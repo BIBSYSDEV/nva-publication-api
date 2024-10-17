@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -7,7 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -69,7 +70,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var publication = persistedPublication();
         var resourceVersion = Resource.fromPublication(publication).toDao().getVersion();
         putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
         var refreshedPublication = resourceService.getPublication(publication);
         var resourceVersionAfterRefresh = Resource.fromPublication(refreshedPublication).toDao().getVersion();
@@ -86,7 +87,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
                 .persistNewTicket(ticketService);
         var ticketVersion = ticket.toDao().getVersion();
         putMessageOnRecoveryQueue(ticket.getIdentifier(), "Ticket");
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
         var refreshedTicket = ticketService.fetchTicket(ticket);
         var resourceVersionAfterRefresh = refreshedTicket.toDao().getVersion();
@@ -104,7 +105,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var messageVersion = message.toDao().getVersion();
         putMessageOnRecoveryQueue(message.getIdentifier(), "Message");
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
         var refreshedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
         var resourceVersionAfterRefresh = refreshedMessage.toDao().getVersion();
@@ -116,47 +117,43 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     void shouldRemoveMessageFromQueueAfterItHasBeenRefreshed() throws JsonProcessingException {
         var publication = persistedPublication();
         putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
         assertTrue(queueClient.getDeliveredMessages().isEmpty());
     }
 
     @Test
-    void shouldEmitNewEventWhenThereAreMoreEntriesOnRecoverQueue() throws JsonProcessingException {
-        persistPublicationsAndPutMessagesOnQueue(1);
-
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
-        var emittedEvents = eventBridgeClient.getRequestEntries();
-
-        assertFalse(emittedEvents.isEmpty());
+    void shouldReadNumberOfMessagesRequested() throws JsonProcessingException {
+        var numberOfMessages = 5;
+        var publications = IntStream.range(0, numberOfMessages)
+                               .mapToObj(i -> persistedPublication())
+                               .toList();
+        publications.forEach(publication -> putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource"));
+        var messagesCount = 2;
+        recoveryBatchScanHandler.handleRequest(createEvent(messagesCount), outputStream, CONTEXT);
+        assertEquals(numberOfMessages - messagesCount, queueClient.getDeliveredMessages().size());
     }
 
-    @Test
-    void shouldNotEmitNewEventWhenNoMessagesOnQueue() throws JsonProcessingException {
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
-        var emittedEvents = eventBridgeClient.getRequestEntries();
-
-        assertTrue(emittedEvents.isEmpty());
-    }
-
-    private static InputStream createEvent() throws JsonProcessingException {
+    private static InputStream createEvent(Integer messagesCount) throws JsonProcessingException {
         var event = new AwsEventBridgeEvent<RecoveryEventRequest>();
         event.setId(randomString());
+        event.setDetail(createRequest(messagesCount));
         var jsonString = JsonUtils.dtoObjectMapper.writeValueAsString(event);
         return IoUtils.stringToStream(jsonString);
+    }
+
+    private static RecoveryEventRequest createRequest(Integer messagesCount) {
+        var builder = RecoveryEventRequest.builder();
+        if (nonNull(messagesCount)) {
+            builder.withMessagesCount(messagesCount);
+        }
+        return builder.build();
     }
 
     //TODO: Implement recovery for other entity types than publication
 
     private static MessageAttributeValue messageAttribute(String value) {
         return MessageAttributeValue.builder().stringValue(value).dataType("String").build();
-    }
-
-    private void persistPublicationsAndPutMessagesOnQueue(int numberOfPublications) {
-        IntStream.range(0, numberOfPublications)
-            .boxed()
-            .map(i -> persistedPublication())
-            .forEach(publication -> putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource"));
     }
 
     private void putMessageOnRecoveryQueue(SortableIdentifier identifier, String type) {
