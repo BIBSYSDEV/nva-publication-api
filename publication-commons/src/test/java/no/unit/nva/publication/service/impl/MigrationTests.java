@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -185,8 +187,32 @@ class MigrationTests extends ResourcesLocalTest {
                            .orElseThrow();
 
         assertThat(resource.getCuratingInstitutions(), hasSize(1));
-        assertThat(resource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(resource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))));
+    }
+
+    @Test
+    void shouldAddSingleCuratingInstitutionForMultipleVerifiedContributorsFromTheSameInstitution() {
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        var publication = createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
+        assertThat(publication.getCuratingInstitutions(), hasSize(0));
+        migrateResources();
+        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var resource = getResourceStream(allMigratedItems)
+                           .findFirst()
+                           .orElseThrow();
+
+        var contributorIds = publication.getEntityDescription().getContributors().stream()
+                                 .map(Contributor::getIdentity)
+                                 .map(Identity::getId)
+                                 .toList();
+        var curatingInstitution = resource.getCuratingInstitutions().stream().findFirst().orElseThrow();
+
+        assertThat(resource.getCuratingInstitutions(), hasSize(1));
+        assertThat(curatingInstitution.id(),
+                   is(equalTo(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))));
+        assertThat(curatingInstitution.curatedContributors(),
+                   is(equalTo(contributorIds)));
     }
 
     @Test

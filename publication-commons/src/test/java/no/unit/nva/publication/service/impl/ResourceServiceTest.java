@@ -69,12 +69,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportSource;
@@ -85,8 +82,11 @@ import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -927,7 +927,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -948,7 +948,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedResource = resourceService.updatePublication(publishedResource);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -970,7 +970,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -993,7 +993,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -1017,7 +1017,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedResource = resourceService.updatePublication(publication);
 
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 

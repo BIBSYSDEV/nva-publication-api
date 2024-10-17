@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -81,6 +82,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         dynamoDbClient = super.client;
         this.resourceService = spy(getResourceServiceBuilder().build());
         this.ticketService = getTicketService();
+        this.s3Client = mock(S3Client.class);
+        this.environment = mock(Environment.class);
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient, s3Client, environment);
     }
 
