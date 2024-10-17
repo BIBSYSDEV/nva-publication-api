@@ -1,5 +1,6 @@
 package no.unit.nva.publication.utils;
 
+import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.publication.model.business.Resource;
@@ -13,14 +14,21 @@ public final class CuratingInstitutionMigration {
     }
 
     public static void migrate(Resource dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
-        if (dataEntry.getCuratingInstitutions().stream()
-                .map(CuratingInstitution::contributorCristinIds).toList().isEmpty()
+        if (curatingInstitutionsContainContributors(dataEntry)
             && hasContributors(dataEntry)) {
             dataEntry.setCuratingInstitutions(
                 CuratingInstitutionsUtil.getCuratingInstitutionsCached(
                     dataEntry.toPublication().getEntityDescription(),
                     new CristinUnitsUtil(s3Client, cristinUnitsS3Uri)));
         }
+    }
+
+    private static boolean curatingInstitutionsContainContributors(Resource dataEntry) {
+        return dataEntry.getCuratingInstitutions().stream()
+                   .filter(Objects::nonNull)
+                   .map(CuratingInstitution::contributorCristinIds)
+                   .filter(Objects::nonNull)
+                   .toList().isEmpty();
     }
 
     private static boolean hasContributors(Resource dataEntry) {
