@@ -713,12 +713,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                                String responseBody, int statusCode) {
 
         var fakeUriRetriever = FakeUriRetriever.newInstance();
-        try {
-            FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
-            FakeUriResponse.setUpNviResponse(fakeUriRetriever, statusCode, publication, responseBody);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
+        FakeUriResponse.setUpNviResponse(fakeUriRetriever, statusCode, publication, responseBody);
 
         return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
                                                             new TicketService(client, fakeUriRetriever),

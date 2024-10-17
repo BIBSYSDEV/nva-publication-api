@@ -3,8 +3,8 @@ package no.unit.nva.publication.uriretriever;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_OK;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.MediaType;
 import java.net.URI;
@@ -21,13 +21,20 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
+import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.ExhibitionContent;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -62,8 +69,7 @@ public final class FakeUriResponse {
         // NO-OP
     }
 
-    public static void setupFakeForType(Publication publication,
-                                        FakeUriRetriever fakeUriRetriever) throws JsonProcessingException {
+    public static void setupFakeForType(Publication publication, FakeUriRetriever fakeUriRetriever) {
 
         fakeContributorResponses(publication, fakeUriRetriever);
         fakeOwnerResponse(fakeUriRetriever, publication.getResourceOwner().getOwnerAffiliation());
@@ -123,44 +129,60 @@ public final class FakeUriResponse {
     }
 
     private static void fakeContextResponses(Publication publication,
-                                             FakeUriRetriever fakeUriRetriever) throws JsonProcessingException {
+                                             FakeUriRetriever fakeUriRetriever) {
 
-        var publicationContext = extractPublicationContext(publication);
+        extractPublicationContext(publication)
+            .ifPresent(publicationContext -> selectResponsesToFake(fakeUriRetriever, publicationContext));
+    }
 
+    private static void selectResponsesToFake(FakeUriRetriever fakeUriRetriever,
+                                              PublicationContext publicationContext) {
         switch (publicationContext) {
             case Anthology anthologyContext -> setupFakeResponsesForAnthology(fakeUriRetriever, anthologyContext);
+            case Book book when book.getPublisher() instanceof Publisher publisher ->
+                setupFakeResponsesForBookTypes(fakeUriRetriever, book, publisher);
+            case Degree degree when degree.getPublisher() instanceof Publisher publisher ->
+                setupFakeResponsesForBookTypes(fakeUriRetriever, degree, publisher);
+            case GeographicalContent geographicalContent when
+                geographicalContent.getPublisher() instanceof Publisher publisher -> {
+                var uri = publisher.getId();
+                fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
+            }
             case Journal journal -> {
                 URI id = journal.getId();
                 fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createJournal(id));
             }
-            case Book book when book.getPublisher() instanceof Publisher publisher -> {
-                URI id = publisher.getId();
-                fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createPublisher(id));
-                fakeSeriesResponse(fakeUriRetriever, book);
-            }
+            case Report report when report.getPublisher() instanceof Publisher publisher ->
+                setupFakeResponsesForBookTypes(fakeUriRetriever, report, publisher);
             case ResearchData researchData when researchData.getPublisher() instanceof Publisher publisher -> {
                 var uri = publisher.getId();
                 fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
             }
-            case
-                GeographicalContent geographicalContent when geographicalContent.getPublisher() instanceof Publisher publisher -> {
-                var uri = publisher.getId();
-                fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
-            }
-            default -> {
+            case Artistic ignored -> { /* No faking expected */ }
+            case Event ignored ->  { /* No faking expected */ }
+            case ExhibitionContent ignored ->  { /* No faking expected */ }
+            case MediaContribution ignored ->  { /* No faking expected */ }
+            case Report ignored -> { /* No faking expected */ }
+            case UnconfirmedJournal ignored ->  { /* No faking expected */ }
+            default -> throw new IllegalArgumentException("Unhandled publication context: " + publicationContext);
 
-            }
         }
     }
 
-    private static void setupFakeResponsesForAnthology(FakeUriRetriever fakeUriRetriever, Anthology anthologyContext)
-        throws JsonProcessingException {
+    private static void setupFakeResponsesForBookTypes(FakeUriRetriever fakeUriRetriever, Book book, Publisher publisher) {
+        URI id = publisher.getId();
+        fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createPublisher(id));
+        fakeSeriesResponse(fakeUriRetriever, book);
+    }
+
+    private static void setupFakeResponsesForAnthology(FakeUriRetriever fakeUriRetriever,
+                                                       Anthology anthologyContext) {
         var contextUri = anthologyContext.getId();
         var parent = randomPublication(BookAnthology.class).copy()
                          .withIdentifier(SortableIdentifier.fromUri(contextUri))
                          .build();
         var parentResponse = PublicationResponse.fromPublication(parent);
-        var anthology = OBJECT_MAPPER.writeValueAsString(parentResponse);
+        var anthology = attempt(() -> OBJECT_MAPPER.writeValueAsString(parentResponse)).orElseThrow();
         fakeUriRetriever.registerResponse(contextUri, SC_OK, APPLICATION_JSON_LD, anthology);
         fakePendingNviResponse(fakeUriRetriever, parent);
         fakeFundingResponses(fakeUriRetriever, parent);
@@ -169,17 +191,11 @@ public final class FakeUriResponse {
         fakeSeriesResponse(fakeUriRetriever, book);
     }
 
-    private static PublicationContext extractPublicationContext(Publication publication) {
-        var publicationContext = nonNull(publication.getEntityDescription())
-                                 && nonNull(publication.getEntityDescription().getReference())
+    private static Optional<PublicationContext> extractPublicationContext(Publication publication) {
+        return nonNull(publication.getEntityDescription())
+               && nonNull(publication.getEntityDescription().getReference())
             ? Optional.of(publication.getEntityDescription().getReference().getPublicationContext())
-            : Optional.<PublicationContext>empty();
-
-        if (publicationContext.isEmpty()) {
-            throw new RuntimeException("PublicationContext is empty");
-        }
-
-        return publicationContext.get();
+            : Optional.empty();
     }
 
     private static void fakeContributorResponses(Publication publication, FakeUriRetriever fakeUriRetriever) {
