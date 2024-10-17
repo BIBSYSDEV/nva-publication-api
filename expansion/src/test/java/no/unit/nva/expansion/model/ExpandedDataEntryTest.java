@@ -8,6 +8,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.HttpStatus.SC_FORBIDDEN;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
@@ -156,16 +159,20 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             .map(Contributor::getAffiliations)
                 .flatMap(i -> i.stream()
                               .filter(Organization.class::isInstance)
-                              .map(Organization.class::cast).map(Organization::getId))
-                    .forEach(uri -> {
-                        uriRetriever.registerResponse(toCristinOrgUri(UriWrapper.fromUri(uri).getLastPathElement()), 200,
-                                                      MediaType.ANY_APPLICATION_TYPE,
-                                                      FakeUriResponse.createCristinOrganizationResponseForTopLevelOrg(uri));
-                        uriRetriever.registerResponse(toFetchCustomerByCristinIdUri(uri), 200,
-                                                      MediaType.ANY_APPLICATION_TYPE, "{}");
-                    });
+                              .map(Organization.class::cast)
+                                  .map(Organization::getId))
+                    .forEach(uri -> addResponsesForCristinCustomer(uri));
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(logger.getMessages(), containsString("is nva customer: true"));
+    }
+
+    private void addResponsesForCristinCustomer(URI uri) {
+        uriRetriever.registerResponse(toCristinOrgUri(UriWrapper.fromUri(uri).getLastPathElement()), SC_OK,
+                                      MediaType.ANY_APPLICATION_TYPE,
+                                      FakeUriResponse.createCristinOrganizationResponseForTopLevelOrg(uri));
+        uriRetriever.registerResponse(toFetchCustomerByCristinIdUri(uri), SC_OK,
+                                      MediaType.ANY_APPLICATION_TYPE, "{}");
+        ;
     }
 
     private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
@@ -190,7 +197,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var channelUri =
             ((Publisher)((Book) importCandidate.getEntityDescription().getReference().getPublicationContext())
                             .getPublisher()).getId();
-        uriRetriever.registerResponse(channelUri, 403, MediaType.ANY_APPLICATION_TYPE, randomString());
+        uriRetriever.registerResponse(channelUri, SC_FORBIDDEN, MediaType.ANY_APPLICATION_TYPE, randomString());
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(logger.getMessages(), containsString("Not Ok response from channel registry"));
     }
@@ -203,7 +210,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var channelUri =
             ((Publisher)((Book) importCandidate.getEntityDescription().getReference().getPublicationContext())
                             .getPublisher()).getId();
-        uriRetriever.registerResponse(channelUri, 200, MediaType.ANY_APPLICATION_TYPE, randomString());
+        uriRetriever.registerResponse(channelUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(logger.getMessages(), containsString("Failed to parse channel registry response"));
     }
@@ -222,9 +229,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         assertThat(logAppender.getMessages(), containsString("Not Ok response from channel registry"));
     }
 
-    private void overrideStandardResponseWithNotFoundFromChannelRegistry(ImportCandidate importCandidate, URI journalId) throws JsonProcessingException {
+    private void overrideStandardResponseWithNotFoundFromChannelRegistry(ImportCandidate importCandidate,
+                                                                         URI journalId) throws JsonProcessingException {
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever);
-        uriRetriever.registerResponse(journalId, 404, MediaType.ANY_APPLICATION_TYPE, "");
+        uriRetriever.registerResponse(journalId, SC_NOT_FOUND, MediaType.ANY_APPLICATION_TYPE, "");
     }
 
     @Test
@@ -302,7 +310,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private void overrideDefaultFakeResponseToReturnNonsensicalResponse(ImportCandidate importCandidate) {
         var journalUri =
             ((Journal) importCandidate.getEntityDescription().getReference().getPublicationContext()).getId();
-        uriRetriever.registerResponse(journalUri, 200, MediaType.ANY_APPLICATION_TYPE, randomString());
+        uriRetriever.registerResponse(journalUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
     }
 
     public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
