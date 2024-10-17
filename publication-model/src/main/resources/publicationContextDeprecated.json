@@ -185,6 +185,11 @@
     "@type": "@id",
     "@container": "@set"
   },
+  "contributorCristinIds": {
+    "@id": "contributorCristinIds",
+    "@type": "@id",
+    "@container": "@set"
+  },
   "contributorOrganizations": {
     "@id": "contributorOrganization",
     "@container": "@set",

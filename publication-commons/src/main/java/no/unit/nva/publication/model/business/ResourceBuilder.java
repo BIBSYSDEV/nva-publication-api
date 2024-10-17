@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
@@ -42,7 +43,7 @@ public final class ResourceBuilder {
     private ImportStatus importStatus;
     private List<PublicationNoteBase> publicationNotes;
     private URI duplicateOf;
-    private Set<URI> curatingInstitutions;
+    private Set<CuratingInstitution> curatingInstitutions;
     private List<ImportDetail> importDetails;
 
     ResourceBuilder() {
@@ -153,7 +154,7 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public ResourceBuilder withCuratingInstitutions(Set<URI> curatingInstitutions) {
+    public ResourceBuilder withCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
         this.curatingInstitutions = curatingInstitutions;
         return this;
     }
