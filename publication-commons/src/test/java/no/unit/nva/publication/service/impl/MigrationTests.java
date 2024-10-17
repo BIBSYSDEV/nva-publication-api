@@ -211,7 +211,7 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(resource.getCuratingInstitutions(), hasSize(1));
         assertThat(curatingInstitution.id(),
                    is(equalTo(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))));
-        assertThat(curatingInstitution.curatedContributors(),
+        assertThat(curatingInstitution.contributorCristinIds(),
                    is(equalTo(contributorIds)));
     }
 

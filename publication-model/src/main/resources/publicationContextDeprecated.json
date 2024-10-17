@@ -185,8 +185,8 @@
     "@type": "@id",
     "@container": "@set"
   },
-  "curatedContributors": {
-    "@id": "curatedContributors",
+  "contributorCristinIds": {
+    "@id": "contributorCristinIds",
     "@type": "@id",
     "@container": "@set"
   },
