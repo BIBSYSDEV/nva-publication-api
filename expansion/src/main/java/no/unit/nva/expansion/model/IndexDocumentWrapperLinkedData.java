@@ -67,6 +67,7 @@ public class IndexDocumentWrapperLinkedData {
     public static final String PUBLICATION = "publication";
     public static final String PATH_DELIMITER = "/";
     public static final int ONE_HUNDRED = 100;
+    public static final int SUCCESS_FAMILY = 2;
     private final RawContentRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever) {
@@ -121,7 +122,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private static boolean isAcceptableNviResponse(HttpResponse<String> response) {
-        return response.statusCode() / ONE_HUNDRED == 2 || response.statusCode() == SC_NOT_FOUND;
+        return response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY || response.statusCode() == SC_NOT_FOUND;
     }
 
     private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {
@@ -154,7 +155,7 @@ public class IndexDocumentWrapperLinkedData {
         return extractUris(fundingNodes(indexDocument), SOURCE).stream()
                    .map(uri -> {
                        var response = fetch(uri);
-                       if (response.statusCode() / ONE_HUNDRED == 2) {
+                       if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
                            return response.body();
                        } else if (isClientError(response)) {
                            logger.warn("Client error when fetching funding source: {}. Response body: {}", uri,
@@ -208,7 +209,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private InputStream processResponse(HttpResponse<String> response) {
-        if (response.statusCode() / ONE_HUNDRED == 2) {
+        if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             return stringToStream(response.body());
         }
         throw new RuntimeException("Unexpected response " + response);
