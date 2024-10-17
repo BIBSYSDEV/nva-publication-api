@@ -94,7 +94,6 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -118,7 +117,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class)
-                   .filter(type -> !type.equals(UnpublishRequest.class))
+                   .filter(type -> !type.getPayload().equals(UnpublishRequest.class))
                    .map(Arguments::of);
     }
 
@@ -206,8 +205,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @DisplayName("should not allow users to create tickets for publications they do not belong to, i.e. " +
-                 "where they are not listed as contributors, owner or curators for owner or contributors institution")
+    @DisplayName("should not allow users to create tickets for publications they do not belong to, i.e. "
+                 + "where they are not listed as contributors, owner or curators for owner or contributors institution")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotAllowUsersToCreateTicketsForPublicationsBelongingToDifferentOrgThanTheOneTheyAreLoggedInTo(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)

@@ -24,7 +24,7 @@ dependencies {
 test {
     environment "API_HOST", "api.dev.nva.aws.unit.no"
     environment "AWS_REGION", "eu-west-1"
-    environment "ID_NAMESPACE", "https://www.example.org/publication"
+    environment "ID_NAMESPACE", "https://api.dev.nva.aws.unit.no/publication"
 
     // Disable remote context loading for JsonLd
     System.setProperty("com.github.jsonldjava.disallowRemoteContextLoading", "true")

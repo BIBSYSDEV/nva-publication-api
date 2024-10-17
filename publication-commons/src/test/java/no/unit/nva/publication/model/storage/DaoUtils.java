@@ -13,7 +13,6 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -31,6 +30,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.core.attempt.Try;
+import org.junit.jupiter.api.Named;
 
 public final class DaoUtils extends TestDataSource {
 
@@ -71,7 +71,9 @@ public final class DaoUtils extends TestDataSource {
     @SuppressWarnings("unchecked")
     public static Class<? extends TicketEntry> randomTicketType() {
         return (Class<? extends TicketEntry>)
-                   randomElement(TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList()));
+                   randomElement(TypeProvider.listSubTypes(TicketEntry.class)
+                                     .map(Named::getPayload)
+                                     .toList());
     }
 
     static PutItemRequest toPutItemRequest(Dao resource) {
