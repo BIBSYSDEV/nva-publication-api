@@ -8,7 +8,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.model.CuratingInstitution;
@@ -165,7 +164,8 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
                                                 randomUri(), editorInstitution);
         var publication = createNonDegreePublication(randomString(), randomUri()).copy()
-                              .withCuratingInstitutions(Set.of(new CuratingInstitution(editorInstitution, List.of(randomUri()))))
+                              .withCuratingInstitutions(Set.of(new CuratingInstitution(editorInstitution,
+                                                                                       Set.of(randomUri()))))
                               .withStatus(UNPUBLISHED).build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 

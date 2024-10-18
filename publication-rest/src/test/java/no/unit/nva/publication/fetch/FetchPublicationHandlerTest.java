@@ -445,7 +445,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.randomPublication();
         publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
         publication.setDuplicateOf(null);
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(RandomDataGenerator.randomUri(), List.of(
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(RandomDataGenerator.randomUri(), Set.of(
             RandomDataGenerator.randomUri()))));
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =

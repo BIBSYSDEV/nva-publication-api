@@ -133,7 +133,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
                               .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
                               .build();
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, List.of(randomUri()))));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
                                                 cristinId, curatingInstitution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);

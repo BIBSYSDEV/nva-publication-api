@@ -919,7 +919,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)
-                   .map(id -> new CuratingInstitution(id, List.of()))
+                   .map(id -> new CuratingInstitution(id, Set.of()))
                    .collect(Collectors.toSet());
     }
 
