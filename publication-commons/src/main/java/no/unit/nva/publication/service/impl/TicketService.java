@@ -238,8 +238,7 @@ public class TicketService extends ServiceWithTransactions {
     }
 
     private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) throws ForbiddenException {
-        var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
-        return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier()))
+        return attempt(() -> resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier()))
                    .orElseThrow(fail -> new ForbiddenException());
     }
 

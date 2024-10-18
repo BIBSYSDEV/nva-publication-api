@@ -50,7 +50,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -94,7 +93,6 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -874,6 +872,26 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
     }
 
+    @ParameterizedTest
+    @MethodSource("ticketEntryProvider")
+    void shouldSetUserFromRequestAsTicketOwner(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED, resourceService);
+        var requestBody = constructDto(ticketType);
+        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
+
+        var userId = publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
+        var username = randomString();
+        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
+                                                      curatingInstitution, userId, username);
+        handler.handleRequest(request, output, CONTEXT);
+
+        var ticket =
+            resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList().getFirst();
+
+        assertThat(ticket.getOwner().toString(), is(equalTo(username)));
+    }
+
     private PublishingRequestCase fetchTicket(Publication publishedPublication,
                                               Class<PublishingRequestCase> ticketType) {
         return ticketService.fetchTicketByResourceIdentifier(publishedPublication.getPublisher().getId(),
@@ -885,10 +903,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
-    }
-
-    private static Username getResourceOwner(Publication publication) {
-        return publication.getResourceOwner().getOwner();
     }
 
     private static List<AssociatedArtifact> getAssociatedFiles(Publication publishedPublication) {

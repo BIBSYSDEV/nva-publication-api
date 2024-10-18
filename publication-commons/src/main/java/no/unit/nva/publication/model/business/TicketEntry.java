@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.fromPublication;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -49,6 +50,8 @@ public abstract class TicketEntry implements Entity {
     public static final String UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE =
         "Ticket owner only can remove ticket!";
 
+    @JsonProperty(OWNER_FIELD)
+    private User owner;
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(RESOURCE_IDENTIFIER)
@@ -165,6 +168,15 @@ public abstract class TicketEntry implements Entity {
         this.viewedBy = new ViewedBy(viewedBy);
     }
 
+    @Override
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
     public void persistUpdate(TicketService ticketService) {
         ticketService.updateTicket(this);
     }
@@ -219,6 +231,11 @@ public abstract class TicketEntry implements Entity {
 
     public boolean isPending() {
         return TicketStatus.PENDING.equals(getStatus());
+    }
+
+    public TicketEntry withOwner(String username) {
+        this.owner = new User(username);
+        return this;
     }
 
     private void validateTicketOwner(UserInstance userInstance) throws UnauthorizedException {
