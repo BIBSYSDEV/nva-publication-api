@@ -854,7 +854,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .stream()
                    .map(UpdatePublicationHandlerTest::getAffiliationUriStream)
                    .flatMap(Set::stream)
-                   .map(id -> new CuratingInstitution(id, List.of(randomUri())))
+                   .map(id -> new CuratingInstitution(id, Set.of(randomUri())))
                    .collect(Collectors.toSet());
     }
 
@@ -1767,7 +1767,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                        IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, List.of(randomUri()))));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
         resourceService.unpublishPublication(publication);
         var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
                                                                   MANAGE_RESOURCES_ALL);
@@ -1786,7 +1786,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, List.of(randomUri()))));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
         var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
                                                                   MANAGE_RESOURCES_ALL);
 

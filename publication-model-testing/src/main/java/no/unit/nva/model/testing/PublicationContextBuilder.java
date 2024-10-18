@@ -82,6 +82,7 @@ public class PublicationContextBuilder {
             case "JournalReview":
                 return randomJournal();
             case "AcademicMonograph":
+            case "AcademicCommentary":
             case "Encyclopedia":
             case "ExhibitionCatalog":
             case "NonFictionMonograph":

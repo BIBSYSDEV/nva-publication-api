@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,12 +22,12 @@ public final class CuratingInstitutionsUtil {
     private CuratingInstitutionsUtil() {
     }
 
-    public static Set<CuratingInstitution> getCuratingInstitutionsOnline(Publication publication, UriRetriever uriRetriever) {
+    public static Set<CuratingInstitution> getCuratingInstitutionsOnline(Publication publication,
+                                                                         UriRetriever uriRetriever) {
         return getVerifiedContributors(publication.getEntityDescription())
-
                    .flatMap(contributor -> toCuratingInstitutionOnline(contributor, uriRetriever))
                    .collect(Collectors.groupingBy(SimpleEntry::getKey,
-                                                  Collectors.mapping(SimpleEntry::getValue, Collectors.toList())))
+                                                  Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
                    .entrySet()
                    .stream()
                    .map(entry -> new CuratingInstitution(entry.getKey(), entry.getValue()))
@@ -43,7 +42,7 @@ public final class CuratingInstitutionsUtil {
                                                   Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
                    .entrySet()
                    .stream()
-                   .map(entry -> new CuratingInstitution(entry.getKey(), new ArrayList<>(entry.getValue())))
+                   .map(entry -> new CuratingInstitution(entry.getKey(), entry.getValue()))
                    .collect(Collectors.toSet());
     }
 

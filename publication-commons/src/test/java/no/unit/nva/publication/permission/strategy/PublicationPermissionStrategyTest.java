@@ -304,7 +304,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
         return publication.copy().withEntityDescription(entityDescription)
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withCuratingInstitutions(Set.of(new CuratingInstitution(topLevelCristinOrgId, List.of(randomUri()))))
+                   .withCuratingInstitutions(Set.of(new CuratingInstitution(topLevelCristinOrgId, Set.of(randomUri()))))
                    .withStatus(PUBLISHED).build();
     }
 
