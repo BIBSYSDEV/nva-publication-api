@@ -12,6 +12,7 @@ import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
+import no.unit.nva.model.instancetypes.book.AcademicCommentary;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.Encyclopedia;
@@ -68,6 +69,7 @@ import no.unit.nva.model.pages.Pages;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
+    @JsonSubTypes.Type(name = "AcademicCommentary", value = AcademicCommentary.class),
     @JsonSubTypes.Type(name = "Architecture", value = Architecture.class),
     @JsonSubTypes.Type(name = "ArtisticDesign", value = ArtisticDesign.class),
     @JsonSubTypes.Type(name = "MovingPicture", value = MovingPicture.class),

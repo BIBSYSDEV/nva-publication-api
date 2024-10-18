@@ -23,6 +23,7 @@ nva:ReportBookOfAbstract rdfs:subClassOf schema:Report .
 nva:MediaPodcast rdfs:subClassOf schema:PodcastEpisode .
 nva:BookMonograph rdfs:subClassOf schema:Book .
 nva:AcademicMonograph rdfs:subClassOf schema:Book .
+nva:AcademicCommentary rdfs:subClassOf schema:Book .
 nva:Encyclopedia rdfs:subClassOf schema:Book .
 nva:ExhibitionCatalog rdfs:subClassOf schema:Book .
 nva:NonFictionMonograph rdfs:subClassOf schema:Book .

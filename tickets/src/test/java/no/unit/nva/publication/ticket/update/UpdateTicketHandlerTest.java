@@ -636,7 +636,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
             PublicationStatus.PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, List.of())));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of())));
         resourceService.updatePublication(publication);
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
 

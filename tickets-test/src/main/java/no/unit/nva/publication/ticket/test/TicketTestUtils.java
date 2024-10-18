@@ -127,13 +127,13 @@ public final class TicketTestUtils {
         return persistPublication(resourceService, publication);
     }
 
-    private static List<URI> getContributorIds(Publication publication) {
+    private static Set<URI> getContributorIds(Publication publication) {
         return publication.getEntityDescription()
                    .getContributors()
                    .stream()
                    .map(Contributor::getIdentity)
                    .map(Identity::getId)
-                   .toList();
+                   .collect(Collectors.toSet());
     }
 
     public static Publication createPersistedDegreePublication(PublicationStatus status,

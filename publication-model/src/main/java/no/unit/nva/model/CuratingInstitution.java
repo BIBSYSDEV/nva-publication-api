@@ -7,28 +7,29 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record CuratingInstitution(URI id, List<URI> contributorCristinIds) {
+public record CuratingInstitution(URI id, Set<URI> contributorCristinIds) {
 
     @JsonCreator
     public static CuratingInstitution create(@JsonProperty("id") URI id,
-                                             @JsonProperty("contributorCristinIds") List<URI> contributorCristinIds) {
+                                             @JsonProperty("contributorCristinIds") Set<URI> contributorCristinIds) {
         return new CuratingInstitution(id, getContributorCristinIds(contributorCristinIds));
     }
 
     @JsonCreator
     public static CuratingInstitution create(String id) {
-        return new CuratingInstitution(URI.create(id), Collections.emptyList());
+        return new CuratingInstitution(URI.create(id), Collections.emptySet());
     }
 
     @Override
-    public List<URI> contributorCristinIds() {
-        return nonNull(contributorCristinIds) ? contributorCristinIds : Collections.emptyList();
+    public Set<URI> contributorCristinIds() {
+        return nonNull(contributorCristinIds) ? contributorCristinIds : Collections.emptySet();
     }
 
-    private static List<URI> getContributorCristinIds(List<URI> contributorCristinIds) {
+    private static Set<URI> getContributorCristinIds(Set<URI> contributorCristinIds) {
         return nonNull(contributorCristinIds) && !contributorCristinIds.isEmpty() ? contributorCristinIds
-                   : Collections.emptyList();
+                   : Collections.emptySet();
     }
 }

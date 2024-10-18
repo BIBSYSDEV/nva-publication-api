@@ -787,7 +787,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, List.of(randomUri()))));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
         resourceService.updatePublication(publication);
         var requestBody = constructDto(PublishingRequestCase.class);
 
