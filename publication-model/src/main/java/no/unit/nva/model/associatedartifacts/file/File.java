@@ -33,7 +33,12 @@ import nva.commons.core.JacocoGenerated;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = PublishedFile.TYPE, value = PublishedFile.class),
     @JsonSubTypes.Type(names = {UnpublishedFile.TYPE, "File"}, value = UnpublishedFile.class),
-    @JsonSubTypes.Type(name = AdministrativeAgreement.TYPE, value = AdministrativeAgreement.class)
+    @JsonSubTypes.Type(name = AdministrativeAgreement.TYPE, value = AdministrativeAgreement.class),
+    @JsonSubTypes.Type(name = OpenFile.TYPE, value = OpenFile.class),
+    @JsonSubTypes.Type(name = PendingOpenFile.TYPE, value = PendingOpenFile.class),
+    @JsonSubTypes.Type(name = InternalFile.TYPE, value = InternalFile.class),
+    @JsonSubTypes.Type(name = PendingInternalFile.TYPE, value = PendingInternalFile.class),
+    @JsonSubTypes.Type(name = RejectedFile.TYPE, value = RejectedFile.class)
 })
 public abstract class File implements JsonSerializable, AssociatedArtifact {
 
@@ -64,7 +69,9 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     private static final Supplier<Pattern> LICENSE_VALIDATION_PATTERN =
         () -> Pattern.compile("^(http|https)://.*$");
     public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(PublishedFile.class,
-                                                                                    AdministrativeAgreement.class);
+                                                                                AdministrativeAgreement.class,
+                                                                                OpenFile.class,
+                                                                                InternalFile.class);
 
 
     @JsonProperty(IDENTIFIER_FIELD)
@@ -424,6 +431,36 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         public File buildUnpublishableFile() {
             return new AdministrativeAgreement(identifier, name, mimeType, size, license, administrativeAgreement,
                                                publisherVersion, embargoDate, uploadDetails);
+        }
+
+        public File buildOpenFile() {
+            return new OpenFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                     publisherVersion, embargoDate, rightsRetentionStrategy,
+                                     legalNote, Instant.now(), uploadDetails);
+        }
+
+        public File buildInternalFile() {
+            return new InternalFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                     publisherVersion, embargoDate, rightsRetentionStrategy,
+                                     legalNote, Instant.now(), uploadDetails);
+        }
+
+        public File buildPendingOpenFile() {
+            return new PendingOpenFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                       publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
+                                       uploadDetails);
+        }
+
+        public File buildPendingInternalFile() {
+            return new PendingInternalFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                       publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
+                                       uploadDetails);
+        }
+
+        public File buildRejectedFile() {
+            return new RejectedFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                       publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
+                                       uploadDetails);
         }
 
         public File build(Class<? extends File> clazz) {

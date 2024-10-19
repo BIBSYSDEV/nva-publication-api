@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.test;
 
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
@@ -21,6 +22,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
@@ -35,7 +37,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -47,9 +48,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
@@ -61,6 +60,8 @@ public final class TicketTestUtils {
 
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
     public static final Random RANDOM = new Random(System.currentTimeMillis());
+    public static final URI CURATING_INSTITUTION_ID = URI.create(
+        "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
     private TicketTestUtils() {
     }
@@ -121,8 +122,17 @@ public final class TicketTestUtils {
                                                                              .forEach(TicketTestUtils::setAffiliation)
         );
         publication.setCuratingInstitutions(
-            Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
+            Set.of(new CuratingInstitution(CURATING_INSTITUTION_ID, getContributorIds(publication))));
         return persistPublication(resourceService, publication);
+    }
+
+    private static Set<URI> getContributorIds(Publication publication) {
+        return publication.getEntityDescription()
+                   .getContributors()
+                   .stream()
+                   .map(Contributor::getIdentity)
+                   .map(Identity::getId)
+                   .collect(Collectors.toSet());
     }
 
     public static Publication createPersistedDegreePublication(PublicationStatus status,
@@ -135,7 +145,7 @@ public final class TicketTestUtils {
                                                                              .forEach(TicketTestUtils::setAffiliation)
         );
         publication.setCuratingInstitutions(
-            Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
+            Set.of(new CuratingInstitution(CURATING_INSTITUTION_ID, getContributorIds(publication))));
         return persistPublication(resourceService, publication);
     }
 
@@ -184,7 +194,7 @@ public final class TicketTestUtils {
 
     public static Publication createPersistedPublicationWithAdministrativeAgreement(ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withAssociatedArtifacts(List.of(administrativeAgreement()))
                               .build();
 
@@ -273,13 +283,16 @@ public final class TicketTestUtils {
     public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        return TicketEntry.requestNewTicket(publication, ticketType)
+                   .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                   .persistNewTicket(ticketService);
     }
 
     public static TicketEntry createClosedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                  TicketService ticketService)
         throws ApiGatewayException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
                    .persistNewTicket(ticketService).close(new Username("Username"));
     }
 
@@ -303,7 +316,7 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withStatus(status)
                               .build();
         publishFiles(publication);
@@ -328,14 +341,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithStatus(PublicationStatus status) {
-        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withDoi(null)
                    .withStatus(status)
                    .build();
     }
 
     private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withStatus(status)
                               .build();
         unpublishFiles(publication);
@@ -354,14 +367,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithAssociatedLink(PublicationStatus status) {
-        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withStatus(status)
                    .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
                    .build();
     }
 
     private static Publication randomNonDegreePublication(PublicationStatus status) {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES);
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
         return publication.copy()
                    .withStatus(status)
                    .withDoi(null)

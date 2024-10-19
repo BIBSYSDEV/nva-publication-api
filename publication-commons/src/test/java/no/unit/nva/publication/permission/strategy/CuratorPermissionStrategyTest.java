@@ -49,7 +49,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on contributors")
     @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
-        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH"})
+        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH", "UPDATE_FILES"})
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 

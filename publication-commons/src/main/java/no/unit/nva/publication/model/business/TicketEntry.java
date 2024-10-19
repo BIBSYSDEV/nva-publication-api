@@ -3,7 +3,7 @@ package no.unit.nva.publication.model.business;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.fromPublication;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -12,6 +12,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -47,6 +48,7 @@ public abstract class TicketEntry implements Entity {
         "Cannot remove a ticket that has any other status than %s";
     public static final String UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE =
         "Ticket owner only can remove ticket!";
+
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(RESOURCE_IDENTIFIER)
@@ -72,7 +74,7 @@ public abstract class TicketEntry implements Entity {
         if (DoiRequest.class.equals(ticketType)) {
             return attempt(() -> requestDoiRequestTicket(publication)).orElseThrow();
         } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return createOpeningCaseObject(publication);
+            return fromPublication(publication);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequest.fromPublication(publication);
         } else if (UnpublishRequest.class.equals(ticketType)) {
@@ -126,6 +128,9 @@ public abstract class TicketEntry implements Entity {
         ticketEntry.setCreatedDate(now);
         ticketEntry.setModifiedDate(now);
         ticketEntry.setIdentifier(identifierProvider.get());
+        if (nonNull(ticketEntry.getFinalizedDate())) {
+            ticketEntry.setFinalizedDate(now);
+        }
     }
 
     public SortableIdentifier getResourceIdentifier() {
@@ -310,6 +315,17 @@ public abstract class TicketEntry implements Entity {
         return updated;
     }
 
+    public TicketEntry withOwnerAffiliation(URI ownerAffiliation) {
+        this.setOwnerAffiliation(ownerAffiliation);
+        return this;
+    }
+
+    public boolean hasSameOwnerAffiliationAs(UserInstance userInstance) {
+        return Optional.ofNullable(this.getOwnerAffiliation())
+                   .map(value -> value.equals(userInstance.getTopLevelOrgCristinId()))
+                   .orElse(false);
+    }
+
     private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {
         if (isPublished(publication)) {
             return DoiRequest.fromPublication(publication);
@@ -345,7 +361,7 @@ public abstract class TicketEntry implements Entity {
 
     private static TicketEntry createNewPublishingRequestEntry(Publication publication,
                                                                Supplier<SortableIdentifier> identifierProvider) {
-        var entry = createOpeningCaseObject(publication);
+        var entry = fromPublication(publication);
         setServiceControlledFields(entry, identifierProvider);
         return entry;
     }

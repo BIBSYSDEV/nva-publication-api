@@ -1,9 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
+
 Description: >
   AWS
 
   SAM Template for NVA Publication Service
+
 
 
 
@@ -233,6 +235,11 @@ Resources:
         StreamViewType: NEW_AND_OLD_IMAGES
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: IncludedInBackup
+          Value: 'true'
+        - Key: TemporaryTag
+          Value: 'this_is_a_test_to_trigger_stack_update'
 
   # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
   NvaImportCandidatesTable:
@@ -305,6 +312,11 @@ Resources:
         StreamViewType: NEW_AND_OLD_IMAGES
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: IncludedInBackup
+          Value: 'true'
+        - Key: TemporaryTag
+          Value: 'this_is_a_test_to_trigger_stack_update'
 
   #===============================DLOQs===================================================================
 
@@ -429,9 +441,6 @@ Resources:
 
   DatabaseAccessLambdaManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
-    DependsOn:
-      - DeleteDraftPublicationLambdaRole
-      - UpdateDoiStatusLambdaRole
     Properties:
       Roles:
         - !Ref LambdaRole
@@ -1346,6 +1355,7 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !GetAtt InternalBus.Name
+            State: "DISABLED" # disabled for now to avoid extra compute during batch scans for something we don't use
             Pattern:
               detail:
                 responsePayload:
@@ -1656,7 +1666,6 @@ Resources:
   DynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
     DependsOn:
-      - LambdaRole
       - DatabaseAccessLambdaManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
@@ -1684,7 +1693,6 @@ Resources:
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
     DependsOn:
-      - LambdaRole
       - DatabaseAccessLambdaManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
@@ -1740,9 +1748,6 @@ Resources:
 
   CristinEntriesEventEmitter:
     Type: AWS::Serverless::Function
-    DependsOn:
-      - CristinImportDataEntryQueue
-      - CristinImportPatchQueue
     Properties:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
@@ -1928,7 +1933,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.lambda_handler
-      Runtime: python3.8
+      Runtime: python3.12
       Timeout: 900
       Environment:
         Variables:
@@ -1982,7 +1987,6 @@ Resources:
 
   CristinEntriesSQSConsumer:
     Type: AWS::Serverless::Function
-    DependsOn: LambdaRole
     Properties:
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
@@ -2355,7 +2359,6 @@ Resources:
   BrageMigrationInputBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${BrageMigrationInputBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
@@ -2366,13 +2369,11 @@ Resources:
   BrageMigrationErrorBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
 
   ScopusZipBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${ScopusZipBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
@@ -2384,7 +2385,6 @@ Resources:
   ScopusXmlBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
@@ -2395,13 +2395,11 @@ Resources:
   ImportCandidateStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${ImportCandidateStorageBucketName}-${AWS::AccountId}"
 
   ScopusImportReportBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
 
 

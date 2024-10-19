@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permission.strategy.grant.BackendClientStrategy;
 import no.unit.nva.publication.permission.strategy.grant.ContributorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.CuratorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.EditorPermissionStrategy;
@@ -40,7 +41,8 @@ public class PublicationPermissionStrategy {
             new CuratorPermissionStrategy(publication, userInstance, resourceService),
             new ContributorPermissionStrategy(publication, userInstance, resourceService),
             new ResourceOwnerPermissionStrategy(publication, userInstance, resourceService),
-            new TrustedThirdPartyStrategy(publication, userInstance, resourceService)
+            new TrustedThirdPartyStrategy(publication, userInstance, resourceService),
+            new BackendClientStrategy(publication, userInstance, resourceService)
         );
         this.denyStrategies = Set.of(
             new NonDegreePermissionStrategy(publication, userInstance, resourceService)

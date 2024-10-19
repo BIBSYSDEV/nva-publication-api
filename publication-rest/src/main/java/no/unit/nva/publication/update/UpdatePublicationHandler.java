@@ -10,7 +10,6 @@ import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
-import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -18,22 +17,16 @@ import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -50,11 +43,6 @@ import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
-import no.unit.nva.publication.model.business.FileForApproval;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
@@ -62,7 +50,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
-import no.unit.nva.publication.validation.PublicationValidator;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -152,10 +139,6 @@ public class UpdatePublicationHandler
         this.secretsReader = new SecretsReader(secretsManagerClient);
         this.publicationValidator = new DefaultPublicationValidator();
         this.httpClient = httpClient;
-    }
-
-    private static boolean isPending(TicketEntry publishingRequest) {
-        return TicketStatus.PENDING.equals(publishingRequest.getStatus());
     }
 
     @Override
@@ -330,7 +313,8 @@ public class UpdatePublicationHandler
                                      publicationUpdate.getAssociatedArtifacts(),
                                      extractUploadDetails(userInstance));
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
-        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, userInstance);
+        new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
+            .resolve(existingPublication, publicationUpdate);
 
         return resourceService.updatePublication(publicationUpdate);
     }
@@ -358,6 +342,17 @@ public class UpdatePublicationHandler
         }
     }
 
+    private static boolean publishedFilesAreUnchanged(Publication existingPublication,
+                                                      UpdatePublicationRequest input) {
+        var inputFiles = input.getAssociatedArtifacts().stream()
+                             .filter(PublishedFile.class::isInstance)
+                             .map(PublishedFile.class::cast).toList();
+        var existingFiles = existingPublication.getAssociatedArtifacts().stream()
+                                .filter(PublishedFile.class::isInstance)
+                                .map(PublishedFile.class::cast);
+        return existingFiles.allMatch(inputFiles::contains);
+    }
+
     private static void updateAssociatedArtifacts(AssociatedArtifactList updatedArtifacts,
                                                   UploadDetails uploadDetails,
                                                   File item) throws BadRequestException {
@@ -381,17 +376,6 @@ public class UpdatePublicationHandler
         return file.copy().withUploadDetails(uploadDetails);
     }
 
-    private static boolean publishedFilesAreUnchanged(Publication existingPublication,
-                                                      UpdatePublicationRequest input) {
-        var inputFiles = input.getAssociatedArtifacts().stream()
-                             .filter(PublishedFile.class::isInstance)
-                             .map(PublishedFile.class::cast).toList();
-        var existingFiles = existingPublication.getAssociatedArtifacts().stream()
-                                .filter(PublishedFile.class::isInstance)
-                                .map(PublishedFile.class::cast);
-        return existingFiles.allMatch(inputFiles::contains);
-    }
-
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
                                String actingUser, PublicationPermissionStrategy permissionStrategy)
         throws BadRequestException, UnauthorizedException {
@@ -413,43 +397,6 @@ public class UpdatePublicationHandler
         return new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
     }
 
-
-    private void upsertPublishingRequestIfNeeded(Publication existingPublication,
-                                                 Publication publicationUpdate,
-                                                 Customer customer,
-                                                 UserInstance userInstance) {
-        if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
-            createPublishingRequestOnFileUpdate(publicationUpdate, customer, userInstance);
-        }
-        if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
-            autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate, userInstance);
-        }
-        if (isAlreadyPublished(existingPublication) && updateHasFileChanges(existingPublication, publicationUpdate)) {
-            updateFilesForApproval(publicationUpdate);
-        }
-    }
-
-    private void updateFilesForApproval(Publication publicationUpdate) {
-        var filesForApproval = getUnpublishedFiles(publicationUpdate).stream()
-                                   .map(FileForApproval::fromFile)
-                                   .collect(Collectors.toSet());
-        fetchPendingPublishingRequest(publicationUpdate)
-            .forEach(publishingRequestCase -> updateFilesForApproval(publishingRequestCase, filesForApproval));
-    }
-
-    private void updateFilesForApproval(PublishingRequestCase publishingRequestCase,
-                                        Set<FileForApproval> filesForApproval) {
-        publishingRequestCase.setFilesForApproval(filesForApproval);
-        publishingRequestCase.persistUpdate(ticketService);
-    }
-
-    private boolean updateHasFileChanges(Publication existingPublication, Publication publicationUpdate) {
-        var existingFiles = getUnpublishedFiles(existingPublication);
-        var updatedFiles = getUnpublishedFiles(publicationUpdate);
-        return !(new HashSet<>(existingFiles).containsAll(updatedFiles)
-               && new HashSet<>(updatedFiles).containsAll(existingFiles));
-    }
-
     private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
                                                               URI customerUri) throws BadGatewayException {
         try {
@@ -460,31 +407,13 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void validatePublication(Publication publicationUpdate, Publication existingPublication, Customer customer) throws BadRequestException {
+    private void validatePublication(Publication publicationUpdate, Publication existingPublication, Customer customer)
+        throws BadRequestException {
         try {
             publicationValidator.validateUpdate(publicationUpdate, existingPublication, customer);
         } catch (PublicationValidationException e) {
             throw new BadRequestException(e.getMessage());
         }
-    }
-
-    private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication, UserInstance userInstance) {
-        fetchPendingPublishingRequest(publication)
-            .map(PublishingRequestCase.class::cast)
-            .forEach(ticket -> ticket.complete(publication, new Username(userInstance.getUsername()))
-                                   .persistUpdate(ticketService));
-    }
-
-    private Stream<PublishingRequestCase> fetchPendingPublishingRequest(Publication publication) {
-        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
-                   .filter(PublishingRequestCase.class::isInstance)
-                   .filter(UpdatePublicationHandler::isPending)
-                   .map(PublishingRequestCase.class::cast);
-    }
-
-    private boolean thereAreNoFiles(Publication publicationUpdate) {
-        return publicationUpdate.getAssociatedArtifacts().stream()
-                   .noneMatch(File.class::isInstance);
     }
 
     @Override
@@ -498,87 +427,14 @@ public class UpdatePublicationHandler
         };
     }
 
-    private boolean containsNewPublishableFiles(Publication publicationUpdate) {
-        var unpublishedFiles = getUnpublishedFiles(publicationUpdate);
-        return !unpublishedFiles.isEmpty() && containsPublishableFile(unpublishedFiles);
-    }
-
-    private boolean containsPublishableFile(List<File> unpublishedFiles) {
-        return unpublishedFiles.stream().anyMatch(this::isPublishable);
-    }
-
-    private boolean hasMatchingIdentifier(Publication publication, TicketEntry ticketEntry) {
-        return ticketEntry.getResourceIdentifier().equals(publication.getIdentifier());
-    }
-
     private boolean identifiersDoNotMatch(SortableIdentifier identifierInPath,
                                           UpdatePublicationRequest input) {
         return !identifierInPath.equals(input.getIdentifier());
     }
 
-    private boolean isAlreadyPublished(Publication existingPublication) {
-        return PublicationStatus.PUBLISHED.equals(existingPublication.getStatus())
-               || PublicationStatus.PUBLISHED_METADATA.equals(existingPublication.getStatus());
-    }
-
-    private boolean isPublishable(AssociatedArtifact artifact) {
-        var file = (File) artifact;
-        return nonNull(file.getLicense()) && !file.isAdministrativeAgreement();
-    }
-
-    private boolean thereIsRelatedPendingPublishingRequest(Publication publication) {
-        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
-                   .filter(PublishingRequestCase.class::isInstance)
-                   .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
-                   .anyMatch(UpdatePublicationHandler::isPending);
-    }
-
-    private List<File> getUnpublishedFiles(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(UnpublishedFile.class::cast)
-                   .collect(Collectors.toList());
-    }
-
     private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
         return attempt(() -> resourceService.getPublicationByIdentifier(identifierInPath))
                    .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
-    }
-
-    private void createPublishingRequestOnFileUpdate(Publication publicationUpdate, Customer customer,
-                                                     UserInstance userInstance) {
-        if (containsNewPublishableFiles(publicationUpdate)) {
-            persistPendingPublishingRequest(publicationUpdate, customer, userInstance);
-        }
-    }
-
-    private void persistPendingPublishingRequest(Publication publicationUpdate,
-                                                 Customer customer,
-                                                 UserInstance userInstance) {
-        attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
-            .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
-            .map(publishingRequest ->
-                     persistPublishingRequest(publicationUpdate, userInstance, customer, publishingRequest));
-    }
-
-    private TicketEntry persistPublishingRequest(Publication publicationUpdate, UserInstance userInstance,
-                                                 Customer customer, PublishingRequestCase publishingRequest)
-        throws ApiGatewayException {
-        return userInstance.getAccessRights().contains(MANAGE_PUBLISHING_REQUESTS)
-               || useIsAllowedToPublishFiles(customer)
-                   ? publishingRequest.persistAutoComplete(ticketService, publicationUpdate,
-                                                           new Username(userInstance.getUsername()))
-                   : publishingRequest.persistNewTicket(ticketService);
-    }
-
-    private static boolean useIsAllowedToPublishFiles(Customer customer) {
-        return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.getValue()
-                   .equals(customer.getPublicationWorkflow());
-    }
-
-    private PublishingRequestCase injectPublishingWorkflow(PublishingRequestCase ticket, Customer customer) {
-        ticket.setWorkflow(PublishingWorkflow.lookUp(customer.getPublicationWorkflow()));
-        return ticket;
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)

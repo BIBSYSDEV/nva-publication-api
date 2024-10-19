@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -15,13 +16,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
-import no.unit.nva.model.instancetypes.degree.DegreeMaster;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
@@ -31,13 +26,6 @@ import org.slf4j.LoggerFactory;
 public abstract class PermissionStrategy {
 
     public static final Logger logger = LoggerFactory.getLogger(PermissionStrategy.class);
-
-    public static final Class<?>[] PROTECTED_DEGREE_INSTANCE_TYPES = {
-        DegreeLicentiate.class,
-        DegreeBachelor.class,
-        DegreeMaster.class,
-        DegreePhd.class
-    };
 
     protected final Publication publication;
     protected final UserInstance userInstance;
@@ -68,8 +56,7 @@ public abstract class PermissionStrategy {
                     publication.getCuratingInstitutions(),
                     userInstance.getUser(),
                     userTopLevelOrg);
-
-        return publication.getCuratingInstitutions().stream().anyMatch(org -> org.equals(userTopLevelOrg));
+        return publication.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
     }
 
     protected boolean userIsFromSameInstitutionAsPublication() {
@@ -85,13 +72,6 @@ public abstract class PermissionStrategy {
                                                       .filter(File.class::isInstance)
                                                       .map(File.class::cast)
                                                       .anyMatch(this::hasEmbargo);
-    }
-
-    protected boolean hasNoPendingTicket(Class<? extends TicketEntry> ticketType) {
-        var resource = Resource.fromPublication(publication);
-        return resourceService.fetchAllTicketsForResource(resource)
-                   .filter(ticketType::isInstance)
-                   .noneMatch(TicketEntry::isPending);
     }
 
     private boolean hasEmbargo(File file) {

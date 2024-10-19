@@ -1,16 +1,45 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
@@ -27,34 +56,14 @@ import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
-
-import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
 
 class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     
@@ -94,7 +103,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldPublishFilesWhenPublicationIsAlreadyPublished() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
-        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME)
+                                            .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -106,7 +116,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME)
+                                            .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -123,12 +134,16 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                                                                          IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PublicationStatus.PUBLISHED,
                                                                                          resourceService);
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var pendingPublishingRequest =
+            (PublishingRequestCase) persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         pendingPublishingRequest.setWorkflow(value);
-        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
+        var approvedPublishingRequest = pendingPublishingRequest.approveFiles()
+                                            .complete(publication, USERNAME)
+                                            .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(getAssociatedFiles(updatedPublication), everyItem(instanceOf(PublishedFile.class)));
     }
@@ -139,7 +154,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME).persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -151,38 +166,39 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldCreateDoiRequestTicketWhenPublicationWithDraftDoiIsPublished()
-        throws IOException, NotFoundException, BadRequestException {
+        throws IOException, ApiGatewayException {
         var publication = createDraftPublicationWithDoi();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME).persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var ticket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
                                                                    publication.getIdentifier(),
-                                                                   DoiRequest.class);
+                                                                   DoiRequest.class).orElseThrow();
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(ticket.get().getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
     }
 
     @Test
     void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
-        throws NotFoundException, IOException, BadRequestException {
+        throws ApiGatewayException, IOException {
         var publication = createDraftPublicationWithDoi();
         final var existingTicket = createDoiRequestTicket(publication);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME)
+                                            .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var actualTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
                                                                    publication.getIdentifier(),
-                                                                   DoiRequest.class);
+                                                                   DoiRequest.class).orElseThrow();
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(existingTicket.getIdentifier(), is(equalTo(actualTicket.get().getIdentifier())));
-        assertThat(actualTicket.get().getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(existingTicket.getIdentifier(), is(equalTo(actualTicket.getIdentifier())));
+        assertThat(actualTicket.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
@@ -198,24 +214,101 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldLogFailingReasonsWhenPublishingFails() throws ApiGatewayException, IOException {
+    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenPublishingPublicationFails()
+        throws ApiGatewayException, IOException {
         var publication = createUnpublishablePublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
-        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
-        approvedPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME)
+                                            .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         var logger = LogUtils.getTestingAppenderForRootLogger();
         
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(event, outputStream, CONTEXT));
+
         assertThat(logger.getMessages(), containsString(RESOURCE_LACKS_REQUIRED_DATA));
     }
 
+    @Test
+    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenUpdatingPublicationFails()
+        throws ApiGatewayException, IOException {
+        var publication = createUnpublishablePublication();
+        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME)
+                                            .persistNewTicket(ticketService);
+        var handlerThrowingException = handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication();
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+        var logger = LogUtils.getTestingAppenderForRootLogger();
+
+        assertThrows(RuntimeException.class, () -> handlerThrowingException.handleRequest(event, outputStream, CONTEXT));
+
+        assertThat(logger.getMessages(), containsString("Could not update publication"));
+    }
+
+    @Test
+    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenFetchingPublishingRequestFails()
+        throws ApiGatewayException, IOException {
+        var publication = createUnpublishablePublication();
+        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME)
+                                            .persistNewTicket(ticketService);
+        var handlerThrowingException = handlerWithResourceServiceThrowingExceptionWhenFetchingTicket();
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+        var logger = LogUtils.getTestingAppenderForRootLogger();
+
+        assertThrows(RuntimeException.class, () -> handlerThrowingException.handleRequest(event, outputStream, CONTEXT));
+
+        assertThat(logger.getMessages(), containsString("Could not fetch PublishingRequest"));
+    }
+
+    @Test
+    void shouldPublishFilesFromPublishingRequestOnlyWhenPublishingRequestIsApproved()
+        throws ApiGatewayException, IOException {
+        var fileToPublish = randomUnpublishedFile();
+        var file = randomUnpublishedFile();
+        var publication = createPublicationWithFiles(file, fileToPublish);
+        var completedPublishingRequest = persistCompletedPublishingRequestWithApprovedFiles(publication, fileToPublish);
+        completedPublishingRequest.setFilesForApproval(Set.of(FileForApproval.fromFile(fileToPublish)));
+        var event = createEvent(null, completedPublishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        var publishedFiles = getPublishedFiles(updatedPublication);
+
+        assertThat(publishedFiles, hasSize(1));
+        assertThat(publishedFiles.getFirst().getIdentifier(),
+                   is(equalTo(fileToPublish.getIdentifier())));
+    }
+
+    private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(Publication publication,
+                                                                                     File file) throws ApiGatewayException {
+        var publishingRequest =  (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                                     .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+        publishingRequest.setStatus(TicketStatus.COMPLETED);
+        publishingRequest.setApprovedFiles(Set.of(file.getIdentifier()));
+        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
+    }
+
+    private Publication createPublicationWithFiles(File file, File fileInPublishingRequest) throws ApiGatewayException {
+        var publication = randomPublication();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file, fileInPublishingRequest)));
+        var persistedPublication = Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+        resourceService.publishPublication(UserInstance.fromPublication(publication), persistedPublication.getIdentifier());
+        return persistedPublication;
+    }
+
+    private static List<PublishedFile> getPublishedFiles(Publication updatedPublication) {
+        return updatedPublication.getAssociatedArtifacts().stream()
+                   .filter(PublishedFile.class::isInstance)
+                   .map(PublishedFile.class::cast)
+                   .toList();
+    }
+
     private static List<AssociatedArtifact> getAssociatedFiles(Publication updatedPublication) {
-        return updatedPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance).collect(
-            Collectors.toList());
+        return updatedPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance).toList();
     }
 
     private DoiRequest createDoiRequestTicket(Publication publication) {
@@ -269,6 +362,42 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        return PublishingRequestCase.createOpeningCaseObject(publication);
+        return PublishingRequestCase.fromPublication(publication);
+    }
+
+    private AcceptedPublishingRequestEventHandler handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication()
+        throws ApiGatewayException {
+        resourceService = mock(ResourceService.class);
+        var s3Client = new FakeS3Client();
+        this.s3Driver = new S3Driver(s3Client, randomString());
+        when(resourceService.getPublication(any(), any())).thenReturn(randomPublication());
+        when(resourceService.updatePublication(any())).thenThrow(RuntimeException.class);
+        return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
+    }
+
+    private AcceptedPublishingRequestEventHandler handlerWithResourceServiceThrowingExceptionWhenFetchingTicket()
+        throws ApiGatewayException {
+        ticketService = mock(TicketService.class);
+        var s3Client = new FakeS3Client();
+        this.s3Driver = new S3Driver(s3Client, randomString());
+        when(ticketService.fetchTicket(any())).thenThrow(RuntimeException.class);
+        return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
+    }
+
+    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
+        throws ApiGatewayException {
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
+                                                                                              SortableIdentifier::next)
+                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
+        return publishingRequest.persistNewTicket(ticketService);
+    }
+
+    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
     }
 }

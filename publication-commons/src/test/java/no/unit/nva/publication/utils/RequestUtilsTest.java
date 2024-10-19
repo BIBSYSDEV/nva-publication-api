@@ -1,6 +1,7 @@
 package no.unit.nva.publication.utils;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
@@ -30,8 +31,8 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
@@ -124,7 +125,8 @@ public class RequestUtilsTest {
                                                     requestInfo.getCurrentCustomer(),
                                                     requestInfo.getTopLevelOrgCristinId().orElseThrow(),
                                                     requestInfo.getPersonCristinId(),
-                                                    requestInfo.getAccessRights());
+                                                    requestInfo.getAccessRights(),
+                                                    UserClientType.INTERNAL);
         var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo).toUserInstance();
         Assertions.assertEquals(createdUserInstance, expectedUserInstance);
     }
@@ -138,7 +140,7 @@ public class RequestUtilsTest {
     }
 
     private static Publication publicationWithOwner(String owner) {
-        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withStatus(PUBLISHED)
                    .withResourceOwner(new ResourceOwner(new Username(owner), randomUri())).build();
     }

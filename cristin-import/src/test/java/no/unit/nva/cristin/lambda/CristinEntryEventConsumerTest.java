@@ -87,7 +87,6 @@ import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportSource;
@@ -95,6 +94,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.MediaContribution;
@@ -931,7 +931,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         names = {"ANTHOLOGY", "MONOGRAPH", "NON_FICTION_BOOK", "TEXTBOOK", "ENCYCLOPEDIA",
             "POPULAR_BOOK", "REFERENCE_MATERIAL", "RESEARCH_REPORT", "DEGREE_PHD",
             "DEGREE_MASTER", "SECOND_DEGREE_THESIS", "MEDICAL_THESIS"})
-    void shouldPersistNoPublisherReportWhenCristinObjectMissesPublisherName(CristinSecondaryCategory category)
+    void shouldPersistChannelRegistryExceptionReportWhenCristinObjectMissesPublisherName(CristinSecondaryCategory category)
         throws IOException {
         var cristinObject = CristinDataGenerator.randomObject(category.getValue());
         cristinObject.setSecondaryCategory(category);
@@ -946,28 +946,6 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                 .addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedReportFileLocation);
-        assertThat(file, is(not(emptyString())));
-    }
-
-    @ParameterizedTest(name = "Cristin entry with secondary category {arguments}")
-    @EnumSource(value = CristinSecondaryCategory.class, mode = Mode.INCLUDE,
-        names = {"ANTHOLOGY", "MONOGRAPH"})
-    void shouldPersistChannelRegistryExceptionReportWhenNsdCodeIsNotInChannelRegistry(CristinSecondaryCategory category)
-        throws IOException {
-        var cristinObject = CristinDataGenerator.randomObject(category.getValue());
-        cristinObject.setSecondaryCategory(category);
-        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(randomString());
-        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(NOT_EXISTING_NSD_CODE);
-        var eventBody = createEventBody(cristinObject);
-        var sqsEvent = createSqsEvent(eventBody);
-        handler.handleRequest(sqsEvent, CONTEXT);
-        var cristinId = String.valueOf(cristinObject.getId());
-        var expectedReportFileLocation =
-            UnixPath.of(ERROR_REPORT).addChild("ChannelRegistryException").addChild(cristinId);
-        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(expectedReportFileLocation);
-        var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinId);
-        assertThat(importedPublication, hasSize(1));
         assertThat(file, is(not(emptyString())));
     }
 

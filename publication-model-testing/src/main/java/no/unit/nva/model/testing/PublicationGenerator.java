@@ -1,6 +1,7 @@
 package no.unit.nva.model.testing;
 
 import static java.util.function.Predicate.not;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstanceType;
 import static no.unit.nva.model.testing.RandomCurrencyUtil.randomCurrency;
 import static no.unit.nva.model.testing.RandomUtils.randomLabels;
@@ -17,14 +18,13 @@ import java.util.Set;
 import java.util.UUID;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Approval;
 import no.unit.nva.model.ApprovalStatus;
 import no.unit.nva.model.ApprovalsBody;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
@@ -35,13 +35,19 @@ import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.funding.MonetaryAmount;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import nva.commons.core.JacocoGenerated;
 
@@ -76,6 +82,10 @@ public final class PublicationGenerator {
 
     public static Publication randomPublication() {
         return randomPublication(randomPublicationInstanceType());
+    }
+
+    public static Publication randomNonDegreePublication() {
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
     }
 
     public static Publication randomPublication(Class<?> publicationInstanceClass) {
@@ -216,6 +226,13 @@ public final class PublicationGenerator {
                    .build();
     }
 
+    public static Contributor randomContributorWithId(URI id) {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(Role.OTHER))
+                   .withIdentity(new Identity.Builder().withId(id).build())
+                   .build();
+    }
+
     private static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
         return new Builder()
                    .withIdentifier(SortableIdentifier.next())
@@ -238,7 +255,7 @@ public final class PublicationGenerator {
                    .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
                    .withPublicationNotes(List.of(randomPublicationNote(), randomUnpublishingNote()))
                    .withDuplicateOf(randomUri())
-                   .withCuratingInstitutions(Set.of(randomUri()))
+                   .withCuratingInstitutions(Set.of(new CuratingInstitution(randomUri(), Set.of(randomUri()))))
                    .build();
     }
 

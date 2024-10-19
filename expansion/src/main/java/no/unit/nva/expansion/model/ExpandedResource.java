@@ -55,6 +55,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     // but it contains its data as an inner Json Node.
 
     public static final String TYPE = "Publication";
+    public static final JsonPointer ENTITY_DESCRIPTION_PTR = JsonPointer.compile("/entityDescription");
     public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     public static final String LICENSE_FIELD = "license";
@@ -72,6 +73,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
     private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
     private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
+    public static final int MAX_CONTRIBUTORS_PREVIEW = 10;
+    public static final String CONTRIBUTORS_COUNT = "contributorsCount";
+    public static final String CONTRIBUTORS_PREVIEW = "contributorsPreview";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -83,8 +87,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         throws JsonProcessingException {
         var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
-        var sortedJson = addFields(enrichedJson, publication);
-        return attempt(() -> objectMapper.treeToValue(sortedJson, ExpandedResource.class)).orElseThrow();
+        var jsonWithAddedFields = addFields(enrichedJson, publication);
+        return attempt(() -> objectMapper.treeToValue(jsonWithAddedFields, ExpandedResource.class)).orElseThrow();
     }
 
     public static List<URI> extractPublicationContextUris(JsonNode indexDocument) {
@@ -180,12 +184,46 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return toJsonString();
     }
 
-    private static JsonNode addFields(String json, Publication publication) {
-        var sortedJson = strToJsonWithSortedContributors(json);
-        injectHasFileEnum(publication, (ObjectNode) sortedJson);
-        expandLicenses(sortedJson);
-        injectJoinField(publication, (ObjectNode) sortedJson);
-        return sortedJson;
+    private static ObjectNode addFields(String jsonString, Publication publication) {
+        var objectNode = strToJson(jsonString);
+        sortContributors(objectNode);
+        injectHasFileEnum(publication, objectNode);
+        expandLicenses(objectNode);
+        injectJoinField(publication, objectNode);
+        injectContributorCount(objectNode);
+        injectContributorsPreview(objectNode);
+        return objectNode;
+    }
+
+    private static void injectContributorCount(ObjectNode json) {
+        var contributors = json.at(CONTRIBUTORS_PTR);
+        if (!contributors.isMissingNode() && contributors.isArray()) {
+            var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
+            if (!entityDescription.isMissingNode() && entityDescription.isObject()) {
+                entityDescription.put(CONTRIBUTORS_COUNT, contributors.size());
+            }
+        }
+    }
+
+    private static void injectContributorsPreview(ObjectNode json) {
+        var contributors = json.at(CONTRIBUTORS_PTR);
+        if (!contributors.isMissingNode() && contributors.isArray()) {
+            var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
+            if (!entityDescription.isMissingNode() && entityDescription.isObject()) {
+                var sortedContributors = sortBySequenceAndLimit(contributors);
+                var sortedContributorsArrayNode = new ArrayNode(JsonNodeFactory.instance).addAll(sortedContributors);
+
+                entityDescription.set(CONTRIBUTORS_PREVIEW, sortedContributorsArrayNode);
+            }
+        }
+    }
+
+    private static List<JsonNode> sortBySequenceAndLimit(JsonNode contributors) {
+        var contributorsList = new ArrayList<JsonNode>();
+        contributors.forEach(contributorsList::add);
+        return contributorsList.stream()
+                   .sorted(Comparator.comparingInt(contributor -> contributor.get(CONTRIBUTOR_SEQUENCE).asInt()))
+                   .limit(MAX_CONTRIBUTORS_PREVIEW).toList();
     }
 
     /**
@@ -282,8 +320,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         sortedJson.put(FilesStatus.FILES_STATUS, FilesStatus.fromPublication(publication).getValue());
     }
 
-    private static JsonNode strToJsonWithSortedContributors(String jsonStr) {
-        var json = attempt(() -> objectMapper.readTree(jsonStr)).orElseThrow();
+    private static ObjectNode strToJson(String jsonStr) {
+        return (ObjectNode) attempt(() -> objectMapper.readTree(jsonStr)).orElseThrow();
+    }
+
+    private static JsonNode sortContributors(JsonNode json) {
         var contributors = json.at(CONTRIBUTORS_PTR);
         if (!contributors.isMissingNode()) {
             var contributorsArray = (ArrayNode) contributors;

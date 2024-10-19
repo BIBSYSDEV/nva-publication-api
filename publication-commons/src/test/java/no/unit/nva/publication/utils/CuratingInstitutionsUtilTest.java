@@ -1,5 +1,6 @@
 package no.unit.nva.publication.utils;
 
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
@@ -10,7 +11,6 @@ import static org.mockito.Mockito.when;
 import java.net.URI;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import org.junit.jupiter.api.Test;
 
 class CuratingInstitutionsUtilTest {
@@ -21,7 +21,7 @@ class CuratingInstitutionsUtilTest {
         when(util.getTopLevel(any())).thenReturn(URI.create("https://example.com"));
         var list =
             CuratingInstitutionsUtil.getCuratingInstitutionsCached(
-                PublicationGenerator.fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES)
+                PublicationGenerator.fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
                     .getEntityDescription(),
                 util);
 
@@ -33,7 +33,7 @@ class CuratingInstitutionsUtilTest {
         var util = mock(CristinUnitsUtil.class);
         when(util.getTopLevel(any())).thenReturn(URI.create("https://example.com"));
         var entityDescription = PublicationGenerator.fromInstanceClassesExcluding(
-            PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).getEntityDescription();
+            PROTECTED_DEGREE_INSTANCE_TYPES).getEntityDescription();
 
         entityDescription.setContributors(entityDescription.getContributors().stream().map(contributor -> {
             contributor.getIdentity().setId(null);

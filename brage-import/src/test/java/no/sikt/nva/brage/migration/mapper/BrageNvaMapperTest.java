@@ -120,7 +120,8 @@ class BrageNvaMapperTest {
         var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         var actualContributor = publication.getEntityDescription().getContributors().getFirst();
 
-        assertEquals(contributor.getIdentity().getOrcId(), actualContributor.getIdentity().getOrcId());
+        assertEquals(contributor.getIdentity().getOrcId().toString(),
+                     actualContributor.getIdentity().getOrcId());
     }
 
     @Test
@@ -172,7 +173,7 @@ class BrageNvaMapperTest {
     }
 
     private static Contributor randomContributorWithOrcId() {
-        return new Contributor(new Identity(randomString(), randomString(), randomString()),
+        return new Contributor(new Identity(randomString(), randomString(), randomUri()),
                                "ACTOR",
                                randomString(), List.of());
     }

@@ -1,0 +1,13 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  build:
+    uses: BIBSYSDEV/nva-github-workflows/.github/workflows/java.yml@v1
+    secrets:
+      codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
