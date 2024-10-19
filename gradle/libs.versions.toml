@@ -28,7 +28,7 @@ nva-language = { strictly = '1.2.0' }
 guava = { strictly = '33.3.0-jre' }
 javers = { strictly = '7.6.1' }
 hamcrestSpotify = { strictly = '1.3.2' }
-jena = { strictly = '5.1.0'}
+jena = { strictly = '5.2.0'}
 jsonassert = { strictly = '1.5.3'}
 datafaker = { strictly = '2.3.1' }
 tika = { strictly = '2.9.2' }
