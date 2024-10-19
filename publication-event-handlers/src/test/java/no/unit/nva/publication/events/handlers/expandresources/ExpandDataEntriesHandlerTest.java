@@ -88,6 +88,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private MessageService messageService;
     private FakeUriRetriever fakeUriRetriever;
 
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -150,9 +151,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         assertThat(response, is(equalTo(emptyEvent(response.getTimestamp()))));
     }
 
-    // TODO: Is this correct?
     @Test
-    void shouldLogFailingExpansionNotThrowExceptionAndEmitEmptyEvent() throws IOException {
+    void shouldThrowExceptionWhenExpansionFailing() throws IOException {
         var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
         FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever);
@@ -163,8 +163,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
         expandResourceHandler.handleRequest(request, output, CONTEXT);
 
-        assertThat(logger.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
-        assertThat(logger.getMessages(), containsString(newImage.getIdentifier().toString()));
+        assertThat(logger.getMessages(), containsString("DateEntry has been sent to recovery queue"));
     }
 
     @Test

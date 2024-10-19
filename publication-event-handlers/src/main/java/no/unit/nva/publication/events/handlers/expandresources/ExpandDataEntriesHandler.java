@@ -8,7 +8,6 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +17,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -31,7 +31,6 @@ import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -42,7 +41,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
-    public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource:";
+    public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource: {}";
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
     public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
@@ -125,10 +124,16 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private EventReference createEnrichedEventReference(Entity newData) {
-        return enrich(newData)
+        return attempt(() -> resourceExpansionService.expandEntry(newData))
+                   .map(ExpandedDataEntry::toJsonString)
                    .map(this::insertEnrichEventBodyToS3)
                    .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
-                   .orElseThrow();
+                   .orElseThrow(failure -> throwError(failure, newData));
+    }
+
+    private RuntimeException throwError(Failure<EventReference> failure, Entity newData) {
+        logger.error(ERROR_EXPANDING_RESOURCE_WARNING, newData.getIdentifier());
+        return (RuntimeException) failure.getException();
     }
 
     private Optional<PublicationStatus> getPublicationStatus(Entity entity) {
@@ -168,19 +173,5 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
 
     private URI insertEnrichEventBodyToS3(String string) {
         return attempt(() -> s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), string)).orElseThrow();
-    }
-
-    private Optional<String> enrich(Entity newData) {
-        return attempt(() -> createExpandedResourceUpdate(newData))
-                   .toOptional(fail -> logError(fail, newData));
-    }
-
-    private String createExpandedResourceUpdate(Entity input) throws JsonProcessingException, NotFoundException {
-        return resourceExpansionService.expandEntry(input).toJsonString();
-    }
-
-    private void logError(Failure<?> fail, Entity input) {
-        Exception exception = fail.getException();
-        logger.warn(ERROR_EXPANDING_RESOURCE_WARNING + input.getIdentifier(), exception);
     }
 }
