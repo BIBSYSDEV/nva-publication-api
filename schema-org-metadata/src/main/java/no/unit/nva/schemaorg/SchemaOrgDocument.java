@@ -2,10 +2,18 @@ package no.unit.nva.schemaorg;
 
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
+import com.apicatalog.jsonld.JsonLd;
+import com.apicatalog.jsonld.JsonLdError;
+import com.apicatalog.jsonld.document.JsonDocument;
+import com.apicatalog.jsonld.http.media.MediaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.jsonldjava.core.JsonLdOptions;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import no.unit.nva.PublicationMapper;
@@ -17,11 +25,8 @@ import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.riot.JsonLDWriteContext;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.riot.RDFWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,30 +73,33 @@ public final class SchemaOrgDocument {
     }
 
     private static String getJsonLdStringOfModel(Model result) {
-        return RDFWriter.create()
-                .format(RDFFormat.JSONLD10_FRAME_PRETTY)
-                .context(getJsonLdWriteContext(extractTypeForFrame(result)))
-                .source(result)
-                .build()
-                .asString();
+        var byteArrayOutputStream = new ByteArrayOutputStream();
+        RDFDataMgr.write(byteArrayOutputStream, result, Lang.JSONLD);
+        try (var inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray())) {
+            var jsonDocument = JsonDocument.of(MediaType.JSON_LD, inputStream);
+            var frame = createFrame(extractTypeForFrame(result));
+            return write(JsonLd.frame(jsonDocument, frame).get());
+        } catch (IOException | JsonLdError e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private static JsonLDWriteContext getJsonLdWriteContext(String type) {
-        var context = new JsonLDWriteContext();
-        context.setOptions(getJsonLdOptions());
-        context.setFrame(createFrame(type));
-        return context;
+    private static String write(JsonObject frame) {
+        var stringWriter = new StringWriter();
+        try (var jsonWriter = Json.createWriter(stringWriter)) {
+            jsonWriter.write(frame);
+        }
+        return stringWriter.toString();
     }
 
-    private static String createFrame(String type) {
-        return String.format(JSON_LD_FRAME_TEMPLATE, type);
-    }
-
-    private static JsonLdOptions getJsonLdOptions() {
-        var jsonLdOptions = new JsonLdOptions();
-        jsonLdOptions.setOmitGraph(true);
-        jsonLdOptions.setPruneBlankNodeIdentifiers(true);
-        return jsonLdOptions;
+    private static JsonDocument createFrame(String type) {
+        var frame = new ByteArrayInputStream(String.format(JSON_LD_FRAME_TEMPLATE, type)
+                                                 .getBytes(StandardCharsets.UTF_8));
+        try {
+            return JsonDocument.of(frame);
+        } catch (JsonLdError e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static String extractTypeForFrame(Model model) {
