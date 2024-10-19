@@ -101,6 +101,7 @@ import no.unit.nva.publication.uriretriever.FakeUriResponse;
 import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -191,6 +192,18 @@ class ExpandedResourceTest {
                                             .toList();
 
         assertThat(actualContributorsPreview, is(equalTo(expectedContributors)));
+    }
+
+    @Test
+    void shouldAllowAndLogMissingChannel() {
+        final var logger = LogUtils.getTestingAppenderForRootLogger();
+        var publication = randomPublication(AcademicArticle.class);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
+        var channel = ((Journal)publication.getEntityDescription().getReference().getPublicationContext()).getId();
+        fakeUriRetriever.registerResponse(channel, 404, APPLICATION_JSON_LD, "");
+        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, publication));
+        assertThat(logger.getMessages(),
+                   containsString("Request for publication channel <%s> returned 404".formatted(channel)));
     }
 
     @Test

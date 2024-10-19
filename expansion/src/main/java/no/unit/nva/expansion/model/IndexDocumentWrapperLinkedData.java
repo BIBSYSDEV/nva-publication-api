@@ -208,6 +208,9 @@ public class IndexDocumentWrapperLinkedData {
     private InputStream processResponse(HttpResponse<String> response) {
         if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             return stringToStream(response.body());
+        } else if (response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY) {
+            logger.info("Request for publication channel <{}> returned 404", response.uri());
+            return null;
         }
         throw new RuntimeException("Unexpected response " + response);
     }
