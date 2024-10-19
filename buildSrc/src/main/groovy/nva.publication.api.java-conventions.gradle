@@ -43,7 +43,7 @@ tasks.named('test') {
     useJUnitPlatform {
         excludeTags "RemoteTest", "integrationTest", "KarateTest"
     }
-    failFast = true
+    failFast = false
     testLogging {
         events 'skipped', 'passed', 'failed'
         showCauses true
@@ -59,6 +59,7 @@ pmd {
 }
 
 checkstyle {
+    toolVersion = '10.18.2'
     configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
     showViolations = true
 }

@@ -15,7 +15,7 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 
 public final class CuratingInstitutionsUtil {
@@ -23,7 +23,7 @@ public final class CuratingInstitutionsUtil {
     }
 
     public static Set<CuratingInstitution> getCuratingInstitutionsOnline(Publication publication,
-                                                                         UriRetriever uriRetriever) {
+                                                                         RawContentRetriever uriRetriever) {
         return getVerifiedContributors(publication.getEntityDescription())
                    .flatMap(contributor -> toCuratingInstitutionOnline(contributor, uriRetriever))
                    .collect(Collectors.groupingBy(SimpleEntry::getKey,
@@ -55,7 +55,7 @@ public final class CuratingInstitutionsUtil {
     }
 
     private static Stream<SimpleEntry<URI, URI>> toCuratingInstitutionOnline(Contributor contributor,
-                                                                             UriRetriever uriRetriever) {
+                                                                             RawContentRetriever uriRetriever) {
         return getOrganizationIds(contributor)
                    .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
                    .filter(Objects::nonNull)

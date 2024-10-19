@@ -110,7 +110,10 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     public static Optional<URI> extractPublicationContextUri(JsonNode indexDocument) {
-        return Optional.of(URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).asText()));
+        var contextId = indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR);
+        return !contextId.isMissingNode() && !contextId.textValue().isBlank()
+                   ? Optional.of(URI.create(contextId.textValue()))
+                   : Optional.empty();
     }
 
     public static boolean isPublicationContextTypeAnthology(JsonNode root) {

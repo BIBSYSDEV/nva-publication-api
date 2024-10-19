@@ -1,7 +1,6 @@
 package no.unit.nva.expansion.model.cristin;
 
 import static java.util.Objects.nonNull;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -29,10 +28,6 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
     public static final String COUNTRY = "country";
     public static final String CONTEXT = "@context";
     private static final String TYPE = "type";
-
-    @JsonCreator
-    public CristinOrganization {
-    }
 
     @JacocoGenerated
     @JsonIgnore

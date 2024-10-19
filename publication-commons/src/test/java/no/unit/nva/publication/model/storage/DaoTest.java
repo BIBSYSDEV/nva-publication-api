@@ -70,6 +70,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -87,11 +88,11 @@ class DaoTest extends ResourcesLocalTest {
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
     public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
 
-    public static Stream<Class<?>> entityProvider() {
+    public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
     }
 
-    public static Stream<Class<?>> ticketProvider() {
+    public static Stream<Named<Class<?>>> ticketProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
     

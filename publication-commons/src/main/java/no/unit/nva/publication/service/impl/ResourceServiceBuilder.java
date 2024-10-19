@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.time.Clock;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 
 public final class ResourceServiceBuilder {
@@ -15,7 +16,7 @@ public final class ResourceServiceBuilder {
     private AmazonDynamoDB dynamoDbClient = DEFAULT_DYNAMODB_CLIENT;
     private Clock clock = Clock.systemDefaultZone();
     Supplier<SortableIdentifier> identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
-    private UriRetriever uriRetriever = UriRetriever.defaultUriRetriever();
+    private RawContentRetriever uriRetriever = UriRetriever.defaultUriRetriever();
 
     ResourceServiceBuilder() {
     }
@@ -40,7 +41,7 @@ public final class ResourceServiceBuilder {
         return this;
     }
 
-    public ResourceServiceBuilder withUriRetriever(UriRetriever uriRetriever) {
+    public ResourceServiceBuilder withUriRetriever(RawContentRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
         return this;
     }
