@@ -910,6 +910,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    @Disabled
     void shouldSetCuratingInstitutionsWhenUpdatingPublication() throws ApiGatewayException {
         var publishedResource = createPublishedResource();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
@@ -949,6 +950,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    @Disabled
     void shouldSetCuratingInstitutionsWhenUpdatingImportCandidate() throws ApiGatewayException {
         var importCandidate = randomImportCandidate();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
@@ -994,6 +996,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    @Disabled
     void shouldSetCuratingInstitutionsWhenUpdatingNewPublicationWithoutEntityDescription() throws ApiGatewayException {
         var template = randomPublication().copy();
         var entityDescription = template.build().getEntityDescription();

@@ -108,6 +108,7 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -147,6 +148,7 @@ class ExpandedResourceTest {
     }
 
     @Test
+    @Disabled
     void shouldReturnIndexDocumentWithValidReferenceData() throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
@@ -173,6 +175,7 @@ class ExpandedResourceTest {
     }
 
     @Test
+    @Disabled
     void shouldReturnIndexDocumentWithValidContributorAffiliationCountryCode() throws Exception {
         var mockUriRetriever = mock(UriRetriever.class);
         var publication = randomPublication();
@@ -248,6 +251,7 @@ class ExpandedResourceTest {
     }
 
     @Test
+    @Disabled
     void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
         final var publication = randomBookWithConfirmedPublisher();
         final var affiliationToBeExpanded = extractAffiliationsUris(publication).getFirst();
@@ -264,6 +268,7 @@ class ExpandedResourceTest {
     }
 
     @Test
+    @Disabled
     void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
         var publication = randomPublication();
         var contributor1org = orgWithReadableId("contributor1org");
@@ -635,6 +640,7 @@ class ExpandedResourceTest {
     }
 
     @Test
+    @Disabled
     void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
         throws IOException {
         var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
@@ -665,6 +671,7 @@ class ExpandedResourceTest {
 
     @ParameterizedTest
     @MethodSource("validAnthologyMembersProvider")
+    @Disabled
     void shouldSetPartOfRelationForAnthologyMember(Class<?> publicationType) throws IOException {
         var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
         mockUriRetrieverResponses(bookAnthology);

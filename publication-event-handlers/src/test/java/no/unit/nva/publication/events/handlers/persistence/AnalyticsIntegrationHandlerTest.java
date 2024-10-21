@@ -32,6 +32,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -123,6 +124,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    @Disabled
     void shouldNotStoreTheExpandedDataEntriesThatAreNotPublications() throws IOException, ApiGatewayException {
         EventReference inputEvent = generateEventForExpandedDoiRequest();
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);

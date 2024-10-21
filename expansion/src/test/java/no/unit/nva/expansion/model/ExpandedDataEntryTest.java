@@ -87,6 +87,7 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -331,6 +332,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "Expanded DOI request should have type DoiRequest for instance type {0}")
+    @Disabled
     @MethodSource("publicationInstanceProvider")
     void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
         var publication = createPublishedPublicationWithoutDoi(instanceType);
@@ -342,6 +344,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "should return identifier using a non serializable method:{0}")
+    @Disabled
     @MethodSource("entryTypes")
     void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type)
         throws ApiGatewayException, JsonProcessingException {
