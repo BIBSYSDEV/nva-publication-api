@@ -238,17 +238,15 @@ class GetTicketHandlerTest extends TicketTestLocal {
         throws NotFoundException {
         return createHttpRequest(ticket)
                    .withCurrentCustomer(customerId)
-                   .withNvaUsername(randomString())
+                   .withUserName(randomString())
                    .withAccessRights(customerId, accessRight);
     }
 
     private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
-    }
-
-    private User randomOwner() {
-        return new User(randomString());
+        return TicketEntry.requestNewTicket(publication, ticketType)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername())
+                   .persistNewTicket(ticketService);
     }
 
     private HandlerRequestBuilder<TicketDto> createHttpRequest(TicketEntry ticket)

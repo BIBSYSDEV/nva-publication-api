@@ -777,6 +777,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
                                                                                               SortableIdentifier::next)
+                                                            .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);

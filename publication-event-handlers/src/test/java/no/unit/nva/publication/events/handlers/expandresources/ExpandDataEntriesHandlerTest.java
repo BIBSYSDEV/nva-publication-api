@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -85,6 +87,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
 
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -106,6 +109,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
+    }
+
+    void some() {
+        HttpClient.newBuilder().followRedirects(Redirect.ALWAYS)
     }
 
     @ParameterizedTest
@@ -239,6 +246,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var persistedPublication =
             resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
+                         .withOwner(UserInstance.fromPublication(publication).getUsername())
                          .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);

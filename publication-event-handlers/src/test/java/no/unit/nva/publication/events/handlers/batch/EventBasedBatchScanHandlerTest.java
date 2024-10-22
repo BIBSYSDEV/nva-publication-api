@@ -72,6 +72,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private S3Client s3Client;
     private Environment environment;
 
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -108,6 +109,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
@@ -132,6 +134,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
@@ -155,6 +158,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
@@ -200,7 +204,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
                                     .build();
         handler.handleRequest(eventToInputStream(secondScanRequest), output, context);
 
-        ArgumentCaptor<Map<String, AttributeValue>> startingPointsCapturer = ArgumentCaptor.forClass(Map.class);
+        var startingPointsCapturer = ArgumentCaptor.forClass(Map.class);
         verify(resourceService, atLeastOnce()).scanResources(anyInt(), startingPointsCapturer.capture(), any());
         var scanStartingPointSentToTheService = startingPointsCapturer.getValue();
 
@@ -279,7 +283,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     private ScanDatabaseRequest consumeLatestEmittedEvent() {
         var allRequests = eventBridgeClient.getRequestEntries();
-        var latest = allRequests.remove(allRequests.size() - 1);
+        var latest = allRequests.removeLast();
         return attempt(() -> ScanDatabaseRequest.fromJson(latest.detail())).orElseThrow();
     }
 

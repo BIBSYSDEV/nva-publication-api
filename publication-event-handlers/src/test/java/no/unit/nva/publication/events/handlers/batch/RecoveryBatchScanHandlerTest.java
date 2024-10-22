@@ -48,6 +48,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     private FakeSqsClient queueClient;
     private RecoveryBatchScanHandler recoveryBatchScanHandler;
 
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -80,6 +81,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var publication = persistedPublication();
         var ticket =
             GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+                .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .persistNewTicket(ticketService);
         var ticketVersion = ticket.toDao().getVersion();
         putMessageOnRecoveryQueue(ticket.getIdentifier(), "Ticket");
@@ -97,6 +99,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var publication = persistedPublication();
         var ticket =
             GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+                .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var messageVersion = message.toDao().getVersion();

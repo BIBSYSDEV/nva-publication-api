@@ -139,12 +139,13 @@ public final class PublishingRequestResolver {
     }
 
     private void persistPendingPublishingRequest(Publication oldImage, Publication newImage) {
-        attempt(() -> TicketEntry.requestNewTicket(newImage, PublishingRequestCase.class)).map(
-                PublishingRequestCase.class::cast)
+        attempt(() -> TicketEntry.requestNewTicket(newImage, PublishingRequestCase.class))
+            .map(PublishingRequestCase.class::cast)
             .map(publishingRequest -> publishingRequest.withOwnerAffiliation(userInstance.getTopLevelOrgCristinId()))
             .map(publishingRequest -> publishingRequest.withWorkflow(lookUp(customer.getPublicationWorkflow())))
             .map(publishingRequest -> publishingRequest.withFilesForApproval(getFilesForApproval(oldImage, newImage)))
-            .map(publishingRequest -> persistPublishingRequest(newImage, publishingRequest));
+            .map(publishingRequest -> publishingRequest.withOwner(userInstance.getUsername()))
+            .map(publishingRequest -> persistPublishingRequest(newImage, (PublishingRequestCase) publishingRequest));
     }
 
     private boolean isPublishable(File file) {

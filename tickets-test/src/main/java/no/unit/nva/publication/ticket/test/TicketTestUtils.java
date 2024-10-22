@@ -301,6 +301,7 @@ public final class TicketTestUtils {
                                                     TicketService ticketService)
         throws ApiGatewayException {
         var completedTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                                  .withOwner(UserInstance.fromPublication(publication).getUsername())
                                   .persistNewTicket(ticketService).complete(publication, new Username("Username"));
         completedTicket.persistUpdate(ticketService);
         return completedTicket;

@@ -400,6 +400,19 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThrows(NotFoundException.class, () -> ticketService.completeTicket(nonExisingTicket, USERNAME));
     }
 
+    @ParameterizedTest(name = "ticket type:{0}")
+    @MethodSource("ticketTypeProvider")
+    void shouldNotUpdateAssigneeWhenCompletingTicketForAnotherAssignee(
+        Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, PUBLISHED);
+        var ticket = createPersistedTicket(publication, ticketType);
+        ticket.setAssignee(randomUsername());
+        ticket.persistUpdate(ticketService);
+        var completedTicket = ticketService.completeTicket(ticket, USERNAME);
+
+        assertThat(completedTicket.getAssignee(), is(not(equalTo(USERNAME))));
+    }
+
     //TODO: remove this test when ticket service is in place
     @Test
     void shouldCompleteTicketByResourceIdentifierWhenTicketIsUniqueForAPublication() throws ApiGatewayException {
