@@ -10,7 +10,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -27,7 +26,6 @@ import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
@@ -127,7 +125,7 @@ public class TicketService extends ServiceWithTransactions {
         return dao.fetchTicketMessages(getClient())
                    .map(MessageDao::getData)
                    .map(Message.class::cast)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     public TicketEntry refreshTicket(TicketEntry ticket) {
@@ -237,10 +235,9 @@ public class TicketService extends ServiceWithTransactions {
                                                ticketEntry.getClass()).orElseThrow();
     }
 
-    private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) throws ForbiddenException {
-        var userInstance = UserInstance.create(ticketEntry.getOwner(), ticketEntry.getCustomerId());
-        return attempt(() -> resourceService.getPublication(userInstance, ticketEntry.getResourceIdentifier()))
-                   .orElseThrow(fail -> new ForbiddenException());
+    private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier()))
+                   .orElseThrow();
     }
 
     private <T extends TicketEntry> T createTicketForPublication(Publication publication,

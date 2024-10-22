@@ -450,8 +450,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourcesByCristinIdentifierReturnsAllResourcesWithCristinIdentifier() {
         String cristinIdentifier = randomString();
-        Set<Publication> publicationsWithCristinIdentifier =
-            createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
+        createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
         List<Publication> actualPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualPublication);
         assertTrue(actualPublication.containsAll(actualResourcesSet));
@@ -856,7 +855,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var identifiersFromSecondScan = secondListingResult.getDatabaseEntries()
                                             .stream()
                                             .map(Entity::getIdentifier)
-                                            .collect(Collectors.toList());
+                                            .toList();
 
         var expectedIdentifiers = new ArrayList<>(
             List.of(publication.getIdentifier(), ticket.getIdentifier(), sampleMessage.getIdentifier()));
@@ -1071,7 +1070,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resources = userResources.stream()
                             .map(Resource::fromPublication)
                             .map(Entity.class::cast)
-                            .collect(Collectors.toList());
+                            .toList();
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
@@ -1126,15 +1125,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
-        var pendingGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
-        var pendingDoiRequestTicket = DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        var username = UserInstance.fromPublication(publication).getUsername();
+        GeneralSupportRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService);
         var closedGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication)
-                .persistNewTicket(ticketService)
+            GeneralSupportRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService)
                 .close(new Username(randomString()));
         ticketService.updateTicket(closedGeneralSupportTicket);
-        var publishingRequestTicket = PublishingRequestCase.fromPublication(publication);
+        var publishingRequestTicket = PublishingRequestCase.fromPublication(publication).withOwner(username);
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
         publishingRequestTicket.persistNewTicket(ticketService);
         resourceService.unpublishPublication(publication);
@@ -1294,7 +1292,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var contributions = IntStream
                                 .rangeClosed(1, amount)
                                 .mapToObj(i -> randomContributor())
-                                .collect(Collectors.toList());
+                                .toList();
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -1306,7 +1304,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var contributions = IntStream
                                 .rangeClosed(1, amount)
                                 .mapToObj(i -> randomContributor(List.of()))
-                                .collect(Collectors.toList());
+                                .toList();
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));

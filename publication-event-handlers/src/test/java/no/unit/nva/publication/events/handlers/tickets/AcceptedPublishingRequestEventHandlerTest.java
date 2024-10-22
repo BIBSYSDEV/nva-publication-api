@@ -59,7 +59,6 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -284,6 +283,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(Publication publication,
                                                                                      File file) throws ApiGatewayException {
         var publishingRequest =  (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                      .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.setStatus(TicketStatus.COMPLETED);
         publishingRequest.setApprovedFiles(Set.of(file.getIdentifier()));
@@ -362,7 +362,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        return PublishingRequestCase.fromPublication(publication);
+        return (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     private AcceptedPublishingRequestEventHandler handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication()
@@ -388,6 +389,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
                                                                                               SortableIdentifier::next)
+                                                            .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);

@@ -13,16 +13,15 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
@@ -58,7 +57,7 @@ public final class DaoUtils extends TestDataSource {
 
     public static DoiRequestDao doiRequestDao() {
         var publication = randomPublicationEligibleForDoiRequest();
-        var doiRequest = DoiRequest.fromPublication(publication);
+        var doiRequest = (DoiRequest) DoiRequest.fromPublication(publication).withOwner(randomString());
         return new DoiRequestDao(doiRequest);
     }
 
@@ -71,7 +70,7 @@ public final class DaoUtils extends TestDataSource {
     @SuppressWarnings("unchecked")
     public static Class<? extends TicketEntry> randomTicketType() {
         return (Class<? extends TicketEntry>)
-                   randomElement(TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList()));
+                   randomElement(TypeProvider.listSubTypes(TicketEntry.class).toList());
     }
 
     static PutItemRequest toPutItemRequest(Dao resource) {
@@ -87,7 +86,7 @@ public final class DaoUtils extends TestDataSource {
     }
 
     private static PublishingRequestDao sampleApprovePublishingRequestDao() {
-        var publishingRequest = randomPublishingRequest();
+        var publishingRequest = randomPublishingRequest().withOwner(randomString());
         return (PublishingRequestDao) publishingRequest.toDao();
     }
 
@@ -101,6 +100,7 @@ public final class DaoUtils extends TestDataSource {
 
     private static TicketEntry randomTicket(Publication publication) {
         return attempt(() -> TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next))
+                   .map(ticketEntry -> ticketEntry.withOwner(randomString()))
                    .orElseThrow();
     }
 }

@@ -6,7 +6,6 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTO
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,8 +36,6 @@ public class GeneralSupportRequest extends TicketEntry {
     private Instant createdDate;
     @JsonProperty(MODIFIED_DATE_FIELD)
     private Instant modifiedDate;
-    @JsonProperty(OWNER_FIELD)
-    private User owner;
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
     @JsonProperty(STATUS_FIELD)
@@ -55,13 +52,12 @@ public class GeneralSupportRequest extends TicketEntry {
     public static TicketEntry fromPublication(Publication publication) {
         var ticket = new GeneralSupportRequest();
         ticket.setResourceIdentifier(publication.getIdentifier());
-        ticket.setOwner(extractOwner(publication));
         ticket.setCustomerId(extractCustomerId(publication));
         ticket.setCreatedDate(Instant.now());
         ticket.setModifiedDate(Instant.now());
         ticket.setStatus(TicketStatus.PENDING);
         ticket.setIdentifier(SortableIdentifier.next());
-        ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
+        ticket.setViewedBy(ViewedBy.addAll(UserInstance.fromPublication(publication).getUser()));
         return ticket;
     }
 
@@ -112,15 +108,6 @@ public class GeneralSupportRequest extends TicketEntry {
     @Override
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
-    }
-
-    @Override
-    public User getOwner() {
-        return this.owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
     }
 
     @Override
@@ -234,12 +221,5 @@ public class GeneralSupportRequest extends TicketEntry {
 
     private static URI extractCustomerId(Publication publication) {
         return Optional.of(publication).map(Publication::getPublisher).map(Organization::getId).orElse(null);
-    }
-
-    private static User extractOwner(Publication publication) {
-        return Optional.of(publication).map(Publication::getResourceOwner)
-                   .map(ResourceOwner::getOwner)
-                   .map(owner -> new User(owner.getValue()))
-                   .orElse(null);
     }
 }
