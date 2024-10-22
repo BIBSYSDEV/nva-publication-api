@@ -24,8 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpClient.Redirect;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -109,10 +107,6 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
-    }
-
-    void some() {
-        HttpClient.newBuilder().followRedirects(Redirect.ALWAYS)
     }
 
     @ParameterizedTest
