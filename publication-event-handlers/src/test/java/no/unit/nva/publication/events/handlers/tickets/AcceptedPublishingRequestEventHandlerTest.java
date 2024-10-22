@@ -176,8 +176,10 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var ticket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
                                                                    publication.getIdentifier(),
                                                                    DoiRequest.class).orElseThrow();
+
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(ticket.getOwnerAffiliation(), is(equalTo(publication.getResourceOwner().getOwnerAffiliation())));
     }
 
     @Test
