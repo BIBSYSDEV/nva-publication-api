@@ -98,7 +98,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
     private static final String EMPTY_OBJECT = "{}";
 
-    private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
     private TicketService ticketService;
     private MessageService messageService;
@@ -127,8 +126,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.ticketService = getTicketService();
         this.uriRetriever = mock(UriRetriever.class);
         when(uriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
-
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
     @ParameterizedTest()
@@ -143,7 +140,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             .forEach(this::mockOrganizations);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
     @ParameterizedTest()
@@ -159,7 +155,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
     @Test
