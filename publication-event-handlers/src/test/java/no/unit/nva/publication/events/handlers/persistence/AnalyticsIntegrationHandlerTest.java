@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.persistence;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -32,7 +31,6 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -40,10 +38,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Optional;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -59,8 +57,10 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -70,12 +70,11 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
     public static final String JSONLD_CONTEXT = "@context";
     public static final ObjectMapper DTO_OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
+    private static final String EMPTY_OBJECT = "{}";
     private AnalyticsIntegrationHandler analyticsIntegration;
     private ByteArrayOutputStream outputStream;
     private S3Driver s3Driver;
-    private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
-    private AmazonDynamoDB dynamoClient;
 
     private final Context context = new FakeContext();
 
@@ -88,16 +87,13 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     @BeforeEach()
     public void init() {
         super.init();
-        this.dynamoClient = super.client;
         this.outputStream = new ByteArrayOutputStream();
-        FakeS3Client s3Client = new FakeS3Client();
+        S3Client s3Client = new FakeS3Client();
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
 
         resourceService = getResourceServiceBuilder().build();
         ticketService = getTicketService();
-
-        this.resourceExpansionService = setupResourceExpansionService();
     }
 
     @Test
@@ -124,7 +120,6 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    @Disabled
     void shouldNotStoreTheExpandedDataEntriesThatAreNotPublications() throws IOException, ApiGatewayException {
         EventReference inputEvent = generateEventForExpandedDoiRequest();
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
@@ -133,8 +128,15 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         assertThat(analyticsObjectEvent, is(nullValue()));
     }
 
-    private ResourceExpansionServiceImpl setupResourceExpansionService() {
-        return new ResourceExpansionServiceImpl(resourceService, ticketService);
+    private ResourceExpansionService setupResourceExpansionService() {
+        var mockUriRetriever = mock(UriRetriever.class);
+        doReturn(Optional.of(EMPTY_OBJECT))
+            .doReturn(Optional.of(EMPTY_OBJECT))
+            .doReturn(Optional.of(EMPTY_OBJECT))
+            .when(mockUriRetriever)
+            .getRawContent(any(),any());
+
+        return new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
     }
 
     private void assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(EventReference inputEvent,
@@ -171,7 +173,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
         Publication samplePublication = insertSamplePublication();
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
-        var messages = doiRequest.fetchMessages(ticketService);
+        doiRequest.fetchMessages(ticketService);
+        var resourceExpansionService = setupResourceExpansionService();
         return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
     }
 
