@@ -16,6 +16,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -87,7 +88,6 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -96,6 +96,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     public static final String TYPE = "type";
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
+    private static final String EMPTY_OBJECT = "{}";
 
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
@@ -332,11 +333,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "Expanded DOI request should have type DoiRequest for instance type {0}")
-    @Disabled
     @MethodSource("publicationInstanceProvider")
     void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
         var publication = createPublishedPublicationWithoutDoi(instanceType);
         var doiRequest = createDoiRequest(publication);
+        var resourceExpansionService = setupResourceExpansionService();
         var expandedResource = ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService,
                                                               ticketService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
@@ -344,16 +345,25 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "should return identifier using a non serializable method:{0}")
-    @Disabled
     @MethodSource("entryTypes")
     void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type)
         throws ApiGatewayException, JsonProcessingException {
+        var resourceExpansionService = setupResourceExpansionService();
         var expandedDataEntry = ExpandedDataEntryWithAssociatedPublication.create(type, resourceExpansionService,
                                                                                   resourceService, messageService,
                                                                                   ticketService, uriRetriever);
         SortableIdentifier identifier = expandedDataEntry.getExpandedDataEntry().identifyExpandedEntry();
         SortableIdentifier expectedIdentifier = extractExpectedIdentifier(expandedDataEntry);
         assertThat(identifier, is(equalTo(expectedIdentifier)));
+    }
+
+    private ResourceExpansionService setupResourceExpansionService() {
+        var mockUriRetriever = mock(UriRetriever.class);
+        doReturn(Optional.of(EMPTY_OBJECT))
+            .when(mockUriRetriever)
+            .getRawContent(any(),any());
+
+        return new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
     }
 
     private static Reference createReference(PublicationContext publicationContext) {
