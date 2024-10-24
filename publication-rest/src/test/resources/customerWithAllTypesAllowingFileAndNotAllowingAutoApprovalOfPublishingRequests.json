@@ -59,7 +59,8 @@
     "VisualArts",
     "Map",
     "LiteraryArts",
-    "ExhibitionProduction"
+    "ExhibitionProduction",
+    "AcademicCommentary"
   ],
   "publicationWorkflow": "RegistratorPublishesMetadataOnly",
   "rightsRetentionStrategy": {
