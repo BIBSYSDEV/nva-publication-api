@@ -182,7 +182,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -2200,21 +2199,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         }
     }
 
-    private Set<FileForApproval> fetchFilesForApprovalFromPendingPublishingRequest(Publication publication) {
-        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
-                   .filter(PublishingRequestCase.class::isInstance)
-                   .filter(ticketEntry -> PENDING.equals(ticketEntry.getStatus()))
-                   .map(PublishingRequestCase.class::cast)
-                   .map(PublishingRequestCase::getFilesForApproval)
-                   .collect(SingletonCollector.collect());
-    }
-
-    private List<FileForApproval> mergeExistingFilesForApprovalWithNewFile(List<FileForApproval> list, File file) {
-        list = new ArrayList<>(list);
-        list.add(FileForApproval.fromFile(file));
-        return list;
-    }
-
     private void updatePublicationWithFile(Publication publication, File newUnpublishedFile) {
         var associatedArtifacts = publication.getAssociatedArtifacts();
         associatedArtifacts.add(newUnpublishedFile);
@@ -2582,23 +2566,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(new RepublishPublicationRequest())
                    .withAccessRights(customerId, accessRights)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
-                   .withPersonCristinId(randomUri())
-                   .build();
-    }
-
-    private InputStream curatorForPublicationUpdatesPublication(Publication publication)
-        throws JsonProcessingException {
-        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString());
-        return new HandlerRequestBuilder<Publication>(restApiMapper)
-                   .withUserName(publication.getResourceOwner().getOwner().getValue())
-                   .withPathParameters(pathParameters)
-                   .withCurrentCustomer(publication.getPublisher().getId())
-                   .withBody(publication)
-                   .withAccessRights(customerId,
-                                     MANAGE_PUBLISHING_REQUESTS,
-                                     MANAGE_DOI, SUPPORT,
-                                     MANAGE_RESOURCES_STANDARD)
-                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .withPersonCristinId(randomUri())
                    .build();
     }

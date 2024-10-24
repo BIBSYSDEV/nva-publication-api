@@ -9,7 +9,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 @JsonSerialize
 public record FileForApproval(UUID identifier) {
 
-
     public static FileForApproval fromFile(File file) {
         return new FileForApproval(file.getIdentifier());
     }
