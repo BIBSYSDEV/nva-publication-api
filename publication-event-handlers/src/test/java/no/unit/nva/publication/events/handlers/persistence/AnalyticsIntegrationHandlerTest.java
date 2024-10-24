@@ -128,17 +128,6 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         assertThat(analyticsObjectEvent, is(nullValue()));
     }
 
-    private ResourceExpansionService setupResourceExpansionService() {
-        var mockUriRetriever = mock(UriRetriever.class);
-        doReturn(Optional.of(EMPTY_OBJECT))
-            .doReturn(Optional.of(EMPTY_OBJECT))
-            .doReturn(Optional.of(EMPTY_OBJECT))
-            .when(mockUriRetriever)
-            .getRawContent(any(),any());
-
-        return new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
-    }
-
     private void assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(EventReference inputEvent,
                                                                               ExpandedResource storedPublication) {
         var expectedPublicationIdentifier = extractPublicationIdentifier(inputEvent);
@@ -183,6 +172,15 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = Resource.fromPublication(samplePublication).persistNew(resourceService, userInstance);
         return samplePublication;
+    }
+
+    private ResourceExpansionService setupResourceExpansionService() {
+        var mockUriRetriever = mock(UriRetriever.class);
+        doReturn(Optional.of(EMPTY_OBJECT))
+            .when(mockUriRetriever)
+            .getRawContent(any(),any());
+
+        return new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
     }
 
     private URI expandPublicationAndSaveToS3(Publication publication) throws IOException {
