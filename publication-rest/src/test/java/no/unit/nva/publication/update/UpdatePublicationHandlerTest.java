@@ -191,6 +191,7 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -1911,12 +1912,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @DisplayName("When publishing curator updates publication with unpublished file" +
-                 "and publication already contains another unpublished file" +
-                 "and there is no pending publishing request for the publication with curator owner affiliation" +
-                 "then only new unpublished file is added to approved files in PublishingRequest")
+                 " and publication already contains another unpublished file" +
+                 " and there is no pending publishing request for the publication with curator owner affiliation" +
+                 " then only new unpublished file is added to approved files in PublishingRequest")
     @Test
     void shouldPublishOnlyNewUnpublishedFilesWhenCuratorUpdatesPublicationWithNewUnpublishedFiles()
-        throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException, InterruptedException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
             customerId, PUBLISHED, resourceService);
         var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
@@ -1931,7 +1932,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publishingRequest = getPublishingRequestCase(publication);
 
-        assertThat(publishingRequest.getApprovedFiles(), hasSize(1));
         assertThat(publishingRequest.getApprovedFiles(), containsInAnyOrder(newUnpublishedFile.getIdentifier()));
     }
 
