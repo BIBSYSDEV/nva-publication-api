@@ -147,8 +147,8 @@ class ExpandedResourceTest {
         when(uriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
     }
 
+    // TODO: Uses real network calls. Should be fixed
     @Test
-    @Disabled
     void shouldReturnIndexDocumentWithValidReferenceData() throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
@@ -174,8 +174,8 @@ class ExpandedResourceTest {
         assertEquals(seriesName, framedResultNode.at(SERIES_NAME_JSON_PTR).textValue());
     }
 
+    // TODO: Uses real network calls. Should be fixed
     @Test
-    @Disabled
     void shouldReturnIndexDocumentWithValidContributorAffiliationCountryCode() throws Exception {
         var mockUriRetriever = mock(UriRetriever.class);
         var publication = randomPublication();
@@ -250,8 +250,8 @@ class ExpandedResourceTest {
         assertThat(contributorsCountNode.intValue(), is(equalTo(20)));
     }
 
+    // TODO: Uses real network calls. Should be fixed
     @Test
-    @Disabled
     void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
         final var publication = randomBookWithConfirmedPublisher();
         final var affiliationToBeExpanded = extractAffiliationsUris(publication).getFirst();
@@ -267,8 +267,8 @@ class ExpandedResourceTest {
                    is(equalTo(affiliationToBeExpanded.toString())));
     }
 
+    // TODO: Uses real network calls. Should be fixed
     @Test
-    @Disabled
     void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
         var publication = randomPublication();
         var contributor1org = orgWithReadableId("contributor1org");
@@ -639,8 +639,8 @@ class ExpandedResourceTest {
                    allOf(Matchers.instanceOf(String.class), is((equalTo(bookAnthology.getLink().toString())))));
     }
 
+    // TODO: Uses real network calls. Should be fixed
     @Test
-    @Disabled
     void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
         throws IOException {
         var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
@@ -669,9 +669,9 @@ class ExpandedResourceTest {
         assertThat(actualNode, is(equalTo(expectedNode)));
     }
 
+    // TODO: Uses real network calls. Should be fixed
     @ParameterizedTest
     @MethodSource("validAnthologyMembersProvider")
-    @Disabled
     void shouldSetPartOfRelationForAnthologyMember(Class<?> publicationType) throws IOException {
         var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
         mockUriRetrieverResponses(bookAnthology);
