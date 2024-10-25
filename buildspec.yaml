@@ -8,7 +8,7 @@ phases:
       - pip3 install aws-sam-cli -U
   build:
     commands:
-      - sam build
+      - sam build --cached
       - sam package --s3-bucket $S3_BUCKET --output-template-file packaged_raw.yaml
   post_build:
     commands:
