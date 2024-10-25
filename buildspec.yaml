@@ -1,5 +1,9 @@
 version: 0.2
 
+cache:
+  paths:
+    - ".aws-sam/**/*"
+
 phases:
   install:
     runtime-versions:
