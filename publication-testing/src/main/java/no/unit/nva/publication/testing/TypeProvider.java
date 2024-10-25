@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Named;
 
 public final class TypeProvider {
     
@@ -14,9 +15,9 @@ public final class TypeProvider {
     
     }
     
-    public static Stream<Class<?>> listSubTypes(Class<?> type) {
+    public static Stream<Named<Class<?>>> listSubTypes(Class<?> type) {
         var types = fetchDirectSubtypes(type);
-        var result = new HashSet<Class<?>>();
+        var result = new HashSet<Named<Class<?>>>();
         var nestedTypes = new ArrayDeque<Type>(types);
         while (!nestedTypes.isEmpty()) {
             var currentType = nestedTypes.pop();
@@ -24,7 +25,7 @@ public final class TypeProvider {
                 var subTypes = fetchDirectSubtypes(currentType.value());
                 nestedTypes.addAll(subTypes);
             } else {
-                result.add(currentType.value());
+                result.add(Named.of(currentType.name(), currentType.value()));
             }
         }
         return result.stream();

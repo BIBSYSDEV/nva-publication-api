@@ -27,6 +27,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -107,6 +108,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     
     private static List<TicketEntry> createUnpersistedTicketEntries(Resource resource) {
         return TypeProvider.listSubTypes(TicketEntry.class)
+                   .map(Named::getPayload)
                    .map(ticketType -> (Class<TicketEntry>) ticketType)
                    .map(attempt(ticketType -> TicketEntry.createNewTicket(resource.toPublication(), ticketType,
                        SortableIdentifier::next)))

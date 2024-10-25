@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -43,13 +44,13 @@ public class TicketService extends ServiceWithTransactions {
     private final ResourceService resourceService;
     private final String tableName;
 
-    public TicketService(AmazonDynamoDB client, UriRetriever uriRetriever) {
+    public TicketService(AmazonDynamoDB client, RawContentRetriever uriRetriever) {
         this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever);
     }
 
     protected TicketService(AmazonDynamoDB client,
                             Supplier<SortableIdentifier> identifierProvider,
-                            UriRetriever uriRetriever) {
+                            RawContentRetriever uriRetriever) {
         super(client);
         this.identifierProvider = identifierProvider;
         tableName = RESOURCES_TABLE_NAME;

@@ -36,6 +36,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -81,13 +82,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         UNPUBLISHED,
         DELETED
     );
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
 
     public UpdateResourceService(AmazonDynamoDB client,
                                  String tableName,
                                  Clock clockForTimestamps,
                                  ReadResourceService readResourceService,
-                                 UriRetriever uriRetriever) {
+                                 RawContentRetriever uriRetriever) {
         super(client);
         this.tableName = tableName;
         this.clockForTimestamps = clockForTimestamps;
