@@ -32,7 +32,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class WithPrimaryKeyTest extends ResourcesLocalTest {
-    
+
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -112,6 +113,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
                    .map(attempt(ticketType -> TicketEntry.createNewTicket(resource.toPublication(), ticketType,
                        SortableIdentifier::next)))
                    .map(Try::orElseThrow)
+                   .map(ticketEntry -> ticketEntry.withOwner(UserInstance.fromPublication(resource.toPublication()).getUsername()))
                    .toList();
     }
 

@@ -51,10 +51,12 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static GeneralSupportRequest createGeneralSupportRequest(Publication publication) {
-        return (GeneralSupportRequest) TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class);
+        return (GeneralSupportRequest) TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
+                                           .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     public static UnpublishRequest createUnpublishRequest(Publication publication) {
-        return (UnpublishRequest) TicketEntry.requestNewTicket(publication, UnpublishRequest.class);
+        return (UnpublishRequest) TicketEntry.requestNewTicket(publication, UnpublishRequest.class)
+                                      .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 }

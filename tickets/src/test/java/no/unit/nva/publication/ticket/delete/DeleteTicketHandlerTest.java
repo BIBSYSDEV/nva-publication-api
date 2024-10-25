@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -120,6 +119,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
 
     private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
         return TicketEntry.createNewTicket(publication, PublishingRequestCase.class, SortableIdentifier::next)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername())
                    .persistNewTicket(ticketService);
     }
 

@@ -40,8 +40,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.model.ExpandedDoiRequest;
-import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
@@ -303,6 +301,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
+                                     .withOwner(UserInstance.fromPublication(publication).getUsername())
                                      .persistNewTicket(ticketService);
         FakeUriResponse.setupFakeForType(ticketToBeExpanded, fakeUriRetriever);
 
@@ -322,6 +321,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
+                                     .withOwner(randomString())
                                      .persistNewTicket(ticketService);
         FakeUriResponse.setupFakeForType(ticketToBeExpanded, fakeUriRetriever);
 
@@ -777,6 +777,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
                                                                                               SortableIdentifier::next)
+                                                            .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
@@ -933,11 +934,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
 
         var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
+                                          .withOwner(UserInstance.fromPublication(publication).getUsername())
                                           .persistNewTicket(ticketService);
         var firstUnexpectedMessage = ExpandedMessage.createEntry(
             messageService.createMessage(differentTicketSameType, owner, randomString()), expansionService);
         var differentTicketType = someOtherTicketTypeBesidesDoiRequest(ticketType);
         var differentTicketDifferentType = TicketEntry.requestNewTicket(publication, differentTicketType)
+                                               .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                .persistNewTicket(ticketService);
         var secondUnexpectedMessage = ExpandedMessage.createEntry(
             messageService.createMessage(differentTicketDifferentType, owner, randomString()), expansionService);
@@ -961,34 +964,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private DoiRequest toTicketEntry(ExpandedDoiRequest expandedDoiRequest) {
-        DoiRequest doiRequest = new DoiRequest();
-        doiRequest.setCreatedDate(expandedDoiRequest.getCreatedDate());
-        doiRequest.setIdentifier(expandedDoiRequest.identifyExpandedEntry());
-        doiRequest.setCustomerId(expandedDoiRequest.getCustomerId());
-        doiRequest.setModifiedDate(expandedDoiRequest.getModifiedDate());
-        doiRequest.setOwner(expandedDoiRequest.getOwner().username());
-        doiRequest.setResourceIdentifier(expandedDoiRequest.getPublication().getIdentifier());
-        doiRequest.setResourceStatus(expandedDoiRequest.getPublication().getStatus());
-        doiRequest.setStatus(getTicketStatus(expandedDoiRequest.getStatus()));
-        doiRequest.setAssignee(extractUsername(expandedDoiRequest.getAssignee()));
-        doiRequest.setOwnerAffiliation(expandedDoiRequest.getOrganization().id());
-        return doiRequest;
-    }
-
-    private GeneralSupportRequest toTicketEntry(ExpandedGeneralSupportRequest expandedGeneralSupportRequest) {
-        var ticketEntry = new GeneralSupportRequest();
-        ticketEntry.setModifiedDate(expandedGeneralSupportRequest.getModifiedDate());
-        ticketEntry.setCreatedDate(expandedGeneralSupportRequest.getCreatedDate());
-        ticketEntry.setCustomerId(expandedGeneralSupportRequest.getCustomerId());
-        ticketEntry.setIdentifier(extractIdentifier(expandedGeneralSupportRequest.getId()));
-        ticketEntry.setResourceIdentifier(expandedGeneralSupportRequest.getPublication().getIdentifier());
-        ticketEntry.setStatus(getTicketStatus(expandedGeneralSupportRequest.getStatus()));
-        ticketEntry.setOwner(expandedGeneralSupportRequest.getOwner().username());
-        ticketEntry.setAssignee(extractUsername(expandedGeneralSupportRequest.getAssignee()));
-        return ticketEntry;
-    }
-
     private TicketEntry toTicketEntry(ExpandedPublishingRequest expandedPublishingRequest) {
         var publishingRequest = new PublishingRequestCase();
         publishingRequest.setResourceIdentifier(expandedPublishingRequest.getPublication().getIdentifier());
@@ -1004,31 +979,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setFilesForApproval(extractFilesForApproval(expandedPublishingRequest));
         publishingRequest.setOwnerAffiliation(expandedPublishingRequest.getOrganization().id());
         return publishingRequest;
-    }
-
-    private UnpublishRequest toTicketEntry(ExpandedUnpublishRequest expandedUnpublishRequest) {
-        var ticketEntry = new UnpublishRequest();
-        ticketEntry.setModifiedDate(expandedUnpublishRequest.getModifiedDate());
-        ticketEntry.setCreatedDate(expandedUnpublishRequest.getCreatedDate());
-        ticketEntry.setCustomerId(expandedUnpublishRequest.getCustomerId());
-        ticketEntry.setIdentifier(expandedUnpublishRequest.identifyExpandedEntry());
-        ticketEntry.setResourceIdentifier(expandedUnpublishRequest.getPublication().getIdentifier());
-        ticketEntry.setStatus(getTicketStatus(expandedUnpublishRequest.getStatus()));
-        ticketEntry.setOwner(expandedUnpublishRequest.getOwner().username());
-        ticketEntry.setAssignee(extractUsername(expandedUnpublishRequest.getAssignee()));
-        ticketEntry.setOwnerAffiliation(expandedUnpublishRequest.getOrganization().id());
-        return ticketEntry;
-    }
-
-    private TicketEntry toTicketEntry(ExpandedTicket expandedTicket) {
-        return switch (expandedTicket) {
-            case ExpandedDoiRequest expandedDoiRequest -> toTicketEntry(expandedDoiRequest);
-            case ExpandedPublishingRequest expandedPublishingRequest -> toTicketEntry(expandedPublishingRequest);
-            case ExpandedGeneralSupportRequest expandedGeneralSupportRequest ->
-                toTicketEntry(expandedGeneralSupportRequest);
-            case ExpandedUnpublishRequest expandedUnpublishRequest -> toTicketEntry(expandedUnpublishRequest);
-            case null, default -> null;
-        };
     }
 
     private Set<FileForApproval> extractFilesForApproval(ExpandedPublishingRequest expandedPublishingRequest) {

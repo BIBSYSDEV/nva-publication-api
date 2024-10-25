@@ -165,11 +165,12 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var username = UserInstance.fromPublication(publication).getUsername();
 
         var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
-        DoiRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
-        PublishingRequestCase.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
-        GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
+        PublishingRequestCase.fromPublication(publication).withOwner(username).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
+        GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
 
         var request = curatorWithAccessRightRequestTicketsForPublication(publication, accessRight);
         handler.handleRequest(request, output, CONTEXT);
@@ -205,13 +206,14 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var username = UserInstance.fromPublication(publication).getUsername();
 
         var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
         DoiRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
         PublishingRequestCase.fromPublication(publication).withOwnerAffiliation(
-            ownerAffiliation).persistNewTicket(ticketService);
+            ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
         GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(
-            ownerAffiliation).persistNewTicket(ticketService);
+            ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
 
         var request = userRequestsTickets(publication, randomUri(), ownerAffiliation, accessRight);
         handler.handleRequest(request, output, CONTEXT);
@@ -266,9 +268,13 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var contributor = randomContributorWithId(contributorId);
         publication.getEntityDescription().setContributors(List.of(contributor));
         resourceService.updatePublication(publication);
-        DoiRequest.fromPublication(publication).withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
-        PublishingRequestCase.fromPublication(publication).withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
-        GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
+        var username = UserInstance.fromPublication(publication).getUsername();
+        DoiRequest.fromPublication(publication).withOwner(username)
+            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
+        PublishingRequestCase.fromPublication(publication).withOwner(username)
+            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
+        GeneralSupportRequest.fromPublication(publication).withOwner(username)
+            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
 
         var request = userRequestsTickets(publication, contributorId, randomUri());
         handler.handleRequest(request, output, CONTEXT);
@@ -289,6 +295,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         resourceService.updatePublication(publication);
         GeneralSupportRequest.fromPublication(publication)
             .withOwnerAffiliation(randomUri())
+            .withOwner(UserInstance.fromPublication(publication).getUsername())
             .persistNewTicket(ticketService)
             .complete(publication, new Username(randomString())).persistUpdate(ticketService);
 

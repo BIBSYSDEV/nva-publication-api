@@ -176,8 +176,10 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var ticket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
                                                                    publication.getIdentifier(),
                                                                    DoiRequest.class).orElseThrow();
+
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(ticket.getOwnerAffiliation(), is(equalTo(publication.getResourceOwner().getOwnerAffiliation())));
     }
 
     @Test
@@ -283,6 +285,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(Publication publication,
                                                                                      File file) throws ApiGatewayException {
         var publishingRequest =  (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                      .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.setStatus(TicketStatus.COMPLETED);
         publishingRequest.setApprovedFiles(Set.of(file.getIdentifier()));
@@ -361,7 +364,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        return PublishingRequestCase.fromPublication(publication);
+        return (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     private AcceptedPublishingRequestEventHandler handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication()
@@ -387,6 +391,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
                                                                                               SortableIdentifier::next)
+                                                            .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);

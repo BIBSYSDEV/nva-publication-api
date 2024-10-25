@@ -248,6 +248,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var persistedPublication =
             resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
+                         .withOwner(UserInstance.fromPublication(publication).getUsername())
                          .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);

@@ -286,6 +286,7 @@ public final class TicketTestUtils {
         throws ApiGatewayException {
         return TicketEntry.requestNewTicket(publication, ticketType)
                    .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                   .withOwner(UserInstance.fromPublication(publication).getUsername())
                    .persistNewTicket(ticketService);
     }
 
@@ -301,6 +302,7 @@ public final class TicketTestUtils {
                                                     TicketService ticketService)
         throws ApiGatewayException {
         var completedTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                                  .withOwner(UserInstance.fromPublication(publication).getUsername())
                                   .persistNewTicket(ticketService).complete(publication, new Username("Username"));
         completedTicket.persistUpdate(ticketService);
         return completedTicket;
@@ -308,7 +310,8 @@ public final class TicketTestUtils {
 
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
-        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     private static void setAffiliation(Corporation affiliation) {
