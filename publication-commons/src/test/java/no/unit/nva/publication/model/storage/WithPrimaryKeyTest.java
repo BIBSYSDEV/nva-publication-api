@@ -11,7 +11,6 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
@@ -28,11 +27,13 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class WithPrimaryKeyTest extends ResourcesLocalTest {
-    
+
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -43,9 +44,9 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     @MethodSource("createUnpersistedEntities")
     void primaryKeyPartitionKeyConditionReturnsQueryConditionForListingAllEntriesOfSpecificTypeForASingleUser(
         List<Entity> entities) {
-        var daos = entities.stream().map(Entity::toDao).collect(Collectors.toList());
+        var daos = entities.stream().map(Entity::toDao).toList();
         daos.forEach(this::insertToDb);
-        WithPrimaryKey queryObject = daos.get(0);
+        WithPrimaryKey queryObject = daos.getFirst();
         
         var result = performQuery(queryObject);
         var expectedItems = daos.toArray(Object[]::new);
@@ -60,7 +61,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     }
     
     private static List<Message> sampleMessages() {
-        return sampleTickets().stream().flatMap(WithPrimaryKeyTest::randomMessages).collect(Collectors.toList());
+        return sampleTickets().stream().flatMap(WithPrimaryKeyTest::randomMessages).toList();
     }
     
     private static Stream<Message> randomMessages(TicketEntry ticket) {
@@ -80,7 +81,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
                    .map(publication -> publication.withPublisher(commonPublisher))
                    .map(Publication.Builder::build)
                    .map(Resource::fromPublication)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private static Username randomUsername() {
@@ -107,11 +108,13 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     
     private static List<TicketEntry> createUnpersistedTicketEntries(Resource resource) {
         return TypeProvider.listSubTypes(TicketEntry.class)
+                   .map(Named::getPayload)
                    .map(ticketType -> (Class<TicketEntry>) ticketType)
                    .map(attempt(ticketType -> TicketEntry.createNewTicket(resource.toPublication(), ticketType,
                        SortableIdentifier::next)))
                    .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+                   .map(ticketEntry -> ticketEntry.withOwner(UserInstance.fromPublication(resource.toPublication()).getUsername()))
+                   .toList();
     }
 
     private List<? extends WithPrimaryKey> performQuery(WithPrimaryKey queryObject) {
@@ -124,7 +127,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
                    .getItems()
                    .stream()
                    .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                   .collect(Collectors.toList());
+                   .toList();
     }
     
     private QueryRequest createQuery(WithPrimaryKey queryObject) {

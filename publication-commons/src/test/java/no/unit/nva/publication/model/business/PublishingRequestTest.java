@@ -28,8 +28,9 @@ class PublishingRequestTest {
     @Test
     void shouldReturnPublishingRequestWithAdequateInfoForCreatingEntryWhenSuppliedWithUserAndPublicationInfo() {
         var publication = randomPublication();
-        var objectForCreatingNewEntry = PublishingRequestCase.fromPublication(publication);
         var userInstance = UserInstance.fromPublication(publication);
+        var objectForCreatingNewEntry = PublishingRequestCase.fromPublication(publication)
+                                            .withOwner(userInstance.getUsername());
         assertThat(objectForCreatingNewEntry.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(objectForCreatingNewEntry.getOwner(), is(equalTo(userInstance.getUser())));
         assertThat(objectForCreatingNewEntry.getCustomerId(), is(equalTo(userInstance.getCustomerId())));

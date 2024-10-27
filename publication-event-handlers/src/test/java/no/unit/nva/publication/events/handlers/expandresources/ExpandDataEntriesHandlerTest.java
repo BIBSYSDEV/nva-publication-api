@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
@@ -40,6 +39,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -55,6 +55,8 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.uriretriever.FakeUriResponse;
+import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -84,7 +86,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private MessageService messageService;
+    private FakeUriRetriever fakeUriRetriever;
 
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -97,11 +101,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
 
-        var mockUriRetriever = mock(UriRetriever.class);
-        when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
-
+        fakeUriRetriever = FakeUriRetriever.newInstance();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
+            new ResourceExpansionServiceImpl(resourceService, ticketService, fakeUriRetriever, fakeUriRetriever);
 
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
@@ -116,6 +118,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldProduceAnExpandedDataEntryWhenInputHasNewImage(PublicationStatus status) throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
+        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
@@ -132,6 +135,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldNotProduceEntryWhenNotPublishedOrDeletedEntry(PublicationStatus status) throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
+        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
@@ -148,9 +152,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldLogFailingExpansionNotThrowExceptionAndEmitEmptyEvent() throws IOException {
+    void shouldThrowExceptionWhenExpansionFailing() throws IOException {
         var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
+        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
@@ -158,14 +163,14 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
         expandResourceHandler.handleRequest(request, output, CONTEXT);
 
-        assertThat(logger.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
-        assertThat(logger.getMessages(), containsString(newImage.getIdentifier().toString()));
+        assertThat(logger.getMessages(), containsString("DateEntry has been sent to recovery queue"));
     }
 
     @Test
     void shouldPersistRecoveryMessageWhenExpansionHasFailed() throws IOException {
         var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
+        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
 
 
@@ -181,6 +186,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistRecoveryMessageWhenExpansionHasFailedAndOldImageIsNotPresent() throws IOException {
         var newImage = createPublicationWithStatus(PUBLISHED);
+        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
 
 
@@ -196,6 +202,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistRecoveryMessageForPublicationWhenBadResponseFromExternalApi() throws IOException {
         var newImage = createPublicationWithStatus(PUBLISHED);
+        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
 
         var resourceExpansionService =
@@ -215,6 +222,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistRecoveryMessageForTicketWhenBadResponseFromExternalApi() throws IOException {
         var publication = createPublicationWithStatus(PUBLISHED);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
         var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
 
@@ -236,9 +244,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldPersistRecoveryMessageForMessageWhenBadResponseFromExternalApi() throws IOException,
                                                                                        ApiGatewayException {
         var publication = createPublicationWithStatus(PUBLISHED);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
         var persistedPublication =
             resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
+                         .withOwner(UserInstance.fromPublication(publication).getUsername())
                          .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
@@ -267,6 +277,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
         var oldImage = createPublicationWithStatus(DRAFT);
         var newImage = createUpdatedVersionOfPublication(oldImage);
+        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
 
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -302,7 +313,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublicationWithStatus(PublicationStatus status) {
-        return randomPublication().copy().withStatus(status).build();
+        return randomPublication(AcademicArticle.class).copy().withStatus(status).build();
     }
 
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {

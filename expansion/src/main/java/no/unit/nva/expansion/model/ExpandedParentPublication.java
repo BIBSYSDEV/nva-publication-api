@@ -11,12 +11,12 @@ import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.document.JsonDocument;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.Lang;
@@ -43,9 +43,7 @@ public class ExpandedParentPublication {
     }
 
     public String getExpandedParentPublication(URI publicationId) {
-        return fetch(publicationId)
-                   .map(expandedPublication -> expandParent(publicationId, expandedPublication))
-                   .orElse(null);
+        return expandParent(publicationId, fetch(publicationId));
     }
 
     private static void removePublicationTypeFromResource(URI id, Model model) {
@@ -75,13 +73,20 @@ public class ExpandedParentPublication {
 
     private Collection<? extends InputStream> fetchAll(List<URI> externalReferences) {
         return externalReferences.stream()
+                   .filter(this::isNotBlankUri)
                    .map(this::fetch)
-                   .flatMap(Optional::stream)
                    .map(IoUtils::stringToStream)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
-    private Optional<String> fetch(URI externalReference) {
-        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
+    private boolean isNotBlankUri(URI uri) {
+        return StringUtils.isNotBlank(uri.toString());
+    }
+
+    private String fetch(URI externalReference) {
+        return uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString())
+                   .filter(response -> response.statusCode() / 100 == 2)
+                   .map(HttpResponse::body)
+                   .orElseThrow();
     }
 }

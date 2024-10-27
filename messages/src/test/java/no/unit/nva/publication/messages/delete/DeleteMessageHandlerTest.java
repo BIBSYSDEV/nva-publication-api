@@ -103,6 +103,7 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
         var publication = Resource.fromPublication(randomPublication)
                               .persistNew(resourceService, UserInstance.fromPublication(randomPublication));
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .withOwner(randomString())
                    .persistNewTicket(ticketService);
     }
 

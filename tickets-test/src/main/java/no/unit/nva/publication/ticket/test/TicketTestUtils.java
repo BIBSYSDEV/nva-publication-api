@@ -39,6 +39,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -256,7 +257,7 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublicationWithDoi(PublicationStatus status,
                                                                 ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublicationWithStatusAndDoi(status);
+        var publication = publicationWithStatusAndDoi(status);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
@@ -285,6 +286,7 @@ public final class TicketTestUtils {
         throws ApiGatewayException {
         return TicketEntry.requestNewTicket(publication, ticketType)
                    .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                   .withOwner(UserInstance.fromPublication(publication).getUsername())
                    .persistNewTicket(ticketService);
     }
 
@@ -300,6 +302,7 @@ public final class TicketTestUtils {
                                                     TicketService ticketService)
         throws ApiGatewayException {
         var completedTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                                  .withOwner(UserInstance.fromPublication(publication).getUsername())
                                   .persistNewTicket(ticketService).complete(publication, new Username("Username"));
         completedTicket.persistUpdate(ticketService);
         return completedTicket;
@@ -307,7 +310,8 @@ public final class TicketTestUtils {
 
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
-        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     private static void setAffiliation(Corporation affiliation) {
@@ -405,8 +409,8 @@ public final class TicketTestUtils {
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }
 
-    private static Publication randomPublicationWithStatusAndDoi(PublicationStatus status) {
-        return PublicationGenerator.randomPublication().copy()
+    private static Publication publicationWithStatusAndDoi(PublicationStatus status) {
+        return PublicationGenerator.randomPublication(AcademicArticle.class).copy()
                    .withDoi(randomDoi())
                    .withStatus(status)
                    .build();

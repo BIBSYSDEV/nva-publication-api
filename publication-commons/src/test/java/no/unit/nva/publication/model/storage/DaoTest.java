@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -53,6 +52,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -70,6 +70,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -87,11 +88,11 @@ class DaoTest extends ResourcesLocalTest {
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
     public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
 
-    public static Stream<Class<?>> entityProvider() {
+    public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
     }
 
-    public static Stream<Class<?>> ticketProvider() {
+    public static Stream<Named<Class<?>>> ticketProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
     
@@ -338,7 +339,8 @@ class DaoTest extends ResourcesLocalTest {
     }
     
     private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
-        return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next);
+        return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next)
+                   .withOwner(randomString());
     }
     
     private static Stream<Dao> instanceProvider() {

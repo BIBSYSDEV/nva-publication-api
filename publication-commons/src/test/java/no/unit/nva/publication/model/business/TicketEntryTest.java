@@ -25,7 +25,8 @@ class TicketEntryTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldRequestNewTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status) {
         var publication = TicketTestUtils.createNonPersistedPublication(status);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType)
+                         .withOwner(UserInstance.fromPublication(publication).getUsername());
         var actualUserInstance = UserInstance.fromTicket(ticket);
         var expectedUserInstance = getExpectedUserInstance(publication);
 
