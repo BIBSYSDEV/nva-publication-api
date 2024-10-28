@@ -59,7 +59,7 @@ public final class ResourceQueueClient implements QueueClient {
         return ReceiveMessageRequest.builder()
                    .queueUrl(queueUrl)
                    .waitTimeSeconds(WAITING_TIME)
-                   .maxNumberOfMessages(maximumNumberOfMessages)
+                   .maxNumberOfMessages(Math.min(maximumNumberOfMessages, 10))
                    .messageAttributeNames(ALL_MESSAGE_ATTRIBUTES)
                    .build();
     }
