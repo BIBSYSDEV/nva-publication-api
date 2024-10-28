@@ -5,12 +5,16 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
@@ -21,6 +25,8 @@ import no.unit.nva.model.instancetypes.degree.DegreeBase;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.RequestUtil;
@@ -127,15 +133,19 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var institution = randomUri();
         var resourceOwner = randomString();
         var curatorUsername = randomString();
-        var cristinId = randomUri();
+        var cristinOrganizationId = randomUri();
 
         var publication = createPublication(degreeInstanceTypeClass, resourceOwner, institution, randomUri()).copy()
                               .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
                               .build();
+        var creator = createContributor(Role.CREATOR, randomUri(), cristinOrganizationId);
+        publication.getEntityDescription().setContributors(List.of(creator));
+
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution,
+                                                                           Set.of(creator.getIdentity().getId()))));
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
-                                                cristinId, curatingInstitution);
+                                                cristinOrganizationId, curatingInstitution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -168,7 +178,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
     }
 
     @Test
-    void shouldAllowEmbargoThesisCuratorOnDegreeWithEmbargo()
+    void shouldAllowEmbargoThesisCuratorOnDegreeWithEmbargoWhenCuratorForRegistrator()
         throws JsonProcessingException, UnauthorizedException {
 
         var institution = randomUri();
@@ -189,6 +199,111 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, userInstance, resourceService)
                                   .allowsAction(PublicationOperation.UPDATE));
+    }
+
+    @ParameterizedTest(
+        name = "Should allow Thesis curator {0} operation on instance type {1} belonging to the institution"
+    )
+    @MethodSource("argumentsForAllowingThesisCuratorPerformingOperationsOnProtectedDegreeResources")
+    void shouldNotAllowThesisCuratorFromCuratingInstitutionOnDegreeWhenCuratorIsCuratingSupervisorOnly(PublicationOperation operation,
+                                                                 Class<?> degreeInstanceTypeClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var institution = randomUri();
+        var resourceOwner = randomString();
+        var curatorUsername = randomString();
+        var publication = createPublication(degreeInstanceTypeClass, resourceOwner, institution, randomUri()).copy()
+                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
+                              .build();
+
+        var cristinOrganizationId = randomUri();
+        var cristinPersonId = randomUri();
+        var contributor = createContributor(Role.SUPERVISOR, cristinPersonId, cristinOrganizationId);
+        publication.getEntityDescription().setContributors(List.of(contributor));
+
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(cristinPersonId))));
+
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
+                                                cristinOrganizationId, curatingInstitution);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                  .create(publication, userInstance, resourceService)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(
+        name = "Should allow Thesis curator {0} operation on instance type {1} belonging to the institution"
+    )
+    @MethodSource("argumentsForAllowingThesisCuratorPerformingOperationsOnProtectedDegreeResources")
+    void shouldAllowThesisCuratorFromCuratingInstitutionOnDegreeWhenCuratorIsCuratingNotOnlySupervisor(PublicationOperation operation,
+                                                                                                       Class<?> degreeInstanceTypeClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var institution = randomUri();
+        var resourceOwner = randomString();
+        var curatorUsername = randomString();
+        var publication = createPublication(degreeInstanceTypeClass, resourceOwner, institution, randomUri()).copy()
+                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
+                              .build();
+
+        var cristinOrganizationId = randomUri();
+        var supervisor = createContributor(Role.SUPERVISOR, randomUri(), cristinOrganizationId);
+        var creator = createContributor(Role.CREATOR, randomUri(), cristinOrganizationId);
+        publication.getEntityDescription().setContributors(List.of(supervisor, creator));
+
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(
+            curatingInstitution, Set.of(supervisor.getIdentity().getId(), creator.getIdentity().getId()))));
+
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
+                                                cristinOrganizationId, curatingInstitution);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissionStrategy
+                                   .create(publication, userInstance, resourceService)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(
+        name = "Should allow Thesis curator {0} operation on instance type {1} belonging to the institution"
+    )
+    @MethodSource("argumentsForAllowingThesisCuratorPerformingOperationsOnProtectedDegreeResources")
+    void shouldNotAllowThesisCuratorFromCuratingInstitutionOnDegreeWhenCuratingInstitutionIsMissingContributors(PublicationOperation operation,
+                                                                                                       Class<?> degreeInstanceTypeClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var institution = randomUri();
+        var resourceOwner = randomString();
+        var curatorUsername = randomString();
+        var publication = createPublication(degreeInstanceTypeClass, resourceOwner, institution, randomUri()).copy()
+                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
+                              .build();
+
+        var cristinOrganizationId = randomUri();
+        var cristinPersonId = randomUri();
+        var contributor = createContributor(Role.SUPERVISOR, cristinPersonId, cristinOrganizationId);
+        publication.getEntityDescription().setContributors(List.of(contributor));
+
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of())));
+
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
+                                                cristinOrganizationId, curatingInstitution);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .create(publication, userInstance, resourceService)
+                                   .allowsAction(operation));
+    }
+
+    private static Contributor createContributor(Role role, URI cristinPersonId, URI cristinOrganizationId) {
+        return new Contributor.Builder()
+                   .withAffiliations(List.of(Organization.fromUri(cristinOrganizationId)))
+                   .withIdentity(new Identity.Builder().withId(cristinPersonId).build())
+                   .withRole(new RoleType(role))
+                   .build();
     }
 
     public static PublishedFile randomFileWithEmbargo() {
