@@ -27,8 +27,8 @@ public class FakeSqsClient implements QueueClient {
     }
 
     @Override
-    public List<Message> readMessages() {
-        int toIndex = Math.min(deliveredMessages.size(), 10);
+    public List<Message> readMessages(int maximumNumberOfMessages) {
+        int toIndex = Math.min(deliveredMessages.size(), maximumNumberOfMessages);
         return new ArrayList<>(deliveredMessages.subList(0, toIndex));
     }
 

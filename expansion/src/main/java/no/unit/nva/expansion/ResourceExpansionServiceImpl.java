@@ -53,12 +53,12 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final RawContentRetriever authorizedUriRetriever;
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService,
                                         RawContentRetriever authorizedUriRetriever,
-                                        UriRetriever uriRetriever) {
+                                        RawContentRetriever uriRetriever) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.authorizedUriRetriever = authorizedUriRetriever;

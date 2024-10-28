@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
@@ -38,6 +39,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -48,7 +50,6 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
@@ -60,6 +61,8 @@ public final class TicketTestUtils {
 
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
     public static final Random RANDOM = new Random(System.currentTimeMillis());
+    public static final URI CURATING_INSTITUTION_ID = URI.create(
+        "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
     private TicketTestUtils() {
     }
@@ -120,8 +123,17 @@ public final class TicketTestUtils {
                                                                              .forEach(TicketTestUtils::setAffiliation)
         );
         publication.setCuratingInstitutions(
-            Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
+            Set.of(new CuratingInstitution(CURATING_INSTITUTION_ID, getContributorIds(publication))));
         return persistPublication(resourceService, publication);
+    }
+
+    private static Set<URI> getContributorIds(Publication publication) {
+        return publication.getEntityDescription()
+                   .getContributors()
+                   .stream()
+                   .map(Contributor::getIdentity)
+                   .map(Identity::getId)
+                   .collect(Collectors.toSet());
     }
 
     public static Publication createPersistedDegreePublication(PublicationStatus status,
@@ -134,7 +146,7 @@ public final class TicketTestUtils {
                                                                              .forEach(TicketTestUtils::setAffiliation)
         );
         publication.setCuratingInstitutions(
-            Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
+            Set.of(new CuratingInstitution(CURATING_INSTITUTION_ID, getContributorIds(publication))));
         return persistPublication(resourceService, publication);
     }
 
@@ -245,7 +257,7 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublicationWithDoi(PublicationStatus status,
                                                                 ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublicationWithStatusAndDoi(status);
+        var publication = publicationWithStatusAndDoi(status);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
@@ -274,6 +286,7 @@ public final class TicketTestUtils {
         throws ApiGatewayException {
         return TicketEntry.requestNewTicket(publication, ticketType)
                    .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                   .withOwner(UserInstance.fromPublication(publication).getUsername())
                    .persistNewTicket(ticketService);
     }
 
@@ -289,6 +302,7 @@ public final class TicketTestUtils {
                                                     TicketService ticketService)
         throws ApiGatewayException {
         var completedTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                                  .withOwner(UserInstance.fromPublication(publication).getUsername())
                                   .persistNewTicket(ticketService).complete(publication, new Username("Username"));
         completedTicket.persistUpdate(ticketService);
         return completedTicket;
@@ -296,7 +310,8 @@ public final class TicketTestUtils {
 
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
-        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     private static void setAffiliation(Corporation affiliation) {
@@ -394,8 +409,8 @@ public final class TicketTestUtils {
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }
 
-    private static Publication randomPublicationWithStatusAndDoi(PublicationStatus status) {
-        return PublicationGenerator.randomPublication().copy()
+    private static Publication publicationWithStatusAndDoi(PublicationStatus status) {
+        return PublicationGenerator.randomPublication(AcademicArticle.class).copy()
                    .withDoi(randomDoi())
                    .withStatus(status)
                    .build();

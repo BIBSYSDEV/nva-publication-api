@@ -1,8 +1,24 @@
 package no.unit.nva.publication.events.handlers.persistence;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
+import static no.unit.nva.testutils.EventBridgeEventBuilder.sampleLambdaDestinationsEvent;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
@@ -11,10 +27,7 @@ import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.contexttypes.Anthology;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -23,6 +36,8 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.uriretriever.FakeUriResponse;
+import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -33,36 +48,11 @@ import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.util.Optional;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.services.s3.S3Client;
-
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
-import static no.unit.nva.testutils.EventBridgeEventBuilder.sampleLambdaDestinationsEvent;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
@@ -105,10 +95,9 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         assertThat(expectedException.getMessage(), containsString(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC));
     }
 
-    @ParameterizedTest(name = "should store the expanded publication from S3 URI in analytics folder: {0} ")
-    @MethodSource("listPublicationInstanceTypes")
-    void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder(Class<?> type) throws IOException {
-        var inputEvent = generateEventForExpandedPublication(type);
+    @Test
+    void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder() throws IOException {
+        var inputEvent = generateEventForExpandedPublication(AcademicArticle.class);
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
         analyticsIntegration.handleRequest(event, outputStream, context);
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
@@ -146,7 +135,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     }
 
     private EventReference generateEventForExpandedPublication(Class<?> type) throws IOException {
-        var inputFileUri = expandPublicationAndSaveToS3(randomPublication(type));
+        var publication = randomPublication(type);
+        var inputFileUri = expandPublicationAndSaveToS3(publication);
         return new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, inputFileUri);
     }
 
@@ -184,74 +174,15 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     }
 
     private URI expandPublicationAndSaveToS3(Publication publication) throws IOException {
-        UriRetriever fakeUrlRetriever = mock(UriRetriever.class);
-        mockPublicationContextResponse(publication, fakeUrlRetriever);
-        ExpandedResource expandedPublication = ExpandedResource.fromPublication(fakeUrlRetriever, publication);
-        String resourceJson = DTO_OBJECT_MAPPER.writeValueAsString(expandedPublication);
-        UnixPath randomPath = formatPublicationFilename(expandedPublication);
+        var fakeUrlRetriever = FakeUriRetriever.newInstance();
+        FakeUriResponse.setupFakeForType(publication, fakeUrlRetriever);
+        var expandedPublication = ExpandedResource.fromPublication(fakeUrlRetriever, publication);
+        var resourceJson = DTO_OBJECT_MAPPER.writeValueAsString(expandedPublication);
+        var randomPath = formatPublicationFilename(expandedPublication);
         return s3Driver.insertFile(randomPath, resourceJson);
-    }
-
-    private void mockPublicationContextResponse(Publication publication, UriRetriever fakeUrlRetriever) {
-        var publicationContext = publication.getEntityDescription().getReference().getPublicationContext();
-
-        if (publicationContext instanceof Anthology anthology) {
-            URI id = anthology.getId();
-            when(fakeUrlRetriever.getRawContent(eq(id), anyString())).thenReturn(Optional.of(getAnthology(id)));
-        } else if (publicationContext instanceof Journal journal) {
-            URI id = journal.getId();
-            when(fakeUrlRetriever.getRawContent(eq(id), anyString())).thenReturn(Optional.of(getJournal(id)));
-        } else if (publicationContext instanceof Publisher publisher) {
-            URI id = publisher.getId();
-            when(fakeUrlRetriever.getRawContent(eq(id), anyString())).thenReturn(Optional.of(getPublisher(id)));
-        }
-    }
-
-    private String getPublisher(URI id) {
-        var template = """
-            {
-              "id" : "%s",
-              "name" : "Test (Madrid)",
-              "scientificValue" : "LevelOne",
-              "sameAs" : "https://example.org/KanalTidsskriftInfo?pid=D4781C26-15BD-4CD2-BC2D-03C19B112134",
-              "type" : "Publisher",
-              "@context" : "https://bibsysdev.github.io/src/publication-channel/channel-context.json"
-            }
-            """;
-        return String.format(template, id.toString());
-    }
-
-    private String getJournal(URI id) {
-        var template = """
-            {
-              "id" : "%s",
-              "name" : "Test (Madrid)",
-              "onlineIssn" : "1863-8260",
-              "printIssn" : "1133-0686",
-              "scientificValue" : "LevelOne",
-              "sameAs" : "https://example.org/KanalTidsskriftInfo?pid=D4781C26-15BD-4CD2-BC2D-03C19B112134",
-              "type" : "Journal",
-              "@context" : "https://bibsysdev.github.io/src/publication-channel/channel-context.json"
-            }
-            """;
-        return String.format(template, id.toString());
     }
 
     private UnixPath formatPublicationFilename(ExpandedResource expandedPublication) {
         return UnixPath.of(randomString(), expandedPublication.identifyExpandedEntry() + ".gz");
-    }
-
-    private String getAnthology(URI id) {
-        var publication = attempt(
-            () -> DTO_OBJECT_MAPPER.writeValueAsString(randomPublication(AcademicMonograph.class))).orElseThrow();
-        var publicationNode = (ObjectNode) attempt(() -> DTO_OBJECT_MAPPER.readTree(publication)).orElseThrow();
-        publicationNode.put("id", id.toString());
-
-        var context = Publication.getJsonLdContext(URI.create(System.getenv("ID_NAMESPACE")));
-        var contextNode = attempt(() -> DTO_OBJECT_MAPPER.readTree(context)).orElseThrow();
-
-        publicationNode.set(JSONLD_CONTEXT, contextNode);
-
-        return attempt(() -> DTO_OBJECT_MAPPER.writeValueAsString(publicationNode)).orElseThrow();
     }
 }

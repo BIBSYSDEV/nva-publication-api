@@ -7,7 +7,6 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREAT
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonAlias;
@@ -60,8 +59,6 @@ public class DoiRequest extends TicketEntry {
     private Instant createdDate;
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
-    @JsonProperty(OWNER_FIELD)
-    private User owner;
     @JsonProperty(ASSIGNEE_FIELD)
     private Username assignee;
     @JsonProperty(OWNER_AFFILIATION_FIELD)
@@ -149,15 +146,6 @@ public class DoiRequest extends TicketEntry {
     @Override
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
-    }
-
-    @Override
-    public User getOwner() {
-        return owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
     }
 
     @Override

@@ -74,7 +74,8 @@ public class TicketResolver {
         validateUserPermissions(permissionStrategy, ticketDto, requestUtils);
 
         var ticket = TicketEntry.requestNewTicket(publication, ticketDto.ticketType())
-                         .withOwnerAffiliation(requestUtils.topLevelCristinOrgId());
+                         .withOwnerAffiliation(requestUtils.topLevelCristinOrgId())
+                         .withOwner(requestUtils.username());
         if (ticket instanceof PublishingRequestCase publishingRequest) {
             var customerId = requestUtils.customerId();
             publishingRequest.withWorkflow(getCustomerPublishingWorkflowResponse(customerId).convertToPublishingWorkflow())

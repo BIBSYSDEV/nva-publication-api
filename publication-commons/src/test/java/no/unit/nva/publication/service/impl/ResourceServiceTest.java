@@ -69,11 +69,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportSource;
@@ -84,8 +82,11 @@ import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -136,6 +137,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -166,6 +168,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private Instant now;
+    private S3Client s3Client;
+    private String cristinUnitsS3Uri;
 
     @BeforeEach
     public void init() {
@@ -446,8 +450,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourcesByCristinIdentifierReturnsAllResourcesWithCristinIdentifier() {
         String cristinIdentifier = randomString();
-        Set<Publication> publicationsWithCristinIdentifier =
-            createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
+        createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
         List<Publication> actualPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualPublication);
         assertTrue(actualPublication.containsAll(actualResourcesSet));
@@ -852,7 +855,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var identifiersFromSecondScan = secondListingResult.getDatabaseEntries()
                                             .stream()
                                             .map(Entity::getIdentifier)
-                                            .collect(Collectors.toList());
+                                            .toList();
 
         var expectedIdentifiers = new ArrayList<>(
             List.of(publication.getIdentifier(), ticket.getIdentifier(), sampleMessage.getIdentifier()));
@@ -923,7 +926,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -938,13 +941,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
 
         resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        resource.setCuratingInstitutions(Set.of(topLevelId));
+        resource.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
         var publishedResource = publishResource(createPersistedPublicationWithoutDoi(resource));
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -966,7 +969,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -982,14 +985,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
 
         importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        importCandidate.setCuratingInstitutions(Set.of(topLevelId));
+        importCandidate.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
 
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -1013,7 +1016,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedResource = resourceService.updatePublication(publication);
 
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -1067,11 +1070,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resources = userResources.stream()
                             .map(Resource::fromPublication)
                             .map(Entity.class::cast)
-                            .collect(Collectors.toList());
+                            .toList();
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources);
+        resourceService.refreshResources(resources, s3Client, cristinUnitsS3Uri);
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }
@@ -1122,15 +1125,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
-        var pendingGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
-        var pendingDoiRequestTicket = DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        var username = UserInstance.fromPublication(publication).getUsername();
+        GeneralSupportRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService);
         var closedGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication)
-                .persistNewTicket(ticketService)
+            GeneralSupportRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService)
                 .close(new Username(randomString()));
         ticketService.updateTicket(closedGeneralSupportTicket);
-        var publishingRequestTicket = PublishingRequestCase.fromPublication(publication);
+        var publishingRequestTicket = PublishingRequestCase.fromPublication(publication).withOwner(username);
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
         publishingRequestTicket.persistNewTicket(ticketService);
         resourceService.unpublishPublication(publication);
@@ -1290,7 +1292,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var contributions = IntStream
                                 .rangeClosed(1, amount)
                                 .mapToObj(i -> randomContributor())
-                                .collect(Collectors.toList());
+                                .toList();
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -1302,7 +1304,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var contributions = IntStream
                                 .rangeClosed(1, amount)
                                 .mapToObj(i -> randomContributor(List.of()))
-                                .collect(Collectors.toList());
+                                .toList();
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.Set;
 import java.util.stream.Stream;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
@@ -163,7 +164,8 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
                                                 randomUri(), editorInstitution);
         var publication = createNonDegreePublication(randomString(), randomUri()).copy()
-                              .withCuratingInstitutions(Set.of(editorInstitution))
+                              .withCuratingInstitutions(Set.of(new CuratingInstitution(editorInstitution,
+                                                                                       Set.of(randomUri()))))
                               .withStatus(UNPUBLISHED).build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 

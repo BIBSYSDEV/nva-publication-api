@@ -7,6 +7,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.schemaorg.document.FramedSchemaOrgDocumentBuilder;
 import nva.commons.core.paths.UriWrapper;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -36,7 +37,7 @@ class SchemaOrgDocumentTest {
     public static final char TURTLE_STATEMENT_END = '.';
     public static final Path RDF_SUBTYPE_MAPPINGS = Path.of("subtype_mappings.ttl");
 
-    public static Stream<Class<?>> instanceTypeProvider() {
+    public static Stream<Named<Class<?>>> instanceTypeProvider() {
         return TypeProvider.listSubTypes(PublicationInstance.class);
     }
 

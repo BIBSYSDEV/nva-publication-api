@@ -23,9 +23,9 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
@@ -165,11 +165,12 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var username = UserInstance.fromPublication(publication).getUsername();
 
         var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
-        DoiRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
-        PublishingRequestCase.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
-        GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
+        PublishingRequestCase.fromPublication(publication).withOwner(username).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
+        GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
 
         var request = curatorWithAccessRightRequestTicketsForPublication(publication, accessRight);
         handler.handleRequest(request, output, CONTEXT);
@@ -205,13 +206,14 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var username = UserInstance.fromPublication(publication).getUsername();
 
         var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
         DoiRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
         PublishingRequestCase.fromPublication(publication).withOwnerAffiliation(
-            ownerAffiliation).persistNewTicket(ticketService);
+            ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
         GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(
-            ownerAffiliation).persistNewTicket(ticketService);
+            ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
 
         var request = userRequestsTickets(publication, randomUri(), ownerAffiliation, accessRight);
         handler.handleRequest(request, output, CONTEXT);
@@ -266,9 +268,13 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var contributor = randomContributorWithId(contributorId);
         publication.getEntityDescription().setContributors(List.of(contributor));
         resourceService.updatePublication(publication);
-        DoiRequest.fromPublication(publication).withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
-        PublishingRequestCase.fromPublication(publication).withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
-        GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
+        var username = UserInstance.fromPublication(publication).getUsername();
+        DoiRequest.fromPublication(publication).withOwner(username)
+            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
+        PublishingRequestCase.fromPublication(publication).withOwner(username)
+            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
+        GeneralSupportRequest.fromPublication(publication).withOwner(username)
+            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
 
         var request = userRequestsTickets(publication, contributorId, randomUri());
         handler.handleRequest(request, output, CONTEXT);
@@ -289,6 +295,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         resourceService.updatePublication(publication);
         GeneralSupportRequest.fromPublication(publication)
             .withOwnerAffiliation(randomUri())
+            .withOwner(UserInstance.fromPublication(publication).getUsername())
             .persistNewTicket(ticketService)
             .complete(publication, new Username(randomString())).persistUpdate(ticketService);
 
@@ -368,7 +375,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     private InputStream curatorWithAccessRightRequestTicketsForPublication(Publication publication,
                                                                            AccessRight[] accessRight)
         throws JsonProcessingException {
-        var customer = publication.getCuratingInstitutions().stream().findFirst().orElseThrow();
+        var customer = publication.getCuratingInstitutions().stream().map(CuratingInstitution::id).findFirst().orElseThrow();
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(customer)
@@ -379,18 +386,6 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private InputStream curatorWithAccessRightForPublication(Publication publication,
-                                                             AccessRight[] accessRight)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(constructPathParameters(publication))
-                   .withCurrentCustomer(publication.getPublisher().getId())
-                   .withUserName(publication.getResourceOwner().getOwner().getValue())
-                   .withAccessRights(publication.getPublisher().getId(), accessRight)
-                   .withPersonCristinId(randomUri())
-                   .build();
-    }
-
     private void assertThatResponseContainsExpectedTickets(TicketEntry ticket) throws JsonProcessingException {
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         var body = response.getBodyObject(TicketCollection.class);
@@ -398,7 +393,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                                           .stream()
                                           .map(TicketDtoParser::toTicket)
                                           .map(Entity::getIdentifier)
-                                          .collect(Collectors.toList());
+                                          .toList();
         var expectedIdentifiers = ticket.getIdentifier();
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(actualTicketIdentifiers, containsInAnyOrder(expectedIdentifiers));

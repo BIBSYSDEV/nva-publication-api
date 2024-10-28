@@ -7,7 +7,6 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTO
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
 import static nva.commons.core.attempt.Try.attempt;
@@ -57,16 +56,12 @@ public class PublishingRequestCase extends TicketEntry {
     private TicketStatus status;
     @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
-    @JsonProperty(OWNER_FIELD)
-    private User owner;
     @JsonProperty(MODIFIED_DATE_FIELD)
     private Instant modifiedDate;
     @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
-
     @JsonProperty(WORKFLOW)
     private PublishingWorkflow workflow;
-
     @JsonProperty(ASSIGNEE_FIELD)
     private Username assignee;
     @JsonProperty(OWNER_AFFILIATION_FIELD)
@@ -83,10 +78,9 @@ public class PublishingRequestCase extends TicketEntry {
     public static PublishingRequestCase fromPublication(Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject = new PublishingRequestCase();
-        openingCaseObject.setOwner(userInstance.getUser());
         openingCaseObject.setCustomerId(userInstance.getCustomerId());
         openingCaseObject.setStatus(TicketStatus.PENDING);
-        openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
+        openingCaseObject.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
         openingCaseObject.setResourceIdentifier(publication.getIdentifier());
         return openingCaseObject;
     }
@@ -259,11 +253,6 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     @Override
-    public User getOwner() {
-        return owner;
-    }
-
-    @Override
     public URI getCustomerId() {
         return customerId;
     }
@@ -280,10 +269,6 @@ public class PublishingRequestCase extends TicketEntry {
     @Override
     public String getStatusString() {
         return status.toString();
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
     }
 
     public PublishingRequestCase withFilesForApproval(Set<FileForApproval> filesForApproval) {

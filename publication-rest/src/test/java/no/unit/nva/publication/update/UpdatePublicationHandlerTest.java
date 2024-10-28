@@ -116,6 +116,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportSource;
@@ -421,14 +422,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
                                                                               PUBLISHED,
                                                                               resourceService);
-        var completedTicket = persistCompletedPublishingRequest(publishedPublication);
+        persistCompletedPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        final var tickets = ticketService.fetchTicketsForUser(UserInstance.fromTicket(completedTicket)).toList();
+        final var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publishedPublication)).toList();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -848,11 +849,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
 
-    private static Set<URI> mockCuratingInstitutions(ArrayList<Contributor> contributors) {
+    private static Set<CuratingInstitution> mockCuratingInstitutions(ArrayList<Contributor> contributors) {
         return contributors
                    .stream()
                    .map(UpdatePublicationHandlerTest::getAffiliationUriStream)
                    .flatMap(Set::stream)
+                   .map(id -> new CuratingInstitution(id, Set.of(randomUri())))
                    .collect(Collectors.toSet());
     }
 
@@ -976,6 +978,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                                   PUBLISHED,
                                                                                                   resourceService);
         var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
+                                 .withOwner(publication.getResourceOwner().getOwner().getValue())
                                  .withOwnerAffiliation(persistedPublication.getResourceOwner().getOwnerAffiliation())
                                  .persistNewTicket(ticketService);
         var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
@@ -1002,6 +1005,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId,
                                                                       username);
         var pendingTicket = PublishingRequestCase.fromPublication(publication)
+                                .withOwner(publication.getResourceOwner().getOwner().getValue())
                                 .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
                                 .persistNewTicket(ticketService);
         updatePublicationHandler.handleRequest(event, output, context);
@@ -1011,7 +1015,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(completedTicket.getFinalizedBy(), is(equalTo(new Username(username))));
         assertThat(completedTicket.getFinalizedBy(), is(not(equalTo(publication.getResourceOwner().getOwner()))));
     }
-
 
     @Test
     void publishingCuratorWithAccessRightManageResourceFilesShouldBeAbleToOverrideRrs()
@@ -1202,10 +1205,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(
             userCristinId,
             resourceService);
-        GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
-        DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        GeneralSupportRequest.fromPublication(publication).withOwner(UserInstance.fromPublication(publication).getUsername()).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication).withOwner(UserInstance.fromPublication(publication).getUsername()).persistNewTicket(ticketService);
         var publishingRequestTicket =
-            PublishingRequestCase.fromPublication(publication).persistNewTicket(ticketService);
+            PublishingRequestCase.fromPublication(publication)
+                .withOwner(UserInstance.fromPublication(publication).getUsername())
+                .persistNewTicket(ticketService);
         var completedPublishingRequest = publishingRequestTicket.complete(publication, new Username(userName));
         ticketService.updateTicket(completedPublishingRequest);
 
@@ -1236,9 +1241,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
                                                                                        resourceService);
-        GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
-        DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        GeneralSupportRequest.fromPublication(publication).withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication).withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
         PublishingRequestCase.fromPublication(publication)
+            .withOwner(publication.getResourceOwner().getOwner().getValue())
             .persistNewTicket(ticketService)
             .complete(publication, new Username(randomString()))
             .persistUpdate(ticketService);
@@ -1765,7 +1771,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                        IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
         resourceService.unpublishPublication(publication);
         var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
                                                                   MANAGE_RESOURCES_ALL);
@@ -1784,7 +1790,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
         var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
                                                                   MANAGE_RESOURCES_ALL);
 
@@ -1991,7 +1997,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
                                                       SortableIdentifier::next)
-                   .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+                                                            .withOwner(publication.getResourceOwner().getOwner().getValue())
+                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
@@ -2264,6 +2271,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private TicketEntry createPendingPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
         return PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
+                   .withOwner(publication.getResourceOwner().getOwner().getValue())
                    .withOwnerAffiliation(publishedPublication.getResourceOwner().getOwnerAffiliation())
                    .persistNewTicket(ticketService);
     }
@@ -2271,6 +2279,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private TicketEntry persistCompletedPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
         var ticket = PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
                          .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                         .withOwner(publication.getResourceOwner().getOwner().getValue())
                          .persistNewTicket(ticketService);
         return ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, new Username(randomString()));
     }

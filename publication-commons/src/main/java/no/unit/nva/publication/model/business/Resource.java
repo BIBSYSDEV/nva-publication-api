@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
@@ -87,7 +88,7 @@ public class Resource implements Entity {
     @JsonProperty
     private URI duplicateOf;
     @JsonProperty
-    private Set<URI> curatingInstitutions;
+    private Set<CuratingInstitution> curatingInstitutions;
     @JsonProperty
     private List<ImportDetail> importDetails;
 
@@ -242,11 +243,11 @@ public class Resource implements Entity {
         this.publicationNotes = publicationNotes;
     }
 
-    public Set<URI> getCuratingInstitutions() {
+    public Set<CuratingInstitution> getCuratingInstitutions() {
         return nonNull(this.curatingInstitutions) ? this.curatingInstitutions : Collections.emptySet();
     }
 
-    public void setCuratingInstitutions(Set<URI> curatingInstitutions) {
+    public void setCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
         this.curatingInstitutions = curatingInstitutions;
     }
 
