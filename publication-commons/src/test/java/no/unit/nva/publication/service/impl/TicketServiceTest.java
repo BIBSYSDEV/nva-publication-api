@@ -963,15 +963,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
                                                                                               SortableIdentifier::next)
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
 
-    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(UnpublishedFile.class::cast)
-                   .map(FileForApproval::fromFile)
-                   .collect(Collectors.toSet());
-    }
 }

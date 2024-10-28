@@ -1,30 +1,29 @@
 package no.unit.nva.publication.update;
 
-import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithUnpublishedFiles;
+import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithFile;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.commons.customer.Customer;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class PublishingRequestResolverTest extends ResourcesLocalTest {
 
@@ -42,10 +41,11 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                  "and there exists pending publishing request with those files" +
                  "and there are no new unpublished files to publish" +
                  "then existing pending publishing request should be completed")
-    @Test
-    void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFiles()
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#notApprovedFilesProvider")
+    void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFiles(File file)
         throws ApiGatewayException {
-        var publication = createPersistedPublicationWithUnpublishedFiles(PublicationStatus.PUBLISHED, resourceService);
+        var publication = createPersistedPublicationWithFile(PublicationStatus.PUBLISHED, file, resourceService);
         persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         var publicationUpdateRemovingUnpublishedFiles = publication.copy()
                                                             .withAssociatedArtifacts(List.of())
@@ -72,7 +72,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                              customerNotAllowingPublishingFiles());
     }
 
-    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
+    private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication,
                                                                                               PublishingRequestCase.class,
@@ -80,16 +80,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(
                                                                 publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
-        return publishingRequest.persistNewTicket(ticketService);
-    }
-
-    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
-        return publication.getAssociatedArtifacts()
-                   .stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(UnpublishedFile.class::cast)
-                   .map(FileForApproval::fromFile)
-                   .collect(Collectors.toSet());
+        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.persistNewTicket(ticketService);
     }
 }
