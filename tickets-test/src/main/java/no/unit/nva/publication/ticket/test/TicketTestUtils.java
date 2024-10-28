@@ -39,6 +39,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -315,12 +316,13 @@ public final class TicketTestUtils {
         return persistPublication(resourceService, publication);
     }
 
-    public static Publication createPersistedPublicationWithDoi(
-            PublicationStatus status, ResourceService resourceService) throws ApiGatewayException {
-        var publication = randomPublicationWithStatusAndDoi(status);
-        var persistedPublication =
-                Resource.fromPublication(publication)
-                        .persistNew(resourceService, UserInstance.fromPublication(publication));
+    public static Publication createPersistedPublicationWithDoi(PublicationStatus status,
+                                                                ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = publicationWithStatusAndDoi(status);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
         if (PUBLISHED.equals(status)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
@@ -492,12 +494,11 @@ public final class TicketTestUtils {
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }
 
-    private static Publication randomPublicationWithStatusAndDoi(PublicationStatus status) {
-        return PublicationGenerator.randomPublication()
-                .copy()
-                .withDoi(randomDoi())
-                .withStatus(status)
-                .build();
+    private static Publication publicationWithStatusAndDoi(PublicationStatus status) {
+        return PublicationGenerator.randomPublication(AcademicArticle.class).copy()
+                   .withDoi(randomDoi())
+                   .withStatus(status)
+                   .build();
     }
 
     private static AdministrativeAgreement administrativeAgreement() {

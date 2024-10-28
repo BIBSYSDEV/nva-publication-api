@@ -128,7 +128,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class)
-                   .filter(type -> !type.equals(UnpublishRequest.class))
+                   .filter(type -> !type.getPayload().equals(UnpublishRequest.class))
                    .map(Arguments::of);
     }
 
@@ -216,8 +216,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
-    @DisplayName("should not allow users to create tickets for publications they do not belong to, i.e. " +
-                 "where they are not listed as contributors, owner or curators for owner or contributors institution")
+    @DisplayName("should not allow users to create tickets for publications they do not belong to, i.e. "
+                 + "where they are not listed as contributors, owner or curators for owner or contributors institution")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotAllowUsersToCreateTicketsForPublicationsBelongingToDifferentOrgThanTheOneTheyAreLoggedInTo(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
