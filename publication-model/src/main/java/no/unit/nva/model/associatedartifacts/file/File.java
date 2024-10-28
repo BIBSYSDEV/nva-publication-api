@@ -277,6 +277,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
 
     public abstract boolean isVisibleForNonOwner();
 
+    public abstract boolean needsApproval();
+
     public abstract Builder copy();
 
     @Override

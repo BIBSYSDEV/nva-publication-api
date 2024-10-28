@@ -57,7 +57,7 @@ public class AcceptedPublishingRequestEventHandler
     private static final String PUBLICATION_UPDATE_ERROR_MESSAGE =
             "Could not update publication: %s";
     private static final String PUBLISHING_FILE_MESSAGE =
-            "Publishing file {} from approved PublishingRequest {} for publication {}";
+            "Publishing file {} of type {} from approved PublishingRequest {} for publication {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
@@ -225,33 +225,32 @@ public class AcceptedPublishingRequestEventHandler
 
     private AssociatedArtifact publishFileIfApproved(
             AssociatedArtifact associatedArtifact, PublishingRequestCase publishingRequestCase) {
-        if (associatedArtifact instanceof UnpublishedFile unpublishedFile) {
-            return publishingRequestCase
-                            .getApprovedFiles()
-                            .contains(unpublishedFile.getIdentifier())
-                    ? toPublishedFile(unpublishedFile, publishingRequestCase)
-                    : unpublishedFile;
-        } else if (associatedArtifact instanceof PendingInternalFile pendingInternalFile) {
-            return publishingRequestCase
-                            .getApprovedFiles()
-                            .contains(pendingInternalFile.getIdentifier())
-                    ? toInternalFile(pendingInternalFile, publishingRequestCase)
-                    : pendingInternalFile;
-        } else if (associatedArtifact instanceof PendingOpenFile pendingOpenFile) {
-            return publishingRequestCase
-                       .getApprovedFiles()
-                       .contains(pendingOpenFile.getIdentifier())
-                       ? toOpenFile(pendingOpenFile, publishingRequestCase)
-                       : pendingOpenFile;
-        } else {
-            return associatedArtifact;
-        }
+        return switch (associatedArtifact) {
+            case UnpublishedFile unpublishedFile -> publishingRequestCase
+                                                        .getApprovedFiles()
+                                                        .contains(unpublishedFile.getIdentifier())
+                                                        ? toPublishedFile(unpublishedFile, publishingRequestCase)
+                                                        : unpublishedFile;
+            case PendingInternalFile pendingInternalFile -> publishingRequestCase
+                                                                .getApprovedFiles()
+                                                                .contains(pendingInternalFile.getIdentifier())
+                                                                ? toInternalFile(pendingInternalFile,
+                                                                                 publishingRequestCase)
+                                                                : pendingInternalFile;
+            case PendingOpenFile pendingOpenFile -> publishingRequestCase
+                                                        .getApprovedFiles()
+                                                        .contains(pendingOpenFile.getIdentifier())
+                                                        ? toOpenFile(pendingOpenFile, publishingRequestCase)
+                                                        : pendingOpenFile;
+            case null, default -> associatedArtifact;
+        };
     }
 
     private static void logFilePublish(File unpublishedFile, PublishingRequestCase publishingRequestCase) {
         logger.info(
                 PUBLISHING_FILE_MESSAGE,
                 unpublishedFile.getIdentifier(),
+                unpublishedFile.getClass().getSimpleName(),
                 publishingRequestCase.getIdentifier(),
                 publishingRequestCase.getResourceIdentifier());
     }

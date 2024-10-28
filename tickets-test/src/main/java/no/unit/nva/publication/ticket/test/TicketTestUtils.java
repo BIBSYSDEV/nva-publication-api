@@ -43,7 +43,9 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -65,6 +67,24 @@ public final class TicketTestUtils {
             URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
     private TicketTestUtils() {}
+
+    public static Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+        return publication.getAssociatedArtifacts()
+                   .stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .filter(File::needsApproval)
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
+    }
+
+    public static Stream<Arguments> notApprovedFilesProvider() {
+        return Stream.of(
+            Arguments.of(AssociatedArtifactsGenerator.randomUnpublishedFile()),
+            Arguments.of(AssociatedArtifactsGenerator.randomPendingOpenFile()),
+            Arguments.of(AssociatedArtifactsGenerator.randomPendingInternalFile())
+        );
+    }
 
     public static Stream<Arguments> ticketTypeAndPublicationStatusProvider() {
         return Stream.of(

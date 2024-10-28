@@ -36,10 +36,7 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -542,22 +539,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                 .withOwnerAffiliation(
                                         publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(
-                convertUnpublishedFilesToFilesForApproval(publication));
+                TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
 
-    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(
-            Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                .filter(this::fileNeedsApproval)
-                .map(File.class::cast)
-                .map(FileForApproval::fromFile)
-                .collect(Collectors.toSet());
-    }
-
-    private boolean fileNeedsApproval(AssociatedArtifact associatedArtifact) {
-        return associatedArtifact instanceof UnpublishedFile
-                || associatedArtifact instanceof PendingInternalFile
-                || associatedArtifact instanceof PendingOpenFile;
-    }
 }

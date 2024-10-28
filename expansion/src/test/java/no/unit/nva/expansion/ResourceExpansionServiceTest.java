@@ -707,7 +707,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
         var ticket = (PublishingRequestCase) TicketTestUtils.createCompletedTicket(
             publication, PublishingRequestCase.class, ticketService);
-        ticket.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication)).approveFiles();
+        ticket.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication)).approveFiles();
         publishFiles(publication);
         return ticket;
     }
@@ -745,16 +745,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                                               SortableIdentifier::next)
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
-    }
-
-    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(UnpublishedFile.class::cast)
-                   .map(FileForApproval::fromFile)
-                   .collect(Collectors.toSet());
     }
 
     private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
