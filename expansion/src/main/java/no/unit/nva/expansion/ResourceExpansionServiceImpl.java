@@ -56,14 +56,6 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private final UriRetriever uriRetriever;
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
-                                        TicketService ticketService) {
-        this.resourceService = resourceService;
-        this.ticketService = ticketService;
-        this.authorizedUriRetriever = new UriRetriever();
-        this.uriRetriever = new UriRetriever();
-    }
-
-    public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService,
                                         RawContentRetriever authorizedUriRetriever,
                                         UriRetriever uriRetriever) {
