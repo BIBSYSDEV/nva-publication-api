@@ -1,6 +1,7 @@
 package no.unit.nva.publication.queue;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -42,13 +43,25 @@ public final class ResourceQueueClient implements QueueClient {
 
     @Override
     public List<Message> readMessages(int maximumNumberOfMessages) {
-        var receiveMessageRequest = ReceiveMessageRequest.builder()
-                                        .queueUrl(queueUrl)
-                                        .waitTimeSeconds(WAITING_TIME)
-                                        .maxNumberOfMessages(maximumNumberOfMessages)
-                                        .messageAttributeNames(ALL_MESSAGE_ATTRIBUTES)
-                                        .build();
-        return sqsClient.receiveMessage(receiveMessageRequest).messages();
+        var allMessages = new ArrayList<Message>();
+        while (allMessages.size() < maximumNumberOfMessages) {
+            var receiveMessageRequest = createRequest(maximumNumberOfMessages);
+            List<Message> messages = sqsClient.receiveMessage(receiveMessageRequest).messages();
+            if (messages.isEmpty()) {
+                break;
+            }
+            allMessages.addAll(messages);
+        }
+        return allMessages;
+    }
+
+    private ReceiveMessageRequest createRequest(int maximumNumberOfMessages) {
+        return ReceiveMessageRequest.builder()
+                   .queueUrl(queueUrl)
+                   .waitTimeSeconds(WAITING_TIME)
+                   .maxNumberOfMessages(maximumNumberOfMessages)
+                   .messageAttributeNames(ALL_MESSAGE_ATTRIBUTES)
+                   .build();
     }
 
     @Override
