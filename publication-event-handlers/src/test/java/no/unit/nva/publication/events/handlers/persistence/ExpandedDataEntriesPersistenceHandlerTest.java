@@ -335,7 +335,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var publication = randomPublication(AcademicArticle.class).copy().withDoi(null).build();
         var persisted = Resource.fromPublication(publication)
                             .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(persisted, uriRetriever);
+        FakeUriResponse.setupFakeForType(persisted, uriRetriever, resourceService);
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
 

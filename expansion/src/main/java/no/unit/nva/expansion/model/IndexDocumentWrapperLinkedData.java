@@ -34,6 +34,7 @@ import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
@@ -69,9 +70,11 @@ public class IndexDocumentWrapperLinkedData {
     private static final int SUCCESS_FAMILY = 2;
     private static final int CLIENT_ERROR_FAMILY = 4;
     private final RawContentRetriever uriRetriever;
+    private final ResourceService resourceService;
 
-    public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever) {
+    public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever, ResourceService resourceService) {
         this.uriRetriever = uriRetriever;
+        this.resourceService = resourceService;
     }
 
     public String toFramedJsonLd(JsonNode indexDocument) {
@@ -233,7 +236,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private Optional<InputStream> getAnthology(JsonNode indexDocument) {
         return extractPublicationContextUri(indexDocument)
-                   .map(uri -> new ExpandedParentPublication(uriRetriever)
+                   .map(uri -> new ExpandedParentPublication(uriRetriever, resourceService)
                                    .getExpandedParentPublication(uri))
                    .map(IoUtils::stringToStream);
     }

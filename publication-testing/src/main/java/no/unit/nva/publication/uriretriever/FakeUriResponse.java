@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -39,7 +38,9 @@ import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
@@ -69,13 +70,16 @@ public final class FakeUriResponse {
         // NO-OP
     }
 
-    public static void setupFakeForType(Publication publication, FakeUriRetriever fakeUriRetriever) {
+    /**
+     * This setup mutes the anthology identifier to mock the response of the parent publication.
+     */
+    public static void setupFakeForType(Publication publication, FakeUriRetriever fakeUriRetriever, ResourceService resourceService) {
 
         fakeContributorResponses(publication, fakeUriRetriever);
         fakeOwnerResponse(fakeUriRetriever, publication.getResourceOwner().getOwnerAffiliation());
         fakePendingNviResponse(fakeUriRetriever, publication);
         fakeFundingResponses(fakeUriRetriever, publication);
-        fakeContextResponses(publication, fakeUriRetriever);
+        fakeContextResponses(publication, fakeUriRetriever, resourceService);
         if (publication instanceof ImportCandidate) {
             createFakeCustomerApiResponse(fakeUriRetriever);
         }
@@ -129,16 +133,18 @@ public final class FakeUriResponse {
     }
 
     private static void fakeContextResponses(Publication publication,
-                                             FakeUriRetriever fakeUriRetriever) {
+                                             FakeUriRetriever fakeUriRetriever, ResourceService resourceService) {
 
         extractPublicationContext(publication)
-            .ifPresent(publicationContext -> selectResponsesToFake(fakeUriRetriever, publicationContext));
+            .ifPresent(publicationContext -> selectResponsesToFake(fakeUriRetriever,
+                                                                   resourceService, publicationContext));
     }
 
     private static void selectResponsesToFake(FakeUriRetriever fakeUriRetriever,
-                                              PublicationContext publicationContext) {
+                                              ResourceService resourceService, PublicationContext publicationContext) {
         switch (publicationContext) {
-            case Anthology anthologyContext -> setupFakeResponsesForAnthology(fakeUriRetriever, anthologyContext);
+            case Anthology anthologyContext -> setupFakeResponsesForAnthology(fakeUriRetriever, resourceService,
+                                                                              anthologyContext);
             case Book book when book.getPublisher() instanceof Publisher publisher ->
                 setupFakeResponsesForBookTypes(fakeUriRetriever, book, publisher);
             case Degree degree when degree.getPublisher() instanceof Publisher publisher ->
@@ -176,16 +182,15 @@ public final class FakeUriResponse {
     }
 
     private static void setupFakeResponsesForAnthology(FakeUriRetriever fakeUriRetriever,
-                                                       Anthology anthologyContext) {
-        var contextUri = anthologyContext.getId();
-        var parent = randomPublication(BookAnthology.class).copy()
-                         .withIdentifier(SortableIdentifier.fromUri(contextUri))
-                         .build();
-        var parentResponse = PublicationResponse.fromPublication(parent);
-        var anthology = attempt(() -> OBJECT_MAPPER.writeValueAsString(parentResponse)).orElseThrow();
-        fakeUriRetriever.registerResponse(contextUri, SC_OK, APPLICATION_JSON_LD, anthology);
-        fakePendingNviResponse(fakeUriRetriever, parent);
-        fakeFundingResponses(fakeUriRetriever, parent);
+                                                       ResourceService resourceService, Anthology anthologyContext) {
+        var parentPublication = randomPublication(BookAnthology.class);
+        var persistedParent =
+            attempt(() -> resourceService.createPublication(UserInstance.fromPublication(parentPublication),
+                                                         parentPublication)).orElseThrow();
+        anthologyContext.setId(getPublicationId(persistedParent));
+        var parentResponse = PublicationResponse.fromPublication(parentPublication);
+        fakePendingNviResponse(fakeUriRetriever, parentPublication);
+        fakeFundingResponses(fakeUriRetriever, parentPublication);
         var book = (Book) parentResponse.getEntityDescription().getReference().getPublicationContext();
         fakePublisherResponse(fakeUriRetriever, book);
         fakeSeriesResponse(fakeUriRetriever, book);
@@ -535,5 +540,11 @@ public final class FakeUriResponse {
                       .addChild("publication")
                       .getUri();
         return URI.create(String.format("%s/%s", uri, publicationId));
+    }
+
+    private static URI getPublicationId(Publication publication) {
+        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+                   .addChild("publication")
+                   .addChild(publication.getIdentifier().toString()).getUri();
     }
 }
