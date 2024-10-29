@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import no.unit.nva.PublicationMapper;
-import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
@@ -185,7 +184,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         //TODO: when the userIsCuratorOrOwner is properlyImplementedAgain,
         // then only those should get the PublicationResponseElevatedUser
         //Regular users should receive PublicationResponse.class
-        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
+        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
         publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
