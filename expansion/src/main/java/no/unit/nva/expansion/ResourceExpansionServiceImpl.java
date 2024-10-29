@@ -15,7 +15,6 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.cristin.CristinPerson;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
