@@ -232,6 +232,34 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                                  getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
     }
 
+    public PendingOpenFile toPendingOpenFile() {
+        return new PendingOpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                   isAdministrativeAgreement(), getPublisherVersion(),
+                                   getEmbargoDate().orElse(null),
+                                   getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
+    }
+
+    public OpenFile toOpenFile() {
+        return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                   isAdministrativeAgreement(), getPublisherVersion(),
+                                   getEmbargoDate().orElse(null),
+                                   getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
+    }
+
+    public PendingInternalFile toPendingInternalFile() {
+        return new PendingInternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                   isAdministrativeAgreement(), getPublisherVersion(),
+                                   getEmbargoDate().orElse(null),
+                                   getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
+    }
+
+    public InternalFile toInternalFile() {
+        return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                            isAdministrativeAgreement(), getPublisherVersion(),
+                            getEmbargoDate().orElse(null),
+                            getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
+    }
+
     public final AdministrativeAgreement toAdministrativeAgreement() {
         if (isAdministrativeAgreement()) {
             return new AdministrativeAgreement(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
@@ -248,6 +276,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     }
 
     public abstract boolean isVisibleForNonOwner();
+
+    public abstract boolean needsApproval();
 
     public abstract Builder copy();
 

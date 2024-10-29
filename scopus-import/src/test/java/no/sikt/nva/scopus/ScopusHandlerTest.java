@@ -502,8 +502,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                         .getPublisher()
                                         .getFirst()
                                         .getPublishername();
-        //            var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
-        //            assertThat(actualPublisherName, is(expectedPublisherName));
+        var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
+        assertThat(actualPublisherName, is(expectedPublisherName));
     }
 
     @Test
@@ -1073,8 +1073,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
         authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
         piaCristinAffiliationIdAndAuthors.forEach(
-            (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(new PiaResponseGenerator(),
-                                                                                      authorGroupTp,
+            (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(authorGroupTp,
                                                                                       cristinOrganizationId));
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -1085,9 +1084,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnAffiliationWithLabelsOnlyWhenNoResponseFromCristin() throws IOException {
         scopusData = generateScopusDataWithOneAffiliation();
-        var authorGroupTpList = new ArrayList<>(keepOnlyAuthorGroups());
-        var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
-        authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = publication.getEntityDescription().getContributors();
@@ -1204,7 +1200,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri(), "application/pdf", VOR)),
                                                 List.of(new License(
                                                     URI.create("http://creativecommons.org/" + randomString()), 0,
-                                                    new Start(List.of(List.of(2023, 01, 25))), VOR)),
+                                                    new Start(List.of(List.of(2023, 1, 25))), VOR)),
                                                 new Resource(new Primary(randomUri())))).toString();
     }
 
@@ -1393,7 +1389,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                              .getHead()
                              .getSource()
                              .getPublisher();
-        publishers.removeAll(publishers);
+        publishers.clear();
     }
 
     private void mockAffiliationResponse(String cristinOrganizationId, AuthorGroupTp authorGroupTp) {
@@ -1429,9 +1425,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return affiliation;
     }
 
-    private void generatePiaAffiliationsResponse(PiaResponseGenerator piaResponseGenerator, AuthorGroupTp authorGroupTp,
+    private void generatePiaAffiliationsResponse(AuthorGroupTp authorGroupTp,
                                                  String cristinOrganizationId) {
-        var affiliationList = piaResponseGenerator.generateAffiliations(cristinOrganizationId);
+        var affiliationList = PiaResponseGenerator.generateAffiliations(cristinOrganizationId);
         createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
     }
 
@@ -1454,12 +1450,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private void mockResponsesForAuthors(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors,
                                          AuthorGroupTp authorGroupTp) {
-        authorGroupTp.getAuthorOrCollaboration()
+        var ignore = authorGroupTp.getAuthorOrCollaboration()
             .stream()
             .filter(author -> author instanceof AuthorTp)
             .map(authorTp -> (AuthorTp) authorTp)
-            .map(author -> attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author)).orElseThrow())
-            .collect(Collectors.toList());
+            .map(author -> attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author)).orElseThrow());
     }
 
     private AuthorTp generatePersonResponse(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors, AuthorTp authorTp) {
@@ -1546,7 +1541,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private void generatePiaAndCristinAffiliationResponse(AuthorGroupTp authorGroupTp, String cristinOrganizationId) {
-        var affiliation = new PiaResponseGenerator().generateAffiliation(cristinOrganizationId);
+        var affiliation = PiaResponseGenerator.generateAffiliation(cristinOrganizationId, List.of(1).iterator());
         createPiaAffiliationMock(List.of(affiliation), authorGroupTp.getAffiliation().getAfid());
         generateCristinOrganizationResponse(affiliation.getUnitIdentifier());
     }
@@ -1909,15 +1904,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
         public static final long SOME_CONTENT_LENGTH = 2932645L;
         public static final String APPLICATION_PDF_MIMETYPE = "application/pdf";
-        private final List<CopyObjectRequest> copyObjectRequestList;
-
-        public FakeS3cClientWithHeadSupport() {
-            this.copyObjectRequestList = new ArrayList<>();
-        }
 
         @Override
         public CopyObjectResponse copyObject(CopyObjectRequest copyObjectRequest) {
-            copyObjectRequestList.add(copyObjectRequest);
             return CopyObjectResponse.builder().build();
         }
 

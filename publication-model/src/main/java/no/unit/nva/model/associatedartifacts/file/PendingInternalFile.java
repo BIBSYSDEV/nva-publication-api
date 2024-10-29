@@ -1,6 +1,7 @@
 package no.unit.nva.model.associatedartifacts.file;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -53,6 +54,12 @@ public class PendingInternalFile extends File {
     @Override
     public boolean isVisibleForNonOwner() {
         return false;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean needsApproval() {
+        return true;
     }
 
     @Override
