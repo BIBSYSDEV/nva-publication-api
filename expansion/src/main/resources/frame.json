@@ -224,9 +224,16 @@
       "@container": "@set"
     },
     "curatingInstitutions": {
-      "@id": "curatingInstitution",
+      "@id": "curatingOrganization",
       "@container": "@set",
       "@type": "@id"
+    },
+    "importDetails": {
+      "@id": "importDetail",
+      "@container": "@set"
+    },
+    "valid": {
+      "@type": "xsd:boolean"
     }
   },
   "@type": "Publication",
@@ -239,21 +246,9 @@
         "@default": "@null"
       },
       "affiliations": {
-        "@explicit": true,
         "@default": "@null",
         "@embed": "@always",
-        "type": "Organization",
-        "labels": {
-          "@embed": "@always"
-        },
-        "countryCode": {
-          "@embed": "@always",
-          "@default": "@null"
-        },
-        "name": {
-          "@embed": "@always",
-          "@default": "@null"
-        }
+        "type": "Organization"
       }
     },
     "reference": {
@@ -295,5 +290,8 @@
   },
   "contributorOrganization": {
     "@embed": "@never"
+  },
+  "topLevelOrganizations": {
+    "@embed": "@always"
   }
 }

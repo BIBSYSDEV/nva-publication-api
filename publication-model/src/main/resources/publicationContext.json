@@ -181,7 +181,7 @@
     "@container": "@set"
   },
   "curatingInstitutions": {
-    "@id": "curatingInstitution",
+    "@id": "curatingOrganization",
     "@type": "@id",
     "@container": "@set"
   },
@@ -193,5 +193,8 @@
   "importDetails": {
     "@id": "importDetail",
     "@container": "@set"
+  },
+  "valid": {
+    "@type": "xsd:boolean"
   }
 }

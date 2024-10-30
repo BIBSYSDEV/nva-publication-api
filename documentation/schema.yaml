@@ -28,6 +28,18 @@ AcademicChapter:
         $ref: "#/components/schemas/Range"
       type:
         type: string
+AcademicCommentary:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: "#/components/schemas/PublicationInstancePages"
+  - type: object
+    properties:
+      pages:
+        $ref: "#/components/schemas/MonographPages"
+      type:
+        type: string
 AcademicLiteratureReview:
   required:
   - type
@@ -589,6 +601,7 @@ CuratingInstitution:
       type: string
       format: uri
     contributorCristinIds:
+      uniqueItems: true
       type: array
       items:
         type: string
