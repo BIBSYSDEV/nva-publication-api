@@ -120,7 +120,7 @@ class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
         when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenReturn(request);
         return PresignedUri.builder()
                    .withFileIdentifier(file.getIdentifier())
-                   .withUri(presignedUrl.toURI())
+                   .withSignedUri(presignedUrl.toURI())
                    .withExpiration(expires)
                    .build();
     }

@@ -967,6 +967,37 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
+  NvaDownloadPublicationFileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: create-presigned-download-url
+      Handler: no.unit.nva.download.publication.file.CreatePresignedDownloadUrlHandler::handleRequest
+      Runtime: java17
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
+          API_SCHEME: https
+          API_HOST: !Sub api.${CustomDomain}
+          SHORTENED_URI_TABLE_NAME: !Sub nva-url-shorterner-${AWS::StackName}
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          COGNITO_HOST: !Ref CognitoAuthorizationUri
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+      Role: !GetAtt UploadExecutionRole.Arn
+      Events:
+        AuthorizedGetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/files/{fileIdentifier}
+            Method: get
+            RestApiId: !Ref NvaDownloadPublicationFileApi
+        AnonymousGetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/publicFiles/{fileIdentifier}
+            Method: get
+            RestApiId: !Ref NvaDownloadPublicationFileApi
+
   #==========================Event Lambda functions====================================================
 
   BrageMigrationEventConsumer:
