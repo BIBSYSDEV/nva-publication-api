@@ -104,7 +104,6 @@ import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -153,7 +152,6 @@ class ExpandedResourceTest {
         assertTrue(publisher.isNotEmpty());
     }
 
-    // TODO: Uses real network calls. Should be fixed
     @Test
     void shouldReturnIndexDocumentWithValidContributorAffiliationCountryCode() throws Exception {
         var publication = randomPublication();
