@@ -29,7 +29,6 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -48,11 +47,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import java.util.Optional;
 import software.amazon.awssdk.services.s3.S3Client;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 
 class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
@@ -60,7 +55,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
     public static final String JSONLD_CONTEXT = "@context";
     public static final ObjectMapper DTO_OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
-    private static final String EMPTY_OBJECT = "{}";
+
     private AnalyticsIntegrationHandler analyticsIntegration;
     private ByteArrayOutputStream outputStream;
     private S3Driver s3Driver;
@@ -151,9 +146,14 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
         Publication samplePublication = insertSamplePublication();
+        var fakeUriRetriever = FakeUriRetriever.newInstance();
+        FakeUriResponse.setupFakeForType(samplePublication, fakeUriRetriever);
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
         doiRequest.fetchMessages(ticketService);
-        var resourceExpansionService = setupResourceExpansionService();
+        ResourceExpansionService resourceExpansionService = new ResourceExpansionServiceImpl(resourceService,
+                                                                                             ticketService,
+                                                                                             fakeUriRetriever,
+                                                                                             fakeUriRetriever);
         return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
     }
 
@@ -162,15 +162,6 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = Resource.fromPublication(samplePublication).persistNew(resourceService, userInstance);
         return samplePublication;
-    }
-
-    private ResourceExpansionService setupResourceExpansionService() {
-        var mockUriRetriever = mock(UriRetriever.class);
-        doReturn(Optional.of(EMPTY_OBJECT))
-            .when(mockUriRetriever)
-            .getRawContent(any(),any());
-
-        return new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
     }
 
     private URI expandPublicationAndSaveToS3(Publication publication) throws IOException {

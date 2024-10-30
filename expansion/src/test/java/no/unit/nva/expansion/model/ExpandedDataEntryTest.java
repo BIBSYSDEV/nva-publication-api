@@ -18,7 +18,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -68,7 +67,6 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -108,8 +106,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
     public static final Book BOOK_SAMPLE = new Book(null, randomString(), new Publisher(randomUri()), List.of(),
                                                     Revision.UNREVISED);
-    private static final String EMPTY_OBJECT = "{}";
 
+    private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
     private TicketService ticketService;
     private MessageService messageService;
@@ -137,6 +135,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.messageService = getMessageService();
         this.ticketService = getTicketService();
         this.uriRetriever = FakeUriRetriever.newInstance();
+        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever
+            , uriRetriever);
     }
 
     @ParameterizedTest()
@@ -352,8 +352,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("publicationInstanceProvider")
     void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
         var publication = createPublishedPublicationWithoutDoi(instanceType);
+        FakeUriResponse.setupFakeForType(publication, uriRetriever);
         var doiRequest = createDoiRequest(publication);
-        var resourceExpansionService = setupResourceExpansionService();
         var expandedResource = ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService,
                                                               ticketService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
@@ -365,22 +365,12 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type)
         throws ApiGatewayException, JsonProcessingException {
 
-        var resourceExpansionService = setupResourceExpansionService();
         var expandedDataEntry = ExpandedDataEntryWithAssociatedPublication.create(type, resourceExpansionService,
                                                                                   resourceService, messageService,
                                                                                   ticketService, uriRetriever);
         SortableIdentifier identifier = expandedDataEntry.getExpandedDataEntry().identifyExpandedEntry();
         SortableIdentifier expectedIdentifier = extractExpectedIdentifier(expandedDataEntry);
         assertThat(identifier, is(equalTo(expectedIdentifier)));
-    }
-
-    private ResourceExpansionService setupResourceExpansionService() {
-        var mockUriRetriever = mock(UriRetriever.class);
-        doReturn(Optional.of(EMPTY_OBJECT))
-            .when(mockUriRetriever)
-            .getRawContent(any(),any());
-
-        return new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
     }
 
     private static Reference createReference(PublicationContext publicationContext) {
