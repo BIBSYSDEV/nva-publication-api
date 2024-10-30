@@ -18,6 +18,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -219,10 +221,17 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     private List<AssociatedArtifact> updateUnpublishedFiles(Publication publication) {
         var associatedArtifacts = publication.getAssociatedArtifacts();
         return associatedArtifacts.stream()
-                   .map(file -> file instanceof UnpublishedFile unpublishedFile
-                                    ? unpublishedFile.toUnpublishableFile()
-                                    : file)
+                   .map(this::rejectIfUnpublished)
                    .toList();
+    }
+
+    private AssociatedArtifact rejectIfUnpublished(AssociatedArtifact associatedArtifact) {
+        return switch (associatedArtifact) {
+            case UnpublishedFile unpublishedFile -> unpublishedFile.toUnpublishableFile();
+            case PendingInternalFile pendingInternalFile -> pendingInternalFile.toRejectedFile();
+            case PendingOpenFile pendingOpenFile -> pendingOpenFile.toRejectedFile();
+            case null, default -> associatedArtifact;
+        };
     }
 
     private TicketEntry fetchTicket(RequestUtils requestUtils)
