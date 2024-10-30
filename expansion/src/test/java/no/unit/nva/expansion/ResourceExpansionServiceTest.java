@@ -224,7 +224,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(indexDoc.fetchId(), is(not(nullValue())));
     }
 
-    // TODO: Uses real network calls. Should be fixed
     @ParameterizedTest(name = "should return framed index document containing license:{0}")
     @MethodSource("licenseProvider")
     void shouldReturnIndexDocumentContainingLicense(String licenseUri, LicenseType expectedLicense)
@@ -391,7 +390,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(actualAffiliation, is(equalTo(expectedOrgId)));
     }
 
-    // TODO: Uses real network calls. Should be fixed
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldGetOrganizationIdentifierForAffiliations(Class<? extends TicketEntry> ticketType,

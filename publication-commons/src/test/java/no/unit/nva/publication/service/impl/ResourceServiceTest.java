@@ -912,7 +912,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
     }
 
-    @Test // TODO: Uses real network calls. Should be fixed
+    @Test
     void shouldSetCuratingInstitutionsWhenUpdatingPublication() throws ApiGatewayException {
         var publishedResource = createPublishedResource();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
@@ -951,7 +951,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    is(equalTo(topLevelId)));
     }
 
-    @Test // TODO: Uses real network calls. Should be fixed
+    @Test
     void shouldSetCuratingInstitutionsWhenUpdatingImportCandidate() throws ApiGatewayException {
         var importCandidate = randomImportCandidate();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
@@ -996,7 +996,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    is(equalTo(topLevelId)));
     }
 
-    @Test // TODO: Uses real network calls. Should be fixed
+    @Test
     void shouldSetCuratingInstitutionsWhenUpdatingNewPublicationWithoutEntityDescription() throws ApiGatewayException {
         var template = randomPublication().copy();
         var entityDescription = template.build().getEntityDescription();
