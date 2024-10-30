@@ -31,9 +31,9 @@ import nva.commons.core.JacocoGenerated;
 // TODO: Remove File annotation once all data has been migrated
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = PublishedFile.TYPE, value = PublishedFile.class),
-    @JsonSubTypes.Type(names = {UnpublishedFile.TYPE, "File"}, value = UnpublishedFile.class),
-    @JsonSubTypes.Type(name = AdministrativeAgreement.TYPE, value = AdministrativeAgreement.class),
+    @JsonSubTypes.Type(name = PublishedFile.TYPE, value = OpenFile.class),
+    @JsonSubTypes.Type(names = {UnpublishedFile.TYPE, "File"}, value = PendingOpenFile.class),
+    @JsonSubTypes.Type(name = AdministrativeAgreement.TYPE, value = InternalFile.class),
     @JsonSubTypes.Type(name = OpenFile.TYPE, value = OpenFile.class),
     @JsonSubTypes.Type(name = PendingOpenFile.TYPE, value = PendingOpenFile.class),
     @JsonSubTypes.Type(name = InternalFile.TYPE, value = InternalFile.class),
@@ -199,7 +199,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         return administrativeAgreement;
     }
 
-    public PublisherVersion getPublisherVersion(){
+    public PublisherVersion getPublisherVersion() {
         return publisherVersion;
     }
 
@@ -246,27 +246,11 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                                    getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
     }
 
-    public PendingInternalFile toPendingInternalFile() {
-        return new PendingInternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                                   isAdministrativeAgreement(), getPublisherVersion(),
-                                   getEmbargoDate().orElse(null),
-                                   getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
-    }
-
     public InternalFile toInternalFile() {
         return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
                             isAdministrativeAgreement(), getPublisherVersion(),
                             getEmbargoDate().orElse(null),
                             getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
-    }
-
-    public final AdministrativeAgreement toAdministrativeAgreement() {
-        if (isAdministrativeAgreement()) {
-            return new AdministrativeAgreement(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                                               isAdministrativeAgreement(), getPublisherVersion(),
-                                               getEmbargoDate().orElse(null), getUploadDetails());
-        }
-        throw new IllegalStateException("Can not make unpublishable a non-administrative agreement");
     }
 
     public final AdministrativeAgreement toUnpublishableFile() {
@@ -343,7 +327,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     }
 
     private String getLicenseValue(Map<?, ?> license) {
-        return (String) license.get("identifier");
+        return (String) license.get(IDENTIFIER_FIELD);
     }
 
     /**

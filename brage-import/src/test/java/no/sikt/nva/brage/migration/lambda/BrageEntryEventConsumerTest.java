@@ -117,24 +117,24 @@ import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCo
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
-import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.UnconfirmedCourse;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
@@ -1114,7 +1114,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldMigrateAdministrativeAgreementFromIncomingWhenExistingPublicationDoesNotHaveAdministrativeAgreement()
+    void shouldMigrateInternalFileFromIncomingWhenExistingPublicationDoesNotHaveInternalFile()
         throws IOException, InvalidUnconfirmedSeriesException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DegreeBachelor.class);
@@ -1156,7 +1156,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var actualPublicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
 
         assertTrue(actualPublicationRepresentation.publication().getAssociatedArtifacts().stream()
-                       .anyMatch(AdministrativeAgreement.class::isInstance));
+                       .anyMatch(InternalFile.class::isInstance));
     }
 
     @Test
@@ -1665,7 +1665,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                   .withYear("2022")
                                                                   .build());
         publication.setHandle(randomUri());
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPublishedFile())));
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomOpenFile())));
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
         var existingPublication =
@@ -2334,10 +2334,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .addChild(String.valueOf(cristinPublication.getIdentifier()));
     }
 
-    private AssociatedArtifact randomPublishedFile() {
+    private AssociatedArtifact randomOpenFile() {
 
-        return new PublishedFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null, false,
-                                 PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
+        return new OpenFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null, false,
+                            PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
             RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(), new ImportUploadDetails(null, null, null));
     }
 

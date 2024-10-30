@@ -283,20 +283,20 @@ public final class TicketTestUtils {
 
     public static Publication createPersistedPublicationWithUnpublishedFiles(
             PublicationStatus status, ResourceService resourceService) throws ApiGatewayException {
-        var publication = randomPublicationWithUnpublishedFiles(status);
+        var publication = randomPublicationWithPendingOpenFiles(status);
         return persistPublication(resourceService, publication);
     }
 
     public static Publication createPersistedPublicationWithUnpublishedFiles(
             URI publisher, PublicationStatus status, ResourceService resourceService)
             throws ApiGatewayException {
-        var publication = randomPublicationWithUnpublishedFiles(publisher, status);
+        var publication = randomPublicationWithPendingOpenFiles(publisher, status);
         return persistPublication(resourceService, publication);
     }
 
     public static Publication createdPersistedPublicationWithoutMainTitle(
             PublicationStatus status, ResourceService resourceService) throws ApiGatewayException {
-        var publication = randomPublicationWithUnpublishedFiles(status);
+        var publication = randomPublicationWithPendingOpenFiles(status);
         publication.getEntityDescription().setMainTitle(null);
         return persistPublication(resourceService, publication);
     }
@@ -433,17 +433,17 @@ public final class TicketTestUtils {
                 .build();
     }
 
-    private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
+    private static Publication randomPublicationWithPendingOpenFiles(PublicationStatus status) {
         var publication =
                 fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
                         .copy()
                         .withStatus(status)
                         .build();
-        unpublishFiles(publication);
+        convertFilesToPendingOpenFiles(publication);
         return publication;
     }
 
-    private static Publication randomPublicationWithUnpublishedFiles(
+    private static Publication randomPublicationWithPendingOpenFiles(
             URI publisherId, PublicationStatus status) {
         var publication =
                 randomNonDegreePublication(PUBLISHED)
@@ -451,7 +451,7 @@ public final class TicketTestUtils {
                         .withPublisher(new Organization.Builder().withId(publisherId).build())
                         .withStatus(status)
                         .build();
-        unpublishFiles(publication);
+        convertFilesToPendingOpenFiles(publication);
         return publication;
     }
 
@@ -472,12 +472,12 @@ public final class TicketTestUtils {
         return elements.get(RANDOM.nextInt(elements.size()));
     }
 
-    private static void unpublishFiles(Publication publication) {
+    private static void convertFilesToPendingOpenFiles(Publication publication) {
         var list =
                 publication.getAssociatedArtifacts().stream()
                         .filter(File.class::isInstance)
                         .map(File.class::cast)
-                        .map(File::toUnpublishedFile)
+                        .map(File::toPendingOpenFile)
                         .collect(
                                 Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));

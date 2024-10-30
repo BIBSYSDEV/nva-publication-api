@@ -353,7 +353,7 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldKeepFileFromNewPublicationWhenExistingPublicationHasAdministrativeAgreementOnly()
+    void shouldKeepFileFromNewPublicationWhenExistingPublicationHasInternalFileOnly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var administrativeAgreement = randomAdministrativeAgreement();
         var newPublishedFile = randomPublishedFile();

@@ -202,9 +202,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     private List<AssociatedArtifact> randomFileWithLicense(URI license) {
-        return List.of(File.builder().withLicense(license).withIdentifier(randomUUID()).buildPublishedFile(),
-                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildUnpublishableFile(),
-                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildUnpublishedFile(),
+        return List.of(File.builder().withLicense(license).withIdentifier(randomUUID()).buildOpenFile(),
+                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildInternalFile(),
+                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildPendingInternalFile(),
                        new AssociatedLink(randomUri(), randomString(), randomString()));
     }
 
