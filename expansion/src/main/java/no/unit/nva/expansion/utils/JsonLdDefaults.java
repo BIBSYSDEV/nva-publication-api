@@ -33,10 +33,10 @@ public final class JsonLdDefaults {
         }
     }
 
-    private static String write(JsonObject frame) {
+    private static String write(JsonObject framedObject) {
         var stringWriter = new StringWriter();
         try (var jsonWriter = Json.createWriter(stringWriter)) {
-            jsonWriter.write(frame);
+            jsonWriter.write(framedObject);
         }
         return stringWriter.toString();
     }
