@@ -28,6 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +60,7 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -383,10 +385,15 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
             claims.put(INJECT_TOP_ORG_CRISTIN_ID_CLAIM, topLevelCristinOrgId.toString());
         }
 
-        var requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
 
         return requestInfo;
+    }
+
+    private static RequestInfo getRequestInfo() {
+        return new RequestInfo(mock(HttpClient.class), RandomDataGenerator::randomUri,
+                               RandomDataGenerator::randomUri);
     }
 
     private RequestInfo createThirdPartyRequestInfo(List<AccessRight> accessRights)
@@ -400,7 +407,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
 
-        var requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
 
         return requestInfo;
@@ -413,7 +420,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
 
-        var requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
         requestInfo.setHeaders(Map.of(AUTHORIZATION, BEARER_TOKEN));
 
@@ -428,7 +435,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
         claims.put(SCOPE_CLAIM, BACKEND_SCOPE);
 
-        var requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
         requestInfo.setHeaders(Map.of(AUTHORIZATION, BEARER_TOKEN));
 
