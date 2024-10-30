@@ -82,6 +82,9 @@
   "handle": {
     "@type": "@id"
   },
+  "illustrated": {
+    "@type": "xsd:boolean"
+  },
   "indexedDate": {
     "@type": "xsd:dateTime"
   },
