@@ -302,7 +302,7 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
 
-        if (publishedFilesAreUnchanged(existingPublication, input)) {
+        if (openFilesAreUnchanged(existingPublication, input)) {
             permissionStrategy.authorize(UPDATE);
         } else {
             permissionStrategy.authorize(UPDATE_FILES);
@@ -346,14 +346,15 @@ public class UpdatePublicationHandler
         }
     }
 
-    private static boolean publishedFilesAreUnchanged(Publication existingPublication,
-                                                      UpdatePublicationRequest input) {
+    //TODO: Should this method also compare changes of internal files?
+    private static boolean openFilesAreUnchanged(Publication existingPublication,
+                                                 UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
-                             .filter(PublishedFile.class::isInstance)
-                             .map(PublishedFile.class::cast).toList();
+                             .filter(OpenFile.class::isInstance)
+                             .map(OpenFile.class::cast).toList();
         var existingFiles = existingPublication.getAssociatedArtifacts().stream()
-                                .filter(PublishedFile.class::isInstance)
-                                .map(PublishedFile.class::cast);
+                                .filter(OpenFile.class::isInstance)
+                                .map(OpenFile.class::cast);
         return existingFiles.allMatch(inputFiles::contains);
     }
 
