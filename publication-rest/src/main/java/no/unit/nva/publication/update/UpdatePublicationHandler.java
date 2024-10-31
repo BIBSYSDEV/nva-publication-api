@@ -132,7 +132,7 @@ public class UpdatePublicationHandler
                                     S3Client s3Client,
                                     SecretsManagerClient secretsManagerClient,
                                     HttpClient httpClient) {
-        super(PublicationRequest.class, environment);
+        super(PublicationRequest.class, environment, httpClient);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;

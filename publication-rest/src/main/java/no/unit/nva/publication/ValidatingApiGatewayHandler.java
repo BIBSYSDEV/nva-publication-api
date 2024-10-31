@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
+import java.net.http.HttpClient;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,8 +17,8 @@ import nva.commons.core.Environment;
 public abstract class ValidatingApiGatewayHandler<I, O> extends ApiGatewayHandler<I, O> {
     private final Validator validator;
 
-    public ValidatingApiGatewayHandler(Class<I> iclass, Environment environment) {
-        super(iclass, environment);
+    public ValidatingApiGatewayHandler(Class<I> iclass, Environment environment, HttpClient httpClient) {
+        super(iclass, environment, httpClient);
         try (var factory = Validation.buildDefaultValidatorFactory()) {
             validator = factory.getValidator();
         }
