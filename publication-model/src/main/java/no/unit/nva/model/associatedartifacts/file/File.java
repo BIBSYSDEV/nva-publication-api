@@ -238,6 +238,21 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                                 getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
     }
 
+    public final RejectedFile toRejectedFile() {
+        return new RejectedFile(
+                getIdentifier(),
+                getName(),
+                getMimeType(),
+                getSize(),
+                getLicense(),
+                isAdministrativeAgreement(),
+                getPublisherVersion(),
+                getEmbargoDate().orElse(null),
+                getRightsRetentionStrategy(),
+                getLegalNote(),
+                getUploadDetails());
+    }
+
     public abstract boolean isVisibleForNonOwner();
 
     public abstract boolean needsApproval();

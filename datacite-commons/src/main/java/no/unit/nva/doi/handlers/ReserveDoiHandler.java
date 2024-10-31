@@ -25,12 +25,13 @@ public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
         this(ResourceService.defaultService(),
              new DataCiteDoiClient(getDefaultHttpClient(),
                                    SecretsReader.defaultSecretsManagerClient(), new Environment().readEnv("API_HOST")),
-             new Environment());
+             new Environment(),
+             HttpClient.newBuilder().build());
     }
 
     public ReserveDoiHandler(ResourceService resourceService,
-                             DataCiteDoiClient reserveDoiClient, Environment environment) {
-        super(Void.class, environment);
+                             DataCiteDoiClient reserveDoiClient, Environment environment, HttpClient httpclient) {
+        super(Void.class, environment, httpclient);
         this.reserveDoiService = new ReserveDoiService(resourceService, reserveDoiClient);
     }
 

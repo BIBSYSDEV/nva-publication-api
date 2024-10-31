@@ -5,7 +5,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.http.HttpClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -13,6 +15,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiIoException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -50,14 +53,15 @@ class UserInstanceTest {
     }
     
     @Test
-    void shouldReturnUserInstanceFromRequestInfo() throws JsonProcessingException, UnauthorizedException {
+    void shouldReturnUserInstanceFromRequestInfo() throws JsonProcessingException, UnauthorizedException,
+                                                          ApiIoException {
         var customerId = randomUri();
         var username = randomString();
         var httpRequest = new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                               .withCurrentCustomer(customerId)
                               .withNvaUsername(username)
                               .build();
-        var requestInfo = RequestInfo.fromRequest(httpRequest);
+        var requestInfo = RequestInfo.fromRequest(httpRequest, mock(HttpClient.class));
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
         assertThat(userInstance.getUsername(), is(equalTo(username)));
         assertThat(userInstance.getCustomerId(), is(equalTo(customerId)));

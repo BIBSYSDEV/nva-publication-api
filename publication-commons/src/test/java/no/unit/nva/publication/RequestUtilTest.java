@@ -11,6 +11,7 @@ import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
 import static no.unit.nva.publication.RequestUtil.getIdentifier;
 import static no.unit.nva.publication.RequestUtil.getImportCandidateIdentifier;
 import static no.unit.nva.publication.RequestUtil.getOwner;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.http.HttpClient;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -54,12 +56,17 @@ class RequestUtilTest {
     void shouldReturnCorrectIdentifierWhenIdentifierIsSet(String pathParameterKey,
                                                           Function<RequestInfo, SortableIdentifier> identifierGetter) {
         var uuid = SortableIdentifier.next();
-        var requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setPathParameters(Map.of(pathParameterKey, uuid.toString()));
 
         var identifier = identifierGetter.apply(requestInfo);
 
         assertEquals(uuid, identifier);
+    }
+
+    private static RequestInfo getRequestInfo() {
+        return new RequestInfo(mock(HttpClient.class), RandomDataGenerator::randomUri,
+                                          RandomDataGenerator::randomUri);
     }
 
     private static Stream<Arguments> provideIdentifiersForTesting() {
@@ -78,7 +85,7 @@ class RequestUtilTest {
     @Test
     void canGetFileIdentifierFromRequest() throws ApiGatewayException {
         var uuid = randomUUID();
-        var requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, uuid.toString()));
 
         var identifier = getFileIdentifier(requestInfo);
@@ -88,7 +95,7 @@ class RequestUtilTest {
     
     @Test
     void getIdentifierOnInvalidRequestThrowsException() {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         assertThrows(BadRequestException.class, () -> getIdentifier(requestInfo));
         assertThrows(BadRequestException.class, () -> getImportCandidateIdentifier(requestInfo));
         assertThrows(BadRequestException.class, () -> getFileIdentifier(requestInfo));
@@ -96,7 +103,7 @@ class RequestUtilTest {
     
     @Test
     void canGetOwnerFromRequest() throws Exception {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(INJECT_NVA_USERNAME_CLAIM, VALUE));
         
         String owner = getOwner(requestInfo);
@@ -106,14 +113,14 @@ class RequestUtilTest {
     
     @Test
     void getOwnerThrowsUnauthorizedExceptionWhenOwnerCannotBeRetrieved() {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         assertThrows(UnauthorizedException.class, () -> getOwner(requestInfo));
     }
 
     @Test
     void createExternalUserInstanceReturnsNonNullValue()
         throws NotFoundException, JsonProcessingException, UnauthorizedException {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
             INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
             INJECT_CLIENT_ID_CLAIM, "clientId"
@@ -130,7 +137,7 @@ class RequestUtilTest {
     @Test
     void createExternalUserInstanceThrowsUnauthorizedWhenClientIdIsMissing()
         throws NotFoundException, JsonProcessingException {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
             INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER
         )));
@@ -147,7 +154,7 @@ class RequestUtilTest {
     void createInternalUserInstanceReturnsValidData() throws ApiGatewayException {
 
         var username = RandomDataGenerator.randomString();
-        var customer = RandomDataGenerator.randomUri();
+        var customer = randomUri();
 
         RequestInfo requestInfo = mock(RequestInfo.class);
         when(requestInfo.getCurrentCustomer()).thenReturn(customer);

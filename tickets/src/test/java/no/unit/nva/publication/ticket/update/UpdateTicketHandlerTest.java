@@ -462,7 +462,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldMarkTicketAsReadWhenCuratorOpensNotViewedTicket(Class<? extends TicketEntry> ticketType,
-                                                                 PublicationStatus status)
+                                                               PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = setupUnassignedPersistedTicket(ticketType, publication);
@@ -548,8 +548,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldUpdatePendingFilesToRejectedWhenRejectingPublishingRequest()
-        throws ApiGatewayException, IOException {
+    void shouldUpdatePendingFilesToRejectedWhenRejectingPublishingRequest() throws ApiGatewayException, IOException {
 
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             PublicationStatus.DRAFT, resourceService);
@@ -626,7 +625,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertEquals(response.getStatusCode(),HTTP_ACCEPTED);
+        assertEquals(response.getStatusCode(), HTTP_ACCEPTED);
     }
 
     @Test
@@ -644,7 +643,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertEquals(response.getStatusCode(),HTTP_ACCEPTED);
+        assertEquals(response.getStatusCode(), HTTP_ACCEPTED);
     }
 
     private InputStream userUpdatesTicket(TicketEntry ticket, URI userId, URI customer) throws JsonProcessingException {
@@ -774,10 +773,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     private TicketEntry persistPublishingRequestContainingExistingPendingOpenFiles(Publication publication)
         throws ApiGatewayException {
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication,
+                                                                                              PublishingRequestCase.class,
                                                                                               SortableIdentifier::next)
-                                                            .withOwner(UserInstance.fromPublication(publication).getUsername())
-                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+                                                            .withOwner(
+                                                                UserInstance.fromPublication(publication).getUsername())
+                                                            .withOwnerAffiliation(
+                                                                publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }

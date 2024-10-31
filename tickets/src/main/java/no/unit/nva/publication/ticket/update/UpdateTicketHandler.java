@@ -219,8 +219,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     private List<AssociatedArtifact> rejectFiles(Publication publication) {
         var associatedArtifacts = publication.getAssociatedArtifacts();
         return associatedArtifacts.stream()
-                   .map(file -> file instanceof PendingFile rejectableFile
-                                    ? rejectableFile.reject()
+                   .map(file -> file instanceof PendingFile<?> pendingFile
+                                    ? pendingFile.reject()
                                     : file)
                    .toList();
     }
