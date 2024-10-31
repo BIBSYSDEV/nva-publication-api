@@ -13,7 +13,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PendingOpenFile.TYPE)
-public class PendingOpenFile extends File {
+public class PendingOpenFile extends File implements PendingFile<OpenFile> {
     public static final String TYPE = "PendingOpenFile";
 
     /**
@@ -59,6 +59,20 @@ public class PendingOpenFile extends File {
     @JsonIgnore
     public boolean needsApproval() {
         return true;
+    }
+
+    @Override
+    public RejectedFile reject() {
+        return new RejectedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
+                                getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
+    }
+
+    @Override
+    public OpenFile approve() {
+        return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
+                                getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
     }
 
     @Override

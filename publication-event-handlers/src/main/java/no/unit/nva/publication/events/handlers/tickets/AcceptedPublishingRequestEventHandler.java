@@ -18,8 +18,6 @@ import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -223,14 +221,10 @@ public class AcceptedPublishingRequestEventHandler
                 .toList();
     }
 
+    //TODO: should be refactored and use PendingFile interface
     private AssociatedArtifact publishFileIfApproved(
             AssociatedArtifact associatedArtifact, PublishingRequestCase publishingRequestCase) {
         return switch (associatedArtifact) {
-            case UnpublishedFile unpublishedFile -> publishingRequestCase
-                                                        .getApprovedFiles()
-                                                        .contains(unpublishedFile.getIdentifier())
-                                                        ? toPublishedFile(unpublishedFile, publishingRequestCase)
-                                                        : unpublishedFile;
             case PendingInternalFile pendingInternalFile -> publishingRequestCase
                                                                 .getApprovedFiles()
                                                                 .contains(pendingInternalFile.getIdentifier())
@@ -253,12 +247,6 @@ public class AcceptedPublishingRequestEventHandler
                 unpublishedFile.getClass().getSimpleName(),
                 publishingRequestCase.getIdentifier(),
                 publishingRequestCase.getResourceIdentifier());
-    }
-
-    private static PublishedFile toPublishedFile(
-            UnpublishedFile unpublishedFile, PublishingRequestCase publishingRequestCase) {
-        logFilePublish(unpublishedFile, publishingRequestCase);
-        return unpublishedFile.toPublishedFile();
     }
 
     private static InternalFile toInternalFile(

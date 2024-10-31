@@ -18,9 +18,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -201,7 +199,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                                               UpdateTicketRequest ticketRequest)
         throws NotFoundException {
         if (CLOSED.equals(ticketRequest.getStatus())) {
-            updateUnpublishedFilesToUnpublishable(ticket.getResourceIdentifier());
+            updatePendingFilesToRejected(ticket.getResourceIdentifier());
         }
         if (COMPLETED.equals(ticketRequest.getStatus())) {
             ticket.approveFiles();
@@ -209,29 +207,22 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         }
     }
 
-    private void updateUnpublishedFilesToUnpublishable(SortableIdentifier publicationIdentifier)
+    private void updatePendingFilesToRejected(SortableIdentifier publicationIdentifier)
         throws NotFoundException {
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
         var updatedPublication = publication.copy()
-                                     .withAssociatedArtifacts(updateUnpublishedFiles(publication))
+                                     .withAssociatedArtifacts(rejectFiles(publication))
                                      .build();
         resourceService.updatePublication(updatedPublication);
     }
 
-    private List<AssociatedArtifact> updateUnpublishedFiles(Publication publication) {
+    private List<AssociatedArtifact> rejectFiles(Publication publication) {
         var associatedArtifacts = publication.getAssociatedArtifacts();
         return associatedArtifacts.stream()
-                   .map(this::rejectIfUnpublished)
+                   .map(file -> file instanceof PendingFile<?> pendingFile
+                                    ? pendingFile.reject()
+                                    : file)
                    .toList();
-    }
-
-    private AssociatedArtifact rejectIfUnpublished(AssociatedArtifact associatedArtifact) {
-        return switch (associatedArtifact) {
-            case UnpublishedFile unpublishedFile -> unpublishedFile.toUnpublishableFile();
-            case PendingInternalFile pendingInternalFile -> pendingInternalFile.toRejectedFile();
-            case PendingOpenFile pendingOpenFile -> pendingOpenFile.toRejectedFile();
-            case null, default -> associatedArtifact;
-        };
     }
 
     private TicketEntry fetchTicket(RequestUtils requestUtils)
