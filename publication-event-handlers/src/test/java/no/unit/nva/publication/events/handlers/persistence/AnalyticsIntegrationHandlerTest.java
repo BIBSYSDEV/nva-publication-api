@@ -147,7 +147,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
         Publication samplePublication = insertSamplePublication();
         var fakeUriRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(samplePublication, fakeUriRetriever);
+        FakeUriResponse.setupFakeForType(samplePublication, fakeUriRetriever, resourceService);
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
         doiRequest.fetchMessages(ticketService);
         ResourceExpansionService resourceExpansionService = new ResourceExpansionServiceImpl(resourceService,
