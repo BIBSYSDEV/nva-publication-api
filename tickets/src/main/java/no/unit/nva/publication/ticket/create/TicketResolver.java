@@ -21,6 +21,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.FileForApproval;
@@ -234,6 +235,9 @@ public class TicketResolver {
         }
         if (artifact instanceof AdministrativeAgreement administrativeAgreement) {
             return administrativeAgreement;
+        }
+        if (artifact instanceof RejectedFile rejectedFile) {
+            return rejectedFile;
         } else {
             return artifact instanceof File file ? file.toPublishedFile() : artifact;
         }
