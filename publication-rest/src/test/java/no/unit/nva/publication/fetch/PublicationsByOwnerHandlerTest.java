@@ -15,12 +15,14 @@ import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.http.HttpClient;
 import java.util.List;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -67,7 +69,7 @@ class PublicationsByOwnerHandlerTest {
         
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
-            new PublicationsByOwnerHandler(resourceService, environment, identityServiceClient);
+            new PublicationsByOwnerHandler(resourceService, environment, identityServiceClient, mock(HttpClient.class));
     }
     
     @Test

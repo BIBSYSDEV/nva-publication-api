@@ -166,8 +166,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private URI expandPublicationAndSaveToS3(Publication publication) throws IOException {
         var fakeUrlRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(publication, fakeUrlRetriever);
-        var expandedPublication = ExpandedResource.fromPublication(fakeUrlRetriever, publication);
+        FakeUriResponse.setupFakeForType(publication, fakeUrlRetriever, resourceService);
+        var expandedPublication = ExpandedResource.fromPublication(fakeUrlRetriever, resourceService, publication);
         var resourceJson = DTO_OBJECT_MAPPER.writeValueAsString(expandedPublication);
         var randomPath = formatPublicationFilename(expandedPublication);
         return s3Driver.insertFile(randomPath, resourceJson);

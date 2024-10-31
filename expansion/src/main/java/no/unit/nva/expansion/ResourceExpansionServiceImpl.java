@@ -68,7 +68,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
         if (dataEntry instanceof Resource resource) {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
-            var expandedResource = ExpandedResource.fromPublication(uriRetriever, resource.toPublication(resourceService));
+            var expandedResource = ExpandedResource.fromPublication(uriRetriever,
+             resourceService, resource.toPublication(resourceService));
             var resourceWithContextUri = replaceInlineContextWithUriContext(expandedResource);
             return attempt(
                 () -> objectMapper.readValue(resourceWithContextUri.toString(), ExpandedResource.class)).orElseThrow();

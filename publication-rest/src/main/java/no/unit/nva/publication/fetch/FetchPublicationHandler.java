@@ -20,6 +20,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         this(ResourceService.defaultService(),
              new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
              new Environment(),
-             IdentityServiceClient.prepare());
+             IdentityServiceClient.prepare(),
+             HttpClient.newHttpClient());
     }
 
     /**
@@ -78,8 +80,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     public FetchPublicationHandler(ResourceService resourceService,
                                    RawContentRetriever authorizedBackendUriRetriever,
                                    Environment environment,
-                                   IdentityServiceClient identityServiceClient) {
-        super(Void.class, environment);
+                                   IdentityServiceClient identityServiceClient,
+                                   HttpClient httpClient) {
+        super(Void.class, environment, httpClient);
         this.authorizedBackendUriRetriever = authorizedBackendUriRetriever;
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;

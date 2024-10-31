@@ -44,6 +44,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -83,10 +84,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         this.allFields = new LinkedHashMap<>();
     }
 
-    public static ExpandedResource fromPublication(RawContentRetriever uriRetriever, Publication publication)
+    public static ExpandedResource fromPublication(RawContentRetriever uriRetriever,
+                                                   ResourceService resourceService, Publication publication)
         throws JsonProcessingException {
         var documentWithId = transformToJsonLd(publication);
-        var enrichedJson = enrichJson(uriRetriever, documentWithId);
+        var enrichedJson = enrichJson(uriRetriever, resourceService, documentWithId);
         var jsonWithAddedFields = addFields(enrichedJson, publication);
         return attempt(() -> objectMapper.treeToValue(jsonWithAddedFields, ExpandedResource.class)).orElseThrow();
     }
@@ -360,8 +362,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return root.at(INSTANCE_TYPE_JSON_PTR).asText();
     }
 
-    private static String enrichJson(RawContentRetriever uriRetriever, ObjectNode documentWithId) {
-        return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever))
+    private static String enrichJson(RawContentRetriever uriRetriever, ResourceService resourceService, ObjectNode documentWithId) {
+        return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever, resourceService))
                    .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
                    .orElseThrow();
     }

@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -50,6 +51,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -138,7 +140,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler = new FetchPublicationHandler(publicationService,
                                                               uriRetriever,
                                                               environment,
-                                                              identityServiceClient);
+                                                              identityServiceClient,
+                                                              mock(HttpClient.class));
     }
 
     @Test
@@ -289,7 +292,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,
                                                               uriRetriever,
                                                               environment,
-                                                              identityServiceClient);
+                                                              identityServiceClient,
+                                                              mock(HttpClient.class));
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
 
         var gatewayResponse = parseFailureResponse();
