@@ -584,7 +584,63 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-
+  /public/{identifier}/filelink/{fileIdentifier}:
+    get:
+      summary: Public pre signed download link for publication file
+      description: Returns an S3 pre signed and temporal download URL to a publication file
+      operationId: publicGetPresignDownloadUri
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DownloadPublicationFileFunction.Arn}/invocations
+        httpMethod: POST
+        type: AWS_PROXY
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: fileIdentifier
+          description: UUID identifier of the Publication File.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: "Ok"
+          headers:
+            "Location":
+              description: Message has been successfully deleted
+              schema:
+                type: string
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /tickets:
     get:
       operationId: listTicketsForUser

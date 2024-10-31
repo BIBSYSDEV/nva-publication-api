@@ -318,6 +318,27 @@ Resources:
         - Key: TemporaryTag
           Value: 'this_is_a_test_to_trigger_stack_update'
 
+  DownloadUrlShorteningTable:
+    Type: AWS::DynamoDB::Table
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      TableName: !Sub nva-download-url-shorterner-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: shortenedUri
+          AttributeType: S
+      KeySchema:
+        - AttributeName: shortenedUri
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      TimeToLiveSpecification:
+        AttributeName: expiresDate
+        Enabled: true
+
   #===============================DLOQs===================================================================
 
   DynamodbEventFanoutStreamRecordsDLQ:
@@ -475,6 +496,22 @@ Resources:
               - s3:PutObjectAcl
             Resource: "*"
 
+  S3AccessResourceStorageManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+              - s3:PutObjectAcl
+            Resource:
+              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
+
   S3DeleteAccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -542,6 +579,19 @@ Resources:
             Resource:
               - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:BackendCognitoClientCredentials-*"
               - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${PiaRestCredentialsTokenName}-*"
+
+  DownloadUrlShorteningTableManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+            Resource:
+              - !GettAtt DownloadUrlShorteningTable.Arn
 
   NvaPublicationApi:
     Type: AWS::Serverless::Api
@@ -967,36 +1017,34 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-  NvaDownloadPublicationFileFunction:
+  DownloadPublicationFileFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DownloadPublicationFileFunction}'
+      RetentionInDays: 90
+
+  DownloadPublicationFileFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: create-presigned-download-url
-      Handler: no.unit.nva.download.publication.file.CreatePresignedDownloadUrlHandler::handleRequest
-      Runtime: java17
-      MemorySize: 1408
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.download.CreatePresignedDownloadUrlHandler::handleRequest
       Environment:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
-          API_SCHEME: https
-          API_HOST: !Sub api.${CustomDomain}
-          SHORTENED_URI_TABLE_NAME: !Sub nva-url-shorterner-${AWS::StackName}
-          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
-          COGNITO_HOST: !Ref CognitoAuthorizationUri
+          SHORTENED_URI_TABLE_NAME: !Ref DownloadUrlShorteningTable
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
-      Role: !GetAtt UploadExecutionRole.Arn
+      Policies:
+        - !GetAtt S3AccessResourceStorageManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt DownloadUrlShorteningTableManagedPolicy.PolicyArn
       Events:
-        AuthorizedGetEvent:
-          Type: Api
-          Properties:
-            Path: /{publicationIdentifier}/files/{fileIdentifier}
-            Method: get
-            RestApiId: !Ref NvaDownloadPublicationFileApi
         AnonymousGetEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/publicFiles/{fileIdentifier}
+            Path: /{publicationIdentifier}/filelink/{fileIdentifier}
             Method: get
-            RestApiId: !Ref NvaDownloadPublicationFileApi
+            RestApiId: !Ref NvaPublicationApi
+
 
   #==========================Event Lambda functions====================================================
 
