@@ -40,6 +40,7 @@ import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import nva.commons.core.ioutils.IoUtils;
@@ -87,7 +88,7 @@ public class ScopusFileConverterTest {
     void shouldCreateAssociatedArtifactWithEmbargoWhenSumOfDelayAndStartDateIsInFuture()
         throws IOException, InterruptedException {
         mockResponses("crossrefResponseWithEmbargo.json");
-        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getEmbargoDate().orElseThrow(), is(notNullValue()));
     }
@@ -105,7 +106,7 @@ public class ScopusFileConverterTest {
     void shouldMapContentVersionToPublisherAuthority() throws IOException, InterruptedException {
         mockResponses("crossrefResponseWithEmbargo.json");
 
-        var files = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var files = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(files.getPublisherVersion(), is(PublisherVersion.PUBLISHED_VERSION));
     }
@@ -115,7 +116,7 @@ public class ScopusFileConverterTest {
         throws IOException, InterruptedException {
         mockResponsesWithoutHeaders("crossrefResponseMissingFields.json");
 
-        var files = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var files = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(files.getPublisherVersion(), is(nullValue()));
         assertThat(files.getEmbargoDate(), is(Optional.empty()));
@@ -167,7 +168,7 @@ public class ScopusFileConverterTest {
         throws IOException, InterruptedException {
         var contentTypeHeader = Map.of(Header.CONTENT_TYPE, List.of("application/html"));
         mockResponsesWithHeader("crossrefResponseMissingFields.json", contentTypeHeader);
-        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getName(), containsString("html"));
     }
@@ -177,7 +178,7 @@ public class ScopusFileConverterTest {
         throws IOException, InterruptedException {
         var responseBody = "crossrefResponseMissingFields.json";
         mockResponsesWithoutHeaders(responseBody);
-        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getName(), is(equalTo(TEST_FILE_NAME)));
     }
@@ -187,7 +188,7 @@ public class ScopusFileConverterTest {
         throws IOException, InterruptedException {
         var responseBody = "crossrefResponseMissingFields.json";
         mockResponsesWithHeader(responseBody, Map.of());
-        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getName(), is(notNullValue()));
     }
@@ -197,7 +198,7 @@ public class ScopusFileConverterTest {
         var firstUrl = randomUri();
         scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
         mockDownloadUrlResponse();
-        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(((ImportUploadDetails) file.getUploadDetails()).source(), is(equalTo(Source.SCOPUS)));
         assertThat(file.getUploadDetails().uploadedDate(), is(notNullValue()));
@@ -207,7 +208,7 @@ public class ScopusFileConverterTest {
     void shouldSetUploadDetailsWhenFetchingFileFromDoi() throws IOException, InterruptedException {
         var responseBody = "crossrefResponseMissingFields.json";
         mockResponsesWithHeader(responseBody, Map.of());
-        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(((ImportUploadDetails) file.getUploadDetails()).source(), is(equalTo(Source.SCOPUS)));
         assertThat(file.getUploadDetails().uploadedDate(), is(notNullValue()));
@@ -220,7 +221,7 @@ public class ScopusFileConverterTest {
         var firstUrl = randomUri();
         scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
         mockDownloadUrlResponse();
-        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getPublisherVersion(), is(equalTo(PublisherVersion.PUBLISHED_VERSION)));
     }
