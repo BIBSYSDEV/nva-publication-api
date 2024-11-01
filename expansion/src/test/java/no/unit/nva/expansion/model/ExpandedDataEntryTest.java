@@ -135,7 +135,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.messageService = getMessageService();
         this.ticketService = getTicketService();
         this.uriRetriever = FakeUriRetriever.newInstance();
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
+        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever
+            , uriRetriever);
     }
 
     @ParameterizedTest()
@@ -146,7 +147,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
 
@@ -352,6 +352,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("publicationInstanceProvider")
     void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
         var publication = createPublishedPublicationWithoutDoi(instanceType);
+        FakeUriResponse.setupFakeForType(publication, uriRetriever, resourceService);
         var doiRequest = createDoiRequest(publication);
         var expandedResource = ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService,
                                                               ticketService);
