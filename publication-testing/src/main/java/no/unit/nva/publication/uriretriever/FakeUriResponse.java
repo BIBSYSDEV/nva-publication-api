@@ -512,7 +512,7 @@ public final class FakeUriResponse {
             """.formatted(uri, CHANNEL_SAME_AS);
     }
 
-    private static String createSeries(URI seriesId) {
+    public static String createSeries(URI seriesId) {
         return """
             {
               "id" : "%s",
