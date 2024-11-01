@@ -1,6 +1,6 @@
 package no.unit.nva.model.associatedartifacts.file;
 
-public interface PendingFile<T> {
+public interface PendingFile<T extends File> {
 
     RejectedFile reject();
 
