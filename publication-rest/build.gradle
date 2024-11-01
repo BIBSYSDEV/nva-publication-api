@@ -48,6 +48,12 @@ dependencies {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
 
+    testImplementation(libs.dynamodDbLocal) {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+        exclude group: 'com.google.guava', module: 'guava'
+    }
+
     compileOnly(libs.aws.sdk.apigateway) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
