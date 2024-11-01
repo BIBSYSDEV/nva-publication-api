@@ -6,6 +6,8 @@ import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.core.attempt.Try.attempt;
+import java.net.http.HttpClient;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.download.exception.S3ServiceException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -37,17 +39,22 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     private final UriShortener uriShortener;
     private final ResourceService resourceService;
     public static final String BUCKET_NAME_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
+    private final IdentityServiceClient identityServiceClient;
 
     /**
      * Constructor for CreatePresignedDownloadUrlHandler.
      */
-    public CreatePresignedDownloadUrlHandler(ResourceService resourceService, S3Presigner s3Presigner,
+    public CreatePresignedDownloadUrlHandler(ResourceService resourceService,
+                                             S3Presigner s3Presigner,
                                              Environment environment,
-                                             UriShortener uriShortener) {
-        super(Void.class, environment);
+                                             UriShortener uriShortener,
+                                             HttpClient httpClient,
+                                             IdentityServiceClient identityServiceClient) {
+        super(Void.class, environment, httpClient);
         this.resourceService = resourceService;
         this.s3Presigner = s3Presigner;
         this.uriShortener = uriShortener;
+        this.identityServiceClient = identityServiceClient;
     }
 
     /**
@@ -58,7 +65,9 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
         this(ResourceService.defaultService(),
              defaultS3Presigner(),
              new Environment(),
-             UriShortenerImpl.createDefault());
+             UriShortenerImpl.createDefault(),
+             HttpClient.newHttpClient(),
+             IdentityServiceClient.prepare());
     }
 
     @Override
