@@ -22,7 +22,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!userRelatesToPublication() ) {
+        if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() ) {
             return false;
         }
 
@@ -31,10 +31,10 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
             case UPDATE -> canManageStandardResources();
             case TICKET_PUBLISH -> canManagePublishingRequests() && hasUnpublishedFile();
             case UNPUBLISH -> canManagePublishingRequests() && isPublished();
-            case DOI_REQUEST_CREATE -> hasAccessRight(MANAGE_DOI) && userRelatesToPublication();
-            case PUBLISHING_REQUEST_CREATE ->  canManagePublishingRequests()
-                                              && userRelatesToPublication();
-            case SUPPORT_REQUEST_CREATE -> hasAccessRight(SUPPORT) && userRelatesToPublication();
+            case DOI_REQUEST_CREATE -> hasAccessRight(MANAGE_DOI) && userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+            case PUBLISHING_REQUEST_CREATE -> canManagePublishingRequests()
+                                              && userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+            case SUPPORT_REQUEST_CREATE -> hasAccessRight(SUPPORT) && userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
             case PUBLISHING_REQUEST_APPROVE ->  canManagePublishingRequests();
             case SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);
@@ -44,10 +44,6 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     private boolean canManageStandardResources() {
         return hasAccessRight(MANAGE_RESOURCES_STANDARD);
-    }
-
-    private boolean userRelatesToPublication() {
-        return userIsFromSameInstitutionAsPublication() || userBelongsToCuratingInstitution();
     }
 
     private boolean canManagePublishingRequests() {

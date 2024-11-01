@@ -3,6 +3,7 @@ package no.unit.nva.publication.delete;
 import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -32,19 +33,21 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare());
+        this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare(),
+             HttpClient.newHttpClient());
     }
 
     /**
      * Constructor for DeletePublicationHandler.
      *
-     * @param resourceService   resourceService
-     * @param environment       environment
+     * @param resourceService resourceService
+     * @param environment     environment
+     * @param httpClient
      */
     public DeletePublicationHandler(ResourceService resourceService,
                                     Environment environment,
-                                    IdentityServiceClient identityServiceClient) {
-        super(Void.class, environment);
+                                    IdentityServiceClient identityServiceClient, HttpClient httpClient) {
+        super(Void.class, environment, httpClient);
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
     }
@@ -60,7 +63,6 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
 
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
-
 
         if (publication.getStatus() == PublicationStatus.DRAFT) {
             PublicationPermissionStrategy.create(publication, userInstance, resourceService).authorize(DELETE);

@@ -18,6 +18,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -211,18 +212,25 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         throws NotFoundException {
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
         var updatedPublication = publication.copy()
-                                     .withAssociatedArtifacts(updateUnpublishedFiles(publication))
+                                     .withAssociatedArtifacts(rejectFiles(publication))
                                      .build();
         resourceService.updatePublication(updatedPublication);
     }
 
-    private List<AssociatedArtifact> updateUnpublishedFiles(Publication publication) {
+    private List<AssociatedArtifact> rejectFiles(Publication publication) {
         var associatedArtifacts = publication.getAssociatedArtifacts();
         return associatedArtifacts.stream()
-                   .map(file -> file instanceof UnpublishedFile unpublishedFile
-                                    ? unpublishedFile.toUnpublishableFile()
-                                    : file)
+                   .map(UpdateTicketHandler::rejectFile)
                    .toList();
+    }
+
+    //TODO: Remove unpublishable file and logic related to it after we have migrated files
+    private static AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
+        if (associatedArtifact instanceof UnpublishedFile unpublishedFile) {
+            return unpublishedFile.toUnpublishableFile();
+        } else {
+            return associatedArtifact instanceof PendingFile<?> pendingFile ? pendingFile.reject() : associatedArtifact;
+        }
     }
 
     private TicketEntry fetchTicket(RequestUtils requestUtils)
