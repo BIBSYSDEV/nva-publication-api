@@ -49,7 +49,11 @@ public abstract class PermissionStrategy {
                    .orElse(false);
     }
 
-    protected boolean userBelongsToCuratingInstitution() {
+    protected boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() {
+        return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
+    }
+
+    private boolean userBelongsToCuratingInstitution() {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("found topLevels {} for user {} of {}.",
@@ -59,7 +63,7 @@ public abstract class PermissionStrategy {
         return publication.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
     }
 
-    protected boolean userIsFromSameInstitutionAsPublication() {
+    protected boolean userIsFromSameInstitutionAsPublicationOwner() {
         if (isNull(userInstance.getTopLevelOrgCristinId()) || isNull(publication.getResourceOwner())) {
             return false;
         }

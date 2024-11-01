@@ -34,7 +34,7 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
                 return true; // deny
             }
-            if (userDoesNotBelongToPublication()) {
+            if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
                 return true; // deny
             }
             return isNotCuratorForRegistratorInstitution() && userIsCuratingSupervisorsOnly(); // deny
@@ -73,10 +73,6 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
                    .stream()
                    .filter(contributor -> contributor.getIdentity().getId().equals(contributorId))
                    .findFirst();
-    }
-
-    private boolean userDoesNotBelongToPublication() {
-        return !(userBelongsToCuratingInstitution() || userIsFromSameInstitutionAsPublication());
     }
 
     private boolean isUsersDraft() {
