@@ -5,9 +5,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
+import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
@@ -31,7 +32,6 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
         response.setHandle(publication.getHandle());
         response.setLink(publication.getLink());
         response.setEntityDescription(publication.getEntityDescription());
-        response.setAssociatedArtifacts(publication.getAssociatedArtifacts());
         response.setDoi(publication.getDoi());
         response.setProjects(publication.getProjects());
         response.setFundings(publication.getFundings());
@@ -61,6 +61,11 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
 
     public void setPublicationNotes(List<PublicationNoteBase> publicationNotes) {
         this.publicationNotes = publicationNotes;
+    }
+
+    @Override
+    public AssociatedArtifactList getAssociatedArtifacts() {
+        return super.getAssociatedArtifactsForElevatedUser();
     }
 
     @JacocoGenerated

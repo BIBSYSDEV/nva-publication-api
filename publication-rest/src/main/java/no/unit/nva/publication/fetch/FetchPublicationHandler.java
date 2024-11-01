@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import no.unit.nva.PublicationMapper;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
@@ -35,6 +36,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
@@ -184,12 +186,37 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
-        //TODO: when the userIsCuratorOrOwner is properlyImplementedAgain,
-        // then only those should get the PublicationResponseElevatedUser
-        //Regular users should receive PublicationResponse.class
+        if (userIsCuratorOrOwner(requestInfo, publication)) {
+            return createPublicationResponseForElevatedUser(requestInfo, publication);
+        } else {
+            return createPublicationResponseForNotElevatedUser(requestInfo, publication);
+        }
+
+    }
+
+    private String createPublicationResponseForNotElevatedUser(RequestInfo requestInfo, Publication publication) {
+        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
+        publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
+        return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
+    }
+
+    private String createPublicationResponseForElevatedUser(RequestInfo requestInfo, Publication publication) {
         var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
         publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
+    }
+
+    private boolean userIsCuratorOrOwner(RequestInfo requestInfo, Publication publication) {
+        var userInstance = attempt(() -> UserInstance.fromRequestInfo(requestInfo)).toOptional();
+        if (userInstance.isPresent()) {
+            var userInstanceValue = userInstance.get();
+            var permissionStrategy = PublicationPermissionStrategy.create(publication, userInstanceValue,
+                                                                        resourceService);
+            return permissionStrategy.allowsAction(PublicationOperation.UPDATE);
+        } else {
+            return false;
+        }
+
     }
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
