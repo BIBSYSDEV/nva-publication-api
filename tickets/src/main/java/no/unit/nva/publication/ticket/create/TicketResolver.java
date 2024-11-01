@@ -20,6 +20,8 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.FileForApproval;
@@ -228,10 +230,13 @@ public class TicketResolver {
         return publication.getAssociatedArtifacts().stream().map(this::openFiles).toList();
     }
 
-    //TODO: Remember to not publish internal files in here
+    //TODO: Remove unpublishable file and logic related to it after we have migrated files
     private AssociatedArtifact openFiles(AssociatedArtifact artifact) {
         if (artifact instanceof PendingFile<?> file) {
-            return (AssociatedArtifact) file.approve();
+            return file.approve();
+        }
+        if (artifact instanceof UnpublishedFile unpublishedFile) {
+            return unpublishedFile.toPublishedFile();
         } else {
             return artifact;
         }

@@ -1,11 +1,6 @@
 package no.unit.nva.model.associatedartifacts.file;
 
-import java.util.UUID;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-
-public interface PendingFile<T> extends AssociatedArtifact {
-
-    UUID getIdentifier();
+public interface PendingFile<T extends File> {
 
     RejectedFile reject();
 

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
 import java.util.UUID;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 @SuppressWarnings("PMD.ExcessiveParameterList")
@@ -82,5 +83,11 @@ public class UnpublishedFile extends File {
                    .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
                    .withLegalNote(this.getLegalNote())
                    .withUploadDetails(this.getUploadDetails());
+    }
+
+    public AdministrativeAgreement toUnpublishableFile() {
+        return new AdministrativeAgreement(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                 isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
+                                           getUploadDetails());
     }
 }

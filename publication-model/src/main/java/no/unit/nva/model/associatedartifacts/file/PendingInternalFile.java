@@ -63,6 +63,20 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
     }
 
     @Override
+    public RejectedFile reject() {
+        return new RejectedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
+                                getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
+    }
+
+    @Override
+    public InternalFile approve() {
+        return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
+                                getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
+    }
+
+    @Override
     public Builder copy() {
         return builder()
                    .withIdentifier(this.getIdentifier())
@@ -76,19 +90,5 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
                    .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
                    .withLegalNote(this.getLegalNote())
                    .withUploadDetails(this.getUploadDetails());
-    }
-
-    @Override
-    public RejectedFile reject() {
-        return new RejectedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                         isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                         getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
-    }
-
-    @Override
-    public InternalFile approve() {
-        return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                                getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
     }
 }

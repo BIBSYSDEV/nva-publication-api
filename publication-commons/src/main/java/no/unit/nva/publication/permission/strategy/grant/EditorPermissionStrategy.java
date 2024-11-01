@@ -8,7 +8,9 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public class EditorPermissionStrategy extends GrantPermissionStrategy {
 
-    public EditorPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+    public EditorPermissionStrategy(Publication publication,
+                                    UserInstance userInstance,
+                                    ResourceService resourceService) {
         super(publication, userInstance, resourceService);
     }
 
@@ -20,12 +22,11 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
         return switch (permission) {
             case TICKET_PUBLISH -> isDraft() || isUnpublished();
             case UPDATE -> true;
-            case UNPUBLISH -> isPublished();
-            case TERMINATE -> isUnpublished();
-            case REPUBLISH -> userBelongsToCuratingInstitution() && isUnpublished();
+            case UNPUBLISH -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isPublished();
+            case REPUBLISH, TERMINATE -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isUnpublished();
             case DOI_REQUEST_CREATE,
                  PUBLISHING_REQUEST_CREATE,
-                 SUPPORT_REQUEST_CREATE -> userBelongsToCuratingInstitution();
+                 SUPPORT_REQUEST_CREATE -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
             case DELETE,
                  UPDATE_FILES,
                  DOI_REQUEST_APPROVE,
@@ -33,5 +34,4 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
                  SUPPORT_REQUEST_APPROVE -> false;
         };
     }
-
 }
