@@ -282,6 +282,8 @@ public class PublishingRequestCase extends TicketEntry {
         return this;
     }
 
+
+
     public PublishingRequestCase withWorkflow(PublishingWorkflow workflow) {
         this.workflow = workflow;
         return this;

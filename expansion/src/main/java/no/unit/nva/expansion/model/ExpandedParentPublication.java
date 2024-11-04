@@ -33,6 +33,9 @@ public class ExpandedParentPublication {
     private static final String PARENT_PUBLICATION_NOT_FOUND_S = "Parent publication not found %s";
     private static final String PUBLICATION_ONTOLOGY = "https://nva.sikt.no/ontology/publication#Publication";
     private static final String ERROR_MESSAGE_FETCHING_REFERENCE = "Could not fetch external reference: %s";
+    private static final int ONE_HUNDRED = 100;
+    private static final int SUCCESS_FAMILY = 2;
+    private static final int CLIENT_ERROR_FAMILY = 4;
     private final RawContentRetriever uriRetriever;
     private final ResourceService resourceService;
 
@@ -82,9 +85,18 @@ public class ExpandedParentPublication {
         return StringUtils.isNotBlank(uri.toString());
     }
 
+    private boolean processResponse(HttpResponse<String> response) {
+        if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
+            return true;
+        } else if (response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY) {
+            return true;
+        }
+        throw new RuntimeException("Unexpected response " + response);
+    }
+
     private String fetch(URI externalReference) {
         return uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString())
-                   .filter(response -> response.statusCode() / 100 == 2)
+                   .filter(this::processResponse)
                    .map(HttpResponse::body)
                    .orElseThrow(() -> new RuntimeException(
                        ERROR_MESSAGE_FETCHING_REFERENCE.formatted(externalReference)));
