@@ -7,6 +7,7 @@ import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAccep
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static no.unit.nva.testutils.TestHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -41,10 +42,12 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
@@ -200,7 +203,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         var customer = randomUri();
         handler.handleRequest(createRequestWithAccessRight(
                                   NON_OWNER,
-                                  publication.getIdentifier(),
+                                  publication.getCuratingInstitutions().stream().findFirst().get().id(), publication.getIdentifier(),
                                   FILE_IDENTIFIER,
                                   customer,
                                   MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD),
@@ -243,17 +246,20 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
-    @ParameterizedTest(name = "Unpublished publication with filetype {1} is downloadable by user {0}")
+    @ParameterizedTest(name = "Unpublished publication downloadable by user {0} with file {1}")
     @MethodSource("userFileTypeSupplier")
     void handlerReturnsOkResponseOnValidInputPublication(String user, File file)
         throws IOException {
-
         var publication = buildPublication(DRAFT, file);
         var handler = getCreatePresignedDownloadUrlHandler();
-
+        var topLevelCristinUnitId = publication.getCuratingInstitutions().stream().findFirst().get().id();
         handler.handleRequest(
-            createRequestWithAccessRight(user, publication.getIdentifier(), file.getIdentifier(), CUSTOMER,
-                                         MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD),
+            createRequestWithAccessRight(user,
+                                         topLevelCristinUnitId,
+                                         publication.getIdentifier(),
+                                         file.getIdentifier(),
+                                         CUSTOMER,
+                                         MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE),
             output, context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), PresignedUriResponse.class);
@@ -300,7 +306,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnNotFoundOnAnonymousRequestForDraftPublication()
+    void shouldReturnUnauthorizedOnAnonymousRequestForDraftPublication()
         throws IOException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler();
@@ -345,7 +351,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         var customer = randomUri();
         handler.handleRequest(createRequestWithAccessRight(
                                   NON_OWNER,
-                                  publication.getIdentifier(),
+                                  publication.getCuratingInstitutions().stream().findFirst().get().id(), publication.getIdentifier(),
                                   FILE_IDENTIFIER,
                                   customer,
                                   MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD),
@@ -474,6 +480,9 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         randomPublication.setAssociatedArtifacts(new AssociatedArtifactList(file));
         randomPublication.setStatus(status);
         randomPublication.setResourceOwner(new ResourceOwner(new Username(OWNER_USER_ID), CUSTOMER));
+
+        var curatingInstitution = randomUri();
+        randomPublication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of())));
         var user = UserInstance.createExternalUser(randomPublication.getResourceOwner(), randomUri());
 
         var publication = attempt(
@@ -546,6 +555,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createRequestWithAccessRight(String user,
+                                                     URI curatingInstiturionId,
                                                      SortableIdentifier identifier,
                                                      UUID fileIdentifier,
                                                      URI customer,
@@ -554,6 +564,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                    .withHeaders(Map.of(AUTHORIZATION, SOME_API_KEY))
                    .withCurrentCustomer(customer)
                    .withAccessRights(customer, accessRight)
+                   .withTopLevelCristinOrgId(curatingInstiturionId)
                    .withUserName(user)
                    .withPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, identifier.toString(),
                                               RequestUtil.FILE_IDENTIFIER, fileIdentifier.toString()))

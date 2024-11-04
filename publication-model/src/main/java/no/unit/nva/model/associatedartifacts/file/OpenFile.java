@@ -55,7 +55,7 @@ public class OpenFile extends File {
 
     @Override
     public boolean isVisibleForNonOwner() {
-        return true;
+        return fileDoesNotHaveActiveEmbargo();
     }
 
     @Override

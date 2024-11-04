@@ -8,7 +8,10 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.download.exception.S3ServiceException;
+import no.unit.nva.publication.exception.NotAuthorizedException;
+import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Instant;
@@ -78,13 +81,36 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     @Override
     protected PresignedUriResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-
         var publication = resourceService.getPublicationByIdentifier(RequestUtil.getIdentifier(requestInfo));
         var file = getFileInformation(publication, requestInfo);
+
+        if (!isFileVisible(publication, file, requestInfo)) {
+            if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
+                throw new NotFoundException(
+                    String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), file.getIdentifier()));
+            }
+            throw new NotAuthorizedException();
+        }
+
+        return getPresignedUriResponse(file);
+    }
+
+    private PresignedUriResponse getPresignedUriResponse(File file) throws S3ServiceException {
         var expiration = defaultExpiration();
         var preSignedUriLong = getPresignedDownloadUrl(file, expiration);
         var shortenedPresignUri = uriShortener.shorten(preSignedUriLong.signedUri(), expiration);
         return new PresignedUriResponse(preSignedUriLong.signedUri(), expiration, shortenedPresignUri);
+    }
+
+    private boolean isFileVisible(Publication publication, File file, RequestInfo requestInfo) {
+        var userInstance = attempt(
+            () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).or(() -> null).get();
+
+        var permissionStrategy = userInstance!= null ? PublicationPermissionStrategy.create(publication, userInstance,
+                                                                                            resourceService) : null;
+
+        return file.isVisibleForNonOwner() ||
+               (permissionStrategy != null && permissionStrategy.allowsAction(PublicationOperation.UPDATE));
     }
 
     @JacocoGenerated
@@ -101,7 +127,7 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     }
 
     private File getFileInformation(Publication publication, RequestInfo requestInfo)
-        throws NotFoundException, ApiGatewayException {
+        throws ApiGatewayException {
 
         var fileIdentifier = getFileIdentifier(requestInfo);
         if (publication.getAssociatedArtifacts().isEmpty()) {
