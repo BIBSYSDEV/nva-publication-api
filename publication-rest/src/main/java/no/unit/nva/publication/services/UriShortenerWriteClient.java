@@ -10,7 +10,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import no.unit.nva.publication.services.exceptions.TransactionFailedException;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.services.model.UriMap;
 import no.unit.nva.publication.services.storage.UriMapDao;
 import nva.commons.core.attempt.Failure;

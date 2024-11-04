@@ -14,6 +14,7 @@ import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import no.unit.nva.publication.download.utils.UriShortenerLocalDynamoDb;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.services.UriResolver;
 import no.unit.nva.publication.services.UriResolverImpl;
 import no.unit.nva.publication.services.UriShortener;
@@ -72,5 +73,15 @@ class UriShortenerResolverTest extends UriShortenerLocalDynamoDb {
         var shortenedUri = uriShortener.shorten(longUri, randomInstant());
         var actualResult = uriResolver.resolve(shortenedUri);
         assertThat(actualResult, is(equalTo(longUri)));
+    }
+
+    @Test
+    void shouldThrowTransactionFailedExceptionOnTransactionFail() {
+        var longUri = randomUri();
+        var dynamoDbClient = mock(AmazonDynamoDB.class);
+        this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()).getUri(),
+                                                 new UriShortenerWriteClient(dynamoDbClient, TABLE_NAME));
+        when(dynamoDbClient.transactWriteItems(any())).thenThrow(AmazonDynamoDBException.class);
+        assertThrows(TransactionFailedException.class, () -> uriShortener.shorten(longUri, randomInstant()));
     }
 }
