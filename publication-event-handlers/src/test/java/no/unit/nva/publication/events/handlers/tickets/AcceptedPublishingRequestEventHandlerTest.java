@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
@@ -16,6 +17,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -389,6 +391,20 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(
                 publishedFiles.getFirst().getIdentifier(),
                 is(equalTo(fileToPublish.getIdentifier())));
+    }
+
+    @Test
+    void shouldProceedTicketOwnedByOtherInstitutionThanPublication() throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                    .withOwner(randomString())
+                    .withOwnerAffiliation(randomUri());
+        publishingRequest.setStatus(TicketStatus.COMPLETED);
+        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var ticket = publishingRequest.persistNewTicket(ticketService);
+        var event = createEvent(null, ticket);
+
+        assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
     }
 
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
