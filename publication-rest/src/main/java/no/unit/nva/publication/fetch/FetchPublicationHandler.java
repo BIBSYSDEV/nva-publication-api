@@ -186,7 +186,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
-        if (userIsCuratorOrOwner(requestInfo, publication)) {
+        if (isElevatedUser(requestInfo, publication)) {
             return createPublicationResponseForElevatedUser(requestInfo, publication);
         } else {
             return createPublicationResponseForNotElevatedUser(requestInfo, publication);
@@ -206,17 +206,15 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
 
-    private boolean userIsCuratorOrOwner(RequestInfo requestInfo, Publication publication) {
-        var userInstance = attempt(() -> UserInstance.fromRequestInfo(requestInfo)).toOptional();
-        if (userInstance.isPresent()) {
-            var userInstanceValue = userInstance.get();
-            var permissionStrategy = PublicationPermissionStrategy.create(publication, userInstanceValue,
-                                                                        resourceService);
-            return permissionStrategy.allowsAction(PublicationOperation.UPDATE);
-        } else {
-            return false;
-        }
+    private boolean isElevatedUser(RequestInfo requestInfo, Publication publication) {
+        return attempt(() -> UserInstance.fromRequestInfo(requestInfo)).toOptional()
+                   .map(userInstance -> isElevatedUser(publication, userInstance))
+                   .orElse(false);
+    }
 
+    private boolean isElevatedUser(Publication publication, UserInstance userInstance) {
+        var permissionStrategy = PublicationPermissionStrategy.create(publication, userInstance, resourceService);
+        return permissionStrategy.allowsAction(PublicationOperation.UPDATE);
     }
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {

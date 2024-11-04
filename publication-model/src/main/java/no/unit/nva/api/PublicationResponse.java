@@ -33,8 +33,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
+import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
@@ -90,7 +89,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         response.setFundings(publication.getFundings());
         response.setSubjects(publication.getSubjects());
         response.setContext(PublicationContext.getContext(publication));
-        response.setAssociatedArtifacts(getAllNonInternalFiles(publication));
+        response.setAssociatedArtifacts(getPublicAssociatedArtifacts(publication));
         response.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
         response.setRightsHolder(publication.getRightsHolder());
         response.setAllowedOperations(Set.of());
@@ -98,15 +97,15 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         return response;
     }
 
-    private static AssociatedArtifactList getAllNonInternalFiles(Publication publication) {
+    private static AssociatedArtifactList getPublicAssociatedArtifacts(Publication publication) {
         var artifacts = publication.getAssociatedArtifacts().stream()
-                            .filter(PublicationResponse::isNotInternalFile)
+                            .filter(PublicationResponse::isPublicAssociatedArtifact)
                             .toList();
         return new AssociatedArtifactList(artifacts);
     }
 
-    private static boolean isNotInternalFile(AssociatedArtifact artifact) {
-        return !(artifact instanceof PendingInternalFile) && !(artifact instanceof InternalFile);
+    private static boolean isPublicAssociatedArtifact(AssociatedArtifact artifact) {
+        return artifact instanceof PublicAssociatedArtifact;
     }
 
     public static PublicationResponse fromPublicationWithAllowedOperations(
@@ -299,7 +298,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     @Override
     public AssociatedArtifactList getAssociatedArtifacts() {
         var artifacts = this.associatedArtifacts.stream()
-                   .filter(PublicationResponse::isNotInternalFile)
+                   .filter(PublicationResponse::isPublicAssociatedArtifact)
                    .toList();
         return new AssociatedArtifactList(artifacts);
     }
