@@ -584,7 +584,7 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-  /{identifier}/filelink/{fileIdentifier}:
+  /{publicationIdentifier}/filelink/{fileIdentifier}:
     get:
       summary: Public pre signed download link for publication file
       description: Returns an S3 pre signed and temporal download URL to a publication file
@@ -641,7 +641,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /file/{identifier}:
+  /file/{fileIdentifier}:
     get:
       summary: Resolves shortened URI to original presigned URI
       description: Returns 301 if successful with location header set to the original presigned URI
@@ -653,7 +653,7 @@ paths:
         type: AWS_PROXY
       parameters:
         - in: path
-          name: identifier
+          name: fileIdentifier
           description: UUID identifier of the shortened URI
           required: true
           schema:
