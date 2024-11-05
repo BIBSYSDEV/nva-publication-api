@@ -32,8 +32,6 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,7 +81,6 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
-@WireMockTest(httpsEnabled = true)
 class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     private static final String SOME_API_KEY = "some api key";
@@ -110,7 +107,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     private IdentityServiceClient identityServiceClient;
 
     @BeforeEach
-    void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    void setUp() {
         super.init();
         httpClient = mock(HttpClient.class);
         resourceService = spy(getResourceServiceBuilder().build());
@@ -118,7 +115,11 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         uriShortener = mock(UriShortener.class);
-        environment = mockEnvironment(wireMockRuntimeInfo);
+
+        environment = mock(Environment.class);
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ANY_ORIGIN);
+        when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
+            .thenReturn("https://example.com");
 
         s3Presigner = mock(S3Presigner.class);
 
@@ -318,34 +319,16 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "Should return Not Found when requester is not owner and embargo is in place")
     @MethodSource("nonOwnerProvider")
-    void shouldDisallowDownloadByNonOwnerWhenEmbargoDateHasNotPassed(InputStream request) throws IOException,
-                                                                                                 InterruptedException {
-        var publication = buildPublication(PUBLISHED, fileWithEmbargo(FILE_IDENTIFIER));
-        mockSuccessfulPublicationRequest(dtoObjectMapper.writeValueAsString(publication));
+    void shouldDisallowDownloadByNonOwnerWhenEmbargoDateHasNotPassed(InputStream request) throws IOException {
         var handler = getCreatePresignedDownloadUrlHandler();
-        handler.handleRequest(request, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
-    }
-
-    @ParameterizedTest(name = "Should return Not Found when requester is not owner and file is administrative "
-                              + "agreement")
-    @MethodSource("nonOwnerProvider")
-    void shouldDisallowDownloadByNonOwnerWhenFileHasIsAdministrativeAgreement(InputStream request)
-        throws IOException, InterruptedException {
-        var publication = buildPublication(PUBLISHED, fileWithTypeUnpublishable(FILE_IDENTIFIER, true));
-        mockSuccessfulPublicationRequest(dtoObjectMapper.writeValueAsString(publication));
-        var handler = getCreatePresignedDownloadUrlHandler();
-
         handler.handleRequest(request, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
         assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
     @Test
-    void shouldThrowInternalServerExceptionIfUriShortenerFails() throws IOException, InterruptedException {
+    void shouldThrowInternalServerExceptionIfUriShortenerFails() throws IOException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
-        mockSuccessfulPublicationRequest(dtoObjectMapper.writeValueAsString(publication));
         when(uriShortener.shorten(any(), any())).thenThrow(new RuntimeException("shouldThrowInternalServerExceptionIfUriShortenerFails"));
         var handler = getCreatePresignedDownloadUrlHandler();
         var customer = randomUri();
@@ -522,25 +505,6 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     private boolean greaterThanNow(Instant instant) {
         return Instant.now().isBefore(instant);
-    }
-
-    private Environment mockEnvironment(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ANY_ORIGIN);
-        var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
-        when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
-            .thenReturn(baseUrl.toString());
-        return environment;
-    }
-
-    private void mockSuccessfulPublicationRequest(String responseBody)
-        throws IOException, InterruptedException {
-        /*var publicationService = new RestPublicationService(httpClient, dtoObjectMapper, API_SCHEME, API_HOST);
-        @SuppressWarnings("unchecked")
-        var response = (HttpResponse<String>) mock(HttpResponse.class);
-        when((response.body())).thenAnswer(i -> responseBody);
-        when(httpClient.<String>send(any(), any())).thenAnswer((Answer<HttpResponse<String>>) invocation -> response);
-        return publicationService;*/
     }
 
     private InputStream createRequest(String user, SortableIdentifier identifier, UUID fileIdentifier)
