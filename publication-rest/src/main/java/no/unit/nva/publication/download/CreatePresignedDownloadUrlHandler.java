@@ -7,6 +7,7 @@ import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.download.exception.S3ServiceException;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -97,14 +98,26 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     }
 
     private boolean hasFileAccess(Publication publication, File file, RequestInfo requestInfo) {
-        var userInstance = attempt(
-            () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).or(() -> null).get();
+        return userHasUpdatePermission(publication, requestInfo) || fileIsVisibleForNonOwner(publication, file);
+    }
 
-        var permissionStrategy = userInstance!= null ? PublicationPermissionStrategy.create(publication, userInstance,
-                                                                                            resourceService) : null;
+    private boolean fileIsVisibleForNonOwner(Publication publication, File file) {
+        return isPublicationPublished(publication) && file.isVisibleForNonOwner();
+    }
 
-        return PublicationStatus.PUBLISHED.equals(publication.getStatus()) && file.isVisibleForNonOwner() ||
-               permissionStrategy != null && permissionStrategy.allowsAction(PublicationOperation.UPDATE);
+    private boolean isPublicationPublished(Publication publication) {
+        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
+    }
+
+    private boolean userHasUpdatePermission(Publication publication, RequestInfo requestInfo) {
+        return attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
+                   .map(user -> hasUpdatePermission(publication, user))
+                   .orElse(false);
+    }
+
+    private boolean hasUpdatePermission(Publication publication, UserInstance user) {
+        return PublicationPermissionStrategy.create(publication, user, resourceService)
+                   .allowsAction(PublicationOperation.UPDATE);
     }
 
     @JacocoGenerated

@@ -5,7 +5,6 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.services.model.UriMap;
@@ -29,9 +28,7 @@ public class UriMapDao {
     }
 
     public static Map<String, AttributeValue> createKey(URI shortenedUri) {
-        var map = new HashMap<String, AttributeValue>();
-        map.put(URI_MAP_PRIMARY_PARTITION_KEY, new AttributeValue().withS(shortenedUri.toString()));
-        return map;
+        return Map.of(URI_MAP_PRIMARY_PARTITION_KEY, new AttributeValue().withS(shortenedUri.toString()));
     }
 
     public Map<String, AttributeValue> toDynamoFormat() {
