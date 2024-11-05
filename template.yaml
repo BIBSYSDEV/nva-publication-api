@@ -1045,24 +1045,24 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
- # ResolveShortenedUrlFunction:
- #   Type: AWS::Serverless::Function
- #   Properties:
- #     CodeUri: publication-rest
- #     Handler: com.github.bibsysdev.urlshortener.handler.ResolveShortenedUrlHandler::handleRequest
- #     Environment:
- #       Variables:
- #         ALLOWED_ORIGIN: !Ref AllowedOrigins
- #         SHORTENED_URI_TABLE_NAME: !Ref DownloadUrlShorteningTable
- #     Policies:
- #       - !GetAtt DownloadUrlShorteningTableManagedPolicy.PolicyArn
- #     Events:
- #       AuthorizedGetEvent:
- #         Type: Api
- #         Properties:
- #           Path: /file/{fileIdentifier}
- #           Method: get
- #           RestApiId: !Ref RestApiId
+  ResolveShortenedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.download.ResolveShortenedUrlHandler::handleRequest
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
+          SHORTENED_URI_TABLE_NAME: !Ref DownloadUrlShorteningTable
+      Policies:
+        - !GetAtt DownloadUrlShorteningTableManagedPolicy.PolicyArn
+      Events:
+        AnonymousGetEvent:
+          Type: Api
+          Properties:
+            Path: /file/{fileIdentifier}
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
 
   #==========================Event Lambda functions====================================================
 
