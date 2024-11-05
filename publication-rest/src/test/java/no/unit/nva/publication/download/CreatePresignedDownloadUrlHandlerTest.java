@@ -361,7 +361,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowInternalServerExceptionIfUriShortenerFails() throws IOException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
-        when(uriShortener.shorten(any(), any())).thenThrow(
+        when(uriShortener.shorten(any(), any(), any())).thenThrow(
             new RuntimeException("shouldThrowInternalServerExceptionIfUriShortenerFails"));
         var handler = getCreatePresignedDownloadUrlHandler(httpClient);
         var customer = randomUri();

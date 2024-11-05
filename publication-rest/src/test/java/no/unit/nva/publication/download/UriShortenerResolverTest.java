@@ -1,6 +1,7 @@
 package no.unit.nva.publication.download;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -35,6 +36,7 @@ class UriShortenerResolverTest extends UriShortenerLocalDynamoDb {
 
     private UriResolver uriResolver;
     private UriShortener uriShortener;
+    private String basePath;
 
     @BeforeEach
     void initialize() {
@@ -42,6 +44,7 @@ class UriShortenerResolverTest extends UriShortenerLocalDynamoDb {
         this.uriResolver = new UriResolverImpl(client, TABLE_NAME);
         this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()).getUri(),
                                                  new UriShortenerWriteClient(client, TABLE_NAME));
+        this.basePath = randomString();
     }
 
     @Test
@@ -70,7 +73,7 @@ class UriShortenerResolverTest extends UriShortenerLocalDynamoDb {
     @Test
     void shouldReturnLongUriWhenShortenedUriIsInDatabase() throws ApiGatewayException {
         var longUri = randomUri();
-        var shortenedUri = uriShortener.shorten(longUri, randomInstant());
+        var shortenedUri = uriShortener.shorten(longUri, basePath, randomInstant());
         var actualResult = uriResolver.resolve(shortenedUri);
         assertThat(actualResult, is(equalTo(longUri)));
     }
@@ -82,6 +85,6 @@ class UriShortenerResolverTest extends UriShortenerLocalDynamoDb {
         this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()).getUri(),
                                                  new UriShortenerWriteClient(dynamoDbClient, TABLE_NAME));
         when(dynamoDbClient.transactWriteItems(any())).thenThrow(AmazonDynamoDBException.class);
-        assertThrows(TransactionFailedException.class, () -> uriShortener.shorten(longUri, randomInstant()));
+        assertThrows(TransactionFailedException.class, () -> uriShortener.shorten(longUri, basePath, randomInstant()));
     }
 }

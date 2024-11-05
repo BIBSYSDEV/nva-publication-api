@@ -27,8 +27,8 @@ public class UriShortenerImpl implements UriShortener {
     }
 
     @Override
-    public URI shorten(URI longUri, Instant expiration) {
-        var uriMap = UriMap.create(longUri, expiration, domain);
+    public URI shorten(URI longUri, String basePath, Instant expiration) {
+        var uriMap = UriMap.create(longUri, expiration, domain, basePath);
         uriShortenerWriteClient.insertUriMap(uriMap);
         return uriMap.shortenedUri();
     }

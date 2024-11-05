@@ -37,6 +37,8 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     private final ResourceService resourceService;
     public static final String BUCKET_NAME_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private final IdentityServiceClient identityServiceClient;
+    public static final String CUSTOM_DOMAIN_BASE_PATH_ENV = "CUSTOM_DOMAIN_BASE_PATH";
+    private final String basePath;
 
     /**
      * Constructor for CreatePresignedDownloadUrlHandler.
@@ -52,6 +54,7 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
         this.s3Presigner = s3Presigner;
         this.uriShortener = uriShortener;
         this.identityServiceClient = identityServiceClient;
+        this.basePath = environment.readEnv(CUSTOM_DOMAIN_BASE_PATH_ENV);
     }
 
     /**
@@ -89,7 +92,7 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     private PresignedUriResponse getPresignedUriResponse(File file) throws S3ServiceException {
         var expiration = defaultExpiration();
         var preSignedUriLong = getPresignedDownloadUrl(file, expiration);
-        var shortenedPresignUri = uriShortener.shorten(preSignedUriLong.signedUri(), expiration);
+        var shortenedPresignUri = uriShortener.shorten(preSignedUriLong.signedUri(), basePath, expiration);
         return new PresignedUriResponse(preSignedUriLong.signedUri(), expiration, shortenedPresignUri);
     }
 

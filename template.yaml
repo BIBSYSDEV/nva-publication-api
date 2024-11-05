@@ -1034,6 +1034,7 @@ Resources:
           SHORTENED_URI_TABLE_NAME: !Ref DownloadUrlShorteningTable
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           TABLE_NAME: !Ref NvaResourcesTable
+          CUSTOM_DOMAIN_BASE_PATH: !Ref CustomDomainBasePath
       Policies:
         - !GetAtt S3AccessResourceStorageManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn

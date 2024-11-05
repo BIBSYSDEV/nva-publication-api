@@ -9,12 +9,11 @@ import nva.commons.core.paths.UriWrapper;
 
 public record UriMap(URI shortenedUri, URI longUri, Instant createdDate, Long expiresDate) {
 
-    private static final String PATH = "download";
-    private static final String SHORTENED_PATH = "short";
+    private static final String SHORTENED_PATH = "file";
 
-    public static UriMap create(URI longVersion, Instant expiresDate, URI domain) {
+    public static UriMap create(URI longVersion, Instant expiresDate, URI domain, String basePath) {
         validateRequest(longVersion, expiresDate);
-        return new UriMap(createNewShortVersion(domain), longVersion, Instant.now(), expiresDate.getEpochSecond());
+        return new UriMap(createNewShortVersion(domain, basePath), longVersion, Instant.now(), expiresDate.getEpochSecond());
     }
 
     private static void validateRequest(URI longVersion, Instant expiresDate) {
@@ -23,9 +22,9 @@ public record UriMap(URI shortenedUri, URI longUri, Instant createdDate, Long ex
         }
     }
 
-    private static URI createNewShortVersion(URI domain) {
+    private static URI createNewShortVersion(URI domain, String basePath) {
         return UriWrapper.fromUri(domain)
-                   .addChild(PATH)
+                   .addChild(basePath)
                    .addChild(SHORTENED_PATH)
                    .addChild(SortableIdentifier.next().toString())
                    .getUri();
