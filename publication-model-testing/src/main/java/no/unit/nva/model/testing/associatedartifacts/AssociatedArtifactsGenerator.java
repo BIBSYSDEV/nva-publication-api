@@ -8,6 +8,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -45,5 +46,12 @@ public final class AssociatedArtifactsGenerator {
                    .withLicense(randomUri())
                    .withName(randomString())
                    .buildPendingInternalFile();
+    }
+
+    public static File randomInternalFile() {
+        return InternalFile.builder().withIdentifier(UUID.randomUUID())
+                   .withLicense(randomUri())
+                   .withName(randomString())
+                   .buildInternalFile();
     }
 }

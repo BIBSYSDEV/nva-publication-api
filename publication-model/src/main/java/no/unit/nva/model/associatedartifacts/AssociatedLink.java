@@ -14,7 +14,7 @@ import nva.commons.core.SingletonCollector;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(AssociatedLink.TYPE_NAME)
-public class AssociatedLink implements AssociatedArtifact {
+public class AssociatedLink implements AssociatedArtifact, PublicAssociatedArtifact {
 
     public static final String ID_FIELD = "id";
     public static final String NAME_FIELD = "name";

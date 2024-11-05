@@ -337,12 +337,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(event, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
-        final var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -359,7 +359,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         final var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
                                                                    publicationUpdate.getIdentifier(),
                                                                    PublishingRequestCase.class);
@@ -381,7 +381,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         final var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
                                                                    publicationUpdate.getIdentifier(),
                                                                    PublishingRequestCase.class);
@@ -404,7 +404,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationUpdate = addAnotherUnpublishedFile(publication);
         var input = curatorPublicationOwnerUpdatesPublication(publicationUpdate);
         updatePublicationHandler.handleRequest(input, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var autoCompletedTicket = ticketService.fetchTicketsForUser(UserInstance.fromPublication(publicationUpdate))
@@ -427,7 +427,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         final var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publishedPublication)).toList();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
@@ -483,12 +483,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
-        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -507,12 +507,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = backendClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
-        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -634,7 +634,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
@@ -707,7 +707,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
@@ -917,7 +917,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(degreePublication.getIdentifier());
@@ -960,12 +960,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
-        final var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -1050,7 +1050,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                 MANAGE_RESOURCE_FILES);
         updatePublicationHandler.handleRequest(request, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
 
         var updatedPublication = resourceService.getPublicationByIdentifier(publicationUpdate.getIdentifier());
@@ -1663,10 +1663,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                       contributorName);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
-        var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var uploadedFile = body.getAssociatedArtifacts().stream()
                                .filter(File.class::isInstance)
                                .map(File.class::cast)
@@ -1693,10 +1693,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                       contributorName);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
-        var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var existingFiles = body.getAssociatedArtifacts().stream()
                                 .filter(File.class::isInstance)
                                 .map(File.class::cast)
@@ -1729,10 +1729,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publication, cristinId, contributorName);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
-        var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var updatedFile = body.getAssociatedArtifacts().stream()
                               .filter(File.class::isInstance)
                               .map(File.class::cast)
