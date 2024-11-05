@@ -4,7 +4,6 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.lookUp;
 
-import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
 
 import static java.util.Objects.nonNull;
@@ -54,18 +53,10 @@ public final class PublishingRequestResolver {
         }
     }
 
-    private boolean canManagePublishingRequests() {
-        return userCanManagePublishingRequests() || userIsAllowedToPublishFiles();
-    }
-
-    private boolean userCanManagePublishingRequests() {
-        return userInstance.getAccessRights().contains(MANAGE_PUBLISHING_REQUESTS);
-    }
-
-    private boolean userIsAllowedToPublishFiles() {
+    private boolean customerAllowsPublishingMetadataAndFiles() {
         return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES
-                .getValue()
-                .equals(customer.getPublicationWorkflow());
+                          .getValue()
+                          .equals(customer.getPublicationWorkflow());
     }
 
     private static Set<FileForApproval> mergeFilesForApproval(
@@ -143,7 +134,7 @@ public final class PublishingRequestResolver {
     private TicketEntry persistPublishingRequest(
             Publication newImage, PublishingRequestCase publishingRequest)
             throws ApiGatewayException {
-        return canManagePublishingRequests()
+        return customerAllowsPublishingMetadataAndFiles()
                 ? publishingRequest
                         .approveFiles()
                         .persistAutoComplete(ticketService, newImage, getUsername())
@@ -209,7 +200,7 @@ public final class PublishingRequestResolver {
             Set<FileForApproval> filesForApproval) {
         var updatedFilesForApproval = mergeFilesForApproval(publishingRequest, filesForApproval);
         ensureFileExists(newImage, updatedFilesForApproval);
-        if (canManagePublishingRequests()) {
+        if (customerAllowsPublishingMetadataAndFiles()) {
             publishingRequest
                     .withFilesForApproval(updatedFilesForApproval)
                     .approveFiles()
