@@ -3,8 +3,6 @@ package no.unit.nva.publication.download;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
-import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static no.unit.nva.testutils.TestHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
@@ -133,9 +131,6 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenReturn(signedMock);//new URL
 
         identityServiceClient = mock(IdentityServiceClient.class);
-
-        stubSuccessfulTokenResponse();
-        stubCustomerResponseAcceptingFilesForAllTypes(CUSTOMER);
     }
 
     private static void mockUserInfo(String userName, URI currentCustomer, HttpClient httpClient,
