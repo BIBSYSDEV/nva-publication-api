@@ -110,7 +110,7 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
                                                                                             resourceService) : null;
 
         return file.isVisibleForNonOwner() ||
-               (permissionStrategy != null && permissionStrategy.allowsAction(PublicationOperation.UPDATE));
+               permissionStrategy != null && permissionStrategy.allowsAction(PublicationOperation.UPDATE);
     }
 
     @JacocoGenerated

@@ -247,7 +247,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
-    @ParameterizedTest(name = "Unpublished publication downloadable by user {0} with file {1}")
+    @ParameterizedTest(name = "Unpublished publication downloadable by user {0}")
     @MethodSource("userFileTypeSupplier")
     void handlerReturnsOkResponseOnValidInputPublication(String user, File file)
         throws IOException {
