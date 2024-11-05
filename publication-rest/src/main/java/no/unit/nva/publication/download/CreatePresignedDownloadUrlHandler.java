@@ -1,23 +1,17 @@
 package no.unit.nva.publication.download;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
-import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.download.exception.S3ServiceException;
-import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -84,12 +78,9 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
         var publication = resourceService.getPublicationByIdentifier(RequestUtil.getIdentifier(requestInfo));
         var file = getFileInformation(publication, requestInfo);
 
-        if (!isFileVisible(publication, file, requestInfo)) {
-            if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
-                throw new NotFoundException(
-                    String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), file.getIdentifier()));
-            }
-            throw new NotAuthorizedException();
+        if (!hasFileAccess(publication, file, requestInfo)) {
+            throw new NotFoundException(
+                String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), file.getIdentifier()));
         }
 
         return getPresignedUriResponse(file);
@@ -102,14 +93,14 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
         return new PresignedUriResponse(preSignedUriLong.signedUri(), expiration, shortenedPresignUri);
     }
 
-    private boolean isFileVisible(Publication publication, File file, RequestInfo requestInfo) {
+    private boolean hasFileAccess(Publication publication, File file, RequestInfo requestInfo) {
         var userInstance = attempt(
             () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).or(() -> null).get();
 
         var permissionStrategy = userInstance!= null ? PublicationPermissionStrategy.create(publication, userInstance,
                                                                                             resourceService) : null;
 
-        return file.isVisibleForNonOwner() ||
+        return PublicationStatus.PUBLISHED.equals(publication.getStatus()) && file.isVisibleForNonOwner() ||
                permissionStrategy != null && permissionStrategy.allowsAction(PublicationOperation.UPDATE);
     }
 
@@ -130,69 +121,15 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
         throws ApiGatewayException {
 
         var fileIdentifier = getFileIdentifier(requestInfo);
-        if (publication.getAssociatedArtifacts().isEmpty()) {
+
+        var file = publication.getFile(fileIdentifier);
+
+        if (file.isEmpty()) {
             throw new NotFoundException(
                 String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), fileIdentifier));
         }
 
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .filter(element -> findByIdentifier(fileIdentifier, element))
-                   .map(element -> getFile(element, publication, requestInfo))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .findFirst()
-                   .orElseThrow(() -> new NotFoundException(
-                       String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), fileIdentifier)));
-    }
-
-    private boolean findByIdentifier(UUID fileIdentifier, File element) {
-        return fileIdentifier.equals(element.getIdentifier());
-    }
-
-    private boolean hasReadAccess(File file, Publication publication, RequestInfo requestInfo) {
-        if (isFilePublic(file, publication)) {
-            return true;
-        }
-
-        var user = attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, null)).or(() -> null).get();
-
-        var isThesisAndEmbargoThesisReader =
-            isThesis(publication) && requestInfo.userIsAuthorized(MANAGE_DEGREE_EMBARGO);
-        var isOwner = nonNull(user) && publication.getResourceOwner().getOwner().getValue().equals(user.getUsername());
-        var hasActiveEmbargo = !file.fileDoesNotHaveActiveEmbargo();
-
-        if (hasActiveEmbargo) {
-            return isOwner || isThesisAndEmbargoThesisReader;
-        }
-
-        var isEditor = requestInfo.userIsAuthorized(MANAGE_RESOURCES_STANDARD);
-
-        return isOwner || isEditor;
-    }
-
-    private static boolean isFilePublic(File file, Publication publication) {
-        var isPublished = PublicationStatus.PUBLISHED.equals(publication.getStatus());
-        return isPublished && file.isVisibleForNonOwner();
-    }
-
-    private Optional<File> getFile(File file, Publication publication, RequestInfo requestInfo) {
-        return hasReadAccess(file, publication, requestInfo)
-                   ? Optional.of(file)
-                   : Optional.empty();
-    }
-
-    private boolean isThesis(Publication publication) {
-        var kind = attempt(() -> publication
-                                     .getEntityDescription()
-                                     .getReference()
-                                     .getPublicationInstance()).toOptional();
-        return kind.isPresent() && ("DegreeBachelor".equals(kind.get().getInstanceType())
-                                    ||
-                                    "DegreeMaster".equals(kind.get().getInstanceType())
-                                    ||
-                                    "DegreePhd".equals(kind.get().getInstanceType()));
+        return file.get();
     }
 
     private PresignedUri getPresignedDownloadUrl(File file, Instant expiration) throws S3ServiceException {
