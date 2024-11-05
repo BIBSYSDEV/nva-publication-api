@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -121,7 +122,7 @@ public class CreatePublicationHandler
                                      .persistNew(publicationService, customerAwareUserContext.userInstance());
         setLocationHeader(createdPublication.getIdentifier());
 
-        return PublicationResponse.fromPublication(createdPublication);
+        return PublicationResponseElevatedUser.fromPublication(createdPublication);
     }
 
     private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {

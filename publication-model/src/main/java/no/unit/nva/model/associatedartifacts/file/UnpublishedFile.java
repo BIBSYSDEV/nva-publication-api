@@ -9,12 +9,13 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(UnpublishedFile.TYPE)
-public class UnpublishedFile extends File {
+public class UnpublishedFile extends File implements PublicAssociatedArtifact {
 
     public static final String TYPE = "UnpublishedFile";
 

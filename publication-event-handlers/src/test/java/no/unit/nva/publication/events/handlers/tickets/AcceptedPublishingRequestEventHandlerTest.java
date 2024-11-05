@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
@@ -16,6 +17,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -37,6 +39,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -377,6 +380,20 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                 is(equalTo(fileToPublish.getIdentifier())));
     }
 
+    @Test
+    void shouldProceedTicketOwnedByOtherInstitutionThanPublication() throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                    .withOwner(randomString())
+                    .withOwnerAffiliation(randomUri());
+        publishingRequest.setStatus(TicketStatus.COMPLETED);
+        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var ticket = publishingRequest.persistNewTicket(ticketService);
+        var event = createEvent(null, ticket);
+
+        assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
+    }
+
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
             Publication publication, File file) throws ApiGatewayException {
         var publishingRequest =
@@ -481,7 +498,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
         return (PublishingRequestCase)
                 PublishingRequestCase.fromPublication(publication)
-                        .withOwner(UserInstance.fromPublication(publication).getUsername());
+                    .withWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                    .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     private AcceptedPublishingRequestEventHandler
@@ -490,7 +508,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         resourceService = mock(ResourceService.class);
         var s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, randomString());
-        when(resourceService.getPublication(any(), any())).thenReturn(randomPublication());
+        when(resourceService.getPublicationByIdentifier(any())).thenReturn(randomPublication());
         when(resourceService.updatePublication(any())).thenThrow(RuntimeException.class);
         return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
     }

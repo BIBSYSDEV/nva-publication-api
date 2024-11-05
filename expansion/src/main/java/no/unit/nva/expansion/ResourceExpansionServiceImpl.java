@@ -15,7 +15,6 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.cristin.CristinPerson;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -54,14 +53,6 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private final TicketService ticketService;
     private final RawContentRetriever authorizedUriRetriever;
     private final RawContentRetriever uriRetriever;
-
-    public ResourceExpansionServiceImpl(ResourceService resourceService,
-                                        TicketService ticketService) {
-        this.resourceService = resourceService;
-        this.ticketService = ticketService;
-        this.authorizedUriRetriever = new UriRetriever();
-        this.uriRetriever = new UriRetriever();
-    }
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService,
