@@ -610,13 +610,12 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
-          description: "Ok"
-          headers:
-            "Location":
-              description: Message has been successfully deleted
+        200:
+          description: OK
+          content:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/PresignedUriResponse'
         401:
           description: Unauthorized
           content:
@@ -952,7 +951,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PresignedUrl'
+                $ref: '#/components/schemas/PresignedUriResponse'
         '404':
           description: File not found
           content:
@@ -1321,17 +1320,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Ticket"
-    PresignedUrl:
+    PresignedUriResponse:
       description: PresignedUrl response
       type: object
       properties:
         fileIdentifier:
           type: string
-        uri:
+        id:
           type: string
           format: uri
         expires:
           type: string
+        shortenedVersion:
+          type: string
+          format: uri
+          description: Shortened version of the id, will return a redirect to uri.
 #region content from "documentation/schema.yaml"
     AcademicArticle:
       required:

@@ -538,7 +538,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     private void assertExpectedResponseBody(GatewayResponse<PresignedUriResponse> gatewayResponse)
         throws JsonProcessingException {
         var body = gatewayResponse.getBodyObject(PresignedUriResponse.class);
-        assertThat(body.signedUri(), is(notNullValue()));
+        assertThat(body.id(), is(notNullValue()));
         assertTrue(greaterThanNow(body.expires()));
     }
 

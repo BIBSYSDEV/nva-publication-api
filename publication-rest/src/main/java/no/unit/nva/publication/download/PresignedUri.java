@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(PresignedUri.TYPE)
 public record PresignedUri(UUID fileIdentifier, @JsonIgnore String bucket, Instant expires, String mime,
-                           URI signedUri) {
+                           URI id) {
 
     public static final String TYPE = "PresignedUrl";
 

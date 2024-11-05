@@ -92,8 +92,8 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     private PresignedUriResponse getPresignedUriResponse(File file) throws S3ServiceException {
         var expiration = defaultExpiration();
         var preSignedUriLong = getPresignedDownloadUrl(file, expiration);
-        var shortenedPresignUri = uriShortener.shorten(preSignedUriLong.signedUri(), basePath, expiration);
-        return new PresignedUriResponse(preSignedUriLong.signedUri(), expiration, shortenedPresignUri);
+        var shortenedPresignUri = uriShortener.shorten(preSignedUriLong.id(), basePath, expiration);
+        return new PresignedUriResponse(file.getIdentifier().toString(), preSignedUriLong.id(), expiration, shortenedPresignUri);
     }
 
     private boolean hasFileAccess(Publication publication, File file, RequestInfo requestInfo) {
