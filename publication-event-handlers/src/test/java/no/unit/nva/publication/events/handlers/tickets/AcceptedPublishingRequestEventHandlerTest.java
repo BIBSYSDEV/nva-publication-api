@@ -2,15 +2,14 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-
 import static nva.commons.core.attempt.Try.attempt;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -18,13 +17,18 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.lambda.runtime.Context;
-
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -55,25 +59,15 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
-
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
@@ -399,6 +393,20 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                 is(equalTo(fileToPublish.getIdentifier())));
     }
 
+    @Test
+    void shouldProceedTicketOwnedByOtherInstitutionThanPublication() throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                    .withOwner(randomString())
+                    .withOwnerAffiliation(randomUri());
+        publishingRequest.setStatus(TicketStatus.COMPLETED);
+        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var ticket = publishingRequest.persistNewTicket(ticketService);
+        var event = createEvent(null, ticket);
+
+        assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
+    }
+
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
             Publication publication, File file) throws ApiGatewayException {
         var publishingRequest =
@@ -503,7 +511,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
         return (PublishingRequestCase)
                 PublishingRequestCase.fromPublication(publication)
-                        .withOwner(UserInstance.fromPublication(publication).getUsername());
+                    .withWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                    .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     private AcceptedPublishingRequestEventHandler
@@ -512,7 +521,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         resourceService = mock(ResourceService.class);
         var s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, randomString());
-        when(resourceService.getPublication(any(), any())).thenReturn(randomPublication());
+        when(resourceService.getPublicationByIdentifier(any())).thenReturn(randomPublication());
         when(resourceService.updatePublication(any())).thenThrow(RuntimeException.class);
         return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
     }

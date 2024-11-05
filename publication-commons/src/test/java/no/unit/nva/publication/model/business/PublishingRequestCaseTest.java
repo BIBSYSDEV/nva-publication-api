@@ -7,6 +7,10 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.Set;
+import java.util.UUID;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import org.junit.jupiter.api.Test;
 
 class PublishingRequestCaseTest {
@@ -17,6 +21,16 @@ class PublishingRequestCaseTest {
         var copy = original.copy();
         assertThat(copy, is(equalTo(original)));
         assertThat(copy, is(not(sameInstance(original))));
+    }
+
+    @Test
+    void shouldReturnTrueWhenApprovedFilesListContainsFileIdentifier() {
+        var file = OpenFile.builder().withIdentifier(UUID.randomUUID()).buildOpenFile();
+        var publishingRequestCase = createSample(randomElement(TicketStatus.values()))
+                           .withFilesForApproval(Set.of(FileForApproval.fromFile(file)))
+                           .approveFiles();
+
+        assertTrue(publishingRequestCase.fileIsApproved(file));
     }
     
     private PublishingRequestCase createSample(TicketStatus status) {

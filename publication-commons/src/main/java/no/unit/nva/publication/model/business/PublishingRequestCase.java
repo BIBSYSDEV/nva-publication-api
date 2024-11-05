@@ -24,6 +24,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -329,6 +330,10 @@ public class PublishingRequestCase extends TicketEntry {
                                                      Username finalizedBy)
         throws ApiGatewayException {
         return (PublishingRequestCase) this.complete(publication, finalizedBy).persistNewTicket(ticketService);
+    }
+
+    public boolean fileIsApproved(File file) {
+        return getApprovedFiles().contains(file.getIdentifier());
     }
 
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
