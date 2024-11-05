@@ -1033,10 +1033,12 @@ Resources:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           SHORTENED_URI_TABLE_NAME: !Ref DownloadUrlShorteningTable
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+          TABLE_NAME: !Ref NvaResourcesTable
       Policies:
         - !GetAtt S3AccessResourceStorageManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
         - !GetAtt DownloadUrlShorteningTableManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn # because of identityServiceClient::getExternalClient call
       Events:
         AnonymousGetEvent:
           Type: Api
@@ -1044,6 +1046,12 @@ Resources:
             Path: /{publicationIdentifier}/filelink/{fileIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
+
+  ResolveShortenedUrlFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ResolveShortenedUrlFunction}'
+      RetentionInDays: 90
 
   ResolveShortenedUrlFunction:
     Type: AWS::Serverless::Function
