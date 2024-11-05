@@ -511,7 +511,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
         return (PublishingRequestCase)
                 PublishingRequestCase.fromPublication(publication)
-                        .withOwner(UserInstance.fromPublication(publication).getUsername());
+                    .withWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                    .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 
     private AcceptedPublishingRequestEventHandler

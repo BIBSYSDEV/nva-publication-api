@@ -27,7 +27,6 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -53,6 +52,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private static final String PUBLICATION_UPDATE_ERROR_MESSAGE = "Could not update publication: %s";
     private static final String PUBLISHING_FILE_MESSAGE =
         "Publishing file {} of type {} from approved " + "PublishingRequest {} for publication {}";
+    public static final String UNKNOWN_WORKFLOW_MESSAGE = "Unknown workflow: {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
@@ -107,16 +107,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
     }
 
-    private static boolean shouldPublishMetadataAndFiles(PublishingRequestCase publishingRequestCase) {
-        return PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(
-            publishingRequestCase.getWorkflow());
-    }
-
-    private static boolean shouldPublishFilesOnly(PublishingRequestCase publishingRequestCase) {
-        return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow()) ||
-               PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow());
-    }
-
     private static void logFilePublish(File unpublishedFile, PublishingRequestCase publishingRequestCase) {
         logger.info(PUBLISHING_FILE_MESSAGE, unpublishedFile.getIdentifier(),
                     unpublishedFile.getClass().getSimpleName(), publishingRequestCase.getIdentifier(),
@@ -148,15 +138,19 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         var publication = fetchPublication(publishingRequestCase.getResourceIdentifier());
         var publishingRequest = fetchPublishingRequest(publishingRequestCase);
         var updatedPublication = toPublicationWithPublishedFiles(publication, publishingRequest);
-        if (shouldPublishFilesOnly(publishingRequestCase)) {
-            publishFiles(updatedPublication);
-            logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), publishingRequestCase.getIdentifier());
-        }
-        if (shouldPublishMetadataAndFiles(publishingRequestCase)) {
-            publishFiles(updatedPublication);
-            publishPublication(publishingRequestCase);
-            logger.info(PUBLISHING_METADATA_AND_FILES_MESSAGE, publication.getIdentifier(),
-                        publishingRequestCase.getIdentifier());
+        var ticketIdentifier = publishingRequest.getIdentifier();
+        switch (publishingRequestCase.getWorkflow()) {
+            case REGISTRATOR_PUBLISHES_METADATA_ONLY, REGISTRATOR_PUBLISHES_METADATA_AND_FILES -> {
+                publishFiles(updatedPublication);
+                logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), ticketIdentifier);
+            }
+            case REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES -> {
+                publishFiles(updatedPublication);
+                publishPublication(publishingRequestCase);
+                logger.info(PUBLISHING_METADATA_AND_FILES_MESSAGE, publication.getIdentifier(),
+                            ticketIdentifier);
+            }
+            default -> logger.error(UNKNOWN_WORKFLOW_MESSAGE, publishingRequestCase.getWorkflow());
         }
         createDoiRequestIfNeeded(updatedPublication);
     }
@@ -217,6 +211,11 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return attempt(() -> resourceService.getPublicationByIdentifier(publicationIdentifier)).orElseThrow();
     }
 
+    /**
+     * Creating DoiRequest for a publication necessarily owned by publication owner institution
+     * and not the institution that requests the doi.
+     * @param publication to create a DoiRequest for
+     */
     private void createDoiRequestIfNeeded(Publication publication) {
         if (hasDoi(publication) && !doiRequestExists(publication)) {
             attempt(() -> DoiRequest.fromPublication(publication)
