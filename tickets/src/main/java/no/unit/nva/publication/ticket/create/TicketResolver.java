@@ -7,10 +7,8 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
-import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +23,7 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
@@ -47,7 +46,8 @@ import org.slf4j.LoggerFactory;
 public class TicketResolver {
 
     public static final String CONTENT_TYPE = "application/json";
-    public static final String CREATING_TICKET_ERROR_MESSAGE = "Creating ticket {} for publication {} is forbidden for user {}";
+    public static final String CREATING_TICKET_ERROR_MESSAGE =
+        "Creating ticket {} for publication {} is forbidden for user {}";
     private final Logger logger = LoggerFactory.getLogger(TicketResolver.class);
     private final ResourceService resourceService;
     private final TicketService ticketService;
@@ -69,7 +69,8 @@ public class TicketResolver {
     public TicketEntry resolveAndPersistTicket(TicketDto ticketDto, RequestUtils requestUtils)
         throws ApiGatewayException {
         var publication = fetchPublication(requestUtils);
-        var permissionStrategy = PublicationPermissionStrategy.create(publication, requestUtils.toUserInstance(), resourceService);
+        var permissionStrategy = PublicationPermissionStrategy
+                                     .create(publication, requestUtils.toUserInstance(), resourceService);
 
         validateUserPermissions(permissionStrategy, ticketDto, requestUtils);
 
@@ -78,11 +79,15 @@ public class TicketResolver {
                          .withOwner(requestUtils.username());
         if (ticket instanceof PublishingRequestCase publishingRequest) {
             var customerId = requestUtils.customerId();
-            publishingRequest.withWorkflow(getCustomerPublishingWorkflowResponse(customerId).convertToPublishingWorkflow())
+            publishingRequest.withWorkflow(getWorkflow(customerId))
                 .withFilesForApproval(getFilesForApproval(publication));
             return createPublishingRequest(publishingRequest, publication, requestUtils);
         }
         return persistTicket(ticket);
+    }
+
+    private PublishingWorkflow getWorkflow(URI customerId) throws BadGatewayException {
+        return getCustomerPublishingWorkflowResponse(customerId).convertToPublishingWorkflow();
     }
 
     private Set<FileForApproval> getFilesForApproval(Publication publication) {
@@ -130,7 +135,7 @@ public class TicketResolver {
     }
 
     private ApiGatewayException loggingFailureReporter(Exception exception) {
-        logger.error("Request failed: {}", Arrays.toString(exception.getStackTrace()));
+        logger.error("Request failed: {}", exception.getMessage());
         return new ForbiddenException();
     }
 
@@ -138,18 +143,13 @@ public class TicketResolver {
                                                           Publication publication, RequestUtils requestUtils)
         throws ApiGatewayException {
         var username = new Username(requestUtils.username());
-        return userCanPublishFiles(requestUtils, publishingRequestCase)
-                   ? createPublishingRequestForCurator(publishingRequestCase, publication, username)
+        return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())
+                   ? createPublishingRequestAndPublishMetadateWithFiles(publishingRequestCase, publication, username)
                    : createPublishingRequestForNonCurator(publishingRequestCase, publication, username);
     }
 
-    private static boolean userCanPublishFiles(RequestUtils requestUtils, PublishingRequestCase publishingRequestCase) {
-        return requestUtils.toUserInstance().getAccessRights().contains(MANAGE_PUBLISHING_REQUESTS)
-               || publishingRequestCase.getWorkflow().equals(REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
-    }
-
-    private PublishingRequestCase createPublishingRequestForCurator(PublishingRequestCase publishingRequestCase,
-                                                                    Publication publication, Username curator)
+    private PublishingRequestCase createPublishingRequestAndPublishMetadateWithFiles(
+        PublishingRequestCase publishingRequestCase, Publication publication, Username curator)
         throws ApiGatewayException {
         publishPublicationAndFiles(publication);
         return createAutoApprovedTicketForCurator(publishingRequestCase, publication, curator);
