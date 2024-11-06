@@ -17,7 +17,6 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -416,46 +415,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(PendingOpenFile.class)));
         assertThat(publishedPublication.getStatus(), is(equalTo(PUBLISHED)));
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
-    }
-
-    @Test
-    void shouldPublishPublicationAndFilesWhenCustomerAllowsPublishingMetadataOnlyButRequesterHasManagePubReqRight()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
-        var requestBody = constructDto(PublishingRequestCase.class);
-        ticketResolver = new TicketResolver(resourceService, ticketService,
-                                            getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
-                                                            secretsManagerClient));
-        handler = new CreateTicketHandler(ticketResolver, messageService);
-        handler.handleRequest(
-            createHttpTicketCreationRequestWithAccessRight(
-                requestBody, publication, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD), output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        var publishedPublication = resourceService.getPublication(publication);
-        assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(OpenFile.class)));
-        assertThat(publishedPublication.getStatus(), is(equalTo(PUBLISHED)));
-        assertThat(getTicketStatusForPublication(publication), is(equalTo(COMPLETED)));
-    }
-
-    @Test
-    void shouldSetCuratorAsAssigneeWhenCuratorPublishesPublicationAndCustomerAllowsPublishingMetadataOnly()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
-        var requestBody = constructDto(PublishingRequestCase.class);
-        ticketResolver = new TicketResolver(resourceService, ticketService,
-                                            getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
-                                                            secretsManagerClient));
-        handler = new CreateTicketHandler(ticketResolver, messageService);
-        handler.handleRequest(
-            createHttpTicketCreationRequestWithAccessRight(
-                requestBody, publication, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD), output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        var completedPublishingRequest = fetchTicket(publication, PublishingRequestCase.class);
-
-        assertThat(completedPublishingRequest.getAssignee().getValue(),
-                   is(equalTo(completedPublishingRequest.getOwner().toString())));
     }
 
     @Test

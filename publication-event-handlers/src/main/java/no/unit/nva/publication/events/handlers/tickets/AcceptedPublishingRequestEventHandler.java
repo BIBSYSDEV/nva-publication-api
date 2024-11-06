@@ -15,6 +15,13 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -22,7 +29,6 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -74,14 +80,44 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
         var ticketUpdate = parseInput(eventBlob);
-        if (isCompleted(ticketUpdate) && hasEffectiveChanges(eventBlob)) {
-            publishPublicationAndFiles(ticketUpdate);
+        if (hasEffectiveChanges(eventBlob)) {
+            handleChanges(ticketUpdate);
         }
         return null;
     }
 
-    private static boolean isCompleted(PublishingRequestCase latestUpdate) {
-        return TicketStatus.COMPLETED.equals(latestUpdate.getStatus());
+    private void handleChanges(PublishingRequestCase publishingRequest) {
+        switch (publishingRequest.getStatus()) {
+            case COMPLETED -> handleCompletedPublishingRequest(publishingRequest);
+            case CLOSED -> handleClosedPublishingRequest(publishingRequest);
+            default -> {
+                // Ignore other non-final statuses
+            }
+        }
+    }
+
+    private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
+        var publication = fetchPublication(publishingRequestCase.getResourceIdentifier());
+        var updatedPublication = publication.copy()
+                                     .withAssociatedArtifacts(rejectFiles(publication))
+                                     .build();
+        resourceService.updatePublication(updatedPublication);
+    }
+
+    private List<AssociatedArtifact> rejectFiles(Publication publication) {
+        var associatedArtifacts = publication.getAssociatedArtifacts();
+        return associatedArtifacts.stream()
+                   .map(this::rejectFile)
+                   .toList();
+    }
+
+    //TODO: Remove unpublishable file and logic related to it after we have migrated files
+    private AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
+        return switch (associatedArtifact) {
+            case UnpublishedFile unpublishedFile -> unpublishedFile.toUnpublishableFile();
+            case PendingFile<?> pendingFile -> pendingFile.reject();
+            default -> associatedArtifact;
+        };
     }
 
     private static boolean hasDoi(Publication publication) {
@@ -118,7 +154,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
     }
 
-    private void publishPublicationAndFiles(PublishingRequestCase publishingRequestCase) {
+    private void handleCompletedPublishingRequest(PublishingRequestCase publishingRequestCase) {
         var publication = fetchPublication(publishingRequestCase.getResourceIdentifier());
         var publishingRequest = fetchPublishingRequest(publishingRequestCase);
         var updatedPublication = toPublicationWithPublishedFiles(publication, publishingRequest);

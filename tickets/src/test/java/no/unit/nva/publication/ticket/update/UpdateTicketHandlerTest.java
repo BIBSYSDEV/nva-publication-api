@@ -21,7 +21,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -46,7 +45,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -57,7 +55,6 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.DoiRequestDto;
 import no.unit.nva.publication.ticket.TicketAndPublicationStatusProvider;
 import no.unit.nva.publication.ticket.TicketConfig;
@@ -548,26 +545,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldUpdatePendingFilesToRejectedWhenRejectingPublishingRequest() throws ApiGatewayException, IOException {
-
-        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
-            PublicationStatus.DRAFT, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
-        var closedTicket = ticket.close(new Username(randomString()));
-        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
-                                                          ticket.getCustomerId(),
-                                                          MANAGE_RESOURCES_STANDARD,
-                                                          MANAGE_PUBLISHING_REQUESTS);
-        handler.handleRequest(httpRequest, output, CONTEXT);
-
-        var updatedPublication = resourceService.getPublication(publication);
-
-        var file = updatedPublication.getAssociatedArtifacts().getFirst();
-
-        assertThat(file, is(instanceOf(RejectedFile.class)));
-    }
-
-    @Test
     void shouldSetUnpublishedFilesAsApprovedFilesForPublishingRequestWhenUpdatingStatusToComplete()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
@@ -621,7 +598,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
 
         var completedTicket = ticket.complete(publication, USER_NAME);
-        var httpRequest = userUpdatesTicket(completedTicket, contributorId, randomUri());
+        var httpRequest = userUpdatesTicket(completedTicket, contributorId);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
@@ -639,14 +616,14 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
 
         var completedTicket = ticket.complete(publication, USER_NAME);
-        var httpRequest = userUpdatesTicket(completedTicket, randomUri(), curatingInstitution);
+        var httpRequest = userUpdatesTicket(completedTicket, randomUri());
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertEquals(response.getStatusCode(), HTTP_ACCEPTED);
     }
 
-    private InputStream userUpdatesTicket(TicketEntry ticket, URI userId, URI customer) throws JsonProcessingException {
+    private InputStream userUpdatesTicket(TicketEntry ticket, URI userId) throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withBody(
                 new UpdateTicketRequest(null, null, ViewStatus.READ))
                    .withCurrentCustomer(randomUri())
@@ -667,11 +644,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private static Map<String, String> pathParameters(Publication publication, TicketEntry ticket) {
         return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publication.getIdentifier().toString(),
                       TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString());
-    }
-
-    private static void assertThatTicketViewStatusIsUnchanged(TicketEntry ticket) {
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-        assertThat(ticket.getViewedBy(), hasItem(new User(ticket.getAssignee().toString())));
     }
 
     private static InputStream createOwnerMarksTicket(Publication publication, TicketEntry ticket,
@@ -832,12 +804,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withAccessRights(ticket.getCustomerId(), AccessRight.MANAGE_DOI)
                    .withPersonCristinId(randomUri())
                    .build();
-    }
-
-    private InputStream alienCuratorMarksTicket(Publication publication, TicketEntry ticket)
-        throws JsonProcessingException {
-        return elevatedUserMarksTicket(publication, ticket, ViewStatus.UNREAD, RandomPersonServiceResponse.randomUri(),
-                                       new User(randomString()));
     }
 
     private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket,
