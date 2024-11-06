@@ -11,15 +11,10 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.List;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -197,39 +192,9 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private void publishingRequestSideEffects(PublishingRequestCase ticket,
-                                              UpdateTicketRequest ticketRequest)
-        throws NotFoundException {
-        if (CLOSED.equals(ticketRequest.getStatus())) {
-            updateUnpublishedFilesToUnpublishable(ticket.getResourceIdentifier());
-        }
+                                              UpdateTicketRequest ticketRequest) {
         if (COMPLETED.equals(ticketRequest.getStatus())) {
-            ticket.approveFiles();
-            ticketService.updateTicket(ticket);
-        }
-    }
-
-    private void updateUnpublishedFilesToUnpublishable(SortableIdentifier publicationIdentifier)
-        throws NotFoundException {
-        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
-        var updatedPublication = publication.copy()
-                                     .withAssociatedArtifacts(rejectFiles(publication))
-                                     .build();
-        resourceService.updatePublication(updatedPublication);
-    }
-
-    private List<AssociatedArtifact> rejectFiles(Publication publication) {
-        var associatedArtifacts = publication.getAssociatedArtifacts();
-        return associatedArtifacts.stream()
-                   .map(UpdateTicketHandler::rejectFile)
-                   .toList();
-    }
-
-    //TODO: Remove unpublishable file and logic related to it after we have migrated files
-    private static AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
-        if (associatedArtifact instanceof UnpublishedFile unpublishedFile) {
-            return unpublishedFile.toUnpublishableFile();
-        } else {
-            return associatedArtifact instanceof PendingFile<?> pendingFile ? pendingFile.reject() : associatedArtifact;
+            ticket.approveFiles().persistUpdate(ticketService);
         }
     }
 

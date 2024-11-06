@@ -3,6 +3,8 @@ package no.unit.nva.publication.events.handlers.tickets;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
@@ -19,6 +21,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -41,6 +44,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -405,6 +409,26 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var event = createEvent(null, ticket);
 
         assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
+    }
+
+    @Test
+    void shouldHandleClosedPublishingRequestWhenPublishingRequestIsBeingRejected() throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(), randomPendingOpenFile()));
+        resourceService.updatePublication(publication);
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                                                            .withOwner(randomString())
+                                                            .withOwnerAffiliation(randomUri());
+        publishingRequest.setStatus(TicketStatus.CLOSED);
+        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var ticket = publishingRequest.persistNewTicket(ticketService);
+        var event = createEvent(null, ticket);
+
+        handler.handleRequest(event, outputStream, CONTEXT);
+
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+
+        assertTrue(updatedPublication.getAssociatedArtifacts().stream().allMatch(RejectedFile.class::isInstance));
     }
 
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
