@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.List;
@@ -11,6 +12,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -87,11 +89,19 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     private void handleChanges(PublishingRequestCase publishingRequest) {
         switch (publishingRequest.getStatus()) {
+            case PENDING -> handlePendingPublishingRequest(publishingRequest);
             case COMPLETED -> handleCompletedPublishingRequest(publishingRequest);
             case CLOSED -> handleClosedPublishingRequest(publishingRequest);
             default -> {
                 // Ignore other non-final statuses
             }
+        }
+    }
+
+    private void handlePendingPublishingRequest(PublishingRequestCase publishingRequest) {
+        var publication = fetchPublication(publishingRequest.getResourceIdentifier());
+        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
+            publishPublication(publication);
         }
     }
 
@@ -167,22 +177,35 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private void handleCompletedPublishingRequest(PublishingRequestCase publishingRequestCase) {
         var publication = fetchPublication(publishingRequestCase.getResourceIdentifier());
         var publishingRequest = fetchPublishingRequest(publishingRequestCase);
-        var updatedPublication = toPublicationWithPublishedFiles(publication, publishingRequest);
-        var ticketIdentifier = publishingRequest.getIdentifier();
+
+        publishWhenPublicationStatusDraft(publication);
+        var updatedPublication = toPublicationWithUpdatedFiles(publication, publishingRequest);
+
         switch (publishingRequestCase.getWorkflow()) {
             case REGISTRATOR_PUBLISHES_METADATA_ONLY, REGISTRATOR_PUBLISHES_METADATA_AND_FILES -> {
                 publishFiles(updatedPublication);
-                logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), ticketIdentifier);
+                logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), publishingRequest.getIdentifier());
             }
             case REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES -> {
                 publishFiles(updatedPublication);
-                publishPublication(publishingRequestCase);
                 logger.info(PUBLISHING_METADATA_AND_FILES_MESSAGE, publication.getIdentifier(),
-                            ticketIdentifier);
+                            publishingRequest.getIdentifier());
             }
             default -> logger.error(UNKNOWN_WORKFLOW_MESSAGE, publishingRequestCase.getWorkflow());
         }
         createDoiRequestIfNeeded(updatedPublication);
+    }
+
+    private void publishWhenPublicationStatusDraft(Publication publication) {
+        if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
+            publishPublication(publication);
+        }
+    }
+
+    private Publication toPublicationWithUpdatedFiles(Publication publication, PublishingRequestCase publishingRequest) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(publication.getIdentifier()))
+                   .map(pub -> toPublicationWithPublishedFiles(pub, publishingRequest))
+                   .orElseThrow();
     }
 
     private PublishingRequestCase fetchPublishingRequest(PublishingRequestCase latestUpdate) {
@@ -197,12 +220,12 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return new RuntimeException();
     }
 
-    private void publishPublication(PublishingRequestCase publishingRequestCase) {
-        var userInstance = UserInstance.create(publishingRequestCase.getOwner(), publishingRequestCase.getCustomerId());
+    private void publishPublication(Publication publication) {
+        var userInstance = UserInstance.fromPublication(publication);
         attempt(() -> resourceService.publishPublication(userInstance,
-                                                         publishingRequestCase.getResourceIdentifier())).orElseThrow(
+                                                         publication.getIdentifier())).orElseThrow(
             fail -> throwException(
-                String.format(PUBLISHING_ERROR_MESSAGE, publishingRequestCase.getResourceIdentifier()), fail));
+                String.format(PUBLISHING_ERROR_MESSAGE, publication.getIdentifier()), fail));
     }
 
     private void publishFiles(Publication updatedPublication) {
