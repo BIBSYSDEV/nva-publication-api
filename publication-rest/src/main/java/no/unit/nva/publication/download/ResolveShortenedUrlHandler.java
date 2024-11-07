@@ -47,9 +47,7 @@ public class ResolveShortenedUrlHandler extends ApiGatewayHandler<Void, Void> {
     }
 
     private Map<String, String> addLocationHeader(URI longUri) {
-        Map<String, String> headers = new HashMap<>();
-        headers.put(LOCATION, longUri.toString());
-        return headers;
+        return Map.of(LOCATION,  longUri.toString());
     }
 
     @JacocoGenerated
