@@ -80,7 +80,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(
                                                                 publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
         publishingRequest.persistNewTicket(ticketService);
     }
 }

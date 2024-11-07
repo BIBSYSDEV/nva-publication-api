@@ -16,10 +16,13 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -68,9 +71,9 @@ public class PublishingRequestCase extends TicketEntry {
     @JsonProperty(OWNER_AFFILIATION_FIELD)
     private URI ownerAffiliation;
     @JsonProperty(APPROVED_FILES_FIELD)
-    private Set<UUID> approvedFiles;
+    private Set<File> approvedFiles;
     @JsonProperty(FILES_FOR_APPROVAL_FIELD)
-    private Set<FileForApproval> filesForApproval;
+    private Set<File> filesForApproval;
 
     public PublishingRequestCase() {
         super();
@@ -151,8 +154,8 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setWorkflow(this.getWorkflow());
         copy.setAssignee(this.getAssignee());
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
-        copy.setApprovedFiles(this.getApprovedFiles().isEmpty() ? Set.of() : this.getApprovedFiles());
-        copy.setFilesForApproval(this.getFilesForApproval().isEmpty() ? Set.of() : this.getFilesForApproval());
+        copy.approvedFiles = this.getApprovedFiles().isEmpty() ? Set.of() : this.getApprovedFiles();
+        copy.filesForApproval = this.getFilesForApproval().isEmpty() ? Set.of() : this.getFilesForApproval();
         copy.setFinalizedBy(this.getFinalizedBy());
         copy.setFinalizedDate(this.getFinalizedDate());
         return copy;
@@ -178,12 +181,44 @@ public class PublishingRequestCase extends TicketEntry {
         this.assignee = assignee;
     }
 
-    public Set<FileForApproval> getFilesForApproval() {
+    public Set<File> getFilesForApproval() {
         return nonNull(filesForApproval) ? filesForApproval : Set.of();
     }
 
-    public void setFilesForApproval(Set<FileForApproval> filesForApproval) {
-        this.filesForApproval = filesForApproval;
+    public void setFilesForApproval(Set<Object> filesForApproval) {
+        if (filesForApproval.stream().allMatch(FileForApproval.class::isInstance)) {
+            this.filesForApproval =
+                filesForApproval.stream().map(map -> attempt(() -> JsonUtils.dtoObjectMapper.convertValue(map,
+                                                                                                          FileForApproval.class)).toOptional())
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(fileForApproval -> File.builder().withIdentifier(fileForApproval.identifier()).buildOpenFile())
+                    .collect(Collectors.toSet());
+        } else if (filesForApproval.stream().allMatch(File.class::isInstance)) {
+            this.filesForApproval =
+                filesForApproval.stream().map(map -> attempt(() -> JsonUtils.dtoObjectMapper.convertValue(map,
+                                                                                                          File.class)).toOptional())
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
+        } else if (filesForApproval.stream().allMatch(file -> file instanceof Map<?,?> map && map.size() == 1)) {
+            this.filesForApproval =
+                filesForApproval.stream().map(map -> attempt(() -> JsonUtils.dtoObjectMapper.convertValue(map,
+                                                                                                         FileForApproval.class)).toOptional())
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(fileForApproval -> File.builder().withIdentifier(fileForApproval.identifier()).buildOpenFile())
+                    .collect(Collectors.toSet());
+        } else if (filesForApproval.stream().allMatch(Map.class::isInstance)) {
+            this.filesForApproval = filesForApproval.stream()
+                                     .map(map -> attempt(
+                                         () -> JsonUtils.dtoObjectMapper.convertValue(map, File.class)).toOptional())
+                                     .filter(Optional::isPresent)
+                                     .map(Optional::get)
+                                     .collect(Collectors.toSet());
+        } else {
+            this.filesForApproval = Set.of();
+        }
     }
 
     public void emptyFilesForApproval() {
@@ -200,12 +235,32 @@ public class PublishingRequestCase extends TicketEntry {
         this.ownerAffiliation = ownerAffiliation;
     }
 
-    public Set<UUID> getApprovedFiles() {
+    public Set<File> getApprovedFiles() {
         return nonNull(approvedFiles) ? approvedFiles : Collections.emptySet();
     }
 
-    public void setApprovedFiles(Set<UUID> approvedFiles) {
-        this.approvedFiles = approvedFiles;
+    public void setApprovedFiles(Set<Object> approvedFiles) {
+        if (approvedFiles.stream().allMatch(value -> value instanceof String || value instanceof UUID)) {
+            this.approvedFiles =
+                approvedFiles.stream().map(fileIdentifier -> File.builder().withIdentifier(UUID.fromString(fileIdentifier.toString())).buildOpenFile())
+                    .collect(Collectors.toSet());
+        } else if (approvedFiles.stream().allMatch(File.class::isInstance)) {
+            this.approvedFiles =
+                approvedFiles.stream().map(map -> attempt(() -> JsonUtils.dtoObjectMapper.convertValue(map,
+                                                                                                          File.class)).toOptional())
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
+        } else if (approvedFiles.stream().allMatch(Map.class::isInstance)) {
+            this.approvedFiles = approvedFiles.stream()
+                                     .map(map -> attempt(
+                                         () -> JsonUtils.dtoObjectMapper.convertValue(map, File.class)).toOptional())
+                                     .filter(Optional::isPresent)
+                                     .map(Optional::get)
+                                     .collect(Collectors.toSet());
+        } else {
+            this.approvedFiles = Set.of();
+        }
     }
 
     @Override
@@ -272,13 +327,13 @@ public class PublishingRequestCase extends TicketEntry {
         return status.toString();
     }
 
-    public PublishingRequestCase withFilesForApproval(Set<FileForApproval> filesForApproval) {
+    public PublishingRequestCase withFilesForApproval(Set<File> filesForApproval) {
         this.filesForApproval = filesForApproval;
         return this;
     }
 
     public PublishingRequestCase approveFiles() {
-        this.approvedFiles = getFilesForApproval().stream().map(FileForApproval::identifier).collect(Collectors.toSet());
+        this.approvedFiles = getFilesForApproval();
         this.filesForApproval = Set.of();
         return this;
     }

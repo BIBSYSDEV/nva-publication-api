@@ -72,7 +72,6 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -744,7 +743,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var expectedFilesForApproval = publication.getAssociatedArtifacts().stream()
                                            .filter(UnpublishedFile.class::isInstance)
                                            .map(UnpublishedFile.class::cast)
-                                           .map(FileForApproval::fromFile)
                                            .toArray();
 
         assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
@@ -963,7 +961,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
                                                                                               SortableIdentifier::next)
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
 

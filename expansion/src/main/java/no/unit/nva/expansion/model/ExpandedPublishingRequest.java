@@ -6,7 +6,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
@@ -160,24 +159,19 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setFinalizedBy(finalizedBy);
         entry.setOwner(owner);
         entry.setAssignee(assignee);
-        entry.setApprovedFiles(extractApprovedFiles(publication, dataEntry.getApprovedFiles()));
-        entry.setFilesForApproval(extractFilesForApproval(publication, dataEntry.getFilesForApproval()));
+        entry.setApprovedFiles(dataEntry.getApprovedFiles().stream().map(File.class::cast)
+                                   .collect(Collectors.toSet()));
+        entry.setFilesForApproval(extractFilesForApproval(publication,
+                                                          dataEntry.getFilesForApproval().stream().map(Object.class::cast)
+                                                                           .collect(Collectors.toSet())));
         return entry;
     }
 
-    private static Set<File> extractFilesForApproval(Publication publication, Set<FileForApproval> filesForApproval) {
+    private static Set<File> extractFilesForApproval(Publication publication, Set<Object> filesForApproval) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .filter(file -> filesForApproval.contains(FileForApproval.fromFile(file)))
-                   .collect(Collectors.toSet());
-    }
-
-    private static Set<File> extractApprovedFiles(Publication publication, Set<UUID> approvedFiles) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .filter(file -> approvedFiles.contains(file.getIdentifier()))
                    .collect(Collectors.toSet());
     }
 

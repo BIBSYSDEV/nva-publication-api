@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -46,9 +47,9 @@ public class PublishingRequestDto extends TicketDto {
     @JsonProperty(WORKFLOW_FIELD)
     private final PublishingWorkflow workflow;
     @JsonProperty(APPROVED_FILES_FIELD)
-    private final Set<UUID> approvedFiles;
+    private final Set<File> approvedFiles;
     @JsonProperty(FILES_FOR_APPROVAL)
-    private final Set<UUID> filesForApproval;
+    private final Set<File> filesForApproval;
 
     @JsonCreator
     public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
@@ -63,8 +64,8 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(OWNER_FIELD) User owner,
                                 @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                 @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow,
-                                @JsonProperty(APPROVED_FILES_FIELD) Set<UUID> approvedFiles,
-                                @JsonProperty(FILES_FOR_APPROVAL) Set<UUID> filesForApproval,
+                                @JsonProperty(APPROVED_FILES_FIELD) Set<File> approvedFiles,
+                                @JsonProperty(FILES_FOR_APPROVAL) Set<File> filesForApproval,
                                 @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                                 @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
         super(status,
@@ -120,11 +121,11 @@ public class PublishingRequestDto extends TicketDto {
         return workflow;
     }
 
-    public Set<UUID> getApprovedFiles() {
+    public Set<File> getApprovedFiles() {
         return approvedFiles;
     }
 
-    public Set<UUID> getFilesForApproval() {
+    public Set<File> getFilesForApproval() {
         return filesForApproval;
     }
 

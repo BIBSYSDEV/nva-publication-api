@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,12 +37,14 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -323,7 +326,29 @@ public class ResourceService extends ServiceWithTransactions {
     // update this method according to current needs.
     //TODO: redesign migration process?
     public Entity migrate(Entity dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
-        return dataEntry instanceof Resource ? migrateResource((Resource) dataEntry, s3Client, cristinUnitsS3Uri) : dataEntry;
+        return switch (dataEntry) {
+            case Resource resource -> migrateResource(resource, s3Client, cristinUnitsS3Uri);
+            case TicketEntry ticketEntry when ticketEntry instanceof PublishingRequestCase publishingRequestCase -> migratePublishingRequest(publishingRequestCase);
+            default -> dataEntry;
+        };
+    }
+
+    private Entity migratePublishingRequest(PublishingRequestCase publishingRequest) {
+        var resourceIdentifier = publishingRequest.getResourceIdentifier();
+        publishingRequest.setFilesForApproval(migrateFiles(publishingRequest.getFilesForApproval(), resourceIdentifier));
+        publishingRequest.setApprovedFiles(migrateFiles(publishingRequest.getApprovedFiles(), resourceIdentifier));
+        return publishingRequest;
+    }
+
+    private Set<Object> migrateFiles(Set<File> files, SortableIdentifier resourceIdentifier) {
+        return files.stream().map(file -> migrateFile(file, resourceIdentifier)).collect(Collectors.toSet());
+    }
+
+    private File migrateFile(File file, SortableIdentifier resourceIdentifier) {
+        var publication = attempt(() -> readResourceService.getResourceByIdentifier(resourceIdentifier))
+                              .map(Resource::toPublication).orElseThrow();
+        return publication.getFile(file.getIdentifier())
+            .orElse(file);
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {

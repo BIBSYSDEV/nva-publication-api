@@ -46,7 +46,6 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -69,13 +68,12 @@ public final class TicketTestUtils {
 
     private TicketTestUtils() {}
 
-    public static Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+    public static Set<File> getFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts()
                    .stream()
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .filter(File::needsApproval)
-                   .map(FileForApproval::fromFile)
                    .collect(Collectors.toSet());
     }
 

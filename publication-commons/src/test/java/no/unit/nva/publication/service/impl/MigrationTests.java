@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -34,15 +36,20 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DataCompressor;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +67,7 @@ class MigrationTests extends ResourcesLocalTest {
     public static final String CRISTIN_UNITS_S3_URI = "s3://some-bucket/some-key";
     private S3Client s3Client;
     private ResourceService resourceService;
+    private TicketService ticketService;
 
     @BeforeEach
     public void init() {
@@ -69,6 +77,7 @@ class MigrationTests extends ResourcesLocalTest {
         when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
             (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         this.resourceService = getResourceServiceBuilder().build();
+        this.ticketService = new TicketService(client, uriRetriever);
     }
 
     @Test
@@ -222,6 +231,29 @@ class MigrationTests extends ResourcesLocalTest {
         createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
         migrateResources();
         verify(uriRetriever, never()).getRawContent(ArgumentMatchers.any(), ArgumentMatchers.any());
+    }
+
+    @Test
+    void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
+        var publication = resourceService.createPublicationWithPredefinedCreationDate(randomPublication());
+        var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(publication,
+                                                                                    PublishingRequestCase.class);
+        var fileFromPublication = publication.getAssociatedArtifacts().stream().filter(File.class::isInstance)
+                                      .map(File.class::cast)
+                                      .findFirst()
+                                      .orElseThrow();
+        publishingRequest.setFilesForApproval(Set.of(FileForApproval.fromFile(fileFromPublication)));
+        publishingRequest.setApprovedFiles(Set.of(fileFromPublication.getIdentifier()));
+
+        publishingRequest.withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
+
+        var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
+        resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client, CRISTIN_UNITS_S3_URI);
+
+        var migratedTicket = (PublishingRequestCase) publishingRequest.fetch(ticketService);
+
+        assertEquals(migratedTicket.getApprovedFiles().iterator().next(), fileFromPublication);
+        assertEquals(migratedTicket.getFilesForApproval().iterator().next(), fileFromPublication);
     }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {

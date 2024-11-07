@@ -591,7 +591,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                 .withOwnerAffiliation(
                                         publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(
-                TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+                TicketTestUtils.getFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
 
