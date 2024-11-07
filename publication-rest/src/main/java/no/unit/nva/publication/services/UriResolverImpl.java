@@ -39,8 +39,8 @@ public class UriResolverImpl implements UriResolver {
 
 
     @Override
-    public URI resolve(URI shortenedUri) throws ApiGatewayException {
-        var uriMap = findUriMapById(shortenedUri);
+    public URI resolve(URI alias) throws ApiGatewayException {
+        var uriMap = findUriMapById(alias);
         return uriMap.longUri();
     }
 
