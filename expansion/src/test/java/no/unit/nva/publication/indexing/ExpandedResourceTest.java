@@ -161,7 +161,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var indexDocument = fromPublication(fakeUriRetriever, resourceService, publication);
         var framedResultNode = indexDocument.asJsonNode();
 
-        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/countryCode")
+        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/country")
                                     .textValue();
         assertThat(actualCountryCode, is(not(nullValue())));
     }

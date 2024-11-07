@@ -1,43 +1,39 @@
 {
   "@vocab": "https://nva.sikt.no/ontology/publication#",
-  "xsd": "http://www.w3.org/2001/XMLSchema#",
-  "id": "@id",
-  "type": "@type",
-  "affiliations": {
-    "@id": "affiliation",
-    "@container": "@set"
-  },
   "activeFrom": {
     "@type": "xsd:dateTime"
   },
   "activeTo": {
     "@type": "xsd:dateTime"
   },
-  "associatedArtifacts": {
-    "@id": "associatedArtifact",
-    "@container": "@set"
-  },
   "additionalIdentifiers": {
     "@id": "additionalIdentifier",
     "@container": "@set"
   },
-  "publicationNotes": {
-    "@id": "publicationNoteBase",
+  "administrativeAgreement": {
+    "@id": "administrativeAgreement",
+    "@type": "xsd:boolean"
+  },
+  "affiliations": {
+    "@id": "affiliation",
     "@container": "@set"
   },
   "alternativeTitles": {
     "@id": "alternativeTitle",
     "@container": "@language"
   },
-  "approvals": {
-    "@id": "approval",
-    "@container": "@set"
+  "amount": {
+    "@type": "xsd:integer"
   },
   "approvalStatus": {
     "@type": "@vocab",
     "@context": {
       "@vocab": "https://nva.sikt.no/ontology/publication#"
     }
+  },
+  "approvals": {
+    "@id": "approval",
+    "@container": "@set"
   },
   "approvedBy": {
     "@type": "@vocab",
@@ -49,6 +45,10 @@
     "@id": "architectureOutput",
     "@container": "@set"
   },
+  "associatedArtifacts": {
+    "@id": "associatedArtifact",
+    "@container": "@set"
+  },
   "compliesWith": {
     "@id": "compliesWith",
     "@container": "@set"
@@ -57,12 +57,28 @@
     "@id": "concertProgramme",
     "@container": "@set"
   },
+  "contributorOrganizations": {
+    "@id": "contributorOrganization",
+    "@container": "@set",
+    "@type": "@id"
+  },
   "contributors": {
     "@id": "contributor",
     "@container": "@set"
   },
+  "correspondingAuthor": {
+    "@type": "xsd:boolean"
+  },
+  "country": {
+    "@id": "country"
+  },
   "createdDate": {
     "@type": "xsd:dateTime"
+  },
+  "curatingInstitutions": {
+    "@id": "curatingOrganization",
+    "@type": "@id",
+    "@container": "@set"
   },
   "date": {
     "@type": "xsd:dateTime"
@@ -79,11 +95,23 @@
   "from": {
     "@type": "xsd:dateTime"
   },
+  "fundings": {
+    "@id": "funding",
+    "@container": "@set"
+  },
   "handle": {
     "@type": "@id"
   },
+  "hasPart": {
+    "@container": "@set"
+  },
+  "id": "@id",
   "illustrated": {
     "@type": "xsd:boolean"
+  },
+  "importDetails": {
+    "@id": "importDetail",
+    "@container": "@set"
   },
   "indexedDate": {
     "@type": "xsd:dateTime"
@@ -116,43 +144,49 @@
     "@id": "musicalWork",
     "@container": "@set"
   },
-  "ownerAffiliation": {
-    "@type": "@id"
-  },
-  "outputs": {
-    "@id": "output",
-    "@container": "@set"
-  },
-  "publishedDate": {
-    "@type": "xsd:dateTime"
-  },
   "nameType": {
     "@type": "@vocab",
     "@context": {
       "@vocab": "https://nva.sikt.no/ontology/publication#"
     }
   },
+  "outputs": {
+    "@id": "output",
+    "@container": "@set"
+  },
+  "ownerAffiliation": {
+    "@type": "@id"
+  },
+  "partOf": {
+    "@container": "@set"
+  },
   "projects": {
     "@id": "project",
     "@container": "@set"
   },
-  "fundings": {
-    "@id": "funding",
+  "publicationNotes": {
+    "@id": "publicationNote",
+    "@container": "@set"
+  },
+  "publishedDate": {
+    "@type": "xsd:dateTime"
+  },
+  "referencedBy": {
+    "@id": "referencedBy",
     "@container": "@set"
   },
   "related": {
     "@id": "related",
     "@container": "@set"
   },
-  "referencedBy": {
-    "@id": "referencedBy",
-    "@container": "@set"
-  },
   "role": {
-    "@type": "@vocab",
-    "@context": {
-      "@vocab": "https://nva.sikt.no/ontology/publication#"
-    }
+    "@id": "role"
+  },
+  "sequence": {
+    "@type": "xsd:integer"
+  },
+  "size": {
+    "@type": "xsd:integer"
   },
   "source": {
     "@type": "@id"
@@ -175,29 +209,27 @@
   "to": {
     "@type": "xsd:dateTime"
   },
+  "topLevelOrganizations": {
+    "@id": "topLevelOrganization",
+    "@container": "@set"
+  },
   "trackList": {
     "@id": "trackList",
     "@container": "@set"
+  },
+  "type": "@type",
+  "userAgreesToTermsAndConditions": {
+    "@type": "xsd:boolean"
+  },
+  "valid": {
+    "@type": "xsd:boolean"
   },
   "venues": {
     "@id": "venue",
     "@container": "@set"
   },
-  "curatingInstitutions": {
-    "@id": "curatingOrganization",
-    "@type": "@id",
-    "@container": "@set"
-  },
-  "contributorOrganizations": {
-    "@id": "contributorOrganization",
-    "@container": "@set",
-    "@type": "@id"
-  },
-  "importDetails": {
-    "@id": "importDetail",
-    "@container": "@set"
-  },
-  "valid": {
+  "visibleForNonOwner": {
     "@type": "xsd:boolean"
-  }
+  },
+  "xsd": "http://www.w3.org/2001/XMLSchema#"
 }

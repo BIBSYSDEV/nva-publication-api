@@ -124,7 +124,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private EventReference createEnrichedEventReference(Entity newData) {
-        return attempt(() -> resourceExpansionService.expandEntry(newData))
+        return attempt(() -> resourceExpansionService.expandEntry(newData, true))
                    .map(ExpandedDataEntry::toJsonString)
                    .map(this::insertEnrichEventBodyToS3)
                    .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))

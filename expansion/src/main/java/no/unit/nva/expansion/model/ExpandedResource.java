@@ -45,6 +45,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -372,7 +373,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         var jsonString = objectMapper.writeValueAsString(publication);
         var json = (ObjectNode) objectMapper.readTree(jsonString);
         json.put(ID_FIELD_NAME, extractJsonLdId(publication).toString());
-        json.set(JSON_LD_CONTEXT_FIELD, extractJsonLdContext(publication));
+        json.set(JSON_LD_CONTEXT_FIELD, extractJsonLdContext());
         return json;
     }
 
@@ -380,8 +381,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return UriWrapper.fromUri(PUBLICATION_HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
     }
 
-    private static JsonNode extractJsonLdContext(Publication publication) {
-        var jsonContext = publication.getJsonLdContext();
+    private static JsonNode extractJsonLdContext() {
+        var jsonContext = Publication.getJsonLdContext(
+            UriWrapper.fromHost(new Environment().readEnv("API_HOST")).getUri());
         return attempt(() -> dtoObjectMapper.readTree(jsonContext)).orElseThrow();
     }
 

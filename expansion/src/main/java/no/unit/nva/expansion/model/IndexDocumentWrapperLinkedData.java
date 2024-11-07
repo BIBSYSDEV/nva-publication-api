@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -69,6 +70,7 @@ public class IndexDocumentWrapperLinkedData {
     private static final int ONE_HUNDRED = 100;
     private static final int SUCCESS_FAMILY = 2;
     private static final int CLIENT_ERROR_FAMILY = 4;
+    public static final String FRAME_JSON = "frame.json";
     private final RawContentRetriever uriRetriever;
     private final ResourceService resourceService;
 
@@ -78,7 +80,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     public String toFramedJsonLd(JsonNode indexDocument) {
-        var frame = SearchIndexFrame.FRAME_SRC;
+        var frame = SearchIndexFrame.getFrameWithContext(Path.of(FRAME_JSON));
         var inputStreams = getInputStreams(indexDocument);
         return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
     }
