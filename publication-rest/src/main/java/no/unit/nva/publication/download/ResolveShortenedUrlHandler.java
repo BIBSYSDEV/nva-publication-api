@@ -5,7 +5,6 @@ import static org.apache.http.HttpHeaders.LOCATION;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.HashMap;
 import java.util.Map;
 import no.unit.nva.publication.services.UriResolver;
 import no.unit.nva.publication.services.UriResolverImpl;
