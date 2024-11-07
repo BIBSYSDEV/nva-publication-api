@@ -3,13 +3,10 @@ package no.unit.nva.publication.ticket.create;
 import static no.unit.nva.model.PublicationOperation.DOI_REQUEST_CREATE;
 import static no.unit.nva.model.PublicationOperation.PUBLISHING_REQUEST_CREATE;
 import static no.unit.nva.model.PublicationOperation.SUPPORT_REQUEST_CREATE;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
@@ -18,15 +15,12 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -143,48 +137,32 @@ public class TicketResolver {
     private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase,
                                                           Publication publication, RequestUtils requestUtils)
         throws ApiGatewayException {
+
         var username = new Username(requestUtils.username());
-        return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())
-                   ? createPublishingRequestAndPublishMetadateWithFiles(publishingRequestCase, publication, username)
-                   : createPublishingRequestForNonCurator(publishingRequestCase, publication, username);
+
+        return switch (publishingRequestCase.getWorkflow()) {
+            case REGISTRATOR_PUBLISHES_METADATA_AND_FILES ->
+                persistCompletedPublishingRequest(publishingRequestCase, publication, username);
+            case REGISTRATOR_PUBLISHES_METADATA_ONLY ->
+                persistPublishingRequest(publishingRequestCase, publication, username);
+            default -> (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
+        };
     }
 
-    private PublishingRequestCase createPublishingRequestAndPublishMetadateWithFiles(
+    private PublishingRequestCase persistCompletedPublishingRequest(
         PublishingRequestCase publishingRequestCase, Publication publication, Username curator)
-        throws ApiGatewayException {
-        publishPublicationAndFiles(publication);
-        return createAutoApprovedTicketForCurator(publishingRequestCase, publication, curator);
-    }
-
-    private PublishingRequestCase createPublishingRequestForNonCurator(PublishingRequestCase publishingRequestCase,
-                                                                       Publication publication, Username curator)
-        throws ApiGatewayException {
-        if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
-            publishPublicationAndFiles(publication);
-            return createAutoApprovedTicket(publishingRequestCase, publication, curator);
-        }
-        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
-            publishMetadata(publication);
-            return createAutoApprovedTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication,
-                                                                               curator);
-        } else {
-            return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
-        }
-    }
-
-    private PublishingRequestCase createAutoApprovedTicketForCurator(PublishingRequestCase publishingRequestCase,
-                                                                     Publication publication, Username curator)
         throws ApiGatewayException {
         publishingRequestCase.setAssignee(curator);
         return publishingRequestCase.approveFiles().persistAutoComplete(ticketService, publication, curator);
     }
 
-    private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(
-        PublishingRequestCase ticket, Publication publication, Username finalizedBy) throws ApiGatewayException {
+    private PublishingRequestCase persistPublishingRequest(PublishingRequestCase publishingRequestCase,
+                                                           Publication publication, Username username)
+        throws ApiGatewayException {
         if (hasNoFiles(publication)) {
-            return createAutoApprovedTicket(ticket, publication, finalizedBy);
+            return createAutoApprovedTicket(publishingRequestCase, publication, username);
         } else {
-            return (PublishingRequestCase) ticket.persistNewTicket(ticketService);
+            return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
         }
     }
 
@@ -204,42 +182,6 @@ public class TicketResolver {
 
     private TicketEntry persistTicket(TicketEntry newTicket) {
         return attempt(() -> newTicket.persistNewTicket(ticketService)).orElseThrow();
-    }
-
-    //TODO: This functionality has been implemented before publishing files in AcceptedPublishingRequestEventHandler
-    // I think this method should be removed, files should be published via event handler, simplifies logic here.
-    private void publishPublicationAndFiles(Publication publication) throws ApiGatewayException {
-        var updatedPublication = toPublicationWithPublishedFiles(publication);
-        publishPublication(updatedPublication);
-    }
-
-    private void publishPublication(Publication publication) throws ApiGatewayException {
-        resourceService.updatePublication(publication);
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-    }
-
-    private void publishMetadata(Publication publication) throws ApiGatewayException {
-        publishPublication(publication);
-    }
-
-    private Publication toPublicationWithPublishedFiles(Publication publication) {
-        return publication.copy().withAssociatedArtifacts(convertFilesToPublished(publication)).build();
-    }
-
-    private List<AssociatedArtifact> convertFilesToPublished(Publication publication) {
-        return publication.getAssociatedArtifacts().stream().map(this::openFiles).toList();
-    }
-
-    //TODO: Remove unpublishable file and logic related to it after we have migrated files
-    private AssociatedArtifact openFiles(AssociatedArtifact artifact) {
-        if (artifact instanceof PendingFile<?> file) {
-            return file.approve();
-        }
-        if (artifact instanceof UnpublishedFile unpublishedFile) {
-            return unpublishedFile.toPublishedFile();
-        } else {
-            return artifact;
-        }
     }
 
     private BadGatewayException createBadGatewayException() {

@@ -416,6 +416,25 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertTrue(updatedPublication.getAssociatedArtifacts().stream().allMatch(RejectedFile.class::isInstance));
     }
 
+    @Test
+    void shouldPublishPublicationWhenPendingPublishingRequestAndCustomerAllowsPublishingMetadata() throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(), randomPendingOpenFile()));
+        resourceService.updatePublication(publication);
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                                                            .withOwner(randomString())
+                                                            .withOwnerAffiliation(randomUri());
+        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var ticket = publishingRequest.persistNewTicket(ticketService);
+        var event = createEvent(null, ticket);
+
+        handler.handleRequest(event, outputStream, CONTEXT);
+
+        var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+
+        assertTrue(PublicationStatus.PUBLISHED.equals(publishedPublication.getStatus()));
+    }
+
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
             Publication publication, File file) throws ApiGatewayException {
         var publishingRequest =

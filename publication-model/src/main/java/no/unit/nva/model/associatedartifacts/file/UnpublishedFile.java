@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
 import java.util.UUID;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
