@@ -8,12 +8,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
 import java.util.UUID;
+import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(OpenFile.TYPE)
-public class OpenFile extends File {
+public class OpenFile extends File implements PublicAssociatedArtifact {
 
     public static final String TYPE = "OpenFile";
 
@@ -55,7 +56,7 @@ public class OpenFile extends File {
 
     @Override
     public boolean isVisibleForNonOwner() {
-        return true;
+        return fileDoesNotHaveActiveEmbargo();
     }
 
     @Override

@@ -34,32 +34,34 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
                 return true; // deny
             }
-            if (userDoesNotBelongToPublication()) {
+            if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
                 return true; // deny
             }
-            return isNotCuratorForRegistratorInstitution() && userIsCuratingSupervisorsOnly(); // deny
+            return !currentUserHaveSameTopLevelAsOwner() && userIsCuratingSupervisorsOnly(); // deny
         }
 
         return false; // allow
     }
 
     private boolean userIsCuratingSupervisorsOnly() {
-        return getCuratingInstitutions().map(CuratingInstitution::contributorCristinIds)
-                   .stream()
-                   .flatMap(Collection::stream)
-                   .map(this::getContributor)
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .map(Contributor::getRole)
-                   .map(RoleType::getType)
-                   .allMatch(SUPERVISOR::equals);
+        var roles = getCuratingInstitutionsForCurrentUser().map(CuratingInstitution::contributorCristinIds)
+                                 .stream()
+                                 .flatMap(Collection::stream)
+                                 .map(this::getContributor)
+                                 .filter(Optional::isPresent)
+                                 .map(Optional::get)
+                                 .map(Contributor::getRole)
+                                 .map(RoleType::getType)
+                                 .toList();
+
+        return !roles.isEmpty() && roles.stream().allMatch(role -> role.equals(SUPERVISOR));
     }
 
-    private boolean isNotCuratorForRegistratorInstitution() {
-        return !userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
+    private boolean currentUserHaveSameTopLevelAsOwner() {
+        return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
     }
 
-    private Optional<CuratingInstitution> getCuratingInstitutions() {
+    private Optional<CuratingInstitution> getCuratingInstitutionsForCurrentUser() {
         return Optional.ofNullable(publication.getCuratingInstitutions())
                    .stream()
                    .flatMap(Collection::stream)
@@ -73,10 +75,6 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
                    .stream()
                    .filter(contributor -> contributor.getIdentity().getId().equals(contributorId))
                    .findFirst();
-    }
-
-    private boolean userDoesNotBelongToPublication() {
-        return !(userBelongsToCuratingInstitution() || userIsFromSameInstitutionAsPublication());
     }
 
     private boolean isUsersDraft() {

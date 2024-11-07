@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.List;
@@ -11,11 +12,13 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
@@ -27,8 +30,6 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -39,41 +40,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class AcceptedPublishingRequestEventHandler
-        extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+public class AcceptedPublishingRequestEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    private static final String DOI_REQUEST_CREATION_MESSAGE =
-            "Doi request has been created for publication: {}";
-    private static final Logger logger =
-            LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
+    private static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
+    private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
     private static final String PUBLISHING_METADATA_AND_FILES_MESSAGE =
-            "Publishing files and publication metadata {} via approved publishing request {}";
+        "Publishing files and publication metadata {}" + " via approved publishing request {}";
     private static final String PUBLISHING_FILES_MESSAGE =
-            "Publishing files for publication {} via approved publishing request {}";
-    private static final String COULD_NOT_FETCH_TICKET_MESSAGE =
-            "Could not fetch PublishingRequest with identifier: ";
+        "Publishing files for publication {} via approved " + "publishing request {}";
+    private static final String COULD_NOT_FETCH_TICKET_MESSAGE = "Could not fetch PublishingRequest with identifier: ";
     private static final String PUBLISHING_ERROR_MESSAGE = "Could not publish publication: %s";
     private static final String EXCEPTION_MESSAGE = "Exception: {}";
-    private static final String PUBLICATION_UPDATE_ERROR_MESSAGE =
-            "Could not update publication: %s";
+    private static final String PUBLICATION_UPDATE_ERROR_MESSAGE = "Could not update publication: %s";
     private static final String PUBLISHING_FILE_MESSAGE =
-            "Publishing file {} of type {} from approved PublishingRequest {} for publication {}";
+        "Publishing file {} of type {} from approved " + "PublishingRequest {} for publication {}";
+    public static final String UNKNOWN_WORKFLOW_MESSAGE = "Unknown workflow: {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
 
     @JacocoGenerated
     public AcceptedPublishingRequestEventHandler() {
-        this(
-                ResourceService.defaultService(),
-                new TicketService(
-                        PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT,
-                        UriRetriever.defaultUriRetriever()),
-                S3Driver.defaultS3Client().build());
+        this(ResourceService.defaultService(),
+             new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, UriRetriever.defaultUriRetriever()),
+             S3Driver.defaultS3Client().build());
     }
 
-    protected AcceptedPublishingRequestEventHandler(
-            ResourceService resourceService, TicketService ticketService, S3Client s3Client) {
+    protected AcceptedPublishingRequestEventHandler(ResourceService resourceService, TicketService ticketService,
+                                                    S3Client s3Client) {
         super(EventReference.class);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
@@ -82,20 +76,57 @@ public class AcceptedPublishingRequestEventHandler
 
     // TODO: hasEffectiveChanges method should be implemented in a predecessor eventHandler.
     @Override
-    protected Void processInputPayload(
-            EventReference input,
-            AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
-            Context context) {
+    protected Void processInputPayload(EventReference input,
+                                       AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
+                                       Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
         var ticketUpdate = parseInput(eventBlob);
-        if (isCompleted(ticketUpdate) && hasEffectiveChanges(eventBlob)) {
-            publishPublicationAndFiles(ticketUpdate);
+        if (hasEffectiveChanges(eventBlob)) {
+            handleChanges(ticketUpdate);
         }
         return null;
     }
 
-    private static boolean isCompleted(PublishingRequestCase latestUpdate) {
-        return TicketStatus.COMPLETED.equals(latestUpdate.getStatus());
+    private void handleChanges(PublishingRequestCase publishingRequest) {
+        switch (publishingRequest.getStatus()) {
+            case PENDING -> handlePendingPublishingRequest(publishingRequest);
+            case COMPLETED -> handleCompletedPublishingRequest(publishingRequest);
+            case CLOSED -> handleClosedPublishingRequest(publishingRequest);
+            default -> {
+                // Ignore other non-final statuses
+            }
+        }
+    }
+
+    private void handlePendingPublishingRequest(PublishingRequestCase publishingRequest) {
+        var publication = fetchPublication(publishingRequest.getResourceIdentifier());
+        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
+            publishPublication(publication);
+        }
+    }
+
+    private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
+        var publication = fetchPublication(publishingRequestCase.getResourceIdentifier());
+        var updatedPublication = publication.copy()
+                                     .withAssociatedArtifacts(rejectFiles(publication))
+                                     .build();
+        resourceService.updatePublication(updatedPublication);
+    }
+
+    private List<AssociatedArtifact> rejectFiles(Publication publication) {
+        var associatedArtifacts = publication.getAssociatedArtifacts();
+        return associatedArtifacts.stream()
+                   .map(this::rejectFile)
+                   .toList();
+    }
+
+    //TODO: Remove unpublishable file and logic related to it after we have migrated files
+    private AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
+        return switch (associatedArtifact) {
+            case UnpublishedFile unpublishedFile -> unpublishedFile.toUnpublishableFile();
+            case PendingFile<?> pendingFile -> pendingFile.reject();
+            default -> associatedArtifact;
+        };
     }
 
     private static boolean hasDoi(Publication publication) {
@@ -109,69 +140,78 @@ public class AcceptedPublishingRequestEventHandler
     }
 
     private static Optional<String> getOldStatus(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
-                .map(DataEntryUpdateEvent::getOldData)
-                .map(Entity::getStatusString);
+        return Optional.of(updateEvent).map(DataEntryUpdateEvent::getOldData).map(Entity::getStatusString);
     }
 
     private static Optional<String> getNewStatus(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
-                .map(DataEntryUpdateEvent::getNewData)
-                .map(Entity::getStatusString);
+        return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
+    }
+
+    private static void logFilePublish(File unpublishedFile, PublishingRequestCase publishingRequestCase) {
+        logger.info(PUBLISHING_FILE_MESSAGE, unpublishedFile.getIdentifier(),
+                    unpublishedFile.getClass().getSimpleName(), publishingRequestCase.getIdentifier(),
+                    publishingRequestCase.getResourceIdentifier());
+    }
+
+    private static PublishedFile toPublishedFile(UnpublishedFile unpublishedFile,
+                                                 PublishingRequestCase publishingRequestCase) {
+        logFilePublish(unpublishedFile, publishingRequestCase);
+        return unpublishedFile.toPublishedFile();
+    }
+
+    private static InternalFile toInternalFile(PendingInternalFile pendingInternalFile,
+                                               PublishingRequestCase publishingRequestCase) {
+        logFilePublish(pendingInternalFile, publishingRequestCase);
+        return pendingInternalFile.toInternalFile();
+    }
+
+    private static OpenFile toOpenFile(PendingOpenFile pendingOpenFile, PublishingRequestCase publishingRequestCase) {
+        logFilePublish(pendingOpenFile, publishingRequestCase);
+        return pendingOpenFile.toOpenFile();
     }
 
     private boolean hasEffectiveChanges(String eventBlob) {
         return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
     }
 
-    private void publishPublicationAndFiles(PublishingRequestCase publishingRequestCase) {
-        var userInstance =
-                UserInstance.create(
-                        publishingRequestCase.getOwner(), publishingRequestCase.getCustomerId());
-        var publication =
-                fetchPublication(userInstance, publishingRequestCase.getResourceIdentifier());
+    private void handleCompletedPublishingRequest(PublishingRequestCase publishingRequestCase) {
+        var publication = fetchPublication(publishingRequestCase.getResourceIdentifier());
         var publishingRequest = fetchPublishingRequest(publishingRequestCase);
-        var updatedPublication = toPublicationWithPublishedFiles(publication, publishingRequest);
-        if (shouldPublishFilesOnly(publishingRequestCase)) {
-            publishFiles(updatedPublication);
-            logger.info(
-                    PUBLISHING_FILES_MESSAGE,
-                    publication.getIdentifier(),
-                    publishingRequestCase.getIdentifier());
-        }
-        if (shouldPublishMetadataAndFiles(publishingRequestCase)) {
-            publishFiles(updatedPublication);
-            publishPublication(publishingRequestCase, userInstance);
-            logger.info(
-                    PUBLISHING_METADATA_AND_FILES_MESSAGE,
-                    publication.getIdentifier(),
-                    publishingRequestCase.getIdentifier());
+
+        publishWhenPublicationStatusDraft(publication);
+        var updatedPublication = toPublicationWithUpdatedFiles(publication, publishingRequest);
+
+        switch (publishingRequestCase.getWorkflow()) {
+            case REGISTRATOR_PUBLISHES_METADATA_ONLY, REGISTRATOR_PUBLISHES_METADATA_AND_FILES -> {
+                publishFiles(updatedPublication);
+                logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), publishingRequest.getIdentifier());
+            }
+            case REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES -> {
+                publishFiles(updatedPublication);
+                logger.info(PUBLISHING_METADATA_AND_FILES_MESSAGE, publication.getIdentifier(),
+                            publishingRequest.getIdentifier());
+            }
+            default -> logger.error(UNKNOWN_WORKFLOW_MESSAGE, publishingRequestCase.getWorkflow());
         }
         createDoiRequestIfNeeded(updatedPublication);
     }
 
-    private static boolean shouldPublishMetadataAndFiles(
-            PublishingRequestCase publishingRequestCase) {
-        return PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(
-                publishingRequestCase.getWorkflow());
+    private void publishWhenPublicationStatusDraft(Publication publication) {
+        if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
+            publishPublication(publication);
+        }
     }
 
-    private static boolean shouldPublishFilesOnly(PublishingRequestCase publishingRequestCase) {
-        return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(
-                        publishingRequestCase.getWorkflow())
-                || PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(
-                        publishingRequestCase.getWorkflow());
+    private Publication toPublicationWithUpdatedFiles(Publication publication, PublishingRequestCase publishingRequest) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(publication.getIdentifier()))
+                   .map(pub -> toPublicationWithPublishedFiles(pub, publishingRequest))
+                   .orElseThrow();
     }
 
     private PublishingRequestCase fetchPublishingRequest(PublishingRequestCase latestUpdate) {
-        return attempt(() -> ticketService.fetchTicket(latestUpdate))
-                .map(PublishingRequestCase.class::cast)
-                .orElseThrow(
-                        failure ->
-                                throwException(
-                                        COULD_NOT_FETCH_TICKET_MESSAGE
-                                                + latestUpdate.getIdentifier(),
-                                        failure));
+        return attempt(() -> ticketService.fetchTicket(latestUpdate)).map(PublishingRequestCase.class::cast)
+                   .orElseThrow(failure -> throwException(COULD_NOT_FETCH_TICKET_MESSAGE + latestUpdate.getIdentifier(),
+                                                          failure));
     }
 
     private RuntimeException throwException(String message, Failure<?> failure) {
@@ -180,121 +220,61 @@ public class AcceptedPublishingRequestEventHandler
         return new RuntimeException();
     }
 
-    private void publishPublication(PublishingRequestCase latestUpdate, UserInstance userInstance) {
-        attempt(
-                        () ->
-                                resourceService.publishPublication(
-                                        userInstance, latestUpdate.getResourceIdentifier()))
-                .orElseThrow(
-                        fail ->
-                                throwException(
-                                        String.format(
-                                                PUBLISHING_ERROR_MESSAGE,
-                                                latestUpdate.getResourceIdentifier()),
-                                        fail));
+    private void publishPublication(Publication publication) {
+        var userInstance = UserInstance.fromPublication(publication);
+        attempt(() -> resourceService.publishPublication(userInstance,
+                                                         publication.getIdentifier())).orElseThrow(
+            fail -> throwException(
+                String.format(PUBLISHING_ERROR_MESSAGE, publication.getIdentifier()), fail));
     }
 
     private void publishFiles(Publication updatedPublication) {
-        attempt(() -> resourceService.updatePublication(updatedPublication))
-                .orElseThrow(
-                        failure ->
-                                throwException(
-                                        String.format(
-                                                PUBLICATION_UPDATE_ERROR_MESSAGE,
-                                                updatedPublication.getIdentifier()),
-                                        failure));
+        attempt(() -> resourceService.updatePublication(updatedPublication)).orElseThrow(failure -> throwException(
+            String.format(PUBLICATION_UPDATE_ERROR_MESSAGE, updatedPublication.getIdentifier()), failure));
     }
 
-    private Publication toPublicationWithPublishedFiles(
-            Publication publication, PublishingRequestCase publishingRequest) {
-        var updatedAssociatedArtifacts =
-                publishFilesFromPublishingRequest(
-                        publication.getAssociatedArtifacts(), publishingRequest);
+    private Publication toPublicationWithPublishedFiles(Publication publication,
+                                                        PublishingRequestCase publishingRequest) {
+        var updatedAssociatedArtifacts = publishFilesFromPublishingRequest(publication.getAssociatedArtifacts(),
+                                                                           publishingRequest);
         return publication.copy().withAssociatedArtifacts(updatedAssociatedArtifacts).build();
     }
 
-    private List<AssociatedArtifact> publishFilesFromPublishingRequest(
-            AssociatedArtifactList associatedArtifacts,
-            PublishingRequestCase publishingRequestCase) {
+    private List<AssociatedArtifact> publishFilesFromPublishingRequest(AssociatedArtifactList associatedArtifacts,
+                                                                       PublishingRequestCase publishingRequestCase) {
         return associatedArtifacts.stream()
-                .map(
-                        associatedArtifact ->
-                                publishFileIfApproved(associatedArtifact, publishingRequestCase))
-                .toList();
+                   .map(associatedArtifact -> publishFileIfApproved(associatedArtifact, publishingRequestCase))
+                   .toList();
     }
 
-    private AssociatedArtifact publishFileIfApproved(
-            AssociatedArtifact associatedArtifact, PublishingRequestCase publishingRequestCase) {
+    private AssociatedArtifact publishFileIfApproved(AssociatedArtifact associatedArtifact,
+                                                     PublishingRequestCase publishingRequest) {
         return switch (associatedArtifact) {
-            case UnpublishedFile unpublishedFile -> publishingRequestCase
-                                                        .getApprovedFiles()
-                                                        .contains(unpublishedFile.getIdentifier())
-                                                        ? toPublishedFile(unpublishedFile, publishingRequestCase)
-                                                        : unpublishedFile;
-            case PendingInternalFile pendingInternalFile -> publishingRequestCase
-                                                                .getApprovedFiles()
-                                                                .contains(pendingInternalFile.getIdentifier())
-                                                                ? toInternalFile(pendingInternalFile,
-                                                                                 publishingRequestCase)
-                                                                : pendingInternalFile;
-            case PendingOpenFile pendingOpenFile -> publishingRequestCase
-                                                        .getApprovedFiles()
-                                                        .contains(pendingOpenFile.getIdentifier())
-                                                        ? toOpenFile(pendingOpenFile, publishingRequestCase)
-                                                        : pendingOpenFile;
+            case UnpublishedFile unpublishedFile when publishingRequest.fileIsApproved(unpublishedFile) ->
+                toPublishedFile(unpublishedFile, publishingRequest);
+            case PendingInternalFile pendingInternalFile when publishingRequest.fileIsApproved(pendingInternalFile) ->
+                toInternalFile(pendingInternalFile, publishingRequest);
+            case PendingOpenFile pendingOpenFile when publishingRequest.fileIsApproved(pendingOpenFile) ->
+                toOpenFile(pendingOpenFile, publishingRequest);
             case null, default -> associatedArtifact;
         };
     }
 
-    private static void logFilePublish(File unpublishedFile, PublishingRequestCase publishingRequestCase) {
-        logger.info(
-                PUBLISHING_FILE_MESSAGE,
-                unpublishedFile.getIdentifier(),
-                unpublishedFile.getClass().getSimpleName(),
-                publishingRequestCase.getIdentifier(),
-                publishingRequestCase.getResourceIdentifier());
+    private Publication fetchPublication(SortableIdentifier publicationIdentifier) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(publicationIdentifier)).orElseThrow();
     }
 
-    private static PublishedFile toPublishedFile(
-            UnpublishedFile unpublishedFile, PublishingRequestCase publishingRequestCase) {
-        logFilePublish(unpublishedFile, publishingRequestCase);
-        return unpublishedFile.toPublishedFile();
-    }
-
-    private static InternalFile toInternalFile(
-            PendingInternalFile pendingInternalFile, PublishingRequestCase publishingRequestCase) {
-        logFilePublish(pendingInternalFile, publishingRequestCase);
-        return pendingInternalFile.toInternalFile();
-    }
-
-    private static OpenFile toOpenFile(
-        PendingOpenFile pendingOpenFile, PublishingRequestCase publishingRequestCase) {
-        logFilePublish(pendingOpenFile, publishingRequestCase);
-        return pendingOpenFile.toOpenFile();
-    }
-
-    private Publication fetchPublication(
-            UserInstance userInstance, SortableIdentifier publicationIdentifier) {
-        return attempt(() -> resourceService.getPublication(userInstance, publicationIdentifier))
-                .orElseThrow();
-    }
-
+    /**
+     * Creating DoiRequest for a publication necessarily owned by publication owner institution
+     * and not the institution that requests the doi.
+     * @param publication to create a DoiRequest for
+     */
     private void createDoiRequestIfNeeded(Publication publication) {
         if (hasDoi(publication) && !doiRequestExists(publication)) {
-            attempt(
-                            () ->
-                                    DoiRequest.fromPublication(publication)
-                                            .withOwner(
-                                                    publication
-                                                            .getResourceOwner()
-                                                            .getOwner()
-                                                            .getValue())
-                                            .withOwnerAffiliation(
-                                                    publication
-                                                            .getResourceOwner()
-                                                            .getOwnerAffiliation())
-                                            .persistNewTicket(ticketService))
-                    .orElseThrow();
+            attempt(() -> DoiRequest.fromPublication(publication)
+                              .withOwner(publication.getResourceOwner().getOwner().getValue())
+                              .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                              .persistNewTicket(ticketService)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
         }
     }
@@ -304,8 +284,8 @@ public class AcceptedPublishingRequestEventHandler
     }
 
     private Optional<DoiRequest> fetchTicket(Publication publication) {
-        return ticketService.fetchTicketByResourceIdentifier(
-                publication.getPublisher().getId(), publication.getIdentifier(), DoiRequest.class);
+        return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
+                                                             publication.getIdentifier(), DoiRequest.class);
     }
 
     private PublishingRequestCase parseInput(String eventBlob) {

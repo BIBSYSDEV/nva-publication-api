@@ -20,11 +20,13 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import no.unit.nva.PublicationMapper;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
@@ -34,6 +36,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
@@ -66,7 +69,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         this(ResourceService.defaultService(),
              new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
              new Environment(),
-             IdentityServiceClient.prepare());
+             IdentityServiceClient.prepare(),
+             HttpClient.newHttpClient());
     }
 
     /**
@@ -78,8 +82,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     public FetchPublicationHandler(ResourceService resourceService,
                                    RawContentRetriever authorizedBackendUriRetriever,
                                    Environment environment,
-                                   IdentityServiceClient identityServiceClient) {
-        super(Void.class, environment);
+                                   IdentityServiceClient identityServiceClient,
+                                   HttpClient httpClient) {
+        super(Void.class, environment, httpClient);
         this.authorizedBackendUriRetriever = authorizedBackendUriRetriever;
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
@@ -181,12 +186,35 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
-        //TODO: when the userIsCuratorOrOwner is properlyImplementedAgain,
-        // then only those should get the PublicationResponseElevatedUser
-        //Regular users should receive PublicationResponse.class
+        if (isElevatedUser(requestInfo, publication)) {
+            return createPublicationResponseForElevatedUser(requestInfo, publication);
+        } else {
+            return createPublicationResponseForNotElevatedUser(requestInfo, publication);
+        }
+
+    }
+
+    private String createPublicationResponseForNotElevatedUser(RequestInfo requestInfo, Publication publication) {
+        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
+        publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
+        return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
+    }
+
+    private String createPublicationResponseForElevatedUser(RequestInfo requestInfo, Publication publication) {
         var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
         publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
+    }
+
+    private boolean isElevatedUser(RequestInfo requestInfo, Publication publication) {
+        return attempt(() -> UserInstance.fromRequestInfo(requestInfo)).toOptional()
+                   .map(userInstance -> isElevatedUser(publication, userInstance))
+                   .orElse(false);
+    }
+
+    private boolean isElevatedUser(Publication publication, UserInstance userInstance) {
+        var permissionStrategy = PublicationPermissionStrategy.create(publication, userInstance, resourceService);
+        return permissionStrategy.allowsAction(PublicationOperation.UPDATE);
     }
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {

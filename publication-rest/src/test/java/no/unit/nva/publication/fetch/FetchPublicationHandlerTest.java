@@ -11,6 +11,8 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
@@ -32,10 +34,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -50,6 +54,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,6 +68,7 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -138,7 +144,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler = new FetchPublicationHandler(publicationService,
                                                               uriRetriever,
                                                               environment,
-                                                              identityServiceClient);
+                                                              identityServiceClient,
+                                                              mock(HttpClient.class));
     }
 
     @Test
@@ -289,7 +296,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,
                                                               uriRetriever,
                                                               environment,
-                                                              identityServiceClient);
+                                                              identityServiceClient,
+                                                              mock(HttpClient.class));
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
 
         var gatewayResponse = parseFailureResponse();
@@ -424,6 +432,30 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actualPublication.getAllowedOperations(), hasItem(PublicationOperation.REPUBLISH));
     }
 
+    @Test
+    void shouldReturnPublicationWithInternalFilesWhenUserIsAllowedToUpdatePublication()
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithInternalFilesOnly();
+        fetchPublicationHandler.handleRequest(generateOwnerRequest(publication), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), PublicationResponseElevatedUser.class);
+
+        assertFalse(publicationResponse.getAssociatedArtifacts().isEmpty());
+    }
+
+    @Test
+    void shouldReturnPublicationWithOutInternalFilesWhenUserIsNotAllowedToUpdatePublication()
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithInternalFilesOnly();
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), PublicationResponse.class);
+
+        assertTrue(publicationResponse.getAssociatedArtifacts().isEmpty());
+    }
+
     private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException {
         var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
         publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
@@ -543,6 +575,14 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
+        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createPublicationWithInternalFilesOnly() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(), randomInternalFile()));
+        var userInstance = UserInstance.fromPublication(publication);
+        var publicationIdentifier = Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 

@@ -318,6 +318,27 @@ Resources:
         - Key: TemporaryTag
           Value: 'this_is_a_test_to_trigger_stack_update'
 
+  DownloadUrlShorteningTable:
+    Type: AWS::DynamoDB::Table
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      TableName: !Sub nva-download-url-shorterner-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: shortenedUri
+          AttributeType: S
+      KeySchema:
+        - AttributeName: shortenedUri
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      TimeToLiveSpecification:
+        AttributeName: expiresDate
+        Enabled: true
+
   #===============================DLOQs===================================================================
 
   DynamodbEventFanoutStreamRecordsDLQ:
@@ -475,6 +496,22 @@ Resources:
               - s3:PutObjectAcl
             Resource: "*"
 
+  S3AccessResourceStorageManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:PutObject
+              - s3:PutObjectAcl
+            Resource:
+              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
+
   S3DeleteAccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -542,6 +579,19 @@ Resources:
             Resource:
               - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:BackendCognitoClientCredentials-*"
               - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${PiaRestCredentialsTokenName}-*"
+
+  DownloadUrlShorteningTableManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+            Resource:
+              - !GetAtt DownloadUrlShorteningTable.Arn
 
   NvaPublicationApi:
     Type: AWS::Serverless::Api
@@ -965,6 +1015,62 @@ Resources:
           Properties:
             Path: /import-candidate/{importCandidateIdentifier}
             Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  DownloadPublicationFileFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DownloadPublicationFileFunction}'
+      RetentionInDays: 90
+
+  DownloadPublicationFileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.download.CreatePresignedDownloadUrlHandler::handleRequest
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
+          SHORTENED_URI_TABLE_NAME: !Ref DownloadUrlShorteningTable
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+          TABLE_NAME: !Ref NvaResourcesTable
+          CUSTOM_DOMAIN_BASE_PATH: !Ref CustomDomainBasePath
+      Policies:
+        - !GetAtt S3AccessResourceStorageManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt DownloadUrlShorteningTableManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn # because of identityServiceClient::getExternalClient call
+      Events:
+        AnonymousGetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/filelink/{fileIdentifier}
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  ResolveShortenedUrlFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ResolveShortenedUrlFunction}'
+      RetentionInDays: 90
+
+  ResolveShortenedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.download.ResolveShortenedUrlHandler::handleRequest
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
+          SHORTENED_URI_TABLE_NAME: !Ref DownloadUrlShorteningTable
+      Policies:
+        - !GetAtt DownloadUrlShorteningTableManagedPolicy.PolicyArn
+      Events:
+        AnonymousGetEvent:
+          Type: Api
+          Properties:
+            Path: /file/{fileIdentifier}
+            Method: get
             RestApiId: !Ref NvaPublicationApi
 
   #==========================Event Lambda functions====================================================

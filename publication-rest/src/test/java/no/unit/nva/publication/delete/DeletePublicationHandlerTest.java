@@ -18,14 +18,13 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
+import java.net.http.HttpClient;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -64,7 +63,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         prepareEnvironment();
         prepareIdentityServiceClient();
         publicationService = getResourceServiceBuilder().build();
-        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
+        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient,
+                                               mock(HttpClient.class));
         outputStream = new ByteArrayOutputStream();
     }
 

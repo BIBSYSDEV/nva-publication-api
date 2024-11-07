@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithInternal;
@@ -31,6 +32,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.config.ResourcesBuildConfig;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.model.funding.Funding;
@@ -435,6 +437,14 @@ public class Publication
         }
 
         importDetails.add(importDetail);
+    }
+
+    public Optional<File> getFile(UUID fileIdentifier) {
+        return getAssociatedArtifacts().stream()
+            .filter(File.class::isInstance)
+            .map(File.class::cast)
+            .filter(element -> fileIdentifier.equals(element.getIdentifier()))
+            .findFirst();
     }
 
     private void verifyStatusTransition(PublicationStatus nextStatus)

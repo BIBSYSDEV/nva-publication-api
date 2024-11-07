@@ -337,12 +337,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(event, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
-        final var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -359,7 +359,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         final var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
                                                                    publicationUpdate.getIdentifier(),
                                                                    PublishingRequestCase.class);
@@ -381,7 +381,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         final var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
                                                                    publicationUpdate.getIdentifier(),
                                                                    PublishingRequestCase.class);
@@ -404,7 +404,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationUpdate = addAnotherUnpublishedFile(publication);
         var input = curatorPublicationOwnerUpdatesPublication(publicationUpdate);
         updatePublicationHandler.handleRequest(input, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var autoCompletedTicket = ticketService.fetchTicketsForUser(UserInstance.fromPublication(publicationUpdate))
@@ -427,7 +427,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         final var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publishedPublication)).toList();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
@@ -483,12 +483,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
-        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -507,12 +507,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = backendClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
-        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -634,7 +634,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
@@ -707,7 +707,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
@@ -917,7 +917,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(degreePublication.getIdentifier());
@@ -960,12 +960,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
-        final var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -1050,7 +1050,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                 MANAGE_RESOURCE_FILES);
         updatePublicationHandler.handleRequest(request, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
 
         var updatedPublication = resourceService.getPublicationByIdentifier(publicationUpdate.getIdentifier());
@@ -1059,29 +1059,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actualPublishedFile.getRightsRetentionStrategy(),
                    allOf(instanceOf(OverriddenRightsRetentionStrategy.class),
                          hasProperty("overriddenBy", is(notNullValue()))));
-    }
-
-    @Test
-    void shouldUpdatePublicationWithoutReferencedContext()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(customerId,
-                                                                                                resourceService);
-        publication.getEntityDescription().getReference().setDoi(null);
-        resourceService.updatePublication(publication);
-        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
-            .complete(publication, new Username(randomString())).persistUpdate(ticketService);
-
-        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
-                                     .withLicense(randomUri()).buildUnpublishedFile();
-        var files = new ArrayList<>(publication.getAssociatedArtifacts());
-        files.add(newUnpublishedFile);
-
-        publication.copy().withAssociatedArtifacts(files);
-
-        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
-        updatePublicationHandler.handleRequest(input, output, context);
-
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(200)));
     }
 
     @Test
@@ -1663,10 +1640,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                       contributorName);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
-        var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var uploadedFile = body.getAssociatedArtifacts().stream()
                                .filter(File.class::isInstance)
                                .map(File.class::cast)
@@ -1693,10 +1670,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                       contributorName);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
-        var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var existingFiles = body.getAssociatedArtifacts().stream()
                                 .filter(File.class::isInstance)
                                 .map(File.class::cast)
@@ -1729,10 +1706,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publication, cristinId, contributorName);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
-        var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var updatedFile = body.getAssociatedArtifacts().stream()
                               .filter(File.class::isInstance)
                               .map(File.class::cast)
@@ -1903,80 +1880,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(publishingRequest.getFilesForApproval(),
                    containsInAnyOrder(FileForApproval.fromFile(newUnpublishedFile)));
-    }
-
-    @DisplayName("When publishing curator updates publication with unpublished file" +
-                 " and publication already contains another unpublished file" +
-                 " and there is no pending publishing request for the publication with curator owner affiliation" +
-                 " then only new unpublished file is added to approved files in PublishingRequest")
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#notApprovedFilesProvider")
-    void shouldPublishOnlyNewUnpublishedFilesWhenCuratorUpdatesPublicationWithNewUnpublishedFiles(File newUnpublishedFile)
-        throws ApiGatewayException, IOException, InterruptedException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
-            customerId, PUBLISHED, resourceService);
-        updatePublicationWithFile(publication, newUnpublishedFile);
-        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
-        var input = curatorWithAccessRightsUpdatesPublication(publication, customerId,
-                                                              publication.getResourceOwner().getOwnerAffiliation(),
-                                                              MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_ALL);
-        updatePublicationHandler.handleRequest(input, output, context);
-
-        var publishingRequest = getPublishingRequestCase(publication);
-
-        assertThat(publishingRequest.getApprovedFiles(), containsInAnyOrder(newUnpublishedFile.getIdentifier()));
-    }
-
-    @DisplayName("When publishing curator updates publication with unpublished file" +
-                 " and publication already contains another unpublished file" +
-                 " and there exists pending publishing request for curator institution with existing unpublished file" +
-                 " then both existing and new unpublished files are added to approved files in PublishingRequest")
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#notApprovedFilesProvider")
-    void shouldPublishExistingAndNewUnpublishedFileWhenThereExistsPendingPublishingRequestForCuratorInstitution(
-        File newUnpublishedFile
-    ) throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
-            customerId, PUBLISHED, resourceService);
-        persistPublishingRequestContainingExistingUnpublishedFiles(publication);
-        updatePublicationWithFile(publication, newUnpublishedFile);
-        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
-        var input = curatorWithAccessRightsUpdatesPublication(publication, customerId,
-                                                              publication.getResourceOwner().getOwnerAffiliation(),
-                                                              MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_ALL);
-        updatePublicationHandler.handleRequest(input, output, context);
-
-        var publishingRequest = getPublishingRequestCase(publication);
-
-        var approvedFiles = TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication).stream()
-                                .map(FileForApproval::identifier)
-                                .toList().toArray();
-
-        assertThat(publishingRequest.getApprovedFiles(), containsInAnyOrder(approvedFiles));
-    }
-
-    @DisplayName("When publishing curator updates publication with unpublished file and removes existing unpublished "
-                 + "file and there exists pending publishing request for curator institution with unpublished file to "
-                 + "remove then new unpublished file only is added to approved files in PublishingRequest")
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#notApprovedFilesProvider")
-    void shouldAddNewUnpublishedFileAndRemoveRemovedUnpublishedFileFromFileForApprovalWhenUpdatingPublication(File newUnpublishedFile)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
-            customerId, PUBLISHED, resourceService);
-        persistPublishingRequestContainingExistingUnpublishedFiles(publication);
-        publication.getAssociatedArtifacts().clear();
-        updatePublicationWithFile(publication, newUnpublishedFile);
-        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
-        var input = curatorWithAccessRightsUpdatesPublication(publication, customerId,
-                                                              publication.getResourceOwner().getOwnerAffiliation(),
-                                                              MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_ALL);
-        updatePublicationHandler.handleRequest(input, output, context);
-
-        var publishingRequest = getPublishingRequestCase(publication);
-
-        assertThat(publishingRequest.getApprovedFiles(), hasSize(1));
-        assertThat(publishingRequest.getApprovedFiles(), containsInAnyOrder(newUnpublishedFile.getIdentifier()));
     }
 
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
