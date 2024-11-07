@@ -177,31 +177,35 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private void handleCompletedPublishingRequest(PublishingRequestCase publishingRequestCase) {
         var publication = fetchPublication(publishingRequestCase.getResourceIdentifier());
         var publishingRequest = fetchPublishingRequest(publishingRequestCase);
-        var ticketIdentifier = publishingRequest.getIdentifier();
 
-        if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
-            publishPublication(publication);
-        }
-
-        var updatedPublication =
-            attempt(() -> resourceService.getPublicationByIdentifier(publication.getIdentifier()))
-                .map(p -> toPublicationWithPublishedFiles(p, publishingRequest))
-                .orElseThrow();
-
+        publishWhenPublicationStatusDraft(publication);
+        var updatedPublication = toPublicationWithUpdatedFiles(publication, publishingRequest);
 
         switch (publishingRequestCase.getWorkflow()) {
             case REGISTRATOR_PUBLISHES_METADATA_ONLY, REGISTRATOR_PUBLISHES_METADATA_AND_FILES -> {
                 publishFiles(updatedPublication);
-                logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), ticketIdentifier);
+                logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), publishingRequest.getIdentifier());
             }
             case REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES -> {
                 publishFiles(updatedPublication);
                 logger.info(PUBLISHING_METADATA_AND_FILES_MESSAGE, publication.getIdentifier(),
-                            ticketIdentifier);
+                            publishingRequest.getIdentifier());
             }
             default -> logger.error(UNKNOWN_WORKFLOW_MESSAGE, publishingRequestCase.getWorkflow());
         }
         createDoiRequestIfNeeded(updatedPublication);
+    }
+
+    private void publishWhenPublicationStatusDraft(Publication publication) {
+        if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
+            publishPublication(publication);
+        }
+    }
+
+    private Publication toPublicationWithUpdatedFiles(Publication publication, PublishingRequestCase publishingRequest) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(publication.getIdentifier()))
+                   .map(pub -> toPublicationWithPublishedFiles(pub, publishingRequest))
+                   .orElseThrow();
     }
 
     private PublishingRequestCase fetchPublishingRequest(PublishingRequestCase latestUpdate) {
