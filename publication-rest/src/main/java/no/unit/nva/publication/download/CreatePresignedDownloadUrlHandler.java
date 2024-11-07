@@ -1,7 +1,6 @@
 package no.unit.nva.publication.download;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -31,14 +30,15 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, PresignedUriResponse> {
 
-    public static final int DEFAULT_EXPIRATION_SECONDS = 180;
-    public static final String REQUESTED_RESOURCE_NOT_FOUND = "Requested resource \"%s/files/%s\" was found";
+    private static final int DEFAULT_EXPIRATION_SECONDS = 180;
+    private static final String REQUESTED_RESOURCE_NOT_FOUND = "Requested resource \"%s/files/%s\" was found";
+    private static final String API_HOST_ENV = "API_HOST";
     private final S3Presigner s3Presigner;
     private final UriShortener uriShortener;
     private final ResourceService resourceService;
-    public static final String BUCKET_NAME_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
+    private static final String BUCKET_NAME_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private final IdentityServiceClient identityServiceClient;
-    public static final String CUSTOM_DOMAIN_BASE_PATH_ENV = "CUSTOM_DOMAIN_BASE_PATH";
+    private static final String CUSTOM_DOMAIN_BASE_PATH_ENV = "CUSTOM_DOMAIN_BASE_PATH";
     private final String basePath;
 
     /**
@@ -66,7 +66,7 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
         this(ResourceService.defaultService(),
              defaultS3Presigner(),
              new Environment(),
-             UriShortenerImpl.createDefault(),
+             UriShortenerImpl.createDefault(new Environment().readEnv(API_HOST_ENV)),
              HttpClient.newHttpClient(),
              IdentityServiceClient.prepare());
     }
@@ -79,15 +79,18 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     @Override
     protected PresignedUriResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var publication = resourceService.getPublicationByIdentifier(RequestUtil.getIdentifier(requestInfo));
-        var file = getFileInformation(publication, requestInfo);
+        var publicationId = RequestUtil.getIdentifier(requestInfo);
+        var fileIdentifier = RequestUtil.getFileIdentifier(requestInfo);
 
-        if (!hasFileAccess(publication, file, requestInfo)) {
+        var publication = resourceService.getPublicationByIdentifier(publicationId);
+        var file =  publication.getFile(fileIdentifier);
+
+        if (file.isEmpty() || !hasFileAccess(publication, file.get(), requestInfo)) {
             throw new NotFoundException(
-                String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), file.getIdentifier()));
+                String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), fileIdentifier));
         }
 
-        return getPresignedUriResponse(file);
+        return getPresignedUriResponse(file.get());
     }
 
     private PresignedUriResponse getPresignedUriResponse(File file) throws S3ServiceException {
@@ -131,21 +134,6 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     @Override
     protected Integer getSuccessStatusCode(Void input, PresignedUriResponse output) {
         return HTTP_OK;
-    }
-
-    private File getFileInformation(Publication publication, RequestInfo requestInfo)
-        throws ApiGatewayException {
-
-        var fileIdentifier = getFileIdentifier(requestInfo);
-
-        var file = publication.getFile(fileIdentifier);
-
-        if (file.isEmpty()) {
-            throw new NotFoundException(
-                String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), fileIdentifier));
-        }
-
-        return file.get();
     }
 
     private PresignedUri getPresignedDownloadUrl(File file, Instant expiration) throws S3ServiceException {

@@ -42,7 +42,7 @@ class UriShortenerResolverTest extends UriShortenerLocalDynamoDb {
     void initialize() {
         super.init(TABLE_NAME);
         this.uriResolver = new UriResolverImpl(client, TABLE_NAME);
-        this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()).getUri(),
+        this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()),
                                                  new UriShortenerWriteClient(client, TABLE_NAME));
         this.basePath = randomString();
     }
@@ -82,7 +82,7 @@ class UriShortenerResolverTest extends UriShortenerLocalDynamoDb {
     void shouldThrowTransactionFailedExceptionOnTransactionFail() {
         var longUri = randomUri();
         var dynamoDbClient = mock(AmazonDynamoDB.class);
-        this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()).getUri(),
+        this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()),
                                                  new UriShortenerWriteClient(dynamoDbClient, TABLE_NAME));
         when(dynamoDbClient.transactWriteItems(any())).thenThrow(AmazonDynamoDBException.class);
         assertThrows(TransactionFailedException.class, () -> uriShortener.shorten(longUri, basePath, randomInstant()));

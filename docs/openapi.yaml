@@ -1331,10 +1331,10 @@ components:
           format: uri
         expires:
           type: string
-        shortenedVersion:
+        alias:
           type: string
           format: uri
-          description: Shortened version of the id, will return a redirect to uri.
+          description: Shortened alias of the id, will return a redirect to the id.
 #region content from "documentation/schema.yaml"
     AcademicArticle:
       required:

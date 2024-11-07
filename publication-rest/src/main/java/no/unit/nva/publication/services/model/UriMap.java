@@ -11,9 +11,9 @@ public record UriMap(URI shortenedUri, URI longUri, Instant createdDate, Long ex
 
     private static final String SHORTENED_PATH = "file";
 
-    public static UriMap create(URI longVersion, Instant expiresDate, URI domain, String basePath) {
+    public static UriMap create(URI longVersion, Instant expiresDate, UriWrapper endpointWrapper) {
         validateRequest(longVersion, expiresDate);
-        return new UriMap(createNewShortVersion(domain, basePath), longVersion, Instant.now(), expiresDate.getEpochSecond());
+        return new UriMap(createNewShortVersion(endpointWrapper), longVersion, Instant.now(), expiresDate.getEpochSecond());
     }
 
     private static void validateRequest(URI longVersion, Instant expiresDate) {
@@ -22,9 +22,8 @@ public record UriMap(URI shortenedUri, URI longUri, Instant createdDate, Long ex
         }
     }
 
-    private static URI createNewShortVersion(URI domain, String basePath) {
-        return UriWrapper.fromUri(domain)
-                   .addChild(basePath)
+    private static URI createNewShortVersion(UriWrapper endpointWrapper) {
+        return endpointWrapper
                    .addChild(SHORTENED_PATH)
                    .addChild(SortableIdentifier.next().toString())
                    .getUri();
