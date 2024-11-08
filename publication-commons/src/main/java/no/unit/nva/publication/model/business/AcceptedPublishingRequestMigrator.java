@@ -9,14 +9,14 @@ import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.file.File;
 
-public class AcceptedPublishingRequestMigrator {
+public final class AcceptedPublishingRequestMigrator {
 
     private AcceptedPublishingRequestMigrator() {
     }
 
     @Deprecated
     public static Set<File> migrateApprovedFiles(Set<Object> approvedFiles) {
-        if (EveryEntryIsIdentifier(approvedFiles)) {
+        if (everyEntryIsIdentifier(approvedFiles)) {
             return migrateIdentifiers(approvedFiles);
         } else if (everyEntryIsFile(approvedFiles)) {
             return migrateFiles(approvedFiles);
@@ -42,7 +42,7 @@ public class AcceptedPublishingRequestMigrator {
         }
     }
 
-    private static boolean EveryEntryIsIdentifier(Set<Object> approvedFiles) {
+    private static boolean everyEntryIsIdentifier(Set<Object> approvedFiles) {
         return approvedFiles.stream().allMatch(value -> value instanceof String || value instanceof UUID);
     }
 
