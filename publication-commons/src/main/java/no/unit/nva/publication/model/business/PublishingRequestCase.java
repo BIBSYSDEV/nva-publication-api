@@ -16,13 +16,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -187,39 +183,7 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     public void setFilesForApproval(Set<Object> filesForApproval) {
-        if (filesForApproval.stream().allMatch(FileForApproval.class::isInstance)) {
-            this.filesForApproval =
-                filesForApproval.stream().map(map -> attempt(() -> JsonUtils.dtoObjectMapper.convertValue(map,
-                                                                                                          FileForApproval.class)).toOptional())
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .map(fileForApproval -> File.builder().withIdentifier(fileForApproval.identifier()).buildOpenFile())
-                    .collect(Collectors.toSet());
-        } else if (filesForApproval.stream().allMatch(File.class::isInstance)) {
-            this.filesForApproval =
-                filesForApproval.stream().map(map -> attempt(() -> JsonUtils.dtoObjectMapper.convertValue(map,
-                                                                                                          File.class)).toOptional())
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .collect(Collectors.toSet());
-        } else if (filesForApproval.stream().allMatch(file -> file instanceof Map<?,?> map && map.size() == 1)) {
-            this.filesForApproval =
-                filesForApproval.stream().map(map -> attempt(() -> JsonUtils.dtoObjectMapper.convertValue(map,
-                                                                                                         FileForApproval.class)).toOptional())
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .map(fileForApproval -> File.builder().withIdentifier(fileForApproval.identifier()).buildOpenFile())
-                    .collect(Collectors.toSet());
-        } else if (filesForApproval.stream().allMatch(Map.class::isInstance)) {
-            this.filesForApproval = filesForApproval.stream()
-                                     .map(map -> attempt(
-                                         () -> JsonUtils.dtoObjectMapper.convertValue(map, File.class)).toOptional())
-                                     .filter(Optional::isPresent)
-                                     .map(Optional::get)
-                                     .collect(Collectors.toSet());
-        } else {
-            this.filesForApproval = Set.of();
-        }
+        this.filesForApproval = AcceptedPublishingRequestMigrator.migrateFilesForApproval(filesForApproval);
     }
 
     public void emptyFilesForApproval() {
@@ -241,27 +205,7 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     public void setApprovedFiles(Set<Object> approvedFiles) {
-        if (approvedFiles.stream().allMatch(value -> value instanceof String || value instanceof UUID)) {
-            this.approvedFiles =
-                approvedFiles.stream().map(fileIdentifier -> File.builder().withIdentifier(UUID.fromString(fileIdentifier.toString())).buildOpenFile())
-                    .collect(Collectors.toSet());
-        } else if (approvedFiles.stream().allMatch(File.class::isInstance)) {
-            this.approvedFiles =
-                approvedFiles.stream().map(map -> attempt(() -> JsonUtils.dtoObjectMapper.convertValue(map,
-                                                                                                          File.class)).toOptional())
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .collect(Collectors.toSet());
-        } else if (approvedFiles.stream().allMatch(Map.class::isInstance)) {
-            this.approvedFiles = approvedFiles.stream()
-                                     .map(map -> attempt(
-                                         () -> JsonUtils.dtoObjectMapper.convertValue(map, File.class)).toOptional())
-                                     .filter(Optional::isPresent)
-                                     .map(Optional::get)
-                                     .collect(Collectors.toSet());
-        } else {
-            this.approvedFiles = Set.of();
-        }
+        this.approvedFiles = AcceptedPublishingRequestMigrator.migrateApprovedFiles(approvedFiles);
     }
 
     @Override

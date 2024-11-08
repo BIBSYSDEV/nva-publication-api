@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -11,7 +12,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -36,7 +36,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileForApproval;
@@ -233,17 +233,19 @@ class MigrationTests extends ResourcesLocalTest {
         verify(uriRetriever, never()).getRawContent(ArgumentMatchers.any(), ArgumentMatchers.any());
     }
 
+    @Deprecated
     @Test
     void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
         var publication = resourceService.createPublicationWithPredefinedCreationDate(randomPublication());
+        var firstFile = randomUnpublishedFile();
+        var secondFile = randomUnpublishedFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
+        resourceService.updatePublication(publication);
         var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(publication,
                                                                                     PublishingRequestCase.class);
-        var fileFromPublication = publication.getAssociatedArtifacts().stream().filter(File.class::isInstance)
-                                      .map(File.class::cast)
-                                      .findFirst()
-                                      .orElseThrow();
-        publishingRequest.setFilesForApproval(Set.of(FileForApproval.fromFile(fileFromPublication)));
-        publishingRequest.setApprovedFiles(Set.of(fileFromPublication.getIdentifier()));
+        publishingRequest.setFilesForApproval(Set.of(FileForApproval.fromFile(firstFile),
+                                                     FileForApproval.fromFile(secondFile)));
+        publishingRequest.setApprovedFiles(Set.of(firstFile.getIdentifier(), secondFile.getIdentifier()));
 
         publishingRequest.withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
 
@@ -252,8 +254,8 @@ class MigrationTests extends ResourcesLocalTest {
 
         var migratedTicket = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
-        assertEquals(migratedTicket.getApprovedFiles().iterator().next(), fileFromPublication);
-        assertEquals(migratedTicket.getFilesForApproval().iterator().next(), fileFromPublication);
+        assertThat(migratedTicket.getApprovedFiles(), containsInAnyOrder(publication.getAssociatedArtifacts().toArray()));
+        assertThat(migratedTicket.getFilesForApproval(), containsInAnyOrder(publication.getAssociatedArtifacts().toArray()));
     }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {

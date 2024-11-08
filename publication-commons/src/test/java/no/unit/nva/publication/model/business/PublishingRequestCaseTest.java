@@ -35,6 +35,7 @@ class PublishingRequestCaseTest {
         assertTrue(publishingRequestCase.fileIsApproved(file));
     }
 
+    @Deprecated
     @Test
     void shouldDeserializeApprovedFilesFromUUID() throws JsonProcessingException {
         var json = publishingRequestWithApprovedFilesAsUUID();
@@ -44,6 +45,7 @@ class PublishingRequestCaseTest {
         assertInstanceOf(OpenFile.class, publishingRequestCase.getApprovedFiles().iterator().next());
     }
 
+    @Deprecated
     @Test
     void shouldDeserializeApprovedFilesFromFile() throws JsonProcessingException {
         var json = publishingRequestWithApprovedFilesAsFile();
@@ -53,6 +55,7 @@ class PublishingRequestCaseTest {
         assertInstanceOf(OpenFile.class, publishingRequestCase.getApprovedFiles().iterator().next());
     }
 
+    @Deprecated
     @Test
     void shouldDeserializeFilesForApprovalFromObject() throws JsonProcessingException {
         var json = publishingRequestWithFileForApproval();
@@ -62,6 +65,7 @@ class PublishingRequestCaseTest {
         assertInstanceOf(OpenFile.class, publishingRequestCase.getFilesForApproval().iterator().next());
     }
 
+    @Deprecated
     @Test
     void shouldDeserializeFilesForApprovalFromFile() throws JsonProcessingException {
         var json = publishingRequestWithFileForApprovalAsFile();

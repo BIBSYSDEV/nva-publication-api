@@ -20,7 +20,7 @@ public final class AssociatedArtifactsGenerator {
     }
 
     public static List<AssociatedArtifact> randomAssociatedArtifacts() {
-        return new AssociatedArtifactList(PublishedFileGenerator.random(),randomAssociatedLink());
+        return new AssociatedArtifactList(PublishedFileGenerator.random(), randomAssociatedLink());
     }
 
     public static AssociatedLink randomAssociatedLink() {

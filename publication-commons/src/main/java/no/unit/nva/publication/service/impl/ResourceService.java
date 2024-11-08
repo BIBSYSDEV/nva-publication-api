@@ -333,6 +333,7 @@ public class ResourceService extends ServiceWithTransactions {
         };
     }
 
+    @Deprecated
     private Entity migratePublishingRequest(PublishingRequestCase publishingRequest) {
         var resourceIdentifier = publishingRequest.getResourceIdentifier();
         publishingRequest.setFilesForApproval(migrateFiles(publishingRequest.getFilesForApproval(), resourceIdentifier));
@@ -419,6 +420,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // change this method depending on the current migration needs.
+    @Deprecated
     private Resource migrateResource(Resource dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
         CuratingInstitutionMigration.migrate(dataEntry, s3Client, cristinUnitsS3Uri);
         return dataEntry;
