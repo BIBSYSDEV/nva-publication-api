@@ -102,7 +102,16 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         var publication = fetchPublication(publishingRequest.getResourceIdentifier());
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
             publishPublication(publication);
+            refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
+    }
+
+    /**
+     * Is needed in order to populate publication status changes in search-index when publication is being published.
+     * @param publishingRequest to refresh
+     */
+    private void refreshPublishingRequestAfterPublishingMetadata(PublishingRequestCase publishingRequest) {
+        publishingRequest.persistUpdate(ticketService);
     }
 
     private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
