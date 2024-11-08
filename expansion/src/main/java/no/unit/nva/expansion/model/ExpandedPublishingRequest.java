@@ -143,7 +143,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                            ExpandedPerson owner,
                                                            ExpandedPerson assignee,
                                                            ExpandedPerson finalizedBy,
-                                                           Set<ExpandedPerson> viewedBy) throws NotFoundException {
+                                                           Set<ExpandedPerson> viewedBy) {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
@@ -159,20 +159,9 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setFinalizedBy(finalizedBy);
         entry.setOwner(owner);
         entry.setAssignee(assignee);
-        entry.setApprovedFiles(dataEntry.getApprovedFiles().stream().map(File.class::cast)
-                                   .collect(Collectors.toSet()));
-        entry.setFilesForApproval(extractFilesForApproval(publication,
-                                                          dataEntry.getFilesForApproval().stream().map(Object.class::cast)
-                                                                           .collect(Collectors.toSet())));
+        entry.setApprovedFiles(dataEntry.getApprovedFiles());
+        entry.setFilesForApproval(dataEntry.getFilesForApproval());
         return entry;
-    }
-
-    private static Set<File> extractFilesForApproval(Publication publication, Set<Object> filesForApproval) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .filter(file -> filesForApproval.contains(FileForApproval.fromFile(file)))
-                   .collect(Collectors.toSet());
     }
 
     private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,

@@ -19,7 +19,6 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
@@ -49,7 +48,6 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -561,7 +559,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
-        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+        assertThat(completedPublishingRequest.getApprovedFiles(), hasItem(approvedFile));
     }
 
     @Test
@@ -573,7 +571,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var expectedFilesForApproval = getUnpublishedFiles(publication);
 
         assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
-                   containsInAnyOrder(expectedFilesForApproval));
+                   contains(expectedFilesForApproval));
 
         var completedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(completedTicket,
@@ -584,7 +582,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
-        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile));
         assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
     }
 
@@ -634,12 +632,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private static Object[] getUnpublishedFiles(Publication publication) {
+    private static File[] getUnpublishedFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(UnpublishedFile.class::isInstance)
                    .map(File.class::cast)
-                   .map(FileForApproval::fromFile)
-                   .toArray();
+                   .toArray(File[]::new);
     }
 
     private static Map<String, String> pathParameters(Publication publication, TicketEntry ticket) {
@@ -757,11 +754,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         return publishingRequest.persistNewTicket(ticketService);
     }
 
-    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+    private Set<File> convertUnpublishedFilesToFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(UnpublishedFile.class::isInstance)
                    .map(UnpublishedFile.class::cast)
-                   .map(FileForApproval::fromFile)
                    .collect(Collectors.toSet());
     }
 

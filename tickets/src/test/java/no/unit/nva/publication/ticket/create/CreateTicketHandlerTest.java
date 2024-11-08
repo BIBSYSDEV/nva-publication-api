@@ -55,7 +55,6 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -449,8 +448,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var expectedApprovedFiles = publication.getAssociatedArtifacts().stream()
                                 .filter(UnpublishedFile.class::isInstance)
                                 .map(File.class::cast)
-                                .map(File::getIdentifier)
-                                .toArray();
+                                .toArray(File[]::new);
 
         assertThat(publishingRequest.orElseThrow().getApprovedFiles(), containsInAnyOrder(expectedApprovedFiles));
     }
@@ -499,9 +497,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publishingRequest = ticketService.fetchTicketByResourceIdentifier(
             publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class).orElseThrow();
 
-        var expectedFilesForApproval = new FileForApproval[] { new FileForApproval(file.getIdentifier()) };
-
-        assertThat(publishingRequest.getFilesForApproval(), containsInAnyOrder(expectedFilesForApproval));
+        assertThat(publishingRequest.getFilesForApproval(), containsInAnyOrder(file));
     }
 
     @Test

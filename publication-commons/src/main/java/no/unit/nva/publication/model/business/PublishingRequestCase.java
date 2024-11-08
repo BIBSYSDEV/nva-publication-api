@@ -388,7 +388,7 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     public boolean fileIsApproved(File file) {
-        return getApprovedFiles().contains(file.getIdentifier());
+        return getApprovedFiles().contains(file);
     }
 
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(

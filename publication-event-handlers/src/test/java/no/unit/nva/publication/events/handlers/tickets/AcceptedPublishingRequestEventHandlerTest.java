@@ -459,7 +459,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                 .withOwnerAffiliation(
                                         publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.setStatus(TicketStatus.COMPLETED);
-        publishingRequest.setApprovedFiles(Set.of(file.getIdentifier()));
+        publishingRequest.setApprovedFiles(Set.of(file));
         publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
         return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
