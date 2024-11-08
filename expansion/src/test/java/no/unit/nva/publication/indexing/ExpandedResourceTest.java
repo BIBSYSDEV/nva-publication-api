@@ -99,7 +99,6 @@ import no.unit.nva.publication.uriretriever.FakeUriResponse;
 import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.hamcrest.Matchers;
@@ -161,7 +160,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var indexDocument = fromPublication(fakeUriRetriever, resourceService, publication);
         var framedResultNode = indexDocument.asJsonNode();
 
-        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/country")
+        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/countryCode")
                                     .textValue();
         assertThat(actualCountryCode, is(not(nullValue())));
     }

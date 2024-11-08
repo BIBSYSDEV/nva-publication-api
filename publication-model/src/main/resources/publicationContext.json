@@ -69,7 +69,7 @@
   "correspondingAuthor": {
     "@type": "xsd:boolean"
   },
-  "country": {
+  "countryCode": {
     "@id": "country"
   },
   "createdDate": {
