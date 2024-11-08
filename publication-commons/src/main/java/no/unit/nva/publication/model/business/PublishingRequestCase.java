@@ -28,6 +28,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -333,12 +334,14 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     public PublishingRequestCase approveFiles() {
-        this.approvedFiles = getFilesForApproval();
+        this.approvedFiles = getFilesForApproval().stream().map(this::toApprovedFile).collect(Collectors.toSet());
         this.filesForApproval = Set.of();
         return this;
     }
 
-
+    private File toApprovedFile(File file) {
+        return file instanceof PendingFile<?,?> pendingFile ? pendingFile.approve() : file;
+    }
 
     public PublishingRequestCase withWorkflow(PublishingWorkflow workflow) {
         this.workflow = workflow;
@@ -388,7 +391,7 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     public boolean fileIsApproved(File file) {
-        return getApprovedFiles().contains(file);
+        return getApprovedFiles().stream().map(File::getIdentifier).toList().contains(file.getIdentifier());
     }
 
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(

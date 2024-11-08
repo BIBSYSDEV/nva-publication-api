@@ -14,7 +14,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PendingOpenFile.TYPE)
-public class PendingOpenFile extends File implements PendingFile<OpenFile>, PublicAssociatedArtifact {
+public class PendingOpenFile extends File implements PendingFile<OpenFile, RejectedFile>, PublicAssociatedArtifact {
     public static final String TYPE = "PendingOpenFile";
 
     /**

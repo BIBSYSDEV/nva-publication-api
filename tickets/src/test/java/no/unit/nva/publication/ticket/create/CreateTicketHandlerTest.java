@@ -41,6 +41,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -446,11 +448,15 @@ class CreateTicketHandlerTest extends TicketTestLocal {
             publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class);
 
         var expectedApprovedFiles = publication.getAssociatedArtifacts().stream()
-                                .filter(UnpublishedFile.class::isInstance)
-                                .map(File.class::cast)
-                                .toArray(File[]::new);
+                                        .filter(UnpublishedFile.class::isInstance)
+                                        .map(File.class::cast)
+                                        .map(File::getIdentifier)
+                                        .toArray(UUID[]::new);
 
-        assertThat(publishingRequest.orElseThrow().getApprovedFiles(), containsInAnyOrder(expectedApprovedFiles));
+        var approvedFilesIdentifiers = publishingRequest.orElseThrow().getApprovedFiles().stream()
+                                           .map(File::getIdentifier)
+                                           .collect(Collectors.toSet());
+        assertThat(approvedFilesIdentifiers, containsInAnyOrder(expectedApprovedFiles));
     }
 
     @Test

@@ -559,7 +559,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
-        assertThat(completedPublishingRequest.getApprovedFiles(), hasItem(approvedFile));
+        var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
+                                      .map(File::getIdentifier)
+                                      .collect(Collectors.toSet());
+        assertThat(approvedFiles, hasItem(approvedFile.getIdentifier()));
     }
 
     @Test
@@ -582,7 +585,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
-        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile));
+        var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
+                               .map(File::getIdentifier)
+                               .toList();
+        assertThat(approvedFiles, contains(approvedFile.getIdentifier()));
         assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
     }
 
