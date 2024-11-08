@@ -5,15 +5,12 @@ import com.apicatalog.jsonld.document.JsonDocument;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.file.Path;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.ExpansionConfig;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.utils.JsonLdFrameUtil;
-import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
-import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class SearchIndexFrame {
