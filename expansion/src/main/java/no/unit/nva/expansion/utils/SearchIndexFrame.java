@@ -5,8 +5,10 @@ import com.apicatalog.jsonld.document.JsonDocument;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Path;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.ExpansionConfig;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.utils.JsonLdFrameUtil;
 import nva.commons.core.Environment;
@@ -21,9 +23,8 @@ public final class SearchIndexFrame {
     }
 
     private static InputStream generateFrameWithContext(Path framePath) {
-        var uri = UriWrapper.fromHost(new Environment().readEnv("API_HOST")).getUri();
         var frame = JsonLdFrameUtil.from(IoUtils.stringFromResources(framePath),
-                             Publication.getJsonLdContext(uri));
+                                         Publication.getJsonLdContext(ExpansionConfig.getApiHost()));
         return asInputStream(frame);
     }
 

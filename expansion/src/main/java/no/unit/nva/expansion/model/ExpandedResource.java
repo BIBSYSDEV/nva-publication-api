@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.expansion.ExpansionConfig;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -45,7 +46,6 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -78,6 +78,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final int MAX_CONTRIBUTORS_PREVIEW = 10;
     public static final String CONTRIBUTORS_COUNT = "contributorsCount";
     public static final String CONTRIBUTORS_PREVIEW = "contributorsPreview";
+
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -382,8 +383,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static JsonNode extractJsonLdContext() {
-        var jsonContext = Publication.getJsonLdContext(
-            UriWrapper.fromHost(new Environment().readEnv("API_HOST")).getUri());
+        var jsonContext = Publication.getJsonLdContext(ExpansionConfig.getApiHost());
         return attempt(() -> dtoObjectMapper.readTree(jsonContext)).orElseThrow();
     }
 
