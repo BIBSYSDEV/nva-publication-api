@@ -67,14 +67,14 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public ExpandedDataEntry expandEntry(Entity dataEntry, boolean replaceContext) throws JsonProcessingException,
-                                                                             NotFoundException {
+    public ExpandedDataEntry expandEntry(Entity dataEntry, boolean useUriContext) throws JsonProcessingException,
+                                                                                         NotFoundException {
         if (dataEntry instanceof Resource resource) {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
             var expandedResource = ExpandedResource.fromPublication(uriRetriever,
                                                                     resourceService,
                                                                     resource.toPublication(resourceService));
-            var resourceWithContextUri = replaceContext
+            var resourceWithContextUri = useUriContext
                                              ? replaceInlineContextWithUriContext(expandedResource)
                                              : replaceContextWithInlineContext(expandedResource);
 
