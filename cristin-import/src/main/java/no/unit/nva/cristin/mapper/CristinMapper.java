@@ -184,7 +184,12 @@ public class CristinMapper extends CristinMappingModule {
     private URI extractHandle() {
         return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
                    .flatMap(CristinMapper::extractArchiveUri)
+                   .map(this::updateHttpScheme)
                    .orElse(null);
+    }
+
+    private URI updateHttpScheme(URI uri) {
+        return UriWrapper.fromHost(uri.toString()).addChild(uri.getPath()).getUri();
     }
 
     private List<PublicationNoteBase> extractPublicationNotes() {

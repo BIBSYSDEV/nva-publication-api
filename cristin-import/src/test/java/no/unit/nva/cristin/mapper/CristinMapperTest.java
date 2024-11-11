@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
-import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static no.unit.nva.cristin.mapper.CristinPresentationalWork.PROSJEKT;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
@@ -39,14 +38,14 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaBookSeriesBuilder;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.NullPublisher;
@@ -78,10 +77,11 @@ class CristinMapperTest extends AbstractCristinImportTest {
     private List<CristinObject> cristinObjects;
     private CristinUnitsUtil cristinUnitsUtil;
 
+    @Override
     @BeforeEach
     public void init() {
         super.init();
-        this.cristinObjects = cristinObjects(NUMBER_OF_OBJECTS).collect(Collectors.toList());
+        this.cristinObjects = cristinObjects(NUMBER_OF_OBJECTS).toList();
         this.cristinUnitsUtil = mock(CristinUnitsUtil.class);
     }
 
@@ -117,7 +117,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsJournalWithoutDoiUriWhenInputIsAJournalArticleWihoutDoi() {
+    void mapReturnsJournalWithoutDoiUriWhenInputIsAJournalArticleWihoutDoi() {
         CristinObject cristinObject =
             CristinDataGenerator.randomObject(JOURNAL_ARTICLE.toString());
         cristinObject.getJournalPublication().setDoi(null);
@@ -156,7 +156,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                             .map(Publication::getAdditionalIdentifiers)
                             .flatMap(Collection::stream)
                             .filter(additionalIdentifierBase -> !(additionalIdentifierBase instanceof CristinIdentifier))
-                            .collect(Collectors.toList());
+                            .toList();
 
         assertThat(actualIds, containsInAnyOrder(expectedIds.toArray()));
         assertThat(actualIds, hasSize(expectedIds.size()));
@@ -202,13 +202,13 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                           .map(CristinObject::getCristinTitles)
                                           .map(this::mainTitle)
                                           .map(CristinTitle::getTitle)
-                                          .collect(Collectors.toList());
+                                          .toList();
 
         List<String> actualTitles = cristinObjects.stream()
                                         .map(this::mapToPublication)
                                         .map(Publication::getEntityDescription)
                                         .map(EntityDescription::getMainTitle)
-                                        .collect(Collectors.toList());
+                                        .toList();
 
         assertThat(expectedTitles, is(not(empty())));
         assertThat(actualTitles, containsInAnyOrder(expectedTitles.toArray(String[]::new)));
@@ -220,7 +220,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     void mapReturnsResourceWithDateEqualToArstall() {
         List<Integer> expectedPublicationYear = cristinObjects.stream()
                                                     .map(CristinObject::getPublicationYear)
-                                                    .collect(Collectors.toList());
+                                                    .toList();
 
         var actualPublicationDates = cristinObjects.stream()
                                          .map(this::mapToPublication)
@@ -228,7 +228,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                          .map(EntityDescription::getPublicationDate)
                                          .map(PublicationDate::getYear)
                                          .map(Integer::parseInt)
-                                         .collect(Collectors.toList());
+                                         .toList();
         assertThat(expectedPublicationYear, is(not(empty())));
         assertThat(actualPublicationDates, containsInAnyOrder(expectedPublicationYear.toArray(Integer[]::new)));
     }
@@ -284,7 +284,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                                   .flatMap(Collection::stream)
                                                   .map(Contributor::getIdentity)
                                                   .map(Identity::getName)
-                                                  .collect(Collectors.toList());
+                                                  .toList();
 
         assertThat(actualContributorNames, containsInAnyOrder(expectedContributorNames.toArray(String[]::new)));
     }
@@ -355,7 +355,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                                            .map(this::mapToPublication)
                                                            .map(Publication::getEntityDescription)
                                                            .map(EntityDescription::getPublicationDate)
-                                                           .collect(Collectors.toList());
+                                                           .toList();
 
         assertThat(actualPublicationDates,
                    containsInAnyOrder(expectedPublicationDates.toArray(PublicationDate[]::new)));
@@ -662,13 +662,13 @@ class CristinMapperTest extends AbstractCristinImportTest {
         return actualContributors.stream()
                    .map(Contributor::getSequence)
                    .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private static List<Integer> getSequenceNumberSet(List<Integer> actualSequenceNumbers) {
         return new HashSet<>(actualSequenceNumbers).stream()
                    .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private CristinObject getSingleCristinObject() {
@@ -710,7 +710,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         return publication.getEntityDescription()
                    .getContributors().stream()
                    .map(contributor -> extractContributionReference(cristinIdentifierValue, contributor))
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private List<ContributionReference> extractContributions(CristinObject cristinObject) {
@@ -718,11 +718,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         return cristinObject.getContributors().stream()
                    .map(c -> new ContributionReference(cristinResourceIdentifier, c.getIdentifier(),
                                                        c.getContributorOrder()))
-                   .collect(Collectors.toList());
-    }
-
-    private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
-        return identifier.sourceName().equals(IDENTIFIER_ORIGIN);
+                   .toList();
     }
 
     private ContributionReference extractContributionReference(Integer cristinIdentifierValue,

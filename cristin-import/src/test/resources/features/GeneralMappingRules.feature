@@ -429,6 +429,14 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource should have the archive handle set to "https://hdl.handle.net/11250/2977385"
 
+  Scenario: when brage-archive handle is present and has http scheme
+    Given the Cristin Result has the following varbeid_url present:
+      | urltypekode | url                                  |
+      | FULLTEKST   | wwww.example.com                     |
+      | ARKIV       | http://hdl.handle.net/11250/2977385 |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have the archive handle set to "https://hdl.handle.net/11250/2977385"
+
   Scenario: when brage-archive handles is not present the result is still mapped
     Given the Cristin Result has the following varbeid_url present:
       | urltypekode | url              |
