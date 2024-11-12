@@ -41,6 +41,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -55,7 +57,6 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -447,12 +448,15 @@ class CreateTicketHandlerTest extends TicketTestLocal {
             publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class);
 
         var expectedApprovedFiles = publication.getAssociatedArtifacts().stream()
-                                .filter(UnpublishedFile.class::isInstance)
-                                .map(File.class::cast)
-                                .map(File::getIdentifier)
-                                .toArray();
+                                        .filter(UnpublishedFile.class::isInstance)
+                                        .map(File.class::cast)
+                                        .map(File::getIdentifier)
+                                        .toArray(UUID[]::new);
 
-        assertThat(publishingRequest.orElseThrow().getApprovedFiles(), containsInAnyOrder(expectedApprovedFiles));
+        var approvedFilesIdentifiers = publishingRequest.orElseThrow().getApprovedFiles().stream()
+                                           .map(File::getIdentifier)
+                                           .collect(Collectors.toSet());
+        assertThat(approvedFilesIdentifiers, containsInAnyOrder(expectedApprovedFiles));
     }
 
     @Test
@@ -499,9 +503,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publishingRequest = ticketService.fetchTicketByResourceIdentifier(
             publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class).orElseThrow();
 
-        var expectedFilesForApproval = new FileForApproval[] { new FileForApproval(file.getIdentifier()) };
-
-        assertThat(publishingRequest.getFilesForApproval(), containsInAnyOrder(expectedFilesForApproval));
+        assertThat(publishingRequest.getFilesForApproval(), containsInAnyOrder(file));
     }
 
     @Test

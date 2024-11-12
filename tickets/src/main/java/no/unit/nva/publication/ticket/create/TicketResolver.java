@@ -16,7 +16,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -84,11 +83,10 @@ public class TicketResolver {
         return getCustomerPublishingWorkflowResponse(customerId).convertToPublishingWorkflow();
     }
 
-    private Set<FileForApproval> getFilesForApproval(Publication publication) {
+    private Set<File> getFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(this::isFileThatNeedsApproval)
                    .map(File.class::cast)
-                   .map(FileForApproval::fromFile)
                    .collect(Collectors.toSet());
     }
 

@@ -608,7 +608,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldExpandApprovedFilesForPublishingRequest()
         throws ApiGatewayException, JsonProcessingException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PUBLISHED, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(randomUri(), PUBLISHED,
+                                                                                       resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var ticket = createCompletedTicketAndPublishFiles(publication);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -741,7 +742,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
         var ticket = (PublishingRequestCase) TicketTestUtils.createCompletedTicket(
             publication, PublishingRequestCase.class, ticketService);
-        ticket.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication)).approveFiles();
+        ticket.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication)).approveFiles();
         publishFiles(publication);
         return ticket;
     }
@@ -779,7 +780,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                                               SortableIdentifier::next)
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
 
@@ -967,8 +968,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setStatus(getTicketStatus(expandedPublishingRequest.getStatus()));
         publishingRequest.setFinalizedBy(extractUsername(expandedPublishingRequest.getFinalizedBy()));
         publishingRequest.setAssignee(extractUsername(expandedPublishingRequest.getAssignee()));
-        publishingRequest.setApprovedFiles(extractApprovedFiles(expandedPublishingRequest));
-        publishingRequest.setFilesForApproval(extractFilesForApproval(expandedPublishingRequest));
+        publishingRequest.setApprovedFiles(expandedPublishingRequest.getApprovedFiles().stream()
+                                               .map(Object.class::cast)
+                                               .collect(Collectors.toSet()));
+        publishingRequest.setFilesForApproval(expandedPublishingRequest.getFilesForApproval().stream()
+                                                  .map(Object.class::cast)
+                                                  .collect(Collectors.toSet()));
         publishingRequest.setOwnerAffiliation(expandedPublishingRequest.getOrganization().id());
         return publishingRequest;
     }

@@ -13,7 +13,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PendingInternalFile.TYPE)
-public class PendingInternalFile extends File implements PendingFile<InternalFile> {
+public class PendingInternalFile extends File implements PendingFile<InternalFile, RejectedFile> {
 
     public static final String TYPE = "PendingInternalFile";
 

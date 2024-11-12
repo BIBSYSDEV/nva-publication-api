@@ -16,13 +16,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -131,11 +125,11 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     //TODO: Remove unpublishable file and logic related to it after we have migrated files
     private AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
-        return switch (associatedArtifact) {
-            case UnpublishedFile unpublishedFile -> unpublishedFile.toUnpublishableFile();
-            case PendingFile<?> pendingFile -> pendingFile.reject();
-            default -> associatedArtifact;
-        };
+        if (associatedArtifact instanceof PendingFile<?,?> pendingFile) {
+            return pendingFile.reject();
+        } else {
+            return associatedArtifact;
+        }
     }
 
     private static boolean hasDoi(Publication publication) {
@@ -160,23 +154,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         logger.info(PUBLISHING_FILE_MESSAGE, unpublishedFile.getIdentifier(),
                     unpublishedFile.getClass().getSimpleName(), publishingRequestCase.getIdentifier(),
                     publishingRequestCase.getResourceIdentifier());
-    }
-
-    private static PublishedFile toPublishedFile(UnpublishedFile unpublishedFile,
-                                                 PublishingRequestCase publishingRequestCase) {
-        logFilePublish(unpublishedFile, publishingRequestCase);
-        return unpublishedFile.toPublishedFile();
-    }
-
-    private static InternalFile toInternalFile(PendingInternalFile pendingInternalFile,
-                                               PublishingRequestCase publishingRequestCase) {
-        logFilePublish(pendingInternalFile, publishingRequestCase);
-        return pendingInternalFile.toInternalFile();
-    }
-
-    private static OpenFile toOpenFile(PendingOpenFile pendingOpenFile, PublishingRequestCase publishingRequestCase) {
-        logFilePublish(pendingOpenFile, publishingRequestCase);
-        return pendingOpenFile.toOpenFile();
     }
 
     private boolean hasEffectiveChanges(String eventBlob) {
@@ -259,14 +236,15 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private AssociatedArtifact publishFileIfApproved(AssociatedArtifact associatedArtifact,
                                                      PublishingRequestCase publishingRequest) {
         return switch (associatedArtifact) {
-            case UnpublishedFile unpublishedFile when publishingRequest.fileIsApproved(unpublishedFile) ->
-                toPublishedFile(unpublishedFile, publishingRequest);
-            case PendingInternalFile pendingInternalFile when publishingRequest.fileIsApproved(pendingInternalFile) ->
-                toInternalFile(pendingInternalFile, publishingRequest);
-            case PendingOpenFile pendingOpenFile when publishingRequest.fileIsApproved(pendingOpenFile) ->
-                toOpenFile(pendingOpenFile, publishingRequest);
+            case PendingFile<?,?> pendingFile when publishingRequest.fileIsApproved((File) pendingFile) ->
+                approve(pendingFile, publishingRequest);
             case null, default -> associatedArtifact;
         };
+    }
+
+    private static File approve(PendingFile<?, ?> pendingFile, PublishingRequestCase publishingRequest) {
+        logFilePublish((File) pendingFile, publishingRequest);
+        return pendingFile.approve();
     }
 
     private Publication fetchPublication(SortableIdentifier publicationIdentifier) {
