@@ -11,7 +11,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -82,7 +85,7 @@ public final class PublishingRequestResolver {
             createPublishingRequestOnFileUpdate(oldImage, newImage);
             return;
         }
-        if (thereAreNoFiles(newImage)) {
+        if (thereAreNoPendingFiles(newImage)) {
             autoCompletePendingPublishingRequestsIfNeeded(newImage, pendingPublishingRequests);
             return;
         }
@@ -103,9 +106,13 @@ public final class PublishingRequestResolver {
                 ticket -> ticket.complete(publication, getUsername()).persistUpdate(ticketService));
     }
 
-    private boolean thereAreNoFiles(Publication publicationUpdate) {
+    private boolean thereAreNoPendingFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
-                .noneMatch(File.class::isInstance);
+                .noneMatch(this::isPendingFile);
+    }
+
+    private boolean isPendingFile(AssociatedArtifact associatedArtifact) {
+        return associatedArtifact instanceof PendingFile<?> || associatedArtifact instanceof UnpublishedFile;
     }
 
     private List<PublishingRequestCase> fetchPendingPublishingRequestsForUserInstitution(
