@@ -5,9 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.BRAGE_MIGRATION_REPORTS_BUCKET_NAME;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_PREFIX;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -61,6 +59,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.utils.DoesNotHaveEmptyValues;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -212,16 +211,15 @@ public final class BrageNvaMapper {
     private static void assertPublicationDoesNotHaveEmptyFields(Publication publication, Record brageRecord, S3Client s3Client) {
         // TODO: Fix this so we don't depend on JUnit.
         try {
-            Set<String> ignoredAndPossiblyEmptyPublicationFields =
+            var ignoredAndPossiblyEmptyPublicationFields =
                 MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
-            assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(
-                ignoredAndPossiblyEmptyPublicationFields));
-        } catch (Error error) {
+            DoesNotHaveEmptyValues.checkForEmptyFields(publication, ignoredAndPossiblyEmptyPublicationFields);
+        } catch (Exception error) {
             persistErrorReport(brageRecord, s3Client, error);
         }
     }
 
-    private static void persistErrorReport(Record brageRecord, S3Client s3Client, Error error) {
+    private static void persistErrorReport(Record brageRecord, S3Client s3Client, Exception error) {
         var customerName = brageRecord.getCustomer().getName();
         var handlePath = brageRecord.getId().getPath();
         var location = UnixPath.fromString(ERROR_REPORT)
