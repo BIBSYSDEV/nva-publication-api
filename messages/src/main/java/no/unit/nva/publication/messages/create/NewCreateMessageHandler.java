@@ -96,8 +96,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
 
     private PublicationPermissionStrategy fetchPermissions(RequestInfo requestInfo, Publication publication)
         throws UnauthorizedException {
-        return PublicationPermissionStrategy.create(publication, UserInstance.fromRequestInfo(requestInfo),
-                                                    resourceService);
+        return PublicationPermissionStrategy.create(publication, UserInstance.fromRequestInfo(requestInfo));
     }
 
     private void isAuthorizedToManageTicket(PublicationPermissionStrategy permissions, TicketEntry ticket)

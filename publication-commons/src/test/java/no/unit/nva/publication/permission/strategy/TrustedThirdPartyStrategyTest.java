@@ -39,7 +39,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -53,7 +53,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, resourceService)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 
@@ -70,7 +70,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(DELETE));
     }
 
@@ -87,7 +87,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(DELETE));
     }
 
@@ -100,7 +100,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), resourceService)
+                    requestInfo, identityServiceClient))
                 .allowsAction(UPDATE));
     }
 
@@ -113,7 +113,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                                           userInstanse.getTopLevelOrgCristinId());
 
         Assertions.assertTrue(
-            PublicationPermissionStrategy.create(publication, userInstanse, resourceService)
+            PublicationPermissionStrategy.create(publication, userInstanse)
                 .allowsAction(UPDATE));
     }
 
@@ -126,7 +126,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         var publication = createDegreePhd(randomString(), publisher, userInstanse.getTopLevelOrgCristinId());
 
         Assertions.assertFalse(
-            PublicationPermissionStrategy.create(publication, userInstanse, resourceService)
+            PublicationPermissionStrategy.create(publication, userInstanse)
                 .allowsAction(UPDATE));
     }
 }

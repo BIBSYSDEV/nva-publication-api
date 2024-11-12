@@ -161,8 +161,7 @@ public class UpdatePublicationHandler
         Publication existingPublication = fetchPublication(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance,
-                                                                      resourceService);
+        var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
@@ -198,7 +197,7 @@ public class UpdatePublicationHandler
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
         return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance, resourceService))
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
                    .map(PublicationPermissionStrategy::getAllAllowedActions)
                    .orElse(Collections.emptySet());
     }

@@ -7,13 +7,11 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.ResourceService;
 
 public class ContributorPermissionStrategy extends GrantPermissionStrategy {
 
-    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance,
-                                         ResourceService resourceService) {
-        super(publication, userInstance, resourceService);
+    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override
