@@ -1,6 +1,5 @@
 package no.unit.nva.model.testing;
 
-import static no.unit.nva.model.testing.RandomUtils.randomLabel;
 import static no.unit.nva.model.testing.RandomUtils.randomPublicationId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -197,7 +196,7 @@ public class PublicationContextBuilder {
 
     private static Event randomPresentation() {
         return new Event.Builder().withAgent(randomAgent())
-                                  .withLabel(randomLabel())
+                                  .withName(randomString())
                                   .withPlace(randomPlace())
                                   .withProduct(randomUri())
                                   .withTime(randomTime())

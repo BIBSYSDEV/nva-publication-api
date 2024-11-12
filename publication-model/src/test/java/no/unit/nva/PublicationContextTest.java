@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,6 +33,8 @@ import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import nva.commons.core.Environment;
+import nva.commons.core.paths.UriWrapper;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
@@ -47,6 +48,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class PublicationContextTest {
 
     public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
+    public static final Set<String> SET_DEFINED_IN_JSON_LD_CONTEXT = getAllContextContainerSetTerms();
 
     public static Stream<Class<?>> publicationInstanceProvider() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
@@ -61,7 +63,9 @@ class PublicationContextTest {
 
     @Test
     void shouldReturnContextObjectWhenRequested() {
-        assertThat(new Publication().getJsonLdContext(), is(not(nullValue())));
+        assertThat(Publication.getJsonLdContext(
+            UriWrapper.fromHost(new Environment().readEnv("API_HOST")).getUri()),
+                   is(not(nullValue())));
     }
 
     @Test
@@ -77,16 +81,16 @@ class PublicationContextTest {
         var nvaObjects = objectResources.stream()
                              .filter(PublicationContextTest::isAnNvaObjectResource)
                              .filter(PublicationContextTest::isNonFragmentUri)
-                             .collect(Collectors.toList());
+                             .toList();
         assertThat(nvaObjects, is(emptyList()));
     }
 
-    @Test
-    void shouldContainEveryCollectionInModel() {
-        var contextContainerSets = getAllContextContainerSetTerms();
-        var allNvaCollectionProperties = generateSetOfPropertiesThatHaveCollectionTypeForEveryNvaType();
+    @ParameterizedTest
+    @MethodSource("publicationInstanceProvider")
+    void shouldContainEveryCollectionInModel(Class<?> instanceType) {
+        var allNvaCollectionProperties = generateSetOfPropertiesThatHaveCollectionTypeForEveryNvaType(instanceType);
         for (var modelProperty : allNvaCollectionProperties) {
-            assertTrue(contextContainerSets.contains(modelProperty));
+            assertTrue(SET_DEFINED_IN_JSON_LD_CONTEXT.contains(modelProperty));
         }
     }
 
@@ -99,7 +103,7 @@ class PublicationContextTest {
 
     // TODO: test that every property and class is described in the ontology
 
-    private Set<String> getAllContextContainerSetTerms() {
+    private static Set<String> getAllContextContainerSetTerms() {
         var elements = getElementsFromJsonContextObject();
         return extractPropertyKeysThatSpecifyContainerSets(elements);
     }
@@ -113,7 +117,8 @@ class PublicationContextTest {
     }
 
     private static Iterator<Map.Entry<String, JsonNode>> getElementsFromJsonContextObject() {
-        var contextFromPublication = new Publication().getJsonLdContext();
+        var contextFromPublication = Publication.getJsonLdContext(
+            UriWrapper.fromHost(new Environment().readEnv("API_HOST")).getUri());
         var jsonLdContext = stringToTree(contextFromPublication);
         return jsonLdContext.fields();
     }
@@ -124,42 +129,14 @@ class PublicationContextTest {
                && current.getValue().get("@container").asText().equals("@set");
     }
 
-    private Set<String> generateSetOfPropertiesThatHaveCollectionTypeForEveryNvaType() {
-        return publicationInstanceProvider()
-                   .map(PublicationGenerator::randomPublication)
-                   .map(PublicationContextTest::convertToJsonNode)
-                   .map(PublicationContextTest::initiateArrayFieldNameExtraction)
-                   .flatMap(Collection::stream)
-                   .collect(Collectors.toSet());
+    private Set<String> generateSetOfPropertiesThatHaveCollectionTypeForEveryNvaType(Class<?> instanceType) {
+        var publication = PublicationGenerator.randomPublication(instanceType);
+        var jsonNode = PublicationContextTest.convertToJsonNode(publication);
+        return initiateArrayFieldNameExtraction(jsonNode);
     }
 
     private static Set<String> initiateArrayFieldNameExtraction(JsonNode jsonNode) {
-        return extractPropertiesThatHaveArrayValue(jsonNode.fields());
-    }
-
-    private static Set<String> extractPropertiesThatHaveArrayValue(Iterator<Map.Entry<String, JsonNode>> fields) {
-        return streamOf(fields)
-                   .map(PublicationContextTest::extractFieldNameFromJsonNode)
-                   .flatMap(Set::stream)
-                   .collect(Collectors.toSet());
-    }
-
-    private static Set<String> extractFieldNameFromJsonNode(Map.Entry<String, JsonNode> current) {
-        var fieldNames = new HashSet<String>();
-        if (current.getValue().isArray()) {
-            fieldNames.add(current.getKey());
-            fieldNames.addAll(iterateArray(current.getValue().elements()));
-        } else if (current.getValue().isObject()) {
-            fieldNames.addAll(extractPropertiesThatHaveArrayValue(current.getValue().fields()));
-        }
-        return fieldNames;
-    }
-
-    private static Set<String> iterateArray(Iterator<JsonNode> elements) {
-        return streamOf(elements)
-                   .map(JsonNode::fields)
-                   .map(PublicationContextTest::extractPropertiesThatHaveArrayValue)
-                   .flatMap(Set::stream).collect(Collectors.toSet());
+        return JsonFlattener.getFlattenedKeysAndTypes(jsonNode);
     }
 
     private static Set<String> generateListOfDistinctObjectClassesForEveryNvaPublicationType() {
@@ -178,7 +155,7 @@ class PublicationContextTest {
     private static Set<Statement> generateStatementsForEveryPublicationType() {
         var publications = publicationInstanceProvider()
                                .map(PublicationContextTest::generatePublicationWithContext)
-                               .collect(Collectors.toList());
+                               .toList();
         return getDistinctStatementsOfResources(publications);
     }
 
@@ -203,7 +180,8 @@ class PublicationContextTest {
 
     private static byte[] addContextObjectToPublication(Publication publication) {
         var jsonNode = (ObjectNode) convertToJsonNode(publication);
-        jsonNode.set("@context", stringToTree(publication.getJsonLdContext()));
+        jsonNode.set("@context", stringToTree(
+            Publication.getJsonLdContext(UriWrapper.fromHost(new Environment().readEnv("API_HOST")).getUri())));
         return jsonNode.toString().getBytes();
     }
 
@@ -217,5 +195,32 @@ class PublicationContextTest {
 
     private static <T> Stream<T> streamOf(Iterator<T> iterator) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
+    }
+
+
+
+    public static class JsonFlattener {
+
+        public static Set<String> getFlattenedKeysAndTypes(JsonNode jsonNode) {
+            return getFlattenedKeysAndTypes(jsonNode, "");
+        }
+
+        private static Set<String> getFlattenedKeysAndTypes(JsonNode jsonNode, String currentPath) {
+            var keyList = new HashSet<String>();
+            Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
+
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> jsonField = fields.next();
+                String keyName = currentPath.isEmpty() ? jsonField.getKey() : currentPath + "." + jsonField.getKey();
+                JsonNode fieldValue = jsonField.getValue();
+
+                if (fieldValue.isObject()) {
+                    keyList.addAll(getFlattenedKeysAndTypes(fieldValue, keyName));
+                } else if (fieldValue.isArray()) {
+                    keyList.add(jsonField.getKey());
+                }
+            }
+            return keyList;
+        }
     }
 }
