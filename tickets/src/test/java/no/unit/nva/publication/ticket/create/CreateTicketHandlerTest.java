@@ -53,6 +53,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
@@ -452,7 +453,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
             publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class);
 
         var expectedApprovedFiles = publication.getAssociatedArtifacts().stream()
-                                        .filter(UnpublishedFile.class::isInstance)
+                                        .filter(PendingFile.class::isInstance)
                                         .map(File.class::cast)
                                         .map(File::getIdentifier)
                                         .toArray(UUID[]::new);

@@ -11,10 +11,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -108,11 +106,7 @@ public final class PublishingRequestResolver {
 
     private boolean thereAreNoPendingFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
-                .noneMatch(this::isPendingFile);
-    }
-
-    private boolean isPendingFile(AssociatedArtifact associatedArtifact) {
-        return associatedArtifact instanceof PendingFile<?> || associatedArtifact instanceof UnpublishedFile;
+                .noneMatch(PendingFile.class::isInstance);
     }
 
     private List<PublishingRequestCase> fetchPendingPublishingRequestsForUserInstitution(

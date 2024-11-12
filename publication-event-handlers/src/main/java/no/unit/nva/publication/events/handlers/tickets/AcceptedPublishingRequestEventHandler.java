@@ -17,9 +17,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -157,12 +154,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         logger.info(PUBLISHING_FILE_MESSAGE, unpublishedFile.getIdentifier(),
                     unpublishedFile.getClass().getSimpleName(), publishingRequestCase.getIdentifier(),
                     publishingRequestCase.getResourceIdentifier());
-    }
-
-    private static File toPublishedFile(PendingFile<?> pendingFile,
-                                        PublishingRequestCase publishingRequestCase) {
-        logFilePublish((File) pendingFile, publishingRequestCase);
-        return pendingFile.approve();
     }
 
     private boolean hasEffectiveChanges(String eventBlob) {
