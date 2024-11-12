@@ -16,7 +16,6 @@ dependencies {
     implementation libs.bundles.jackson
 
     implementation libs.hamcrest.base
-    implementation libs.nva.testutils
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk.sqs
