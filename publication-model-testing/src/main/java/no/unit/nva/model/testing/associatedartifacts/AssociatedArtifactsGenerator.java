@@ -34,6 +34,13 @@ public final class AssociatedArtifactsGenerator {
                    .buildUnpublishedFile();
     }
 
+    public static File randomPublishedFile() {
+        return File.builder().withIdentifier(UUID.randomUUID())
+                   .withLicense(randomUri())
+                   .withName(randomString())
+                   .buildPublishedFile();
+    }
+
     public static File randomPendingOpenFile() {
         return PendingOpenFile.builder().withIdentifier(UUID.randomUUID())
                    .withLicense(randomUri())
