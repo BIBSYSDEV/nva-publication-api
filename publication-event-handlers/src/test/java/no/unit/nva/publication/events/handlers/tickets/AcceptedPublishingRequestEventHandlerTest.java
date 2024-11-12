@@ -19,6 +19,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -432,7 +434,32 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
         var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
-        assertTrue(PublicationStatus.PUBLISHED.equals(publishedPublication.getStatus()));
+        assertEquals(PublicationStatus.PUBLISHED, publishedPublication.getStatus());
+    }
+
+    @Test
+    void shouldRefreshPendingPublishingRequestWhenPublishingMetadataWithoutDoingAnyTicketUpdates()
+        throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(), randomPendingOpenFile()));
+        resourceService.updatePublication(publication);
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+                                                            .withOwner(randomString())
+                                                            .withOwnerAffiliation(randomUri());
+        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var ticket = publishingRequest.persistNewTicket(ticketService);
+        var event = createEvent(null, ticket);
+
+        handler.handleRequest(event, outputStream, CONTEXT);
+
+        var refreshedPublishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
+
+        assertNotEquals(publishingRequest, refreshedPublishingRequest);
+
+        publishingRequest.setModifiedDate(null);
+        refreshedPublishingRequest.setModifiedDate(null);
+
+        assertEquals(publishingRequest, refreshedPublishingRequest);
     }
 
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
@@ -444,7 +471,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                 .withOwnerAffiliation(
                                         publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.setStatus(TicketStatus.COMPLETED);
-        publishingRequest.setApprovedFiles(Set.of(file.getIdentifier()));
+        publishingRequest.setApprovedFiles(Set.of(file));
         publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
         return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
@@ -576,7 +603,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                 .withOwnerAffiliation(
                                         publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(
-                TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+                TicketTestUtils.getFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
 

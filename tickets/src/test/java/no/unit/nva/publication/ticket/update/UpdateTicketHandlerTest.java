@@ -19,6 +19,7 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
@@ -48,7 +49,6 @@ import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -560,7 +560,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
-        assertThat(completedPublishingRequest.getApprovedFiles(), hasItem(approvedFile.getIdentifier()));
+        var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
+                                      .map(File::getIdentifier)
+                                      .collect(Collectors.toSet());
+        assertThat(approvedFiles, hasItem(approvedFile.getIdentifier()));
     }
 
     @Test
@@ -572,7 +575,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var expectedFilesForApproval = getPendingOpenFiles(publication);
 
         assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
-                   containsInAnyOrder(expectedFilesForApproval));
+                   contains(expectedFilesForApproval));
 
         var completedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(completedTicket,
@@ -583,7 +586,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
-        assertThat(completedPublishingRequest.getApprovedFiles(), hasItem(approvedFile.getIdentifier()));
+        var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
+                               .map(File::getIdentifier)
+                               .toList();
+        assertThat(approvedFiles, contains(approvedFile.getIdentifier()));
         assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
     }
 
@@ -633,12 +639,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private static Object[] getPendingOpenFiles(Publication publication) {
+    private static File[] getUnpublishedFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(PendingOpenFile.class::isInstance)
                    .map(File.class::cast)
-                   .map(FileForApproval::fromFile)
-                   .toArray();
+                   .toArray(File[]::new);
     }
 
     private static Map<String, String> pathParameters(Publication publication, TicketEntry ticket) {
@@ -756,11 +761,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         return publishingRequest.persistNewTicket(ticketService);
     }
 
-    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+    private Set<File> convertUnpublishedFilesToFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(PendingOpenFile.class::isInstance)
-                   .map(PendingOpenFile.class::cast)
-                   .map(FileForApproval::fromFile)
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
                    .collect(Collectors.toSet());
     }
 

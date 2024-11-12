@@ -20,10 +20,6 @@ import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -103,7 +99,16 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         var publication = fetchPublication(publishingRequest.getResourceIdentifier());
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
             publishPublication(publication);
+            refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
+    }
+
+    /**
+     * Is needed in order to populate publication status changes in search-index when publication is being published.
+     * @param publishingRequest to refresh
+     */
+    private void refreshPublishingRequestAfterPublishingMetadata(PublishingRequestCase publishingRequest) {
+        publishingRequest.persistUpdate(ticketService);
     }
 
     private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
@@ -123,11 +128,11 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     //TODO: Remove unpublishable file and logic related to it after we have migrated files
     private AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
-        return switch (associatedArtifact) {
-            case UnpublishedFile unpublishedFile -> unpublishedFile.toUnpublishableFile();
-            case PendingFile<?> pendingFile -> pendingFile.reject();
-            default -> associatedArtifact;
-        };
+        if (associatedArtifact instanceof PendingFile<?,?> pendingFile) {
+            return pendingFile.reject();
+        } else {
+            return associatedArtifact;
+        }
     }
 
     private static boolean hasDoi(Publication publication) {
@@ -242,10 +247,15 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private AssociatedArtifact publishFileIfApproved(AssociatedArtifact associatedArtifact,
                                                      PublishingRequestCase publishingRequest) {
         return switch (associatedArtifact) {
-            case PendingFile<?> pendingFile when publishingRequest.fileIsApproved((File) pendingFile) ->
-                toPublishedFile(pendingFile, publishingRequest);
+            case PendingFile<?,?> pendingFile when publishingRequest.fileIsApproved((File) pendingFile) ->
+                approve(pendingFile, publishingRequest);
             case null, default -> associatedArtifact;
         };
+    }
+
+    private static File approve(PendingFile<?, ?> pendingFile, PublishingRequestCase publishingRequest) {
+        logFilePublish((File) pendingFile, publishingRequest);
+        return pendingFile.approve();
     }
 
     private Publication fetchPublication(SortableIdentifier publicationIdentifier) {

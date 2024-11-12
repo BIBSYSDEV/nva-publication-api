@@ -1,18 +1,21 @@
 package no.unit.nva.publication.update;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.lookUp;
-
 import static nva.commons.core.attempt.Try.attempt;
-
-import static java.util.Objects.nonNull;
-
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.commons.customer.Customer;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
@@ -21,13 +24,7 @@ import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public final class PublishingRequestResolver {
 
@@ -59,8 +56,8 @@ public final class PublishingRequestResolver {
                           .equals(customer.getPublicationWorkflow());
     }
 
-    private static Set<FileForApproval> mergeFilesForApproval(
-            PublishingRequestCase publishingRequestCase, Set<FileForApproval> filesForApproval) {
+    private static Set<File> mergeFilesForApproval(
+            PublishingRequestCase publishingRequestCase, Set<File> filesForApproval) {
         var combinedFilesForApproval = new HashSet<>(publishingRequestCase.getFilesForApproval());
         combinedFilesForApproval.addAll(filesForApproval);
         return combinedFilesForApproval;
@@ -88,7 +85,7 @@ public final class PublishingRequestResolver {
             createPublishingRequestOnFileUpdate(oldImage, newImage);
             return;
         }
-        if (thereAreNoFiles(newImage)) {
+        if (thereAreNoPendingFiles(newImage)) {
             autoCompletePendingPublishingRequestsIfNeeded(newImage, pendingPublishingRequests);
             return;
         }
@@ -109,9 +106,13 @@ public final class PublishingRequestResolver {
                 ticket -> ticket.complete(publication, getUsername()).persistUpdate(ticketService));
     }
 
-    private boolean thereAreNoFiles(Publication publicationUpdate) {
+    private boolean thereAreNoPendingFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
-                .noneMatch(File.class::isInstance);
+                .noneMatch(this::isPendingFile);
+    }
+
+    private boolean isPendingFile(AssociatedArtifact associatedArtifact) {
+        return associatedArtifact instanceof PendingFile<?> || associatedArtifact instanceof UnpublishedFile;
     }
 
     private List<PublishingRequestCase> fetchPendingPublishingRequestsForUserInstitution(
@@ -188,16 +189,14 @@ public final class PublishingRequestResolver {
         return newUnpublishedFiles;
     }
 
-    private Set<FileForApproval> getFilesForApproval(Publication oldImage, Publication newImage) {
-        return getNewUnpublishedFiles(oldImage, newImage).stream()
-                .map(FileForApproval::fromFile)
-                .collect(Collectors.toSet());
+    private Set<File> getFilesForApproval(Publication oldImage, Publication newImage) {
+        return getNewUnpublishedFiles(oldImage, newImage).stream().collect(Collectors.toSet());
     }
 
     private void updatePublishingRequest(
             Publication newImage,
             PublishingRequestCase publishingRequest,
-            Set<FileForApproval> filesForApproval) {
+            Set<File> filesForApproval) {
         var updatedFilesForApproval = mergeFilesForApproval(publishingRequest, filesForApproval);
         ensureFileExists(newImage, updatedFilesForApproval);
         if (customerAllowsPublishingMetadataAndFiles()) {
@@ -213,16 +212,15 @@ public final class PublishingRequestResolver {
         }
     }
 
-    private void ensureFileExists(
-            Publication publication, Set<FileForApproval> updatedFilesForApproval) {
+    private void ensureFileExists(Publication publication, Set<File> updatedFilesForApproval) {
         updatedFilesForApproval.removeIf(file -> publicationDoesNotContainFile(publication, file));
     }
 
-    private boolean publicationDoesNotContainFile(Publication publication, FileForApproval file) {
+    private boolean publicationDoesNotContainFile(Publication publication, File file) {
         return publication.getAssociatedArtifacts().stream()
                 .filter(File.class::isInstance)
                 .map(File.class::cast)
-                .noneMatch(existingFile -> existingFile.getIdentifier().equals(file.identifier()));
+                .noneMatch(existingFile -> existingFile.getIdentifier().equals(file.getIdentifier()));
     }
 
     private boolean isAlreadyPublished(Publication existingPublication) {

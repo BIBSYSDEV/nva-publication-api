@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileForApproval;
@@ -296,8 +297,10 @@ public abstract class TicketDto implements JsonSerializable {
 
         private PublishingRequestDto createPublishingRequestDto(PublishingRequestCase publishingRequestCase) {
             var filesForApproval = publishingRequestCase.getFilesForApproval().stream()
-                                       .map(FileForApproval::identifier)
+                                       .map(File.class::cast)
                                        .collect(Collectors.toSet());
+            var approvedFiles = publishingRequestCase.getApprovedFiles().stream().map(File.class::cast)
+                                    .collect(Collectors.toSet());
             return new PublishingRequestDto(status,
                                             createdDate,
                                             modifiedDate,
@@ -310,7 +313,7 @@ public abstract class TicketDto implements JsonSerializable {
                                             owner,
                                             ownerAffiliation,
                                             publishingRequestCase.getWorkflow(),
-                                            publishingRequestCase.getApprovedFiles(),
+                                            approvedFiles,
                                             filesForApproval,
                                             finalizedBy,
                                             finalizedDate);

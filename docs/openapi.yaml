@@ -584,7 +584,113 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-
+  /{publicationIdentifier}/filelink/{fileIdentifier}:
+    get:
+      summary: Public pre signed download link for publication file
+      description: Returns an S3 pre signed and temporal download URL to a publication file
+      operationId: getPresignDownloadUri
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DownloadPublicationFileFunction.Arn}/invocations
+        httpMethod: POST
+        type: AWS_PROXY
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: fileIdentifier
+          description: UUID identifier of the Publication File.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUriResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /file/{fileIdentifier}:
+    get:
+      summary: Resolves shortened URI to original presigned URI
+      description: Returns 301 if successful with location header set to the original presigned URI
+      operationId: resolveDownloadUriFromIdentifier
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ResolveShortenedUrlFunction.Arn}/invocations
+        httpMethod: POST
+        type: AWS_PROXY
+      parameters:
+        - in: path
+          name: fileIdentifier
+          description: UUID identifier of the shortened URI
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        301:
+          description: Permanently moved
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: The URI that this redirects to
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /tickets:
     get:
       operationId: listTicketsForUser
@@ -845,7 +951,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PresignedUrl'
+                $ref: '#/components/schemas/PresignedUriResponse'
         '404':
           description: File not found
           content:
@@ -877,7 +983,7 @@ components:
                 * ticket/publish - Allowed to approve a PublishingRequest ticket
             items:
               type: string
-              enum: ["update", "delete", "terminate", "unpublish", "ticket/publish"]
+              enum: ["update", "delete", "terminate", "unpublish", "republish", "update-including-files", "doi-request-create", "doi-request-approve", "publishing-request-create", "publishing-request-approve", "support-request-create", "support-request-approve"]
     DeletePublicationRequest:
       type: object
       description: Delete publication request
@@ -1214,17 +1320,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Ticket"
-    PresignedUrl:
+    PresignedUriResponse:
       description: PresignedUrl response
       type: object
       properties:
         fileIdentifier:
           type: string
-        uri:
+        id:
           type: string
           format: uri
         expires:
           type: string
+        alias:
+          type: string
+          format: uri
+          description: Shortened alias of the id, will return a redirect to the id.
 #region content from "documentation/schema.yaml"
     AcademicArticle:
       required:

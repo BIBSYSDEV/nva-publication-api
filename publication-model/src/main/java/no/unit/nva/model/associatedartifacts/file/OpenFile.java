@@ -56,7 +56,7 @@ public class OpenFile extends File implements PublicAssociatedArtifact {
 
     @Override
     public boolean isVisibleForNonOwner() {
-        return true;
+        return fileDoesNotHaveActiveEmbargo();
     }
 
     @Override

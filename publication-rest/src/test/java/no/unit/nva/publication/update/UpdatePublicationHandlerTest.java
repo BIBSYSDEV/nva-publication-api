@@ -157,7 +157,6 @@ import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -1832,7 +1831,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publishingRequest = getPublishingRequestCase(publication);
 
-        assertThat(publishingRequest.getFilesForApproval(), hasItem(FileForApproval.fromFile(newUnpublishedFile)));
+        assertThat(publishingRequest.getFilesForApproval().stream().map(File::getIdentifier).toList(),
+                   containsInAnyOrder(newUnpublishedFile.getIdentifier()));
     }
 
     @DisplayName("When contributor uploads file and customer does not allow publishing files, then " +
@@ -1855,7 +1855,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publishingRequest = getPublishingRequestCase(publication);
 
         assertThat(publishingRequest.getStatus(), is(equalTo(PENDING)));
-        assertThat(publishingRequest.getFilesForApproval(), hasItem(FileForApproval.fromFile(newUnpublishedFile)));
+        assertThat(publishingRequest.getFilesForApproval().stream().map(File::getIdentifier).toList(),
+                   containsInAnyOrder(newUnpublishedFile.getIdentifier()));
     }
 
     @DisplayName("When user with accessRight updates metadata for publication containing unpublished file and" +
@@ -1902,8 +1903,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publishingRequest = getPublishingRequestCase(publication);
 
-        assertThat(publishingRequest.getFilesForApproval(),
-                   containsInAnyOrder(FileForApproval.fromFile(newUnpublishedFile)));
+        assertThat(publishingRequest.getFilesForApproval().stream().map(File::getIdentifier).toList(),
+                   containsInAnyOrder(newUnpublishedFile.getIdentifier()));
     }
 
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
@@ -1912,7 +1913,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                       SortableIdentifier::next)
                                                             .withOwner(publication.getResourceOwner().getOwner().getValue())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
         publishingRequest.persistNewTicket(ticketService);
     }
 
@@ -2111,12 +2112,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publication.setAssociatedArtifacts(associatedArtifacts);
     }
 
-    private static List<FileForApproval> getUnpublishedFiles(Publication publication) {
+    private static List<File> getUnpublishedFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .filter(File::needsApproval)
-                   .map(FileForApproval::fromFile).toList();
+                   .toList();
     }
 
     private Publication savePublication(Publication publication) throws BadRequestException {

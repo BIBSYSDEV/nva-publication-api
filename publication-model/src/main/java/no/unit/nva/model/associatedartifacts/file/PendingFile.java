@@ -1,8 +1,8 @@
 package no.unit.nva.model.associatedartifacts.file;
 
-public interface PendingFile<T extends File> {
+public interface PendingFile<A extends File, R extends File> {
 
-    RejectedFile reject();
+    R reject();
 
-    T approve();
+    A approve();
 }

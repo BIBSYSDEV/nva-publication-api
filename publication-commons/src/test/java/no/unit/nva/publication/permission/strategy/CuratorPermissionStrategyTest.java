@@ -24,7 +24,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on publication owner")
     @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
-        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH"})
+        names = {"UPDATE", "UNPUBLISH"})
     void shouldAllowCuratorOnNonDegreeBasedOnOwner(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -49,7 +49,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on contributors")
     @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
-        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH", "UPDATE_FILES"})
+        names = {"UPDATE", "UNPUBLISH", "UPDATE_FILES"})
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -135,7 +135,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources belonging to the institution "
                               + "with MANAGE_DEGREE access rights")
     @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
-        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH"})
+        names = {"UPDATE", "UNPUBLISH"})
     void shouldAllowCuratorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -178,7 +178,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources with matching resource owner "
                               + "affiliation")
     @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
-        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH"})
+        names = {"UPDATE", "UNPUBLISH"})
     void shouldAllowCuratorOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
