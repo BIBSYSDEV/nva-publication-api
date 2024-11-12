@@ -193,6 +193,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
 
     private void publishingRequestSideEffects(PublishingRequestCase ticket,
                                               UpdateTicketRequest ticketRequest) {
+
         if (COMPLETED.equals(ticketRequest.getStatus())) {
             ticket.approveFiles().persistUpdate(ticketService);
         }

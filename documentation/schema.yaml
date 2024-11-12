@@ -28,6 +28,18 @@ AcademicChapter:
         $ref: "#/components/schemas/Range"
       type:
         type: string
+AcademicCommentary:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: "#/components/schemas/PublicationInstancePages"
+  - type: object
+    properties:
+      pages:
+        $ref: "#/components/schemas/MonographPages"
+      type:
+        type: string
 AcademicLiteratureReview:
   required:
   - type
@@ -73,16 +85,6 @@ AdditionalIdentifierBase:
       type: string
     type:
       type: string
-AdministrativeAgreement:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/File"
-  - type: object
-    properties:
-      type:
-        type: string
 Agent:
   required:
   - type
@@ -589,6 +591,7 @@ CuratingInstitution:
       type: string
       format: uri
     contributorCristinIds:
+      uniqueItems: true
       type: array
       items:
         type: string
@@ -1079,6 +1082,8 @@ Funding:
   - type
   type: object
   properties:
+    identifier:
+      type: string
     labels:
       type: object
       additionalProperties:
@@ -1086,16 +1091,14 @@ Funding:
     source:
       type: string
       format: uri
-    fundingAmount:
-      $ref: "#/components/schemas/MonetaryAmount"
     activeFrom:
       type: string
       format: date-time
     activeTo:
       type: string
       format: date-time
-    identifier:
-      type: string
+    fundingAmount:
+      $ref: "#/components/schemas/MonetaryAmount"
     type:
       type: string
 GeographicalContent:
@@ -2311,16 +2314,6 @@ PublicationNoteBase:
       type: string
     type:
       type: string
-PublishedFile:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/File"
-  - type: object
-    properties:
-      type:
-        type: string
 Publisher:
   required:
   - type
@@ -2801,16 +2794,6 @@ UndefinedDuration:
     properties:
       value:
         type: string
-      type:
-        type: string
-UnpublishedFile:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/File"
-  - type: object
-    properties:
       type:
         type: string
 UnpublishingNote:

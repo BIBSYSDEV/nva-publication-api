@@ -385,7 +385,7 @@ public class ScopusFileConverter {
                                       .withLicense(DEFAULT_LICENSE)
                                       .withUploadDetails(createUploadDetails())
                                .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
-                                      .buildPublishedFile());
+                                      .buildOpenFile());
     }
 
     private ImportUploadDetails createUploadDetails() {

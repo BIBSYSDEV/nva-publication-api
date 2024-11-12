@@ -136,6 +136,7 @@ import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -394,9 +395,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistApprovedPublishingRequestWhenUserHasPublishingAccessRight()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId,
-                                                                                       PublicationStatus.PUBLISHED,
-                                                                                       resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId,
+                                                                                  PublicationStatus.PUBLISHED,
+                                                                                  resourceService);
 
         var existingTicket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class,
                                                                    ticketService);
@@ -972,9 +973,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldCompleteExistingPendingPublishingRequestWhenPublicationUpdateRemovesFilesAndFilesAreNotPublished()
         throws IOException, ApiGatewayException {
-        var persistedPublication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(customerId,
-                                                                                                  PUBLISHED,
-                                                                                                  resourceService);
+        var persistedPublication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(customerId,
+                                                                                                 PUBLISHED,
+                                                                                                 resourceService);
         var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
                                  .withOwner(publication.getResourceOwner().getOwner().getValue())
                                  .withOwnerAffiliation(persistedPublication.getResourceOwner().getOwnerAffiliation())
@@ -1017,7 +1018,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void publishingCuratorWithAccessRightManageResourceFilesShouldBeAbleToOverrideRrs()
         throws IOException, NotFoundException {
-        var publishedFileRrs = File.builder()
+        var openFileRrs = File.builder()
                                    .withIdentifier(UUID.randomUUID())
                                    .withName(randomString())
                                    .withSize(10L)
@@ -1027,11 +1028,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                        UriWrapper.fromUri("https://creativecommons.org/licenses/by/4.0").getUri())
                                    .withRightsRetentionStrategy(CustomerRightsRetentionStrategy.create(
                                        RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY))
-                                   .buildPublishedFile();
+                                   .buildOpenFile();
         var publicationWithRrs = randomPublication(AcademicArticle.class)
                                      .copy()
                                      .withStatus(PUBLISHED)
-                                     .withAssociatedArtifacts(List.of(publishedFileRrs))
+                                     .withAssociatedArtifacts(List.of(openFileRrs))
                                      .withPublisher(new Organization.Builder()
                                                         .withId(customerId)
                                                         .build())
@@ -1040,10 +1041,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publicationWithRrs,
                                                                ImportSource.fromSource(Source.CRISTIN));
 
-        publishedFileRrs.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
+        openFileRrs.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));
 
-        var publicationUpdate = publicationWithRrs.copy().withAssociatedArtifacts(List.of(publishedFileRrs)).build();
+        var publicationUpdate = publicationWithRrs.copy().withAssociatedArtifacts(List.of(openFileRrs)).build();
         var request = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId,
                                                                 publicationWithRrs.getResourceOwner().getOwnerAffiliation(),
                                                                 MANAGE_RESOURCE_FILES);
@@ -1054,10 +1055,33 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var updatedPublication = resourceService.getPublicationByIdentifier(publicationUpdate.getIdentifier());
         assertThat(updatedPublication.getAssociatedArtifacts(), hasSize(1));
-        var actualPublishedFile = (PublishedFile) updatedPublication.getAssociatedArtifacts().getFirst();
+        var actualPublishedFile = (OpenFile) updatedPublication.getAssociatedArtifacts().getFirst();
         assertThat(actualPublishedFile.getRightsRetentionStrategy(),
                    allOf(instanceOf(OverriddenRightsRetentionStrategy.class),
                          hasProperty("overriddenBy", is(notNullValue()))));
+    }
+
+    @Test
+    void shouldUpdatePublicationWithoutReferencedContext()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithInternalFile(customerId,
+                                                                                     resourceService);
+        publication.getEntityDescription().getReference().setDoi(null);
+        resourceService.updatePublication(publication);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
+            .complete(publication, new Username(randomString())).persistUpdate(ticketService);
+
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri()).buildUnpublishedFile();
+        var files = new ArrayList<>(publication.getAssociatedArtifacts());
+        files.add(newUnpublishedFile);
+
+        publication.copy().withAssociatedArtifacts(files);
+
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(200)));
     }
 
     @Test
@@ -1214,8 +1238,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenCuratorUnpublishesPublicationWithPublishedFiles(
         AccessRight... accessRight)
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
-                                                                                       resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
+                                                                                  resourceService);
         GeneralSupportRequest.fromPublication(publication).withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
         DoiRequest.fromPublication(publication).withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
         PublishingRequestCase.fromPublication(publication)
@@ -1583,8 +1607,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenNonCuratorAttemptsToRemovePublishedFile()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
-                                                                                       resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
+                                                                                  resourceService);
         var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
         var event = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
 
@@ -1596,8 +1620,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldAllowUserWithAccessRightManageResourceFilesToRemovePublishedFile()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
-                                                                                       resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
+                                                                                  resourceService);
         var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
         var event = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
                                                               publication.getResourceOwner().getOwnerAffiliation(),
@@ -1612,8 +1636,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @EnumSource(value = AccessRight.class, mode = Mode.EXCLUDE, names = {"MANAGE_RESOURCE_FILES"})
     void shouldNotAllowUserWithoutAccessRightManageResourceFilesToRemovePublishedFile(AccessRight accessRight)
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
-                                                                                       resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
+                                                                                  resourceService);
         var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
         var event = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
                                                               publication.getResourceOwner().getOwnerAffiliation(),
@@ -1721,16 +1745,16 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void publicationOwnerShouldBeAbleToUpdateMetadataOfPublishedFile() throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
-                                                                                       resourceService);
-        var publishedFile = publication.getAssociatedArtifacts().stream()
-                              .filter(PublishedFile.class::isInstance)
-                              .map(PublishedFile.class::cast)
+    void publicationOwnerShouldNotBeAbleToUpdateMetadataOfOpenFile() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
+                                                                                  resourceService);
+        var openFile = publication.getAssociatedArtifacts().stream()
+                              .filter(OpenFile.class::isInstance)
+                              .map(OpenFile.class::cast)
                               .findFirst().orElseThrow();
-        var updatedFile = publishedFile.copy().withLicense(randomUri()).buildPublishedFile();
+        var updatedFile = openFile.copy().withLicense(randomUri()).buildPublishedFile();
         var files = publication.getAssociatedArtifacts();
-        files.remove(publishedFile);
+        files.remove(openFile);
         files.add(updatedFile);
         var event = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
 
@@ -1793,7 +1817,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldSetFilesForApprovalWhenPublicationOwnerUpdatesPublicationWithUnpublishedFile() throws ApiGatewayException,
                                                                                        IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(
+        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(
             customerId, PUBLISHED, resourceService);
 
         var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
@@ -1817,7 +1841,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#notApprovedFilesProvider")
     void shouldSetFilesForApprovalWhenContributorUpdatesPublicationWithUnpublishedFile(File newUnpublishedFile)
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(
+        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(
             customerId, PUBLISHED, resourceService);
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
@@ -1842,7 +1866,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldNotPublishFilesWhenUpdatingMetadataForPublicationWithUnpublishedFiles()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             customerId, PUBLISHED, resourceService);
         persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         var updatedPublication = updateTitle(publication);
@@ -1867,7 +1891,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#notApprovedFilesProvider")
     void shouldAddOnlyNewUnpublishedFilesForApprovalToPublishingRequestsFilesForApprovalWhenAddingNewUnpublishedFile(File newUnpublishedFile)
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             customerId, PUBLISHED, resourceService);
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);

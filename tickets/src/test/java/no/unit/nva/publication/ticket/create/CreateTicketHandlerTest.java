@@ -51,6 +51,10 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
@@ -359,7 +363,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldCreatePendingPublishingRequestWhenCustomerAllowsPublishingMetadataOnly()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
         ticketResolver = new TicketResolver(resourceService, ticketService,
@@ -370,7 +374,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var publishedPublication = resourceService.getPublication(publication);
-        assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(UnpublishedFile.class)));
+
+        assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(PendingOpenFile.class)));
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
     }
 
@@ -433,7 +438,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     void shouldSetApprovedFilesForPublishingRequestWhenUserCanPublishFiles()
         throws ApiGatewayException, IOException {
         var publication =
-            TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+            TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
         ticketResolver = new TicketResolver(resourceService, ticketService,
@@ -448,7 +453,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
             publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class);
 
         var expectedApprovedFiles = publication.getAssociatedArtifacts().stream()
-                                        .filter(UnpublishedFile.class::isInstance)
+                                        .filter(PendingFile.class::isInstance)
                                         .map(File.class::cast)
                                         .map(File::getIdentifier)
                                         .toArray(UUID[]::new);
@@ -461,7 +466,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     @Test
     void shouldEmptyFilesForApprovalWhenUserCanPublishFiles() throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         var owner = UserInstance.fromPublication(publication);
         ticketResolver = new TicketResolver(resourceService, ticketService,
@@ -509,7 +514,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void userWithAccessRightManageDoiShouldNotBeAbleToAutoPublishFilesWhenAllowedToPublishMetadataOnly()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
@@ -523,7 +528,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var updatedPublication = resourceService.getPublication(publication);
         var file = (File) updatedPublication.getAssociatedArtifacts().getFirst();
 
-        assertThat(file, is(instanceOf(UnpublishedFile.class)));
+        assertThat(file, is(instanceOf(PendingOpenFile.class)));
     }
 
     @Test

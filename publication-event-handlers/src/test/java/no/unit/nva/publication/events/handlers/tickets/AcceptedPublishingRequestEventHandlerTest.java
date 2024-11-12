@@ -5,7 +5,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
@@ -41,11 +40,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -164,10 +161,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                         AssociatedArtifactsGenerator.randomPendingInternalFile(),
                         InternalFile.class),
                 Arguments.of(
-                        REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                        AssociatedArtifactsGenerator.randomUnpublishedFile(),
-                        PublishedFile.class),
-                Arguments.of(
                         REGISTRATOR_PUBLISHES_METADATA_AND_FILES,
                         AssociatedArtifactsGenerator.randomPendingOpenFile(),
                         OpenFile.class),
@@ -176,21 +169,13 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                         AssociatedArtifactsGenerator.randomPendingInternalFile(),
                         InternalFile.class),
                 Arguments.of(
-                        REGISTRATOR_PUBLISHES_METADATA_AND_FILES,
-                        AssociatedArtifactsGenerator.randomUnpublishedFile(),
-                        PublishedFile.class),
-                Arguments.of(
                         REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
                         AssociatedArtifactsGenerator.randomPendingOpenFile(),
                         OpenFile.class),
                 Arguments.of(
                         REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
                         AssociatedArtifactsGenerator.randomPendingInternalFile(),
-                        InternalFile.class),
-                Arguments.of(
-                        REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
-                        AssociatedArtifactsGenerator.randomUnpublishedFile(),
-                        PublishedFile.class));
+                        InternalFile.class));
     }
 
     @ParameterizedTest
@@ -222,10 +207,10 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotPublishAdministrativeAgreementWhenPublishingRequestIsApproved()
+    void shouldNotPublishInternalFileWhenPublishingRequestIsApproved()
             throws ApiGatewayException, IOException {
         var publication =
-                TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(
+                TicketTestUtils.createPersistedPublicationWithInternalFile(
                         resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
@@ -240,7 +225,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
         assertThat(
                 updatedPublication.getAssociatedArtifacts().getFirst(),
-                is(instanceOf(AdministrativeAgreement.class)));
+                is(instanceOf(InternalFile.class)));
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
@@ -380,8 +365,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPublishFilesFromPublishingRequestOnlyWhenPublishingRequestIsApproved()
             throws ApiGatewayException, IOException {
-        var fileToPublish = randomUnpublishedFile();
-        var file = randomUnpublishedFile();
+        var fileToPublish = randomPendingOpenFile();
+        var file = randomPendingOpenFile();
         var publication = createPublicationWithFiles(file, fileToPublish);
         var completedPublishingRequest =
                 persistCompletedPublishingRequestWithApprovedFiles(publication, fileToPublish);
@@ -391,7 +376,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication =
                 resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        var publishedFiles = getPublishedFiles(updatedPublication);
+        var publishedFiles = getOpenFiles(updatedPublication);
 
         assertThat(publishedFiles, hasSize(1));
         assertThat(
@@ -504,10 +489,10 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return persistedPublication;
     }
 
-    private static List<PublishedFile> getPublishedFiles(Publication updatedPublication) {
+    private static List<OpenFile> getOpenFiles(Publication updatedPublication) {
         return updatedPublication.getAssociatedArtifacts().stream()
-                .filter(PublishedFile.class::isInstance)
-                .map(PublishedFile.class::cast)
+                .filter(OpenFile.class::isInstance)
+                .map(OpenFile.class::cast)
                 .toList();
     }
 

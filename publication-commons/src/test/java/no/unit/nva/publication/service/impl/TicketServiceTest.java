@@ -67,7 +67,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -735,14 +735,14 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetFilesForApprovalOnPublishingRequestCreationWhenPublicationHasUnpublishedFile()
+    void shouldSetFilesForApprovalOnPublishingRequestCreationWhenPublicationHasPendingOpenFile()
         throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
         var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
 
         var expectedFilesForApproval = publication.getAssociatedArtifacts().stream()
-                                           .filter(UnpublishedFile.class::isInstance)
-                                           .map(UnpublishedFile.class::cast)
+                                           .filter(PendingOpenFile.class::isInstance)
+                                           .map(PendingOpenFile.class::cast)
                                            .toArray();
 
         assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
@@ -753,7 +753,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     void shouldRefreshTicketByUpdatingVersion()
         throws ApiGatewayException {
         var ticketType = PublishingRequestCase.class;
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
         var ticket = PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
                          .withOwner(randomString())
                          .persistNewTicket(ticketService);
@@ -767,7 +767,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
     @Test
     void finalizedDateShouldBeEqualCreatedDateWhenAutoCompletingTicket() throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(DRAFT, resourceService);
         var ticket = (PublishingRequestCase) PublishingRequestCase.createNewTicket(
             publication, PublishingRequestCase.class, SortableIdentifier::next).withOwner(randomString());
         var completedTicket = ticket.persistAutoComplete(ticketService, publication, new Username(randomString()));

@@ -36,6 +36,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class AcceptedPublishingRequestEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
+    public static final String UNKNOWN_WORKFLOW_MESSAGE = "Unknown workflow: {}";
     private static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
     private static final String PUBLISHING_METADATA_AND_FILES_MESSAGE =
@@ -48,7 +49,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private static final String PUBLICATION_UPDATE_ERROR_MESSAGE = "Could not update publication: %s";
     private static final String PUBLISHING_FILE_MESSAGE =
         "Publishing file {} of type {} from approved " + "PublishingRequest {} for publication {}";
-    public static final String UNKNOWN_WORKFLOW_MESSAGE = "Unknown workflow: {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
@@ -233,6 +233,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
                    .toList();
     }
 
+    @JacocoGenerated
     private AssociatedArtifact publishFileIfApproved(AssociatedArtifact associatedArtifact,
                                                      PublishingRequestCase publishingRequest) {
         return switch (associatedArtifact) {
@@ -252,8 +253,9 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     /**
-     * Creating DoiRequest for a publication necessarily owned by publication owner institution
-     * and not the institution that requests the doi.
+     * Creating DoiRequest for a publication necessarily owned by publication owner institution and not the institution
+     * that requests the doi.
+     *
      * @param publication to create a DoiRequest for
      */
     private void createDoiRequestIfNeeded(Publication publication) {

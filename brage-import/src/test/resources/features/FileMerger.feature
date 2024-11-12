@@ -37,7 +37,7 @@ Feature:
     And the merged nva publication has a handle equal to "https://hdl.handle.net/11250/2506045" in additional identifiers
     And the merged nva publication has a root level handle equal to "https://hdl.handle.net/11250/1234567"
 
-  Scenario: The brage-archive handle does not match the handle present in the NVA-publication, but the NVA-publication lacks associatedArticacts
+  Scenario: The brage-archive handle does not match the handle present in the NVA-publication, but the NVA-publication lacks associatedArtifacts
     Given a brage publication with handle "https://hdl.handle.net/11250/2506045"
     And the nva publication has main handle "https://hdl.handle.net/11250/1234567"
     And the brage publication has a file with values:

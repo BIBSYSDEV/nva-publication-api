@@ -18,7 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
@@ -60,32 +60,26 @@ public class FileMergerFeatures {
     }
 
     @And("the brage publication has a file with values:")
-    public void bragePublicationHasAFileWithValues(PublishedFile publishedFile) {
+    public void bragePublicationHasAFileWithValues(OpenFile publishedFile) {
         var bragePublication = scenarioContext.getBragePublication();
         bragePublication.publication().setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
     }
 
     @And("the nva publication has a file with values:")
-    public void nvaPublicationHasAFileWithValues(PublishedFile publishedFile) {
+    public void nvaPublicationHasAFileWithValues(OpenFile publishedFile) {
         var nvaPublication = scenarioContext.getNvaPublication();
         nvaPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
     }
 
     @Then("the merged nva publication has a file with values:")
-    public void mergedNvaPublicationHasAFileWithValues(PublishedFile publishedFile) {
+    public void mergedNvaPublicationHasAFileWithValues(OpenFile publishedFile) {
         var mergedPublication = scenarioContext.getMergedPublication();
         var associatedArtifacts = mergedPublication.getAssociatedArtifacts();
         assertThat(associatedArtifacts, hasSize(1));
         var associatedArtifact = associatedArtifacts.getFirst();
-        assertThat(associatedArtifact, is(instanceOf(PublishedFile.class)));
-        var actualPublishedFile = (PublishedFile) associatedArtifact;
+        assertThat(associatedArtifact, is(instanceOf(OpenFile.class)));
+        var actualPublishedFile = (OpenFile) associatedArtifact;
         assertThat(actualPublishedFile, is(samePropertyValuesAs(publishedFile)));
-    }
-
-    @And("the nva publication has a handle {string}")
-    public void nvaPublicationHasAHandle(String handle) {
-        var nvaPublication = scenarioContext.getNvaPublication();
-        nvaPublication.setHandle(createHandleFromCandidate(handle));
     }
 
     @And("the merged nva publication has a handle equal to {string} in additional identifiers")
