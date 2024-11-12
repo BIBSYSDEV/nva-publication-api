@@ -20,7 +20,6 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
             return false;
         }
         return switch (permission) {
-            case TICKET_PUBLISH -> isDraft() || isUnpublished();
             case UPDATE -> true;
             case UNPUBLISH -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isPublished();
             case REPUBLISH, TERMINATE -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isUnpublished();

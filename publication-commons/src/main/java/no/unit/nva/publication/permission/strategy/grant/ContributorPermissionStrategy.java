@@ -29,7 +29,6 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
                  DOI_REQUEST_CREATE -> !isDraft();
             case UPDATE_FILES,
                  REPUBLISH,
-                 TICKET_PUBLISH,
                  DOI_REQUEST_APPROVE,
                  PUBLISHING_REQUEST_APPROVE,
                  SUPPORT_REQUEST_APPROVE,
