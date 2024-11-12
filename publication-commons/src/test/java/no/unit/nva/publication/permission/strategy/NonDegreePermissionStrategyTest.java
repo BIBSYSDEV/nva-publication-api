@@ -44,8 +44,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.DELETE,
                                       PublicationOperation.UNPUBLISH,
-                                      PublicationOperation.TERMINATE,
-                                      PublicationOperation.TICKET_PUBLISH);
+                                      PublicationOperation.TERMINATE);
 
         final var instanceClasses = Set.of(DegreeLicentiate.class,
                                            DegreeBachelor.class,

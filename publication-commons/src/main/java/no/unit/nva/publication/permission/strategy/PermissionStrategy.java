@@ -14,7 +14,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -91,10 +90,6 @@ public abstract class PermissionStrategy {
                    .stream()
                    .anyMatch(artifact -> ACCEPTED_FILE_TYPES
                                              .contains(artifact.getClass()));
-    }
-
-    protected boolean hasUnpublishedFile() {
-        return publication.getAssociatedArtifacts().stream().anyMatch(UnpublishedFile.class::isInstance);
     }
 
     protected Boolean isOwner() {

@@ -983,7 +983,7 @@ components:
                 * ticket/publish - Allowed to approve a PublishingRequest ticket
             items:
               type: string
-              enum: ["update", "delete", "terminate", "unpublish", "ticket/publish"]
+              enum: ["update", "delete", "terminate", "unpublish", "republish", "update-including-files", "doi-request-create", "doi-request-approve", "publishing-request-create", "publishing-request-approve", "support-request-create", "support-request-approve"]
     DeletePublicationRequest:
       type: object
       description: Delete publication request
