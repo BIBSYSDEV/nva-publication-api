@@ -22,7 +22,7 @@ dependencies {
     implementation libs.nva.language
     implementation libs.nva.identifiers
     implementation project(":publication-model")
-    implementation(libs.dynamodDbLocal) {
+    testImplementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
         exclude group: 'com.google.guava', module: 'guava'
