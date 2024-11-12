@@ -234,7 +234,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     @JacocoGenerated
-    //TODO: should be refactored and use PendingFile interface
     private AssociatedArtifact publishFileIfApproved(AssociatedArtifact associatedArtifact,
                                                      PublishingRequestCase publishingRequest) {
         return switch (associatedArtifact) {
