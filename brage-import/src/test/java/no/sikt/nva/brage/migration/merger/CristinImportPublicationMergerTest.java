@@ -34,16 +34,16 @@ import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
@@ -73,7 +73,6 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -353,7 +352,7 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldKeepFileFromNewPublicationWhenExistingPublicationHasAdministrativeAgreementOnly()
+    void shouldKeepFileFromNewPublicationWhenExistingPublicationHasInternalFileOnly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var administrativeAgreement = randomAdministrativeAgreement();
         var newPublishedFile = randomPublishedFile();
@@ -605,10 +604,10 @@ class CristinImportPublicationMergerTest {
         assertThat(dublinCores, containsInAnyOrder(newDublinCore));
     }
 
-    private static @NotNull Set<AdministrativeAgreement> extractDublinCores(Publication updatedPublication) {
+    private static Set<InternalFile> extractDublinCores(Publication updatedPublication) {
         return updatedPublication.getAssociatedArtifacts().stream()
-                   .filter(AdministrativeAgreement.class::isInstance)
-                   .map(AdministrativeAgreement.class::cast)
+                   .filter(InternalFile.class::isInstance)
+                   .map(InternalFile.class::cast)
                    .filter(administrativeAgreement -> "dublin_core.xml".equals(administrativeAgreement.getName()))
                    .collect(Collectors.toSet());
     }
@@ -723,7 +722,7 @@ class CristinImportPublicationMergerTest {
         return File.builder()
                    .withName("dublin_core.xml")
                    .withLicense(randomUri())
-                   .buildUnpublishableFile();
+                   .buildInternalFile();
     }
 
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {

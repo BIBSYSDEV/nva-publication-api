@@ -14,7 +14,8 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(UnpublishedFile.TYPE)
-public class UnpublishedFile extends File implements PublicAssociatedArtifact {
+public class UnpublishedFile extends File implements PublicAssociatedArtifact,
+                                                     PendingFile<PublishedFile, AdministrativeAgreement> {
 
     public static final String TYPE = "UnpublishedFile";
 
@@ -83,5 +84,20 @@ public class UnpublishedFile extends File implements PublicAssociatedArtifact {
                    .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
                    .withLegalNote(this.getLegalNote())
                    .withUploadDetails(this.getUploadDetails());
+    }
+
+    @Override
+    public AdministrativeAgreement reject() {
+        return new AdministrativeAgreement(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                           isAdministrativeAgreement(), getPublisherVersion(),
+                                           getEmbargoDate().orElse(null), getUploadDetails());
+    }
+
+    @Override
+    public PublishedFile approve() {
+        return new PublishedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                 isAdministrativeAgreement(), getPublisherVersion(),
+                                 getEmbargoDate().orElse(null),
+                                 getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
     }
 }

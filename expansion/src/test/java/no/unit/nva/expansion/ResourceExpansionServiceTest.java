@@ -63,7 +63,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
@@ -629,25 +629,27 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldExpandApprovedFilesForPublishingRequest()
         throws ApiGatewayException, JsonProcessingException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PUBLISHED, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(PUBLISHED, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var ticket = createCompletedTicketAndPublishFiles(publication);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
         var expandedTicket = (ExpandedPublishingRequest) expansionService.expandEntry(ticket, false);
 
-        var publishedFilesFromPublication = resourceService.getPublication(publication)
+        var publishedFilesFromPublication = publication
                                                 .getAssociatedArtifacts().stream()
-                                                .filter(PublishedFile.class::isInstance)
+                                                .map(File.class::cast)
+                                                .map(File::getIdentifier)
                                                 .collect(Collectors.toSet());
-        var publishedFilesFromExpandedPublishingRequest = expandedTicket.getApprovedFiles();
+        var publishedFilesFromExpandedPublishingRequest = expandedTicket.getApprovedFiles()
+                                                              .stream().map(File::getIdentifier).toList();
 
-        assertThat(publishedFilesFromPublication, 
+        assertThat(publishedFilesFromPublication,
                    containsInAnyOrder(publishedFilesFromExpandedPublishingRequest.toArray()));
     }
 
     @Test
     void shouldExpandFilesForApprovalForPublishingRequest() throws ApiGatewayException, JsonProcessingException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PUBLISHED, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(PUBLISHED, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -658,7 +660,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         var expectedFilesForApproval = resourceService.getPublication(publication)
                                                 .getAssociatedArtifacts().stream()
-                                                .filter(UnpublishedFile.class::isInstance)
+                                                .filter(PendingOpenFile.class::isInstance)
                                                 .toArray();
         var filesForApproval = expandedTicket.getFilesForApproval();
 
@@ -761,7 +763,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
         var ticket = (PublishingRequestCase) TicketTestUtils.createCompletedTicket(
             publication, PublishingRequestCase.class, ticketService);
-        ticket.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication)).approveFiles();
+        ticket.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication)).approveFiles();
         publishFiles(publication);
         return ticket;
     }
@@ -799,7 +801,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                                               SortableIdentifier::next)
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
 
@@ -987,8 +989,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setStatus(getTicketStatus(expandedPublishingRequest.getStatus()));
         publishingRequest.setFinalizedBy(extractUsername(expandedPublishingRequest.getFinalizedBy()));
         publishingRequest.setAssignee(extractUsername(expandedPublishingRequest.getAssignee()));
-        publishingRequest.setApprovedFiles(extractApprovedFiles(expandedPublishingRequest));
-        publishingRequest.setFilesForApproval(extractFilesForApproval(expandedPublishingRequest));
+        publishingRequest.setApprovedFiles(expandedPublishingRequest.getApprovedFiles().stream()
+                                               .map(Object.class::cast)
+                                               .collect(Collectors.toSet()));
+        publishingRequest.setFilesForApproval(expandedPublishingRequest.getFilesForApproval().stream()
+                                                  .map(Object.class::cast)
+                                                  .collect(Collectors.toSet()));
         publishingRequest.setOwnerAffiliation(expandedPublishingRequest.getOrganization().id());
         return publishingRequest;
     }

@@ -32,6 +32,7 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.MissingLicenseException;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -281,7 +282,7 @@ public class FileModelTest {
 
     @Deprecated
     @Test
-    void shouldMigrateLegacyFileToUnpublishedFile() throws JsonProcessingException {
+    void shouldMigrateLegacyFileToPendingOpenFile() throws JsonProcessingException {
         var fileJson = """
         {
             "type" : "File",
@@ -301,7 +302,7 @@ public class FileModelTest {
             "visibleForNonOwner" : true
         }""";
         var file = JsonUtils.dtoObjectMapper.readValue(fileJson, File.class);
-        assertThat(file, instanceOf(UnpublishedFile.class));
+        assertThat(file, instanceOf(PendingOpenFile.class));
     }
 
     private static String generateNewFile() {

@@ -3,13 +3,11 @@ package no.unit.nva.publication.permission.strategy.grant;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.ResourceService;
 
 public class ResourceOwnerPermissionStrategy extends GrantPermissionStrategy {
 
-    public ResourceOwnerPermissionStrategy(Publication publication, UserInstance userInstance,
-                                           ResourceService resourceService) {
-        super(publication, userInstance, resourceService);
+    public ResourceOwnerPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override

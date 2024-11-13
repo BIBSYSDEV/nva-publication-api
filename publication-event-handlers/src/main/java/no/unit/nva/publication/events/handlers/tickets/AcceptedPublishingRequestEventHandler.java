@@ -16,13 +16,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -42,6 +36,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class AcceptedPublishingRequestEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
+    public static final String UNKNOWN_WORKFLOW_MESSAGE = "Unknown workflow: {}";
     private static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
     private static final String PUBLISHING_METADATA_AND_FILES_MESSAGE =
@@ -54,7 +49,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private static final String PUBLICATION_UPDATE_ERROR_MESSAGE = "Could not update publication: %s";
     private static final String PUBLISHING_FILE_MESSAGE =
         "Publishing file {} of type {} from approved " + "PublishingRequest {} for publication {}";
-    public static final String UNKNOWN_WORKFLOW_MESSAGE = "Unknown workflow: {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
@@ -102,7 +96,16 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         var publication = fetchPublication(publishingRequest.getResourceIdentifier());
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
             publishPublication(publication);
+            refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
+    }
+
+    /**
+     * Is needed in order to populate publication status changes in search-index when publication is being published.
+     * @param publishingRequest to refresh
+     */
+    private void refreshPublishingRequestAfterPublishingMetadata(PublishingRequestCase publishingRequest) {
+        publishingRequest.persistUpdate(ticketService);
     }
 
     private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
@@ -122,11 +125,11 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     //TODO: Remove unpublishable file and logic related to it after we have migrated files
     private AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
-        return switch (associatedArtifact) {
-            case UnpublishedFile unpublishedFile -> unpublishedFile.toUnpublishableFile();
-            case PendingFile<?> pendingFile -> pendingFile.reject();
-            default -> associatedArtifact;
-        };
+        if (associatedArtifact instanceof PendingFile<?,?> pendingFile) {
+            return pendingFile.reject();
+        } else {
+            return associatedArtifact;
+        }
     }
 
     private static boolean hasDoi(Publication publication) {
@@ -151,23 +154,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         logger.info(PUBLISHING_FILE_MESSAGE, unpublishedFile.getIdentifier(),
                     unpublishedFile.getClass().getSimpleName(), publishingRequestCase.getIdentifier(),
                     publishingRequestCase.getResourceIdentifier());
-    }
-
-    private static PublishedFile toPublishedFile(UnpublishedFile unpublishedFile,
-                                                 PublishingRequestCase publishingRequestCase) {
-        logFilePublish(unpublishedFile, publishingRequestCase);
-        return unpublishedFile.toPublishedFile();
-    }
-
-    private static InternalFile toInternalFile(PendingInternalFile pendingInternalFile,
-                                               PublishingRequestCase publishingRequestCase) {
-        logFilePublish(pendingInternalFile, publishingRequestCase);
-        return pendingInternalFile.toInternalFile();
-    }
-
-    private static OpenFile toOpenFile(PendingOpenFile pendingOpenFile, PublishingRequestCase publishingRequestCase) {
-        logFilePublish(pendingOpenFile, publishingRequestCase);
-        return pendingOpenFile.toOpenFile();
     }
 
     private boolean hasEffectiveChanges(String eventBlob) {
@@ -247,17 +233,19 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
                    .toList();
     }
 
+    @JacocoGenerated
     private AssociatedArtifact publishFileIfApproved(AssociatedArtifact associatedArtifact,
                                                      PublishingRequestCase publishingRequest) {
         return switch (associatedArtifact) {
-            case UnpublishedFile unpublishedFile when publishingRequest.fileIsApproved(unpublishedFile) ->
-                toPublishedFile(unpublishedFile, publishingRequest);
-            case PendingInternalFile pendingInternalFile when publishingRequest.fileIsApproved(pendingInternalFile) ->
-                toInternalFile(pendingInternalFile, publishingRequest);
-            case PendingOpenFile pendingOpenFile when publishingRequest.fileIsApproved(pendingOpenFile) ->
-                toOpenFile(pendingOpenFile, publishingRequest);
+            case PendingFile<?,?> pendingFile when publishingRequest.fileIsApproved((File) pendingFile) ->
+                approve(pendingFile, publishingRequest);
             case null, default -> associatedArtifact;
         };
+    }
+
+    private static File approve(PendingFile<?, ?> pendingFile, PublishingRequestCase publishingRequest) {
+        logFilePublish((File) pendingFile, publishingRequest);
+        return pendingFile.approve();
     }
 
     private Publication fetchPublication(SortableIdentifier publicationIdentifier) {
@@ -265,8 +253,9 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     /**
-     * Creating DoiRequest for a publication necessarily owned by publication owner institution
-     * and not the institution that requests the doi.
+     * Creating DoiRequest for a publication necessarily owned by publication owner institution and not the institution
+     * that requests the doi.
+     *
      * @param publication to create a DoiRequest for
      */
     private void createDoiRequestIfNeeded(Publication publication) {

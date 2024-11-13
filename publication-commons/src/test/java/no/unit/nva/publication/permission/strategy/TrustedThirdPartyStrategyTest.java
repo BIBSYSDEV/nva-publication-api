@@ -39,13 +39,12 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should deny trusted third party {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE", "TERMINATE",
-        "TICKET_PUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE", "TERMINATE"})
     void shouldDenyTrustedThirdPartyOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -54,7 +53,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, resourceService)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 
@@ -71,7 +70,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(DELETE));
     }
 
@@ -88,7 +87,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(DELETE));
     }
 
@@ -101,7 +100,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), resourceService)
+                    requestInfo, identityServiceClient))
                 .allowsAction(UPDATE));
     }
 
@@ -114,7 +113,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                                           userInstanse.getTopLevelOrgCristinId());
 
         Assertions.assertTrue(
-            PublicationPermissionStrategy.create(publication, userInstanse, resourceService)
+            PublicationPermissionStrategy.create(publication, userInstanse)
                 .allowsAction(UPDATE));
     }
 
@@ -127,7 +126,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         var publication = createDegreePhd(randomString(), publisher, userInstanse.getTopLevelOrgCristinId());
 
         Assertions.assertFalse(
-            PublicationPermissionStrategy.create(publication, userInstanse, resourceService)
+            PublicationPermissionStrategy.create(publication, userInstanse)
                 .allowsAction(UPDATE));
     }
 }

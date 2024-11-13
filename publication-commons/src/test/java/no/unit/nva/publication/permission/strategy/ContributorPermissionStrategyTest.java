@@ -36,7 +36,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
 
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -56,7 +56,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, resourceService)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 
@@ -83,7 +83,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
                                    .create(publication,
                                            RequestUtil.createUserInstanceFromRequest(
                                                requestInfo,
-                                               identityServiceClient), resourceService)
+                                               identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 }

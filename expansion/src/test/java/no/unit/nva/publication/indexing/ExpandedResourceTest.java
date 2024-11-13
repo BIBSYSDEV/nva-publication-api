@@ -153,19 +153,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnIndexDocumentWithValidContributorAffiliationCountryCode() throws Exception {
-        var publication = randomPublication();
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
-
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, publication);
-        var framedResultNode = indexDocument.asJsonNode();
-
-        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/countryCode")
-                                    .textValue();
-        assertThat(actualCountryCode, is(not(nullValue())));
-    }
-
-    @Test
     void shouldReturnIndexDocumentWithContributorsPreviewAndCount() throws Exception {
         var publication = randomPublication(AcademicArticle.class);
 

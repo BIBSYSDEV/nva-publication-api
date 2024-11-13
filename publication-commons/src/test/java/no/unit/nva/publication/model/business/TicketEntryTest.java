@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -88,7 +89,7 @@ class TicketEntryTest {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
         var ticket = (PublishingRequestCase) TicketEntry.createNewTicket(
             publication, PublishingRequestCase.class, SortableIdentifier::next);
-        ticket.withFilesForApproval(Set.of(new FileForApproval(UUID.randomUUID())))
+        ticket.withFilesForApproval(Set.of(randomPendingOpenFile()))
             .withWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
             .approveFiles();
 

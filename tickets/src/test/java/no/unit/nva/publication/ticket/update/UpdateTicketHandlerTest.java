@@ -18,7 +18,6 @@ import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
@@ -27,7 +26,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -37,6 +35,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -45,11 +44,10 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -67,6 +65,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -548,9 +547,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldSetUnpublishedFilesAsApprovedFilesForPublishingRequestWhenUpdatingStatusToComplete()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             PublicationStatus.DRAFT, resourceService);
-        var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
+        var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(publication);
         var closedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
                                                           ticket.getCustomerId(),
@@ -561,18 +560,26 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
-        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+        var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
+                                      .map(File::getIdentifier)
+                                      .collect(Collectors.toSet());
+        assertThat(approvedFiles, hasItem(approvedFile.getIdentifier()));
     }
 
     @Test
     void shouldEmptyFilesForApprovalWhenPublishingRequestIsBeingApproved()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             PublicationStatus.DRAFT, resourceService);
-        var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
-        var expectedFilesForApproval = getUnpublishedFiles(publication);
+        var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(publication);
+        var expectedFilesForApproval = publication.getAssociatedArtifacts().stream()
+                                           .filter(PendingFile.class::isInstance)
+                                           .map(PendingFile.class::cast)
+                                           .map(File.class::cast)
+                                           .map(File::getIdentifier)
+                                           .toArray(UUID[]::new);
 
-        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
+        assertThat(((PublishingRequestCase) ticket).getFilesForApproval().stream().map(File::getIdentifier).toList(),
                    containsInAnyOrder(expectedFilesForApproval));
 
         var completedTicket = ticket.complete(publication, USER_NAME);
@@ -584,14 +591,17 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
-        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+        var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
+                               .map(File::getIdentifier)
+                               .toList();
+        assertThat(approvedFiles, hasItem(approvedFile.getIdentifier()));
         assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
     }
 
     @Test
     void contributorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToUpdateTicketForPublication()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             PublicationStatus.PUBLISHED, resourceService);
         var contributorId = PublicationGenerator.randomUri();
         publication.getEntityDescription().setContributors(List.of(randomContributorWithId(contributorId)));
@@ -603,13 +613,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertEquals(response.getStatusCode(), HTTP_ACCEPTED);
+        Assertions.assertEquals(HTTP_ACCEPTED, response.getStatusCode());
     }
 
     @Test
     void curatorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToUpdateTicketForPublication()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+        var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             PublicationStatus.PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
         publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of())));
@@ -621,7 +631,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertEquals(response.getStatusCode(), HTTP_ACCEPTED);
+        Assertions.assertEquals(HTTP_ACCEPTED, response.getStatusCode());
     }
 
     private InputStream userUpdatesTicket(TicketEntry ticket, URI userId) throws JsonProcessingException {
@@ -632,14 +642,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withPathParameters(createPathParameters(ticket, ticket.getResourceIdentifier()))
                    .withPersonCristinId(userId)
                    .build();
-    }
-
-    private static Object[] getUnpublishedFiles(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(File.class::cast)
-                   .map(FileForApproval::fromFile)
-                   .toArray();
     }
 
     private static Map<String, String> pathParameters(Publication publication, TicketEntry ticket) {
@@ -744,7 +746,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT);
     }
 
-    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
+    private TicketEntry persistPublishingRequestContainingExistingPendingOpenFiles(Publication publication)
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication,
                                                                                               PublishingRequestCase.class,
@@ -757,11 +759,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         return publishingRequest.persistNewTicket(ticketService);
     }
 
-    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+    private Set<File> convertUnpublishedFilesToFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(UnpublishedFile.class::cast)
-                   .map(FileForApproval::fromFile)
+                   .filter(PendingFile.class::isInstance)
+                   .map(File.class::cast)
                    .collect(Collectors.toSet());
     }
 

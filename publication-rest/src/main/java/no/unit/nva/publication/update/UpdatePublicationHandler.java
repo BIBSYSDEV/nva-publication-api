@@ -161,8 +161,7 @@ public class UpdatePublicationHandler
         Publication existingPublication = fetchPublication(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance,
-                                                                      resourceService);
+        var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
@@ -198,7 +197,7 @@ public class UpdatePublicationHandler
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
         return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance, resourceService))
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
                    .map(PublicationPermissionStrategy::getAllAllowedActions)
                    .orElse(Collections.emptySet());
     }
@@ -302,7 +301,7 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
 
-        if (publishedFilesAreUnchanged(existingPublication, input)) {
+        if (openFilesAreUnchanged(existingPublication, input)) {
             permissionStrategy.authorize(UPDATE);
         } else {
             permissionStrategy.authorize(UPDATE_FILES);
@@ -346,14 +345,15 @@ public class UpdatePublicationHandler
         }
     }
 
-    private static boolean publishedFilesAreUnchanged(Publication existingPublication,
-                                                      UpdatePublicationRequest input) {
+    //TODO: Should this method also compare changes of internal files?
+    private static boolean openFilesAreUnchanged(Publication existingPublication,
+                                                 UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
-                             .filter(PublishedFile.class::isInstance)
-                             .map(PublishedFile.class::cast).toList();
+                             .filter(OpenFile.class::isInstance)
+                             .map(OpenFile.class::cast).toList();
         var existingFiles = existingPublication.getAssociatedArtifacts().stream()
-                                .filter(PublishedFile.class::isInstance)
-                                .map(PublishedFile.class::cast);
+                                .filter(OpenFile.class::isInstance)
+                                .map(OpenFile.class::cast);
         return existingFiles.allMatch(inputFiles::contains);
     }
 

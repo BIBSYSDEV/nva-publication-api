@@ -1,11 +1,15 @@
 package no.unit.nva.publication.update;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPublishedFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithFile;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -22,6 +26,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -63,6 +68,35 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         Assertions.assertTrue(publishingRequest.getApprovedFiles().isEmpty());
     }
 
+    @Test
+    void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFilesButPublicationHasPublishedFiles()
+        throws ApiGatewayException {
+        var publication = randomPublication();
+        var publishedFile = randomPublishedFile();
+        var unpublishedFile = randomUnpublishedFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(unpublishedFile, publishedFile)));
+        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                                     publication);
+        resourceService.publishPublication(UserInstance.fromPublication(publication),
+                                           persistedPublication.getIdentifier());
+        persistPublishingRequestContainingExistingUnpublishedFiles(persistedPublication);
+        var publicationUpdateRemovingUnpublishedFiles = persistedPublication.copy()
+                                                            .withAssociatedArtifacts(List.of(publishedFile))
+                                                            .withStatus(PublicationStatus.PUBLISHED)
+                                                            .build();
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublication(persistedPublication),
+                                                                publicationUpdateRemovingUnpublishedFiles);
+
+        var publishingRequest = resourceService.fetchAllTicketsForResource(Resource.fromPublication(persistedPublication))
+                                    .map(PublishingRequestCase.class::cast)
+                                    .toList()
+                                    .getFirst();
+
+        Assertions.assertEquals(TicketStatus.COMPLETED, publishingRequest.getStatus());
+        Assertions.assertTrue(publishingRequest.getFilesForApproval().isEmpty());
+        Assertions.assertTrue(publishingRequest.getApprovedFiles().isEmpty());
+    }
+
     private static Customer customerNotAllowingPublishingFiles() {
         return new Customer(Set.of(), PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(), null);
     }
@@ -80,7 +114,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(
                                                                 publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(TicketTestUtils.convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
         publishingRequest.persistNewTicket(ticketService);
     }
 }

@@ -44,7 +44,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
                    .withLicense(license)
                    .withPublisherVersion(publisherVersion)
                    .withEmbargoDate(embargo)
-                   .buildPublishedFile();
+                   .buildOpenFile();
     }
 
     private ImportUploadDetails createUploadDetails() {
