@@ -57,6 +57,11 @@
     "@id": "concertProgramme",
     "@container": "@set"
   },
+  "contributorCristinIds": {
+    "@id": "contributorCristinId",
+    "@type": "@id",
+    "@container": "@set"
+  },
   "contributorOrganizations": {
     "@id": "contributorOrganization",
     "@container": "@set",
