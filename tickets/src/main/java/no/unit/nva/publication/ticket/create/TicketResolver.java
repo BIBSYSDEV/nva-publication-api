@@ -64,7 +64,7 @@ public class TicketResolver {
         throws ApiGatewayException {
         var publication = fetchPublication(requestUtils);
         var permissionStrategy = PublicationPermissionStrategy
-                                     .create(publication, requestUtils.toUserInstance(), resourceService);
+                                     .create(publication, requestUtils.toUserInstance());
 
         validateUserPermissions(permissionStrategy, ticketDto, requestUtils);
 

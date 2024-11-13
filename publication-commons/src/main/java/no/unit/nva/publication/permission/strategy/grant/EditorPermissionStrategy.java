@@ -4,14 +4,12 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.ResourceService;
 
 public class EditorPermissionStrategy extends GrantPermissionStrategy {
 
     public EditorPermissionStrategy(Publication publication,
-                                    UserInstance userInstance,
-                                    ResourceService resourceService) {
-        super(publication, userInstance, resourceService);
+                                    UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override

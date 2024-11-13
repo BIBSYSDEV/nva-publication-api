@@ -42,7 +42,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, super.resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -69,7 +69,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -90,7 +90,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, resourceService)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 
@@ -105,8 +105,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var publication = createNonDegreePublication(username, institution, cristinId);
         var permissionStrategy = PublicationPermissionStrategy.create(publication,
                                                                       RequestUtil.createUserInstanceFromRequest(
-                                                                          requestInfo, identityServiceClient),
-                                                                      resourceService);
+                                                                          requestInfo, identityServiceClient));
         assertThat(permissionStrategy.isCuratorOnPublication(), is(equalTo(true)));
     }
     //endregion
@@ -128,7 +127,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, resourceService)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 
@@ -153,7 +152,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -171,7 +170,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, resourceService)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 
@@ -193,7 +192,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
     //endregion

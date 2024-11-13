@@ -8,7 +8,6 @@ import static nva.commons.apigateway.AccessRight.SUPPORT;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.ResourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +15,8 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     public static final Logger logger = LoggerFactory.getLogger(CuratorPermissionStrategy.class);
 
-    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
-        super(publication, userInstance, resourceService);
+    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override

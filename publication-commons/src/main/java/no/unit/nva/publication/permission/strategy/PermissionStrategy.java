@@ -17,7 +17,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,12 +27,10 @@ public abstract class PermissionStrategy {
 
     protected final Publication publication;
     protected final UserInstance userInstance;
-    protected final ResourceService resourceService;
 
-    protected PermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+    protected PermissionStrategy(Publication publication, UserInstance userInstance) {
         this.publication = publication;
         this.userInstance = userInstance;
-        this.resourceService = resourceService;
     }
 
     protected boolean hasAccessRight(AccessRight accessRight) {

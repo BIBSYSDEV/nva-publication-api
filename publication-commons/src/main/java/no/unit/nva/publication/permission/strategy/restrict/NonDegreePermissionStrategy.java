@@ -12,13 +12,11 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.ResourceService;
 
 public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
 
-    public NonDegreePermissionStrategy(Publication publication, UserInstance userInstance,
-                                       ResourceService resourceService) {
-        super(publication, userInstance, resourceService);
+    public NonDegreePermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override

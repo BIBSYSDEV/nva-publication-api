@@ -58,8 +58,6 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
@@ -70,7 +68,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class PublicationPermissionStrategyTest extends ResourcesLocalTest {
+class PublicationPermissionStrategyTest {
 
     public static final String AT = "@";
     public static final String AUTHORIZER = "authorizer";
@@ -84,7 +82,6 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
     public static final String BEARER_TOKEN = "Bearer token";
     public static final String BACKEND_SCOPE = "https://api.nva.unit.no/scopes/backend";
     IdentityServiceClient identityServiceClient;
-    public ResourceService resourceService;
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
@@ -93,8 +90,6 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
     @BeforeEach
     void setUp() throws NotFoundException {
-        super.init();
-        this.resourceService = getResourceServiceBuilder().build();
         this.identityServiceClient = mock(IdentityServiceClient.class);
 
         when(this.identityServiceClient.getExternalClient(any())).thenReturn(
@@ -110,7 +105,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), resourceService)
+                                       requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 
@@ -125,8 +120,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
                                                                  PublicationPermissionStrategy
                                                                      .create(publication,
                                                                              RequestUtil.createUserInstanceFromRequest(
-                                                                                 requestInfo, identityServiceClient),
-                                                                             resourceService)
+                                                                                 requestInfo, identityServiceClient))
                                                                      .allowsAction(UNPUBLISH));
     }
 
@@ -135,7 +129,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         var publication = createDegreePhd(randomString(), randomUri());
         var requestInfo = createThirdPartyRequestInfo(getAccessRightsForCurator());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var strategy = PublicationPermissionStrategy.create(publication, userInstance, resourceService);
+        var strategy = PublicationPermissionStrategy.create(publication, userInstance);
 
         Assertions.assertThrows(UnauthorizedException.class, () -> strategy.authorize(UPDATE));
     }
@@ -153,7 +147,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), resourceService)
+                    requestInfo, identityServiceClient))
                 .getAllAllowedActions(), is(empty()));
     }
 
@@ -172,7 +166,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), resourceService)
+                    requestInfo, identityServiceClient))
                 .getAllAllowedActions(), hasItems(UPDATE, UNPUBLISH, UPDATE_FILES));
     }
 
@@ -191,7 +185,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
         PublicationPermissionStrategy
             .create(publication, RequestUtil.createUserInstanceFromRequest(
-                requestInfo, identityServiceClient), resourceService)
+                requestInfo, identityServiceClient))
             .authorize(UPDATE);
         assertThat(appender.getMessages(), containsString(contributorName));
         assertThat(appender.getMessages(), containsString(publication.getIdentifier().toString()));
@@ -213,7 +207,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
         assertTrue(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), resourceService)
+                    requestInfo, identityServiceClient))
                 .isPublishingCuratorOnPublication());
     }
 

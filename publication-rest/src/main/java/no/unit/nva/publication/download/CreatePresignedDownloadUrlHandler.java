@@ -119,7 +119,7 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     }
 
     private boolean hasUpdatePermission(Publication publication, UserInstance user) {
-        return PublicationPermissionStrategy.create(publication, user, resourceService)
+        return PublicationPermissionStrategy.create(publication, user)
                    .allowsAction(PublicationOperation.UPDATE);
     }
 

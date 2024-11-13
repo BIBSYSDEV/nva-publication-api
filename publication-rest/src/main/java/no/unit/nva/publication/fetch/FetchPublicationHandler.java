@@ -213,13 +213,13 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private boolean isElevatedUser(Publication publication, UserInstance userInstance) {
-        var permissionStrategy = PublicationPermissionStrategy.create(publication, userInstance, resourceService);
+        var permissionStrategy = PublicationPermissionStrategy.create(publication, userInstance);
         return permissionStrategy.allowsAction(PublicationOperation.UPDATE);
     }
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
         return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance, resourceService))
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
                    .map(PublicationPermissionStrategy::getAllAllowedActions)
                    .orElse(Collections.emptySet());
     }
