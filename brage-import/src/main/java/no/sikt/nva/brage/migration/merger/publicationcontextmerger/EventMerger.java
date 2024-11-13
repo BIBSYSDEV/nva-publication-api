@@ -24,7 +24,7 @@ public final class EventMerger extends PublicationContextMerger {
                        .withProduct(getProduct(event, newEvent))
                        .withTime(getTime(event.getTime(), newEvent.getTime()))
                        .withAgent(getAgent(event.getAgent(), newEvent.getAgent()))
-                       .withLabel(getNonNullValue(event.getLabel(), newEvent.getLabel()))
+                       .withName(getNonNullValue(event.getName(), newEvent.getName()))
                        .build();
         } else {
             return event;

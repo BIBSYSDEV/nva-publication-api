@@ -281,8 +281,8 @@ public final class PublicationUpdater {
             || shouldBeUpdated(getLabel(existingPlace), getLabel(incomingPlace))
             || shouldBeUpdated(existingEvent.getTime(), incomingEvent.getTime())) {
             return new Event.Builder()
-                       .withLabel(
-                           nonNull(existingEvent.getLabel()) ? existingEvent.getLabel() : incomingEvent.getLabel())
+                       .withName(
+                           nonNull(existingEvent.getName()) ? existingEvent.getName() : incomingEvent.getName())
                        .withAgent(
                            nonNull(existingEvent.getAgent()) ? existingEvent.getAgent() : incomingEvent.getAgent())
                        .withTime(nonNull(existingEvent.getTime()) ? existingEvent.getTime() : incomingEvent.getTime())
@@ -296,7 +296,7 @@ public final class PublicationUpdater {
     }
 
     private static String getLabel(UnconfirmedPlace existingPlace) {
-        return Optional.ofNullable(existingPlace).map(UnconfirmedPlace::getLabel).orElse(null);
+        return Optional.ofNullable(existingPlace).map(UnconfirmedPlace::name).orElse(null);
     }
 
     private static UnconfirmedPlace getPlaceCountry(Event event) {

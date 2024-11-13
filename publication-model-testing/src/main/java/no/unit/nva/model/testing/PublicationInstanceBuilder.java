@@ -451,7 +451,8 @@ public final class PublicationInstanceBuilder {
     }
 
     private static List<MusicalWorkPerformance> randomConcertProgramme() {
-        return List.of(new MusicalWorkPerformance(randomString(), randomString(), randomBoolean()));
+        return List.of(new MusicalWorkPerformance(randomString(), randomString(), true),
+                       new MusicalWorkPerformance(randomString(), randomString(), false));
     }
 
     private static MusicPerformanceManifestation randomAudioVisualPublication() {

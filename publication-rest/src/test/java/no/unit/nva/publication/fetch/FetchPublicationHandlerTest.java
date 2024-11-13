@@ -194,7 +194,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = parseHandlerResponse();
         var contentType = gatewayResponse.getHeaders().get(CONTENT_TYPE);
         assertThat(contentType, is(equalTo(MediaTypes.SCHEMA_ORG.toString())));
-        assertThat(gatewayResponse.getBody(), containsString("\"@vocab\" : \"https://schema.org/\""));
+        assertThat(gatewayResponse.getBody(), containsString("\"@vocab\":\"https://schema.org/\""));
     }
 
     @Test
