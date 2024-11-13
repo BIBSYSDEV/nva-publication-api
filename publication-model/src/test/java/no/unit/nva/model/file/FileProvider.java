@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
@@ -58,9 +59,14 @@ public class FileProvider implements ArgumentsProvider {
             case RejectedFile.TYPE -> randomRejectedFile();
             case InternalFile.TYPE -> randomInternalFile();
             case PendingInternalFile.TYPE -> randomPendingInternalFile();
+            case HiddenFile.TYPE -> randomHiddenFile();
             default -> throw new IllegalArgumentException(
                 "Unexpected value, make sure to include new types here: " + aClass.getSimpleName());
         };
+    }
+
+    private static File randomHiddenFile() {
+        return buildNonAdministrativeAgreement().buildHiddenFile();
     }
 
     private static File randomOpenFile() {

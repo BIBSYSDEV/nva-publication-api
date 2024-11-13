@@ -28,7 +28,7 @@ public final class AssociatedArtifactsGenerator {
 
     public static List<AssociatedArtifact> randomAssociatedArtifacts() {
         return new AssociatedArtifactList(PublishedFileGenerator.random(), randomOpenFile(), randomInternalFile(),
-                                          randomAssociatedLink());
+                                          randomAssociatedLink(), randomHiddenFile());
     }
 
     public static AssociatedLink randomAssociatedLink() {
@@ -60,6 +60,10 @@ public final class AssociatedArtifactsGenerator {
 
     public static File randomInternalFile() {
         return randomFileBuilder().buildInternalFile();
+    }
+
+    public static File randomHiddenFile() {
+        return randomFileBuilder().buildHiddenFile();
     }
 
     private static Builder randomFileBuilder() {

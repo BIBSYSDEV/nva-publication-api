@@ -11,6 +11,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
@@ -439,7 +440,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateOwnerRequest(publication), output, context);
         var gatewayResponse = parseHandlerResponse();
 
-        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), PublicationResponseElevatedUser.class);
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
+                                                                      PublicationResponseElevatedUser.class);
 
         assertFalse(publicationResponse.getAssociatedArtifacts().isEmpty());
     }
@@ -448,21 +450,25 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     void shouldReturnPublicationWithOutInternalFilesWhenUserIsNotAllowedToUpdatePublication()
         throws ApiGatewayException, IOException {
         var publication = createPublicationWithInternalFilesOnly();
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
+                                              context);
         var gatewayResponse = parseHandlerResponse();
 
-        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), PublicationResponse.class);
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
+                                                                      PublicationResponse.class);
 
         assertTrue(publicationResponse.getAssociatedArtifacts().isEmpty());
     }
 
-    private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException {
+    private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws ApiGatewayException {
         var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
         publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
         publication.setDuplicateOf(null);
         var peristedPublication = publicationService.createPublication(UserInstance.fromPublication(publication),
-                                                                 publication);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), peristedPublication.getIdentifier());
+                                                                       publication);
+        publicationService.publishPublication(UserInstance.fromPublication(publication),
+                                              peristedPublication.getIdentifier());
         publicationService.unpublishPublication(peristedPublication);
         return peristedPublication;
     }
@@ -580,9 +586,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication createPublicationWithInternalFilesOnly() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(), randomInternalFile()));
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(),
+                                                                      randomInternalFile(), randomHiddenFile()));
         var userInstance = UserInstance.fromPublication(publication);
-        var publicationIdentifier = Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
+        var publicationIdentifier = Resource.fromPublication(publication)
+                                        .persistNew(publicationService, userInstance)
+                                        .getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 
