@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -236,7 +237,8 @@ class MigrationTests extends ResourcesLocalTest {
     @Deprecated
     @Test
     void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
-        var publication = resourceService.createPublicationWithPredefinedCreationDate(randomPublication());
+        var publication = randomPublication().copy().withStatus(UNPUBLISHED).build();
+        publication = resourceService.createPublicationWithPredefinedCreationDate(publication);
         var firstFile = randomUnpublishedFile();
         var secondFile = randomUnpublishedFile();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
