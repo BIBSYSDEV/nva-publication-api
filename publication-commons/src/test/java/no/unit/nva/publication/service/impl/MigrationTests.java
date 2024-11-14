@@ -235,6 +235,7 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     @Deprecated
+    @Test
     void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
         var publication = randomPublication().copy().withStatus(UNPUBLISHED).build();
         publication = resourceService.createPublicationWithPredefinedCreationDate(publication);
