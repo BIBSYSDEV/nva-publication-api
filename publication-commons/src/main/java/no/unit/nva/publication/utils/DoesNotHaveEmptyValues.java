@@ -1,83 +1,119 @@
 package no.unit.nva.publication.utils;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Field;
-import java.lang.reflect.RecordComponent;
+import static java.util.Objects.isNull;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class DoesNotHaveEmptyValues {
 
-    public static final String GET_PREFIX = "get";
+    private static final String GET_PREFIX = "get";
     private static final ArrayList<String> emptyFields = new ArrayList<>();
-    public static final String DELIMITER = ", ";
+    private static final String DELIMITER = ", ";
+    private static final String JAVA_PACKAGE = "java.";
+    private static final String JAVAX_PACKAGE = "javax.";
+    private static final int GET_PREFIX_ENDS = 3;
+    private static final String EMPTY_PATH = "";
+    private static final String PATH_DELIMITER = ".";
 
     private DoesNotHaveEmptyValues() {
         // NO-OP
     }
 
-    public static void checkForEmptyFields(Object object, Set<String> excludeFields) {
-        var classToTest = object.getClass();
-        var fields = classToTest.isRecord() ? classToTest.getRecordComponents() : classToTest.getDeclaredFields();
-        for (var field : fields) {
-            var name = extractName(field);
-            if (excludeFields.contains(name) || isNotVisibleField(field, name)) {
-                continue;
+    public static void checkForEmptyFields(Object obj, Set<String> excludeFields) throws Exception {
+        checkForEmptyFields(obj, excludeFields, EMPTY_PATH, new IdentityHashMap<>());
+    }
+
+    private static void checkForEmptyFields(Object object,
+                                            Set<String> excludeFields,
+                                            String currentPath,
+                                            Map<Object, Boolean> visited) throws Exception {
+        if (isNull(object) || visited.containsKey(object)) {
+            return;
+        }
+        visited.put(object, Boolean.TRUE);
+
+        var objectClass = object.getClass();
+        var isRecord = objectClass.isRecord();
+
+        for (var method : objectClass.getDeclaredMethods()) {
+            if (isGetter(method, isRecord)) {
+                var fullPath = constructFullPath(currentPath, extractFieldName(method, isRecord));
+                if (excludeFields.contains(fullPath)) {
+                    continue;
+                }
+                var value = method.invoke(object);
+                if (isEmpty(value)) {
+                    emptyFields.add(fullPath);
+                } else if (isNestedObject(value)) {
+                    checkForEmptyFields(value, excludeFields, fullPath, visited);
+                }
             }
-            checkForEmptiness(object, excludeFields, name);
         }
 
         if (!emptyFields.isEmpty()) {
-            throw new IllegalArgumentException("Empty fields found: " + String.join(DELIMITER, emptyFields));
+            throw new MissingFieldException("Empty fields found: " + String.join(DELIMITER, emptyFields));
         }
     }
 
-    private static boolean isNotVisibleField(AnnotatedElement element, String name) {
-        return element instanceof Field field && isNotGetterField(field, name);
+    private static String constructFullPath(String currentPath, String fieldName) {
+        return currentPath.isEmpty() ? fieldName : currentPath + PATH_DELIMITER + fieldName;
     }
 
-    private static String extractName(AnnotatedElement element) {
-        return switch (element) {
-            case RecordComponent component -> component.getName();
-            case Field field -> field.getName();
-            default -> throw new IllegalArgumentException();
+    private static boolean isGetter(Method method, boolean isRecord) {
+        if (isRecord) {
+            return method.getParameterCount() == 0;
+        } else {
+            return method.getName().startsWith(GET_PREFIX) && method.getParameterCount() == 0;
+        }
+    }
+
+    private static boolean isEmpty(Object value) {
+        return switch (value) {
+            case null -> true;
+            case String string when string.isEmpty() -> true;
+            case Collection<?> collection when collection.isEmpty() -> true;
+            default -> value.getClass().isArray() && value instanceof Object[] objects && objects.length == 0;
         };
     }
 
-    private static void checkForEmptiness(Object object, Set<String> excludeFields, String name) {
-        var value = getValueUsingGetter(object, name);
-        checkValue(value, name);
-        if (value != null) {
-            checkForEmptyFields(value, excludeFields);
+    /**
+     * This will fail if the getter does not have the exact name 'getFieldName'.
+     *
+     * @param method The method to check.
+     * @param isRecord Whether the origin class is a record.
+     * @return A string of the field name.
+     */
+    private static String extractFieldName(Method method, boolean isRecord) {
+        if (isRecord) {
+            return method.getName();
+        } else {
+            var fieldName = method.getName().substring(GET_PREFIX_ENDS);
+            fieldName = Character.toLowerCase(fieldName.charAt(0)) + fieldName.substring(1);
+            return fieldName;
         }
     }
 
-    private static void checkValue(Object value, String component) {
-        if (value == null || (value instanceof String string && string.isEmpty())) {
-            emptyFields.add(component);
-        }
+    private static boolean isNestedObject(Object value) {
+        return !(value instanceof String)
+               && !(value instanceof Collection)
+               && !value.getClass().isArray()
+               && !value.getClass().isPrimitive()
+               && !isJavaNativePackage(value);
     }
 
-    private static boolean isNotGetterField(Object object, String fieldName) {
-        try {
-            object.getClass().getMethod(formatGetterName(fieldName));
-            return false;
-        } catch (NoSuchMethodException e) {
-            return true;
-        }
+    private static boolean isJavaNativePackage(Object value) {
+        var packageName = value.getClass().getPackageName();
+        return packageName.startsWith(JAVA_PACKAGE) && packageName.startsWith(JAVAX_PACKAGE);
     }
 
-    private static Object getValueUsingGetter(Object object, String fieldName) {
-        try {
-            var getterName = object.getClass().isRecord() ? fieldName : formatGetterName(fieldName);
-            var getterMethod = object.getClass().getMethod(getterName);
-            return getterMethod.invoke(object);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+    public static class MissingFieldException extends RuntimeException {
 
-    private static String formatGetterName(String fieldName) {
-        return GET_PREFIX + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        public MissingFieldException(String string) {
+            super(string);
+        }
     }
 }

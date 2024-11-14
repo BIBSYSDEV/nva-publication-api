@@ -2209,7 +2209,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                       .toS3bucketPath();
         var content = s3Driver.getFile(uri);
 
-        assertThat(content, containsString("All fields of all included objects need to be non empty"));
+        assertThat(content, containsString("Empty fields found: entityDescription.mainTitle"));
     }
 
     @Test
