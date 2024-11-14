@@ -9,7 +9,7 @@ import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JsonLdContextUtil {
+public final class JsonLdContextUtil {
     
     private static final Logger logger = LoggerFactory.getLogger(JsonLdContextUtil.class);
     private final ObjectMapper objectMapper;

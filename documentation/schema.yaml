@@ -852,7 +852,7 @@ Event:
   - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
-      label:
+      name:
         type: string
       place:
         $ref: "#/components/schemas/Place"
@@ -2760,7 +2760,7 @@ UnconfirmedPlace:
   - type
   type: object
   properties:
-    label:
+    name:
       type: string
     country:
       type: string

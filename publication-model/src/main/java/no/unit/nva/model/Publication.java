@@ -381,12 +381,6 @@ public class Publication
     }
 
     @JsonIgnore
-    @Deprecated
-    public String getJsonLdContext() {
-        return stringFromResources(Path.of("publicationContextDeprecated.json"));
-    }
-
-    @JsonIgnore
     public static String getJsonLdContext(URI baseUri) {
         return PUBLICATION_CONTEXT.replace(BASE_URI, baseUri.toString());
     }

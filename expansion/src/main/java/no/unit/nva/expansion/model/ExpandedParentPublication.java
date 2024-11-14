@@ -7,6 +7,7 @@ import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.apache.jena.rdf.model.ModelFactory.createDefaultModel;
+import com.apicatalog.jsonld.document.JsonDocument;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpResponse;
@@ -16,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponseElevatedUser;
+import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -29,8 +31,10 @@ import org.apache.jena.vocabulary.RDF;
 
 public class ExpandedParentPublication {
 
-    private static final String FRAME = IoUtils.stringFromResources(Path.of("parentPublicationFrame.json"));
+    private static final JsonDocument FRAME = SearchIndexFrame
+                                                  .getFrameWithContext(Path.of("parentPublicationFrame.json"));
     private static final String PARENT_PUBLICATION_NOT_FOUND_S = "Parent publication not found %s";
+
     private static final String PUBLICATION_ONTOLOGY = "https://nva.sikt.no/ontology/publication#Publication";
     private static final String ERROR_MESSAGE_FETCHING_REFERENCE = "Could not fetch external reference: %s";
     private static final int ONE_HUNDRED = 100;

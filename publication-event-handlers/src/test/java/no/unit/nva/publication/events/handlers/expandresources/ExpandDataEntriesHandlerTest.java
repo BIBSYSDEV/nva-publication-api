@@ -364,7 +364,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private ResourceExpansionService createFailingService() {
         return new ResourceExpansionService() {
             @Override
-            public ExpandedDataEntry expandEntry(Entity dataEntry) {
+            public ExpandedDataEntry expandEntry(Entity dataEntry, boolean ignored) {
                 throw new RuntimeException(EXPECTED_ERROR_MESSAGE);
             }
 

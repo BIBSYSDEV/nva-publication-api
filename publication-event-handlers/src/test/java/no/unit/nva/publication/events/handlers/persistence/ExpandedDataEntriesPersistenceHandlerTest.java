@@ -293,14 +293,14 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
             TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
                 .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .persistNewTicket(ticketService);
-        return resourceExpansionService.expandEntry(openingCaseObject);
+        return resourceExpansionService.expandEntry(openingCaseObject, false);
     }
 
     private ExpandedDataEntry randomUnpublishRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var unpublishRequest =
             TicketEntry.requestNewTicket(publication, UnpublishRequest.class).persistNewTicket(ticketService);
-        return resourceExpansionService.expandEntry(unpublishRequest);
+        return resourceExpansionService.expandEntry(unpublishRequest, false);
     }
 
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
@@ -311,7 +311,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
                                                                            .getUsername());
         publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         publishingRequest.persistNewTicket(ticketService);
-        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
+        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest, false);
     }
 
     private ExpandedPublishingRequest publishingRequestWithoutWorkflow()
@@ -322,13 +322,13 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
                                                                            .getUsername());
         publishingRequest.setWorkflow(null);
         publishingRequest.persistNewTicket(ticketService);
-        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
+        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest, false);
     }
 
     private ExpandedResource randomResource() throws JsonProcessingException, ApiGatewayException {
         var publication = createPublicationWithoutDoi();
         var resource = Resource.fromPublication(publication);
-        return (ExpandedResource) resourceExpansionService.expandEntry(resource);
+        return (ExpandedResource) resourceExpansionService.expandEntry(resource, false);
     }
 
     private Publication createPublicationWithoutDoi() throws ApiGatewayException {
@@ -344,7 +344,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var doiRequest = DoiRequest.fromPublication(publication)
                              .withOwner(UserInstance.fromPublication(publication).getUsername())
                              .persistNewTicket(ticketService);
-        return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest);
+        return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest, false);
     }
 
     private EventReference sendEvent() throws JsonProcessingException {
