@@ -249,30 +249,19 @@ public final class BrageNvaMapper {
         var embargoDate = defineEmbargoDate(legalNote, file);
         return switch (file.getBundleType()) {
             case BundleType.ORIGINAL -> createOpenFile(file, brageRecord, embargoDate, legalNote, customer);
-            case BundleType.LICENSE -> createInternalFile(file, customer);
-            case BundleType.IGNORED -> createInternalForDublinCore(file, customer);
+            case BundleType.LICENSE, BundleType.IGNORED-> createHiddenFile(file, customer);
             default -> new NullAssociatedArtifact();
         };
     }
 
-    private static AssociatedArtifact createInternalForDublinCore(ContentFile file,
-                                                                  Customer customer) {
+    private static AssociatedArtifact createHiddenFile(ContentFile file,
+                                                       Customer customer) {
         return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
                    .withUploadDetails(createUploadDetails(customer))
                    .withAdministrativeAgreement(true)
-                   .buildInternalFile();
-    }
-
-    private static AssociatedArtifact createInternalFile(ContentFile file,
-                                                         Customer customer) {
-        return File.builder()
-                   .withName(file.getFilename())
-                   .withIdentifier(file.getIdentifier())
-                   .withUploadDetails(createUploadDetails(customer))
-                   .withAdministrativeAgreement(true)
-                   .buildInternalFile();
+                   .buildHiddenFile();
     }
 
     private static ImportUploadDetails createUploadDetails(Customer customer) {

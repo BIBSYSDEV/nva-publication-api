@@ -34,7 +34,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -413,11 +413,11 @@ public class CristinImportPublicationMerger {
         if (shouldOverWriteWithBrageArtifacts()) {
             return keepBrageAssociatedArtifactAndKeepDublinCoreFromExisting();
         }
-        if (!hasInternalFile(existingPublication)) {
+        if (!hasHiddenFile(existingPublication)) {
             var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
-            var internalFiles = extractInternalFiles(
+            var hiddenFiles = extractHiddenFiles(
                 bragePublicationRepresentation.publication());
-            associatedArtifacts.addAll(internalFiles);
+            associatedArtifacts.addAll(hiddenFiles);
             return new AssociatedArtifactList(associatedArtifacts);
         } else {
             var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
@@ -427,10 +427,10 @@ public class CristinImportPublicationMerger {
         }
     }
 
-    private List<InternalFile> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
+    private List<HiddenFile> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
         return associatedArtifactList.stream()
-                   .filter(InternalFile.class::isInstance)
-                   .map(InternalFile.class::cast)
+                   .filter(HiddenFile.class::isInstance)
+                   .map(HiddenFile.class::cast)
                    .filter(CristinImportPublicationMerger::isDublinCore)
                    .toList();
     }
@@ -505,15 +505,15 @@ public class CristinImportPublicationMerger {
         return bragePublicationRepresentation.brageRecord().getId().equals(existingPublication.getHandle());
     }
 
-    private List<AssociatedArtifact> extractInternalFiles(Publication publication) {
+    private List<AssociatedArtifact> extractHiddenFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(InternalFile.class::isInstance)
+                   .filter(HiddenFile.class::isInstance)
                    .toList();
     }
 
-    private boolean hasInternalFile(Publication publication) {
+    private boolean hasHiddenFile(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .anyMatch(InternalFile.class::isInstance);
+                   .anyMatch(HiddenFile.class::isInstance);
     }
 
     private String getCorrectDescription() {

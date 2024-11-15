@@ -146,7 +146,17 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
                                                   .withIdentifier(randomUUID())
                                                   .withName(randomString())
                                                   .withLicense(PublicationGenerator.randomUri())
-                                                  .buildPublishedFile())))
+                                                  .buildPublishedFile()))),
+            arguments(named("OpenFile", List.of(File.builder()
+                                                         .withIdentifier(randomUUID())
+                                                         .withName(randomString())
+                                                         .withLicense(PublicationGenerator.randomUri())
+                                                         .buildOpenFile())),
+            arguments(named("InternalFile", List.of(File.builder()
+                                                      .withIdentifier(randomUUID())
+                                                      .withName(randomString())
+                                                      .withLicense(PublicationGenerator.randomUri())
+                                                      .buildInternalFile()))))
         );
     }
 

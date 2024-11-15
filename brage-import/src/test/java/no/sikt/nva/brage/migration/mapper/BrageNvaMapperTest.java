@@ -25,8 +25,8 @@ import no.sikt.nva.brage.migration.record.license.NvaLicense;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -52,7 +52,7 @@ class BrageNvaMapperTest {
                              .build();
         var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
 
-        assertThat(file, is(instanceOf(InternalFile.class)));
+        assertThat(file, is(instanceOf(HiddenFile.class)));
     }
 
     @Test
@@ -65,7 +65,7 @@ class BrageNvaMapperTest {
                              .build();
         var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
 
-        assertThat(file, is(instanceOf(InternalFile.class)));
+        assertThat(file, is(instanceOf(HiddenFile.class)));
     }
 
     @Test
