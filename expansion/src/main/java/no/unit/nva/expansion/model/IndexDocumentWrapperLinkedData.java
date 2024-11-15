@@ -214,7 +214,7 @@ public class IndexDocumentWrapperLinkedData {
     private InputStream processResponse(HttpResponse<String> response) {
         if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             var body = response.body();
-            return stringToStream(removeType(body));
+            return stringToStream(removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(body));
         } else if (response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY) {
             logger.info("Request for publication channel <{}> returned 404", response.uri());
             return null;
@@ -222,7 +222,7 @@ public class IndexDocumentWrapperLinkedData {
         throw new RuntimeException("Unexpected response " + response);
     }
 
-    private String removeType(String body) {
+    private String removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(String body) {
         var objectNode = (ObjectNode) attempt(() -> objectMapper.readTree(body)).orElseThrow();
         objectNode.remove(TYPE);
         return attempt(() -> objectMapper.writeValueAsString(objectNode)).orElseThrow();
