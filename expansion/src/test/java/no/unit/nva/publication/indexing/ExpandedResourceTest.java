@@ -780,11 +780,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                                                 UserInstance.fromPublication(publication));
     }
 
-    private Organization orgWithReadableId(String readable) {
-        return Organization.fromUri(
-            UriWrapper.fromHost(API_HOST).addChild("cristin").addChild("organization").addChild(readable).getUri());
-    }
-
     private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {
         var doi = randomDoi();
         return PublicationGenerator.randomPublication(BookAnthology.class)
