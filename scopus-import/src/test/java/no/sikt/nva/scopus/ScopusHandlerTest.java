@@ -305,7 +305,29 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, environment, mockedTikaUtils());
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
                                           nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
-        scopusData = new ScopusGenerator();
+        // make sure we have at least one author
+        scopusData = generateScopusDataWithAtLeastOneAuthor();
+    }
+
+    private static ScopusGenerator generateScopusDataWithAtLeastOneAuthor() {
+        List<AuthorTp> authors;
+        ScopusGenerator data;
+        do {
+            data = new ScopusGenerator();
+            authors =
+                data.getDocument()
+                    .getItem()
+                    .getItem()
+                    .getBibrecord()
+                    .getHead()
+                    .getAuthorGroup()
+                    .stream()
+                    .map(AuthorGroupTp::getAuthorOrCollaboration)
+                    .filter(ag -> ag instanceof AuthorTp)
+                    .map(AuthorTp.class::cast)
+                    .toList();
+        } while (authors.isEmpty());
+        return data;
     }
 
     private TikaUtils mockedTikaUtils() throws IOException, URISyntaxException {
@@ -1451,10 +1473,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private void mockResponsesForAuthors(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors,
                                          AuthorGroupTp authorGroupTp) {
         var ignore = authorGroupTp.getAuthorOrCollaboration()
-            .stream()
-            .filter(author -> author instanceof AuthorTp)
-            .map(authorTp -> (AuthorTp) authorTp)
-            .map(author -> attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author)).orElseThrow());
+                         .stream()
+                         .filter(author -> author instanceof AuthorTp)
+                         .map(authorTp -> (AuthorTp) authorTp)
+                         .map(author -> attempt(
+                             () -> generatePersonResponse(piaCristinIdAndAuthors, author)).orElseThrow());
     }
 
     private AuthorTp generatePersonResponse(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors, AuthorTp authorTp) {
