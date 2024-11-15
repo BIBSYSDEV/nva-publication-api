@@ -35,6 +35,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(names = {OpenFile.TYPE, PublishedFile.TYPE}, value = OpenFile.class),
     @JsonSubTypes.Type(names = {InternalFile.TYPE, AdministrativeAgreement.TYPE}, value = InternalFile.class),
     @JsonSubTypes.Type(name = PendingInternalFile.TYPE, value = PendingInternalFile.class),
+    @JsonSubTypes.Type(name = HiddenFile.TYPE, value = HiddenFile.class),
     @JsonSubTypes.Type(name = RejectedFile.TYPE, value = RejectedFile.class)})
 public abstract class File implements JsonSerializable, AssociatedArtifact {
 
@@ -466,6 +467,12 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                                     publisherVersion, embargoDate, rightsRetentionStrategy, legalNote, uploadDetails);
         }
 
+
+        public File buildHiddenFile() {
+            return new HiddenFile(identifier, name, mimeType, size, license, administrativeAgreement, publisherVersion,
+                                  embargoDate, rightsRetentionStrategy, legalNote, uploadDetails);
+        }
+
         public File build(Class<? extends File> clazz) {
             if (clazz.equals(PublishedFile.class)) {
                 return buildPublishedFile();
@@ -481,6 +488,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                 return buildPendingInternalFile();
             } else if (clazz.equals(InternalFile.class)) {
                 return buildInternalFile();
+            } else if (clazz.equals(HiddenFile.class)) {
+                return buildHiddenFile();
             } else if (clazz.equals(AdministrativeAgreement.class)) {
                 return buildUnpublishableFile();
             } else {
