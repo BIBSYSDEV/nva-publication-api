@@ -43,11 +43,11 @@ import org.slf4j.LoggerFactory;
 
 public class IndexDocumentWrapperLinkedData {
 
-    public static final String FRAME_JSON = "frame.json";
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
     private static final String CRISTIN_VERSION = "; version=2023-05-26";
     private static final String MEDIA_TYPE_JSON_LD_V2 = APPLICATION_JSON_LD.toString() + CRISTIN_VERSION;
     private static final String SOURCE = "source";
+    private static final String FRAME_JSON = "frame.json";
     private static final String CONTEXT = "@context";
     @Deprecated
     private static final String contextAsString =
