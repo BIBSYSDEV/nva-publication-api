@@ -97,7 +97,8 @@
     "cristinIdentifier": "222.0.0.0",
     "identifiers": {
       "test": "b3d72c51-c4f2-4aa1-a15a-e9cc9b1f5e1e",
-      "dev": "702c4fbe-d51a-4d20-aec8-50beb813ff36"
+      "dev": "702c4fbe-d51a-4d20-aec8-50beb813ff36",
+      "e2e": "702c4fbe-d51a-4d20-aec8-50beb813ff36"
     },
     "shortName": "USN"
   },
@@ -578,9 +579,19 @@
     "cristinIdentifier": "192.0.0.0",
     "identifiers": {
       "test": "b8977f51-28bd-41b5-bb19-71c577be7c28",
-      "dev": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
+      "dev": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1",
+      "e2e": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
     },
     "shortName": "NMBU"
+  },
+  {
+    "name": "bibsys",
+    "username": "bibsys@5991.0.0.0",
+    "cristinIdentifier": "5991.0.0.0",
+    "identifiers": {
+      "e2e": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
+    },
+    "shortName": "BIBSYS"
   },
   {
     "name": "sihf",
