@@ -63,7 +63,7 @@ public record Customer(String name,
     }
 
     public enum Environment {
-        SANDBOX("sandbox"), DEV("dev"), TEST("test"), PROD("prod");
+        SANDBOX("sandbox"), E2E("e2e"), DEV("dev"), TEST("test"), PROD("prod");
 
         private final String value;
 
