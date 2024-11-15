@@ -82,7 +82,7 @@ class RightsRetentionsApplierTest {
 
     @ParameterizedTest
     @MethodSource("publicationTypeAndForceNull")
-    public void shouldForceNullRightsRetentionIfNotAcademicArticle(
+    void shouldForceNullRightsRetentionIfNotAcademicArticle(
         Class<? extends PublicationInstance<?>> publicationType,
         boolean forceNull) throws BadRequestException, UnauthorizedException {
 
@@ -100,7 +100,7 @@ class RightsRetentionsApplierTest {
 
     @ParameterizedTest
     @MethodSource("rrsConfigIsValid")
-    public void shouldThrowBadRequestWhenFileHasInvalidRrs(RightsRetentionStrategy rrs, boolean isValid) {
+    void shouldThrowBadRequestWhenFileHasInvalidRrs(RightsRetentionStrategy rrs, boolean isValid) {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var file = createAcceptedFileWithRrs(rrs);
         addFilesToPublication(publication, file);
@@ -118,7 +118,7 @@ class RightsRetentionsApplierTest {
     }
 
     @Test
-    public void shouldNotResetRrsWhenFilesMetadataIsChanged() throws BadRequestException, UnauthorizedException {
+    void shouldNotResetRrsWhenFilesMetadataIsChanged() throws BadRequestException, UnauthorizedException {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
@@ -143,7 +143,7 @@ class RightsRetentionsApplierTest {
     }
 
     @Test
-    public void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException, UnauthorizedException {
+    void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException, UnauthorizedException {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, overriddenBy);
@@ -293,7 +293,7 @@ class RightsRetentionsApplierTest {
         private final boolean isCurator;
 
         public FakePublicationPermissionStrategy(boolean isCurator) {
-            super(null, null,  null);
+            super(null, null);
             this.isCurator = isCurator;
         }
 

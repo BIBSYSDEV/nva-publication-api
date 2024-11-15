@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -193,7 +194,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(publishingRequest);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
@@ -203,9 +204,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
 
@@ -215,9 +216,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
 
@@ -228,9 +229,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(publicationResponse.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
     }
 
@@ -246,9 +247,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = requestFromExternalClient(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(publicationResponse.getStatus(), is(equalTo(status)));
     }
 
@@ -272,9 +273,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = requestFromExternalClient(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
 
         var expectedOwner = getExternalClientResponse.getActingUser();
         var expectedOwnerAffiliation = getExternalClientResponse.getCristinUrgUri();
@@ -293,9 +294,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
 
-        var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var actualPublicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
 
         var expectedPublicationResponse =
             constructResponseSettingFieldsThatAreNotCopiedByTheRequest(publicationWithoutFiles,
@@ -508,10 +509,10 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
 
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         var actualFile = (File)
                              Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator())
                                  .getFirst();
@@ -528,7 +529,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
@@ -542,7 +543,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
@@ -555,7 +556,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
@@ -568,7 +569,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
@@ -581,7 +582,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
@@ -594,7 +595,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
@@ -689,7 +690,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         var expectedPublication = setAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication,
                                                                                    actualPublicationResponse);
-        return PublicationResponse.fromPublication(expectedPublication);
+        return PublicationResponseElevatedUser.fromPublication(expectedPublication);
     }
 
     private Publication setAllFieldsThatAreNotCopiedFromTheCreateRequest(

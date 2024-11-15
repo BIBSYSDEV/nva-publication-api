@@ -1,24 +1,18 @@
 package no.unit.nva.model.contexttypes.place;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class UnconfirmedPlace implements Place {
-    public static final String COUNTRY = "country";
-    public static final String LABEL = "label";
+public record UnconfirmedPlace(@JsonAlias(LABEL_FIELD) @JsonProperty(NAME_FIELD) String name,
+                               @JsonProperty(COUNTRY_FIELD) String country) implements Place {
 
-    @JsonProperty(LABEL)
-    private final String label;
-    @JsonProperty(COUNTRY)
-    private final String country;
-
-    public UnconfirmedPlace(@JsonProperty(LABEL) String label, @JsonProperty(COUNTRY) String country) {
-        this.label = label;
-        this.country = country;
-    }
+    private static final String COUNTRY_FIELD = "country";
+    private static final String LABEL_FIELD = "label";
+    private static final String NAME_FIELD = "name";
 
     @JacocoGenerated
     @Override
@@ -26,25 +20,20 @@ public class UnconfirmedPlace implements Place {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof UnconfirmedPlace)) {
+        if (!(o instanceof UnconfirmedPlace that)) {
             return false;
         }
-        UnconfirmedPlace that = (UnconfirmedPlace) o;
-        return Objects.equals(label, that.label)
-                && Objects.equals(country, that.country);
+        return Objects.equals(name, that.name)
+               && Objects.equals(country, that.country);
     }
 
-    @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(label, country);
+    public String name() {
+        return name;
     }
 
-    public String getLabel() {
-        return label;
-    }
-
-    public String getCountry() {
+    @Override
+    public String country() {
         return country;
     }
 }

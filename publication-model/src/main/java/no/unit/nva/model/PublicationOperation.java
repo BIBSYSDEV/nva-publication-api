@@ -11,7 +11,6 @@ public enum PublicationOperation {
     UPDATE_FILES("update-including-files"),
     UNPUBLISH("unpublish"),
     REPUBLISH("republish"),
-    TICKET_PUBLISH("ticket/publish"),
     DELETE("delete"),
     TERMINATE("terminate"),
     DOI_REQUEST_CREATE("doi-request-create"),

@@ -85,7 +85,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     }
 
     private boolean isAllowedToListTickets(UserInstance userInstance, Resource resource) {
-        return PublicationPermissionStrategy.create(resource.toPublication(), userInstance, resourceService)
+        return PublicationPermissionStrategy.create(resource.toPublication(), userInstance)
                    .allowsAction(PublicationOperation.UPDATE);
     }
 

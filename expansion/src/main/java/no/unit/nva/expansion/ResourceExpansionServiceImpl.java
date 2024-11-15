@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedOrganization;
@@ -14,6 +15,7 @@ import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.cristin.CristinPerson;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
@@ -65,12 +67,17 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
+    public ExpandedDataEntry expandEntry(Entity dataEntry, boolean useUriContext) throws JsonProcessingException,
+                                                                                         NotFoundException {
         if (dataEntry instanceof Resource resource) {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
             var expandedResource = ExpandedResource.fromPublication(uriRetriever,
-             resourceService, resource.toPublication(resourceService));
-            var resourceWithContextUri = replaceInlineContextWithUriContext(expandedResource);
+                                                                    resourceService,
+                                                                    resource.toPublication(resourceService));
+            var resourceWithContextUri = useUriContext
+                                             ? replaceInlineContextWithUriContext(expandedResource)
+                                             : replaceContextWithInlineContext(expandedResource);
+
             return attempt(
                 () -> objectMapper.readValue(resourceWithContextUri.toString(), ExpandedResource.class)).orElseThrow();
         } else if (dataEntry instanceof TicketEntry ticketEntry) {
@@ -79,7 +86,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         } else if (dataEntry instanceof Message message) {
             logger.info("Expanding Message: {}", message.getIdentifier());
             var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
-            return expandEntry(ticket);
+            return expandEntry(ticket, true);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
@@ -150,6 +157,14 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         if (hasContextNode(objectNode)) {
             objectNode.put(CONTEXT_FIELD_PROPERTY_NAME, CONTEXT_URI);
         }
+        return objectNode;
+    }
+
+    private ObjectNode replaceContextWithInlineContext(ExpandedResource expandedResource) {
+        var objectNode = expandedResource.asJsonNode();
+        var jsonLdContext = Publication.getJsonLdContext(UriWrapper.fromHost(API_HOST).getUri());
+        objectNode.set(CONTEXT_FIELD_PROPERTY_NAME,
+                       attempt(() -> JsonUtils.dtoObjectMapper.readTree(jsonLdContext)).orElseThrow());
         return objectNode;
     }
 

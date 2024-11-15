@@ -12,7 +12,8 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 
 public interface ResourceExpansionService {
 
-    ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException;
+    ExpandedDataEntry expandEntry(Entity dataEntry, boolean replaceContext) throws JsonProcessingException,
+                                                                                   NotFoundException;
 
     ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException;
 

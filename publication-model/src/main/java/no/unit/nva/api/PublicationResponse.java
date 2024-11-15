@@ -1,5 +1,6 @@
 package no.unit.nva.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -30,7 +31,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
@@ -81,18 +84,28 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         response.setHandle(publication.getHandle());
         response.setLink(publication.getLink());
         response.setEntityDescription(publication.getEntityDescription());
-        response.setAssociatedArtifacts(publication.getAssociatedArtifacts());
         response.setDoi(publication.getDoi());
         response.setProjects(publication.getProjects());
         response.setFundings(publication.getFundings());
         response.setSubjects(publication.getSubjects());
         response.setContext(PublicationContext.getContext(publication));
-        response.setAssociatedArtifacts(publication.getAssociatedArtifacts());
+        response.setAssociatedArtifacts(getPublicAssociatedArtifacts(publication));
         response.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
         response.setRightsHolder(publication.getRightsHolder());
         response.setAllowedOperations(Set.of());
         response.setImportDetails(publication.getImportDetails());
         return response;
+    }
+
+    private static AssociatedArtifactList getPublicAssociatedArtifacts(Publication publication) {
+        var artifacts = publication.getAssociatedArtifacts().stream()
+                            .filter(PublicationResponse::isPublicAssociatedArtifact)
+                            .toList();
+        return new AssociatedArtifactList(artifacts);
+    }
+
+    private static boolean isPublicAssociatedArtifact(AssociatedArtifact artifact) {
+        return artifact instanceof PublicAssociatedArtifact;
     }
 
     public static PublicationResponse fromPublicationWithAllowedOperations(
@@ -284,6 +297,14 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
 
     @Override
     public AssociatedArtifactList getAssociatedArtifacts() {
+        var artifacts = this.associatedArtifacts.stream()
+                   .filter(PublicationResponse::isPublicAssociatedArtifact)
+                   .toList();
+        return new AssociatedArtifactList(artifacts);
+    }
+
+    @JsonIgnore
+    public AssociatedArtifactList getAssociatedArtifactsForElevatedUser() {
         return associatedArtifacts;
     }
 

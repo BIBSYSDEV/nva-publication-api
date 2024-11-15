@@ -75,7 +75,7 @@ public class EventFeatures {
                                             .getEntityDescription()
                                             .getReference()
                                             .getPublicationContext();
-        assertThat(event.getLabel(), is(equalTo(value)));
+        assertThat(event.getName(), is(equalTo(value)));
     }
 
     @Then("the Event has an agent {string}")

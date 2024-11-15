@@ -8,12 +8,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
 import java.util.UUID;
+import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PendingOpenFile.TYPE)
-public class PendingOpenFile extends File implements PendingFile<OpenFile> {
+public class PendingOpenFile extends File implements PendingFile<OpenFile, RejectedFile>, PublicAssociatedArtifact {
     public static final String TYPE = "PendingOpenFile";
 
     /**
@@ -62,6 +63,20 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile> {
     }
 
     @Override
+    public RejectedFile reject() {
+        return new RejectedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
+                                getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
+    }
+
+    @Override
+    public OpenFile approve() {
+        return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
+                                getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
+    }
+
+    @Override
     public Builder copy() {
         return builder()
                    .withIdentifier(this.getIdentifier())
@@ -75,19 +90,5 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile> {
                    .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
                    .withLegalNote(this.getLegalNote())
                    .withUploadDetails(this.getUploadDetails());
-    }
-
-    @Override
-    public RejectedFile reject() {
-        return new RejectedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                                getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
-    }
-
-    @Override
-    public OpenFile approve() {
-        return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                            isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                            getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
     }
 }

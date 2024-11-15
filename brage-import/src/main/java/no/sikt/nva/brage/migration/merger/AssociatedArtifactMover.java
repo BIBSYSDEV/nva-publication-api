@@ -2,12 +2,12 @@ package no.sikt.nva.brage.migration.merger;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
-import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
@@ -38,7 +38,7 @@ public class AssociatedArtifactMover {
         var associatedArtifacts = publication.getAssociatedArtifacts()
                                       .stream()
                                       .map(this::pushAssociatedArtifactToPersistedStorage)
-                                      .collect(Collectors.toList());
+                                      .toList();
         return new AssociatedArtifactList(associatedArtifacts);
     }
 
@@ -82,10 +82,10 @@ public class AssociatedArtifactMover {
                            .withLegalNote(file.getLegalNote())
                            .withAdministrativeAgreement(file.isAdministrativeAgreement())
                            .withUploadDetails(file.getUploadDetails());
-        if (file instanceof AdministrativeAgreement) {
-            return builder.buildUnpublishableFile();
+        if (file instanceof InternalFile) {
+            return builder.buildInternalFile();
         } else  {
-            return builder.buildPublishedFile();
+            return builder.buildOpenFile();
         }
     }
 

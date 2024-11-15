@@ -2,7 +2,9 @@ package no.unit.nva.publication.service.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,6 +28,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -34,15 +37,20 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DataCompressor;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +68,7 @@ class MigrationTests extends ResourcesLocalTest {
     public static final String CRISTIN_UNITS_S3_URI = "s3://some-bucket/some-key";
     private S3Client s3Client;
     private ResourceService resourceService;
+    private TicketService ticketService;
 
     @BeforeEach
     public void init() {
@@ -69,6 +78,7 @@ class MigrationTests extends ResourcesLocalTest {
         when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
             (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         this.resourceService = getResourceServiceBuilder().build();
+        this.ticketService = new TicketService(client, uriRetriever);
     }
 
     @Test
@@ -222,6 +232,32 @@ class MigrationTests extends ResourcesLocalTest {
         createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
         migrateResources();
         verify(uriRetriever, never()).getRawContent(ArgumentMatchers.any(), ArgumentMatchers.any());
+    }
+
+    @Deprecated
+    @Test
+    void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
+        var publication = randomPublication().copy().withStatus(UNPUBLISHED).build();
+        publication = resourceService.createPublicationWithPredefinedCreationDate(publication);
+        var firstFile = randomUnpublishedFile();
+        var secondFile = randomUnpublishedFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
+        resourceService.updatePublication(publication);
+        var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(publication,
+                                                                                    PublishingRequestCase.class);
+        publishingRequest.setFilesForApproval(Set.of(FileForApproval.fromFile(firstFile),
+                                                     FileForApproval.fromFile(secondFile)));
+        publishingRequest.setApprovedFiles(Set.of(firstFile.getIdentifier(), secondFile.getIdentifier()));
+
+        publishingRequest.withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
+
+        var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
+        resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client, CRISTIN_UNITS_S3_URI);
+
+        var migratedTicket = (PublishingRequestCase) publishingRequest.fetch(ticketService);
+
+        assertThat(migratedTicket.getApprovedFiles(), containsInAnyOrder(publication.getAssociatedArtifacts().toArray()));
+        assertThat(migratedTicket.getFilesForApproval(), containsInAnyOrder(publication.getAssociatedArtifacts().toArray()));
     }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {

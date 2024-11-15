@@ -15,7 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 
-public class BackendClientStrategyTest extends PublicationPermissionStrategyTest {
+class BackendClientStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow backend client {0} operation")
     @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE)
     void shouldAllowBackendClientEverything(PublicationOperation operation)
@@ -30,7 +30,7 @@ public class BackendClientStrategyTest extends PublicationPermissionStrategyTest
                 .build();
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, resourceService)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 }

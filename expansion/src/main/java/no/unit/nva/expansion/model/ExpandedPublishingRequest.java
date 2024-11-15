@@ -6,7 +6,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
@@ -144,7 +143,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                            ExpandedPerson owner,
                                                            ExpandedPerson assignee,
                                                            ExpandedPerson finalizedBy,
-                                                           Set<ExpandedPerson> viewedBy) throws NotFoundException {
+                                                           Set<ExpandedPerson> viewedBy) {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
@@ -160,25 +159,9 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setFinalizedBy(finalizedBy);
         entry.setOwner(owner);
         entry.setAssignee(assignee);
-        entry.setApprovedFiles(extractApprovedFiles(publication, dataEntry.getApprovedFiles()));
-        entry.setFilesForApproval(extractFilesForApproval(publication, dataEntry.getFilesForApproval()));
+        entry.setApprovedFiles(dataEntry.getApprovedFiles());
+        entry.setFilesForApproval(dataEntry.getFilesForApproval());
         return entry;
-    }
-
-    private static Set<File> extractFilesForApproval(Publication publication, Set<FileForApproval> filesForApproval) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .filter(file -> filesForApproval.contains(FileForApproval.fromFile(file)))
-                   .collect(Collectors.toSet());
-    }
-
-    private static Set<File> extractApprovedFiles(Publication publication, Set<UUID> approvedFiles) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .filter(file -> approvedFiles.contains(file.getIdentifier()))
-                   .collect(Collectors.toSet());
     }
 
     private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,

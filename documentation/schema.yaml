@@ -28,6 +28,18 @@ AcademicChapter:
         $ref: "#/components/schemas/Range"
       type:
         type: string
+AcademicCommentary:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: "#/components/schemas/PublicationInstancePages"
+  - type: object
+    properties:
+      pages:
+        $ref: "#/components/schemas/MonographPages"
+      type:
+        type: string
 AcademicLiteratureReview:
   required:
   - type
@@ -73,16 +85,6 @@ AdditionalIdentifierBase:
       type: string
     type:
       type: string
-AdministrativeAgreement:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/File"
-  - type: object
-    properties:
-      type:
-        type: string
 Agent:
   required:
   - type
@@ -589,6 +591,7 @@ CuratingInstitution:
       type: string
       format: uri
     contributorCristinIds:
+      uniqueItems: true
       type: array
       items:
         type: string
@@ -849,7 +852,7 @@ Event:
   - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
-      label:
+      name:
         type: string
       place:
         $ref: "#/components/schemas/Place"
@@ -1079,6 +1082,8 @@ Funding:
   - type
   type: object
   properties:
+    identifier:
+      type: string
     labels:
       type: object
       additionalProperties:
@@ -1094,8 +1099,6 @@ Funding:
     activeTo:
       type: string
       format: date-time
-    identifier:
-      type: string
     type:
       type: string
 GeographicalContent:
@@ -1123,6 +1126,16 @@ HandleIdentifier:
   type: object
   allOf:
   - $ref: "#/components/schemas/AdditionalIdentifierBase"
+HiddenFile:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: "#/components/schemas/File"
+  - type: object
+    properties:
+      type:
+        type: string
 Identity:
   required:
   - type
@@ -2311,16 +2324,6 @@ PublicationNoteBase:
       type: string
     type:
       type: string
-PublishedFile:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/File"
-  - type: object
-    properties:
-      type:
-        type: string
 Publisher:
   required:
   - type
@@ -2757,7 +2760,7 @@ UnconfirmedPlace:
   - type
   type: object
   properties:
-    label:
+    name:
       type: string
     country:
       type: string
@@ -2801,16 +2804,6 @@ UndefinedDuration:
     properties:
       value:
         type: string
-      type:
-        type: string
-UnpublishedFile:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/File"
-  - type: object
-    properties:
       type:
         type: string
 UnpublishingNote:

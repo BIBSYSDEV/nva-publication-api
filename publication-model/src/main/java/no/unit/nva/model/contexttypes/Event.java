@@ -1,5 +1,6 @@
 package no.unit.nva.model.contexttypes;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -14,32 +15,34 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Event implements PublicationContext {
-    public static final String LABEL = "label";
-    public static final String PLACE = "place";
-    public static final String TIME = "time";
-    public static final String AGENT = "agent";
-    public static final String PRODUCT = "product";
-    public static final String SUB_EVENT = "subEvent";
-    @JsonProperty(LABEL)
-    private final String label;
-    @JsonProperty(PLACE)
+    private static final String LABEL_FIELD = "label";
+    private static final String NAME_FIELD = "name";
+    public static final String PLACE_FIELD = "place";
+    public static final String TIME_FIELD = "time";
+    public static final String AGENT_FIELD = "agent";
+    public static final String PRODUCT_FIELD = "product";
+    public static final String SUB_EVENT_FIELD = "subEvent";
+    @JsonAlias(LABEL_FIELD)
+    @JsonProperty(NAME_FIELD)
+    private final String name;
+    @JsonProperty(PLACE_FIELD)
     private final Place place;
-    @JsonProperty(TIME)
+    @JsonProperty(TIME_FIELD)
     private final Time time;
-    @JsonProperty(AGENT)
+    @JsonProperty(AGENT_FIELD)
     private final Agent agent;
-    @JsonProperty(PRODUCT)
+    @JsonProperty(PRODUCT_FIELD)
     private final URI product;
-    @JsonProperty(SUB_EVENT)
+    @JsonProperty(SUB_EVENT_FIELD)
     private final Event subEvent;
 
-    public Event(@JsonProperty(LABEL) String label,
-                 @JsonProperty(PLACE) Place place,
-                 @JsonProperty(TIME) Time time,
-                 @JsonProperty(AGENT) Agent agent,
-                 @JsonProperty(PRODUCT) URI product,
-                 @JsonProperty(SUB_EVENT) Event subEvent) {
-        this.label = label;
+    public Event(@JsonAlias(LABEL_FIELD) @JsonProperty(NAME_FIELD)String name,
+                 @JsonProperty(PLACE_FIELD) Place place,
+                 @JsonProperty(TIME_FIELD) Time time,
+                 @JsonProperty(AGENT_FIELD) Agent agent,
+                 @JsonProperty(PRODUCT_FIELD) URI product,
+                 @JsonProperty(SUB_EVENT_FIELD) Event subEvent) {
+        this.name = name;
         this.place = place;
         this.time = time;
         this.agent = agent;
@@ -47,8 +50,8 @@ public class Event implements PublicationContext {
         this.subEvent = subEvent;
     }
 
-    public String getLabel() {
-        return label;
+    public String getName() {
+        return name;
     }
 
     public Place getPlace() {
@@ -72,7 +75,7 @@ public class Event implements PublicationContext {
     }
 
     public static final class Builder {
-        private String label;
+        private String name;
         private Place place;
         private Time time;
         private Agent agent;
@@ -82,8 +85,20 @@ public class Event implements PublicationContext {
         public Builder() {
         }
 
+        /**
+         * This method is deprecated because it conflicts with the generally used "label" concept "labels", which is
+         * always and only a language map. Use @{link #withName}.
+         * @param label The name of the Event.
+         * @return Event.Builder.
+         */
+        @Deprecated(since = "2024-11-05")
         public Builder withLabel(String label) {
-            this.label = label;
+            this.name = label;
+            return this;
+        }
+
+        public Builder withName(String name) {
+            this.name = name;
             return this;
         }
 
@@ -113,7 +128,7 @@ public class Event implements PublicationContext {
         }
 
         public Event build() {
-            return new Event(label, place, time, agent, product, subEvent);
+            return new Event(name, place, time, agent, product, subEvent);
         }
     }
 
@@ -127,7 +142,7 @@ public class Event implements PublicationContext {
             return false;
         }
         Event event = (Event) o;
-        return Objects.equals(getLabel(), event.getLabel())
+        return Objects.equals(getName(), event.getName())
                 && Objects.equals(getPlace(), event.getPlace())
                 && Objects.equals(getTime(), event.getTime())
                 && Objects.equals(getAgent(), event.getAgent())
@@ -138,6 +153,6 @@ public class Event implements PublicationContext {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getLabel(), getPlace(), getTime(), getAgent(), getProduct(), getSubEvent());
+        return Objects.hash(getName(), getPlace(), getTime(), getAgent(), getProduct(), getSubEvent());
     }
 }

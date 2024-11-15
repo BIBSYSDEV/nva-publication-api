@@ -28,9 +28,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -46,7 +43,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -55,7 +51,6 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -96,7 +91,6 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.indexing.verification.FundingResult;
 import no.unit.nva.publication.indexing.verification.PublisherResult;
 import no.unit.nva.publication.model.business.Resource;
@@ -107,7 +101,6 @@ import no.unit.nva.publication.uriretriever.FakeUriResponse;
 import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.hamcrest.Matchers;
@@ -118,7 +111,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedResourceTest extends ResourcesLocalTest {
 
-    public static final String COUNTRY_CODE_NO = "NO";
     public static final String JSON_PTR_TOP_LEVEL_ORGS = "/topLevelOrganizations";
     public static final String JSON_CONTRIBUTOR_ORGANIZATIONS = "/contributorOrganizations";
     public static final String JSON_PTR_ID = "/id";
@@ -137,7 +129,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
         + "/series/id";
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
     private FakeUriRetriever fakeUriRetriever;
     private ResourceService resourceService;
 
@@ -161,19 +152,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             attempt(() -> objectMapper.readValue(publisherResultString, PublisherResult.class)).orElseThrow();
 
         assertTrue(publisher.isNotEmpty());
-    }
-
-    @Test
-    void shouldReturnIndexDocumentWithValidContributorAffiliationCountryCode() throws Exception {
-        var publication = randomPublication();
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
-
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, publication);
-        var framedResultNode = indexDocument.asJsonNode();
-
-        var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/countryCode")
-                                    .textValue();
-        assertThat(actualCountryCode, is(not(nullValue())));
     }
 
     @Test
@@ -645,6 +623,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                     {
                       "@context": "https://bibsysdev.github.io/src/organization-context.json",
                       "id": "%s",
+                      "type": "Organization",
                       "labels": {
                         "en": "Happy duck"
                       }
@@ -731,21 +710,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                    .orElse(null);
     }
 
-    private static void mockCristinOrganizationRawContentResponse(UriRetriever mockUriRetriever,
-                                                                  Publication publication) {
-        publication.getEntityDescription()
-            .getContributors()
-            .stream()
-            .flatMap(contributor -> contributor.getAffiliations().stream())
-            .filter(Organization.class::isInstance)
-            .map(Organization.class::cast)
-            .map(Organization::getId)
-            .forEach(id -> mockGetRawContentResponse(
-                mockUriRetriever,
-                id,
-                getCristinResponseWithCountryCodeForOrganization(id.toString(), COUNTRY_CODE_NO)));
-    }
-
     private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
         final var extractedSourceId = extractSourceId(framedResultNode);
         final var fundings = framedResultNode.at(PublicationJsonPointers.FUNDING_SOURCE_POINTER);
@@ -767,10 +731,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                    .collect(Collectors.toSet());
     }
 
-    private static void mockGetRawContentResponse(UriRetriever uriRetriever, URI uri, String response) {
-        when(uriRetriever.getRawContent(eq(uri), any())).thenReturn(Optional.of(response));
-    }
-
     private static List<URI> extractActualPublicationChannelUris(ObjectNode expandedResourceJsonNode) {
         var actualPublisherId = URI.create(expandedResourceJsonNode.at(PUBLISHER_ID_JSON_PTR).textValue());
         var actualSeriesId = URI.create(expandedResourceJsonNode.at(SERIES_ID_JSON_PTR).textValue());
@@ -786,39 +746,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private static String getCristinResponseWithCountryCodeForOrganization(String id, String countryCode) {
-        return """
-                {"@context": "https://bibsysdev.github.io/src/organization-context.json",
-                  "type": "Organization",
-                  "id": "%s",
-                  "labels": {
-                    "en": "Department of Something",
-                    "nb": "Institutt for Noe"
-                  },
-                  "country": "%s"}
-            """.formatted(id, countryCode);
-    }
-
     private static Stream<Class<?>> publicationInstanceProvider() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
-    }
-
-    private static Set<URI> getOrgIdsForContributorAffiliations(Publication publication) {
-        return publication.getEntityDescription()
-                   .getContributors()
-                   .stream()
-                   .map(Contributor::getAffiliations)
-                   .map(ExpandedResourceTest::getOrgIds)
-                   .flatMap(Set::stream)
-                   .collect(Collectors.toSet());
-    }
-
-    private static Set<URI> getOrgIds(List<Corporation> organizations) {
-        return organizations.stream()
-                   .filter(Organization.class::isInstance)
-                   .map(Organization.class::cast)
-                   .map(Organization::getId)
-                   .collect(Collectors.toSet());
     }
 
     private static JsonNode findDeepestNestedSubUnit(JsonNode jsonNode) {
@@ -905,22 +834,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     private Journal extractJournal(Publication publication) {
         return (Journal) publication.getEntityDescription().getReference().getPublicationContext();
-    }
-
-    private Publisher extractPublisher(Book book) {
-        return (Publisher) book.getPublisher();
-    }
-
-    private List<URI> extractAffiliationsUris(Publication publication) {
-        return publication.getEntityDescription()
-                   .getContributors()
-                   .stream()
-                   .flatMap(contributor -> contributor.getAffiliations()
-                                               .stream()
-                                               .filter(Organization.class::isInstance)
-                                               .map(Organization.class::cast)
-                                               .map(Organization::getId))
-                   .toList();
     }
 
     private Book extractBook(Publication publication) {

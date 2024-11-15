@@ -9,6 +9,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
 import java.util.ArrayList;
@@ -16,7 +17,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -34,10 +34,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.License;
-import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -46,7 +43,6 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -69,13 +65,12 @@ public final class TicketTestUtils {
 
     private TicketTestUtils() {}
 
-    public static Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+    public static Set<File> getFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts()
                    .stream()
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .filter(File::needsApproval)
-                   .map(FileForApproval::fromFile)
                    .collect(Collectors.toSet());
     }
 
@@ -257,56 +252,56 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
-    public static Publication createPersistedPublicationWithAdministrativeAgreement(
+    public static Publication createPersistedPublicationWithInternalFile(
             ResourceService resourceService) throws ApiGatewayException {
         var publication =
                 fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
                         .copy()
-                        .withAssociatedArtifacts(List.of(administrativeAgreement()))
+                        .withAssociatedArtifacts(List.of(randomInternalFile()))
                         .build();
 
         return persistPublication(resourceService, publication);
     }
 
-    public static Publication createPersistedPublicationWithAdministrativeAgreement(
+    public static Publication createPersistedPublicationWithInternalFile(
             URI publisherId, ResourceService resourceService) throws ApiGatewayException {
         var publication =
                 randomNonDegreePublication(
                                 randomElement(Arrays.stream(PublicationStatus.values()).toList()))
                         .copy()
-                        .withAssociatedArtifacts(List.of(administrativeAgreement()))
+                        .withAssociatedArtifacts(List.of(randomInternalFile()))
                         .withPublisher(new Builder().withId(publisherId).build())
                         .build();
 
         return persistPublication(resourceService, publication);
     }
 
-    public static Publication createPersistedPublicationWithUnpublishedFiles(
+    public static Publication createPersistedPublicationWithPendingOpenFile(
             PublicationStatus status, ResourceService resourceService) throws ApiGatewayException {
-        var publication = randomPublicationWithUnpublishedFiles(status);
+        var publication = randomPublicationWithPendingOpenFiles(status);
         return persistPublication(resourceService, publication);
     }
 
-    public static Publication createPersistedPublicationWithUnpublishedFiles(
+    public static Publication createPersistedPublicationWithPendingOpenFile(
             URI publisher, PublicationStatus status, ResourceService resourceService)
             throws ApiGatewayException {
-        var publication = randomPublicationWithUnpublishedFiles(publisher, status);
+        var publication = randomPublicationWithPendingOpenFiles(publisher, status);
         return persistPublication(resourceService, publication);
     }
 
     public static Publication createdPersistedPublicationWithoutMainTitle(
             PublicationStatus status, ResourceService resourceService) throws ApiGatewayException {
-        var publication = randomPublicationWithUnpublishedFiles(status);
+        var publication = randomPublicationWithPendingOpenFiles(status);
         publication.getEntityDescription().setMainTitle(null);
         return persistPublication(resourceService, publication);
     }
 
-    public static Publication createPersistedPublicationWithPublishedFiles(
+    public static Publication createPersistedPublicationWithOpenFiles(
             URI customerId, PublicationStatus status, ResourceService resourceService)
             throws ApiGatewayException {
         var publisher = new Builder().withId(customerId).build();
         var publication =
-                randomPublicationWithPublishedFiles(status).copy().withPublisher(publisher).build();
+                randomPublicationWithOpenFiles(status).copy().withPublisher(publisher).build();
         return persistPublication(resourceService, publication);
     }
 
@@ -393,13 +388,13 @@ public final class TicketTestUtils {
                                 "https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0"));
     }
 
-    private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
+    private static Publication randomPublicationWithOpenFiles(PublicationStatus status) {
         var publication =
                 fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
                         .copy()
                         .withStatus(status)
                         .build();
-        publishFiles(publication);
+        openFiles(publication);
         return publication;
     }
 
@@ -433,17 +428,17 @@ public final class TicketTestUtils {
                 .build();
     }
 
-    private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
+    private static Publication randomPublicationWithPendingOpenFiles(PublicationStatus status) {
         var publication =
                 fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
                         .copy()
                         .withStatus(status)
                         .build();
-        unpublishFiles(publication);
+        convertFilesToPendingOpenFiles(publication);
         return publication;
     }
 
-    private static Publication randomPublicationWithUnpublishedFiles(
+    private static Publication randomPublicationWithPendingOpenFiles(
             URI publisherId, PublicationStatus status) {
         var publication =
                 randomNonDegreePublication(PUBLISHED)
@@ -451,7 +446,7 @@ public final class TicketTestUtils {
                         .withPublisher(new Organization.Builder().withId(publisherId).build())
                         .withStatus(status)
                         .build();
-        unpublishFiles(publication);
+        convertFilesToPendingOpenFiles(publication);
         return publication;
     }
 
@@ -472,23 +467,23 @@ public final class TicketTestUtils {
         return elements.get(RANDOM.nextInt(elements.size()));
     }
 
-    private static void unpublishFiles(Publication publication) {
+    private static void convertFilesToPendingOpenFiles(Publication publication) {
         var list =
                 publication.getAssociatedArtifacts().stream()
                         .filter(File.class::isInstance)
                         .map(File.class::cast)
-                        .map(File::toUnpublishedFile)
+                        .map(File::toPendingOpenFile)
                         .collect(
                                 Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }
 
-    private static void publishFiles(Publication publication) {
+    private static void openFiles(Publication publication) {
         var list =
                 publication.getAssociatedArtifacts().stream()
                         .filter(File.class::isInstance)
                         .map(File.class::cast)
-                        .map(File::toPublishedFile)
+                        .map(File::toOpenFile)
                         .collect(
                                 Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
@@ -499,20 +494,5 @@ public final class TicketTestUtils {
                    .withDoi(randomDoi())
                    .withStatus(status)
                    .build();
-    }
-
-    private static AdministrativeAgreement administrativeAgreement() {
-        var license =
-                new License.Builder().withLink(randomUri()).withIdentifier("identifier").build();
-        return new AdministrativeAgreement(
-                UUID.randomUUID(),
-                "name",
-                "application/json",
-                123124124L,
-                license,
-                true,
-                null,
-                null,
-                new UserUploadDetails(null, null));
     }
 }

@@ -50,7 +50,6 @@ import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
@@ -249,39 +248,39 @@ public final class BrageNvaMapper {
         var legalNote = extractLegalNote(brageRecord);
         var embargoDate = defineEmbargoDate(legalNote, file);
         return switch (file.getBundleType()) {
-            case BundleType.ORIGINAL -> createPublishedFile(file, brageRecord, embargoDate, legalNote, customer);
-            case BundleType.LICENSE -> createAdministrativeAgreement(file, customer);
-            case BundleType.IGNORED -> createAdministrativeAgreementForDublinCore(file, customer);
+            case BundleType.ORIGINAL -> createOpenFile(file, brageRecord, embargoDate, legalNote, customer);
+            case BundleType.LICENSE -> createInternalFile(file, customer);
+            case BundleType.IGNORED -> createInternalForDublinCore(file, customer);
             default -> new NullAssociatedArtifact();
         };
     }
 
-    private static AssociatedArtifact createAdministrativeAgreementForDublinCore(ContentFile file,
-                                                                                 Customer customer) {
-        return AdministrativeAgreement.builder()
+    private static AssociatedArtifact createInternalForDublinCore(ContentFile file,
+                                                                  Customer customer) {
+        return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
                    .withUploadDetails(createUploadDetails(customer))
                    .withAdministrativeAgreement(true)
-                   .buildUnpublishableFile();
+                   .buildInternalFile();
     }
 
-    private static AssociatedArtifact createAdministrativeAgreement(ContentFile file,
-                                                                    Customer customer) {
-        return AdministrativeAgreement.builder()
+    private static AssociatedArtifact createInternalFile(ContentFile file,
+                                                         Customer customer) {
+        return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
                    .withUploadDetails(createUploadDetails(customer))
                    .withAdministrativeAgreement(true)
-                   .buildUnpublishableFile();
+                   .buildInternalFile();
     }
 
     private static ImportUploadDetails createUploadDetails(Customer customer) {
         return new ImportUploadDetails(Source.BRAGE, customer.shortName(), Instant.now());
     }
 
-    private static File createPublishedFile(ContentFile file, Record brageRecord, Instant embargoDate,
-                                            String legalNote, Customer customer) {
+    private static File createOpenFile(ContentFile file, Record brageRecord, Instant embargoDate,
+                                       String legalNote, Customer customer) {
         return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
@@ -290,7 +289,7 @@ public final class BrageNvaMapper {
                    .withEmbargoDate(embargoDate)
                    .withLegalNote(legalNote)
                    .withUploadDetails(createUploadDetails(customer))
-                   .buildPublishedFile();
+                   .buildOpenFile();
     }
 
     private static Instant defineEmbargoDate(String legalNote, ContentFile file) {
