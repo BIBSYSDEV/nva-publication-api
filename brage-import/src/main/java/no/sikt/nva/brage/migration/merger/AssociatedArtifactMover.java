@@ -5,9 +5,8 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
@@ -82,8 +81,8 @@ public class AssociatedArtifactMover {
                            .withLegalNote(file.getLegalNote())
                            .withAdministrativeAgreement(file.isAdministrativeAgreement())
                            .withUploadDetails(file.getUploadDetails());
-        if (file instanceof InternalFile) {
-            return builder.buildInternalFile();
+        if (file instanceof HiddenFile) {
+            return builder.buildHiddenFile();
         } else  {
             return builder.buildOpenFile();
         }

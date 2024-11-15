@@ -132,8 +132,8 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Book;
@@ -1114,7 +1114,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldMigrateInternalFileFromIncomingWhenExistingPublicationDoesNotHaveInternalFile()
+    void shouldMigrateHiddenFileFromIncomingWhenExistingPublicationDoesNotHaveHiddenFile()
         throws IOException, InvalidUnconfirmedSeriesException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DegreeBachelor.class);
@@ -1156,7 +1156,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var actualPublicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
 
         assertTrue(actualPublicationRepresentation.publication().getAssociatedArtifacts().stream()
-                       .anyMatch(InternalFile.class::isInstance));
+                       .anyMatch(HiddenFile.class::isInstance));
     }
 
     @Test
