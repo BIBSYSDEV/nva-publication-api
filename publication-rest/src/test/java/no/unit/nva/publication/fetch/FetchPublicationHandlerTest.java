@@ -436,7 +436,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnPublicationWithInternalFilesWhenUserIsAllowedToUpdatePublication()
         throws ApiGatewayException, IOException {
-        var publication = createPublicationWithInternalFilesOnly();
+        var publication = createPublicationWithNonPublicFilesOnly();
         fetchPublicationHandler.handleRequest(generateOwnerRequest(publication), output, context);
         var gatewayResponse = parseHandlerResponse();
 
@@ -449,7 +449,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnPublicationWithOutInternalFilesWhenUserIsNotAllowedToUpdatePublication()
         throws ApiGatewayException, IOException {
-        var publication = createPublicationWithInternalFilesOnly();
+        var publication = createPublicationWithNonPublicFilesOnly();
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseHandlerResponse();
@@ -584,7 +584,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 
-    private Publication createPublicationWithInternalFilesOnly() throws ApiGatewayException {
+    private Publication createPublicationWithNonPublicFilesOnly() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(),
                                                                       randomInternalFile(), randomHiddenFile()));
