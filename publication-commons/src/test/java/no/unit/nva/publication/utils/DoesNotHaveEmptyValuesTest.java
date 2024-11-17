@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class DoesNotHaveEmptyValuesTest {
 
-    public static Stream<Named<SampleObject>> nonEmptyValueProvider() {
+    public static Stream<Named<Object>> nonEmptyValueProvider() {
         return Stream.of(
             named("Record with two strings", new SampleRecord("hi", "hi")),
             named("Record with string and record", new SampleRecord("hi", new SampleRecord("hi", "hi"))),
@@ -60,7 +60,7 @@ class DoesNotHaveEmptyValuesTest {
 
     @ParameterizedTest
     @MethodSource("nonEmptyValueProvider")
-    void shouldNotThrowWhenFieldsAreNotEmpty(SampleObject testObject) {
+    void shouldNotThrowWhenFieldsAreNotEmpty(Object testObject) {
         assertDoesNotThrow(() -> DoesNotHaveEmptyValues.checkForEmptyFields(testObject, emptySet()));
     }
 
@@ -107,15 +107,12 @@ class DoesNotHaveEmptyValuesTest {
                    .withIdentity(identity).build();
     }
 
-    interface SampleObject {
-        // Marker pattern
-    }
 
-    record SampleRecord(String field1, Object field2) implements SampleObject {
+    record SampleRecord(String field1, Object field2) {
 
     }
 
-    static class SampleClass implements SampleObject {
+    static class SampleClass {
 
         private final String field1;
         private final Object field2;
