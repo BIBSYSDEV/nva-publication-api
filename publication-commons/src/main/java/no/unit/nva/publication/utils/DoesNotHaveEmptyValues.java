@@ -7,10 +7,11 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class DoesNotHaveEmptyValues {
+public final class DoesNotHaveEmptyValues {
 
     private static final String DELIMITER = ", ";
     private static final String JAVA_NAMESPACE = "java.";
@@ -80,7 +81,7 @@ public class DoesNotHaveEmptyValues {
                                       Set<Object> visited,
                                       Iterable<?> iterable,
                                       String fieldName,
-                                      ArrayList<String> emptyFields) throws MissingFieldException {
+                                      List<String> emptyFields) throws MissingFieldException {
         var iterator = iterable.iterator();
         if (!iterator.hasNext() && isNotExcludedField(excludedFields, fieldName)) {
             emptyFields.add(fieldName);
@@ -100,8 +101,8 @@ public class DoesNotHaveEmptyValues {
     }
 
     private static boolean isMissingField(Set<String> excludedFields, Object value, String fieldName) {
-        return (isNull(value) && isNotExcludedField(excludedFields, fieldName))
-               || (value instanceof String string && string.isEmpty() && isNotExcludedField(excludedFields, fieldName));
+        return isNull(value) && isNotExcludedField(excludedFields, fieldName)
+               || value instanceof String string && string.isEmpty() && isNotExcludedField(excludedFields, fieldName);
     }
 
     private static boolean isNotExcludedField(Set<String> excludedFields, String fieldName) {
