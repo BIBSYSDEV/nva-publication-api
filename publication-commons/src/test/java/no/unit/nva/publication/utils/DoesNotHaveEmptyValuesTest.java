@@ -6,14 +6,24 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Named.named;
-import io.vavr.collection.List;
+import java.net.URI;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.ContributorVerificationStatus;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.NameType;
+import no.unit.nva.model.Organization.Builder;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.utils.DoesNotHaveEmptyValues.MissingFieldException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class DoesNotHaveEmptyValuesTest {
 
@@ -41,9 +51,10 @@ class DoesNotHaveEmptyValuesTest {
             named("Empty embedded object", new Pair(new SampleRecord("hi", new SampleRecord("", "hi")),
                                                     Set.of("field2.field1"))),
             named("Empty embedded list", new Pair(new SampleClass("hi", List.of()), Set.of("field2"))),
-            named("Empty field in embeded list", new Pair(new SampleRecord("hi", List.of(new SampleRecord("null",
+            named("Empty field in embedded list", new Pair(new SampleRecord("hi", List.of(new SampleRecord(null,
                                                                                                           "hi"))),
-                                                          Set.of("field2.field1")))
+                                                          Set.of("field2.field1"))),
+            named("Empty identity name", new Pair(sampleContributor(), Set.of("identity.name")))
         );
     }
 
@@ -58,7 +69,7 @@ class DoesNotHaveEmptyValuesTest {
     void shouldThrowWhenFieldsAreEmpty(Pair pair) {
         var exception = assertThrows(MissingFieldException.class,
                                      () -> DoesNotHaveEmptyValues.checkForEmptyFields(pair.sampleObject(), emptySet()));
-        assertThat(exception.getMessage(), containsString("field1"));
+        assertThat(exception.getMessage(), containsString("Empty fields found"));
     }
 
     @ParameterizedTest()
@@ -69,7 +80,32 @@ class DoesNotHaveEmptyValuesTest {
                                DoesNotHaveEmptyValues.checkForEmptyFields(pair.sampleObject(), pair.excludedFields()));
     }
 
-    record Pair(SampleObject sampleObject, Set<String> excludedFields) {}
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "field2", "field2.field2"
+    })
+    void shouldDisregardChildrenWhenParentFieldIsExcluded(String excludedField) {
+        var sample = new SampleRecord("hi", new SampleRecord("hi", new SampleRecord("", "hi")));
+        assertDoesNotThrow(() -> DoesNotHaveEmptyValues.checkForEmptyFields(sample, Set.of(excludedField)));
+    }
+
+    record Pair(Object sampleObject, Set<String> excludedFields) {}
+
+    private static Contributor sampleContributor() {
+        var identity = new Identity.Builder()
+                           .withNameType(NameType.PERSONAL)
+                           .withId(URI.create("https://example.org/a"))
+                           .withOrcId("123123123123")
+                           .withAdditionalIdentifiers(List.of(new AdditionalIdentifier("a", "b")))
+                           .withVerificationStatus(ContributorVerificationStatus.VERIFIED)
+                           .build();
+        var corporation = new Builder().withId(URI.create("https://example.org/org")).build();
+        return new Contributor.Builder()
+                   .withAffiliations(List.of(corporation))
+                   .withRole(new RoleType(Role.ACADEMIC_COORDINATOR))
+                   .withSequence(1)
+                   .withIdentity(identity).build();
+    }
 
     interface SampleObject {
         // Marker pattern

@@ -1,119 +1,137 @@
 package no.unit.nva.publication.utils;
 
 import static java.util.Objects.isNull;
-import java.lang.reflect.Method;
+import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DoesNotHaveEmptyValues {
 
-    private static final String GET_PREFIX = "get";
-    private static final ArrayList<String> emptyFields = new ArrayList<>();
-    private static final String DELIMITER = ", ";
-    private static final String JAVA_PACKAGE = "java.";
-    private static final String JAVAX_PACKAGE = "javax.";
-    private static final int GET_PREFIX_ENDS = 3;
-    private static final String EMPTY_PATH = "";
-    private static final String PATH_DELIMITER = ".";
+    public static final String DELIMITER = ", ";
+    public static final String JAVA_NAMESPACE = "java.";
+    public static final String JAVAX_NAMESPACE = "javax.";
+    public static final String PATH_DELIMITER = ".";
+    public static final String EMPTY_PATH = "";
 
     private DoesNotHaveEmptyValues() {
-        // NO-OP
     }
 
-    public static void checkForEmptyFields(Object obj, Set<String> excludeFields) throws Exception {
-        checkForEmptyFields(obj, excludeFields, EMPTY_PATH, new IdentityHashMap<>());
+    public static void checkForEmptyFields(Object object,
+                                           Set<String> excludedFields) throws MissingFieldException {
+        checkForEmptyFields(object, trimExcludedFields(excludedFields), EMPTY_PATH, new HashSet<>());
     }
 
     private static void checkForEmptyFields(Object object,
-                                            Set<String> excludeFields,
-                                            String currentPath,
-                                            Map<Object, Boolean> visited) throws Exception {
-        if (isNull(object) || visited.containsKey(object)) {
+                                            Set<String> excludedFields,
+                                            String prefix,
+                                            Set<Object> visited) throws MissingFieldException {
+        checkForNullObject(object);
+
+        if (!visited.add(object)) {
             return;
         }
-        visited.put(object, Boolean.TRUE);
 
-        var objectClass = object.getClass();
-        var isRecord = objectClass.isRecord();
+        final var emptyFields = new ArrayList<String>();
+        var fields = object.getClass().getDeclaredFields();
 
-        for (var method : objectClass.getDeclaredMethods()) {
-            if (isGetter(method, isRecord)) {
-                var fullPath = constructFullPath(currentPath, extractFieldName(method, isRecord));
-                if (excludeFields.contains(fullPath)) {
-                    continue;
+        for (var field : fields) {
+            field.trySetAccessible();
+
+            try {
+                var value = field.get(object);
+                var fieldName = createFieldName(prefix, field);
+
+                if (isMissingField(excludedFields, value, fieldName)) {
+                    emptyFields.add(fieldName);
                 }
-                var value = method.invoke(object);
-                if (isEmpty(value)) {
-                    emptyFields.add(fullPath);
+
+                if (value instanceof Iterable<?> iterable) {
+                    iterateObject(excludedFields, visited, iterable, fieldName, emptyFields);
                 } else if (isNestedObject(value)) {
-                    checkForEmptyFields(value, excludeFields, fullPath, visited);
+                    checkForEmptyFields(value, excludedFields, fieldName, visited);
                 }
+
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Failed to access field " + field.getName(), e);
             }
         }
-
         if (!emptyFields.isEmpty()) {
             throw new MissingFieldException("Empty fields found: " + String.join(DELIMITER, emptyFields));
         }
     }
 
-    private static String constructFullPath(String currentPath, String fieldName) {
-        return currentPath.isEmpty() ? fieldName : currentPath + PATH_DELIMITER + fieldName;
+    private static Set<String> trimExcludedFields(Set<String> excludedFields) {
+        return excludedFields.stream()
+                   .filter(not(String::isBlank))
+                   .map(DoesNotHaveEmptyValues::removeLeadingDots)
+                   .collect(Collectors.toSet());
     }
 
-    private static boolean isGetter(Method method, boolean isRecord) {
-        if (isRecord) {
-            return method.getParameterCount() == 0;
-        } else {
-            return method.getName().startsWith(GET_PREFIX) && method.getParameterCount() == 0;
+    private static String removeLeadingDots(String string) {
+        return !string.isBlank() && '.' == string.charAt(0) ? string.substring(1) : string;
+    }
+
+    private static void iterateObject(Set<String> excludedFields,
+                                      Set<Object> visited,
+                                      Iterable<?> iterable,
+                                      String fieldName,
+                                      ArrayList<String> emptyFields) throws MissingFieldException {
+        var iterator = iterable.iterator();
+        if (!iterator.hasNext() && isNotExcludedField(excludedFields, fieldName)) {
+            emptyFields.add(fieldName);
+        }
+        while (iterator.hasNext()) {
+            var item = iterator.next();
+            if (isNestedObject(item)) {
+                checkForEmptyFields(item, excludedFields, fieldName, visited);
+            }
         }
     }
 
-    private static boolean isEmpty(Object value) {
-        return switch (value) {
-            case null -> true;
-            case String string when string.isEmpty() -> true;
-            case Collection<?> collection when collection.isEmpty() -> true;
-            default -> value.getClass().isArray() && value instanceof Object[] objects && objects.length == 0;
-        };
-    }
-
-    /**
-     * This will fail if the getter does not have the exact name 'getFieldName'.
-     *
-     * @param method The method to check.
-     * @param isRecord Whether the origin class is a record.
-     * @return A string of the field name.
-     */
-    private static String extractFieldName(Method method, boolean isRecord) {
-        if (isRecord) {
-            return method.getName();
-        } else {
-            var fieldName = method.getName().substring(GET_PREFIX_ENDS);
-            fieldName = Character.toLowerCase(fieldName.charAt(0)) + fieldName.substring(1);
-            return fieldName;
+    private static void checkForNullObject(Object object) throws MissingFieldException {
+        if (isNull(object)) {
+            throw new MissingFieldException("Object is null");
         }
     }
 
-    private static boolean isNestedObject(Object value) {
-        return !(value instanceof String)
-               && !(value instanceof Collection)
-               && !value.getClass().isArray()
-               && !value.getClass().isPrimitive()
-               && !isJavaNativePackage(value);
+    private static boolean isMissingField(Set<String> excludedFields, Object value, String fieldName) {
+        return (isNull(value) && isNotExcludedField(excludedFields, fieldName))
+               || (value instanceof String string && string.isEmpty() && isNotExcludedField(excludedFields, fieldName));
     }
 
-    private static boolean isJavaNativePackage(Object value) {
-        var packageName = value.getClass().getPackageName();
-        return packageName.startsWith(JAVA_PACKAGE) && packageName.startsWith(JAVAX_PACKAGE);
+    private static boolean isNotExcludedField(Set<String> excludedFields, String fieldName) {
+        return !excludedFields.contains(fieldName) && excludedFields.stream().noneMatch(fieldName::startsWith);
     }
 
-    public static class MissingFieldException extends RuntimeException {
+    private static String createFieldName(String prefix, Field field) {
+        var name = extractFieldName(field);
+        return prefix.isEmpty() ? name : prefix + PATH_DELIMITER + name;
+    }
 
-        public MissingFieldException(String string) {
-            super(string);
+    private static String extractFieldName(Field field) {
+        return field.isAnnotationPresent(JsonSetter.class)
+                   ? field.getAnnotation(JsonSetter.class).value()
+                   : field.getName();
+    }
+
+    private static boolean isNestedObject(Object item) {
+        return nonNull(item)
+               && !item.getClass().isEnum()
+               && !item.getClass().isPrimitive()
+               && !(item instanceof String)
+               && !(item instanceof Number)
+               && !item.getClass().getName().startsWith(JAVA_NAMESPACE)
+               && !item.getClass().getName().startsWith(JAVAX_NAMESPACE);
+    }
+
+    public static class MissingFieldException extends Exception {
+        public MissingFieldException(String message) {
+            super(message);
         }
     }
 }
