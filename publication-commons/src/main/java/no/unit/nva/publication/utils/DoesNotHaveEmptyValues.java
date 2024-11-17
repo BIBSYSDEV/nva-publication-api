@@ -12,11 +12,11 @@ import java.util.stream.Collectors;
 
 public class DoesNotHaveEmptyValues {
 
-    public static final String DELIMITER = ", ";
-    public static final String JAVA_NAMESPACE = "java.";
-    public static final String JAVAX_NAMESPACE = "javax.";
-    public static final String PATH_DELIMITER = ".";
-    public static final String EMPTY_PATH = "";
+    private static final String DELIMITER = ", ";
+    private static final String JAVA_NAMESPACE = "java.";
+    private static final String JAVAX_NAMESPACE = "javax.";
+    private static final String PATH_DELIMITER = ".";
+    private static final String EMPTY_PATH = "";
 
     private DoesNotHaveEmptyValues() {
     }
