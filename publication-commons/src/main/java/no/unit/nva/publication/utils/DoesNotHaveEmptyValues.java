@@ -15,8 +15,8 @@ public class DoesNotHaveEmptyValues {
     private static final String DELIMITER = ", ";
     private static final String JAVA_NAMESPACE = "java.";
     private static final String JAVAX_NAMESPACE = "javax.";
-    private static final String PATH_DELIMITER = ".";
     private static final String EMPTY_PATH = "";
+    public static final char PATH_DELIMITER = '.';
 
     private DoesNotHaveEmptyValues() {
     }
@@ -73,7 +73,7 @@ public class DoesNotHaveEmptyValues {
     }
 
     private static String removeLeadingDots(String string) {
-        return !string.isBlank() && '.' == string.charAt(0) ? string.substring(1) : string;
+        return !string.isBlank() && PATH_DELIMITER == string.charAt(0) ? string.substring(1) : string;
     }
 
     private static void iterateObject(Set<String> excludedFields,
