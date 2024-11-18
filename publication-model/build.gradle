@@ -6,8 +6,6 @@ dependencies {
     implementation( libs.nva.core )
     implementation( libs.nva.json )
     implementation( libs.nva.identifiers )
-    implementation( libs.nva.testutils )
-
     implementation ( libs.jsonld )
     implementation ( libs.commons.validator )
     implementation( libs.jackson.databind )

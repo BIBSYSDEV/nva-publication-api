@@ -63,7 +63,9 @@ public final class TicketTestUtils {
     public static final URI CURATING_INSTITUTION_ID =
             URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
-    private TicketTestUtils() {}
+    private TicketTestUtils() {
+        // NO-OP
+    }
 
     public static Set<File> getFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts()

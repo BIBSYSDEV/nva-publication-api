@@ -429,7 +429,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                 .build();
         var error = assertThrows(MissingFieldsException.class,
                                  () -> mapToPublication(cristinObjectWithContributorsWithoutRole));
-        assertThat(error.getMessage(), containsString(".entityDescription.contributors[0].identity.name"));
+        assertThat(error.getMessage(), containsString("entityDescription.contributors.identity.name"));
     }
 
     @Test

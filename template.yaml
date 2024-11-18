@@ -1880,27 +1880,6 @@ Resources:
                 topic: [ "PublicationService.DataImport.Filename" ]
                 subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.CristinData.NviPatch", "PublicationService.BrageData.PatchEntry" ]
 
-
-  CreatePublishedPublicationHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.create.CreatePublishedPublicationHandler::handleRequest
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: !Ref AllowedOrigins
-          TABLE_NAME: !Ref NvaResourcesTable
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        Event:
-          Type: EventBridgeRule
-          Properties:
-            EventBusName: !Ref NewNvaEventBusArn
-            Pattern:
-              detail:
-                topic: [ "FetchDoi.DataImport.Scopus" ]
-
-
   #==========================Manually triggered functions=============================================
 
   BatchScanStartHandler:

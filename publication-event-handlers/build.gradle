@@ -2,7 +2,7 @@ dependencies {
     implementation project(":publication-doi-commons")
     implementation project(":expansion")
     implementation project(":publication-commons")
-    implementation project(":tickets-test")
+    testImplementation project(":tickets-test")
 
     implementation project(":publication-model")
 
@@ -13,8 +13,6 @@ dependencies {
     implementation libs.nva.secrets
     implementation libs.nva.apigateway
     implementation libs.nva.auth
-    implementation libs.nva.testutils // used in CreatePublishedPublicationsHandler
-
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events

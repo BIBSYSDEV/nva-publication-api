@@ -13,9 +13,7 @@ import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -60,6 +58,7 @@ import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.DoesNotHaveEmptyValues;
 import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
@@ -122,7 +121,7 @@ public class CristinMapper extends CristinMappingModule {
                 .withCuratingInstitutions(extractCuratingInstitutions(entityDescription))
                 .withAssociatedArtifacts(AssociatedLinkExtractor.extractAssociatedLinks(cristinObject))
                 .build();
-        assertPublicationDoesNotHaveEmptyFields(publication);
+        validateDoesNotHaveEmptyFields(publication);
         return publication;
     }
 
@@ -262,16 +261,14 @@ public class CristinMapper extends CristinMappingModule {
                    .toList();
     }
 
-    private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
+    private void validateDoesNotHaveEmptyFields(Publication publication) {
         try {
             if (publication.getEntityDescription().getContributors().isEmpty()) {
-                assertThat(publication,
-                           doesNotHaveEmptyValuesIgnoringFields(IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY));
+                DoesNotHaveEmptyValues.checkForEmptyFields(publication, IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY);
             } else {
-                assertThat(publication,
-                           doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
+                DoesNotHaveEmptyValues.checkForEmptyFields(publication, IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS);
             }
-        } catch (Error error) {
+        } catch (Exception error) {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
         }

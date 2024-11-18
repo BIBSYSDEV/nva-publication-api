@@ -1,5 +1,7 @@
 entityDescription.contributors.affiliations
 entityDescription.reference.publicationContext.publisher
+entityDescription.reference.publicationContext.product
+entityDescription.reference.publicationContext.subEvent
 entityDescription.reference.publicationContext.isbnList
 entityDescription.reference.publicationInstance.pages
 entityDescription.reference.publicationInstance.pages.end
@@ -17,11 +19,11 @@ entityDescription.reference.publicationInstance.venues
 entityDescription.reference.publicationInstance.architectureOutput
 entityDescription.reference.publicationInstance.related
 entityDescription.reference.publicationInstance.manifestations.concertProgramme.composer
+entityDescription.reference.publicationInstance.manifestations.organization.name
 entityDescription.reference.publicationInstance.duration.hours
 entityDescription.reference.publicationInstance.duration.days
 entityDescription.reference.publicationInstance.duration.weeks
 entityDescription.reference.publicationInstance.duration.minutes
-
 .entityDescription.reference.publicationContext.revision
 entityDescription.reference.publicationContext.onlineIssn
 entityDescription.reference.publicationContext.printIssn
@@ -57,6 +59,8 @@ entityDescription.tags
 entityDescription.npiSubjectHeading
 entityDescription.reference.doi
 entityDescription.alternativeAbstracts
+entityDescription.publicationDate.month
+entityDescription.publicationDate.day
 
 publicationNotes
 subjects
