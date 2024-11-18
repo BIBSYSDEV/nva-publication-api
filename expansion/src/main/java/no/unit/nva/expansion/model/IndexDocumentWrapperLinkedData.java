@@ -47,6 +47,7 @@ public class IndexDocumentWrapperLinkedData {
     private static final String CRISTIN_VERSION = "; version=2023-05-26";
     private static final String MEDIA_TYPE_JSON_LD_V2 = APPLICATION_JSON_LD.toString() + CRISTIN_VERSION;
     private static final String SOURCE = "source";
+    private static final String FRAME_JSON = "frame.json";
     private static final String CONTEXT = "@context";
     @Deprecated
     private static final String contextAsString =
@@ -70,7 +71,7 @@ public class IndexDocumentWrapperLinkedData {
     private static final int ONE_HUNDRED = 100;
     private static final int SUCCESS_FAMILY = 2;
     private static final int CLIENT_ERROR_FAMILY = 4;
-    public static final String FRAME_JSON = "frame.json";
+    private static final String TYPE = "type";
     private final RawContentRetriever uriRetriever;
     private final ResourceService resourceService;
 
@@ -86,6 +87,15 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     //TODO: parallelize
+
+    private static URI fetchNviCandidateUri(String publicationId) {
+        var uri = UriWrapper.fromHost(API_HOST)
+                      .addChild(SCIENTIFIC_INDEX)
+                      .addChild(CANDIDATE)
+                      .addChild(PUBLICATION)
+                      .getUri();
+        return URI.create(String.format("%s/%s", uri, publicationId));
+    }
 
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
@@ -134,15 +144,6 @@ public class IndexDocumentWrapperLinkedData {
 
     private NviCandidateResponse toNviCandidateResponse(String value) {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(value, NviCandidateResponse.class)).orElseThrow();
-    }
-
-    private static URI fetchNviCandidateUri(String publicationId) {
-        var uri = UriWrapper.fromHost(API_HOST)
-                   .addChild(SCIENTIFIC_INDEX)
-                   .addChild(CANDIDATE)
-                   .addChild(PUBLICATION)
-                   .getUri();
-        return URI.create(String.format("%s/%s", uri, publicationId));
     }
 
     @Deprecated
@@ -212,12 +213,19 @@ public class IndexDocumentWrapperLinkedData {
 
     private InputStream processResponse(HttpResponse<String> response) {
         if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
-            return stringToStream(response.body());
+            var body = response.body();
+            return stringToStream(removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(body));
         } else if (response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY) {
             logger.info("Request for publication channel <{}> returned 404", response.uri());
             return null;
         }
         throw new RuntimeException("Unexpected response " + response);
+    }
+
+    private String removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(String body) {
+        var objectNode = (ObjectNode) attempt(() -> objectMapper.readTree(body)).orElseThrow();
+        objectNode.remove(TYPE);
+        return attempt(() -> objectMapper.writeValueAsString(objectNode)).orElseThrow();
     }
 
     private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {

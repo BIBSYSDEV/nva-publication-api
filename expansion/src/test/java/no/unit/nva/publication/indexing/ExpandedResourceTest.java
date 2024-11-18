@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static java.util.stream.StreamSupport.stream;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
@@ -25,6 +26,7 @@ import static org.hamcrest.core.IsIterableContaining.hasItems;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -338,7 +340,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         final var sourceUri1 = publication.getFundings().get(1).getSource();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
 
-        assertHasExpectedFundings(sourceUri0, sourceUri1, fromPublication(fakeUriRetriever, resourceService, publication).asJsonNode());
+        assertHasExpectedFundings(sourceUri0, sourceUri1,
+                                  fromPublication(fakeUriRetriever, resourceService, publication).asJsonNode());
     }
 
     @Test
@@ -463,6 +466,19 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         Journal journal = extractJournal(publication);
         URI expectedJournalId = journal.getId();
         assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithOriginalPublicationContextType() throws JsonProcessingException {
+        var publication = PublicationGenerator.randomPublication(FeatureArticle.class);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        var journal = extractJournal(publication);
+        fakeUriRetriever.registerResponse(journal.getId(), 200, APPLICATION_JSON_LD,
+                                          FakeUriResponse.createSeries(journal.getId()));
+        var actualDocument = fromPublication(fakeUriRetriever, resourceService, publication);
+        var expectedJournalType = journal.getClass().getSimpleName();
+        var actualJournalType = actualDocument.asJsonNode().at(CONTEXT_TYPE_JSON_PTR).textValue();
+        assertEquals(expectedJournalType, actualJournalType);
     }
 
     @Test
@@ -593,12 +609,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         assertThat(actualNode, is(equalTo(expectedNode)));
     }
 
-    private Publication randomPersistedPublication(Class<?> publicationType) throws BadRequestException {
-        var publication = PublicationGenerator.randomPublication(publicationType);
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                              UserInstance.fromPublication(publication));
-    }
-
     @Test
     void shouldUseApiVersionWhenLookingUpOrganizations() throws JsonProcessingException {
         var publication = PublicationGenerator.randomPublication();
@@ -624,7 +634,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                               responseBody);
             });
 
-        var actual = fromPublication(uriRetriever,resourceService, publication).toJsonString();
+        var actual = fromPublication(uriRetriever, resourceService, publication).toJsonString();
         assertThat(actual, containsString("Happy duck"));
     }
 
@@ -762,6 +772,12 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     private static boolean isBlankJsonNode(JsonNode jsonNode) {
         return jsonNode.isMissingNode();
+    }
+
+    private Publication randomPersistedPublication(Class<?> publicationType) throws BadRequestException {
+        var publication = PublicationGenerator.randomPublication(publicationType);
+        return Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
     }
 
     private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {
