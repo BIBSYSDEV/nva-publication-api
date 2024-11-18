@@ -44,9 +44,6 @@ entityDescription.reference.publicationInstance.manifestations.movements
 entityDescription.reference.publicationInstance.manifestations.extent
 entityDescription.reference.publicationInstance.manifestations.publisher
 
-resourceOwner
-publisher.id
-
 handle
 publicationNotes
 subjects

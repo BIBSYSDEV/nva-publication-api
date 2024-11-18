@@ -61,8 +61,6 @@ entityDescription.alternativeAbstracts
 entityDescription.publicationDate.month
 entityDescription.publicationDate.day
 
-resourceOwner
-
 publicationNotes
 subjects
 projects
