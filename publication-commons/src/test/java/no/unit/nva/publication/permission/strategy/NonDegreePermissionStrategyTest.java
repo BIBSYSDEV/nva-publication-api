@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -235,6 +236,40 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
     }
 
     @ParameterizedTest(
+        name = "Should handle {0} operation on instance type {1} when contributor is missing ID"
+    )
+    @MethodSource("argumentsForAllowingThesisCuratorPerformingOperationsOnProtectedDegreeResources")
+    void shouldHandleDegreeContributorsWithoutId(
+        PublicationOperation operation,
+        Class<?> degreeInstanceTypeClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var institution = randomUri();
+        var resourceOwner = randomString();
+        var curatorUsername = randomString();
+        var publication = createPublication(degreeInstanceTypeClass, resourceOwner, institution, randomUri()).copy()
+                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
+                              .build();
+
+        var cristinOrganizationId = randomUri();
+        var cristinPersonId = randomUri();
+        var contributor = createContributorWithoutId(Role.CREATOR, cristinOrganizationId);
+        publication.getEntityDescription().setContributors(List.of(contributor));
+
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(
+            Set.of(new CuratingInstitution(curatingInstitution, Set.of(cristinPersonId))));
+
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, Collections.emptyList(),
+                                                cristinOrganizationId, curatingInstitution);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .create(publication, userInstance)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(
         name = "Should allow Thesis curator {0} operation on instance type {1} belonging to the institution"
     )
     @MethodSource("argumentsForAllowingThesisCuratorPerformingOperationsOnProtectedDegreeResources")
@@ -338,6 +373,14 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         return new Contributor.Builder()
                    .withAffiliations(List.of(Organization.fromUri(cristinOrganizationId)))
                    .withIdentity(new Identity.Builder().withId(cristinPersonId).build())
+                   .withRole(new RoleType(role))
+                   .build();
+    }
+
+    private static Contributor createContributorWithoutId(Role role, URI cristinOrganizationId) {
+        return new Contributor.Builder()
+                   .withAffiliations(List.of(Organization.fromUri(cristinOrganizationId)))
+                   .withIdentity(new Identity.Builder().build())
                    .withRole(new RoleType(role))
                    .build();
     }
