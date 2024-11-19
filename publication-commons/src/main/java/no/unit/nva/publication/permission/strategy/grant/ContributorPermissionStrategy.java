@@ -32,7 +32,8 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
                  PUBLISHING_REQUEST_APPROVE,
                  SUPPORT_REQUEST_APPROVE,
                  TERMINATE,
-                 DELETE -> false;
+                 DELETE,
+                 READ_HIDDEN_FILES -> false;
         };
     }
 

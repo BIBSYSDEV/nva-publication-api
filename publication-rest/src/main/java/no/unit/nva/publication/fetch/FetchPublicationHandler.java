@@ -10,7 +10,6 @@ import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
-import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -21,22 +20,19 @@ import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import no.unit.nva.PublicationMapper;
-import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
@@ -127,7 +123,10 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         if (nonNull(publication.getDuplicateOf()) && shouldRedirect(requestInfo)) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
-            var allowedOperations = getAllowedOperations(requestInfo, publication);
+            var publicationStrategy = getPublicationPermissionStrategy(requestInfo, publication);
+
+            Set<PublicationOperation> allowedOperations =
+                publicationStrategy.isPresent() ? publicationStrategy.get().getAllAllowedActions() : Set.of();
             var tombstone = DeletedPublicationResponse.fromPublication(publication, allowedOperations);
             throw new GoneException(GONE_MESSAGE, tombstone);
         }
@@ -186,42 +185,14 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
-        if (isElevatedUser(requestInfo, publication)) {
-            return createPublicationResponseForElevatedUser(requestInfo, publication);
-        } else {
-            return createPublicationResponseForNotElevatedUser(requestInfo, publication);
-        }
-
+        var response = PublicationResponseFactory.create(publication, requestInfo, identityServiceClient);
+        return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
     }
 
-    private String createPublicationResponseForNotElevatedUser(RequestInfo requestInfo, Publication publication) {
-        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
-        publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
-        return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
-    }
-
-    private String createPublicationResponseForElevatedUser(RequestInfo requestInfo, Publication publication) {
-        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
-        publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
-        return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
-    }
-
-    private boolean isElevatedUser(RequestInfo requestInfo, Publication publication) {
-        return attempt(() -> UserInstance.fromRequestInfo(requestInfo)).toOptional()
-                   .map(userInstance -> isElevatedUser(publication, userInstance))
-                   .orElse(false);
-    }
-
-    private boolean isElevatedUser(Publication publication, UserInstance userInstance) {
-        var permissionStrategy = PublicationPermissionStrategy.create(publication, userInstance);
-        return permissionStrategy.allowsAction(PublicationOperation.UPDATE);
-    }
-
-    private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
-        return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
-                   .map(PublicationPermissionStrategy::getAllAllowedActions)
-                   .orElse(Collections.emptySet());
+    private Optional<PublicationPermissionStrategy> getPublicationPermissionStrategy(RequestInfo requestInfo,
+                                                                                     Publication publication) {
+        return attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance));
     }
 
     private String createDataCiteMetadata(Publication publication) {

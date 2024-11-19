@@ -30,7 +30,9 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
             case UPDATE -> canManageStandardResources();
             case UNPUBLISH -> canManagePublishingRequests() && isPublished();
             case DOI_REQUEST_CREATE, DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
-            case PUBLISHING_REQUEST_CREATE, PUBLISHING_REQUEST_APPROVE -> canManagePublishingRequests();
+            case PUBLISHING_REQUEST_CREATE,
+                 PUBLISHING_REQUEST_APPROVE,
+                 READ_HIDDEN_FILES -> canManagePublishingRequests();
             case SUPPORT_REQUEST_CREATE, SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);
             default -> false;
         };
