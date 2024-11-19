@@ -12,7 +12,28 @@
       "affiliations": {
         "@default": "@null",
         "@embed": "@always",
-        "type": "Organization"
+        "type": "Organization",
+        "hasPart": {
+          "@embed": "@never"
+        },
+        "partOf": {
+          "@embed": "@never"
+        }
+      }
+    },
+    "contributorsPreview": {
+      "@type": "Contributor",
+      "@embed": "@always",
+      "affiliations": {
+        "@default": "@null",
+        "@embed": "@always",
+        "type": "Organization",
+        "hasPart": {
+          "@embed": "@never"
+        },
+        "partOf": {
+          "@embed": "@never"
+        }
       }
     },
     "reference": {
