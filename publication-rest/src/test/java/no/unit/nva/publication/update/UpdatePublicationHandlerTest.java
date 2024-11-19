@@ -752,7 +752,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotReturnHiddenFilesWhenUserIsOwner() throws IOException, BadRequestException {
+    void shouldNotReturnHiddenFilesWhenUserOnlyHaveOwnerRights() throws IOException, BadRequestException {
         var resource = Resource
                            .fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));

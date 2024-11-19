@@ -1,8 +1,8 @@
 package no.unit.nva.publication;
 
+import static java.util.Collections.emptySet;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Optional;
-import java.util.Set;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -23,12 +23,9 @@ public final class PublicationResponseFactory {
     public static PublicationResponse create(Publication publication, RequestInfo requestInfo,
                                              IdentityServiceClient identityServiceClient) {
         var userStrategy = getPublicationPermissionStrategy(requestInfo, publication, identityServiceClient);
-
-        if (userStrategy.isPresent() && hasAuthenticatedAccessOnPublication(userStrategy.get())) {
-            return createAuthenticatedResponse(userStrategy.get(), publication);
-        } else {
-            return createPublicResponse(publication);
-        }
+        return userStrategy.filter(PublicationResponseFactory::hasAuthenticatedAccessOnPublication)
+                   .map(strategy -> (PublicationResponse) createAuthenticatedResponse(strategy, publication))
+                   .orElse(createPublicResponse(publication));
     }
 
     private static boolean hasAuthenticatedAccessOnPublication(PublicationPermissionStrategy userStrategy) {
@@ -37,7 +34,7 @@ public final class PublicationResponseFactory {
 
     private static PublicationResponse createPublicResponse(Publication publication) {
         var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
-        publicationResponse.setAllowedOperations(Set.of());
+        publicationResponse.setAllowedOperations(emptySet());
         return publicationResponse;
     }
 
@@ -46,14 +43,18 @@ public final class PublicationResponseFactory {
         var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
         publicationResponse.setAllowedOperations(strategy.getAllAllowedActions());
 
-        var filteredArtifacts = new AssociatedArtifactList(publication.getAssociatedArtifacts()
-                                                               .stream()
-                                                               .filter(
-                                                                   associatedArtifact -> hasAccessToArtifact(strategy,
-                                                                                                             associatedArtifact))
-                                                               .toList());
-        publicationResponse.setAssociatedArtifacts(filteredArtifacts);
+        publicationResponse.setAssociatedArtifacts(extractFilteredAssociatedArtifactsList(strategy, publication));
         return publicationResponse;
+    }
+
+    private static AssociatedArtifactList extractFilteredAssociatedArtifactsList(PublicationPermissionStrategy strategy,
+                                                               Publication publication) {
+        return new AssociatedArtifactList(publication.getAssociatedArtifacts()
+                                              .stream()
+                                              .filter(
+                                                  associatedArtifact -> hasAccessToArtifact(strategy,
+                                                                                            associatedArtifact))
+                                              .toList());
     }
 
     private static boolean hasAccessToArtifact(PublicationPermissionStrategy strategy,

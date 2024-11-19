@@ -8,6 +8,7 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.net.MediaType.XHTML_UTF_8;
 import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
@@ -126,7 +127,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             var publicationStrategy = getPublicationPermissionStrategy(requestInfo, publication);
 
             Set<PublicationOperation> allowedOperations =
-                publicationStrategy.isPresent() ? publicationStrategy.get().getAllAllowedActions() : Set.of();
+                publicationStrategy.map(PublicationPermissionStrategy::getAllAllowedActions).orElse(emptySet());
             var tombstone = DeletedPublicationResponse.fromPublication(publication, allowedOperations);
             throw new GoneException(GONE_MESSAGE, tombstone);
         }
