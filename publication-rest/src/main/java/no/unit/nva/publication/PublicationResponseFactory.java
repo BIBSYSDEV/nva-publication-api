@@ -15,7 +15,7 @@ import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import nva.commons.apigateway.RequestInfo;
 
-public class PublicationResponseFactory {
+public final class PublicationResponseFactory {
 
     private PublicationResponseFactory() {
     }
