@@ -6,7 +6,6 @@ import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
-import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
@@ -16,15 +15,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Set;
 import java.util.UUID;
-import no.unit.nva.api.PublicationResponseElevatedUser;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -39,6 +35,7 @@ import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
+import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
@@ -77,7 +74,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @SuppressWarnings("PMD.GodClass")
 public class UpdatePublicationHandler
-    extends ApiGatewayHandler<PublicationRequest, PublicationResponseElevatedUser> {
+    extends ApiGatewayHandler<PublicationRequest, PublicationResponse> {
 
     private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
@@ -152,9 +149,9 @@ public class UpdatePublicationHandler
     }
 
     @Override
-    protected PublicationResponseElevatedUser processInput(PublicationRequest input,
-                                                           RequestInfo requestInfo,
-                                                           Context context)
+    protected PublicationResponse processInput(PublicationRequest input,
+                                               RequestInfo requestInfo,
+                                               Context context)
         throws ApiGatewayException {
         SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
 
@@ -182,10 +179,7 @@ public class UpdatePublicationHandler
             default -> throw new BadRequestException("Unknown input body type");
         };
 
-        var publicationResponse = PublicationResponseElevatedUser.fromPublication(updatedPublication);
-        publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, updatedPublication));
-
-        return publicationResponse;
+        return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
     }
 
     private Publication republish(Publication existingPublication, PublicationPermissionStrategy permissionStrategy,
@@ -193,13 +187,6 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         return RepublishUtil.create(resourceService, ticketService, permissionStrategy)
                    .republish(existingPublication, userInstance);
-    }
-
-    private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
-        return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
-                   .map(PublicationPermissionStrategy::getAllAllowedActions)
-                   .orElse(Collections.emptySet());
     }
 
     private Publication terminatePublication(Publication existingPublication,
@@ -425,7 +412,7 @@ public class UpdatePublicationHandler
     }
 
     @Override
-    protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponseElevatedUser output) {
+    protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponse output) {
         return switch (input) {
             case UpdatePublicationRequest ignored -> HttpStatus.SC_OK;
             case UnpublishPublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
