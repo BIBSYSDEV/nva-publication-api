@@ -88,6 +88,9 @@
     "@id": "curatingOrganization",
     "@type": "@id"
   },
+  "days": {
+    "@type": "xsd:integer"
+  },
   "doi": {
     "@type": "@id"
   },
@@ -112,6 +115,9 @@
   },
   "hasPart": {
     "@container": "@set"
+  },
+  "hours": {
+    "@type": "xsd:integer"
   },
   "id": "@id",
   "illustrated": {
@@ -144,6 +150,9 @@
   },
   "metadataSource": {
     "@type": "@id"
+  },
+  "minutes": {
+    "@type": "xsd:integer"
   },
   "modifiedDate": {
     "@type": "xsd:dateTime"
@@ -244,6 +253,9 @@
   },
   "visibleForNonOwner": {
     "@type": "xsd:boolean"
+  },
+  "weeks": {
+    "@type": "xsd:integer"
   },
   "xsd": "http://www.w3.org/2001/XMLSchema#"
 }
