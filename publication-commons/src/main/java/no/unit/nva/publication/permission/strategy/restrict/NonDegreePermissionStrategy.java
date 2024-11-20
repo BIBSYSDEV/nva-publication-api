@@ -71,7 +71,7 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
         return publication.getEntityDescription()
                    .getContributors()
                    .stream()
-                   .filter(contributor -> contributor.getIdentity().getId().equals(contributorId))
+                   .filter(contributor -> contributorId.equals(contributor.getIdentity().getId()))
                    .findFirst();
     }
 
