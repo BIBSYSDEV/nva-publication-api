@@ -15,7 +15,10 @@ public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
     @Override
     public boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
-            case UPDATE, UNPUBLISH, TERMINATE -> canModify();
+            case UPDATE,
+                 UNPUBLISH,
+                 TERMINATE,
+                 READ_HIDDEN_FILES -> canModify();
             case DELETE -> canModify() && isDraft();
             case UPDATE_FILES,
                  REPUBLISH,

@@ -70,6 +70,8 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -434,7 +436,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnPublicationWithInternalFilesWhenUserIsAllowedToUpdatePublication()
+    void shouldReturnPublicationWithInternalFilesWhenUserIsOwner()
         throws ApiGatewayException, IOException {
         var publication = createPublicationWithNonPublicFilesOnly();
         fetchPublicationHandler.handleRequest(generateOwnerRequest(publication), output, context);
@@ -443,11 +445,15 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
                                                                       PublicationResponseElevatedUser.class);
 
-        assertFalse(publicationResponse.getAssociatedArtifacts().isEmpty());
+        var artifacts = publicationResponse.getAssociatedArtifacts().stream().toList();
+
+        assertFalse(artifacts.isEmpty());
+        assertFalse(artifacts.stream().anyMatch(artifact -> artifact instanceof HiddenFile));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof InternalFile));
     }
 
     @Test
-    void shouldReturnPublicationWithOutInternalFilesWhenUserIsNotAllowedToUpdatePublication()
+    void shouldReturnPublicationWithoutNonPublicFilesWhenNoAccess()
         throws ApiGatewayException, IOException {
         var publication = createPublicationWithNonPublicFilesOnly();
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
@@ -458,6 +464,22 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                                                       PublicationResponse.class);
 
         assertTrue(publicationResponse.getAssociatedArtifacts().isEmpty());
+    }
+
+    @Test
+    void shouldReturnPublicationWithHiddenFilesWhenUserIsCurator()
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithNonPublicFilesOnly();
+        fetchPublicationHandler.handleRequest(generateCuratorRequest(publication), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
+                                                                      PublicationResponseElevatedUser.class);
+
+        var artifacts = publicationResponse.getAssociatedArtifacts().stream().toList();
+
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof InternalFile));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof HiddenFile));
     }
 
     private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo)
@@ -503,7 +525,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .withHeaders(Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withCurrentCustomer(publication.getPublisher().getId())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI)
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI,
+                                     AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                     AccessRight.MANAGE_RESOURCE_FILES)
+                   .withUserName(randomString())
+                   .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next().id())
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 

@@ -23,7 +23,8 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
             case REPUBLISH, TERMINATE -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isUnpublished();
             case DOI_REQUEST_CREATE,
                  PUBLISHING_REQUEST_CREATE,
-                 SUPPORT_REQUEST_CREATE -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+                 SUPPORT_REQUEST_CREATE,
+                 READ_HIDDEN_FILES -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
             case DELETE,
                  UPDATE_FILES,
                  DOI_REQUEST_APPROVE,
