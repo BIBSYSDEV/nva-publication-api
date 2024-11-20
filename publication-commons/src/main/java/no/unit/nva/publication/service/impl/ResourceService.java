@@ -347,7 +347,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     private File migrateFile(File file, SortableIdentifier resourceIdentifier) {
         var publication = attempt(() -> readResourceService.getResourceByIdentifier(resourceIdentifier))
-                              .map(Resource::toPublication).orElseThrow();
+                              .map(Resource::toPublication)
+                              .orElse(failure -> new Publication());
         return publication.getFile(file.getIdentifier())
             .orElse(file);
     }

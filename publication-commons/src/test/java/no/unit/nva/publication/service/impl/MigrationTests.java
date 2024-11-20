@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
@@ -13,6 +14,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -20,6 +22,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import java.io.IOException;
@@ -258,6 +261,34 @@ class MigrationTests extends ResourcesLocalTest {
 
         assertThat(migratedTicket.getApprovedFiles(), containsInAnyOrder(publication.getAssociatedArtifacts().toArray()));
         assertThat(migratedTicket.getFilesForApproval(), containsInAnyOrder(publication.getAssociatedArtifacts().toArray()));
+    }
+
+    @Test
+    void shouldNotFailWhenMigrationPublishingRequestsThatAreOrphans() throws ApiGatewayException {
+        var publication = randomPublication().copy().withStatus(DRAFT).build();
+        var persistedPublication = resourceService.createPublicationWithPredefinedCreationDate(publication);
+        var firstFile = randomUnpublishedFile();
+        var secondFile = randomUnpublishedFile();
+        persistedPublication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
+        resourceService.updatePublication(persistedPublication);
+        var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(persistedPublication,
+                                                                                     PublishingRequestCase.class);
+        publishingRequest.setFilesForApproval(Set.of(FileForApproval.fromFile(firstFile),
+                                                     FileForApproval.fromFile(secondFile)));
+        publishingRequest.setApprovedFiles(Set.of(firstFile.getIdentifier(), secondFile.getIdentifier()));
+        publishingRequest.withOwner(persistedPublication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
+
+        deletePublication(persistedPublication);
+
+        var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
+
+        assertDoesNotThrow(() -> resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client,
+                                                     CRISTIN_UNITS_S3_URI));
+    }
+
+    private void deletePublication(Publication persistedPublication) {
+        client.deleteItem(new DeleteItemRequest().withTableName(RESOURCES_TABLE_NAME)
+                              .withKey(Resource.fromPublication(persistedPublication).toDao().primaryKey()));
     }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
