@@ -527,7 +527,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI,
                                      AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_PUBLISHING_REQUESTS,
-                                     AccessRight.MANAGE_RESOURCE_FILES)
+                                     AccessRight.MANAGE_RESOURCE_FILES, AccessRight.MANAGE_DEGREE,
+                                     AccessRight.MANAGE_DEGREE_EMBARGO)
                    .withUserName(randomString())
                    .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next().id())
                    .withPersonCristinId(randomUri())
