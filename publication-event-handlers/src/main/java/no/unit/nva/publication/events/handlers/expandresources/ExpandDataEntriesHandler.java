@@ -54,6 +54,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     public static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
+    public static final String EXPANSION_FAILED_MESSAGE = "Error expanding entity %s with identifier %s";
     private final QueueClient sqsClient;
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
@@ -131,9 +132,10 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
                    .orElseThrow(failure -> throwError(failure, newData));
     }
 
-    private RuntimeException throwError(Failure<EventReference> failure, Entity newData) {
+    private ExpandedDataEntryException throwError(Failure<EventReference> failure, Entity newData) {
         logger.error(ERROR_EXPANDING_RESOURCE_WARNING, newData.getIdentifier());
-        return (RuntimeException) failure.getException();
+        return new ExpandedDataEntryException(EXPANSION_FAILED_MESSAGE.formatted(newData.getType(), newData.getIdentifier()),
+                                      failure.getException());
     }
 
     private Optional<PublicationStatus> getPublicationStatus(Entity entity) {
