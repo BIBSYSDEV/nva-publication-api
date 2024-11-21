@@ -189,7 +189,7 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private URI updateHttpScheme(URI uri) {
-        return UriWrapper.fromHost(uri.toString()).addChild(uri.getPath()).getUri();
+        return UriWrapper.fromHost(uri.getHost()).addChild(uri.getPath()).getUri();
     }
 
     private List<PublicationNoteBase> extractPublicationNotes() {
