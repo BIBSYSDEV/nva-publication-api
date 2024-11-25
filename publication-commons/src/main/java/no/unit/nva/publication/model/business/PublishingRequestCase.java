@@ -182,8 +182,8 @@ public class PublishingRequestCase extends TicketEntry {
         return nonNull(filesForApproval) ? filesForApproval : Set.of();
     }
 
-    public void setFilesForApproval(Set<Object> filesForApproval) {
-        this.filesForApproval = AcceptedPublishingRequestMigrator.migrateFilesForApproval(filesForApproval);
+    public void setFilesForApproval(Set<File> filesForApproval) {
+        this.filesForApproval = filesForApproval;
     }
 
     public void emptyFilesForApproval() {
@@ -204,8 +204,8 @@ public class PublishingRequestCase extends TicketEntry {
         return nonNull(approvedFiles) ? approvedFiles : Collections.emptySet();
     }
 
-    public void setApprovedFiles(Set<Object> approvedFiles) {
-        this.approvedFiles = AcceptedPublishingRequestMigrator.migrateApprovedFiles(approvedFiles);
+    public void setApprovedFiles(Set<File> approvedFiles) {
+        this.approvedFiles = approvedFiles;
     }
 
     @Override

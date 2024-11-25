@@ -39,7 +39,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -195,9 +194,8 @@ class MigrationTests extends ResourcesLocalTest {
         resourceService.updatePublication(publication);
         var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(publication,
                                                                                     PublishingRequestCase.class);
-        publishingRequest.setFilesForApproval(Set.of(FileForApproval.fromFile(firstFile),
-                                                     FileForApproval.fromFile(secondFile)));
-        publishingRequest.setApprovedFiles(Set.of(firstFile.getIdentifier(), secondFile.getIdentifier()));
+        publishingRequest.setFilesForApproval(Set.of(firstFile, secondFile));
+        publishingRequest.setApprovedFiles(Set.of(firstFile, secondFile));
 
         publishingRequest.withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
 
@@ -220,9 +218,8 @@ class MigrationTests extends ResourcesLocalTest {
         resourceService.updatePublication(persistedPublication);
         var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(persistedPublication,
                                                                                      PublishingRequestCase.class);
-        publishingRequest.setFilesForApproval(Set.of(FileForApproval.fromFile(firstFile),
-                                                     FileForApproval.fromFile(secondFile)));
-        publishingRequest.setApprovedFiles(Set.of(firstFile.getIdentifier(), secondFile.getIdentifier()));
+        publishingRequest.setFilesForApproval(Set.of(firstFile, secondFile));
+        publishingRequest.setApprovedFiles(Set.of(firstFile, secondFile));
         publishingRequest.withOwner(persistedPublication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
 
         deletePublication(persistedPublication);
