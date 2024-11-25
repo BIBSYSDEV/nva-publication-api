@@ -14,7 +14,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;

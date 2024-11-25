@@ -72,7 +72,6 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
@@ -989,26 +988,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setStatus(getTicketStatus(expandedPublishingRequest.getStatus()));
         publishingRequest.setFinalizedBy(extractUsername(expandedPublishingRequest.getFinalizedBy()));
         publishingRequest.setAssignee(extractUsername(expandedPublishingRequest.getAssignee()));
-        publishingRequest.setApprovedFiles(expandedPublishingRequest.getApprovedFiles().stream()
-                                               .map(Object.class::cast)
-                                               .collect(Collectors.toSet()));
-        publishingRequest.setFilesForApproval(expandedPublishingRequest.getFilesForApproval().stream()
-                                                  .map(Object.class::cast)
-                                                  .collect(Collectors.toSet()));
+        publishingRequest.setApprovedFiles(expandedPublishingRequest.getApprovedFiles());
+        publishingRequest.setFilesForApproval(expandedPublishingRequest.getFilesForApproval());
         publishingRequest.setOwnerAffiliation(expandedPublishingRequest.getOrganization().id());
         return publishingRequest;
-    }
-
-    private Set<FileForApproval> extractFilesForApproval(ExpandedPublishingRequest expandedPublishingRequest) {
-        return expandedPublishingRequest.getFilesForApproval().stream()
-                   .map(FileForApproval::fromFile)
-                   .collect(Collectors.toSet());
-    }
-
-    private static Set<UUID> extractApprovedFiles(ExpandedPublishingRequest expandedPublishingRequest) {
-        return expandedPublishingRequest.getApprovedFiles().stream().map(
-            File::getIdentifier).collect(
-            Collectors.toSet());
     }
 
     private Username extractUsername(ExpandedPerson expandedPerson) {

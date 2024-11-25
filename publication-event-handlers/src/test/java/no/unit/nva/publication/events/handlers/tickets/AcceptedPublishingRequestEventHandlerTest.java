@@ -47,7 +47,6 @@ import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
@@ -370,8 +369,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createPublicationWithFiles(file, fileToPublish);
         var completedPublishingRequest =
                 persistCompletedPublishingRequestWithApprovedFiles(publication, fileToPublish);
-        completedPublishingRequest.setFilesForApproval(
-                Set.of(FileForApproval.fromFile(fileToPublish)));
+        completedPublishingRequest.setFilesForApproval(Set.of(fileToPublish));
         var event = createEvent(null, completedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication =

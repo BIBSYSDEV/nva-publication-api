@@ -20,7 +20,6 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
