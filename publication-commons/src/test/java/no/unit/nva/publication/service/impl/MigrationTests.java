@@ -16,8 +16,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
@@ -36,8 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -68,7 +64,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 class MigrationTests extends ResourcesLocalTest {
 
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
-    public static final String CRISTIN_UNITS_S3_URI = "s3://some-bucket/some-key";
     private S3Client s3Client;
     private ResourceService resourceService;
     private TicketService ticketService;
@@ -189,54 +184,6 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
     }
 
-    @Test
-    void shouldAddCuratingInstitutionForVerifiedContributors() {
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        var publication = createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
-        assertThat(publication.getCuratingInstitutions(), hasSize(0));
-        migrateResources();
-        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
-        var resource = getResourceStream(allMigratedItems)
-                           .findFirst()
-                           .orElseThrow();
-
-        assertThat(resource.getCuratingInstitutions(), hasSize(1));
-        assertThat(resource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
-                   is(equalTo(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))));
-    }
-
-    @Test
-    void shouldAddSingleCuratingInstitutionForMultipleVerifiedContributorsFromTheSameInstitution() {
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        var publication = createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
-        assertThat(publication.getCuratingInstitutions(), hasSize(0));
-        migrateResources();
-        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
-        var resource = getResourceStream(allMigratedItems)
-                           .findFirst()
-                           .orElseThrow();
-
-        var contributorIds = publication.getEntityDescription().getContributors().stream()
-                                 .map(Contributor::getIdentity)
-                                 .map(Identity::getId)
-                                 .toList();
-        var curatingInstitution = resource.getCuratingInstitutions().stream().findFirst().orElseThrow();
-
-        assertThat(resource.getCuratingInstitutions(), hasSize(1));
-        assertThat(curatingInstitution.id(),
-                   is(equalTo(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))));
-        assertThat(curatingInstitution.contributorCristinIds(),
-                   containsInAnyOrder(contributorIds.toArray()));
-    }
-
-    @Test
-    void shouldNotDoOnlineLookupWhenMigrating() {
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
-        migrateResources();
-        verify(uriRetriever, never()).getRawContent(ArgumentMatchers.any(), ArgumentMatchers.any());
-    }
-
     @Deprecated
     @Test
     void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
@@ -255,7 +202,7 @@ class MigrationTests extends ResourcesLocalTest {
         publishingRequest.withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
 
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client, CRISTIN_UNITS_S3_URI);
+        resourceService.refreshResources(scanResources.getDatabaseEntries());
 
         var migratedTicket = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
@@ -282,8 +229,7 @@ class MigrationTests extends ResourcesLocalTest {
 
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
 
-        assertDoesNotThrow(() -> resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client,
-                                                     CRISTIN_UNITS_S3_URI));
+        assertDoesNotThrow(() -> resourceService.refreshResources(scanResources.getDatabaseEntries()));
     }
 
     private void deletePublication(Publication persistedPublication) {
@@ -330,7 +276,7 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client, CRISTIN_UNITS_S3_URI);
+        resourceService.refreshResources(scanResources.getDatabaseEntries());
     }
 
     public static ResponseBytes getUnitsResponseBytes() {
