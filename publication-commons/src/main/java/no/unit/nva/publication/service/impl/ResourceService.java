@@ -59,7 +59,6 @@ import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
-import no.unit.nva.publication.utils.CuratingInstitutionMigration;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -70,7 +69,6 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.S3Client;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
@@ -265,8 +263,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    public void refreshResources(List<Entity> dataEntries, S3Client s3Client, String cristinUnitsS3Uri) {
-        final var refreshedEntries = refreshAndMigrate(dataEntries, s3Client, cristinUnitsS3Uri);
+    public void refreshResources(List<Entity> dataEntries) {
+        final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
     }
@@ -322,11 +320,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     //TODO: redesign migration process?
-    public Entity migrate(Entity dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
-        return switch (dataEntry) {
-            case Resource resource -> migrateResource(resource, s3Client, cristinUnitsS3Uri);
-            default -> dataEntry;
-        };
+    public Entity migrate(Entity dataEntry) {
+        return dataEntry;
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
@@ -379,9 +374,8 @@ public class ResourceService extends ServiceWithTransactions {
         return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, S3Client s3Client, String cristinUnitsS3Uri) {
-        return dataEntries.stream().map(attempt(
-            dataEntry -> migrate(dataEntry, s3Client, cristinUnitsS3Uri))).map(Try::orElseThrow).collect(Collectors.toList());
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
+        return dataEntries.stream().map(attempt(this::migrate)).map(Try::orElseThrow).toList();
     }
 
     private Organization createOrganization(UserInstance userInstance) {
@@ -394,13 +388,6 @@ public class ResourceService extends ServiceWithTransactions {
 
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {
         return nonNull(scanResult.getLastEvaluatedKey()) && !scanResult.getLastEvaluatedKey().isEmpty();
-    }
-
-    // change this method depending on the current migration needs.
-    @Deprecated
-    private Resource migrateResource(Resource dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
-        CuratingInstitutionMigration.migrate(dataEntry, s3Client, cristinUnitsS3Uri);
-        return dataEntry;
     }
 
     private void writeToDynamoInBatches(List<WriteRequest> writeRequests) {

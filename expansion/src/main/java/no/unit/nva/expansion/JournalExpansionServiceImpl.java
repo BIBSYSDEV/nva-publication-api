@@ -1,8 +1,8 @@
 package no.unit.nva.expansion;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.utils.RdfUtils.APPLICATION_JSON;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import java.net.http.HttpResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedJournal;
@@ -31,7 +31,7 @@ public class JournalExpansionServiceImpl implements JournalExpansionService {
     }
 
     private String expandJournalName(Journal journal) {
-        return rawContentRetriever.fetchResponse(journal.getId(), APPLICATION_JSON)
+        return rawContentRetriever.fetchResponse(journal.getId(), APPLICATION_JSON.getMimeType())
                    .map(this::extractNameFromResponse)
                    .orElse(null);
     }
