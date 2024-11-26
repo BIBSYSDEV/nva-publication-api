@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,7 +38,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -188,8 +188,8 @@ class MigrationTests extends ResourcesLocalTest {
     void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
         var publication = randomPublication().copy().withStatus(UNPUBLISHED).build();
         publication = resourceService.createPublicationWithPredefinedCreationDate(publication);
-        var firstFile = AssociatedArtifactsGenerator.randomPendingOpenFile();
-        var secondFile = AssociatedArtifactsGenerator.randomPendingOpenFile();
+        var firstFile = randomPendingOpenFile();
+        var secondFile = randomPendingOpenFile();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
         resourceService.updatePublication(publication);
         var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(publication,
@@ -212,8 +212,8 @@ class MigrationTests extends ResourcesLocalTest {
     void shouldNotFailWhenMigrationPublishingRequestsThatAreOrphans() throws ApiGatewayException {
         var publication = randomPublication().copy().withStatus(DRAFT).build();
         var persistedPublication = resourceService.createPublicationWithPredefinedCreationDate(publication);
-        var firstFile = AssociatedArtifactsGenerator.randomPendingOpenFile();
-        var secondFile = AssociatedArtifactsGenerator.randomPendingOpenFile();
+        var firstFile = randomPendingOpenFile();
+        var secondFile = randomPendingOpenFile();
         persistedPublication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
         resourceService.updatePublication(persistedPublication);
         var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(persistedPublication,

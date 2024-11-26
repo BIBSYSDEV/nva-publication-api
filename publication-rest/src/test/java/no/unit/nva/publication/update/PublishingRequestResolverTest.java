@@ -1,6 +1,8 @@
 package no.unit.nva.publication.update;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithFile;
 import java.util.List;
 import java.util.Set;
@@ -9,7 +11,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -71,8 +72,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFilesButPublicationHasPublishedFiles()
         throws ApiGatewayException {
         var publication = randomPublication();
-        var openFile = AssociatedArtifactsGenerator.randomOpenFile();
-        var pendingOpenFile = AssociatedArtifactsGenerator.randomPendingOpenFile();
+        var openFile = randomOpenFile();
+        var pendingOpenFile = randomPendingOpenFile();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile, openFile)));
         var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                      publication);

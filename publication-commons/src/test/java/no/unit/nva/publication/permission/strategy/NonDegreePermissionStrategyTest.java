@@ -2,6 +2,7 @@ package no.unit.nva.publication.permission.strategy;
 
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,7 +29,6 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -165,7 +165,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var publication = createDegreePhd(resourceOwner, institution, randomUri()).copy()
                               .withStatus(PUBLISHED)
                               .withAssociatedArtifacts(
-                                  List.of(randomFileWithEmbargo(), AssociatedArtifactsGenerator.randomOpenFile()))
+                                  List.of(randomFileWithEmbargo(), randomOpenFile()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
@@ -189,7 +189,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var publication = createDegreePhd(resourceOwner, institution, randomUri()).copy()
                               .withStatus(PUBLISHED)
                               .withAssociatedArtifacts(
-                                  List.of(randomFileWithEmbargo(), AssociatedArtifactsGenerator.randomOpenFile()))
+                                  List.of(randomFileWithEmbargo(), randomOpenFile()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForEmbargoThesisCurator(),

@@ -7,9 +7,12 @@ import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.NEW;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.file.FileModelTest.buildNonAdministrativeAgreement;
+import static no.unit.nva.model.file.FileModelTest.randomPendingOpenFile;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -47,8 +50,6 @@ import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedLinkGenerator;
 import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -400,21 +401,21 @@ public class PublicationTest {
     }
 
     private static Publication publicationWithInternalFileAndLink() {
-        var internalFile = AssociatedArtifactsGenerator.randomInternalFile();
-        var link = AssociatedLinkGenerator.random();
+        var internalFile = randomInternalFile();
+        var link = randomAssociatedLink();
         return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(internalFile, link)));
     }
 
     private static Publication publicationWithInternalFileAndPendingOpenFile() {
-        var pendingOpenFile = AssociatedArtifactsGenerator.randomPendingOpenFile();
-        var internalFile = AssociatedArtifactsGenerator.randomInternalFile();
+        var pendingOpenFile = randomPendingOpenFile();
+        var internalFile = randomInternalFile();
         return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(internalFile,
                                                                                     pendingOpenFile)));
     }
 
     private static Publication publicationWithInternalFileAndOpenFile() {
-        var openFile = AssociatedArtifactsGenerator.randomOpenFile();
-        var internalFile = AssociatedArtifactsGenerator.randomInternalFile();
+        var openFile = randomOpenFile();
+        var internalFile = randomInternalFile();
         return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(internalFile,
                                                                                     openFile)));
     }

@@ -10,6 +10,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWi
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
@@ -53,7 +55,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
@@ -481,8 +482,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     static Stream<Arguments> fileTypesNeedingApprovalProvider() {
-        return Stream.of(Arguments.of(AssociatedArtifactsGenerator.randomPendingOpenFile()),
-                         Arguments.of(AssociatedArtifactsGenerator.randomPendingInternalFile()));
+        return Stream.of(Arguments.of(randomPendingOpenFile()),
+                         Arguments.of(randomPendingInternalFile()));
     }
 
     @ParameterizedTest

@@ -7,6 +7,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFileWithLicense;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -69,7 +70,6 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -231,7 +231,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @MethodSource("licenseProvider")
     void shouldReturnIndexDocumentContainingLicense(String licenseUri, LicenseType expectedLicense)
         throws JsonProcessingException, NotFoundException {
-        var fileWithLicense = AssociatedArtifactsGenerator.randomOpenFileWithLicense(URI.create(licenseUri));
+        var fileWithLicense = randomOpenFileWithLicense(URI.create(licenseUri));
         var associatedLink = new AssociatedLink(randomUri(), null, null);
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class)
                                       .copy()

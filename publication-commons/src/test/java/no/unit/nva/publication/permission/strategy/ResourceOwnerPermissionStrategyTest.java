@@ -1,5 +1,7 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Named.named;
@@ -134,8 +136,8 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
 
     public static Stream<Arguments> filesWithApprovedStatus() {
         return Stream.of(
-            arguments(named(OpenFile.TYPE, List.of(AssociatedArtifactsGenerator.randomOpenFile())),
-            arguments(named(InternalFile.TYPE, List.of(AssociatedArtifactsGenerator.randomInternalFile()))))
+            arguments(named(OpenFile.TYPE, List.of(randomOpenFile())),
+            arguments(named(InternalFile.TYPE, List.of(randomInternalFile()))))
         );
     }
 

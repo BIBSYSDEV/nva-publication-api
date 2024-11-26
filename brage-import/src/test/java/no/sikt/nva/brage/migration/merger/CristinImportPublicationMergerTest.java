@@ -13,6 +13,7 @@ import static no.unit.nva.model.role.Role.ACTOR;
 import static no.unit.nva.model.role.Role.SUPERVISOR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -73,7 +74,6 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -339,7 +339,7 @@ class CristinImportPublicationMergerTest {
     void shouldKeepFileFromNewPublicationWhenExistingPublicationHasAssociatedLinkOnly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var associatedLink = randomAssociatedLink();
-        var newPublishedFile = AssociatedArtifactsGenerator.randomOpenFile();
+        var newPublishedFile = randomOpenFile();
 
         var existingPublication = randomPublication(Map.class);
         existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(associatedLink)));
@@ -356,7 +356,7 @@ class CristinImportPublicationMergerTest {
     void shouldKeepFileFromNewPublicationWhenExistingPublicationHasHiddenFileOnly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var administrativeAgreement = randomAdministrativeAgreement();
-        var newPublishedFile = AssociatedArtifactsGenerator.randomOpenFile();
+        var newPublishedFile = randomOpenFile();
 
         var existingPublication = randomPublication(Map.class);
         existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(administrativeAgreement)));
@@ -559,11 +559,11 @@ class CristinImportPublicationMergerTest {
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(AcademicMonograph.class);
         var existingDublinCore = randomDublinCore();
-        var existingAssociatedArtifact = List.of(existingDublinCore, AssociatedArtifactsGenerator.randomOpenFile());
+        var existingAssociatedArtifact = List.of(existingDublinCore, randomOpenFile());
         existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(existingAssociatedArtifact));
         var newPublication = randomPublication(AcademicMonograph.class);
         var newDublinCore = randomDublinCore();
-        var newAssociatedArtifact = List.of(newDublinCore, AssociatedArtifactsGenerator.randomOpenFile());
+        var newAssociatedArtifact = List.of(newDublinCore, randomOpenFile());
         newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
 
         var record = new Record();
@@ -580,11 +580,11 @@ class CristinImportPublicationMergerTest {
     void shouldAddDublinCoreFromIncomingPublicationToExistingOneWhenItIsPresentInNewPublicationOnly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(AcademicMonograph.class);
-        var existingAssociatedArtifact = List.<AssociatedArtifact>of(AssociatedArtifactsGenerator.randomOpenFile());
+        var existingAssociatedArtifact = List.<AssociatedArtifact>of(randomOpenFile());
         existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(existingAssociatedArtifact));
         var newPublication = randomPublication(AcademicMonograph.class);
         var newDublinCore = randomDublinCore();
-        var newAssociatedArtifact = List.of(newDublinCore, AssociatedArtifactsGenerator.randomOpenFile());
+        var newAssociatedArtifact = List.of(newDublinCore, randomOpenFile());
         newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
 
         var record = new Record();

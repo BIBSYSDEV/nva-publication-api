@@ -253,13 +253,6 @@ class RightsRetentionsApplierTest {
         return createPendingOpenFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION, rrs);
     }
 
-    //            case OverriddenRightsRetentionStrategy strategy -> Set.of(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-    //            case NullRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY);
-    //            case CustomerRightsRetentionStrategy strategy -> Set.of(RIGHTS_RETENTION_STRATEGY,
-    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-    //            case FunderRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY,
-    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-
     private static PendingOpenFile createPendingOpenFileWithAcceptedVersionAndRrs(UUID uuid, RightsRetentionStrategy rrs) {
         return createPendingOpenFileWithRrs(uuid, ACCEPTED_VERSION, rrs);
     }

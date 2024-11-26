@@ -44,7 +44,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -153,27 +152,27 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return Stream.of(
                 Arguments.of(
                         REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                        AssociatedArtifactsGenerator.randomPendingOpenFile(),
+                        randomPendingOpenFile(),
                         OpenFile.class),
                 Arguments.of(
                         REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                        AssociatedArtifactsGenerator.randomPendingInternalFile(),
+                        randomPendingInternalFile(),
                         InternalFile.class),
                 Arguments.of(
                         REGISTRATOR_PUBLISHES_METADATA_AND_FILES,
-                        AssociatedArtifactsGenerator.randomPendingOpenFile(),
+                        randomPendingOpenFile(),
                         OpenFile.class),
                 Arguments.of(
                         REGISTRATOR_PUBLISHES_METADATA_AND_FILES,
-                        AssociatedArtifactsGenerator.randomPendingInternalFile(),
+                        randomPendingInternalFile(),
                         InternalFile.class),
                 Arguments.of(
                         REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
-                        AssociatedArtifactsGenerator.randomPendingOpenFile(),
+                        randomPendingOpenFile(),
                         OpenFile.class),
                 Arguments.of(
                         REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
-                        AssociatedArtifactsGenerator.randomPendingInternalFile(),
+                        randomPendingInternalFile(),
                         InternalFile.class));
     }
 
