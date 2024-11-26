@@ -388,7 +388,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
     public static OpenFile randomFileWithEmbargo() {
         return new OpenFile(UUID.randomUUID(), RandomDataGenerator.randomString(),
                                  RandomDataGenerator.randomString(), RandomDataGenerator.randomInteger().longValue(),
-                                 RandomDataGenerator.randomUri(), false, PublisherVersion.PUBLISHED_VERSION,
+                                 RandomDataGenerator.randomUri(), PublisherVersion.PUBLISHED_VERSION,
                                  Instant.now().plusSeconds(60 * 60 * 24),
                                  RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                  RandomDataGenerator.randomString(), RandomDataGenerator.randomInstant(),

@@ -14,7 +14,6 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
@@ -171,9 +170,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
                                    RandomDataGenerator.randomString(),
                                    RandomDataGenerator.randomInteger().longValue(),
                                    RandomDataGenerator.randomUri(),
-                                   false,
                                    PublisherVersion.ACCEPTED_VERSION,
-                                   (Instant) null,
+                                   null,
                                    rrs,
                                    RandomDataGenerator.randomString(),
                                    new UserUploadDetails(null, null));

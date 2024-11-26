@@ -135,7 +135,6 @@ import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
-import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
@@ -2426,8 +2425,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private AssociatedArtifact randomPendingOpenFile() {
         return new PendingOpenFile(UUID.randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
-                                   new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                                   false, PublisherVersion.PUBLISHED_VERSION, null,
+                                   randomUri(), PublisherVersion.PUBLISHED_VERSION, null,
                                    OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
                                                                             randomString()),
                                    randomString(), new UserUploadDetails(new Username(randomString()), Instant.now()));

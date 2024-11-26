@@ -388,13 +388,13 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         return Stream.of(
             Arguments.of(OWNER_USER_ID, fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(OWNER_USER_ID, fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
-            Arguments.of(OWNER_USER_ID, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER, true)),
-            Arguments.of(OWNER_USER_ID, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER, false)),
+            Arguments.of(OWNER_USER_ID, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
+            Arguments.of(OWNER_USER_ID, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
             Arguments.of(OWNER_USER_ID, fileWithTypeUnpublished()),
             Arguments.of(CURATOR, fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(CURATOR, fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
-            Arguments.of(CURATOR, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER, true)),
-            Arguments.of(CURATOR, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER, false)),
+            Arguments.of(CURATOR, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
+            Arguments.of(CURATOR, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
             Arguments.of(CURATOR, fileWithTypeUnpublished())
         );
     }
@@ -417,8 +417,8 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         return Stream.of(
             fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER),
             fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER),
-            fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER, true),
-            fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER, false),
+            fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER),
+            fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER),
             fileWithTypeUnpublished()
         );
     }
@@ -426,8 +426,8 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     private static Stream<File> fileTypeSupplierRequiringElevatedRights() {
         return Stream.of(
             fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER),
-            fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER, true),
-            fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER, false),
+            fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER),
+            fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER),
             fileWithTypeUnpublished()
         );
     }
@@ -458,12 +458,11 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                    .buildPendingOpenFile();
     }
 
-    private static File fileWithTypeUnpublishable(UUID fileIdentifier, boolean administrativeAgreement) {
+    private static File fileWithTypeUnpublishable(UUID fileIdentifier) {
         return randomPendingOpenFile()
                    .copy()
                    .withIdentifier(fileIdentifier)
                    .withMimeType(APPLICATION_PDF)
-                   .withAdministrativeAgreement(administrativeAgreement)
                    .buildPendingOpenFile();
     }
 

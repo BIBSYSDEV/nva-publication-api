@@ -159,7 +159,7 @@ public final class PublishingRequestResolver {
     }
 
     private boolean isPublishable(File file) {
-        return nonNull(file.getLicense()) && !file.isAdministrativeAgreement();
+        return nonNull(file.getLicense());
     }
 
     private boolean containsNewPublishableFiles(Publication oldImage, Publication newImage) {

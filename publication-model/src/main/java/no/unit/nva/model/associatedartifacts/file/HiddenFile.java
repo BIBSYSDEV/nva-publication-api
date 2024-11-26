@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
@@ -28,7 +29,6 @@ public class HiddenFile extends File {
      * @param size                    The size of the file
      * @param license                 The license for the file, may be null if and only if the file is an administrative
      *                                agreement
-     * @param administrativeAgreement True if the file is an administrative agreement
      * @param publisherVersion        True if the file owner has publisher authority
      * @param embargoDate             The date after which the file may be published
      * @param rightsRetentionStrategy The rights retention strategy for the file
@@ -41,14 +41,13 @@ public class HiddenFile extends File {
         @JsonProperty(NAME_FIELD) String name,
         @JsonProperty(MIME_TYPE_FIELD) String mimeType,
         @JsonProperty(SIZE_FIELD) Long size,
-        @JsonProperty(LICENSE_FIELD) Object license,
-        @JsonProperty(ADMINISTRATIVE_AGREEMENT_FIELD) boolean administrativeAgreement,
+        @JsonProperty(LICENSE_FIELD) URI license,
         @JsonProperty(PUBLISHER_VERSION_FIELD) PublisherVersion publisherVersion,
         @JsonProperty(EMBARGO_DATE_FIELD) Instant embargoDate,
         @JsonProperty(RIGHTS_RETENTION_STRATEGY) RightsRetentionStrategy rightsRetentionStrategy,
         @JsonProperty(LEGAL_NOTE_FIELD) String legalNote,
         @JsonProperty(UPLOAD_DETAILS_FIELD) UploadDetails uploadDetails) {
-        super(identifier, name, mimeType, size, license, administrativeAgreement, publisherVersion, embargoDate,
+        super(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
               rightsRetentionStrategy, legalNote, null, uploadDetails);
     }
 
@@ -71,7 +70,6 @@ public class HiddenFile extends File {
                    .withMimeType(this.getMimeType())
                    .withSize(this.getSize())
                    .withLicense(this.getLicense())
-                   .withAdministrativeAgreement(this.isAdministrativeAgreement())
                    .withPublisherVersion(this.getPublisherVersion())
                    .withEmbargoDate(this.getEmbargoDate().orElse(null))
                    .withRightsRetentionStrategy(this.getRightsRetentionStrategy())

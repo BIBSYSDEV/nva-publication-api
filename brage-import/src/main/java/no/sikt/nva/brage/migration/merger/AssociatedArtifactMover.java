@@ -79,7 +79,6 @@ public class AssociatedArtifactMover {
                            .withMimeType(mimeType)
                            .withSize(size)
                            .withLegalNote(file.getLegalNote())
-                           .withAdministrativeAgreement(file.isAdministrativeAgreement())
                            .withUploadDetails(file.getUploadDetails());
         if (file instanceof HiddenFile) {
             return builder.buildHiddenFile();

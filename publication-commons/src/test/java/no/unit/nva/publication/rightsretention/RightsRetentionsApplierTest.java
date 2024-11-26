@@ -264,7 +264,6 @@ class RightsRetentionsApplierTest {
                                    randomString(),
                                    RandomDataGenerator.randomInteger().longValue(),
                                    RandomDataGenerator.randomUri(),
-                                   false,
                                    publishedVersion,
                                    null,
                                    rrs,

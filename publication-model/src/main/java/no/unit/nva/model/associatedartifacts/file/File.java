@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -29,8 +28,7 @@ import nva.commons.core.JacocoGenerated;
  */
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@JsonSubTypes({
-    @JsonSubTypes.Type(name = PendingOpenFile.TYPE, value = PendingOpenFile.class),
+@JsonSubTypes({@JsonSubTypes.Type(name = PendingOpenFile.TYPE, value = PendingOpenFile.class),
     @JsonSubTypes.Type(name = OpenFile.TYPE, value = OpenFile.class),
     @JsonSubTypes.Type(name = InternalFile.TYPE, value = InternalFile.class),
     @JsonSubTypes.Type(name = PendingInternalFile.TYPE, value = PendingInternalFile.class),
@@ -43,7 +41,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final String MIME_TYPE_FIELD = "mimeType";
     public static final String SIZE_FIELD = "size";
     public static final String LICENSE_FIELD = "license";
-    public static final String ADMINISTRATIVE_AGREEMENT_FIELD = "administrativeAgreement";
     public static final String PUBLISHER_VERSION_FIELD = "publisherVersion";
     public static final String EMBARGO_DATE_FIELD = "embargoDate";
     public static final String RIGHTS_RETENTION_STRATEGY = "rightsRetentionStrategy";
@@ -60,8 +57,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
             "https://creativecommons.org/publicdomain/zero/1.0"), "RightsReserved",
                                                               URI.create("http://rightsstatements.org/vocab/InC/1.0/"));
 
-    public static final String MISSING_LICENSE = "The file is not annotated as an administrative agreement and should" +
-                                                 " have a license";
+    public static final String MISSING_LICENSE =
+        "The file is not annotated as an administrative agreement and should" + " have a license";
     public static final String LEGAL_NOTE_FIELD = "legalNote";
     public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     private static final Supplier<Pattern> LICENSE_VALIDATION_PATTERN = () -> Pattern.compile("^(http|https)://.*$");
@@ -75,8 +72,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     private final Long size;
     @JsonProperty(LICENSE_FIELD)
     private final URI license;
-    @JsonProperty(ADMINISTRATIVE_AGREEMENT_FIELD)
-    private final boolean administrativeAgreement;
     @JsonProperty(PUBLISHER_VERSION_FIELD)
     private final PublisherVersion publisherVersion;
     @JsonProperty(EMBARGO_DATE_FIELD)
@@ -100,7 +95,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
      * @param size                    The size of the file
      * @param license                 The license for the file, may be null if and only if the file is an administrative
      *                                agreement
-     * @param administrativeAgreement True if the file is an administrative agreement
      * @param publisherVersion        True if the file owner has publisher authority
      * @param embargoDate             The date after which the file may be published
      * @param rightsRetentionStrategy The rights retention strategy for the file
@@ -109,8 +103,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
 
     protected File(@JsonProperty(IDENTIFIER_FIELD) UUID identifier, @JsonProperty(NAME_FIELD) String name,
                    @JsonProperty(MIME_TYPE_FIELD) String mimeType, @JsonProperty(SIZE_FIELD) Long size,
-                   @JsonProperty(LICENSE_FIELD) Object license,
-                   @JsonProperty(ADMINISTRATIVE_AGREEMENT_FIELD) boolean administrativeAgreement,
+                   @JsonProperty(LICENSE_FIELD) URI license,
                    @JsonProperty(PUBLISHER_VERSION_FIELD) PublisherVersion publisherVersion,
                    @JsonProperty(EMBARGO_DATE_FIELD) Instant embargoDate,
                    @JsonProperty(RIGHTS_RETENTION_STRATEGY) RightsRetentionStrategy rightsRetentionStrategy,
@@ -122,8 +115,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         this.name = name;
         this.mimeType = mimeType;
         this.size = size;
-        this.license = validateUriLicense(parseLicense(license));
-        this.administrativeAgreement = administrativeAgreement;
+        this.license = validateUriLicense(license);
         this.publisherVersion = publisherVersion;
         this.embargoDate = embargoDate;
         this.rightsRetentionStrategy = assignDefaultStrategyIfNull(rightsRetentionStrategy);
@@ -140,7 +132,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
      * Validate the file.
      */
     public void validate() {
-        if (!administrativeAgreement && isNull(license)) {
+        if (isNull(license)) {
             throw new MissingLicenseException(MISSING_LICENSE);
         }
     }
@@ -181,10 +173,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         return nonNull(license);
     }
 
-    public boolean isAdministrativeAgreement() {
-        return administrativeAgreement;
-    }
-
     public PublisherVersion getPublisherVersion() {
         return publisherVersion;
     }
@@ -207,20 +195,20 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
 
     public PendingOpenFile toPendingOpenFile() {
         return new PendingOpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                                   isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                                   getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
+                                   getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
+                                   getLegalNote(), getUploadDetails());
     }
 
     public OpenFile toOpenFile() {
-        return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                            isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                            getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
+        return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(), getPublisherVersion(),
+                            getEmbargoDate().orElse(null), getRightsRetentionStrategy(), getLegalNote(), Instant.now(),
+                            getUploadDetails());
     }
 
     public InternalFile toInternalFile() {
         return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                                isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                                getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
+                                getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
+                                getLegalNote(), Instant.now(), getUploadDetails());
     }
 
     public abstract boolean isVisibleForNonOwner();
@@ -232,9 +220,9 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                            isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate(),
-                            getRightsRetentionStrategy(), getLegalNote(), getPublishedDate(), getUploadDetails());
+        return Objects.hash(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(), getPublisherVersion(),
+                            getEmbargoDate(), getRightsRetentionStrategy(), getLegalNote(), getPublishedDate(),
+                            getUploadDetails());
     }
 
     @Override
@@ -246,8 +234,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         if (!(o instanceof File file)) {
             return false;
         }
-        return isAdministrativeAgreement() == file.isAdministrativeAgreement() &&
-               Objects.equals(getIdentifier(), file.getIdentifier()) && Objects.equals(getName(), file.getName()) &&
+        return Objects.equals(getIdentifier(), file.getIdentifier()) && Objects.equals(getName(), file.getName()) &&
                Objects.equals(getMimeType(), file.getMimeType()) && Objects.equals(getSize(), file.getSize()) &&
                Objects.equals(getLicense(), file.getLicense()) && getPublisherVersion() == file.getPublisherVersion() &&
                Objects.equals(getEmbargoDate(), file.getEmbargoDate()) &&
@@ -272,22 +259,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     private RightsRetentionStrategy assignDefaultStrategyIfNull(RightsRetentionStrategy strategy) {
         return nonNull(strategy) ? strategy
                    : NullRightsRetentionStrategy.create(RightsRetentionStrategyConfiguration.UNKNOWN);
-    }
-
-    private URI parseLicense(Object license) {
-        if (isNull(license)) {
-            return null;
-        }
-        if (license instanceof LinkedHashMap) {
-            var licenseName = getLicenseValue((LinkedHashMap<?, ?>) license);
-            return LICENSE_MAP.get(licenseName);
-        } else {
-            return URI.create(license.toString());
-        }
-    }
-
-    private String getLicenseValue(Map<?, ?> license) {
-        return (String) license.get(IDENTIFIER_FIELD);
     }
 
     /**
@@ -325,8 +296,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         private String mimeType;
         private Long size;
         private URI license;
-        private boolean administrativeAgreement;
-
         private PublisherVersion publisherVersion;
         private Instant embargoDate;
         private RightsRetentionStrategy rightsRetentionStrategy;
@@ -361,11 +330,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
             return this;
         }
 
-        public Builder withAdministrativeAgreement(boolean administrativeAgreement) {
-            this.administrativeAgreement = administrativeAgreement;
-            return this;
-        }
-
         public Builder withUploadDetails(UploadDetails uploadDetails) {
             this.uploadDetails = uploadDetails;
             return this;
@@ -392,36 +356,35 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         }
 
         public File buildOpenFile() {
-            return new OpenFile(identifier, name, mimeType, size, license, administrativeAgreement, publisherVersion,
+            return new OpenFile(identifier, name, mimeType, size, license, publisherVersion,
                                 embargoDate, rightsRetentionStrategy, legalNote, Instant.now(), uploadDetails);
         }
 
         public File buildInternalFile() {
-            return new InternalFile(identifier, name, mimeType, size, license, administrativeAgreement,
+            return new InternalFile(identifier, name, mimeType, size, license,
                                     publisherVersion, embargoDate, rightsRetentionStrategy, legalNote, Instant.now(),
                                     uploadDetails);
         }
 
         public File buildPendingOpenFile() {
-            return new PendingOpenFile(identifier, name, mimeType, size, license, administrativeAgreement,
+            return new PendingOpenFile(identifier, name, mimeType, size, license,
                                        publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
                                        uploadDetails);
         }
 
         public File buildPendingInternalFile() {
-            return new PendingInternalFile(identifier, name, mimeType, size, license, administrativeAgreement,
+            return new PendingInternalFile(identifier, name, mimeType, size, license,
                                            publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
                                            uploadDetails);
         }
 
         public File buildRejectedFile() {
-            return new RejectedFile(identifier, name, mimeType, size, license, administrativeAgreement,
+            return new RejectedFile(identifier, name, mimeType, size, license,
                                     publisherVersion, embargoDate, rightsRetentionStrategy, legalNote, uploadDetails);
         }
 
-
         public File buildHiddenFile() {
-            return new HiddenFile(identifier, name, mimeType, size, license, administrativeAgreement, publisherVersion,
+            return new HiddenFile(identifier, name, mimeType, size, license, publisherVersion,
                                   embargoDate, rightsRetentionStrategy, legalNote, uploadDetails);
         }
 

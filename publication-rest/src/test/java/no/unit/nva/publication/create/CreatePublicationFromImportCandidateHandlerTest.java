@@ -558,7 +558,6 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  "pdf",
                                  12312L,
                                  null,
-                                 false,
                                  PublisherVersion.ACCEPTED_VERSION,
                                  null,
                                  null,

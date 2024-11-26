@@ -374,7 +374,6 @@ class CristinImportPublicationMergerTest {
                    .withName(randomString())
                    .withIdentifier(UUID.randomUUID())
                    .withLicense(randomUri())
-                   .withAdministrativeAgreement(true)
                    .buildHiddenFile();
     }
 

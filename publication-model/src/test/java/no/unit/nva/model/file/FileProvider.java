@@ -29,7 +29,6 @@ import org.reflections.Reflections;
 public class FileProvider implements ArgumentsProvider {
 
     public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by/4.0/");
-    public static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
@@ -94,7 +93,6 @@ public class FileProvider implements ArgumentsProvider {
     public static File.Builder buildNonAdministrativeAgreement() {
         return File.builder()
                    .withName(randomString())
-                   .withAdministrativeAgreement(NOT_ADMINISTRATIVE_AGREEMENT)
                    .withMimeType(randomString())
                    .withSize(randomInteger().longValue())
                    .withEmbargoDate(randomInstant())

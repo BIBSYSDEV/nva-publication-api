@@ -68,7 +68,6 @@ public final class AssociatedArtifactsGenerator {
                    .withLicense(randomUri())
                    .withEmbargoDate(Instant.now())
                    .withLegalNote(randomString())
-                   .withAdministrativeAgreement(false)
                    .withRightsRetentionStrategy(NULL_RIGHTS_RETENTION_STRATEGY)
                    .withMimeType(randomString())
                    .withSize(Integer.toUnsignedLong(randomInteger()))

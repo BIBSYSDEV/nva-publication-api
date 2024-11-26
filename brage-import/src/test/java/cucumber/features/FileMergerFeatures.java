@@ -60,26 +60,26 @@ public class FileMergerFeatures {
     }
 
     @And("the brage publication has a file with values:")
-    public void bragePublicationHasAFileWithValues(OpenFile publishedFile) {
+    public void bragePublicationHasAFileWithValues(OpenFile openFile) {
         var bragePublication = scenarioContext.getBragePublication();
-        bragePublication.publication().setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
+        bragePublication.publication().setAssociatedArtifacts(new AssociatedArtifactList(List.of(openFile)));
     }
 
     @And("the nva publication has a file with values:")
-    public void nvaPublicationHasAFileWithValues(OpenFile publishedFile) {
+    public void nvaPublicationHasAFileWithValues(OpenFile openFile) {
         var nvaPublication = scenarioContext.getNvaPublication();
-        nvaPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
+        nvaPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(openFile)));
     }
 
     @Then("the merged nva publication has a file with values:")
-    public void mergedNvaPublicationHasAFileWithValues(OpenFile publishedFile) {
+    public void mergedNvaPublicationHasAFileWithValues(OpenFile openFile) {
         var mergedPublication = scenarioContext.getMergedPublication();
         var associatedArtifacts = mergedPublication.getAssociatedArtifacts();
         assertThat(associatedArtifacts, hasSize(1));
         var associatedArtifact = associatedArtifacts.getFirst();
         assertThat(associatedArtifact, is(instanceOf(OpenFile.class)));
-        var actualPublishedFile = (OpenFile) associatedArtifact;
-        assertThat(actualPublishedFile, is(samePropertyValuesAs(publishedFile)));
+        var actualopenFile = (OpenFile) associatedArtifact;
+        assertThat(actualopenFile, is(samePropertyValuesAs(openFile)));
     }
 
     @And("the merged nva publication has a handle equal to {string} in additional identifiers")
