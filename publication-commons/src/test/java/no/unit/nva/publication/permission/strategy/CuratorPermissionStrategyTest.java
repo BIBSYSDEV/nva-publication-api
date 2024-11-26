@@ -9,7 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
-import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
+import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -34,7 +34,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var cristinId = randomUri();
 
         var publication = createNonDegreePublication(resourceOwner, institution).copy()
-                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
+                              .withAssociatedArtifacts(List.of(AssociatedArtifactsGenerator.randomPendingOpenFile()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForCurator(), cristinId,
@@ -64,7 +64,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                                 topLevelCristinOrgId);
         var publication = createPublicationWithContributor(contributor, contributorCristinId, Role.CREATOR,
                                                            customer, topLevelCristinOrgId).copy()
-                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
+                              .withAssociatedArtifacts(List.of(AssociatedArtifactsGenerator.randomPendingOpenFile()))
                               .build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -144,7 +144,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var cristinId = randomUri();
 
         var publication = createDegreePhd(resourceOwner, institution).copy()
-                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
+                              .withAssociatedArtifacts(List.of(AssociatedArtifactsGenerator.randomPendingOpenFile()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
@@ -187,7 +187,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                                 randomUri(), cristinTopLevelId);
 
         var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
-        unpublishFiles(publication);
+        setFileToPendingOpenFiles(publication);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 

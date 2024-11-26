@@ -24,15 +24,12 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.File.Builder;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.PublicationResponseFactory;
@@ -354,11 +351,6 @@ public class UpdatePublicationHandler
 
     private static File updateFileWithUploadDetails(File file, UploadDetails uploadDetails) throws BadRequestException {
         return switch (file) {
-            case PublishedFile publishedFile -> addUploadDetails(publishedFile, uploadDetails).buildPublishedFile();
-            case UnpublishedFile unpublishedFile -> addUploadDetails(unpublishedFile, uploadDetails)
-                                                        .buildUnpublishedFile();
-            case AdministrativeAgreement unpublishableFile -> addUploadDetails(unpublishableFile, uploadDetails)
-                                                                  .buildUnpublishableFile();
             case PendingOpenFile pendingOpenFile -> addUploadDetails(pendingOpenFile, uploadDetails).buildPendingOpenFile();
             case OpenFile openFile -> addUploadDetails(openFile, uploadDetails).buildOpenFile();
             case PendingInternalFile pendingInternalFile -> addUploadDetails(pendingInternalFile, uploadDetails).buildPendingInternalFile();

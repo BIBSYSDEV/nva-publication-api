@@ -51,11 +51,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -485,8 +482,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     static Stream<Arguments> fileTypesNeedingApprovalProvider() {
         return Stream.of(Arguments.of(AssociatedArtifactsGenerator.randomPendingOpenFile()),
-                         Arguments.of(AssociatedArtifactsGenerator.randomPendingInternalFile()),
-                         Arguments.of(AssociatedArtifactsGenerator.randomUnpublishedFile()));
+                         Arguments.of(AssociatedArtifactsGenerator.randomPendingInternalFile()));
     }
 
     @ParameterizedTest

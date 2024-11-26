@@ -78,7 +78,6 @@ public final class TicketTestUtils {
 
     public static Stream<Arguments> notApprovedFilesProvider() {
         return Stream.of(
-            Arguments.of(AssociatedArtifactsGenerator.randomUnpublishedFile()),
             Arguments.of(AssociatedArtifactsGenerator.randomPendingOpenFile()),
             Arguments.of(AssociatedArtifactsGenerator.randomPendingInternalFile())
         );

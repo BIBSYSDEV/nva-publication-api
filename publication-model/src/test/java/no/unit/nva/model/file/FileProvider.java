@@ -10,17 +10,14 @@ import java.util.ArrayList;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import org.junit.jupiter.api.Named;
@@ -51,9 +48,6 @@ public class FileProvider implements ArgumentsProvider {
 
     private static File resolveFileFromType(Class<?> aClass) {
         return switch (aClass.getSimpleName()) {
-            case PublishedFile.TYPE -> randomPublishedFile();
-            case UnpublishedFile.TYPE -> randomUnpublishedFile();
-            case "AdministrativeAgreement" -> randomUnpublishableFile();
             case OpenFile.TYPE -> randomOpenFile();
             case PendingOpenFile.TYPE -> randomPendingOpenFile();
             case RejectedFile.TYPE -> randomRejectedFile();
@@ -89,23 +83,8 @@ public class FileProvider implements ArgumentsProvider {
         return buildNonAdministrativeAgreement().buildPendingInternalFile();
     }
 
-    public static File randomUnpublishableFile() {
-        return new AdministrativeAgreement(UUID.randomUUID(), randomString(), randomString(),
-                                           randomInteger().longValue(), LICENSE_URI, randomBoolean(),
-                                           PublisherVersion.ACCEPTED_VERSION, randomInstant(),
-                                           randomInserted());
-    }
-
     private static Username randomUsername() {
         return new Username(randomInteger().toString() + "@" + randomString());
-    }
-
-    public static File randomUnpublishedFile() {
-        return buildNonAdministrativeAgreement().buildUnpublishedFile();
-    }
-
-    public static File randomPublishedFile() {
-        return buildNonAdministrativeAgreement().buildPublishedFile();
     }
 
     private static UploadDetails randomInserted() {

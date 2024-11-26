@@ -131,7 +131,7 @@
     "type": "FileSet",
     "files": [
       {
-        "type": "PublishedFile",
+        "type": "OpenFile",
         "administrativeAgreement": false,
         "identifier": "9d1f0455-472c-49d5-8944-8a6dd6b1c391",
         "license": {

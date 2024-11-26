@@ -16,7 +16,6 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator.randomUsername;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
@@ -138,9 +137,8 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
@@ -355,7 +353,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                        PUBLISHED,
                                                                                        resourceService);
 
-        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+        var publicationUpdate = addAnotherPendingOpenFile(publishedPublication);
 
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
@@ -377,7 +375,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                        PUBLISHED,
                                                                                        resourceService);
 
-        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+        var publicationUpdate = addAnotherPendingOpenFile(publishedPublication);
 
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
@@ -402,7 +400,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var existingTicket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class,
                                                                    ticketService);
-        var publicationUpdate = addAnotherUnpublishedFile(publication);
+        var publicationUpdate = addAnotherPendingOpenFile(publication);
         var input = curatorPublicationOwnerUpdatesPublication(publicationUpdate);
         updatePublicationHandler.handleRequest(input, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
@@ -423,7 +421,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                               PUBLISHED,
                                                                               resourceService);
         persistCompletedPublishingRequest(publishedPublication);
-        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+        var publicationUpdate = addAnotherPendingOpenFile(publishedPublication);
 
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
@@ -444,7 +442,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                               PUBLISHED,
                                                                               resourceService);
         var pendingTicket = createPendingPublishingRequest(publishedPublication);
-        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+        var publicationUpdate = addAnotherPendingOpenFile(publishedPublication);
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -461,7 +459,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                               resourceService);
         persistCompletedPublishingRequest(publishedPublication);
         var pendingPublishingRequest = createPendingPublishingRequest(publishedPublication);
-        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+        var publicationUpdate = addAnotherPendingOpenFile(publishedPublication);
         var inputStream = ownerUpdatesOwnPublication(publishedPublication.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -805,7 +803,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                               PUBLISHED,
                                                                               resourceService);
 
-        final var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+        final var publicationUpdate = addAnotherPendingOpenFile(publishedPublication);
 
         WireMock.reset();
 
@@ -1092,10 +1090,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
             .complete(publication, new Username(randomString())).persistUpdate(ticketService);
 
-        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
-                                     .withLicense(randomUri()).buildUnpublishedFile();
+        var newPendingOpenFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri()).buildPendingOpenFile();
         var files = new ArrayList<>(publication.getAssociatedArtifacts());
-        files.add(newUnpublishedFile);
+        files.add(newPendingOpenFile);
 
         publication.copy().withAssociatedArtifacts(files);
 
@@ -1178,14 +1176,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnUnauthorizedWhenUserIsContributorWhenUnpublishingPublicationAndPublicationContainsPublishedFiles()
+    void shouldReturnUnauthorizedWhenUserIsContributorWhenUnpublishingPublicationAndPublicationContainsOpenFiles()
         throws ApiGatewayException, IOException {
 
         var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
         var publication = createPublicationWithoutDoiAndWithContributor(userCristinId, userName);
 
-        assertTrue(publication.getAssociatedArtifacts().stream().anyMatch(PublishedFile.class::isInstance));
+        assertTrue(publication.getAssociatedArtifacts().stream().anyMatch(OpenFile.class::isInstance));
 
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
@@ -1684,7 +1682,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(publication, contributor);
 
-        var fileToUpload = (File) randomUnpublishedFile();
+        var fileToUpload = (File) randomPendingOpenFile();
         var publicationWithNewFile = addFileToPublication(publication, fileToUpload);
 
         var contributorName = contributor.getIdentity().getName();
@@ -1715,7 +1713,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(publication, contributor);
 
-        var fileToUpload = (File) randomUnpublishedFile();
+        var fileToUpload = (File) randomPendingOpenFile();
         var publicationWithNewFile = addFileToPublication(publication, fileToUpload);
         var contributorName = contributor.getIdentity().getName();
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationWithNewFile, cristinId,
@@ -1746,14 +1744,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotOverrideUploadDetailsWhenFileIsUpdated() throws BadRequestException, IOException {
-        var unpublishedFile = (File) randomUnpublishedFile();
-        var publication = createAndPersistNonDegreePublicationWithFile(unpublishedFile);
+        var pendingOpenFile = (File) randomPendingOpenFile();
+        var publication = createAndPersistNonDegreePublicationWithFile(pendingOpenFile);
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(publication, contributor);
 
-        var indexOfFileToUpdate = publication.getAssociatedArtifacts().indexOf(unpublishedFile);
-        var fileUpdate = unpublishedFile.copy().withLicense(randomUri()).buildUnpublishedFile();
+        var indexOfFileToUpdate = publication.getAssociatedArtifacts().indexOf(pendingOpenFile);
+        var fileUpdate = pendingOpenFile.copy().withLicense(randomUri()).buildPendingOpenFile();
         publication.getAssociatedArtifacts().set(indexOfFileToUpdate, fileUpdate);
 
         var contributorName = contributor.getIdentity().getName();
@@ -1783,7 +1781,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                            .filter(OpenFile.class::isInstance)
                            .map(OpenFile.class::cast)
                            .findFirst().orElseThrow();
-        var updatedFile = openFile.copy().withLicense(randomUri()).buildPublishedFile();
+        var updatedFile = openFile.copy().withLicense(randomUri()).buildOpenFile();
         var files = publication.getAssociatedArtifacts();
         files.remove(openFile);
         files.add(updatedFile);
@@ -1852,10 +1850,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(
             customerId, PUBLISHED, resourceService);
 
-        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+        var pendingOpenFile = File.builder().withIdentifier(UUID.randomUUID())
                                      .withLicense(randomUri())
-                                     .buildUnpublishedFile();
-        updatePublicationWithFile(publication, newUnpublishedFile);
+                                     .buildPendingOpenFile();
+        updatePublicationWithFile(publication, pendingOpenFile);
 
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
@@ -1864,7 +1862,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publishingRequest = getPublishingRequestCase(publication);
 
         assertThat(publishingRequest.getFilesForApproval().stream().map(File::getIdentifier).toList(),
-                   containsInAnyOrder(newUnpublishedFile.getIdentifier()));
+                   containsInAnyOrder(pendingOpenFile.getIdentifier()));
     }
 
     @DisplayName("When contributor uploads file and customer does not allow publishing files, then " +
@@ -2421,18 +2419,18 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return update;
     }
 
-    private Publication addAnotherUnpublishedFile(Publication savedPublication) {
-        return addFileToPublication(savedPublication, randomUnpublishedFile());
+    private Publication addAnotherPendingOpenFile(Publication savedPublication) {
+        return addFileToPublication(savedPublication, randomPendingOpenFile());
     }
 
-    private AssociatedArtifact randomUnpublishedFile() {
-        return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
+    private AssociatedArtifact randomPendingOpenFile() {
+        return new PendingOpenFile(UUID.randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
                                    false, PublisherVersion.PUBLISHED_VERSION, null,
                                    OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
                                                                             randomString()),
-                                   randomString(), new UserUploadDetails(randomUsername(), Instant.now()));
+                                   randomString(), new UserUploadDetails(new Username(randomString()), Instant.now()));
     }
 
     private TestAppender createAppenderForLogMonitoring() {

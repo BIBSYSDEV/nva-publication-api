@@ -70,8 +70,8 @@ import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
@@ -187,7 +187,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldAcceptUnpublishableFileType() throws IOException {
-        var serialized = IoUtils.stringFromResources(Path.of("publication_with_unpublishable_file.json"));
+        var serialized = IoUtils.stringFromResources(Path.of("publication_with_internal_file.json"));
         var deserialized = attempt(() -> dtoObjectMapper.readValue(serialized, Publication.class)).orElseThrow();
         var publishingRequest = CreatePublicationRequest.fromPublication(deserialized);
         var inputStream = createPublicationRequest(publishingRequest);
@@ -436,14 +436,14 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadRequestIfProvidedWithOneOrMoreFilesHasNullRightsRetentionSetButCustomerHasAOveridableConfig()
+    void shouldReturnBadRequestIfProvidedWithOneOrMoreFilesHasNullRightsRetentionSetButCustomerHasAOverridableConfig()
         throws IOException {
 
         WireMock.reset();
         stubSuccessfulTokenResponse();
         stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(customerId);
 
-        var file = new UnpublishedFile(UUID.randomUUID(),
+        var file = new PendingOpenFile(UUID.randomUUID(),
                                        RandomDataGenerator.randomString(),
                                        RandomDataGenerator.randomString(),
                                        RandomDataGenerator.randomInteger().longValue(),
@@ -480,7 +480,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         stubSuccessfulTokenResponse();
         stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(customerId);
 
-        var file = new UnpublishedFile(UUID.randomUUID(),
+        var file = new PendingOpenFile(UUID.randomUUID(),
                                        RandomDataGenerator.randomString(),
                                        RandomDataGenerator.randomString(),
                                        RandomDataGenerator.randomInteger().longValue(),

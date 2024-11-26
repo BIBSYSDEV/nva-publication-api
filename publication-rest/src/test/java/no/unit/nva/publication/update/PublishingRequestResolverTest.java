@@ -1,8 +1,6 @@
 package no.unit.nva.publication.update;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPublishedFile;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
 import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithFile;
 import java.util.List;
 import java.util.Set;
@@ -11,6 +9,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -72,16 +71,16 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFilesButPublicationHasPublishedFiles()
         throws ApiGatewayException {
         var publication = randomPublication();
-        var publishedFile = randomPublishedFile();
-        var unpublishedFile = randomUnpublishedFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(unpublishedFile, publishedFile)));
+        var openFile = AssociatedArtifactsGenerator.randomOpenFile();
+        var pendingOpenFile = AssociatedArtifactsGenerator.randomPendingOpenFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile, openFile)));
         var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                      publication);
         resourceService.publishPublication(UserInstance.fromPublication(publication),
                                            persistedPublication.getIdentifier());
         persistPublishingRequestContainingExistingUnpublishedFiles(persistedPublication);
         var publicationUpdateRemovingUnpublishedFiles = persistedPublication.copy()
-                                                            .withAssociatedArtifacts(List.of(publishedFile))
+                                                            .withAssociatedArtifacts(List.of(openFile))
                                                             .withStatus(PublicationStatus.PUBLISHED)
                                                             .build();
         publishingRequestResolver(persistedPublication).resolve(resourceService.getPublication(persistedPublication),

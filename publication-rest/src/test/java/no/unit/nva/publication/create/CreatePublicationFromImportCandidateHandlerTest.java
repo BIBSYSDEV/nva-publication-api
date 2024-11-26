@@ -65,7 +65,7 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.funding.FundingBuilder;
@@ -552,8 +552,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .build();
     }
 
-    private PublishedFile randomFile() {
-        return new PublishedFile(UUID.randomUUID(),
+    private OpenFile randomFile() {
+        return new OpenFile(UUID.randomUUID(),
                                  randomString(),
                                  "pdf",
                                  12312L,
@@ -656,7 +656,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                         .withIdentifier(UUID.randomUUID())
                                                         .withLicense(URI.create("https://hei"))
                                                         .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
-                                                        .buildPublishedFile()))
+                                                        .buildOpenFile()))
                    .build();
     }
 

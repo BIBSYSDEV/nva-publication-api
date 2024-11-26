@@ -10,8 +10,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class LicenseMigrationTest {
 
     public static Stream<String> fileWithLicenseProvider() {
-        return Stream.of(generateOldPublishedFile(),generateOldUnpublishedFile(),
-                         generateOldUnpublishableFile(),  generateNewFile());
+        return Stream.of(generateOldPublishedFile(), generateOldPendingOpenFile(),
+                         generateOldInternalFile(), generateNewFile());
     }
 
     @ParameterizedTest(name = "should accept legacy and current formatting for License")
@@ -22,7 +22,7 @@ public class LicenseMigrationTest {
 
     private static String generateNewFile() {
         return "{\n"
-               + "    \"type\" : \"PublishedFile\",\n"
+               + "    \"type\" : \"OpenFile\",\n"
                + "    \"identifier\" : \"d9fc5844-f1a3-491b-825a-5a4cabc12aa2\",\n"
                + "    \"name\" : \"Per Magne Østertun.pdf\",\n"
                + "    \"mimeType\" : \"application/pdf\",\n"
@@ -37,7 +37,7 @@ public class LicenseMigrationTest {
 
     private static String generateOldPublishedFile() {
         return "{\n"
-               + "    \"type\" : \"PublishedFile\",\n"
+               + "    \"type\" : \"OpenFile\",\n"
                + "    \"identifier\" : \"d9fc5844-f1a3-491b-825a-5a4cabc12aa2\",\n"
                + "    \"name\" : \"Per Magne Østertun.pdf\",\n"
                + "    \"mimeType\" : \"application/pdf\",\n"
@@ -56,9 +56,9 @@ public class LicenseMigrationTest {
                + "  }";
     }
 
-    private static String generateOldUnpublishedFile() {
+    private static String generateOldPendingOpenFile() {
         return "{\n"
-               + "    \"type\" : \"UnpublishedFile\",\n"
+               + "    \"type\" : \"PendingOpenFile\",\n"
                + "    \"identifier\" : \"d9fc5844-f1a3-491b-825a-5a4cabc12aa2\",\n"
                + "    \"name\" : \"Per Magne Østertun.pdf\",\n"
                + "    \"mimeType\" : \"application/pdf\",\n"
@@ -77,9 +77,9 @@ public class LicenseMigrationTest {
                + "  }";
     }
 
-    private static String generateOldUnpublishableFile() {
+    private static String generateOldInternalFile() {
         return "{\n"
-               + "    \"type\" : \"UnpublishableFile\",\n"
+               + "    \"type\" : \"InternalFile\",\n"
                + "    \"identifier\" : \"d9fc5844-f1a3-491b-825a-5a4cabc12aa2\",\n"
                + "    \"name\" : \"Per Magne Østertun.pdf\",\n"
                + "    \"mimeType\" : \"application/pdf\",\n"

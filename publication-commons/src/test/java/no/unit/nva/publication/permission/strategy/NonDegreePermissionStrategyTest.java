@@ -18,7 +18,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -28,7 +28,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
+import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -165,7 +165,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var publication = createDegreePhd(resourceOwner, institution, randomUri()).copy()
                               .withStatus(PUBLISHED)
                               .withAssociatedArtifacts(
-                                  List.of(randomFileWithEmbargo(), PublishedFileGenerator.random()))
+                                  List.of(randomFileWithEmbargo(), AssociatedArtifactsGenerator.randomOpenFile()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
@@ -189,7 +189,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var publication = createDegreePhd(resourceOwner, institution, randomUri()).copy()
                               .withStatus(PUBLISHED)
                               .withAssociatedArtifacts(
-                                  List.of(randomFileWithEmbargo(), PublishedFileGenerator.random()))
+                                  List.of(randomFileWithEmbargo(), AssociatedArtifactsGenerator.randomOpenFile()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForEmbargoThesisCurator(),
@@ -385,8 +385,8 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
                    .build();
     }
 
-    public static PublishedFile randomFileWithEmbargo() {
-        return new PublishedFile(UUID.randomUUID(), RandomDataGenerator.randomString(),
+    public static OpenFile randomFileWithEmbargo() {
+        return new OpenFile(UUID.randomUUID(), RandomDataGenerator.randomString(),
                                  RandomDataGenerator.randomString(), RandomDataGenerator.randomInteger().longValue(),
                                  RandomDataGenerator.randomUri(), false, PublisherVersion.PUBLISHED_VERSION,
                                  Instant.now().plusSeconds(60 * 60 * 24),
