@@ -77,7 +77,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     private final URI license;
     @JsonProperty(ADMINISTRATIVE_AGREEMENT_FIELD)
     private final boolean administrativeAgreement;
-
     @JsonProperty(PUBLISHER_VERSION_FIELD)
     private final PublisherVersion publisherVersion;
     @JsonProperty(EMBARGO_DATE_FIELD)
