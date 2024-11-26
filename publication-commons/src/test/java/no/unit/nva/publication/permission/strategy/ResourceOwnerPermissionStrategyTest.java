@@ -1,7 +1,10 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Named.named;
@@ -16,7 +19,8 @@ import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
+import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -144,10 +148,10 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
     public static Stream<Arguments> filesWithNotApprovedStatus() {
         return Stream.of(
             arguments(named("Empty list", List.of())),
-            arguments(named("NullAssociatedArtifact", List.of(new NullAssociatedArtifact()))),
-            arguments(named("AssociatedLink", List.of(new AssociatedLink(randomUri(), randomString(),
-                                                                                 randomString())))
-            )
+            arguments(named(NullAssociatedArtifact.TYPE_NAME, List.of(new NullAssociatedArtifact()))),
+            arguments(named(AssociatedLink.TYPE_NAME, List.of(randomAssociatedLink()))),
+            arguments(named(PendingOpenFile.TYPE, List.of(randomPendingOpenFile()))),
+            arguments(named(PendingInternalFile.TYPE, List.of(randomPendingInternalFile())))
         );
     }
 }
