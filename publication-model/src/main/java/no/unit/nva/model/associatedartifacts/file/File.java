@@ -2,6 +2,7 @@ package no.unit.nva.model.associatedartifacts.file;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -211,6 +212,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                                 getLegalNote(), Instant.now(), getUploadDetails());
     }
 
+    @JsonIgnore
     public abstract boolean isVisibleForNonOwner();
 
     public abstract boolean needsApproval();
