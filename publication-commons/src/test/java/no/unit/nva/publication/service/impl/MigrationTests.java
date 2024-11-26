@@ -5,7 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUnpublishedFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -134,23 +134,23 @@ class MigrationTests extends ResourcesLocalTest {
                              .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(1));
 
-        assertThat(doiRequest.get(0).getIdentifier(), not(nullValue()));
-        assertThat(doiRequest.get(0).getCreatedAt(), not(nullValue()));
-        assertThat(doiRequest.get(0).getModifiedAt(), not(nullValue()));
-        assertThat(doiRequest.get(0).getOwner(), not(nullValue()));
-        assertThat(doiRequest.get(0).getResourceIdentifier(), not(nullValue()));
-        assertThat(doiRequest.get(0).getCustomerId(), not(nullValue()));
-        assertThat(doiRequest.get(0).getTicketIdentifier(), not(nullValue()));
+        assertThat(doiRequest.getFirst().getIdentifier(), not(nullValue()));
+        assertThat(doiRequest.getFirst().getCreatedAt(), not(nullValue()));
+        assertThat(doiRequest.getFirst().getModifiedAt(), not(nullValue()));
+        assertThat(doiRequest.getFirst().getOwner(), not(nullValue()));
+        assertThat(doiRequest.getFirst().getResourceIdentifier(), not(nullValue()));
+        assertThat(doiRequest.getFirst().getCustomerId(), not(nullValue()));
+        assertThat(doiRequest.getFirst().getTicketIdentifier(), not(nullValue()));
 
         var dbScan = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
-        var doiAttributeValue = dbScan.get(0);
+        var doiAttributeValue = dbScan.getFirst();
         assertThat(doiAttributeValue.get("data").getB(), not(nullValue()));
         assertThat(doiAttributeValue.get("data").getM(), is(nullValue()));
 
         var compressedData = doiAttributeValue.get("data").getB().array();
         var decompressedData = new String(DataCompressor.decompress(compressedData), UTF_8);
         var doi = JsonUtils.dtoObjectMapper.readValue(decompressedData, DoiRequest.class);
-        assertThat(doi.getIdentifier(), is(equalTo(doiRequest.get(0).getIdentifier())));
+        assertThat(doi.getIdentifier(), is(equalTo(doiRequest.getFirst().getIdentifier())));
     }
 
     @Test
@@ -188,8 +188,8 @@ class MigrationTests extends ResourcesLocalTest {
     void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
         var publication = randomPublication().copy().withStatus(UNPUBLISHED).build();
         publication = resourceService.createPublicationWithPredefinedCreationDate(publication);
-        var firstFile = randomUnpublishedFile();
-        var secondFile = randomUnpublishedFile();
+        var firstFile = randomPendingOpenFile();
+        var secondFile = randomPendingOpenFile();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
         resourceService.updatePublication(publication);
         var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(publication,
@@ -212,8 +212,8 @@ class MigrationTests extends ResourcesLocalTest {
     void shouldNotFailWhenMigrationPublishingRequestsThatAreOrphans() throws ApiGatewayException {
         var publication = randomPublication().copy().withStatus(DRAFT).build();
         var persistedPublication = resourceService.createPublicationWithPredefinedCreationDate(publication);
-        var firstFile = randomUnpublishedFile();
-        var secondFile = randomUnpublishedFile();
+        var firstFile = randomPendingOpenFile();
+        var secondFile = randomPendingOpenFile();
         persistedPublication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
         resourceService.updatePublication(persistedPublication);
         var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(persistedPublication,

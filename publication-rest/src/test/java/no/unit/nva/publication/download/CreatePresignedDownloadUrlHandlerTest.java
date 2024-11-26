@@ -3,6 +3,8 @@ package no.unit.nva.publication.download;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static no.unit.nva.testutils.TestHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
@@ -59,8 +61,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
-import no.unit.nva.model.testing.associatedartifacts.UnpublishedFileGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -434,37 +434,37 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     private static File fileWithEmbargo(UUID fileIdentifier) {
         var embargo = Instant.now().plus(Duration.ofDays(3L));
-        return PublishedFileGenerator.random()
+        return randomOpenFile()
                    .copy()
                    .withIdentifier(fileIdentifier)
                    .withMimeType(APPLICATION_PDF)
                    .withEmbargoDate(embargo)
-                   .buildPublishedFile();
+                   .buildOpenFile();
     }
 
     private static File fileWithoutEmbargo(String mimeType, UUID fileIdentifier) {
-        return PublishedFileGenerator.random()
+        return randomOpenFile()
                    .copy()
                    .withIdentifier(fileIdentifier)
                    .withMimeType(mimeType)
-                   .buildPublishedFile();
+                   .buildOpenFile();
     }
 
     private static File fileWithTypeUnpublished() {
-        return UnpublishedFileGenerator.random()
+        return randomPendingOpenFile()
                    .copy()
                    .withIdentifier(FILE_IDENTIFIER)
                    .withMimeType(APPLICATION_PDF)
-                   .buildUnpublishedFile();
+                   .buildPendingOpenFile();
     }
 
     private static File fileWithTypeUnpublishable(UUID fileIdentifier, boolean administrativeAgreement) {
-        return UnpublishedFileGenerator.random()
+        return randomPendingOpenFile()
                    .copy()
                    .withIdentifier(fileIdentifier)
                    .withMimeType(APPLICATION_PDF)
                    .withAdministrativeAgreement(administrativeAgreement)
-                   .buildUnpublishableFile();
+                   .buildPendingOpenFile();
     }
 
     private static InputStream createAnonymousRequest(SortableIdentifier publicationIdentifier) throws

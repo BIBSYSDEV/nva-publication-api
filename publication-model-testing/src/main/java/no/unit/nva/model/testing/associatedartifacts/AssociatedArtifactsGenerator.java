@@ -3,6 +3,7 @@ package no.unit.nva.model.testing.associatedartifacts;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -27,23 +28,12 @@ public final class AssociatedArtifactsGenerator {
     }
 
     public static List<AssociatedArtifact> randomAssociatedArtifacts() {
-        return new AssociatedArtifactList(PublishedFileGenerator.random(), randomOpenFile(), randomInternalFile(),
+        return new AssociatedArtifactList(randomPendingOpenFile(), randomOpenFile(), randomInternalFile(),
                                           randomAssociatedLink(), randomHiddenFile());
     }
 
     public static AssociatedLink randomAssociatedLink() {
         return new AssociatedLink(randomUri(), randomString(), randomString());
-    }
-
-    public static File randomUnpublishedFile() {
-        return randomFileBuilder().buildUnpublishedFile();
-    }
-
-    public static File randomPublishedFile() {
-        return File.builder().withIdentifier(UUID.randomUUID())
-                   .withLicense(randomUri())
-                   .withName(randomString())
-                   .buildPublishedFile();
     }
 
     public static File randomPendingOpenFile() {
@@ -64,6 +54,10 @@ public final class AssociatedArtifactsGenerator {
 
     public static File randomHiddenFile() {
         return randomFileBuilder().buildHiddenFile();
+    }
+
+    public static File randomOpenFileWithLicense(URI license) {
+        return randomFileBuilder().withLicense(license).buildOpenFile();
     }
 
     private static Builder randomFileBuilder() {

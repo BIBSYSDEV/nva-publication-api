@@ -232,7 +232,7 @@ class MusicPerformanceMediaTypeOtherMigrationTest {
                + "  } ],\n"
                + "  \"subjects\" : [ \"https://www.example.org/enimcorrupti\" ],\n"
                + "  \"associatedArtifacts\" : [ {\n"
-               + "    \"type\" : \"PublishedFile\",\n"
+               + "    \"type\" : \"OpenFile\",\n"
                + "    \"identifier\" : \"cf1a09ed-0977-498a-ab02-6fc7393a2199\",\n"
                + "    \"name\" : \"djJ1LoC5AVpuhd6\",\n"
                + "    \"mimeType\" : \"gpexBsQtBWpI0\",\n"

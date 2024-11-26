@@ -52,7 +52,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                                 randomUri(), cristinTopLevelId);
 
         var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
-        unpublishFiles(publication);
+        setFileToPendingOpenFiles(publication);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -74,7 +74,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                                 randomUri(), cristinTopLevelId);
 
         var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
-        unpublishFiles(publication);
+        setFileToPendingOpenFiles(publication);
         publication.setCuratingInstitutions(Set.of(new CuratingInstitution(cristinTopLevelId, Set.of())));
         publication.setStatus(UNPUBLISHED);
 

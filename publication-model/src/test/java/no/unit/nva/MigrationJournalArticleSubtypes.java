@@ -167,7 +167,7 @@ class MigrationJournalArticleSubtypes {
                 + "  } ],\n"
                 + "  \"subjects\" : [ \"https://www.example.org/harumquasi\" ],\n"
                 + "  \"associatedArtifacts\" : [ {\n"
-                + "    \"type\" : \"PublishedFile\",\n"
+                + "    \"type\" : \"OpenFile\",\n"
                 + "    \"identifier\" : \"d8c5785c-2100-4097-b461-a7269d78bf03\",\n"
                 + "    \"name\" : \"63IPVTamuKud3NP\",\n"
                 + "    \"mimeType\" : \"QBk86jTCqlPBH\",\n"

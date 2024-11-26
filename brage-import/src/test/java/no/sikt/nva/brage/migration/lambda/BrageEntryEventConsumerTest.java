@@ -2636,7 +2636,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withEmbargoDate(EMBARGO_DATE)
                            .withLegalNote(legalNote)
                            .withUploadDetails(new ImportUploadDetails(ImportUploadDetails.Source.BRAGE, "ntnu", null))
-                           .buildPublishedFile());
+                           .buildOpenFile());
     }
 
     private S3Event createNewInvalidBrageRecordEvent() throws IOException {

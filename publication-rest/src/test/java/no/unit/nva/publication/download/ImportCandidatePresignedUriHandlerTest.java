@@ -153,7 +153,7 @@ class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
                    .withFundings(List.of(new FundingBuilder().build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Scopus", randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of(File.builder().withIdentifier(randomUUID()).buildPublishedFile()))
+                   .withAssociatedArtifacts(List.of(File.builder().withIdentifier(randomUUID()).buildOpenFile()))
                    .build();
     }
 

@@ -1,6 +1,10 @@
 package no.unit.nva.publication.permission.strategy;
 
-import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Named.named;
@@ -13,8 +17,10 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -116,7 +122,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
     //region Degree publications
     @ParameterizedTest(name = "Should deny ResourceOwner {0} operation on own published degree resource")
     @EnumSource(value = PublicationOperation.class)
-    void shoulDenyResourceOwnerOnDegree(PublicationOperation operation)
+    void shouldDenyResourceOwnerOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
         var institution = randomUri();
@@ -132,46 +138,20 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
                                    .allowsAction(operation));
     }
 
-    //endregion
-
     public static Stream<Arguments> filesWithApprovedStatus() {
         return Stream.of(
-            arguments(named("UnpublishableFile", List.of(File.builder()
-                                                 .withName(randomString())
-                                                 .withIdentifier(randomUUID())
-                                                 .withLicense(PublicationGenerator.randomUri())
-                                                 .withAdministrativeAgreement(true)
-                                                 .buildUnpublishableFile()))),
-            arguments(named("PublishedFile", List.of(File.builder()
-                                                  .withIdentifier(randomUUID())
-                                                  .withName(randomString())
-                                                  .withLicense(PublicationGenerator.randomUri())
-                                                  .buildPublishedFile()))),
-            arguments(named("OpenFile", List.of(File.builder()
-                                                         .withIdentifier(randomUUID())
-                                                         .withName(randomString())
-                                                         .withLicense(PublicationGenerator.randomUri())
-                                                         .buildOpenFile())),
-            arguments(named("InternalFile", List.of(File.builder()
-                                                      .withIdentifier(randomUUID())
-                                                      .withName(randomString())
-                                                      .withLicense(PublicationGenerator.randomUri())
-                                                      .buildInternalFile()))))
+            arguments(named(OpenFile.TYPE, List.of(randomOpenFile())),
+            arguments(named(InternalFile.TYPE, List.of(randomInternalFile()))))
         );
     }
 
     public static Stream<Arguments> filesWithNotApprovedStatus() {
         return Stream.of(
-            arguments(named("UnpublishedFile", List.of(File.builder()
-                                                           .withName(randomString())
-                                                           .withIdentifier(randomUUID())
-                                                           .withLicense(PublicationGenerator.randomUri())
-                                                           .buildUnpublishedFile()))),
             arguments(named("Empty list", List.of())),
-            arguments(named("NullAssociatedArtifact", List.of(new NullAssociatedArtifact()))),
-            arguments(named("AssociatedLink", List.of(new AssociatedLink(randomUri(), randomString(),
-                                                                                 randomString())))
-            )
+            arguments(named(NullAssociatedArtifact.TYPE_NAME, List.of(new NullAssociatedArtifact()))),
+            arguments(named(AssociatedLink.TYPE_NAME, List.of(randomAssociatedLink()))),
+            arguments(named(PendingOpenFile.TYPE, List.of(randomPendingOpenFile()))),
+            arguments(named(PendingInternalFile.TYPE, List.of(randomPendingInternalFile())))
         );
     }
 }

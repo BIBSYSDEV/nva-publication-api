@@ -183,7 +183,7 @@ class ChapterToAnthologyMigrationTest {
                 + "  } ],\n"
                 + "  \"subjects\" : [ \"https://www.example.org/eaut\" ],\n"
                 + "  \"associatedArtifacts\" : [ {\n"
-                + "    \"type\" : \"PublishedFile\",\n"
+                + "    \"type\" : \"OpenFile\",\n"
                 + "    \"identifier\" : \"f2211b09-5685-45cb-a095-507055f1415f\",\n"
                 + "    \"name\" : \"ldNNzZW1iRJ5cZ\",\n"
                 + "    \"mimeType\" : \"cjpQQj3Kz7n988gO7\",\n"

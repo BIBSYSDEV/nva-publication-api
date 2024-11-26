@@ -3,7 +3,6 @@ package no.unit.nva.model.file;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
-import static no.unit.nva.model.file.FileProvider.randomPublishedFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -28,14 +27,13 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.MissingLicenseException;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
@@ -56,6 +54,26 @@ public class FileModelTest {
     public static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
     private static final boolean ADMINISTRATIVE_AGREEMENT = true;
 
+    public static File randomPendingOpenFile() {
+        return buildNonAdministrativeAgreement().buildPendingOpenFile();
+    }
+
+    public static Stream<File> notAdministrativeAgreements() {
+        return Stream.of(randomPendingOpenFile(), unpublishableNotAdministrativeAgreement());
+    }
+
+    public static File.Builder buildNonAdministrativeAgreement() {
+        return File.builder()
+                   .withName(randomString())
+                   .withAdministrativeAgreement(NOT_ADMINISTRATIVE_AGREEMENT)
+                   .withMimeType(randomString())
+                   .withSize(randomInteger().longValue())
+                   .withEmbargoDate(randomInstant())
+                   .withLicense(LICENSE_URI)
+                   .withIdentifier(UUID.randomUUID())
+                   .withUploadDetails(randomInserted())
+                   .withPublisherVersion(randomPublisherVersion());
+    }
 
     @ParameterizedTest
     @ArgumentsSource(FileProvider.class)
@@ -113,35 +131,25 @@ public class FileModelTest {
 
     @Test
     void shouldReturnEmptySetWhenLicenseLabelsAreNull() {
-        var license = new License.Builder()
-                          .withIdentifier(CC_BY)
-                          .withLink(LICENSE_URI)
-                          .withLabels(null)
-                          .build();
+        var license = new License.Builder().withIdentifier(CC_BY).withLink(LICENSE_URI).withLabels(null).build();
         assertThat(license.getLabels(), is(anEmptyMap()));
     }
 
     @Test
     void shouldNotBeVisibleForNonOwnersWhenFileIsAdministrativeAgreement() {
-        var file = randomAdministrativeAgreement();
+        var file = randomInternalFile();
         assertFalse(file.isVisibleForNonOwner());
     }
 
     @Test
     void shouldNotBeVisibleForNonOwnersWhenFileIsEmbargoed() {
-        var embargoedFile = publishedFileWithActiveEmbargo();
+        var embargoedFile = openFileWithActiveEmbargo();
         assertFalse(embargoedFile.isVisibleForNonOwner());
     }
 
     @Test
-    void shouldNotAllowPublishableFilesToBeAdministrativeAgreements() {
-        assertThrows(IllegalStateException.class, this::illegalPublishedFile);
-        assertThrows(IllegalStateException.class, this::illegalUnPublishedFile);
-    }
-
-    @Test
     void shouldNotBeVisibleForNonOwnerWhenUnpublished() throws JsonProcessingException {
-        var file = randomUnpublishedFile();
+        var file = randomPendingOpenFile();
         var mapped = dataModelObjectMapper.writeValueAsString(file);
         var unmapped = dataModelObjectMapper.readValue(mapped, File.class);
 
@@ -155,110 +163,72 @@ public class FileModelTest {
     @Deprecated
     @Test
     void objectMapperShouldSerializeAndDeserializePublishedVersion() throws JsonProcessingException {
-        var unpublishedFile = new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(), 10L, null,
-                                                  false, PublisherVersion.ACCEPTED_VERSION, null, null, randomString(), randomInserted());
-        var unpublishedFileString = unpublishedFile.toString();
-        var publicationAfterRoundTrip = dataModelObjectMapper.readValue(unpublishedFileString, UnpublishedFile.class);
-        assertThat(publicationAfterRoundTrip.getPublisherVersion(), is(equalTo(PublisherVersion.ACCEPTED_VERSION)));
+        var file = new PendingOpenFile(UUID.randomUUID(), randomString(), randomString(), 10L, null, false,
+                                                  PublisherVersion.ACCEPTED_VERSION, null, null, randomString(),
+                                                  randomInserted());
+        var fileAsString = file.toString();
+        var roundTrippedFile = dataModelObjectMapper.readValue(fileAsString, PendingOpenFile.class);
+        assertThat(roundTrippedFile.getPublisherVersion(), is(equalTo(PublisherVersion.ACCEPTED_VERSION)));
     }
 
     private static Username randomUsername() {
         return new Username(randomInteger().toString() + "@" + randomString());
     }
 
-    public static File randomUnpublishedFile() {
-        return buildNonAdministrativeAgreement().buildUnpublishedFile();
-    }
-    public static Stream<File> notAdministrativeAgreements() {
-        return Stream.of(randomPublishedFile(), randomUnpublishedFile(),
-                         unpublishableNotAdministrativeAgreement());
-    }
     private static UploadDetails randomInserted() {
         return new UserUploadDetails(randomUsername(), randomInstant());
-    }
-
-    public static File.Builder buildNonAdministrativeAgreement() {
-        return File.builder()
-                   .withName(randomString())
-                   .withAdministrativeAgreement(NOT_ADMINISTRATIVE_AGREEMENT)
-                   .withMimeType(randomString())
-                   .withSize(randomInteger().longValue())
-                   .withEmbargoDate(randomInstant())
-                   .withLicense(LICENSE_URI)
-                   .withIdentifier(UUID.randomUUID())
-                   .withUploadDetails(randomInserted())
-                   .withPublisherVersion(randomPublisherVersion());
     }
 
     private static PublisherVersion randomPublisherVersion() {
         return randomBoolean() ? PublisherVersion.PUBLISHED_VERSION : PublisherVersion.ACCEPTED_VERSION;
     }
 
-    public static File.Builder buildAdministrativeAgreement() {
-        return File.builder()
-                   .withName(randomString())
-                   .withAdministrativeAgreement(ADMINISTRATIVE_AGREEMENT)
-                   .withMimeType(randomString())
-                   .withSize(randomInteger().longValue())
-                   .withEmbargoDate(randomInstant())
-                   .withRightsRetentionStrategy(RightsRetentionStrategyGenerator.randomRightsRetentionStrategy())
-                   .withLicense(LICENSE_URI)
-                   .withIdentifier(UUID.randomUUID())
-                   .withPublisherVersion(randomPublisherVersion());
-    }
-
     private static File unpublishableNotAdministrativeAgreement() {
-        return new AdministrativeAgreement(UUID.randomUUID(),
-            randomString(),
-            randomString(),
-            randomInteger().longValue(),
-            LICENSE_URI,
-            NOT_ADMINISTRATIVE_AGREEMENT,
-            PublisherVersion.ACCEPTED_VERSION,
-            randomInstant(),
-            randomInserted());
+        return new InternalFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
+                                LICENSE_URI, NOT_ADMINISTRATIVE_AGREEMENT, PublisherVersion.ACCEPTED_VERSION,
+                                randomInstant(), RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
+                                randomString(), randomInstant(), randomInserted());
     }
 
-    private static File.Builder admAgreementBuilder() {
-        return File.builder()
-                   .withAdministrativeAgreement(true)
-                   .withName(randomString());
+    private static String generateNewFile() {
+        return """
+            {
+                "type" : "OpenFile",
+                "identifier" : "d9fc5844-f1a3-491b-825a-5a4cabc12aa2",
+                "name" : "Per Magne Østertun.pdf",
+                "mimeType" : "application/pdf",
+                "size" : 1025817,
+                "license" : "https://creativecommons.org/licenses/by-nc/2.0/",
+                "administrativeAgreement" : false,
+                "publisherAuthority" : false,
+                "publishedDate" : "2023-05-25T19:31:17.302914Z",
+                "visibleForNonOwner" : true
+            }""";
     }
 
-    private File getAdministrativeAgreement(URI license) {
+    private InternalFile getAdministrativeAgreement(URI license) {
         return File.builder()
                    .withIdentifier(UUID.randomUUID())
                    .withLicense(license)
                    .withName(FileModelTest.FIRST_FILE_TXT)
                    .withAdministrativeAgreement(true)
-                   .buildUnpublishableFile();
+                   .buildInternalFile()
+                   .toInternalFile();
     }
 
-    private AdministrativeAgreement randomAdministrativeAgreement() {
-        return new AdministrativeAgreement(UUID.randomUUID(), randomString(), randomString(),
-            randomInteger().longValue(),
-            LICENSE_URI, ADMINISTRATIVE_AGREEMENT, PublisherVersion.ACCEPTED_VERSION, randomInstant(), randomInserted());
+    private InternalFile randomInternalFile() {
+        return new InternalFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
+                                LICENSE_URI, ADMINISTRATIVE_AGREEMENT, PublisherVersion.ACCEPTED_VERSION,
+                                randomInstant(), RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
+                                randomString(), randomInstant(), randomInserted());
     }
 
-    private PublishedFile publishedFileWithActiveEmbargo() {
-        return new PublishedFile(UUID.randomUUID(),
-                                 randomString(),
-                                 randomString(),
-                                 randomInteger().longValue(),
-                                 LICENSE_URI,
-                                 NOT_ADMINISTRATIVE_AGREEMENT,
-                                 PublisherVersion.ACCEPTED_VERSION,
-                                 Instant.now().plus(1, DAYS),
-                                 RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                 randomString(), randomInstant(), randomInserted());
-    }
-
-    private void illegalPublishedFile() {
-        admAgreementBuilder().buildPublishedFile();
-    }
-
-    private void illegalUnPublishedFile() {
-        admAgreementBuilder().buildUnpublishedFile();
+    private OpenFile openFileWithActiveEmbargo() {
+        return new OpenFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(), LICENSE_URI,
+                            NOT_ADMINISTRATIVE_AGREEMENT, PublisherVersion.ACCEPTED_VERSION,
+                            Instant.now().plus(1, DAYS),
+                            RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(), randomString(),
+                            randomInstant(), randomInserted());
     }
 
     private File getPublishedFile() {
@@ -275,49 +245,6 @@ public class FileModelTest {
                    .withName(FIRST_FILE_TXT)
                    .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
                    .withSize(SIZE)
-                   .buildPublishedFile();
-    }
-
-
-
-    @Deprecated
-    @Test
-    void shouldMigrateLegacyFileToPendingOpenFile() throws JsonProcessingException {
-        var fileJson = """
-        {
-            "type" : "File",
-            "identifier" : "df2be965-f628-43fb-914b-e16d6f136e05",
-            "name" : "2-s2.0-85143901828.xml",
-            "mimeType" : "text/xml",
-            "size" : 180088,
-            "license" : {
-                "type" : "License",
-                "identifier" : "RightsReserved",
-                "labels" : {
-                    "nb" : "RightsReserved"
-                }
-            },
-            "administrativeAgreement" : false,
-            "publisherAuthority" : false,
-            "visibleForNonOwner" : true
-        }""";
-        var file = JsonUtils.dtoObjectMapper.readValue(fileJson, File.class);
-        assertThat(file, instanceOf(PendingOpenFile.class));
-    }
-
-    private static String generateNewFile() {
-        return """
-        {
-            "type" : "PublishedFile",
-            "identifier" : "d9fc5844-f1a3-491b-825a-5a4cabc12aa2",
-            "name" : "Per Magne Østertun.pdf",
-            "mimeType" : "application/pdf",
-            "size" : 1025817,
-            "license" : "https://creativecommons.org/licenses/by-nc/2.0/",
-            "administrativeAgreement" : false,
-            "publisherAuthority" : false,
-            "publishedDate" : "2023-05-25T19:31:17.302914Z",
-            "visibleForNonOwner" : true
-        }""";
+                   .buildOpenFile();
     }
 }

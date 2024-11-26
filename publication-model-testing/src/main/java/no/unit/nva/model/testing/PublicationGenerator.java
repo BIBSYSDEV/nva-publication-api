@@ -5,6 +5,7 @@ import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstanceType;
 import static no.unit.nva.model.testing.RandomCurrencyUtil.randomCurrency;
 import static no.unit.nva.model.testing.RandomUtils.randomLabels;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -48,7 +49,6 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.funding.MonetaryAmount;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -264,7 +264,7 @@ public final class PublicationGenerator {
                    .withDoi(randomDoi())
                    .withCreatedDate(randomInstant())
                    .withEntityDescription(randomEntityDescription(publicationInstanceClass))
-                   .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
+                   .withAssociatedArtifacts(randomAssociatedArtifacts())
                    .withPublicationNotes(List.of(randomPublicationNote(), randomUnpublishingNote()))
                    .withDuplicateOf(randomUri())
                    .withCuratingInstitutions(Set.of(new CuratingInstitution(randomUri(), Set.of(randomUri()))))

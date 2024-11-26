@@ -10,6 +10,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescrip
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
 import java.util.ArrayList;
@@ -41,7 +43,6 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -78,9 +79,8 @@ public final class TicketTestUtils {
 
     public static Stream<Arguments> notApprovedFilesProvider() {
         return Stream.of(
-            Arguments.of(AssociatedArtifactsGenerator.randomUnpublishedFile()),
-            Arguments.of(AssociatedArtifactsGenerator.randomPendingOpenFile()),
-            Arguments.of(AssociatedArtifactsGenerator.randomPendingInternalFile())
+            Arguments.of(randomPendingOpenFile()),
+            Arguments.of(randomPendingInternalFile())
         );
     }
 

@@ -234,12 +234,12 @@ class PublicationPermissionStrategyTest {
                    .build();
     }
 
-    static void unpublishFiles(Publication publication) {
+    static void setFileToPendingOpenFiles(Publication publication) {
         var list = publication.getAssociatedArtifacts()
                        .stream()
                        .filter(File.class::isInstance)
                        .map(File.class::cast)
-                       .map(File::toUnpublishedFile)
+                       .map(File::toPendingOpenFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }

@@ -188,7 +188,7 @@ class MigrationBookMonographSubtypesTest {
                 + "  } ],\n"
                 + "  \"subjects\" : [ \"https://www.example.org/quaeratdolorem\" ],\n"
                 + "  \"associatedArtifacts\" : [ {\n"
-                + "    \"type\" : \"PublishedFile\",\n"
+                + "    \"type\" : \"OpenFile\",\n"
                 + "    \"identifier\" : \"86406e82-636e-4ddb-8e07-fd6619ec3aa0\",\n"
                 + "    \"name\" : \"bNvv7O5PyKT\",\n"
                 + "    \"mimeType\" : \"gVDXmTw9H2gqBRm\",\n"

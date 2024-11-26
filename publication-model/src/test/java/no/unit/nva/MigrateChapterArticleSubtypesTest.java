@@ -173,7 +173,7 @@ class MigrateChapterArticleSubtypesTest {
                 + "  } ],\n"
                 + "  \"subjects\" : [ \"https://www.example.org/maximevel\" ],\n"
                 + "  \"associatedArtifacts\" : [ {\n"
-                + "    \"type\" : \"PublishedFile\",\n"
+                + "    \"type\" : \"OpenFile\",\n"
                 + "    \"identifier\" : \"46725458-c60c-44a6-a952-41d25c9e5de3\",\n"
                 + "    \"name\" : \"gEUP4JgMXh1Q\",\n"
                 + "    \"mimeType\" : \"orcFMiw4ZnM\",\n"

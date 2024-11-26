@@ -28,12 +28,11 @@ import nva.commons.core.JacocoGenerated;
  * An object that represents the description of a file.
  */
 @SuppressWarnings("PMD.ExcessiveParameterList")
-// TODO: Remove File annotation once all data has been migrated
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(names = {PendingOpenFile.TYPE, UnpublishedFile.TYPE, "File"}, value = PendingOpenFile.class),
-    @JsonSubTypes.Type(names = {OpenFile.TYPE, PublishedFile.TYPE}, value = OpenFile.class),
-    @JsonSubTypes.Type(names = {InternalFile.TYPE, AdministrativeAgreement.TYPE}, value = InternalFile.class),
+    @JsonSubTypes.Type(name = PendingOpenFile.TYPE, value = PendingOpenFile.class),
+    @JsonSubTypes.Type(name = OpenFile.TYPE, value = OpenFile.class),
+    @JsonSubTypes.Type(name = InternalFile.TYPE, value = InternalFile.class),
     @JsonSubTypes.Type(name = PendingInternalFile.TYPE, value = PendingInternalFile.class),
     @JsonSubTypes.Type(name = HiddenFile.TYPE, value = HiddenFile.class),
     @JsonSubTypes.Type(name = RejectedFile.TYPE, value = RejectedFile.class)})
@@ -64,9 +63,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final String MISSING_LICENSE = "The file is not annotated as an administrative agreement and should" +
                                                  " have a license";
     public static final String LEGAL_NOTE_FIELD = "legalNote";
-    public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(PublishedFile.class,
-                                                                                AdministrativeAgreement.class,
-                                                                                OpenFile.class, InternalFile.class);
+    public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     private static final Supplier<Pattern> LICENSE_VALIDATION_PATTERN = () -> Pattern.compile("^(http|https)://.*$");
     @JsonProperty(IDENTIFIER_FIELD)
     private final UUID identifier;
@@ -80,7 +77,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     private final URI license;
     @JsonProperty(ADMINISTRATIVE_AGREEMENT_FIELD)
     private final boolean administrativeAgreement;
-
     @JsonProperty(PUBLISHER_VERSION_FIELD)
     private final PublisherVersion publisherVersion;
     @JsonProperty(EMBARGO_DATE_FIELD)
@@ -209,18 +205,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         return getEmbargoDate().map(date -> Instant.now().isAfter(date)).orElse(true);
     }
 
-    public UnpublishedFile toUnpublishedFile() {
-        return new UnpublishedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                                   isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                                   getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
-    }
-
-    public PublishedFile toPublishedFile() {
-        return new PublishedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
-                                 isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
-                                 getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
-    }
-
     public PendingOpenFile toPendingOpenFile() {
         return new PendingOpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
                                    isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
@@ -237,21 +221,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
                                 isAdministrativeAgreement(), getPublisherVersion(), getEmbargoDate().orElse(null),
                                 getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
-    }
-
-    public final RejectedFile toRejectedFile() {
-        return new RejectedFile(
-                getIdentifier(),
-                getName(),
-                getMimeType(),
-                getSize(),
-                getLicense(),
-                isAdministrativeAgreement(),
-                getPublisherVersion(),
-                getEmbargoDate().orElse(null),
-                getRightsRetentionStrategy(),
-                getLegalNote(),
-                getUploadDetails());
     }
 
     public abstract boolean isVisibleForNonOwner();
@@ -422,23 +391,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
             return this;
         }
 
-        public File buildPublishedFile() {
-            return new PublishedFile(identifier, name, mimeType, size, license, administrativeAgreement,
-                                     publisherVersion, embargoDate, rightsRetentionStrategy, legalNote, Instant.now(),
-                                     uploadDetails);
-        }
-
-        public File buildUnpublishedFile() {
-            return new UnpublishedFile(identifier, name, mimeType, size, license, administrativeAgreement,
-                                       publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
-                                       uploadDetails);
-        }
-
-        public File buildUnpublishableFile() {
-            return new AdministrativeAgreement(identifier, name, mimeType, size, license, administrativeAgreement,
-                                               publisherVersion, embargoDate, uploadDetails);
-        }
-
         public File buildOpenFile() {
             return new OpenFile(identifier, name, mimeType, size, license, administrativeAgreement, publisherVersion,
                                 embargoDate, rightsRetentionStrategy, legalNote, Instant.now(), uploadDetails);
@@ -474,11 +426,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         }
 
         public File build(Class<? extends File> clazz) {
-            if (clazz.equals(PublishedFile.class)) {
-                return buildPublishedFile();
-            } else if (clazz.equals(UnpublishedFile.class)) {
-                return buildUnpublishedFile();
-            } else if (clazz.equals(RejectedFile.class)) {
+            if (clazz.equals(RejectedFile.class)) {
                 return buildRejectedFile();
             } else if (clazz.equals(OpenFile.class)) {
                 return buildOpenFile();
@@ -490,8 +438,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                 return buildInternalFile();
             } else if (clazz.equals(HiddenFile.class)) {
                 return buildHiddenFile();
-            } else if (clazz.equals(AdministrativeAgreement.class)) {
-                return buildUnpublishableFile();
             } else {
                 throw new IllegalArgumentException("Invalid file type");
             }

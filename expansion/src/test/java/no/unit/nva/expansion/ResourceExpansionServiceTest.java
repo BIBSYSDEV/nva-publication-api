@@ -7,6 +7,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFileWithLicense;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -37,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -63,8 +63,8 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -231,7 +231,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @MethodSource("licenseProvider")
     void shouldReturnIndexDocumentContainingLicense(String licenseUri, LicenseType expectedLicense)
         throws JsonProcessingException, NotFoundException {
-        var fileWithLicense = randomPublishedFile(licenseUri);
+        var fileWithLicense = randomOpenFileWithLicense(URI.create(licenseUri));
         var associatedLink = new AssociatedLink(randomUri(), null, null);
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class)
                                       .copy()
@@ -249,7 +249,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnIndexDocumentWithoutLicenseWhenNoLicense() throws JsonProcessingException, NotFoundException {
-        var fileWithoutLicense = File.builder().buildUnpublishableFile();
+        var fileWithoutLicense = File.builder().buildOpenFile();
         var link = new AssociatedLink(randomUri(), null, null);
         var publication = PublicationGenerator.randomPublication()
                               .copy()
@@ -272,14 +272,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             }
         }
         return string;
-    }
-
-    private File randomPublishedFile(String license) {
-        return File.builder()
-                   .withName(randomString())
-                   .withLicense(URI.create(license))
-                   .withIdentifier(UUID.randomUUID())
-                   .buildPublishedFile();
     }
 
     @Test
@@ -769,16 +761,16 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private void publishFiles(Publication publication) {
         var updatedPublication = publication.copy()
-                                     .withAssociatedArtifacts(convertUnpublishedFilesToPublished(publication))
+                                     .withAssociatedArtifacts(convertPendingFilesToAccepted(publication))
                                      .build();
         resourceService.updatePublication(updatedPublication);
     }
 
-    private static List<AssociatedArtifact> convertUnpublishedFilesToPublished(Publication publication) {
+    private static List<AssociatedArtifact> convertPendingFilesToAccepted(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(UnpublishedFile.class::cast)
-                   .map(UnpublishedFile::toPublishedFile)
+                   .filter(PendingFile.class::isInstance)
+                   .map(PendingFile.class::cast)
+                   .map(PendingFile::approve)
                    .collect(Collectors.toList());
     }
 

@@ -277,7 +277,7 @@ public class LiteraryArtsPerformanceOtherMigrationTest {
                 + "  } ],\n"
                 + "  \"subjects\" : [ \"https://www.example.org/0df586c6-3086-4cad-aafc-e6e1391b364d\" ],\n"
                 + "  \"associatedArtifacts\" : [ {\n"
-                + "    \"type\" : \"PublishedFile\",\n"
+                + "    \"type\" : \"OpenFile\",\n"
                 + "    \"identifier\" : \"52d2222a-9ab4-408b-b056-df1a7325230b\",\n"
                 + "    \"name\" : \"HrHN71LLmat5D\",\n"
                 + "    \"mimeType\" : \"jq9C6S9OtTGE\",\n"
