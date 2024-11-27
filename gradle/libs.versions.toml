@@ -1,42 +1,42 @@
 [versions]
-nva = { strictly = '1.41.0' }
-nvaDoiPartnerData = { strictly = '0.5.8' }
-jackson = { strictly = '2.17.2' }
-awsSdk = { strictly = '1.12.772' }
-awsSdk2 = { strictly = '2.27.24' }
-log4j = { strictly = '2.24.0' }
-slf4j = { strictly = '2.0.16' }
-zalandoProblem = { strictly = '0.27.1' }
-awsLambdaCore = { strictly = '1.2.3' }
-awsLambdaEvents = { strictly = '3.13.0' }
-httpcore = { strictly = '5.3' }
-dynamoDbLocal = { strictly = '2.0.0' }
-awsIon = { strictly = '1.11.9' }
-commonsValidator = { strictly = '1.9.0' }
+apache-bval = { strictly = '3.0.1' }
 apacheCommonsCollections = { require = '4.4' }
 apacheCommonsText = { require = '1.12.0' }
-hamcrest = { strictly = '3.0' }
-cucumber = { strictly = '7.18.1' }
-junit = { strictly = '5.11.0' }
-mockito = { strictly = '5.13.0' }
-wiremock = { strictly = "3.9.1" }
+awsIon = { strictly = '1.11.9' }
+awsLambdaCore = { strictly = '1.2.3' }
+awsLambdaEvents = { strictly = '3.13.0' }
+awsSdk = { strictly = '1.12.772' }
+awsSdk2 = { strictly = '2.27.24' }
+commonsValidator = { strictly = '1.9.0' }
 configTypesafe = { strictly = '1.4.3' }
-nva-language = { strictly = '1.2.0' }
+cucumber = { strictly = '7.18.1' }
+datafaker = { strictly = '2.3.1' }
+dynamoDbLocal = { strictly = '2.0.0' }
+glassfish-el = { strictly = '4.0.2' }
 guava = { strictly = '33.3.0-jre' }
-javers = { strictly = '7.6.1' }
+hamcrest = { strictly = '3.0' }
 hamcrestSpotify = { strictly = '1.3.2' }
+httpcore = { strictly = '5.3' }
+jackson = { strictly = '2.17.2' }
+jakarta-el-api = { strictly = '6.0.1' }
+jakarta-validation-api = { strictly = '3.1.0' }
+javers = { strictly = '7.6.1' }
 jena = { strictly = '5.2.0'}
 jsonassert = { strictly = '1.5.3'}
-datafaker = { strictly = '2.3.1' }
-tika = { strictly = '2.9.2' }
-resilience4j = { strictly = '2.2.0' }
-vavrVersion = { strictly = '0.10.4' }
-jakarta-validation-api = { strictly = '3.1.0' }
-jakarta-el-api = { strictly = '6.0.1' }
-glassfish-el = { strictly = '4.0.2' }
-apache-bval = { strictly = '3.0.1' }
-swaggerCoreVersion = { strictly = '2.2.22' }
+junit = { strictly = '5.11.0' }
+log4j = { strictly = '2.24.0' }
+mockito = { strictly = '5.13.0' }
+nva = { strictly = '1.41.0' }
+nva-language = { strictly = '1.2.0' }
+nvaDoiPartnerData = { strictly = '0.5.8' }
 reflections = { strictly = '0.10.2' }
+resilience4j = { strictly = '2.2.0' }
+slf4j = { strictly = '2.0.16' }
+swaggerCoreVersion = { strictly = '2.2.22' }
+tika = { strictly = '2.9.2' }
+vavrVersion = { strictly = '0.10.4' }
+wiremock = { strictly = "3.9.1" }
+zalandoProblem = { strictly = '0.27.1' }
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
