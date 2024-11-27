@@ -11,10 +11,13 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.util.stream.Collectors;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -29,6 +32,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -57,6 +61,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     private static final String TICKET_ASSIGNEE_UPDATE_MESSAGE =
         "User {} updates assignee to {} for publication {}";
     public static final String UPDATE_FORBIDDEN_MESSAGE = "Updating ticket {} for publication {} is forbidden for user {}";
+    public static final String FILES_MISSING_MANDATORY_FIELDS_MESSAGE = "Files missing mandatory fields: %s";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
@@ -192,11 +197,35 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private void publishingRequestSideEffects(PublishingRequestCase ticket,
-                                              UpdateTicketRequest ticketRequest) {
+                                              UpdateTicketRequest ticketRequest) throws ConflictException {
 
         if (COMPLETED.equals(ticketRequest.getStatus())) {
+            validateFilesForApproval(ticket);
             ticket.approveFiles().persistUpdate(ticketService);
         }
+    }
+
+    private void validateFilesForApproval(PublishingRequestCase ticket) throws ConflictException {
+        if (filesForApprovalAreNotApprovable(ticket)) {
+            var fileNamesMissingMandatoryFields = getFileNamesMissingMandatoryFields(ticket);
+            throw new ConflictException(FILES_MISSING_MANDATORY_FIELDS_MESSAGE
+                                            .formatted(fileNamesMissingMandatoryFields));
+        }
+    }
+
+    private static String getFileNamesMissingMandatoryFields(PublishingRequestCase ticket) {
+        return ticket.getFilesForApproval().stream()
+                   .map(PendingFile.class::cast)
+                   .filter(PendingFile::isNotApprovable)
+                   .map(File.class::cast)
+                   .map(File::getName)
+                   .collect(Collectors.joining(","));
+    }
+
+    private static boolean filesForApprovalAreNotApprovable(PublishingRequestCase ticket) {
+        return ticket.getFilesForApproval().stream()
+                   .map(PendingFile.class::cast)
+                   .anyMatch(PendingFile::isNotApprovable);
     }
 
     private TicketEntry fetchTicket(RequestUtils requestUtils)

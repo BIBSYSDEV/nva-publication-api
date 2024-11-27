@@ -1,5 +1,6 @@
 package no.unit.nva.model.associatedartifacts.file;
 
+import static java.util.Objects.isNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -71,6 +72,11 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
     public OpenFile approve() {
         return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(), getPublisherVersion(), getEmbargoDate().orElse(null),
                                 getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
+    }
+
+    @Override
+    public boolean isNotApprovable() {
+        return isNull(getLicense()) || isNull(getPublisherVersion());
     }
 
     @Override
