@@ -58,8 +58,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
             "https://creativecommons.org/publicdomain/zero/1.0"), "RightsReserved",
                                                               URI.create("http://rightsstatements.org/vocab/InC/1.0/"));
 
-    public static final String MISSING_LICENSE =
-        "The file is not annotated as an administrative agreement and should" + " have a license";
+    public static final String MISSING_LICENSE = "This file public and should therefore have a license";
     public static final String LEGAL_NOTE_FIELD = "legalNote";
     public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     private static final Supplier<Pattern> LICENSE_VALIDATION_PATTERN = () -> Pattern.compile("^(http|https)://.*$");
