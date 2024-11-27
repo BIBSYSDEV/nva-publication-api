@@ -1,5 +1,7 @@
 package no.unit.nva.model.associatedartifacts.file;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -84,5 +86,10 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
         return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
                                 getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
                                 getLegalNote(), Instant.now(), getUploadDetails());
+    }
+
+    @Override
+    public boolean isNotApprovable() {
+        return isNull(getLicense()) || isNull(getPublisherVersion());
     }
 }

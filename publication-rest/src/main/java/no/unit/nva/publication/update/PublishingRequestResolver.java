@@ -1,6 +1,5 @@
 package no.unit.nva.publication.update;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.lookUp;
@@ -158,12 +157,8 @@ public final class PublishingRequestResolver {
                                         newImage, (PublishingRequestCase) publishingRequest));
     }
 
-    private boolean isPublishable(File file) {
-        return nonNull(file.getLicense());
-    }
-
     private boolean containsNewPublishableFiles(Publication oldImage, Publication newImage) {
-        return getNewUnpublishedFiles(oldImage, newImage).stream().anyMatch(this::isPublishable);
+        return !getNewUnpublishedFiles(oldImage, newImage).isEmpty();
     }
 
     private void updateFilesForApproval(
@@ -184,7 +179,7 @@ public final class PublishingRequestResolver {
     }
 
     private Set<File> getFilesForApproval(Publication oldImage, Publication newImage) {
-        return getNewUnpublishedFiles(oldImage, newImage).stream().collect(Collectors.toSet());
+        return new HashSet<>(getNewUnpublishedFiles(oldImage, newImage));
     }
 
     private void updatePublishingRequest(

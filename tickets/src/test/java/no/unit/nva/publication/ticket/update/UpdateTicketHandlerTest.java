@@ -7,9 +7,12 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -43,9 +46,11 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -545,7 +550,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldSetUnpublishedFilesAsApprovedFilesForPublishingRequestWhenUpdatingStatusToComplete()
+    void shouldSetPendingFilesAsApprovedFilesForPublishingRequestWhenUpdatingStatusToComplete()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             PublicationStatus.DRAFT, resourceService);
@@ -632,6 +637,50 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         Assertions.assertEquals(HTTP_ACCEPTED, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnConflictWhenApprovingPublishingRequestContainingFilesThatAreMissingMandatoryFields()
+        throws ApiGatewayException, IOException {
+        var fileWithoutLicense = pendingFileWithoutLicense();
+        var publication =
+            randomPublication().copy().withAssociatedArtifacts(List.of(fileWithoutLicense)).build();
+        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(persistedPublication);
+        var closedTicket = ticket.complete(persistedPublication, USER_NAME);
+        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
+                                                          ticket.getCustomerId(),
+                                                          MANAGE_RESOURCES_STANDARD,
+                                                          MANAGE_PUBLISHING_REQUESTS);
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+    }
+
+    @Test
+    void shouldReturnConflictWhenApprovingPublishingRequestContainingFileThatIsMissingMandatoryFieldsAndValidFile()
+        throws ApiGatewayException, IOException {
+        var publication =
+            randomPublication().copy().withAssociatedArtifacts(
+                List.of(pendingFileWithoutLicense(), randomPendingOpenFile())).build();
+        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(persistedPublication);
+        var closedTicket = ticket.complete(persistedPublication, USER_NAME);
+        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
+                                                          ticket.getCustomerId(),
+                                                          MANAGE_RESOURCES_STANDARD,
+                                                          MANAGE_PUBLISHING_REQUESTS);
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+    }
+
+    private AssociatedArtifact pendingFileWithoutLicense() {
+        return randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
     }
 
     private InputStream userUpdatesTicket(TicketEntry ticket, URI userId) throws JsonProcessingException {
@@ -755,11 +804,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                                 UserInstance.fromPublication(publication).getUsername())
                                                             .withOwnerAffiliation(
                                                                 publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
+        publishingRequest.withFilesForApproval(getPendingFiles(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }
 
-    private Set<File> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+    private Set<File> getPendingFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(PendingFile.class::isInstance)
                    .map(File.class::cast)
