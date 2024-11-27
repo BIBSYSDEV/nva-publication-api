@@ -1,7 +1,7 @@
 [versions]
 apache-bval = { strictly = '3.0.1' }
-apacheCommonsCollections = { require = '4.4' }
-apacheCommonsText = { require = '1.12.0' }
+apacheCommonsCollections = { strictly = '4.4' }
+apacheCommonsText = { strictly = '1.12.0' }
 awsIon = { strictly = '1.11.9' }
 awsLambdaCore = { strictly = '1.2.3' }
 awsLambdaEvents = { strictly = '3.13.0' }
