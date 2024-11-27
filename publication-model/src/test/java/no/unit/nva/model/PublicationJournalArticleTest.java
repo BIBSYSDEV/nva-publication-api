@@ -1,7 +1,6 @@
 package no.unit.nva.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.jsonldjava.utils.JsonUtils;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import org.junit.jupiter.api.Assertions;
@@ -39,14 +38,14 @@ public class PublicationJournalArticleTest extends PublicationTest {
     @Test
     void objectMappingOfPublicationClassReturnsSerializedJsonWithJsonLdFrame() throws IOException {
 
-        Publication publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication();
         var title = publication.getEntityDescription().getMainTitle();
 
-        JsonNode publicationWithContext = toPublicationWithContext(publication);
+        var publicationWithContext = toPublicationWithContext(publication);
 
-        Object framedPublication = produceFramedPublication(publicationWithContext);
+        var framedPublication = produceFramedPublication(publicationWithContext).toString();
 
-        Assertions.assertTrue(JsonUtils.toString(framedPublication).contains(title));
+        Assertions.assertTrue(framedPublication.contains(title));
     }
 
     @DisplayName("Test publications can be serialized/deserialized")

@@ -7,11 +7,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import com.apicatalog.jsonld.JsonLd;
+import com.apicatalog.jsonld.JsonLdError;
+import com.apicatalog.jsonld.document.JsonDocument;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.jsonldjava.core.JsonLdOptions;
-import com.github.jsonldjava.core.JsonLdProcessor;
-import com.github.jsonldjava.utils.JsonUtils;
+import jakarta.json.JsonObject;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -33,8 +34,7 @@ public class PublicationTest {
     public static final String PUBLICATION_CONTEXT_JSON = Publication.getJsonLdContext(URI.create("https://localhost"));
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final String DOI_REQUEST_FIELD = "doiRequest";
-    public static final String FRAME = IoUtils.stringFromResources(Path.of("publicationFrame.json")).replace(
-        "__REPLACE__", "https://localhost");
+    public static final String FRAME = "publicationFrame.json";
     public static final String BOOK_REVISION_FIELD = ".entityDescription.reference.publicationContext.revision";
     public static final String ALLOWED_OPERATIONS_FIELD = "allowedOperations";
     public static final String IMPORT_DETAILS_FIELD = "importDetails";
@@ -84,12 +84,14 @@ public class PublicationTest {
         return document;
     }
 
-    protected Object produceFramedPublication(JsonNode publicationWithContext) throws IOException {
-        var input = JsonUtils.fromString(dataModelObjectMapper.writeValueAsString(publicationWithContext));
-        var frame = JsonUtils.fromString(FRAME);
-        var options = new JsonLdOptions();
-        options.setOmitGraph(true);
-        options.setPruneBlankNodeIdentifiers(true);
-        return JsonLdProcessor.frame(input, frame, options);
+    protected JsonObject produceFramedPublication(JsonNode publicationWithContext) {
+        try {
+            var input = IoUtils.stringToStream(dataModelObjectMapper.writeValueAsString(publicationWithContext));
+            var document = JsonDocument.of(input);
+            var frame = JsonDocument.of(IoUtils.inputStreamFromResources(FRAME));
+            return JsonLd.frame(document, frame).get();
+        } catch (JsonLdError | JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
