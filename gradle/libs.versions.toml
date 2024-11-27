@@ -5,13 +5,11 @@ jackson = { strictly = '2.17.2' }
 awsSdk = { strictly = '1.12.772' }
 awsSdk2 = { strictly = '2.27.24' }
 log4j = { strictly = '2.24.0' }
-# slf4j takes "require", not "strictly" as wiremock has multiple versions
-slf4j = { require = '2.0.16' }
+slf4j = { strictly = '2.0.16' }
 zalandoProblem = { strictly = '0.27.1' }
 awsLambdaCore = { strictly = '1.2.3' }
 awsLambdaEvents = { strictly = '3.13.0' }
-# jsonld and awssdk have different versions. update libraries and check again
-httpcore = { require = '5.3' }
+httpcore = { strictly = '5.3' }
 dynamoDbLocal = { strictly = '2.0.0' }
 awsIon = { strictly = '1.11.9' }
 commonsValidator = { strictly = '1.9.0' }
