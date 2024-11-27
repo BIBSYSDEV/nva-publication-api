@@ -2336,7 +2336,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private AssociatedArtifact randomOpenFile() {
 
-        return new OpenFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null, false,
+        return new OpenFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null,
                             PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
             RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(), new ImportUploadDetails(null, null, null));
     }

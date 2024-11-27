@@ -448,7 +448,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        RandomDataGenerator.randomString(),
                                        RandomDataGenerator.randomInteger().longValue(),
                                        RandomDataGenerator.randomUri(),
-                                       false,
                                        PublisherVersion.ACCEPTED_VERSION,
                                        (Instant) null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
@@ -485,9 +484,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        RandomDataGenerator.randomString(),
                                        RandomDataGenerator.randomInteger().longValue(),
                                        RandomDataGenerator.randomUri(),
-                                       false,
                                        PublisherVersion.ACCEPTED_VERSION,
-                                       (Instant) null,
+                                       null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                        RandomDataGenerator.randomString(),
                                        new UserUploadDetails(null, null));

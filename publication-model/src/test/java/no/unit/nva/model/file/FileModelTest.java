@@ -8,7 +8,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -29,7 +28,6 @@ import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.MissingLicenseException;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
@@ -48,24 +46,20 @@ public class FileModelTest {
     public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by/4.0/");
     public static final String APPLICATION_PDF = "application/pdf";
     public static final String FIRST_FILE_TXT = "First_file.txt";
-    public static final String CC_BY = "CC-BY";
     public static final long SIZE = 200L;
     public static final ObjectMapper dataModelObjectMapper = JsonUtils.dtoObjectMapper;
-    public static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
-    private static final boolean ADMINISTRATIVE_AGREEMENT = true;
 
     public static File randomPendingOpenFile() {
         return buildNonAdministrativeAgreement().buildPendingOpenFile();
     }
 
     public static Stream<File> notAdministrativeAgreements() {
-        return Stream.of(randomPendingOpenFile(), unpublishableNotAdministrativeAgreement());
+        return Stream.of(randomPendingOpenFile(), internalFile());
     }
 
     public static File.Builder buildNonAdministrativeAgreement() {
         return File.builder()
                    .withName(randomString())
-                   .withAdministrativeAgreement(NOT_ADMINISTRATIVE_AGREEMENT)
                    .withMimeType(randomString())
                    .withSize(randomInteger().longValue())
                    .withEmbargoDate(randomInstant())
@@ -87,19 +81,13 @@ public class FileModelTest {
 
     @Test
     void shouldThrowMissingLicenseExceptionWhenFileIsNotAdministrativeAgreementAndLicenseIsMissing() {
-        var file = getPublishedFile();
+        var file = getOpenFile();
         assertThrows(MissingLicenseException.class, file::validate);
     }
 
     @Test
-    void shouldNotThrowMissingLicenseExceptionWhenFileIsAdministrativeAgreementAndLicenseIsMissing() {
-        var file = getAdministrativeAgreement(null);
-        assertDoesNotThrow(file::validate);
-    }
-
-    @Test
     void shouldNotThrowMissingLicenseExceptionWhenFileIsAdministrativeAgreementAndLicenseIsPresent() {
-        var file = getAdministrativeAgreement(LICENSE_URI);
+        var file = getInternalFile(LICENSE_URI);
         assertDoesNotThrow(file::validate);
     }
 
@@ -117,7 +105,7 @@ public class FileModelTest {
 
     @Test
     void shouldSetNewRightsRetentionStrategy() {
-        var file = getPublishedFile();
+        var file = getOpenFile();
         var rightsRetentionStrategy = CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
         file.setRightsRetentionStrategy(rightsRetentionStrategy);
         assertThat(file.getRightsRetentionStrategy(), is(equalTo(rightsRetentionStrategy)));
@@ -127,12 +115,6 @@ public class FileModelTest {
     @MethodSource("notAdministrativeAgreements")
     void shouldNotThrowMissingLicenseExceptionWhenFileIsNotAdministrativeAgreementAndLicenseIsPresent(File file) {
         assertDoesNotThrow(file::validate);
-    }
-
-    @Test
-    void shouldReturnEmptySetWhenLicenseLabelsAreNull() {
-        var license = new License.Builder().withIdentifier(CC_BY).withLink(LICENSE_URI).withLabels(null).build();
-        assertThat(license.getLabels(), is(anEmptyMap()));
     }
 
     @Test
@@ -163,9 +145,8 @@ public class FileModelTest {
     @Deprecated
     @Test
     void objectMapperShouldSerializeAndDeserializePublishedVersion() throws JsonProcessingException {
-        var file = new PendingOpenFile(UUID.randomUUID(), randomString(), randomString(), 10L, null, false,
-                                                  PublisherVersion.ACCEPTED_VERSION, null, null, randomString(),
-                                                  randomInserted());
+        var file = new PendingOpenFile(UUID.randomUUID(), randomString(), randomString(), 10L, null,
+                                       PublisherVersion.ACCEPTED_VERSION, null, null, randomString(), randomInserted());
         var fileAsString = file.toString();
         var roundTrippedFile = dataModelObjectMapper.readValue(fileAsString, PendingOpenFile.class);
         assertThat(roundTrippedFile.getPublisherVersion(), is(equalTo(PublisherVersion.ACCEPTED_VERSION)));
@@ -183,11 +164,11 @@ public class FileModelTest {
         return randomBoolean() ? PublisherVersion.PUBLISHED_VERSION : PublisherVersion.ACCEPTED_VERSION;
     }
 
-    private static File unpublishableNotAdministrativeAgreement() {
+    private static File internalFile() {
         return new InternalFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
-                                LICENSE_URI, NOT_ADMINISTRATIVE_AGREEMENT, PublisherVersion.ACCEPTED_VERSION,
-                                randomInstant(), RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                randomString(), randomInstant(), randomInserted());
+                                LICENSE_URI, PublisherVersion.ACCEPTED_VERSION, randomInstant(),
+                                RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(), randomString(),
+                                randomInstant(), randomInserted());
     }
 
     private static String generateNewFile() {
@@ -206,40 +187,33 @@ public class FileModelTest {
             }""";
     }
 
-    private InternalFile getAdministrativeAgreement(URI license) {
+    private InternalFile getInternalFile(URI license) {
         return File.builder()
                    .withIdentifier(UUID.randomUUID())
                    .withLicense(license)
                    .withName(FileModelTest.FIRST_FILE_TXT)
-                   .withAdministrativeAgreement(true)
                    .buildInternalFile()
                    .toInternalFile();
     }
 
     private InternalFile randomInternalFile() {
         return new InternalFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
-                                LICENSE_URI, ADMINISTRATIVE_AGREEMENT, PublisherVersion.ACCEPTED_VERSION,
-                                randomInstant(), RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                randomString(), randomInstant(), randomInserted());
+                                LICENSE_URI, PublisherVersion.ACCEPTED_VERSION, randomInstant(),
+                                RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(), randomString(),
+                                randomInstant(), randomInserted());
     }
 
     private OpenFile openFileWithActiveEmbargo() {
         return new OpenFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(), LICENSE_URI,
-                            NOT_ADMINISTRATIVE_AGREEMENT, PublisherVersion.ACCEPTED_VERSION,
-                            Instant.now().plus(1, DAYS),
+                            PublisherVersion.ACCEPTED_VERSION, Instant.now().plus(1, DAYS),
                             RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(), randomString(),
                             randomInstant(), randomInserted());
     }
 
-    private File getPublishedFile() {
-        return getPublishedFile(UUID.randomUUID());
-    }
-
-    private File getPublishedFile(UUID identifier) {
+    private File getOpenFile() {
         return File.builder()
-                   .withAdministrativeAgreement(NOT_ADMINISTRATIVE_AGREEMENT)
                    .withEmbargoDate(null)
-                   .withIdentifier(identifier)
+                   .withIdentifier(UUID.randomUUID())
                    .withLicense(null)
                    .withMimeType(APPLICATION_PDF)
                    .withName(FIRST_FILE_TXT)
