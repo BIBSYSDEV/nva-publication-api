@@ -8,7 +8,6 @@ dependencies {
     implementation libs.nva.secrets
     implementation project(":publication-model")
     implementation project(":publication-model-testing")
-    implementation libs.jsonld
     implementation libs.guava
     implementation libs.aws.sdk.dynamodb
     implementation libs.junit.jupiter.params
