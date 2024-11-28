@@ -55,16 +55,23 @@ public final class PublishingRequestResolver {
 
     private static Set<File> mergeFilesForApproval(
             PublishingRequestCase publishingRequestCase, Set<File> filesForApproval) {
-        var combinedFilesForApproval = new HashSet<>(publishingRequestCase.getFilesForApproval());
-        combinedFilesForApproval.addAll(filesForApproval);
-        return combinedFilesForApproval;
+        var newFileIds = filesForApproval.stream()
+                                      .map(File::getIdentifier)
+                                      .collect(Collectors.toSet());
+
+        var existingFiles = publishingRequestCase.getFilesForApproval().stream()
+                                 .filter(file -> !newFileIds.contains(file.getIdentifier()))
+                                 .collect(Collectors.toSet());
+
+        filesForApproval.addAll(existingFiles);
+
+        return filesForApproval;
     }
 
-    private static List<File> getUnpublishedFiles(Publication publication) {
+    private static List<File> getPendingFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                .filter(File.class::isInstance)
+                .filter(PendingFile.class::isInstance)
                 .map(File.class::cast)
-                .filter(File::needsApproval)
                 .collect(Collectors.toList());
     }
 
@@ -92,8 +99,8 @@ public final class PublishingRequestResolver {
     }
 
     private boolean updateHasFileChanges(Publication oldImage, Publication newImage) {
-        var existingFiles = new HashSet<>(getUnpublishedFiles(oldImage));
-        var updatedFiles = new HashSet<>(getUnpublishedFiles(newImage));
+        var existingFiles = new HashSet<>(getPendingFiles(oldImage));
+        var updatedFiles = new HashSet<>(getPendingFiles(newImage));
         return !existingFiles.equals(updatedFiles);
     }
 
@@ -158,35 +165,39 @@ public final class PublishingRequestResolver {
     }
 
     private boolean containsNewPublishableFiles(Publication oldImage, Publication newImage) {
-        return !getNewUnpublishedFiles(oldImage, newImage).isEmpty();
+        return !getNewPendingFiles(oldImage, newImage).isEmpty();
     }
 
     private void updateFilesForApproval(
             Publication oldImage,
             Publication newImage,
             List<PublishingRequestCase> pendingPublishingRequests) {
-        var filesForApproval = getFilesForApproval(oldImage, newImage);
         pendingPublishingRequests.forEach(
                 publishingRequestCase ->
-                        updatePublishingRequest(newImage, publishingRequestCase, filesForApproval));
+                        updatePublishingRequest(oldImage, newImage, publishingRequestCase));
     }
 
-    private List<File> getNewUnpublishedFiles(Publication oldImage, Publication newImage) {
-        var existingUnpublishedFiles = getUnpublishedFiles(oldImage);
-        var newUnpublishedFiles = getUnpublishedFiles(newImage);
-        newUnpublishedFiles.removeAll(existingUnpublishedFiles);
-        return newUnpublishedFiles;
+    private Set<File> prepareFilesForApproval(Publication oldImage, Publication newImage, PublishingRequestCase publishingRequestCase) {
+        var filesForApproval = getFilesForApproval(oldImage, newImage);
+        var mergedFilesForApproval = mergeFilesForApproval(publishingRequestCase, filesForApproval);
+        ensureFileExists(newImage, mergedFilesForApproval);
+        return mergedFilesForApproval;
+    }
+
+    private List<File> getNewPendingFiles(Publication oldImage, Publication newImage) {
+        var existingPendingFiles = getPendingFiles(oldImage);
+        var newPendingFiles = getPendingFiles(newImage);
+        newPendingFiles.removeAll(existingPendingFiles);
+        return newPendingFiles;
     }
 
     private Set<File> getFilesForApproval(Publication oldImage, Publication newImage) {
-        return new HashSet<>(getNewUnpublishedFiles(oldImage, newImage));
+        return new HashSet<>(getNewPendingFiles(oldImage, newImage));
     }
 
-    private void updatePublishingRequest(
-            Publication newImage,
-            PublishingRequestCase publishingRequest,
-            Set<File> filesForApproval) {
-        var updatedFilesForApproval = mergeFilesForApproval(publishingRequest, filesForApproval);
+    private void updatePublishingRequest(Publication oldImage, Publication newImage,
+                                         PublishingRequestCase publishingRequest) {
+        var updatedFilesForApproval = prepareFilesForApproval(oldImage, newImage, publishingRequest);
         ensureFileExists(newImage, updatedFilesForApproval);
         if (customerAllowsPublishingMetadataAndFiles()) {
             publishingRequest

@@ -136,6 +136,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguratio
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
@@ -2147,9 +2148,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private static List<File> getUnpublishedFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
+                   .filter(PendingFile.class::isInstance)
                    .map(File.class::cast)
-                   .filter(File::needsApproval)
                    .toList();
     }
 

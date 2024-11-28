@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -85,13 +85,9 @@ public class TicketResolver {
 
     private Set<File> getFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(this::isFileThatNeedsApproval)
+                   .filter(PendingFile.class::isInstance)
                    .map(File.class::cast)
                    .collect(Collectors.toSet());
-    }
-
-    boolean isFileThatNeedsApproval(AssociatedArtifact artifact) {
-        return artifact instanceof File file && file.needsApproval();
     }
 
     private static boolean userHasPermissionToCreateTicket(PublicationPermissionStrategy permissionStrategy,

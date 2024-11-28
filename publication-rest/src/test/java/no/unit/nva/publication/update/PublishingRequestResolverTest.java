@@ -1,9 +1,11 @@
 package no.unit.nva.publication.update;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithFile;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -51,21 +53,18 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFiles(File file)
         throws ApiGatewayException {
         var publication = createPersistedPublicationWithFile(PublicationStatus.PUBLISHED, file, resourceService);
-        persistPublishingRequestContainingExistingUnpublishedFiles(publication);
+        persistPublishingRequestContainingExistingPendingFiles(publication);
         var publicationUpdateRemovingUnpublishedFiles = publication.copy()
                                                             .withAssociatedArtifacts(List.of())
                                                             .withStatus(PublicationStatus.PUBLISHED)
                                                             .build();
         publishingRequestResolver(publication).resolve(publication, publicationUpdateRemovingUnpublishedFiles);
 
-        var publishingRequest = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
-                                    .map(PublishingRequestCase.class::cast)
-                                    .toList()
-                                    .getFirst();
+        var publishingRequest = getPublishingRequest(publication);
 
         Assertions.assertEquals(TicketStatus.COMPLETED, publishingRequest.getStatus());
-        Assertions.assertTrue(publishingRequest.getFilesForApproval().isEmpty());
-        Assertions.assertTrue(publishingRequest.getApprovedFiles().isEmpty());
+        assertTrue(publishingRequest.getFilesForApproval().isEmpty());
+        assertTrue(publishingRequest.getApprovedFiles().isEmpty());
     }
 
     @Test
@@ -75,11 +74,10 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var openFile = randomOpenFile();
         var pendingOpenFile = randomPendingOpenFile();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile, openFile)));
-        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
-                                                                     publication);
+        var persistedPublication = persistPublication(publication);
         resourceService.publishPublication(UserInstance.fromPublication(publication),
                                            persistedPublication.getIdentifier());
-        persistPublishingRequestContainingExistingUnpublishedFiles(persistedPublication);
+        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
         var publicationUpdateRemovingUnpublishedFiles = persistedPublication.copy()
                                                             .withAssociatedArtifacts(List.of(openFile))
                                                             .withStatus(PublicationStatus.PUBLISHED)
@@ -87,14 +85,46 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         publishingRequestResolver(persistedPublication).resolve(resourceService.getPublication(persistedPublication),
                                                                 publicationUpdateRemovingUnpublishedFiles);
 
-        var publishingRequest = resourceService.fetchAllTicketsForResource(Resource.fromPublication(persistedPublication))
-                                    .map(PublishingRequestCase.class::cast)
-                                    .toList()
-                                    .getFirst();
+        var publishingRequest = getPublishingRequest(persistedPublication);
 
         Assertions.assertEquals(TicketStatus.COMPLETED, publishingRequest.getStatus());
-        Assertions.assertTrue(publishingRequest.getFilesForApproval().isEmpty());
-        Assertions.assertTrue(publishingRequest.getApprovedFiles().isEmpty());
+        assertTrue(publishingRequest.getFilesForApproval().isEmpty());
+        assertTrue(publishingRequest.getApprovedFiles().isEmpty());
+    }
+
+    private PublishingRequestCase getPublishingRequest(Publication publication) {
+        return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
+                   .map(PublishingRequestCase.class::cast)
+                   .toList()
+                   .getFirst();
+    }
+
+    @Test
+    void shouldUpdateExistingFileInFilesForApprovalWhenUpdatingFileForPublication() throws ApiGatewayException {
+        var publication = randomPublication();
+        var pendingOpenFile = randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
+        var persistedPublication = persistPublication(publication);
+        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
+
+        var updatedFile = pendingOpenFile.copy().withLicense(randomUri()).buildPendingOpenFile();
+        var updatedPublication = persistedPublication.copy()
+            .withAssociatedArtifacts(List.of(updatedFile))
+            .build();
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublication(persistedPublication),
+                                                               updatedPublication);
+
+        var filesForApproval = getPublishingRequest(persistedPublication).getFilesForApproval();
+
+        assertTrue(filesForApproval.contains(updatedFile));
+    }
+
+    private Publication persistPublication(Publication publication) throws ApiGatewayException {
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance,
+                                                                     publication);
+        resourceService.publishPublication(userInstance, persistedPublication.getIdentifier());
+        return resourceService.getPublication(persistedPublication);
     }
 
     private static Customer customerNotAllowingPublishingFiles() {
@@ -106,7 +136,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                              customerNotAllowingPublishingFiles());
     }
 
-    private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
+    private void persistPublishingRequestContainingExistingPendingFiles(Publication publication)
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication,
                                                                                               PublishingRequestCase.class,
