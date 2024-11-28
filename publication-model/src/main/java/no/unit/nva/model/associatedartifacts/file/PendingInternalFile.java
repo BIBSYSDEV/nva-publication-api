@@ -1,7 +1,6 @@
 package no.unit.nva.model.associatedartifacts.file;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

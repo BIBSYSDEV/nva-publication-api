@@ -60,7 +60,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         "User {} is not authorized to manage ticket {} for publication {}";
     private static final String TICKET_ASSIGNEE_UPDATE_MESSAGE =
         "User {} updates assignee to {} for publication {}";
-    public static final String UPDATE_FORBIDDEN_MESSAGE = "Updating ticket {} for publication {} is forbidden for user {}";
+    public static final String UPDATE_FORBIDDEN_MESSAGE =
+        "Updating ticket {} for publication {} is forbidden for user {}";
     public static final String FILES_MISSING_MANDATORY_FIELDS_MESSAGE = "Files missing mandatory fields: %s";
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -207,18 +208,19 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
 
     private void validateFilesForApproval(PublishingRequestCase ticket) throws ConflictException {
         if (filesForApprovalAreNotApprovable(ticket)) {
-            var fileNamesMissingMandatoryFields = getFileNamesMissingMandatoryFields(ticket);
+            var fileIdsMissingMandatoryFields = getFileIdsMissingMandatoryFields(ticket);
             throw new ConflictException(FILES_MISSING_MANDATORY_FIELDS_MESSAGE
-                                            .formatted(fileNamesMissingMandatoryFields));
+                                            .formatted(fileIdsMissingMandatoryFields));
         }
     }
 
-    private static String getFileNamesMissingMandatoryFields(PublishingRequestCase ticket) {
+    private static String getFileIdsMissingMandatoryFields(PublishingRequestCase ticket) {
         return ticket.getFilesForApproval().stream()
                    .map(PendingFile.class::cast)
                    .filter(PendingFile::isNotApprovable)
                    .map(File.class::cast)
-                   .map(File::getName)
+                   .map(File::getIdentifier)
+                   .map(String::valueOf)
                    .collect(Collectors.joining(","));
     }
 
