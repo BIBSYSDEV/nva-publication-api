@@ -53,21 +53,6 @@ public final class PublishingRequestResolver {
                           .equals(customer.getPublicationWorkflow());
     }
 
-    private static Set<File> mergeFilesForApproval(
-            PublishingRequestCase publishingRequestCase, Set<File> filesForApproval) {
-        var newFileIds = filesForApproval.stream()
-                                      .map(File::getIdentifier)
-                                      .collect(Collectors.toSet());
-
-        var existingFiles = publishingRequestCase.getFilesForApproval().stream()
-                                 .filter(file -> !newFileIds.contains(file.getIdentifier()))
-                                 .collect(Collectors.toSet());
-
-        filesForApproval.addAll(existingFiles);
-
-        return filesForApproval;
-    }
-
     private static List<File> getPendingFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                 .filter(PendingFile.class::isInstance)
@@ -93,12 +78,12 @@ public final class PublishingRequestResolver {
             autoCompletePendingPublishingRequestsIfNeeded(newImage, pendingPublishingRequests);
             return;
         }
-        if (updateHasFileChanges(oldImage, newImage)) {
+        if (updateHasPendingFileChanges(oldImage, newImage)) {
             updateFilesForApproval(oldImage, newImage, pendingPublishingRequests);
         }
     }
 
-    private boolean updateHasFileChanges(Publication oldImage, Publication newImage) {
+    private boolean updateHasPendingFileChanges(Publication oldImage, Publication newImage) {
         var existingFiles = new HashSet<>(getPendingFiles(oldImage));
         var updatedFiles = new HashSet<>(getPendingFiles(newImage));
         return !existingFiles.equals(updatedFiles);
@@ -177,17 +162,16 @@ public final class PublishingRequestResolver {
                         updatePublishingRequest(oldImage, newImage, publishingRequestCase));
     }
 
-    private Set<File> prepareFilesForApproval(Publication oldImage, Publication newImage, PublishingRequestCase publishingRequestCase) {
+    private Set<File> prepareFilesForApproval(Publication oldImage, Publication newImage) {
         var filesForApproval = getFilesForApproval(oldImage, newImage);
-        var mergedFilesForApproval = mergeFilesForApproval(publishingRequestCase, filesForApproval);
-        ensureFileExists(newImage, mergedFilesForApproval);
-        return mergedFilesForApproval;
+        removeFilesIfFileDoesNotExists(newImage, filesForApproval);
+        return filesForApproval;
     }
 
     private List<File> getNewPendingFiles(Publication oldImage, Publication newImage) {
         var existingPendingFiles = getPendingFiles(oldImage);
         var newPendingFiles = getPendingFiles(newImage);
-        newPendingFiles.removeAll(existingPendingFiles);
+        newPendingFiles.removeIf(existingPendingFiles::contains);
         return newPendingFiles;
     }
 
@@ -197,8 +181,8 @@ public final class PublishingRequestResolver {
 
     private void updatePublishingRequest(Publication oldImage, Publication newImage,
                                          PublishingRequestCase publishingRequest) {
-        var updatedFilesForApproval = prepareFilesForApproval(oldImage, newImage, publishingRequest);
-        ensureFileExists(newImage, updatedFilesForApproval);
+        var updatedFilesForApproval = prepareFilesForApproval(oldImage, newImage);
+        removeFilesIfFileDoesNotExists(newImage, updatedFilesForApproval);
         if (customerAllowsPublishingMetadataAndFiles()) {
             publishingRequest
                     .withFilesForApproval(updatedFilesForApproval)
@@ -212,7 +196,7 @@ public final class PublishingRequestResolver {
         }
     }
 
-    private void ensureFileExists(Publication publication, Set<File> updatedFilesForApproval) {
+    private void removeFilesIfFileDoesNotExists(Publication publication, Set<File> updatedFilesForApproval) {
         updatedFilesForApproval.removeIf(file -> publicationDoesNotContainFile(publication, file));
     }
 

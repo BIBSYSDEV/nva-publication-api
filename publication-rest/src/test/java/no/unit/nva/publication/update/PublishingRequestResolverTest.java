@@ -100,7 +100,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateExistingFileInFilesForApprovalWhenUpdatingFileForPublication() throws ApiGatewayException {
+    void shouldUpdateExistingPendingFileInFilesForApprovalInPendingPublishingRequestWhenUpdatingFileForPublication()
+        throws ApiGatewayException {
         var publication = randomPublication();
         var pendingOpenFile = randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
