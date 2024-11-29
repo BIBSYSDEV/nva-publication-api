@@ -76,7 +76,7 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
     @Override
     public InternalFile approve() {
         if (isNotApprovable()) {
-            throw new IllegalStateException("Cannot publish a file without a license: %s".formatted(getIdentifier()));
+            throw new IllegalStateException(CANNOT_PUBLISH_FILE_MESSAGE.formatted(getIdentifier()));
         }
         return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
                                 getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
