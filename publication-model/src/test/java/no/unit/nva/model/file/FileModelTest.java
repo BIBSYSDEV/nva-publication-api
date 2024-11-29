@@ -30,6 +30,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.MissingLicenseException;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
@@ -150,6 +151,15 @@ public class FileModelTest {
         var fileAsString = file.toString();
         var roundTrippedFile = dataModelObjectMapper.readValue(fileAsString, PendingOpenFile.class);
         assertThat(roundTrippedFile.getPublisherVersion(), is(equalTo(PublisherVersion.ACCEPTED_VERSION)));
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenApprovingPendingFileWithoutLicense() {
+        var fileWithoutLicense = randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
+        var pendingFile = (PendingFile<?, ?>) fileWithoutLicense;
+
+        assertThrows(IllegalStateException.class, pendingFile::approve,
+                     "Cannot publish a file without a license: " + fileWithoutLicense.getIdentifier());
     }
 
     private static Username randomUsername() {
