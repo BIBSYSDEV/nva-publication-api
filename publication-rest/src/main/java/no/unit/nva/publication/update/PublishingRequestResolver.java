@@ -4,9 +4,9 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.lookUp;
 import static nva.commons.core.attempt.Try.attempt;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
@@ -141,7 +141,7 @@ public final class PublishingRequestResolver {
                 .map(
                         publishingRequest ->
                                 publishingRequest.withFilesForApproval(
-                                        getFilesForApproval(oldImage, newImage)))
+                                        new HashSet<>(getFilesForApproval(oldImage, newImage))))
                 .map(publishingRequest -> publishingRequest.withOwner(userInstance.getUsername()))
                 .map(
                         publishingRequest ->
@@ -162,7 +162,7 @@ public final class PublishingRequestResolver {
                         updatePublishingRequest(oldImage, newImage, publishingRequestCase));
     }
 
-    private Set<File> prepareFilesForApproval(Publication oldImage, Publication newImage) {
+    private List<File> prepareFilesForApproval(Publication oldImage, Publication newImage) {
         var filesForApproval = getFilesForApproval(oldImage, newImage);
         removeFilesIfFileDoesNotExists(newImage, filesForApproval);
         return filesForApproval;
@@ -175,13 +175,13 @@ public final class PublishingRequestResolver {
         return newPendingFiles;
     }
 
-    private Set<File> getFilesForApproval(Publication oldImage, Publication newImage) {
-        return new HashSet<>(getNewPendingFiles(oldImage, newImage));
+    private List<File> getFilesForApproval(Publication oldImage, Publication newImage) {
+        return getNewPendingFiles(oldImage, newImage);
     }
 
     private void updatePublishingRequest(Publication oldImage, Publication newImage,
                                          PublishingRequestCase publishingRequest) {
-        var updatedFilesForApproval = prepareFilesForApproval(oldImage, newImage);
+        var updatedFilesForApproval = new HashSet<>(prepareFilesForApproval(oldImage, newImage));
         removeFilesIfFileDoesNotExists(newImage, updatedFilesForApproval);
         if (customerAllowsPublishingMetadataAndFiles()) {
             publishingRequest
@@ -196,7 +196,7 @@ public final class PublishingRequestResolver {
         }
     }
 
-    private void removeFilesIfFileDoesNotExists(Publication publication, Set<File> updatedFilesForApproval) {
+    private void removeFilesIfFileDoesNotExists(Publication publication, Collection<File> updatedFilesForApproval) {
         updatedFilesForApproval.removeIf(file -> publicationDoesNotContainFile(publication, file));
     }
 
