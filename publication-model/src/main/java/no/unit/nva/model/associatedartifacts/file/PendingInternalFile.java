@@ -82,6 +82,6 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
 
     @Override
     public boolean isNotApprovable() {
-        return isNull(getLicense()) || isNull(getPublisherVersion());
+        return isNull(getLicense());
     }
 }
