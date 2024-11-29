@@ -57,12 +57,6 @@ public class InternalFile extends File {
     }
 
     @Override
-    @JsonIgnore
-    public boolean needsApproval() {
-        return false;
-    }
-
-    @Override
     public Builder copy() {
         return builder()
                    .withIdentifier(this.getIdentifier())

@@ -2,7 +2,6 @@ package no.unit.nva.model.associatedartifacts.file;
 
 import static java.util.Objects.isNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -57,12 +56,6 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
     }
 
     @Override
-    @JsonIgnore
-    public boolean needsApproval() {
-        return true;
-    }
-
-    @Override
     public RejectedFile reject() {
         return new RejectedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(), getPublisherVersion(), getEmbargoDate().orElse(null),
                                 getRightsRetentionStrategy(), getLegalNote(), getUploadDetails());
@@ -76,7 +69,7 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
 
     @Override
     public boolean isNotApprovable() {
-        return isNull(getLicense()) || isNull(getPublisherVersion());
+        return isNull(getLicense());
     }
 
     @Override

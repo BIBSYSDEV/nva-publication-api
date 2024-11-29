@@ -37,6 +37,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -71,9 +72,8 @@ public final class TicketTestUtils {
     public static Set<File> getFilesForApproval(Publication publication) {
         return publication.getAssociatedArtifacts()
                    .stream()
-                   .filter(File.class::isInstance)
+                   .filter(PendingFile.class::isInstance)
                    .map(File.class::cast)
-                   .filter(File::needsApproval)
                    .collect(Collectors.toSet());
     }
 

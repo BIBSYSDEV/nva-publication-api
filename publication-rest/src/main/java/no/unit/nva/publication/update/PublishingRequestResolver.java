@@ -4,9 +4,9 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.lookUp;
 import static nva.commons.core.attempt.Try.attempt;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
@@ -53,18 +53,10 @@ public final class PublishingRequestResolver {
                           .equals(customer.getPublicationWorkflow());
     }
 
-    private static Set<File> mergeFilesForApproval(
-            PublishingRequestCase publishingRequestCase, Set<File> filesForApproval) {
-        var combinedFilesForApproval = new HashSet<>(publishingRequestCase.getFilesForApproval());
-        combinedFilesForApproval.addAll(filesForApproval);
-        return combinedFilesForApproval;
-    }
-
-    private static List<File> getUnpublishedFiles(Publication publication) {
+    private static List<File> getPendingFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                .filter(File.class::isInstance)
+                .filter(PendingFile.class::isInstance)
                 .map(File.class::cast)
-                .filter(File::needsApproval)
                 .collect(Collectors.toList());
     }
 
@@ -86,14 +78,14 @@ public final class PublishingRequestResolver {
             autoCompletePendingPublishingRequestsIfNeeded(newImage, pendingPublishingRequests);
             return;
         }
-        if (updateHasFileChanges(oldImage, newImage)) {
+        if (updateHasPendingFileChanges(oldImage, newImage)) {
             updateFilesForApproval(oldImage, newImage, pendingPublishingRequests);
         }
     }
 
-    private boolean updateHasFileChanges(Publication oldImage, Publication newImage) {
-        var existingFiles = new HashSet<>(getUnpublishedFiles(oldImage));
-        var updatedFiles = new HashSet<>(getUnpublishedFiles(newImage));
+    private boolean updateHasPendingFileChanges(Publication oldImage, Publication newImage) {
+        var existingFiles = new HashSet<>(getPendingFiles(oldImage));
+        var updatedFiles = new HashSet<>(getPendingFiles(newImage));
         return !existingFiles.equals(updatedFiles);
     }
 
@@ -149,7 +141,7 @@ public final class PublishingRequestResolver {
                 .map(
                         publishingRequest ->
                                 publishingRequest.withFilesForApproval(
-                                        getFilesForApproval(oldImage, newImage)))
+                                        new HashSet<>(getFilesForApproval(oldImage, newImage))))
                 .map(publishingRequest -> publishingRequest.withOwner(userInstance.getUsername()))
                 .map(
                         publishingRequest ->
@@ -158,36 +150,39 @@ public final class PublishingRequestResolver {
     }
 
     private boolean containsNewPublishableFiles(Publication oldImage, Publication newImage) {
-        return !getNewUnpublishedFiles(oldImage, newImage).isEmpty();
+        return !getNewPendingFiles(oldImage, newImage).isEmpty();
     }
 
     private void updateFilesForApproval(
             Publication oldImage,
             Publication newImage,
             List<PublishingRequestCase> pendingPublishingRequests) {
-        var filesForApproval = getFilesForApproval(oldImage, newImage);
         pendingPublishingRequests.forEach(
                 publishingRequestCase ->
-                        updatePublishingRequest(newImage, publishingRequestCase, filesForApproval));
+                        updatePublishingRequest(oldImage, newImage, publishingRequestCase));
     }
 
-    private List<File> getNewUnpublishedFiles(Publication oldImage, Publication newImage) {
-        var existingUnpublishedFiles = getUnpublishedFiles(oldImage);
-        var newUnpublishedFiles = getUnpublishedFiles(newImage);
-        newUnpublishedFiles.removeAll(existingUnpublishedFiles);
-        return newUnpublishedFiles;
+    private List<File> prepareFilesForApproval(Publication oldImage, Publication newImage) {
+        var filesForApproval = getFilesForApproval(oldImage, newImage);
+        removeFilesIfFileDoesNotExists(newImage, filesForApproval);
+        return filesForApproval;
     }
 
-    private Set<File> getFilesForApproval(Publication oldImage, Publication newImage) {
-        return new HashSet<>(getNewUnpublishedFiles(oldImage, newImage));
+    private List<File> getNewPendingFiles(Publication oldImage, Publication newImage) {
+        var existingPendingFiles = getPendingFiles(oldImage);
+        var newPendingFiles = getPendingFiles(newImage);
+        newPendingFiles.removeIf(existingPendingFiles::contains);
+        return newPendingFiles;
     }
 
-    private void updatePublishingRequest(
-            Publication newImage,
-            PublishingRequestCase publishingRequest,
-            Set<File> filesForApproval) {
-        var updatedFilesForApproval = mergeFilesForApproval(publishingRequest, filesForApproval);
-        ensureFileExists(newImage, updatedFilesForApproval);
+    private List<File> getFilesForApproval(Publication oldImage, Publication newImage) {
+        return getNewPendingFiles(oldImage, newImage);
+    }
+
+    private void updatePublishingRequest(Publication oldImage, Publication newImage,
+                                         PublishingRequestCase publishingRequest) {
+        var updatedFilesForApproval = new HashSet<>(prepareFilesForApproval(oldImage, newImage));
+        removeFilesIfFileDoesNotExists(newImage, updatedFilesForApproval);
         if (customerAllowsPublishingMetadataAndFiles()) {
             publishingRequest
                     .withFilesForApproval(updatedFilesForApproval)
@@ -201,7 +196,7 @@ public final class PublishingRequestResolver {
         }
     }
 
-    private void ensureFileExists(Publication publication, Set<File> updatedFilesForApproval) {
+    private void removeFilesIfFileDoesNotExists(Publication publication, Collection<File> updatedFilesForApproval) {
         updatedFilesForApproval.removeIf(file -> publicationDoesNotContainFile(publication, file));
     }
 
