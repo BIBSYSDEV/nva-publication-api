@@ -69,7 +69,7 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
 
     @Override
     public boolean isNotApprovable() {
-        return isNull(getLicense()) || isNull(getPublisherVersion());
+        return isNull(getLicense());
     }
 
     @Override
