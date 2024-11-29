@@ -18,6 +18,7 @@ import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -52,11 +53,15 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     @Override
     protected Void processInput(TicketDto input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
-        var persistedTicket = ticketResolver.resolveAndPersistTicket(input, requestUtils);
-        persistMessage(input, requestUtils, persistedTicket);
-        addLocationHeader(requestUtils.publicationIdentifier(), persistedTicket.getIdentifier());
-        return null;
+        try {
+            var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+            var persistedTicket = ticketResolver.resolveAndPersistTicket(input, requestUtils);
+            persistMessage(input, requestUtils, persistedTicket);
+            addLocationHeader(requestUtils.publicationIdentifier(), persistedTicket.getIdentifier());
+            return null;
+        } catch (IllegalStateException exception) {
+            throw new ConflictException(exception, exception.getMessage());
+        }
     }
 
     private void persistMessage(TicketDto input, RequestUtils requestUtils, TicketEntry ticket) {

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.create;
 
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -792,6 +793,28 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         assertThat(ticket.getOwner().toString(), is(equalTo(username)));
     }
+
+    @Test
+    void shouldReturnConflictWhenCreatingCompletedPublishingRequestWithInvalidFilesWhenCustomerAllowsPublishingFiles()
+        throws ApiGatewayException, IOException {
+        var fileWithoutLicense = randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(fileWithoutLicense)).build();
+        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                                 publication);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(persistedPublication);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                            secretsManagerClient));
+        handler = new CreateTicketHandler(ticketResolver, messageService);
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, persistedPublication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+        assertThat(response.getBodyObject(Problem.class).getDetail(),
+                   is(equalTo("Cannot publish a file without a license: " + fileWithoutLicense.getIdentifier())));
+    }
+
 
     private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))

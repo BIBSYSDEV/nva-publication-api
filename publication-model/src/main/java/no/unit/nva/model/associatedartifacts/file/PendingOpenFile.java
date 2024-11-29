@@ -63,6 +63,9 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
 
     @Override
     public OpenFile approve() {
+        if (isNotApprovable()) {
+            throw new IllegalStateException(CANNOT_PUBLISH_FILE_MESSAGE.formatted(getIdentifier()));
+        }
         return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(), getPublisherVersion(), getEmbargoDate().orElse(null),
                                 getRightsRetentionStrategy(), getLegalNote(), Instant.now(), getUploadDetails());
     }
