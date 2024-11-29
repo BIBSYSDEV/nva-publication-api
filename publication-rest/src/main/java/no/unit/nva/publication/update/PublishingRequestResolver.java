@@ -165,17 +165,16 @@ public final class PublishingRequestResolver {
 
     private void updatePublishingRequest(Publication oldImage, Publication newImage,
                                          PublishingRequestCase publishingRequest) {
-        var files = prepareFilesForApproval(oldImage, newImage);
-        var updatedFilesForApproval = removeFilesIfFileDoesNotExists(newImage, files).collect(Collectors.toSet());
+        var files = prepareFilesForApproval(oldImage, newImage).collect(Collectors.toSet());
         if (customerAllowsPublishingMetadataAndFiles()) {
             publishingRequest
-                    .withFilesForApproval(updatedFilesForApproval)
+                    .withFilesForApproval(files)
                     .approveFiles()
                     .complete(newImage, getUsername())
                     .persistUpdate(ticketService);
         } else {
             publishingRequest
-                    .withFilesForApproval(updatedFilesForApproval)
+                    .withFilesForApproval(files)
                     .persistUpdate(ticketService);
         }
     }
