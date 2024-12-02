@@ -779,7 +779,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TicketCollection"
+                $ref: "#/components/schemas/PublicationLogResponse"
         401:
           description: Unauthorized
           content:
@@ -1382,10 +1382,15 @@ components:
           format: uri
           description: Shortened alias of the id, will return a redirect to the id.
     PublicationLogResponse:
-      description: PublicationLog response
-      type: array
-      items:
-        $ref: "#/components/schemas/PublicationLogEntry"
+      type: object
+      properties:
+        type:
+          type: string
+          example: "PublicationLog"
+        logEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicationLogEntry'
     PublicationLogEntry:
       description: PublicationLogEntry
       type: object
