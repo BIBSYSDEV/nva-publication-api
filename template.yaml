@@ -1076,7 +1076,7 @@ Resources:
   FetchPublicationLogFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-rest
+      CodeUri: publication-log
       Handler: no.unit.nva.publication.log.rest.FetchPublicationLogHandler::handleRequest
       Environment:
         Variables:
