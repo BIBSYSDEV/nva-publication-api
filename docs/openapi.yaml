@@ -752,6 +752,50 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+  /{publicationIdentifier}/log:
+    get:
+      operationId: fetchPublicationLog
+      summary: Fetch Publication log by identifier
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          schema:
+            type: string
+          required: true
+          style: simple
+          explode: false
+          description: UUID identifier of the Publication to fetch Log for.
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FetchPublicationLogFunction.Arn}/invocations
+        responses: {}
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketCollection"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 
   /context:
     get:
@@ -1335,6 +1379,14 @@ components:
           type: string
           format: uri
           description: Shortened alias of the id, will return a redirect to the id.
+    PublicationLogResponse:
+      description: PublicationLog response
+      type: array
+      items:
+        $ref: "#/components/schemas/PublicationLogEntry"
+    PublicationLogEntry:
+      description: PublicationLogEntry
+      type: object
 #region content from "documentation/schema.yaml"
     AcademicArticle:
       required:
