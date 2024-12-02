@@ -1,0 +1,16 @@
+dependencies {
+
+    implementation libs.nva.apigateway
+    implementation libs.nva.core
+    implementation libs.nva.json
+    implementation libs.nva.identifiers
+
+    implementation libs.jackson.core
+    implementation libs.jackson.databind
+
+    testImplementation libs.bundles.testing
+}
+
+test {
+    environment "ALLOWED_ORIGIN", "*"
+}

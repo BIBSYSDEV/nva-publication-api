@@ -1073,6 +1073,24 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+  FetchPublicationLogFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-log
+      Handler: no.unit.nva.publication.log.rest.FetchPublicationLogHandler::handleRequest
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/log
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+
   #==========================Event Lambda functions====================================================
 
   BrageMigrationEventConsumer:
