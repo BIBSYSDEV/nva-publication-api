@@ -18,6 +18,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.publicationstate.State;
 
 @SuppressWarnings("PMD.TooManyFields")
 public final class ResourceBuilder {
@@ -45,6 +46,7 @@ public final class ResourceBuilder {
     private URI duplicateOf;
     private Set<CuratingInstitution> curatingInstitutions;
     private List<ImportDetail> importDetails;
+    private State state;
 
     ResourceBuilder() {
     }
@@ -164,6 +166,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withState(State state) {
+        this.state = state;
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -189,6 +196,7 @@ public final class ResourceBuilder {
         resource.setDuplicateOf(duplicateOf);
         resource.setCuratingInstitutions(curatingInstitutions);
         resource.setImportDetails(importDetails);
+        resource.setState(state);
         return resource;
     }
 }

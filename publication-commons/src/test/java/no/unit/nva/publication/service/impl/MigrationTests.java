@@ -42,6 +42,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DataCompressor;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
@@ -181,57 +182,6 @@ class MigrationTests extends ResourcesLocalTest {
                            .orElseThrow();
 
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
-    }
-
-    @Deprecated
-    @Test
-    void shouldMigrateFilesForPublishingRequest() throws ApiGatewayException {
-        var publication = randomPublication().copy().withStatus(UNPUBLISHED).build();
-        publication = resourceService.createPublicationWithPredefinedCreationDate(publication);
-        var firstFile = randomPendingOpenFile();
-        var secondFile = randomPendingOpenFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
-        resourceService.updatePublication(publication);
-        var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(publication,
-                                                                                    PublishingRequestCase.class);
-        publishingRequest.setFilesForApproval(Set.of(firstFile, secondFile));
-        publishingRequest.setApprovedFiles(Set.of(firstFile, secondFile));
-
-        publishingRequest.withOwner(publication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
-
-        var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries());
-
-        var migratedTicket = (PublishingRequestCase) publishingRequest.fetch(ticketService);
-
-        assertThat(migratedTicket.getApprovedFiles(), containsInAnyOrder(publication.getAssociatedArtifacts().toArray()));
-        assertThat(migratedTicket.getFilesForApproval(), containsInAnyOrder(publication.getAssociatedArtifacts().toArray()));
-    }
-
-    @Test
-    void shouldNotFailWhenMigrationPublishingRequestsThatAreOrphans() throws ApiGatewayException {
-        var publication = randomPublication().copy().withStatus(DRAFT).build();
-        var persistedPublication = resourceService.createPublicationWithPredefinedCreationDate(publication);
-        var firstFile = randomPendingOpenFile();
-        var secondFile = randomPendingOpenFile();
-        persistedPublication.setAssociatedArtifacts(new AssociatedArtifactList(firstFile, secondFile));
-        resourceService.updatePublication(persistedPublication);
-        var publishingRequest = (PublishingRequestCase) TicketEntry.requestNewTicket(persistedPublication,
-                                                                                     PublishingRequestCase.class);
-        publishingRequest.setFilesForApproval(Set.of(firstFile, secondFile));
-        publishingRequest.setApprovedFiles(Set.of(firstFile, secondFile));
-        publishingRequest.withOwner(persistedPublication.getResourceOwner().getOwner().getValue()).persistNewTicket(ticketService);
-
-        deletePublication(persistedPublication);
-
-        var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-
-        assertDoesNotThrow(() -> resourceService.refreshResources(scanResources.getDatabaseEntries()));
-    }
-
-    private void deletePublication(Publication persistedPublication) {
-        client.deleteItem(new DeleteItemRequest().withTableName(RESOURCES_TABLE_NAME)
-                              .withKey(Resource.fromPublication(persistedPublication).toDao().primaryKey()));
     }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {

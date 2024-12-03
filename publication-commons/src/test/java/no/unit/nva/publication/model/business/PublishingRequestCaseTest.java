@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,6 +31,15 @@ class PublishingRequestCaseTest {
             Set.of(file)).approveFiles();
 
         assertTrue(publishingRequestCase.fileIsApproved(file));
+    }
+
+    @Test
+    void shouldSetApprovedFiles() {
+        var publishingRequest = createSample(TicketStatus.PENDING);
+        var file = randomPendingOpenFile();
+        publishingRequest.setApprovedFiles(Set.of(file));
+
+        assertTrue(publishingRequest.fileIsApproved(file));
     }
 
     private PublishingRequestCase createSample(TicketStatus status) {

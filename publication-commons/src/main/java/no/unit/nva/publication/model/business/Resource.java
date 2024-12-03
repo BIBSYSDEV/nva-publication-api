@@ -31,6 +31,7 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.publicationstate.State;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -64,7 +65,6 @@ public class Resource implements Entity {
     private URI link;
     @JsonProperty
     private AssociatedArtifactList associatedArtifacts;
-
     @JsonProperty
     private List<ResearchProject> projects;
     @JsonProperty
@@ -91,6 +91,8 @@ public class Resource implements Entity {
     private Set<CuratingInstitution> curatingInstitutions;
     @JsonProperty
     private List<ImportDetail> importDetails;
+    @JsonProperty
+    private State state;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -117,7 +119,13 @@ public class Resource implements Entity {
         return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
     }
 
+    public State getState() {
+        return state;
+    }
 
+    public void setState(State state) {
+        this.state = state;
+    }
 
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
@@ -473,7 +481,8 @@ public class Resource implements Entity {
                    .withDuplicateOf(getDuplicateOf())
                    .withRightsHolder(getRightsHolder())
                    .withCuratingInstitutions(getCuratingInstitutions())
-                   .withImportDetails(getImportDetails());
+                   .withImportDetails(getImportDetails())
+                   .withState(getState());
     }
 
     public List<URI> getSubjects() {

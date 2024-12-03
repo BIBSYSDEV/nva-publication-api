@@ -30,7 +30,8 @@ public class ResourceTest {
     public static final String IMPORT_STATUS = "importStatus";
     public static final String IMPORT_DETAILS = "importDetails";
     public static final String REVISION = "entityDescription.reference.publicationContext.revision";
-    public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS);
+    public static final String STATE = "state";
+    public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS, STATE);
     private final Javers javers = JaversBuilder.javers().build();
     private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
 
