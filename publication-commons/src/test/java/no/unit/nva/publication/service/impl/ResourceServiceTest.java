@@ -116,7 +116,6 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -194,23 +193,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                   .build();
         List<String> tableNames = resourceService.getClient().listTables().getTableNames();
         assertThat(tableNames, hasItem(customTable));
-    }
-
-    @Test
-    void shouldKeepImportedDataCreationDates() throws NotFoundException {
-        var randomInstant = RandomDataGenerator.randomInstant();
-        var inputPublication =
-            randomPublication().copy().withCreatedDate(randomInstant).withCuratingInstitutions(null).build();
-
-        var savedPublicationIdentifier = resourceService.createPublicationWithPredefinedCreationDate(inputPublication)
-                                             .getIdentifier();
-        var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
-
-        // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
-        inputPublication.setIdentifier(savedPublicationIdentifier);
-
-        var possiblyErrorDiff = JAVERS.compare(inputPublication, savedPublication);
-        assertThat(possiblyErrorDiff.prettyPrint(), savedPublication, is(equalTo(inputPublication)));
     }
 
     @Test

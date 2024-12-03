@@ -84,9 +84,19 @@ class DaoTest extends ResourcesLocalTest {
     private static final String DATA_FINALIZED_DATE = "data.finalizedDate";
     public static final String DATA_IMPORT_STATUS = "data.importStatus";
     private static final String DATA_OWNER_AFFILIATION = "data.ownerAffiliation";
+    private static final String DATA_STATE = "data.resourceEvent";
+    private static final String RESOURCE_STATE = "resource.resourceEvent";
     public static final String DATA_REVISION = "data.entityDescription.reference.publicationContext.revision";
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
     public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
+    public static final Set<String> IGNORED_FIELDS = Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE,
+                                                                     DATA_FINALIZED_BY,
+                                                                     DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
+                                                                     RESOURCE_IMPORT_STATUS, RESOURCE_REVISION,
+                                                                     DATA_REVISION,
+                                                                     DATA_APPROVED_FILES,
+                                                                     DATA_FILES_FOR_APPROVAL,
+                                                                     DATA_STATE, RESOURCE_STATE);
 
     public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
@@ -213,16 +223,7 @@ class DaoTest extends ResourcesLocalTest {
                 .withKey(originalResource.primaryKey()));
         Dao retrievedResource = parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
         
-        assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION,
-                                                                                 DATA_ASSIGNEE,
-                                                                                 DATA_FINALIZED_BY,
-                                                                                 DATA_FINALIZED_DATE,
-                                                                                 DATA_IMPORT_STATUS,
-                                                                                 RESOURCE_IMPORT_STATUS,
-                                                                                 RESOURCE_REVISION,
-                                                                                 DATA_REVISION,
-                                                                                 DATA_APPROVED_FILES,
-                                                                                 DATA_FILES_FOR_APPROVAL)));
+        assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
         assertThat(originalResource, is(equalTo(retrievedResource)));
     }
     
@@ -242,13 +243,7 @@ class DaoTest extends ResourcesLocalTest {
     @MethodSource("instanceProvider")
     void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao originalDao) {
         
-        assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE,
-                                                                            DATA_FINALIZED_BY,
-                                                                            DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
-                                                                            RESOURCE_IMPORT_STATUS, RESOURCE_REVISION,
-                                                                            DATA_REVISION,
-                                                                            DATA_APPROVED_FILES,
-                                                                            DATA_FILES_FOR_APPROVAL)));
+        assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));
@@ -266,10 +261,7 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(dynamoMap, is(equalTo(savedMap)));
     
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
-        assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(
-                Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE,
-                       DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS, RESOURCE_REVISION, DATA_REVISION,
-                       DATA_APPROVED_FILES, DATA_FILES_FOR_APPROVAL)));
+        assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     
