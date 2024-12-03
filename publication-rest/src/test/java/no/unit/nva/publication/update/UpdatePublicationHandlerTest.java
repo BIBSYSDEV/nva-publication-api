@@ -1800,7 +1800,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
         publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
-        resourceService.unpublishPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        resourceService.unpublishPublication(publication, userInstance);
         var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
                                                                   MANAGE_RESOURCES_ALL);
 
@@ -1964,7 +1965,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createUnpublishedPublication() throws ApiGatewayException {
         var publication = createAndPersistDegreeWithoutDoi();
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        resourceService.unpublishPublication(resourceService.getPublication(publication));
+        var userInstance = UserInstance.fromPublication(publication);
+        resourceService.unpublishPublication(resourceService.getPublication(publication), userInstance);
         return resourceService.getPublication(publication);
     }
 
