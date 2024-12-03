@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business.logentry;
 
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,7 +15,7 @@ class LogEntryTest {
 
     @Test
     void shouldDoRoundTripWithoutLossOfData() throws JsonProcessingException {
-        var logEntry = new LogEntry(PUBLICATION_CREATED, Instant.now(), new User(randomString()));
+        var logEntry = new LogEntry(PUBLICATION_CREATED, Instant.now(), new User(randomString()), randomUri());
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(logEntry);
 
         var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, LogEntry.class);
