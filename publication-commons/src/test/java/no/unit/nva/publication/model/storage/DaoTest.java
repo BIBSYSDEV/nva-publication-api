@@ -84,8 +84,8 @@ class DaoTest extends ResourcesLocalTest {
     private static final String DATA_FINALIZED_DATE = "data.finalizedDate";
     public static final String DATA_IMPORT_STATUS = "data.importStatus";
     private static final String DATA_OWNER_AFFILIATION = "data.ownerAffiliation";
-    private static final String DATA_STATE = "data.state";
-    private static final String RESOURCE_STATE = "resource.state";
+    private static final String DATA_STATE = "data.resourceEvent";
+    private static final String RESOURCE_STATE = "resource.resourceEvent";
     public static final String DATA_REVISION = "data.entityDescription.reference.publicationContext.revision";
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
     public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";

@@ -4,6 +4,6 @@ import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.publication.model.business.User;
 
-public record UnpublishedState(Instant date, User user, URI institution) implements State {
+public record CreatedResourceEvent(Instant date, User user, URI institution) implements ResourceEvent {
 
 }

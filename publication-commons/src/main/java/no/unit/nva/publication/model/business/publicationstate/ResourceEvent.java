@@ -8,12 +8,12 @@ import no.unit.nva.publication.model.business.User;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(CreatedState.class),
-    @JsonSubTypes.Type(PublishedState.class),
-    @JsonSubTypes.Type(UnpublishedState.class),
-    @JsonSubTypes.Type(DeletedState.class)
+    @JsonSubTypes.Type(CreatedResourceEvent.class),
+    @JsonSubTypes.Type(PublishedResourceEvent.class),
+    @JsonSubTypes.Type(UnpublishedResourceEvent.class),
+    @JsonSubTypes.Type(DeletedResourceEvent.class)
 })
-public interface State {
+public interface ResourceEvent {
 
     Instant date();
 

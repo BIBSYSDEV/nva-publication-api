@@ -31,7 +31,7 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
-import no.unit.nva.publication.model.business.publicationstate.State;
+import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -92,7 +92,7 @@ public class Resource implements Entity {
     @JsonProperty
     private List<ImportDetail> importDetails;
     @JsonProperty
-    private State state;
+    private ResourceEvent resourceEvent;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -119,12 +119,12 @@ public class Resource implements Entity {
         return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
     }
 
-    public State getState() {
-        return state;
+    public ResourceEvent getResourceEvent() {
+        return resourceEvent;
     }
 
-    public void setState(State state) {
-        this.state = state;
+    public void setResourceEvent(ResourceEvent resourceEvent) {
+        this.resourceEvent = resourceEvent;
     }
 
     private static Resource convertToResource(Publication publication) {
@@ -482,7 +482,7 @@ public class Resource implements Entity {
                    .withRightsHolder(getRightsHolder())
                    .withCuratingInstitutions(getCuratingInstitutions())
                    .withImportDetails(getImportDetails())
-                   .withState(getState());
+                   .withResourceEvent(getResourceEvent());
     }
 
     public List<URI> getSubjects() {
