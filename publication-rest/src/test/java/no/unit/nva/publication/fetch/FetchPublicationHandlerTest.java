@@ -491,7 +491,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                                                        publication);
         publicationService.publishPublication(UserInstance.fromPublication(publication),
                                               peristedPublication.getIdentifier());
-        publicationService.unpublishPublication(peristedPublication);
+        var userInstance = UserInstance.fromPublication(publication);
+        publicationService.unpublishPublication(peristedPublication, userInstance);
         return peristedPublication;
     }
 
@@ -549,7 +550,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var publishedPublication = publicationService.getPublication(publication);
-        publicationService.unpublishPublication(publishedPublication);
+        var userInstance = UserInstance.fromPublication(publication);
+        publicationService.unpublishPublication(publishedPublication, userInstance);
         return publicationService.getPublication(publication);
     }
 

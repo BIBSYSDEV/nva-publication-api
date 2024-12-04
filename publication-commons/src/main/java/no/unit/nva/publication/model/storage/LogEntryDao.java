@@ -20,7 +20,8 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 
-public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, LogTopic topic,
+public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier,
+                          Instant createdDate, LogTopic topic,
                           Instant timestamp, User performedBy, URI institution, LogEntry data) {
 
     public static final String TYPE = "LogEntry";
@@ -33,7 +34,7 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
     }
 
     public static LogEntryDao fromLogEntry(LogEntry logEntry) {
-        return new LogEntryDao(logEntry.identifier(), logEntry.publicationIdentifier(), logEntry.topic(),
+        return new LogEntryDao(logEntry.identifier(), logEntry.publicationIdentifier(), Instant.now(), logEntry.topic(),
                                logEntry.timestamp(), logEntry.performedBy(), logEntry.institution(), logEntry);
     }
 
