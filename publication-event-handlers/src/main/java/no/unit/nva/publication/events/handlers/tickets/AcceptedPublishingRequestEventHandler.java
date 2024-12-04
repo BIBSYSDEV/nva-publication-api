@@ -36,11 +36,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class AcceptedPublishingRequestEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    public static final String UNKNOWN_WORKFLOW_MESSAGE = "Unknown workflow: {}";
     private static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
-    private static final String PUBLISHING_METADATA_AND_FILES_MESSAGE =
-        "Publishing files and publication metadata {}" + " via approved publishing request {}";
     private static final String PUBLISHING_FILES_MESSAGE =
         "Publishing files for publication {} via approved " + "publishing request {}";
     private static final String COULD_NOT_FETCH_TICKET_MESSAGE = "Could not fetch PublishingRequest with identifier: ";
@@ -165,21 +162,15 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         var publishingRequest = fetchPublishingRequest(publishingRequestCase);
 
         publishWhenPublicationStatusDraft(publication);
-        var updatedPublication = toPublicationWithUpdatedFiles(publication, publishingRequest);
 
-        switch (publishingRequestCase.getWorkflow()) {
-            case REGISTRATOR_PUBLISHES_METADATA_ONLY, REGISTRATOR_PUBLISHES_METADATA_AND_FILES -> {
-                publishFiles(updatedPublication);
-                logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), publishingRequest.getIdentifier());
-            }
-            case REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES -> {
-                publishFiles(updatedPublication);
-                logger.info(PUBLISHING_METADATA_AND_FILES_MESSAGE, publication.getIdentifier(),
-                            publishingRequest.getIdentifier());
-            }
-            default -> logger.error(UNKNOWN_WORKFLOW_MESSAGE, publishingRequestCase.getWorkflow());
+        if (!publishingRequest.getApprovedFiles().isEmpty()) {
+            var updatedPublication = toPublicationWithUpdatedFiles(publication, publishingRequest);
+            publishFiles(updatedPublication);
         }
-        createDoiRequestIfNeeded(updatedPublication);
+
+        logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), publishingRequest.getIdentifier());
+
+        createDoiRequestIfNeeded(publication);
     }
 
     private void publishWhenPublicationStatusDraft(Publication publication) {
@@ -208,6 +199,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     private void publishPublication(Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
+        logger.info("Publishing publication: {}", publication.getIdentifier());
         attempt(() -> resourceService.publishPublication(userInstance,
                                                          publication.getIdentifier())).orElseThrow(
             fail -> throwException(

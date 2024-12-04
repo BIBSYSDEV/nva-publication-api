@@ -21,9 +21,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    public static final Logger logger = LoggerFactory.getLogger(PersistLogEntryEventHandler.class);
     public static final String PERSISTING_LOG_ENTRY_MESSAGE = "Persisting log entry for event {} for resource {}";
-
+    public static final Logger logger = LoggerFactory.getLogger(PersistLogEntryEventHandler.class);
     private final S3Client s3Client;
     private final ResourceService resourceService;
 
@@ -42,7 +41,9 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
     protected Void processInputPayload(EventReference eventReference,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> awsEventBridgeEvent,
                                        Context context) {
-        return readNewImageResourceIdentifier(eventReference).map(this::handleNewImage).orElse(null);
+        return readNewImageResourceIdentifier(eventReference)
+                   .map(this::handleNewImage)
+                   .orElse(null);
     }
 
     private Void handleNewImage(SortableIdentifier resourceIdentifier) {
@@ -57,7 +58,8 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
     }
 
     private Optional<SortableIdentifier> readNewImageResourceIdentifier(EventReference eventReference) {
-        return attempt(() -> fetchDynamoDbStreamRecord(eventReference)).map(DataEntryUpdateEvent::fromJson)
+        return attempt(() -> fetchDynamoDbStreamRecord(eventReference))
+                   .map(DataEntryUpdateEvent::fromJson)
                    .map(DataEntryUpdateEvent::getNewData)
                    .map(Entity::getIdentifier)
                    .toOptional();
