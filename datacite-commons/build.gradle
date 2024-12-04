@@ -27,6 +27,9 @@ dependencies {
     testImplementation(libs.wiremock) {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
+    testImplementation(libs.httpcore) {
+        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
 }
 
 test {

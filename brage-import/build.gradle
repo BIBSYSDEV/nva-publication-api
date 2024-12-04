@@ -25,6 +25,10 @@ dependencies {
         exclude group: 'com.google.guava', module: 'guava'
     }
 
+    testImplementation(libs.httpcore) {
+        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
+
     implementation libs.tika.core
     implementation libs.tika.langdetect.optimaize
 

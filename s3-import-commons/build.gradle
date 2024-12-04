@@ -42,6 +42,10 @@ dependencies {
     testImplementation libs.aws.sdk2.s3
     testImplementation libs.bundles.testing
 
+    testImplementation(libs.httpcore) {
+        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
+
     compileOnly libs.nva.apigateway
     compileOnly libs.zalando
 

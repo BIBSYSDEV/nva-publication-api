@@ -24,6 +24,10 @@ dependencies {
 
     testImplementation libs.zalando
     testImplementation libs.nva.testutils
+
+    testImplementation(libs.httpcore) {
+        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
 }
 
 test {

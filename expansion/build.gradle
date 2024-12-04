@@ -18,6 +18,10 @@ dependencies {
     testImplementation project(path: ':tickets-test')
     testImplementation libs.bundles.testing
     testImplementation libs.jsonassert
+
+    testImplementation(libs.httpcore) {
+        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
 }
 
 test {

@@ -40,6 +40,9 @@ dependencies {
     testImplementation(libs.javers) {
         because "For comparing java objects and detailing the differences in readable way"
     }
+    testImplementation(libs.httpcore) {
+        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
     testImplementation libs.aws.sdk2.s3
 
     testImplementation libs.jackson.core
