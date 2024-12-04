@@ -1,6 +1,7 @@
 package no.unit.nva.model.contexttypes;
 
 import static java.util.Objects.isNull;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -61,13 +62,19 @@ public class Series implements BookSeries {
     }
 
     @Deprecated
+    private static URI replaceOldPath(URI id) {
+        return UriWrapper.fromUri(id)
+                   .replacePathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT,
+                                                     NEW_PATH_SERIAL_PUBLICATION)
+                   .getUri();
+    }
+
+    @Deprecated
     private URI migratePath(URI id) {
-        var path = UriWrapper.fromUri(id)
-                       .getPath()
-                       .getPathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT);
-        return path.equals(OLD_PATH_SERIES)
-                   ? UriWrapper.fromUri(id).replacePathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT,
-                                                                             NEW_PATH_SERIAL_PUBLICATION).getUri()
-                   : id;
+        return attempt(() -> UriWrapper.fromUri(id).getPath()
+                                 .getPathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT)).toOptional()
+                   .filter(path -> path.equals(OLD_PATH_SERIES))
+                   .map(uri -> replaceOldPath(id))
+                   .orElse(id);
     }
 }
