@@ -305,6 +305,10 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updatePublicationButDoNotChangeStatus(resourceUpdate);
     }
 
+    public void updateResource(Resource resource) {
+        updateResourceService.updateResource(resource);
+    }
+
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
         return dataEntry;

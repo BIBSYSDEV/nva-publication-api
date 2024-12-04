@@ -35,7 +35,9 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -1225,6 +1227,36 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resource = resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
 
         assertNotNull(resource.getResourceEvent());
+    }
+
+    @Test
+    void shouldFetchResource() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+
+        var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                           .fetch(resourceService);
+
+        assertEquals(peristedPublication, resource.toPublication());
+    }
+
+    @Test
+    void shouldSetResourceEventToNull() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+
+        var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                           .fetch(resourceService);
+
+        assertNotNull(resource.getResourceEvent());
+
+        resource.clearResourceEvent(resourceService);
+
+        assertNull(resource.getResourceEvent());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

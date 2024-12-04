@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -128,6 +129,15 @@ public class Resource implements Entity {
         this.resourceEvent = resourceEvent;
     }
 
+    public boolean hasResourceEvent() {
+        return nonNull(getResourceEvent());
+    }
+
+    public void clearResourceEvent(ResourceService resourceService) {
+        this.setResourceEvent(null);
+        resourceService.updateResource(this);
+    }
+
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
@@ -200,6 +210,10 @@ public class Resource implements Entity {
 
     public List<LogEntry> fetchLogEntries(ResourceService resourceService) {
         return resourceService.getLogEntriesForResource(this);
+    }
+
+    public Resource fetch(ResourceService resourceService) {
+        return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).orElseThrow();
     }
 
     public URI getDuplicateOf() {

@@ -68,8 +68,14 @@ class LogEntryTest extends ResourcesLocalTest {
         assertTrue(logEntries.containsAll(List.of(firstLogEntry, secondLogEntry)));
     }
 
-    private static LogEntry randomLogEntry(SortableIdentifier identifier, LogTopic logTopic) {
-        return new LogEntry(SortableIdentifier.next(), identifier, logTopic, Instant.now(),
-                            new User(randomString()), randomUri());
+    private static LogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
+        return LogEntry.builder()
+                   .withIdentifier(SortableIdentifier.next())
+                   .withResourceIdentifier(resourceIdentifier)
+                   .withTopic(logTopic)
+                   .withTimestamp(Instant.now())
+                   .withPerformedBy(new User(randomString()))
+                   .withInstitution(randomUri())
+                   .build();
     }
 }

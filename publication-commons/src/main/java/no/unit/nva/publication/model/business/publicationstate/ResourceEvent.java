@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.logentry.LogEntry;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(CreatedResourceEvent.class), @JsonSubTypes.Type(PublishedResourceEvent.class),
@@ -19,4 +21,6 @@ public interface ResourceEvent {
      * @return id of the top level cristin organizations
      */
     URI institution();
+
+    LogEntry toLogEntry(SortableIdentifier resourceIdentifier);
 }

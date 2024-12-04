@@ -2,19 +2,23 @@ package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
@@ -115,6 +119,14 @@ public class ResourceTest {
         assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));
         assertThat(resource.getPublisher().getId(), is(equalTo(SOME_HOST)));
         assertThat(resource.getOwner(), is(equalTo(SOME_OWNER)));
+    }
+
+    @Test
+    void shouldReturnTrueWhenResourceIsPresent() {
+        var resource = Resource.resourceQueryObject(SortableIdentifier.next());
+        resource.setResourceEvent(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri()));
+
+        assertTrue(resource.hasResourceEvent());
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {

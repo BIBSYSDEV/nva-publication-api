@@ -34,7 +34,7 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
     }
 
     public static LogEntryDao fromLogEntry(LogEntry logEntry) {
-        return new LogEntryDao(logEntry.identifier(), logEntry.publicationIdentifier(), Instant.now(), logEntry.topic(),
+        return new LogEntryDao(logEntry.identifier(), logEntry.resourceIdentifier(), Instant.now(), logEntry.topic(),
                                logEntry.timestamp(), logEntry.performedBy(), logEntry.institution(), logEntry);
     }
 

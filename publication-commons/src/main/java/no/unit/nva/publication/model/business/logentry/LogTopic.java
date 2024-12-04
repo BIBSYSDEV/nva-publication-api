@@ -8,7 +8,7 @@ public enum LogTopic {
     FILE_PUBLISHED("FilePublished"),
     FILE_REJECTED("FileRejected"),
     FILE_UPLOADED("FileUploaded"),
-    METADATA_PUBLISHED("PublicationPublished"),
+    PUBLICATION_PUBLISHED("PublicationPublished"),
     PUBLICATION_CREATED("PublicationCreated"),
     PUBLICATION_DELETED("PublicationDeleted"),
     PUBLICATION_UNPUBLISHED("PublicationUnpublished");
