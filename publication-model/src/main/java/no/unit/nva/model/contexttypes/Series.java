@@ -8,16 +8,21 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.model.exceptions.InvalidSeriesException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Series implements BookSeries {
+
+    private static final String NEW_PATH_SERIAL_PUBLICATION = "serial-publication";
+    private static final int INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT = 2;
+    private static final String OLD_PATH_SERIES = "series";
 
     private final URI id;
 
     @JsonCreator
     public Series(@JsonProperty("id") URI id) {
         validate(id);
-        this.id = id;
+        this.id = migratePath(id);
     }
 
     public URI getId() {
@@ -53,5 +58,16 @@ public class Series implements BookSeries {
         if (isNull(stringOfUri) || stringOfUri.isBlank()) {
             throw new InvalidSeriesException(stringOfUri);
         }
+    }
+
+    @Deprecated
+    private URI migratePath(URI id) {
+        var path = UriWrapper.fromUri(id)
+                       .getPath()
+                       .getPathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT);
+        return path.equals(OLD_PATH_SERIES)
+                   ? UriWrapper.fromUri(id).replacePathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT,
+                                                                             NEW_PATH_SERIAL_PUBLICATION).getUri()
+                   : id;
     }
 }
