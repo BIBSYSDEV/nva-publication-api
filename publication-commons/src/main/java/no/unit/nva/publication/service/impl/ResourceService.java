@@ -49,6 +49,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
@@ -143,6 +144,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
+        newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
         setStatusOnNewPublication(userInstance, inputData, newResource);
         return insertResource(newResource);
     }
@@ -331,21 +333,22 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updateImportCandidate(importCandidate);
     }
 
-    public void unpublishPublication(Publication publication) throws BadRequestException, NotFoundException {
+    public void unpublishPublication(Publication publication, UserInstance userInstance) throws BadRequestException,
+                                                                                    NotFoundException {
         var existingPublication = readResourceService.getPublication(publication);
         if (!PUBLISHED.equals(existingPublication.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
         var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
         var unpublishRequestTicket = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
-        updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket);
+        updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket, userInstance);
     }
 
-    public void deletePublication(Publication publication) throws BadRequestException {
+    public void deletePublication(Publication publication, UserInstance userInstance) throws BadRequestException {
         if (!UNPUBLISHED.equals(publication.getStatus())) {
             throw new BadRequestException(DELETE_PUBLICATION_ERROR_MESSAGE);
         }
-        updateResourceService.deletePublication(publication);
+        updateResourceService.deletePublication(publication, userInstance);
     }
 
     @JacocoGenerated

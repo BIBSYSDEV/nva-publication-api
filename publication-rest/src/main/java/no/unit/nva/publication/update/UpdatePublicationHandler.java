@@ -171,7 +171,7 @@ public class UpdatePublicationHandler
 
             case RepublishPublicationRequest ignored -> republish(existingPublication, permissionStrategy, userInstance);
 
-            case DeletePublicationRequest ignored -> terminatePublication(existingPublication, permissionStrategy);
+            case DeletePublicationRequest ignored -> terminatePublication(existingPublication, permissionStrategy, userInstance);
 
             default -> throw new BadRequestException("Unknown input body type");
         };
@@ -187,12 +187,13 @@ public class UpdatePublicationHandler
     }
 
     private Publication terminatePublication(Publication existingPublication,
-                                             PublicationPermissionStrategy permissionStrategy)
+                                             PublicationPermissionStrategy permissionStrategy,
+                                             UserInstance userInstance)
         throws UnauthorizedException, BadRequestException, NotFoundException {
         permissionStrategy.authorize(TERMINATE);
 
         deleteFiles(existingPublication);
-        resourceService.deletePublication(existingPublication);
+        resourceService.deletePublication(existingPublication, userInstance);
 
         return resourceService.getPublication(existingPublication);
     }
@@ -219,7 +220,7 @@ public class UpdatePublicationHandler
         var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest,
                                                             existingPublication,
                                                             userInstance);
-        resourceService.unpublishPublication(updatedPublication);
+        resourceService.unpublishPublication(updatedPublication, userInstance);
         updatedPublication = resourceService.getPublication(updatedPublication);
         updateNvaDoi(updatedPublication);
         return updatedPublication;

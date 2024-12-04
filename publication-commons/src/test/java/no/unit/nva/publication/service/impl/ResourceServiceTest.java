@@ -35,6 +35,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -136,7 +137,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
-import software.amazon.awssdk.services.s3.S3Client;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -167,8 +167,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private Instant now;
-    private S3Client s3Client;
-    private String cristinUnitsS3Uri;
 
     @BeforeEach
     public void init() {
@@ -1084,20 +1082,23 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowBadRequestWhenUnpublishingNotPublishedPublication() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
-        assertThrows(BadRequestException.class, () -> resourceService.unpublishPublication(publication));
+        var userInstance = UserInstance.fromPublication(publication);
+        assertThrows(BadRequestException.class, () -> resourceService.unpublishPublication(publication, userInstance));
     }
 
     @Test
     void shouldSetPublicationStatusToUnpublishedWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
-        resourceService.unpublishPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        resourceService.unpublishPublication(publication, userInstance);
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(UNPUBLISHED)));
     }
 
     @Test
     void shouldCreateAPendingUnpublishingRequestTicketWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
-        resourceService.unpublishPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        resourceService.unpublishPublication(publication, userInstance);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
         assertThat(tickets, hasSize(1));
         assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
@@ -1117,7 +1118,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publishingRequestTicket = PublishingRequestCase.fromPublication(publication).withOwner(username);
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
         publishingRequestTicket.persistNewTicket(ticketService);
-        resourceService.unpublishPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        resourceService.unpublishPublication(publication, userInstance);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
         assertThat(tickets, hasSize(5));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
@@ -1163,9 +1165,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldDeleteUnpublishedPublication() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.fromPublication(publication);
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        resourceService.unpublishPublication(resourceService.getPublication(publication));
-        resourceService.deletePublication(resourceService.getPublication(publication));
+        resourceService.unpublishPublication(resourceService.getPublication(publication), userInstance);
+        resourceService.deletePublication(resourceService.getPublication(publication), userInstance);
 
         var deletedPublication = resourceService.getPublication(publication);
         assertThat(deletedPublication.getStatus(), is(equalTo(PublicationStatus.DELETED)));
@@ -1193,10 +1196,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowBadRequestWhenAttemptingToDeletePublishedPublication() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.fromPublication(publication);
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         assertThrows(BadRequestException.class,
-                     () -> resourceService.deletePublication(resourceService.getPublication(publication)));
+                     () -> resourceService.deletePublication(resourceService.getPublication(publication), userInstance));
     }
 
     @Test
@@ -1209,6 +1213,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(updatedPublication.getImportDetails().size(), is(equalTo(1)));
         assertThat(updatedPublication.getImportDetails().getFirst().importSource().getSource(),
                    is(equalTo(Source.CRISTIN)));
+    }
+
+    @Test
+    void shouldPersistResourceCreatedEventWhenCreatingNewPublication() throws ApiGatewayException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                           .persistNew(resourceService, userInstance);
+
+        var resource = resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
+
+        assertNotNull(resource.getResourceEvent());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

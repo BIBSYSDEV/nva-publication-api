@@ -717,7 +717,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandUnpublishRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
-        resourceService.unpublishPublication(publication);
+        resourceService.unpublishPublication(publication, UserInstance.fromPublication(publication));
         var ticket = TicketTestUtils.createPersistedTicket(publication, UnpublishRequest.class, ticketService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var expandedTicket = expansionService.expandEntry(ticket, false);

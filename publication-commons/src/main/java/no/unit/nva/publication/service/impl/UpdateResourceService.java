@@ -37,7 +37,6 @@ import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -51,6 +50,9 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -115,7 +117,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throw new IllegalStateException(ILLEGAL_DELETE_WHEN_NOT_DRAFT);
     }
 
-    public Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
+    private Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
         var persistedPublication = fetchExistingPublication(publicationUpdate);
         publicationUpdate.setCreatedDate(persistedPublication.getCreatedDate());
         publicationUpdate.setModifiedDate(clockForTimestamps.instant());
@@ -127,7 +129,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
         var resource = Resource.fromPublication(publicationUpdate);
 
-        var updateResourceTransactionItem = updateResource(resource);
+        var updateResourceTransactionItem = createPutTransaction(resource);
         var updateTicketsTransactionItems = updateTickets(resource);
         var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(updateResourceTransactionItem);
@@ -172,7 +174,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
             }
 
             var resource = Resource.fromImportCandidate(importCandidate);
-            var updateResourceTransactionItem = updateResource(resource);
+            var updateResourceTransactionItem = createPutTransaction(resource);
             var request = new TransactWriteItemsRequest().withTransactItems(List.of(updateResourceTransactionItem));
             sendTransactionWriteRequest(request);
             return importCandidate;
@@ -182,13 +184,16 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     public void unpublishPublication(Publication publication,
                                      Stream<TicketEntry> existingTicketStream,
-                                     UnpublishRequest unpublishRequest) {
+                                     UnpublishRequest unpublishRequest,
+                                     UserInstance userInstance) {
         publication.setStatus(UNPUBLISHED);
-        publication.setModifiedDate(clockForTimestamps.instant());
+        var currentTime = clockForTimestamps.instant();
+        publication.setModifiedDate(currentTime);
         var resource = Resource.fromPublication(publication);
+        resource.setResourceEvent(UnpublishedResourceEvent.create(userInstance, currentTime));
 
         var transactionItems = new ArrayList<TransactWriteItem>();
-        transactionItems.add(updateResource(resource));
+        transactionItems.add(createPutTransaction(resource));
         transactionItems.addAll(updateExistingPendingTicketsToNotApplicable(existingTicketStream));
         transactionItems.addAll(createPendingUnpublishingRequestTicket(unpublishRequest));
 
@@ -236,18 +241,19 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return updatedTicket;
     }
 
-    public void deletePublication(Publication publication) {
+    public void deletePublication(Publication publication, UserInstance userInstance) {
 
-        var deletePublication = toDeletedPublication(publication);
+        var currentTime = clockForTimestamps.instant();
+        var deletePublication = toDeletedPublication(publication, currentTime);
         var resource = Resource.fromPublication(deletePublication);
-
-        var updateResourceTransactionItem = updateResource(resource);
+        resource.setResourceEvent(DeletedResourceEvent.create(userInstance, currentTime));
+        var updateResourceTransactionItem = createPutTransaction(resource);
 
         var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
         sendTransactionWriteRequest(request);
     }
 
-    private Publication toDeletedPublication(Publication publication) {
+    private Publication toDeletedPublication(Publication publication, Instant currentTime) {
         return new Publication.Builder()
                    .withIdentifier(publication.getIdentifier())
                    .withStatus(DELETED)
@@ -257,7 +263,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .withEntityDescription(publication.getEntityDescription())
                    .withCreatedDate(publication.getCreatedDate())
                    .withPublishedDate(publication.getPublishedDate())
-                   .withModifiedDate(clockForTimestamps.instant())
+                   .withModifiedDate(currentTime)
                    .build();
     }
 
@@ -278,7 +284,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         if (publicationIsPublished(publication)) {
             return publishCompletedStatus();
         } else if (publicationIsAllowedForPublishing(publication)) {
-            publishPublication(publication);
+            publishPublication(publication, userInstance);
             return publishingInProgressStatus();
         } else {
             throw new UnsupportedPublicationStatusTransition(String.format(
@@ -293,11 +299,24 @@ public class UpdateResourceService extends ServiceWithTransactions {
      * Published/Unpublished temporary.
      **/
 
-    private void publishPublication(Publication publication) throws InvalidPublicationException {
+    private void publishPublication(Publication publication, UserInstance userInstance) throws InvalidPublicationException {
         assertThatPublicationHasMinimumMandatoryFields(publication);
-        publication.setStatus(PublicationStatus.PUBLISHED);
-        publication.setPublishedDate(clockForTimestamps.instant());
-        updatePublicationIncludingStatus(publication);
+        var persistedPublication = fetchExistingPublication(publication);
+        var resource = Resource.fromPublication(publication);
+        resource.setStatus(PublicationStatus.PUBLISHED);
+        var currentTime = clockForTimestamps.instant();
+        resource.setCreatedDate(persistedPublication.getCreatedDate());
+        resource.setModifiedDate(currentTime);
+        resource.setPublishedDate(currentTime);
+        resource.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
+        var updateResourceTransactionItem = createPutTransaction(resource);
+        var updateTicketsTransactionItems = updateTickets(resource);
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(updateResourceTransactionItem);
+        transactionItems.addAll(updateTicketsTransactionItems);
+
+        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        sendTransactionWriteRequest(request);
     }
 
     DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
@@ -320,7 +339,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         importCandidate.setImportStatus(status);
         importCandidate.setModifiedDate(Instant.now());
         var resource = Resource.fromImportCandidate(importCandidate);
-        var updateResourceTransactionItem = updateResource(resource);
+        var updateResourceTransactionItem = createPutTransaction(resource);
         var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
         sendTransactionWriteRequest(request);
         return importCandidate;
@@ -372,7 +391,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
 
-    private TransactWriteItem updateResource(Resource resourceUpdate) {
+    private TransactWriteItem createPutTransaction(Resource resourceUpdate) {
 
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 
