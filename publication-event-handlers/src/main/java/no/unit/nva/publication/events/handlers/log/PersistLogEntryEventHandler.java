@@ -5,7 +5,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
-import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
@@ -16,9 +15,14 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+
+    public static final Logger logger = LoggerFactory.getLogger(PersistLogEntryEventHandler.class);
+    public static final String PERSISTING_LOG_ENTRY_MESSAGE = "Persisting log entry for event {} for resource {}";
 
     private final S3Client s3Client;
     private final ResourceService resourceService;
@@ -44,6 +48,8 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
     private Void handleNewImage(SortableIdentifier resourceIdentifier) {
         var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
         if (resource.hasResourceEvent()) {
+            logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(),
+                        resourceIdentifier);
             resource.getResourceEvent().toLogEntry(resourceIdentifier).persist(resourceService);
             resource.clearResourceEvent(resourceService);
         }
@@ -51,8 +57,7 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
     }
 
     private Optional<SortableIdentifier> readNewImageResourceIdentifier(EventReference eventReference) {
-        return attempt(() -> fetchDynamoDbStreamRecord(eventReference))
-                   .map(DataEntryUpdateEvent::fromJson)
+        return attempt(() -> fetchDynamoDbStreamRecord(eventReference)).map(DataEntryUpdateEvent::fromJson)
                    .map(DataEntryUpdateEvent::getNewData)
                    .map(Entity::getIdentifier)
                    .toOptional();
