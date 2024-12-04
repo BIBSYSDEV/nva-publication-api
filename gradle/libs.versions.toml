@@ -16,7 +16,7 @@ glassfish-el = { strictly = '4.0.2' }
 guava = { strictly = '33.3.1-jre' }
 hamcrest = { strictly = '3.0' }
 hamcrestSpotify = { strictly = '1.3.2' }
-httpcore = { strictly = '5.3' }
+httpcore = { strictly = '5.3.1' }
 jackson = { strictly = '2.18.2' }
 jakarta-el-api = { strictly = '6.0.1' }
 jakarta-validation-api = { strictly = '3.1.0' }
