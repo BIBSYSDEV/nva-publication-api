@@ -87,7 +87,7 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
-    public static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: ";
+    private static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: {}";
     public static final String ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE = "Only published "
                                                                                               + "publications can be "
                                                                                               + "unpublished";
@@ -150,26 +150,6 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
         setStatusOnNewPublication(userInstance, inputData, newResource);
-        return insertResource(newResource);
-    }
-
-    @JacocoGenerated
-    public void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource)
-        throws BadRequestException {
-        var status = userInstance.isExternalClient() ? Optional.ofNullable(fromPublication.getStatus())
-                                                           .orElse(PublicationStatus.DRAFT) : PublicationStatus.DRAFT;
-
-        if (status == PUBLISHED && !fromPublication.isPublishable()) {
-            throw new BadRequestException(NOT_PUBLISHABLE);
-        }
-
-        toResource.setStatus(status);
-    }
-
-    public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
-        Resource newResource = Resource.fromPublication(inputData);
-        newResource.setIdentifier(identifierSupplier.get());
-        newResource.setCreatedDate(inputData.getCreatedDate());
         return insertResource(newResource);
     }
 
@@ -296,7 +276,6 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
 
-    // TODO rename to getPublicationForUsageWithElevatedRights
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return getResourceByIdentifier(identifier).toPublication();
     }
@@ -312,7 +291,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
         deleteResourceService.deleteImportCandidate(importCandidate);
-        logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE + importCandidate.getIdentifier());
+        logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE, importCandidate.getIdentifier());
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -325,7 +304,6 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // update this method according to current needs.
-    //TODO: redesign migration process?
     public Entity migrate(Entity dataEntry) {
         return dataEntry;
     }
@@ -399,6 +377,19 @@ public class ResourceService extends ServiceWithTransactions {
                     .map(LogEntryDao::fromDynamoFormat)
                     .map(LogEntryDao::data)
                     .toList();
+    }
+
+    @JacocoGenerated
+    private void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource)
+        throws BadRequestException {
+        var status = userInstance.isExternalClient() ? Optional.ofNullable(fromPublication.getStatus())
+                                                           .orElse(PublicationStatus.DRAFT) : PublicationStatus.DRAFT;
+
+        if (status == PUBLISHED && !fromPublication.isPublishable()) {
+            throw new BadRequestException(NOT_PUBLISHABLE);
+        }
+
+        toResource.setStatus(status);
     }
 
     private static boolean isNotRemoved(TicketEntry ticket) {

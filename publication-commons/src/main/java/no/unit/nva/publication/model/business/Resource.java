@@ -32,6 +32,7 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -65,7 +66,6 @@ public class Resource implements Entity {
     private URI link;
     @JsonProperty
     private AssociatedArtifactList associatedArtifacts;
-
     @JsonProperty
     private List<ResearchProject> projects;
     @JsonProperty
@@ -92,6 +92,8 @@ public class Resource implements Entity {
     private Set<CuratingInstitution> curatingInstitutions;
     @JsonProperty
     private List<ImportDetail> importDetails;
+    @JsonProperty
+    private ResourceEvent resourceEvent;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -116,6 +118,14 @@ public class Resource implements Entity {
 
     public static Resource fromPublication(Publication publication) {
         return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
+    }
+
+    public ResourceEvent getResourceEvent() {
+        return resourceEvent;
+    }
+
+    public void setResourceEvent(ResourceEvent resourceEvent) {
+        this.resourceEvent = resourceEvent;
     }
 
     private static Resource convertToResource(Publication publication) {
@@ -476,7 +486,8 @@ public class Resource implements Entity {
                    .withDuplicateOf(getDuplicateOf())
                    .withRightsHolder(getRightsHolder())
                    .withCuratingInstitutions(getCuratingInstitutions())
-                   .withImportDetails(getImportDetails());
+                   .withImportDetails(getImportDetails())
+                   .withResourceEvent(getResourceEvent());
     }
 
     public List<URI> getSubjects() {
