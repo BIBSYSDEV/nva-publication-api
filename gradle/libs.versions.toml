@@ -4,29 +4,29 @@ apacheCommonsCollections = { strictly = '4.4' }
 apacheCommonsText = { strictly = '1.12.0' }
 awsIon = { strictly = '1.11.9' }
 awsLambdaCore = { strictly = '1.2.3' }
-awsLambdaEvents = { strictly = '3.13.0' }
-awsSdk = { strictly = '1.12.772' }
-awsSdk2 = { strictly = '2.27.24' }
+awsLambdaEvents = { strictly = '3.14.0' }
+awsSdk = { strictly = '1.12.779' }
+awsSdk2 = { strictly = '2.29.22' }
 commonsValidator = { strictly = '1.9.0' }
 configTypesafe = { strictly = '1.4.3' }
 cucumber = { strictly = '7.18.1' }
-datafaker = { strictly = '2.3.1' }
+datafaker = { strictly = '2.4.2' }
 dynamoDbLocal = { strictly = '2.0.0' }
 glassfish-el = { strictly = '4.0.2' }
-guava = { strictly = '33.3.0-jre' }
+guava = { strictly = '33.3.1-jre' }
 hamcrest = { strictly = '3.0' }
 hamcrestSpotify = { strictly = '1.3.2' }
 httpcore = { strictly = '5.3' }
-jackson = { strictly = '2.17.2' }
+jackson = { strictly = '2.18.2' }
 jakarta-el-api = { strictly = '6.0.1' }
 jakarta-validation-api = { strictly = '3.1.0' }
 javers = { strictly = '7.6.1' }
 jena = { strictly = '5.2.0'}
 jsonassert = { strictly = '1.5.3'}
-junit = { strictly = '5.11.0' }
-log4j = { strictly = '2.24.0' }
-mockito = { strictly = '5.13.0' }
-nva = { strictly = '1.41.0' }
+junit = { strictly = '5.11.3' }
+log4j = { strictly = '2.24.2' }
+mockito = { strictly = '5.14.2' }
+nva = { strictly = '1.41.2' }
 nva-language = { strictly = '1.2.0' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
 reflections = { strictly = '0.10.2' }
@@ -35,7 +35,7 @@ slf4j = { strictly = '2.0.16' }
 swaggerCoreVersion = { strictly = '2.2.22' }
 tika = { strictly = '2.9.2' }
 vavrVersion = { strictly = '0.10.4' }
-wiremock = { strictly = "3.9.1" }
+wiremock = { strictly = "3.9.2" }
 zalandoProblem = { strictly = '0.27.1' }
 
 [libraries]
