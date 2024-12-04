@@ -20,6 +20,9 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 
 class LogEntryTest extends ResourcesLocalTest {
 
@@ -32,9 +35,10 @@ class LogEntryTest extends ResourcesLocalTest {
         resourceService = getResourceServiceBuilder().build();
     }
 
-    @Test
-    void shouldDoRoundTripWithoutLossOfData() throws JsonProcessingException {
-        var logEntry = randomLogEntry(SortableIdentifier.next());
+    @ParameterizedTest
+    @EnumSource(value = LogTopic.class, mode = Mode.EXCLUDE)
+    void shouldDoRoundTripWithoutLossOfData(LogTopic logTopic) throws JsonProcessingException {
+        var logEntry = randomLogEntry(SortableIdentifier.next(), logTopic);
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(logEntry);
 
         var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, LogEntry.class);
@@ -53,8 +57,8 @@ class LogEntryTest extends ResourcesLocalTest {
         var persistedPublication = Resource.fromPublication(publication)
                                        .persistNew(resourceService, UserInstance.fromPublication(publication));
 
-        var firstLogEntry = randomLogEntry(persistedPublication.getIdentifier());
-        var secondLogEntry = randomLogEntry(persistedPublication.getIdentifier());
+        var firstLogEntry = randomLogEntry(persistedPublication.getIdentifier(), LogTopic.PUBLICATION_UNPUBLISHED);
+        var secondLogEntry = randomLogEntry(persistedPublication.getIdentifier(), LogTopic.PUBLICATION_DELETED);
 
         firstLogEntry.persist(resourceService);
         secondLogEntry.persist(resourceService);
@@ -64,8 +68,8 @@ class LogEntryTest extends ResourcesLocalTest {
         assertTrue(logEntries.containsAll(List.of(firstLogEntry, secondLogEntry)));
     }
 
-    private static LogEntry randomLogEntry(SortableIdentifier identifier) {
-        return new LogEntry(SortableIdentifier.next(), identifier, PUBLICATION_CREATED, Instant.now(),
+    private static LogEntry randomLogEntry(SortableIdentifier identifier, LogTopic logTopic) {
+        return new LogEntry(SortableIdentifier.next(), identifier, logTopic, Instant.now(),
                             new User(randomString()), randomUri());
     }
 }

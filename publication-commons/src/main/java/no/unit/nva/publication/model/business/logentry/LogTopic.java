@@ -5,9 +5,13 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum LogTopic {
 
-    PUBLICATION_CREATED("PublicationCreated"), METADATA_PUBLISHED("PublicationPublished"), PUBLICATION_UNPUBLISHED(
-        "PublicationUnpublished"), PUBLICATION_DELETED("PublicationDeleted"), FILE_UPLOADED(
-        "FileUploaded"), FILE_PUBLISHED("FilePublished"), FILE_REJECTED("FileRejected");
+    FILE_PUBLISHED("FilePublished"),
+    FILE_REJECTED("FileRejected"),
+    FILE_UPLOADED("FileUploaded"),
+    METADATA_PUBLISHED("PublicationPublished"),
+    PUBLICATION_CREATED("PublicationCreated"),
+    PUBLICATION_DELETED("PublicationDeleted"),
+    PUBLICATION_UNPUBLISHED("PublicationUnpublished");
 
     private final String value;
 
