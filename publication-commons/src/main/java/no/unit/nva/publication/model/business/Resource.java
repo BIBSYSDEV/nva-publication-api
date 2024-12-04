@@ -31,6 +31,7 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -117,8 +118,6 @@ public class Resource implements Entity {
         return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
     }
 
-
-
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
@@ -187,6 +186,10 @@ public class Resource implements Entity {
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
         throws BadRequestException {
         return resourceService.createPublication(userInstance, this.toPublication());
+    }
+
+    public List<LogEntry> fetchLogEntries(ResourceService resourceService) {
+        return resourceService.getLogEntriesForResource(this);
     }
 
     public URI getDuplicateOf() {

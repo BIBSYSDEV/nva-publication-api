@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business.logentry;
 
 import static java.util.Arrays.stream;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum LogTopic {
 
@@ -18,6 +19,7 @@ public enum LogTopic {
         return stream(values()).filter(topic -> topic.getValue().equalsIgnoreCase(value)).findAny().orElseThrow();
     }
 
+    @JsonValue
     public String getValue() {
         return value;
     }

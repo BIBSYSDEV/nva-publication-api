@@ -7,12 +7,16 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -49,10 +53,12 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.KeyField;
+import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
@@ -368,6 +374,31 @@ public class ResourceService extends ServiceWithTransactions {
             throw new BadRequestException(DELETE_PUBLICATION_ERROR_MESSAGE);
         }
         updateResourceService.deletePublication(publication);
+    }
+
+    public void persistLogEntry(LogEntry logEntry) {
+        var dao = LogEntryDao.fromLogEntry(logEntry);
+        var put = new Put()
+                      .withItem(dao.toDynamoFormat())
+                      .withTableName(tableName)
+                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        var transactWriteItem = new TransactWriteItem().withPut(put);
+        sendTransactionWriteRequest(newTransactWriteItemsRequest(transactWriteItem));
+    }
+
+    public List<LogEntry> getLogEntriesForResource(Resource resource) {
+        var partitionKeyValue = LogEntryDao.getLogEntriesByResourceIdentifierPartitionKey(resource);
+
+        var queryRequest = new QueryRequest()
+                               .withTableName(tableName)
+                               .withKeyConditionExpression("PK0 = :value")
+                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(partitionKeyValue)));
+
+        return client.query(queryRequest).getItems().stream()
+                    .map(LogEntryDao::fromDynamoFormat)
+                    .map(LogEntryDao::data)
+                    .toList();
     }
 
     private static boolean isNotRemoved(TicketEntry ticket) {
