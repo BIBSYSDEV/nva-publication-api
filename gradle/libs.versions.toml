@@ -35,7 +35,7 @@ slf4j = { strictly = '2.0.16' }
 swaggerCoreVersion = { strictly = '2.2.22' }
 tika = { strictly = '2.9.2' }
 vavrVersion = { strictly = '0.10.4' }
-wiremock = { strictly = "3.9.1" }
+wiremock = { strictly = "3.9.2" }
 zalandoProblem = { strictly = '0.27.1' }
 
 [libraries]

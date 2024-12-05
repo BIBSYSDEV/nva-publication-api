@@ -34,7 +34,7 @@ public class LogEntryService {
     }
 
     private void persistLogEntry(SortableIdentifier identifier) {
-        var resource = Resource.resourceQueryObject(identifier).fetch(resourceService);
+        var resource = fetchResource(identifier);
         if (resource.hasResourceEvent()) {
             var resourceEvent = resource.getResourceEvent();
             var user = createUserForLogEntry(resourceEvent);
@@ -45,6 +45,10 @@ public class LogEntryService {
             logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
             resource.clearResourceEvent(resourceService);
         }
+    }
+
+    private Resource fetchResource(SortableIdentifier identifier) {
+        return attempt(() -> Resource.resourceQueryObject(identifier).fetch(resourceService)).orElseThrow();
     }
 
     private LogInstitution createInstitutionForLogEntry(ResourceEvent resourceEvent) {

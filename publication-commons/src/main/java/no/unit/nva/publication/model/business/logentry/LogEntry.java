@@ -9,14 +9,12 @@ import no.unit.nva.publication.service.impl.ResourceService;
 public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, LogTopic topic,
                        Instant timestamp, LogUser performedBy, LogInstitution institution) {
 
-    public static final String TYPE = "LogEntry";
+    public static Builder builder() {
+        return new Builder();
+    }
 
     public void persist(ResourceService resourceService) {
         resourceService.persistLogEntry(this);
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     public static final class Builder {

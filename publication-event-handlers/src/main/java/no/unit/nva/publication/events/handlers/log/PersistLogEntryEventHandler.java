@@ -41,7 +41,7 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> awsEventBridgeEvent,
                                        Context context) {
 
-        readNewImageResourceIdentifier(eventReference).ifPresent(this::persistLogEntry);
+        readNewImage(eventReference).ifPresent(this::persistLogEntry);
 
         return null;
     }
@@ -50,8 +50,9 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
         logEntryService.persistLogEntry(entity);
     }
 
-    private Optional<Entity> readNewImageResourceIdentifier(EventReference eventReference) {
-        return attempt(() -> fetchDynamoDbStreamRecord(eventReference)).map(DataEntryUpdateEvent::fromJson)
+    private Optional<Entity> readNewImage(EventReference eventReference) {
+        return attempt(() -> fetchDynamoDbStreamRecord(eventReference))
+                   .map(DataEntryUpdateEvent::fromJson)
                    .map(DataEntryUpdateEvent::getNewData)
                    .toOptional();
     }

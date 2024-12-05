@@ -1,39 +1,114 @@
 package no.unit.nva.publication.log.rest;
 
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogInstitution;
+import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
-class FetchPublicationLogHandlerTest {
+class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
 
     private final Context context = new FakeContext();
     private ByteArrayOutputStream output;
     private FetchPublicationLogHandler handler;
+    private ResourceService resourceService;
 
     @BeforeEach
     public void setUp() {
+        super.init();
         output = new ByteArrayOutputStream();
-        handler = new FetchPublicationLogHandler();
+        resourceService = getResourceServiceBuilder().build();
+        handler = new FetchPublicationLogHandler(resourceService);
     }
 
     @Test
-    void shouldReturnEmptyPublicationLog() throws IOException {
-        var publicationIdentifier = SortableIdentifier.next();
+    void shouldReturnNotFoundWhenPublicationDoesNotExists() throws IOException {
+        var publication = randomPublication();
 
-        handler.handleRequest(createRequest(publicationIdentifier), output, context);
+        handler.handleRequest(createRequest(publication), output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals(HTTP_NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenUserIsNotAuthorized() throws IOException, BadRequestException {
+        var publication = createPublication();
+
+        handler.handleRequest(createUnauthorizedRequest(publication.getIdentifier()), output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals(HTTP_UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenUserHasNoRightsToFetchLog() throws IOException, BadRequestException {
+        var publication = createPublication();
+
+        handler.handleRequest(createRequest(publication), output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals(HTTP_FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnInternalServerErrorWhenUnexpectedExceptionThrown()
+        throws IOException, BadRequestException, NotFoundException {
+        var publication = createPublication();
+
+        resourceService = mock(ResourceService.class);
+        when(resourceService.getResourceByIdentifier(any())).thenThrow(new RuntimeException());
+
+        new FetchPublicationLogHandler(resourceService).handleRequest(createRequest(publication), output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals(HTTP_INTERNAL_ERROR, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnEmptyPublicationLogWhenUserHasRightsToFetchLogAndNoLogEntries() throws IOException,
+                                                                                       BadRequestException {
+        var publication = createPublication();
+
+        handler.handleRequest(createAuthorizedRequest(publication), output, context);
 
         var response = GatewayResponse.fromOutputStream(output, PublicationLogResponse.class);
 
@@ -41,10 +116,58 @@ class FetchPublicationLogHandlerTest {
         assertTrue(response.getBodyObject(PublicationLogResponse.class).logEntries().isEmpty());
     }
 
-    private InputStream createRequest(SortableIdentifier identifier) throws JsonProcessingException {
-        var dtoObjectMapper = JsonUtils.dtoObjectMapper;
-        return new HandlerRequestBuilder<InputStream>(dtoObjectMapper)
-                   .withPathParameters(Map.of("publicationIdentifier", identifier.toString()))
+    @Test
+    void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLog() throws IOException, BadRequestException,
+                                                                                NotFoundException {
+        var publication = createPublication();
+        persistLogEntry(publication);
+        handler.handleRequest(createAuthorizedRequest(publication), output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, PublicationLogResponse.class);
+
+        assertEquals(HTTP_OK, response.getStatusCode());
+        assertFalse(response.getBodyObject(PublicationLogResponse.class).logEntries().isEmpty());
+    }
+
+    private void persistLogEntry(Publication publication) throws NotFoundException {
+        var user = new LogUser(randomString(), randomString(), randomString(), randomUri(), randomUri());
+        var institution = new LogInstitution(randomUri(), randomUri(), randomString(), randomString());
+        Resource.resourceQueryObject(publication.getIdentifier())
+            .fetch(resourceService)
+            .getResourceEvent()
+            .toLogEntry(publication.getIdentifier(), user, institution)
+            .persist(resourceService);
+    }
+
+    private InputStream createRequest(Publication publication) throws JsonProcessingException {
+        return new HandlerRequestBuilder<InputStream>(dtoObjectMapper).withPathParameters(
+                Map.of("publicationIdentifier", publication.getIdentifier().toString()))
+                   .withUserName(randomString())
+                   .withTopLevelCristinOrgId(randomUri())
+                   .withPersonCristinId(randomUri())
+                   .withAccessRights(randomUri())
+                   .withCurrentCustomer(randomUri())
                    .build();
+    }
+
+    private InputStream createAuthorizedRequest(Publication publication) throws JsonProcessingException {
+        return new HandlerRequestBuilder<InputStream>(dtoObjectMapper)
+                   .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
+                   .withUserName(randomString())
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
+                   .withPersonCristinId(randomUri())
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_RESOURCES_STANDARD)
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .build();
+    }
+
+    private Publication createPublication() throws BadRequestException {
+        var publication = randomPublication(AcademicArticle.class);
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    }
+
+    private InputStream createUnauthorizedRequest(SortableIdentifier identifier) throws JsonProcessingException {
+        return new HandlerRequestBuilder<InputStream>(dtoObjectMapper).withPathParameters(
+            Map.of("publicationIdentifier", identifier.toString())).build();
     }
 }
