@@ -1,15 +1,13 @@
 package no.unit.nva.publication.model.business.logentry;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, LogTopic topic,
-                       Instant timestamp, User performedBy, URI institution) {
+                       Instant timestamp, LogUser performedBy, LogInstitution institution) {
 
     public static Builder builder() {
         return new Builder();
@@ -25,8 +23,8 @@ public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourc
         private SortableIdentifier resourceIdentifier;
         private LogTopic topic;
         private Instant timestamp;
-        private User performedBy;
-        private URI institution;
+        private LogUser performedBy;
+        private LogInstitution institution;
 
         private Builder() {
         }
@@ -51,12 +49,12 @@ public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourc
             return this;
         }
 
-        public Builder withPerformedBy(User performedBy) {
+        public Builder withPerformedBy(LogUser performedBy) {
             this.performedBy = performedBy;
             return this;
         }
 
-        public Builder withInstitution(URI institution) {
+        public Builder withInstitution(LogInstitution institution) {
             this.institution = institution;
             return this;
         }
@@ -64,5 +62,6 @@ public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourc
         public LogEntry build() {
             return new LogEntry(identifier, resourceIdentifier, topic, timestamp, performedBy, institution);
         }
+
     }
 }
