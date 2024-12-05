@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -34,6 +35,7 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
@@ -113,7 +115,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
         assertTrue(response.getBodyObject(PublicationLogResponse.class).logEntries().isEmpty());
     }
 
-    @Test
+    @RepeatedTest(100)
     void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLog() throws IOException, BadRequestException,
                                                                                 NotFoundException {
         var publication = createPublication();
@@ -157,7 +159,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication() throws BadRequestException {
-        var publication = randomPublication();
+        var publication = randomPublication(AcademicArticle.class);
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
 
