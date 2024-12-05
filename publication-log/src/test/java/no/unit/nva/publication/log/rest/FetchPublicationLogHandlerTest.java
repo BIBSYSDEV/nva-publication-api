@@ -114,9 +114,8 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLogAndNoLogEntries() throws IOException,
-                                                                                               BadRequestException,
-                                                                                               NotFoundException {
+    void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLog() throws IOException, BadRequestException,
+                                                                                NotFoundException {
         var publication = createPublication();
         persistLogEntry(publication);
         handler.handleRequest(createAuthorizedRequest(publication), output, context);
