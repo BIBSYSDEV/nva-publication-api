@@ -6,18 +6,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Objects;
+import no.unit.nva.model.contexttypes.utils.MigrateSerialPublicationUtil;
 import no.unit.nva.model.exceptions.InvalidSeriesException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Series implements BookSeries {
 
+    private static final String OLD_PATH_SERIES = "series";
+
     private final URI id;
 
     @JsonCreator
     public Series(@JsonProperty("id") URI id) {
         validate(id);
-        this.id = id;
+        this.id = MigrateSerialPublicationUtil.migratePath(id, OLD_PATH_SERIES);
     }
 
     public URI getId() {

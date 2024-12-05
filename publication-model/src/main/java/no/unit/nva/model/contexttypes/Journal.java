@@ -6,18 +6,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Objects;
+import no.unit.nva.model.contexttypes.utils.MigrateSerialPublicationUtil;
 import no.unit.nva.model.exceptions.InvalidSeriesException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Journal implements Periodical {
 
+    private static final String OLD_PATH_JOURNAL = "journal";
     private final URI id;
 
     @JsonCreator
     public Journal(@JsonProperty("id") URI id) {
         validate(id);
-        this.id = id;
+        this.id = MigrateSerialPublicationUtil.migratePath(id, OLD_PATH_JOURNAL);
     }
 
     public URI getId() {

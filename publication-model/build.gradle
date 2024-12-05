@@ -8,6 +8,7 @@ dependencies {
     implementation( libs.nva.identifiers )
     implementation ( libs.commons.validator )
     implementation( libs.jackson.databind )
+    implementation libs.bundles.logging
 
     testImplementation( libs.reflections )
     testImplementation( libs.jena.core )
@@ -16,6 +17,7 @@ dependencies {
     testImplementation( libs.nva.testutils )
     testImplementation( libs.javers )
     testImplementation( libs.swagger.core )
+    testImplementation( libs.nva.logutils )
     testImplementation project(":publication-model-testing")
 }
 
