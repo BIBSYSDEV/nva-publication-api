@@ -5,6 +5,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.logentry.LogInstitution;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -39,10 +40,16 @@ public class LogEntryService {
 
             var resourceEvent = resource.getResourceEvent();
             var user = createUserForLogEntry(resourceEvent);
+            var institution = createInstitutionForLogEntry(resourceEvent);
 
-            resourceEvent.toLogEntry(resource.getIdentifier(), user).persist(resourceService);
+            resourceEvent.toLogEntry(resource.getIdentifier(), user, institution).persist(resourceService);
             resource.clearResourceEvent(resourceService);
         }
+    }
+
+    private LogInstitution createInstitutionForLogEntry(ResourceEvent resourceEvent) {
+        return attempt(() -> identityServiceClient.getCustomerByCristinId(resourceEvent.institution())).map(
+            LogInstitution::fromGetUserResponse).orElse(failure -> LogInstitution.fromCristinId(resourceEvent.institution()));
     }
 
     private LogUser createUserForLogEntry(ResourceEvent resourceEvent) {

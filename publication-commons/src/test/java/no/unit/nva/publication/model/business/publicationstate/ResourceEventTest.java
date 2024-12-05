@@ -29,8 +29,7 @@ class ResourceEventTest {
     @ParameterizedTest
     @MethodSource("resourceEventProvider")
     void shouldConvertResourceEventToLogEntryWithExpectedTopic(ResourceEvent resourceEvent, LogTopic expectedLogTopic) {
-        var user = new LogUser(randomString(), randomString(), randomString(), randomUri(), randomUri());
-        var logEntry = resourceEvent.toLogEntry(SortableIdentifier.next(), user);
+        var logEntry = resourceEvent.toLogEntry(SortableIdentifier.next(), null, null);
 
         assertEquals(expectedLogTopic, logEntry.topic());
     }
