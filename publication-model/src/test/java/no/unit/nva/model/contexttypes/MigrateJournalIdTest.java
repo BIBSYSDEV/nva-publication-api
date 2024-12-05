@@ -1,5 +1,6 @@
 package no.unit.nva.model.contexttypes;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static no.unit.nva.utils.MigrateSerialPublicationsUtil.constructExampleIdWithPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -25,6 +26,16 @@ public class MigrateJournalIdTest {
     @Test
     void shouldLogUriIfOldIdHasUnexpectedPath() {
         var oldId = constructExampleIdWithPath("unexpected-path");
+        var appender = LogUtils.getTestingAppender(Journal.class);
+
+        new Journal(oldId);
+
+        assertThat(appender.getMessages(), containsString(oldId.toString()));
+    }
+
+    @Test
+    void shouldLogUriIfOldIdHasUnexpectedForm() {
+        var oldId = randomUri();
         var appender = LogUtils.getTestingAppender(Journal.class);
 
         new Journal(oldId);

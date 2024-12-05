@@ -1,10 +1,13 @@
 package no.unit.nva.model.contexttypes;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static no.unit.nva.utils.MigrateSerialPublicationsUtil.constructExampleIdWithPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import java.net.URI;
+import java.util.UUID;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.Test;
@@ -25,6 +28,16 @@ public class MigrateSeriesIdTest {
     @Test
     void shouldLogUriIfOldIdHasUnexpectedPath() {
         var oldId = constructExampleIdWithPath("unexpected-path");
+        var appender = LogUtils.getTestingAppender(Series.class);
+
+        new Series(oldId);
+
+        assertThat(appender.getMessages(), containsString(oldId.toString()));
+    }
+
+    @Test
+    void shouldLogUriIfOldIdHasUnexpectedForm() {
+        var oldId = randomUri();
         var appender = LogUtils.getTestingAppender(Series.class);
 
         new Series(oldId);
