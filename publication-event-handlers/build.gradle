@@ -48,10 +48,7 @@ dependencies {
     testImplementation libs.nva.identifiers
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
-
-    testImplementation(libs.httpcore) {
-        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
-    }
+    testImplementation libs.httpcore
 
     compileOnly(libs.nva.identifiers) {
         because "PMD complains about no/unit/nva/identifiers/SortableIdentifier"

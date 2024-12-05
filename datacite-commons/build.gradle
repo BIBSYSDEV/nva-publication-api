@@ -23,12 +23,10 @@ dependencies {
 
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
+    testImplementation libs.httpcore
     testImplementation libs.bundles.testing
     testImplementation(libs.wiremock) {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
-    }
-    testImplementation(libs.httpcore) {
-        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
 }
 

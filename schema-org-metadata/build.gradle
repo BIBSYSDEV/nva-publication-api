@@ -13,9 +13,7 @@ dependencies {
     testImplementation project(':publication-testing')
     testImplementation project(":publication-model-testing")
     testImplementation libs.hamcrest.json
-    testImplementation(libs.httpcore) {
-        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
-    }
+    testImplementation libs.httpcore
 }
 
 test {

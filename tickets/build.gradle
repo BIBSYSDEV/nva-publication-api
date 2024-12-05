@@ -30,10 +30,7 @@ dependencies {
     testImplementation libs.logutils
     testImplementation libs.wiremock
     testImplementation libs.bundles.testing
-
-    testImplementation(libs.httpcore) {
-        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
-    }
+    testImplementation libs.httpcore
 
     compileOnly libs.zalando
     compileOnly libs.aws.lambda.java.core
