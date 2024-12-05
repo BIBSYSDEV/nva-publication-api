@@ -1,17 +1,23 @@
 package no.unit.nva.publication.events.handlers.log;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Optional;
 import java.util.UUID;
+import no.unit.nva.clients.GetUserResponse;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -23,6 +29,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,15 +41,18 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
     private FakeS3Client s3Client;
     private ByteArrayOutputStream outputStream;
     private Context context;
+    private IdentityServiceClient identityServiceClient;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws NotFoundException {
         super.init();
         outputStream = new ByteArrayOutputStream();
         context = null;
         s3Client = new FakeS3Client();
         resourceService = getResourceServiceBuilder().build();
-        handler = new PersistLogEntryEventHandler(s3Client, resourceService);
+        identityServiceClient = mock(IdentityServiceClient.class);
+        when(identityServiceClient.getUser(any())).thenReturn(randomUser());
+        handler = new PersistLogEntryEventHandler(s3Client, resourceService, identityServiceClient);
     }
 
     @Test
@@ -92,5 +102,14 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
                                                                     dataEntryUpdateEvent.toJsonString());
         var eventReference = new EventReference(RESOURCE_UPDATE_EVENT_TOPIC, uri);
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
+    }
+
+    private GetUserResponse randomUser() {
+        return GetUserResponse.builder()
+                   .withInstitutionCristinId(randomUri())
+                   .withFamilyName(randomString())
+                   .withGivenName(randomString())
+                   .withCristinId(randomUri())
+                   .build();
     }
 }

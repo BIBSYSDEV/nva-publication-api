@@ -13,7 +13,6 @@ import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -74,7 +73,7 @@ class LogEntryTest extends ResourcesLocalTest {
                    .withResourceIdentifier(resourceIdentifier)
                    .withTopic(logTopic)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(new User(randomString()))
+                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(), randomUri()))
                    .withInstitution(randomUri())
                    .build();
     }

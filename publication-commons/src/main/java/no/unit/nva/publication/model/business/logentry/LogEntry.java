@@ -4,12 +4,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, LogTopic topic,
-                       Instant timestamp, User performedBy, URI institution) {
+                       Instant timestamp, LogUser performedBy, URI institution) {
 
     public static final String TYPE = "LogEntry";
 
@@ -27,7 +26,7 @@ public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourc
         private SortableIdentifier resourceIdentifier;
         private LogTopic topic;
         private Instant timestamp;
-        private User performedBy;
+        private LogUser performedBy;
         private URI institution;
 
         private Builder() {
@@ -53,7 +52,7 @@ public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourc
             return this;
         }
 
-        public Builder withPerformedBy(User performedBy) {
+        public Builder withPerformedBy(LogUser performedBy) {
             this.performedBy = performedBy;
             return this;
         }

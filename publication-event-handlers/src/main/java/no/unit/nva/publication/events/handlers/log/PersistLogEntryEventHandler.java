@@ -4,14 +4,13 @@ import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EV
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Optional;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -24,44 +23,37 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
     public static final String PERSISTING_LOG_ENTRY_MESSAGE = "Persisting log entry for event {} for resource {}";
     public static final Logger logger = LoggerFactory.getLogger(PersistLogEntryEventHandler.class);
     private final S3Client s3Client;
-    private final ResourceService resourceService;
+    private final LogEntryService logEntryService;
 
     @JacocoGenerated
     public PersistLogEntryEventHandler() {
-        this(S3Driver.defaultS3Client().build(), ResourceService.defaultService());
+        this(S3Client.create(), ResourceService.defaultService(), IdentityServiceClient.prepare());
     }
 
-    protected PersistLogEntryEventHandler(S3Client s3Client, ResourceService resourceService) {
+    protected PersistLogEntryEventHandler(S3Client s3Client, ResourceService resourceService,
+                                          IdentityServiceClient identityServiceClient) {
         super(EventReference.class);
         this.s3Client = s3Client;
-        this.resourceService = resourceService;
+        this.logEntryService = new LogEntryService(resourceService, identityServiceClient);
     }
 
     @Override
     protected Void processInputPayload(EventReference eventReference,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> awsEventBridgeEvent,
                                        Context context) {
-        return readNewImageResourceIdentifier(eventReference)
-                   .map(this::handleNewImage)
-                   .orElse(null);
-    }
 
-    private Void handleNewImage(SortableIdentifier resourceIdentifier) {
-        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
-        if (resource.hasResourceEvent()) {
-            logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(),
-                        resourceIdentifier);
-            resource.getResourceEvent().toLogEntry(resourceIdentifier).persist(resourceService);
-            resource.clearResourceEvent(resourceService);
-        }
+        readNewImageResourceIdentifier(eventReference).ifPresent(this::persistLogEntry);
+
         return null;
     }
 
-    private Optional<SortableIdentifier> readNewImageResourceIdentifier(EventReference eventReference) {
-        return attempt(() -> fetchDynamoDbStreamRecord(eventReference))
-                   .map(DataEntryUpdateEvent::fromJson)
+    private void persistLogEntry(Entity entity) {
+        logEntryService.persistLogEntry(entity);
+    }
+
+    private Optional<Entity> readNewImageResourceIdentifier(EventReference eventReference) {
+        return attempt(() -> fetchDynamoDbStreamRecord(eventReference)).map(DataEntryUpdateEvent::fromJson)
                    .map(DataEntryUpdateEvent::getNewData)
-                   .map(Entity::getIdentifier)
                    .toOptional();
     }
 

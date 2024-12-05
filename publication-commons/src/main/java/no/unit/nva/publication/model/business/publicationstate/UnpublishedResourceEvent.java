@@ -7,6 +7,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
+import no.unit.nva.publication.model.business.logentry.LogUser;
 
 public record UnpublishedResourceEvent(Instant date, User user, URI institution) implements ResourceEvent {
 
@@ -15,13 +16,13 @@ public record UnpublishedResourceEvent(Instant date, User user, URI institution)
     }
 
     @Override
-    public LogEntry toLogEntry(SortableIdentifier resourceIdentifier) {
+    public LogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user) {
         return LogEntry.builder()
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(SortableIdentifier.next())
                    .withTopic(LogTopic.PUBLICATION_UNPUBLISHED)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(user())
+                   .withPerformedBy(user)
                    .withInstitution(institution())
                    .build();
     }
