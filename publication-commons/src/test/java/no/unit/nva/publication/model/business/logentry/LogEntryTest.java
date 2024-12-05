@@ -6,10 +6,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.List;
+import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
@@ -67,6 +69,23 @@ class LogEntryTest extends ResourcesLocalTest {
         assertTrue(logEntries.containsAll(List.of(firstLogEntry, secondLogEntry)));
     }
 
+    @Test
+    void shouldCreateLogUserFromGetUserResponse() {
+        var getUserResponse = GetUserResponse.builder()
+                                 .withUsername(randomString())
+                                 .withGivenName(randomString())
+                                 .withFamilyName(randomString())
+                                 .withInstitution(randomUri())
+                                 .build();
+
+        assertNotNull(LogUser.fromGetUserResponse(getUserResponse));
+    }
+
+    @Test
+    void shouldCreateLogUserFromUsername() {
+        assertNotNull(LogUser.fromUsername(randomString()));
+    }
+
     private static LogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
         return LogEntry.builder()
                    .withIdentifier(SortableIdentifier.next())
@@ -74,7 +93,6 @@ class LogEntryTest extends ResourcesLocalTest {
                    .withTopic(logTopic)
                    .withTimestamp(Instant.now())
                    .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(), randomUri()))
-                   .withInstitution(randomUri())
                    .build();
     }
 }

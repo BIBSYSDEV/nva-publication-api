@@ -23,7 +23,6 @@ public record UnpublishedResourceEvent(Instant date, User user, URI institution)
                    .withTopic(LogTopic.PUBLICATION_UNPUBLISHED)
                    .withTimestamp(Instant.now())
                    .withPerformedBy(user)
-                   .withInstitution(institution())
                    .build();
     }
 }

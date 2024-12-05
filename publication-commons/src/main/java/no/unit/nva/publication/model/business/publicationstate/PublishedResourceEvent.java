@@ -23,7 +23,6 @@ public record PublishedResourceEvent(Instant date, User user, URI institution) i
                    .withTopic(LogTopic.PUBLICATION_PUBLISHED)
                    .withTimestamp(Instant.now())
                    .withPerformedBy(user)
-                   .withInstitution(institution())
                    .build();
     }
 }

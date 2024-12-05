@@ -23,7 +23,6 @@ public record CreatedResourceEvent(Instant date, User user, URI institution) imp
                    .withTopic(LogTopic.PUBLICATION_CREATED)
                    .withTimestamp(Instant.now())
                    .withPerformedBy(user)
-                   .withInstitution(institution())
                    .build();
     }
 }

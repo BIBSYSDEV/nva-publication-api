@@ -24,7 +24,6 @@ public record DeletedResourceEvent(Instant date, User user, URI institution) imp
                    .withTopic(LogTopic.PUBLICATION_DELETED)
                    .withTimestamp(Instant.now())
                    .withPerformedBy(user)
-                   .withInstitution(institution())
                    .build();
     }
 }

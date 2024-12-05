@@ -25,28 +25,28 @@ public class LogEntryService {
 
     public void persistLogEntry(Entity entity) {
         switch (entity) {
-            case Resource resource when resource.hasResourceEvent() -> persistLogEntry(resource.getIdentifier());
+            case Resource resource -> persistLogEntry(resource.getIdentifier());
             case null, default -> {
                 // Ignore
             }
         }
     }
 
-    private void persistLogEntry(SortableIdentifier resourceIdentifier) {
-        var persistedResource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
-        logger.info(PERSISTING_LOG_ENTRY_MESSAGE, persistedResource.getResourceEvent().getClass().getSimpleName(),
-                    resourceIdentifier);
+    private void persistLogEntry(SortableIdentifier identifier) {
+        var resource = Resource.resourceQueryObject(identifier).fetch(resourceService);
+        if (resource.hasResourceEvent()) {
+            logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
 
-        var resourceEvent = persistedResource.getResourceEvent();
-        var user = createUserForLogEntry(resourceEvent);
+            var resourceEvent = resource.getResourceEvent();
+            var user = createUserForLogEntry(resourceEvent);
 
-        resourceEvent.toLogEntry(resourceIdentifier, user).persist(resourceService);
-        persistedResource.clearResourceEvent(resourceService);
+            resourceEvent.toLogEntry(resource.getIdentifier(), user).persist(resourceService);
+            resource.clearResourceEvent(resourceService);
+        }
     }
 
     private LogUser createUserForLogEntry(ResourceEvent resourceEvent) {
-        return attempt(() -> identityServiceClient.getUser(resourceEvent.user().toString()))
-                   .map(LogUser::fromGetUserResponse)
-                   .orElse(failure -> LogUser.fromUsername(resourceEvent.user().toString()));
+        return attempt(() -> identityServiceClient.getUser(resourceEvent.user().toString())).map(
+            LogUser::fromGetUserResponse).orElse(failure -> LogUser.fromUsername(resourceEvent.user().toString()));
     }
 }

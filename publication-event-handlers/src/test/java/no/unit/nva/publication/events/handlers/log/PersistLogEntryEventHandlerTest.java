@@ -7,6 +7,8 @@ import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EV
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -66,6 +68,22 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
         assertFalse(logEntries.isEmpty());
+    }
+
+    @Test
+    void shouldCreateLogEntryWithUserUsernameOnlyWhenFailingWhenFetchingUser()
+        throws BadRequestException, IOException, NotFoundException {
+        var publication = createPublication();
+        when(identityServiceClient.getUser(any())).thenThrow(new NotFoundException("User not found"));
+        var event = createEvent(null,publication);
+
+        handler.handleRequest(event, outputStream, context);
+
+        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
+
+        var logUser = logEntries.getFirst().performedBy();
+        assertNotNull(logUser.userName());
+        assertNull(logUser.cristinId());
     }
 
     @Test

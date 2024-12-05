@@ -1605,11 +1605,16 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.log.PersistLogEntryEventHandler::handleRequest
       Timeout: 200
-      Role: !GetAtt LambdaRole.Arn
+      Policies:
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
