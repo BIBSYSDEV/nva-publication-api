@@ -162,6 +162,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
 
+    public void updateResource(Resource resource) {
+        resource.setModifiedDate(clockForTimestamps.instant());
+        TransactWriteItem insertionAction = createPutTransaction(resource);
+        TransactWriteItemsRequest request = newTransactWriteItemsRequest(insertionAction);
+        sendTransactionWriteRequest(request);
+    }
+
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
         var existingImportCandidate = fetchImportCandidate(importCandidate);
         if (isNotImported(existingImportCandidate)) {

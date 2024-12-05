@@ -1598,6 +1598,28 @@ Resources:
               ArnEquals:
                 aws:SourceArn: !GetAtt PublicationServiceUpdateRule.Arn
 
+  PersistLogEntryEventHandler:
+    DependsOn: EventsLambdaManagedPolicy
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.log.PersistLogEntryEventHandler::handleRequest
+      Timeout: 200
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.Resource.Update" ]
+
   EventBasedBatchScanHandlerTest:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function

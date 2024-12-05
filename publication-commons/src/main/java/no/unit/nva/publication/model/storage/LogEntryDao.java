@@ -10,19 +10,15 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
-import no.unit.nva.publication.model.business.logentry.LogTopic;
 
-public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier,
-                          Instant createdDate, LogTopic topic,
-                          Instant timestamp, User performedBy, URI institution, LogEntry data) {
+public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
+                          LogEntry data) {
 
     public static final String TYPE = "LogEntry";
     public static final String KEY_PATTERN = "%s:%s";
@@ -34,18 +30,17 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
     }
 
     public static LogEntryDao fromLogEntry(LogEntry logEntry) {
-        return new LogEntryDao(logEntry.identifier(), logEntry.publicationIdentifier(), Instant.now(), logEntry.topic(),
-                               logEntry.timestamp(), logEntry.performedBy(), logEntry.institution(), logEntry);
+        return new LogEntryDao(logEntry.identifier(), logEntry.resourceIdentifier(), Instant.now(), logEntry);
+    }
+
+    public static String getLogEntriesByResourceIdentifierPartitionKey(Resource resource) {
+        return KEY_PATTERN.formatted(Resource.TYPE, resource.getIdentifier());
     }
 
     public Map<String, AttributeValue> toDynamoFormat() {
         return attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(this)).map(Item::fromJSON)
                    .map(ItemUtils::toAttributeValues)
                    .orElseThrow();
-    }
-
-    public static String getLogEntriesByResourceIdentifierPartitionKey(Resource resource) {
-        return KEY_PATTERN.formatted(Resource.TYPE, resource.getIdentifier());
     }
 
     @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME)

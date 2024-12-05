@@ -319,11 +319,11 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenUpdatingPublicationFails()
             throws ApiGatewayException, IOException {
-        var publication = createUnpublishablePublication();
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        var publication = createPublication();
+        var pendingPublishingRequest =
+            (PublishingRequestCase) persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest =
-                pendingPublishingRequest
+        var approvedPublishingRequest = pendingPublishingRequest.approveFiles()
                         .complete(publication, USERNAME)
                         .persistNewTicket(ticketService);
         var handlerThrowingException =
