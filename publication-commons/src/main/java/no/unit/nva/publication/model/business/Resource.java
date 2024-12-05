@@ -38,6 +38,7 @@ import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
@@ -212,8 +213,8 @@ public class Resource implements Entity {
         return resourceService.getLogEntriesForResource(this);
     }
 
-    public Resource fetch(ResourceService resourceService) {
-        return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).orElseThrow();
+    public Resource fetch(ResourceService resourceService) throws NotFoundException {
+        return resourceService.getResourceByIdentifier(this.getIdentifier());
     }
 
     public URI getDuplicateOf() {

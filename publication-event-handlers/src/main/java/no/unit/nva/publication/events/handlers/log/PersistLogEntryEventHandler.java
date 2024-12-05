@@ -14,6 +14,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,7 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
     }
 
     private Void handleNewImage(SortableIdentifier resourceIdentifier) {
-        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
+        var resource = fetchResource(resourceIdentifier);
         if (resource.hasResourceEvent()) {
             logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(),
                         resourceIdentifier);
@@ -55,6 +56,10 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
             resource.clearResourceEvent(resourceService);
         }
         return null;
+    }
+
+    private Resource fetchResource(SortableIdentifier resourceIdentifier) {
+        return attempt(() -> Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService)).orElseThrow();
     }
 
     private Optional<SortableIdentifier> readNewImageResourceIdentifier(EventReference eventReference) {

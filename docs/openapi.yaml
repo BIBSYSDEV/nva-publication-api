@@ -1390,10 +1390,31 @@ components:
         logEntries:
           type: array
           items:
-            $ref: '#/components/schemas/PublicationLogEntry'
-    PublicationLogEntry:
-      description: PublicationLogEntry
+            $ref: '#/components/schemas/LogEntry'
+    LogEntry:
+      description: LogEntry
       type: object
+      properties:
+        logTopic:
+          $ref: '#/components/schemas/LogTopic'
+        timestamp:
+          type: string
+          format: date-time
+        performedBy:
+          type: string
+        institution:
+          type: string
+          format: uri
+    LogTopic:
+      type: string
+      enum:
+        - FilePublished
+        - FileRejected
+        - FileUploaded
+        - PublicationCreated
+        - PublicationDeleted
+        - PublicationPublished
+        - PublicationUnpublished
 #region content from "documentation/schema.yaml"
     AcademicArticle:
       required:
