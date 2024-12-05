@@ -36,20 +36,20 @@ public class LogEntryService {
     private void persistLogEntry(SortableIdentifier identifier) {
         var resource = Resource.resourceQueryObject(identifier).fetch(resourceService);
         if (resource.hasResourceEvent()) {
-            logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
-
             var resourceEvent = resource.getResourceEvent();
             var user = createUserForLogEntry(resourceEvent);
             var institution = createInstitutionForLogEntry(resourceEvent);
 
             resourceEvent.toLogEntry(resource.getIdentifier(), user, institution).persist(resourceService);
+
+            logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
             resource.clearResourceEvent(resourceService);
         }
     }
 
     private LogInstitution createInstitutionForLogEntry(ResourceEvent resourceEvent) {
         return attempt(() -> identityServiceClient.getCustomerByCristinId(resourceEvent.institution())).map(
-            LogInstitution::fromGetUserResponse).orElse(failure -> LogInstitution.fromCristinId(resourceEvent.institution()));
+            LogInstitution::fromGetCustomerResponse).orElse(failure -> LogInstitution.fromCristinId(resourceEvent.institution()));
     }
 
     private LogUser createUserForLogEntry(ResourceEvent resourceEvent) {

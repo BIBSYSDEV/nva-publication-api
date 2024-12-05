@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
+import no.unit.nva.clients.GetCustomerResponse;
 import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -84,6 +86,19 @@ class LogEntryTest extends ResourcesLocalTest {
     @Test
     void shouldCreateLogUserFromUsername() {
         assertNotNull(LogUser.fromUsername(randomString()));
+    }
+
+    @Test
+    void shouldCreateLogInstitutionFromGetCustomerResponse() {
+        var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
+                                                      randomString(), randomUri());
+
+        assertNotNull(LogInstitution.fromGetCustomerResponse(getCustomerResponse));
+    }
+
+    @Test
+    void shouldCreateLogInstitutionFromCristinId() {
+        assertNotNull(LogInstitution.fromCristinId(randomUri()));
     }
 
     private static LogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {

@@ -20,14 +20,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    public static final String PERSISTING_LOG_ENTRY_MESSAGE = "Persisting log entry for event {} for resource {}";
     public static final Logger logger = LoggerFactory.getLogger(PersistLogEntryEventHandler.class);
     private final S3Client s3Client;
     private final LogEntryService logEntryService;
 
     @JacocoGenerated
     public PersistLogEntryEventHandler() {
-        this(S3Client.create(), ResourceService.defaultService(), IdentityServiceClient.prepare());
+        this(S3Driver.defaultS3Client().build(), ResourceService.defaultService(), IdentityServiceClient.prepare());
     }
 
     protected PersistLogEntryEventHandler(S3Client s3Client, ResourceService resourceService,
