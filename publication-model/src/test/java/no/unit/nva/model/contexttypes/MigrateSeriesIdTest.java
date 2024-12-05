@@ -6,8 +6,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import java.net.URI;
-import java.util.UUID;
+import static org.hamcrest.Matchers.not;
+import no.unit.nva.model.contexttypes.utils.MigrateSerialPublicationUtil;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ public class MigrateSeriesIdTest {
     @Test
     void shouldLogUriIfOldIdHasUnexpectedPath() {
         var oldId = constructExampleIdWithPath("unexpected-path");
-        var appender = LogUtils.getTestingAppender(Series.class);
+        var appender = LogUtils.getTestingAppender(MigrateSerialPublicationUtil.class);
 
         new Series(oldId);
 
@@ -38,10 +38,20 @@ public class MigrateSeriesIdTest {
     @Test
     void shouldLogUriIfOldIdHasUnexpectedForm() {
         var oldId = randomUri();
-        var appender = LogUtils.getTestingAppender(Series.class);
+        var appender = LogUtils.getTestingAppender(MigrateSerialPublicationUtil.class);
 
         new Series(oldId);
 
         assertThat(appender.getMessages(), containsString(oldId.toString()));
+    }
+
+    @Test
+    void shouldNotLogUriIfIdIsAlreadyMigrated() {
+        var oldId = constructExampleIdWithPath("serial-publication");
+        var appender = LogUtils.getTestingAppender(MigrateSerialPublicationUtil.class);
+
+        new Series(oldId);
+
+        assertThat(appender.getMessages(), not(containsString(oldId.toString())));
     }
 }

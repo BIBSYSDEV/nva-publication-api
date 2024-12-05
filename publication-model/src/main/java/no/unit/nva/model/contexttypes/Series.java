@@ -1,21 +1,18 @@
 package no.unit.nva.model.contexttypes;
 
 import static java.util.Objects.isNull;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Objects;
+import no.unit.nva.model.contexttypes.utils.MigrateSerialPublicationUtil;
 import no.unit.nva.model.exceptions.InvalidSeriesException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Series implements BookSeries {
 
-    private static final String NEW_PATH_SERIAL_PUBLICATION = "serial-publication";
-    private static final int INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT = 2;
     private static final String OLD_PATH_SERIES = "series";
 
     private final URI id;
@@ -23,7 +20,7 @@ public class Series implements BookSeries {
     @JsonCreator
     public Series(@JsonProperty("id") URI id) {
         validate(id);
-        this.id = migratePath(id);
+        this.id = MigrateSerialPublicationUtil.migratePath(id, OLD_PATH_SERIES);
     }
 
     public URI getId() {
@@ -59,22 +56,5 @@ public class Series implements BookSeries {
         if (isNull(stringOfUri) || stringOfUri.isBlank()) {
             throw new InvalidSeriesException(stringOfUri);
         }
-    }
-
-    @Deprecated
-    private static URI replaceOldPath(URI id) {
-        return UriWrapper.fromUri(id)
-                   .replacePathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT,
-                                                     NEW_PATH_SERIAL_PUBLICATION)
-                   .getUri();
-    }
-
-    @Deprecated
-    private URI migratePath(URI id) {
-        return attempt(() -> UriWrapper.fromUri(id).getPath()
-                                 .getPathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT)).toOptional()
-                   .filter(path -> path.equals(OLD_PATH_SERIES))
-                   .map(uri -> replaceOldPath(id))
-                   .orElse(id);
     }
 }
