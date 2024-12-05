@@ -37,7 +37,6 @@ dependencies {
     testImplementation libs.logutils
     testImplementation libs.nva.identifiers
     testImplementation libs.datafaker
-    testImplementation libs.httpcore
     testImplementation(libs.javers) {
         because "For comparing java objects and detailing the differences in readable way"
     }

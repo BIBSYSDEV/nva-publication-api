@@ -41,7 +41,6 @@ dependencies {
     testImplementation libs.aws.sdk2.utils
     testImplementation libs.aws.sdk2.s3
     testImplementation libs.bundles.testing
-    testImplementation libs.httpcore
 
     compileOnly libs.nva.apigateway
     compileOnly libs.zalando

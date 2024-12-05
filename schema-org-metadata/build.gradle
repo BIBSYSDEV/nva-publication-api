@@ -13,7 +13,6 @@ dependencies {
     testImplementation project(':publication-testing')
     testImplementation project(":publication-model-testing")
     testImplementation libs.hamcrest.json
-    testImplementation libs.httpcore
 }
 
 test {

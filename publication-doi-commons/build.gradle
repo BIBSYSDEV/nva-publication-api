@@ -8,5 +8,4 @@ dependencies {
     testImplementation libs.nva.testutils
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
-    testImplementation libs.httpcore
 }

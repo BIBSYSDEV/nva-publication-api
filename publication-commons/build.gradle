@@ -35,7 +35,6 @@ dependencies {
     testImplementation libs.bundles.testing
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
-    testImplementation libs.httpcore
 }
 
 test {

@@ -16,7 +16,6 @@ dependencies {
     testImplementation(project(':publication-testing'))
     testImplementation project(":publication-model-testing")
     testImplementation project(path: ':tickets-test')
-    testImplementation libs.httpcore
     testImplementation libs.bundles.testing
     testImplementation libs.jsonassert
 }

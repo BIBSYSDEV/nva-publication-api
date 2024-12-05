@@ -15,7 +15,6 @@ dependencies {
     testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils
     testImplementation libs.jsonassert
-    testImplementation libs.httpcore
 
     testImplementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'

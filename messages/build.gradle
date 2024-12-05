@@ -24,7 +24,6 @@ dependencies {
 
     testImplementation libs.zalando
     testImplementation libs.nva.testutils
-    testImplementation libs.httpcore
 }
 
 test {

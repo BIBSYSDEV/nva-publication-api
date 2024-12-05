@@ -33,7 +33,6 @@ dependencies {
 
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.646'
 
-    testImplementation libs.httpcore
     testImplementation libs.nva.testutils
     testImplementation libs.cucumber.java
     testImplementation libs.cucumber.junit
