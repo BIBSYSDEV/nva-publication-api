@@ -1081,6 +1081,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
+          TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:

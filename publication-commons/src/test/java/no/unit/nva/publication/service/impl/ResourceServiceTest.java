@@ -1230,7 +1230,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFetchResource() throws BadRequestException {
+    void shouldFetchResource() throws BadRequestException, NotFoundException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
@@ -1243,7 +1243,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetResourceEventToNull() throws BadRequestException {
+    void shouldSetResourceEventToNull() throws BadRequestException, NotFoundException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)

@@ -1,5 +1,8 @@
 dependencies {
 
+    implementation project(":publication-commons")
+    implementation project(":publication-model")
+
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.json
@@ -9,8 +12,12 @@ dependencies {
     implementation libs.jackson.databind
 
     testImplementation libs.bundles.testing
+
+    testImplementation project(":publication-model-testing")
+    testImplementation project(":publication-testing")
 }
 
 test {
     environment "ALLOWED_ORIGIN", "*"
+    environment "AWS_REGION", "eu-west-1"
 }
