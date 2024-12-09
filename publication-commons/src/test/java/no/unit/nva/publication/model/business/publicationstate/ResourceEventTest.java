@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,7 +28,7 @@ class ResourceEventTest {
     @ParameterizedTest
     @MethodSource("resourceEventProvider")
     void shouldConvertResourceEventToLogEntryWithExpectedTopic(ResourceEvent resourceEvent, LogTopic expectedLogTopic) {
-        var logEntry = resourceEvent.toLogEntry(SortableIdentifier.next(), null, null);
+        var logEntry = resourceEvent.toLogEntry(SortableIdentifier.next(), null);
 
         assertEquals(expectedLogTopic, logEntry.topic());
     }

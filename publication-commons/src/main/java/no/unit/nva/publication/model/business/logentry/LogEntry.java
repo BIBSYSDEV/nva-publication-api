@@ -7,7 +7,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, LogTopic topic,
-                       Instant timestamp, LogUser performedBy, LogInstitution institution) {
+                       Instant timestamp, LogUser performedBy) {
 
     public static Builder builder() {
         return new Builder();
@@ -24,7 +24,6 @@ public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourc
         private LogTopic topic;
         private Instant timestamp;
         private LogUser performedBy;
-        private LogInstitution institution;
 
         private Builder() {
         }
@@ -54,13 +53,8 @@ public record LogEntry(SortableIdentifier identifier, SortableIdentifier resourc
             return this;
         }
 
-        public Builder withInstitution(LogInstitution institution) {
-            this.institution = institution;
-            return this;
-        }
-
         public LogEntry build() {
-            return new LogEntry(identifier, resourceIdentifier, topic, timestamp, performedBy, institution);
+            return new LogEntry(identifier, resourceIdentifier, topic, timestamp, performedBy);
         }
 
     }

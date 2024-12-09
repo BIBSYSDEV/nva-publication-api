@@ -6,7 +6,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
-import no.unit.nva.publication.model.business.logentry.LogInstitution;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 
@@ -17,14 +16,13 @@ public record PublishedResourceEvent(Instant date, User user, URI institution) i
     }
 
     @Override
-    public LogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user, LogInstitution institution) {
+    public LogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user) {
         return LogEntry.builder()
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(SortableIdentifier.next())
                    .withTopic(LogTopic.PUBLICATION_PUBLISHED)
                    .withTimestamp(Instant.now())
                    .withPerformedBy(user)
-                   .withInstitution(institution)
                    .build();
     }
 }

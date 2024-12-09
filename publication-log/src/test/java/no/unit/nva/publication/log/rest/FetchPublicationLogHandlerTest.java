@@ -26,7 +26,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.logentry.LogInstitution;
+import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -130,12 +130,12 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     }
 
     private void persistLogEntry(Publication publication) throws NotFoundException {
-        var user = new LogUser(randomString(), randomString(), randomString(), randomUri(), randomUri());
-        var institution = new LogInstitution(randomUri(), randomUri(), randomString(), randomString());
+        var user = new LogUser(randomString(), randomString(), randomString(), randomUri(),
+                               new LogOrganization(randomUri(), randomUri(), randomString(), randomString()));
         Resource.resourceQueryObject(publication.getIdentifier())
             .fetch(resourceService)
             .getResourceEvent()
-            .toLogEntry(publication.getIdentifier(), user, institution)
+            .toLogEntry(publication.getIdentifier(), user)
             .persist(resourceService);
     }
 

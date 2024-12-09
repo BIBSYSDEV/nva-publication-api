@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
+import no.unit.nva.clients.GetCustomerResponse;
 import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.events.models.EventReference;
@@ -54,6 +55,7 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
         resourceService = getResourceServiceBuilder().build();
         identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getUser(any())).thenReturn(randomUser());
+        when(identityServiceClient.getCustomerByCristinId(any())).thenReturn(randomCustomer());
         handler = new PersistLogEntryEventHandler(s3Client, resourceService, identityServiceClient);
     }
 
@@ -61,7 +63,7 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
     void shouldCreateLogEntryWhenConsumedEventHasResourceWithNewImageWhereResourceEventIsPresent()
         throws BadRequestException, IOException {
         var publication = createPublication();
-        var event = createEvent(null,publication);
+        var event = createEvent(null, publication);
 
         handler.handleRequest(event, outputStream, context);
 
@@ -75,7 +77,7 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
         throws BadRequestException, IOException, NotFoundException {
         var publication = createPublication();
         when(identityServiceClient.getUser(any())).thenThrow(new NotFoundException("User not found"));
-        var event = createEvent(null,publication);
+        var event = createEvent(null, publication);
 
         handler.handleRequest(event, outputStream, context);
 
@@ -129,5 +131,10 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
                    .withGivenName(randomString())
                    .withCristinId(randomUri())
                    .build();
+    }
+
+    private GetCustomerResponse randomCustomer() {
+        return new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(), randomString(),
+                                       randomUri());
     }
 }

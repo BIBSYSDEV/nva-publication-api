@@ -17,6 +17,7 @@ import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -79,13 +80,14 @@ class LogEntryTest extends ResourcesLocalTest {
                                  .withFamilyName(randomString())
                                  .withInstitution(randomUri())
                                  .build();
-
-        assertNotNull(LogUser.fromGetUserResponse(getUserResponse));
+        var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
+                                                      randomString(), randomUri());
+        assertNotNull(LogUser.create(getUserResponse, getCustomerResponse));
     }
 
     @Test
     void shouldCreateLogUserFromUsername() {
-        assertNotNull(LogUser.fromUsername(randomString()));
+        assertNotNull(LogUser.fromResourceEvent(new User(randomString()), randomUri()));
     }
 
     @Test
@@ -93,12 +95,12 @@ class LogEntryTest extends ResourcesLocalTest {
         var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
                                                       randomString(), randomUri());
 
-        assertNotNull(LogInstitution.fromGetCustomerResponse(getCustomerResponse));
+        assertNotNull(LogOrganization.fromGetCustomerResponse(getCustomerResponse));
     }
 
     @Test
     void shouldCreateLogInstitutionFromCristinId() {
-        assertNotNull(LogInstitution.fromCristinId(randomUri()));
+        assertNotNull(LogOrganization.fromCristinId(randomUri()));
     }
 
     private static LogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
@@ -107,7 +109,8 @@ class LogEntryTest extends ResourcesLocalTest {
                    .withResourceIdentifier(resourceIdentifier)
                    .withTopic(logTopic)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(), randomUri()))
+                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
+                                                new LogOrganization(randomUri(), randomUri(), randomString(), randomString())))
                    .build();
     }
 }
