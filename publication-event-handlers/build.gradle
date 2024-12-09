@@ -13,6 +13,7 @@ dependencies {
     implementation libs.nva.secrets
     implementation libs.nva.apigateway
     implementation libs.nva.auth
+    implementation libs.nva.clients
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events

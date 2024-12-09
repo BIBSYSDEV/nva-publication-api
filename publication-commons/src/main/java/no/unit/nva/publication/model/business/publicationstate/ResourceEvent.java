@@ -7,6 +7,7 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.logentry.LogUser;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(CreatedResourceEvent.class), @JsonSubTypes.Type(PublishedResourceEvent.class),
@@ -22,5 +23,5 @@ public interface ResourceEvent {
      */
     URI institution();
 
-    LogEntry toLogEntry(SortableIdentifier resourceIdentifier);
+    LogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user);
 }

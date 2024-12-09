@@ -7,6 +7,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
+import no.unit.nva.publication.model.business.logentry.LogUser;
 
 public record CreatedResourceEvent(Instant date, User user, URI institution) implements ResourceEvent {
 
@@ -15,14 +16,13 @@ public record CreatedResourceEvent(Instant date, User user, URI institution) imp
     }
 
     @Override
-    public LogEntry toLogEntry(SortableIdentifier resourceIdentifier) {
+    public LogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user) {
         return LogEntry.builder()
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(SortableIdentifier.next())
                    .withTopic(LogTopic.PUBLICATION_CREATED)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(user())
-                   .withInstitution(institution())
+                   .withPerformedBy(user)
                    .build();
     }
 }

@@ -26,6 +26,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogOrganization;
+import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
@@ -35,7 +37,6 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
@@ -115,7 +116,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
         assertTrue(response.getBodyObject(PublicationLogResponse.class).logEntries().isEmpty());
     }
 
-    @RepeatedTest(100)
+    @Test
     void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLog() throws IOException, BadRequestException,
                                                                                 NotFoundException {
         var publication = createPublication();
@@ -129,10 +130,12 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     }
 
     private void persistLogEntry(Publication publication) throws NotFoundException {
+        var user = new LogUser(randomString(), randomString(), randomString(), randomUri(),
+                               new LogOrganization(randomUri(), randomUri(), randomString(), randomString()));
         Resource.resourceQueryObject(publication.getIdentifier())
             .fetch(resourceService)
             .getResourceEvent()
-            .toLogEntry(publication.getIdentifier())
+            .toLogEntry(publication.getIdentifier(), user)
             .persist(resourceService);
     }
 

@@ -6,10 +6,14 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
+import no.unit.nva.clients.GetCustomerResponse;
+import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
@@ -68,14 +72,45 @@ class LogEntryTest extends ResourcesLocalTest {
         assertTrue(logEntries.containsAll(List.of(firstLogEntry, secondLogEntry)));
     }
 
+    @Test
+    void shouldCreateLogUserFromGetUserResponse() {
+        var getUserResponse = GetUserResponse.builder()
+                                 .withUsername(randomString())
+                                 .withGivenName(randomString())
+                                 .withFamilyName(randomString())
+                                 .withInstitution(randomUri())
+                                 .build();
+        var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
+                                                      randomString(), randomUri());
+        assertNotNull(LogUser.create(getUserResponse, getCustomerResponse));
+    }
+
+    @Test
+    void shouldCreateLogUserFromUsername() {
+        assertNotNull(LogUser.fromResourceEvent(new User(randomString()), randomUri()));
+    }
+
+    @Test
+    void shouldCreateLogInstitutionFromGetCustomerResponse() {
+        var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
+                                                      randomString(), randomUri());
+
+        assertNotNull(LogOrganization.fromGetCustomerResponse(getCustomerResponse));
+    }
+
+    @Test
+    void shouldCreateLogInstitutionFromCristinId() {
+        assertNotNull(LogOrganization.fromCristinId(randomUri()));
+    }
+
     private static LogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
         return LogEntry.builder()
                    .withIdentifier(SortableIdentifier.next())
                    .withResourceIdentifier(resourceIdentifier)
                    .withTopic(logTopic)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(new User(randomString()))
-                   .withInstitution(randomUri())
+                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
+                                                new LogOrganization(randomUri(), randomUri(), randomString(), randomString())))
                    .build();
     }
 }
