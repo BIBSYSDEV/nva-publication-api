@@ -184,13 +184,26 @@ public class ScopusFileConverter {
                    .plusDays(license.getDelay());
     }
 
-    private static URI extractLicenseForLink(CrossrefLink crossrefLink, List<License> licenses) {
-        return licenses.stream()
+    private static URI extractLicenseForLink(CrossrefLink crossrefLink, List<License> licenseList) {
+        return getLicenseWithTheSameVersion(crossrefLink, licenseList)
+                   .or(() -> getLicenseWithUnspecifiedContentVersion(licenseList))
+                   .orElse(DEFAULT_LICENSE);
+    }
+
+    private static Optional<URI> getLicenseWithUnspecifiedContentVersion(List<License> licenseList) {
+        return licenseList.stream()
+                   .filter(License::hasUnspecifiedContentVersion)
+                   .map(License::getUri)
+                   .filter(ScopusFileConverter::isCreativeCommonsLicense)
+                   .findFirst();
+    }
+
+    private static Optional<URI> getLicenseWithTheSameVersion(CrossrefLink crossrefLink, List<License> licenseList) {
+        return licenseList.stream()
                    .filter(license -> hasSameVersion(crossrefLink, license))
                    .map(License::getUri)
                    .filter(ScopusFileConverter::isCreativeCommonsLicense)
-                   .findFirst()
-                   .orElse(DEFAULT_LICENSE);
+                   .findFirst();
     }
 
     private static boolean isSuccess(HttpResponse<InputStream> response) {
@@ -246,8 +259,8 @@ public class ScopusFileConverter {
     }
 
     private List<AssociatedArtifact> fetchFilesFromDoi(CrossrefResponse response) {
-        return getScopusFiles(response).stream()
-                   .map(scopusFile -> attempt(() -> fetchFileContent(scopusFile)).orElseThrow())
+        return getFilesFromCrossrefResponse(response).stream()
+                   .map(this::fetchScopusFile)
                    .collect(collectRemovingDuplicates())
                    .stream()
                    .map(this::saveFile)
@@ -255,6 +268,10 @@ public class ScopusFileConverter {
                    .filter(ScopusFileConverter::fileWithContent)
                    .map(ScopusFile::toPublishedAssociatedArtifact)
                    .toList();
+    }
+
+    private ScopusFile fetchScopusFile(ScopusFile scopusFile) {
+        return attempt(() -> fetchFileContent(scopusFile)).orElseThrow();
     }
 
     private ScopusFile fetchFileContent(ScopusFile file) throws IOException {
@@ -268,8 +285,8 @@ public class ScopusFileConverter {
                    .withName(filename).build();
     }
 
-    private List<ScopusFile> getScopusFiles(CrossrefResponse response) {
-        var licenses = extractLicenses(response);
+    private List<ScopusFile> getFilesFromCrossrefResponse(CrossrefResponse response) {
+        var licenseList = extractLicenses(response);
         var resource = extractResourceUri(response);
         return response.getMessage()
                    .getLinks()
@@ -277,7 +294,7 @@ public class ScopusFileConverter {
                    .filter(this::hasSupportedMimeType)
                    .filter(this::shouldBeIgnored)
                    .filter(crossrefLink -> isNotResource(crossrefLink, resource))
-                   .map(crossrefLink -> toScopusFile(crossrefLink, licenses))
+                   .map(crossrefLink -> toScopusFile(crossrefLink, licenseList))
                    .distinct()
                    .toList();
     }
@@ -298,13 +315,13 @@ public class ScopusFileConverter {
                    .orElse(null);
     }
 
-    private ScopusFile toScopusFile(CrossrefLink crossrefLink, List<License> licenses) {
+    private ScopusFile toScopusFile(CrossrefLink crossrefLink, List<License> licenseList) {
         return ScopusFile.builder()
                    .withIdentifier(randomUUID())
                    .withDownloadFileUrl(crossrefLink.getUri())
                    .withPublisherVersion(determinePublisherVersion(crossrefLink))
-                   .withLicense(extractLicenseForLink(crossrefLink, licenses))
-                   .withEmbargo(calculateEmbargo(crossrefLink, licenses))
+                   .withLicense(extractLicenseForLink(crossrefLink, licenseList))
+                   .withEmbargo(calculateEmbargo(crossrefLink, licenseList))
                    .build();
     }
 
