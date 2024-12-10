@@ -163,7 +163,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public void updateResource(Resource resource) {
-        resource.setModifiedDate(clockForTimestamps.instant());
         TransactWriteItem insertionAction = createPutTransaction(resource);
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(insertionAction);
         sendTransactionWriteRequest(request);
