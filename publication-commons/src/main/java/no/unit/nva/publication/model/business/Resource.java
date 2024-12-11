@@ -1,7 +1,8 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -33,6 +34,7 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -215,6 +217,17 @@ public class Resource implements Entity {
 
     public Resource fetch(ResourceService resourceService) throws NotFoundException {
         return resourceService.getResourceByIdentifier(this.getIdentifier());
+    }
+
+    public void republish(ResourceService resourceService, UserInstance userInstance) {
+        if (!UNPUBLISHED.equals(getStatus())) {
+            throw new IllegalStateException("Only unpublished resource can be republished");
+        }
+        this.setStatus(PUBLISHED);
+        var timestamp = Instant.now();
+        this.setPublishedDate(timestamp);
+        this.setResourceEvent(RepublishedResourceEvent.create(userInstance, timestamp));
+        resourceService.updateResource(this);
     }
 
     public URI getDuplicateOf() {

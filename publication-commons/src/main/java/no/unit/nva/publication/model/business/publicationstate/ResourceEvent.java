@@ -11,7 +11,8 @@ import no.unit.nva.publication.model.business.logentry.LogUser;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(CreatedResourceEvent.class), @JsonSubTypes.Type(PublishedResourceEvent.class),
-    @JsonSubTypes.Type(UnpublishedResourceEvent.class), @JsonSubTypes.Type(DeletedResourceEvent.class)})
+    @JsonSubTypes.Type(UnpublishedResourceEvent.class), @JsonSubTypes.Type(DeletedResourceEvent.class),
+    @JsonSubTypes.Type(RepublishedResourceEvent.class)})
 public interface ResourceEvent {
 
     Instant date();

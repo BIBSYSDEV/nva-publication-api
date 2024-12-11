@@ -5,6 +5,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
@@ -33,11 +34,10 @@ public class RepublishUtil {
 
     public Publication republish(Publication publication, UserInstance userInstance) throws ApiGatewayException {
         validateRepublishing();
-        var publicationIdentifier = publication.getIdentifier();
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publicationIdentifier);
+        var resource = Resource.fromPublication(publication);
+        resource.republish(resourceService, userInstance);
         persistCompletedPublishingRequest(publication, userInstance);
-
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
+        return resource.fetch(resourceService).toPublication();
     }
 
     private void persistCompletedPublishingRequest(Publication publication, UserInstance userInstance)

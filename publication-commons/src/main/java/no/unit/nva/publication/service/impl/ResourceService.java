@@ -306,6 +306,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void updateResource(Resource resource) {
+        resource.setModifiedDate(Instant.now());
         updateResourceService.updateResource(resource);
     }
 
