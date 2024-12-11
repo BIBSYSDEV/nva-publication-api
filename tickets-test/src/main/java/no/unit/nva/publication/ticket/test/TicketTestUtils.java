@@ -13,6 +13,10 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.SUPPORT;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,17 +98,20 @@ public final class TicketTestUtils {
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
         return Stream.of(
-                Arguments.of(PUBLISHED, DoiRequest.class, AccessRight.MANAGE_DOI),
+                Arguments.of(PUBLISHED, DoiRequest.class, new AccessRight[]{MANAGE_DOI, MANAGE_RESOURCES_STANDARD}),
                 Arguments.of(
-                        DRAFT, PublishingRequestCase.class, AccessRight.MANAGE_PUBLISHING_REQUESTS),
-                Arguments.of(DRAFT, GeneralSupportRequest.class, AccessRight.SUPPORT));
+                        DRAFT, PublishingRequestCase.class,
+                        new AccessRight[]{MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD}),
+                Arguments.of(DRAFT, GeneralSupportRequest.class,
+                             new AccessRight[]{SUPPORT, MANAGE_RESOURCES_STANDARD}));
     }
 
     public static Stream<Arguments> invalidAccessRightForTicketTypeProvider() {
         return Stream.of(
-                Arguments.of(DoiRequest.class, AccessRight.MANAGE_PUBLISHING_REQUESTS),
-                Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_DOI),
-                Arguments.of(GeneralSupportRequest.class, AccessRight.MANAGE_PUBLISHING_REQUESTS));
+                Arguments.of(DoiRequest.class,
+                             new AccessRight[] {MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD}),
+                Arguments.of(PublishingRequestCase.class,
+                             new AccessRight[] {MANAGE_DOI, MANAGE_RESOURCES_STANDARD}));
     }
 
     public static Publication createNonPersistedPublication(PublicationStatus status) {

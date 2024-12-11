@@ -1,5 +1,6 @@
 package no.unit.nva.publication.messages.create;
 
+import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
@@ -89,7 +90,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
     void shouldReturnForbiddenWhenSenderIsElevatedUserWithInvalidAccessRightForTicketType(
-        Class<? extends TicketEntry> ticketType, AccessRight accessRights)
+        Class<? extends TicketEntry> ticketType, AccessRight... accessRights)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -169,7 +170,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
     void shouldCreateMessageWhenCuratorHasValidAccessRightForTicketType(PublicationStatus publicationStatus,
                                                                         Class<? extends TicketEntry> ticketType,
-                                                                        AccessRight accessRight)
+                                                                        AccessRight... accessRights)
         throws ApiGatewayException, IOException {
 
         var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
@@ -179,7 +180,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                       null, UserClientType.INTERNAL);
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
-                                                             MANAGE_RESOURCES_STANDARD, accessRight);
+                                                             accessRights);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -235,6 +236,20 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getStatus(), is(equalTo(TicketStatus.PENDING)));
+    }
+
+    @Test
+    void curatorShouldBeAbleToCreateMessageForGeneralSupportCase()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, MANAGE_RESOURCES_STANDARD);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
     }
 
     private static Map<String, String> pathParameters(Publication publication,
