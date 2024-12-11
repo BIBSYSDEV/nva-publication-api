@@ -226,7 +226,6 @@ public class Resource implements Entity {
         this.setStatus(PUBLISHED);
         var timestamp = Instant.now();
         this.setPublishedDate(timestamp);
-        this.setModifiedDate(timestamp);
         this.setResourceEvent(RepublishedResourceEvent.create(userInstance, timestamp));
         resourceService.updateResource(this);
     }
