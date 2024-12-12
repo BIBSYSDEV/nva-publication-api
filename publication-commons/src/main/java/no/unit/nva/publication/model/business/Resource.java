@@ -232,12 +232,16 @@ public class Resource implements Entity {
         if (!PUBLISHABLE_STATUSES.contains(resource.getStatus())) {
             throw new IllegalStateException("Publication status %s is not al1lowed for publishing");
         } else {
-            this.setStatus(PublicationStatus.PUBLISHED);
-            var currentTime = Instant.now();
-            this.setPublishedDate(currentTime);
-            this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
+            resource.publish(userInstance);
             resourceService.updateResource(resource);
         }
+    }
+
+    private void publish(UserInstance userInstance) {
+        this.setStatus(PublicationStatus.PUBLISHED);
+        var currentTime = Instant.now();
+        this.setPublishedDate(currentTime);
+        this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
     }
 
     public URI getDuplicateOf() {

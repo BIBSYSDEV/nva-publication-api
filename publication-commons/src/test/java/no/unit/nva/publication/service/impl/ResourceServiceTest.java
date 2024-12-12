@@ -5,7 +5,6 @@ import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
-import static no.unit.nva.model.PublicationStatus.NEW;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
