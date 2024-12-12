@@ -24,7 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
@@ -65,6 +68,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -577,6 +581,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, randomString());
         when(resourceService.getPublicationByIdentifier(any())).thenReturn(randomPublication());
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build()));
+        doNothing().when(resourceService).updateResource(any());
         when(resourceService.updatePublication(any())).thenThrow(RuntimeException.class);
         return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
     }

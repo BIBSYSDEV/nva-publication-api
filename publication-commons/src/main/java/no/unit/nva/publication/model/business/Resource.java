@@ -227,39 +227,39 @@ public class Resource implements Entity {
 
     public void publish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
         var resource = this.fetch(resourceService);
-        if (PUBLISHED.equals(resource.getStatus())) {
-            return;
-        }
-        if (isNotPublishable(resource)) {
-            throw new IllegalStateException("Resource is not publishable.");
-        } else {
-            resource.publish(userInstance);
-            resourceService.updateResource(resource);
-        }
+        resource.publish(userInstance);
+        resourceService.updateResource(resource);
     }
 
     private void publish(UserInstance userInstance) {
-        this.setStatus(PUBLISHED);
-        var currentTime = Instant.now();
-        this.setPublishedDate(currentTime);
-        this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
+        if (PUBLISHED.equals(this.getStatus())) {
+            return;
+        }
+        if (this.isNotPublishable()) {
+            throw new IllegalStateException("Resource is not publishable!");
+        } else {
+            this.setStatus(PUBLISHED);
+            var currentTime = Instant.now();
+            this.setPublishedDate(currentTime);
+            this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
+        }
     }
 
-    private boolean isNotPublishable(Resource resource) {
-        return !PUBLISHABLE_STATUSES.contains(resource.getStatus())
+    private boolean isNotPublishable() {
+        return !PUBLISHABLE_STATUSES.contains(this.getStatus())
                || Optional.ofNullable(this.getEntityDescription()).map(EntityDescription::getMainTitle).isEmpty();
     }
 
     public void republish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
         var resource = this.fetch(resourceService);
-        if (!UNPUBLISHED.equals(getStatus())) {
-            throw new IllegalStateException("Only unpublished resource can be republished");
-        }
         resource.republish(userInstance);
         resourceService.updateResource(resource);
     }
 
     private void republish(UserInstance userInstance) {
+        if (!UNPUBLISHED.equals(this.getStatus())) {
+            throw new IllegalStateException("Only unpublished resource can be republished!");
+        }
         this.setStatus(PUBLISHED);
         var timestamp = Instant.now();
         this.setPublishedDate(timestamp);
