@@ -1296,21 +1296,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDoNothingWhenPublishingPublicationWhenPublicationIsAlreadyPublished() throws ApiGatewayException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var peristedPublication = Resource.fromPublication(publication)
-                                      .persistNew(resourceService, userInstance);
-        resourceService.publishPublication(userInstance, peristedPublication.getIdentifier());
+    void shouldNotPublishAlreadyPublishedPublication() throws ApiGatewayException {
+        resourceService = mock(ResourceService.class);
+        var publishedPublication = randomPublication().copy().withStatus(PUBLISHED).build();
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publishedPublication));
+        Resource.resourceQueryObject(publishedPublication.getIdentifier()).publish(resourceService,
+                                                                                   UserInstance.fromPublication(publishedPublication));
 
-        var publishedResource = Resource.fromPublication(peristedPublication).fetch(resourceService);
-
-        Resource.resourceQueryObject(peristedPublication.getIdentifier()).publish(resourceService, userInstance);
-
-        var resource = Resource.fromPublication(peristedPublication).fetch(resourceService);
-
-        assertEquals(PUBLISHED, publishedResource.getStatus());
-        assertEquals(publishedResource.getPublishedDate(), resource.getPublishedDate());
+        verify(resourceService, never()).updateResource(any());
     }
 
     @Test

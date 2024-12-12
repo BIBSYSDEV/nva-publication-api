@@ -227,12 +227,14 @@ public class Resource implements Entity {
 
     public void publish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
         var resource = this.fetch(resourceService);
-        resource.publish(userInstance);
-        resourceService.updateResource(resource);
+        if (resource.isNotPublished()) {
+            resource.publish(userInstance);
+            resourceService.updateResource(resource);
+        }
     }
 
     private void publish(UserInstance userInstance) {
-        if (PUBLISHED.equals(this.getStatus())) {
+        if (this.isPublished()) {
             return;
         }
         if (this.isNotPublishable()) {
@@ -248,6 +250,14 @@ public class Resource implements Entity {
     private boolean isNotPublishable() {
         return !PUBLISHABLE_STATUSES.contains(this.getStatus())
                || Optional.ofNullable(this.getEntityDescription()).map(EntityDescription::getMainTitle).isEmpty();
+    }
+
+    private boolean isNotPublished() {
+        return !isPublished();
+    }
+
+    private boolean isPublished() {
+        return PUBLISHED.equals(this.getStatus());
     }
 
     public void republish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
