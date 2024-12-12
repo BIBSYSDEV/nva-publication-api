@@ -95,6 +95,7 @@ public class PublicationContextBuilder {
             case "DegreeBachelor":
             case "DegreeMaster":
             case "DegreePhd":
+            case "ArtisticDegreePhd":
             case "DegreeLicentiate":
                 return attempt(PublicationContextBuilder::randomDegree).orElseThrow();
             case "ChapterArticle":
