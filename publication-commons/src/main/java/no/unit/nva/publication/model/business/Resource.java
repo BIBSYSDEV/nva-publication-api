@@ -37,6 +37,7 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
@@ -238,10 +239,26 @@ public class Resource implements Entity {
     }
 
     private void publish(UserInstance userInstance) {
-        this.setStatus(PublicationStatus.PUBLISHED);
+        this.setStatus(PUBLISHED);
         var currentTime = Instant.now();
         this.setPublishedDate(currentTime);
         this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
+    }
+
+    public void republish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
+        var resource = this.fetch(resourceService);
+        if (!UNPUBLISHED.equals(getStatus())) {
+            throw new IllegalStateException("Only unpublished resource can be republished");
+        }
+        resource.republish(userInstance);
+        resourceService.updateResource(this);
+    }
+
+    private void republish(UserInstance userInstance) {
+        this.setStatus(PUBLISHED);
+        var timestamp = Instant.now();
+        this.setPublishedDate(timestamp);
+        this.setResourceEvent(RepublishedResourceEvent.create(userInstance, timestamp));
     }
 
     public URI getDuplicateOf() {

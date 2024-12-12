@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -10,6 +12,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -26,12 +29,13 @@ import java.util.Map;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogOrganization;
+import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -41,6 +45,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
@@ -85,7 +90,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateDataEntriesWhenValidRequestIsReceived()
         throws ApiGatewayException {
-        Publication createdPublication = createPublication(PublicationGenerator.randomPublication());
+        Publication createdPublication = createPublication(randomPublication());
         Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
@@ -99,7 +104,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateDataEntriesWithGivenTypeWhenRequestContainsType()
         throws ApiGatewayException {
-        var createdPublication = createPublication(PublicationGenerator.randomPublication());
+        var createdPublication = createPublication(randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
@@ -124,7 +129,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateTicketsWhenRequestContainsTicketKeyFieldOnly()
         throws ApiGatewayException {
-        var createdPublication = createPublication(PublicationGenerator.randomPublication());
+        var createdPublication = createPublication(randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
@@ -148,7 +153,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateDataEntriesDefaultTypesWhenRequestDoesNotContainType()
         throws ApiGatewayException {
-        var createdPublication = createPublication(PublicationGenerator.randomPublication());
+        var createdPublication = createPublication(randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
@@ -234,6 +239,31 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
     }
 
+    @Test
+    void shouldConsumeLogEnryWithoutFailing() throws BadRequestException, NotFoundException {
+        var publication = randomPublication();
+        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                                 publication);
+        persistLogEntry(persistedPublication);
+
+        assertDoesNotThrow(() -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context));
+
+    }
+
+    private void persistLogEntry(Publication persistedPublication) throws NotFoundException {
+        Resource.resourceQueryObject(persistedPublication.getIdentifier())
+            .fetch(resourceService)
+            .getResourceEvent()
+            .toLogEntry(persistedPublication.getIdentifier(), randomLogUser())
+            .persist(resourceService);
+    }
+
+    private static LogUser randomLogUser() {
+        return new LogUser(randomString(),
+                           randomString(), randomString(), randomUri(),
+                           new LogOrganization(randomUri(), randomUri(), randomString(), randomString()));
+    }
+
     private TicketDao fetchTicketDao(SortableIdentifier identifier) throws NotFoundException {
         var queryObject = TicketEntry.createQueryObject(identifier);
         var queryResult = queryObject.fetchByIdentifier(dynamoDbClient, RESOURCES_TABLE_NAME);
@@ -242,7 +272,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     private void createRandomResources(int numberOfResources) throws ApiGatewayException {
         for (int i = 0; i < numberOfResources; i++) {
-            createPublication(PublicationGenerator.randomPublication());
+            createPublication(randomPublication());
         }
     }
 

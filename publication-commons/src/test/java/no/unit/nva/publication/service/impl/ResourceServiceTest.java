@@ -37,6 +37,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -115,6 +116,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -1241,6 +1243,39 @@ class ResourceServiceTest extends ResourcesLocalTest {
                            .fetch(resourceService);
 
         assertEquals(peristedPublication, resource.toPublication());
+    }
+
+    @Test
+    void shouldRepublishResourceAndSetResourceEvent() throws ApiGatewayException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+
+        resourceService.publishPublication(userInstance, peristedPublication.getIdentifier());
+        resourceService.unpublishPublication(peristedPublication, userInstance);
+        Resource.resourceQueryObject(peristedPublication.getIdentifier())
+            .fetch(resourceService)
+            .republish(resourceService, userInstance);
+
+        var republishedResource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                                      .fetch(resourceService);
+
+        assertEquals(PUBLISHED, republishedResource.getStatus());
+        assertInstanceOf(RepublishedResourceEvent.class, republishedResource.getResourceEvent());
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenRepublishingNotPublishedPublication() throws ApiGatewayException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+
+        assertThrows(IllegalStateException.class,
+                     () -> Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                               .fetch(resourceService)
+                               .republish(resourceService, userInstance));
     }
 
     @Test

@@ -38,6 +38,7 @@ import no.scopus.generated.UpwOpenAccessType;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
@@ -130,6 +131,19 @@ public class ScopusFileConverterTest {
         var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
 
         assertThat(files, is(emptyIterable()));
+    }
+
+    @Description("Resource primary url is a landing page url for resource and will never be a content file.")
+    @Test
+    void shouldCreateFileWithLicenseFromCrossrefResponseWithLicenseWithContentVersionUnspecifiedWhenNoLicenseForLinkWithLinkVersion()
+        throws IOException, InterruptedException {
+        mockResponses("crossrefResponseWithUnspecifiedLicense.json");
+
+        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+
+        var expectedLicense = URI.create("https://creativecommons.org/licenses/by/4.0");
+
+        assertThat(file.getLicense(), is(equalTo(expectedLicense)));
     }
 
     @Test
