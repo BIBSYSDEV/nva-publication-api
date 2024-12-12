@@ -1,6 +1,11 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,6 +38,7 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -215,6 +221,22 @@ public class Resource implements Entity {
 
     public Resource fetch(ResourceService resourceService) throws NotFoundException {
         return resourceService.getResourceByIdentifier(this.getIdentifier());
+    }
+
+    public void publish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
+        var resource = this.fetch(resourceService);
+        if (PUBLISHED.equals(resource.getStatus())) {
+            return;
+        }
+        if (!List.of(DRAFT, PUBLISHED_METADATA, UNPUBLISHED, DELETED).contains(resource.getStatus())) {
+            throw new IllegalStateException("Publication status %s is not al1lowed for publishing");
+        } else {
+            this.setStatus(PublicationStatus.PUBLISHED);
+            var currentTime = Instant.now();
+            this.setPublishedDate(currentTime);
+            this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
+            resourceService.updateResource(resource);
+        }
     }
 
     public URI getDuplicateOf() {
