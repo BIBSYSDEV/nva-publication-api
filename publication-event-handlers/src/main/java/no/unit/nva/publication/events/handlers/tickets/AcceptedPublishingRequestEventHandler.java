@@ -24,12 +24,12 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -188,27 +188,29 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private PublishingRequestCase fetchPublishingRequest(PublishingRequestCase latestUpdate) {
         return attempt(() -> ticketService.fetchTicket(latestUpdate)).map(PublishingRequestCase.class::cast)
                    .orElseThrow(failure -> throwException(COULD_NOT_FETCH_TICKET_MESSAGE + latestUpdate.getIdentifier(),
-                                                          failure));
+                                                          failure.getException()));
     }
 
-    private RuntimeException throwException(String message, Failure<?> failure) {
+    private RuntimeException throwException(String message, Exception exception) {
         logger.error(message);
-        logger.error(EXCEPTION_MESSAGE, failure.getException().getMessage());
-        return new RuntimeException();
+        logger.error(EXCEPTION_MESSAGE, exception.getMessage());
+        throw new RuntimeException();
     }
 
     private void publishPublication(Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         logger.info("Publishing publication: {}", publication.getIdentifier());
-        attempt(() -> resourceService.publishPublication(userInstance,
-                                                         publication.getIdentifier())).orElseThrow(
-            fail -> throwException(
-                String.format(PUBLISHING_ERROR_MESSAGE, publication.getIdentifier()), fail));
+        try {
+            Resource.fromPublication(publication).publish(resourceService, userInstance);
+        } catch (Exception e) {
+            throwException(
+                String.format(PUBLISHING_ERROR_MESSAGE, publication.getIdentifier()), e);
+        }
     }
 
     private void publishFiles(Publication updatedPublication) {
         attempt(() -> resourceService.updatePublication(updatedPublication)).orElseThrow(failure -> throwException(
-            String.format(PUBLICATION_UPDATE_ERROR_MESSAGE, updatedPublication.getIdentifier()), failure));
+            String.format(PUBLICATION_UPDATE_ERROR_MESSAGE, updatedPublication.getIdentifier()), failure.getException()));
     }
 
     private Publication toPublicationWithPublishedFiles(Publication publication,

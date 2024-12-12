@@ -230,8 +230,8 @@ public class Resource implements Entity {
         if (PUBLISHED.equals(resource.getStatus())) {
             return;
         }
-        if (!PUBLISHABLE_STATUSES.contains(resource.getStatus())) {
-            throw new IllegalStateException("Publication status %s is not al1lowed for publishing");
+        if (isNotPublishable(resource)) {
+            throw new IllegalStateException("Resource is not publishable.");
         } else {
             resource.publish(userInstance);
             resourceService.updateResource(resource);
@@ -245,13 +245,18 @@ public class Resource implements Entity {
         this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
     }
 
+    private boolean isNotPublishable(Resource resource) {
+        return !PUBLISHABLE_STATUSES.contains(resource.getStatus())
+               || Optional.ofNullable(this.getEntityDescription()).map(EntityDescription::getMainTitle).isEmpty();
+    }
+
     public void republish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
         var resource = this.fetch(resourceService);
         if (!UNPUBLISHED.equals(getStatus())) {
             throw new IllegalStateException("Only unpublished resource can be republished");
         }
         resource.republish(userInstance);
-        resourceService.updateResource(this);
+        resourceService.updateResource(resource);
     }
 
     private void republish(UserInstance userInstance) {

@@ -260,7 +260,9 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
             throws ApiGatewayException, IOException {
         var publication = createDraftPublicationWithDoi();
-        final var existingTicket = createDoiRequestTicket(publication);
+        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
+        final var existingTicket =
+            createDoiRequestTicket(Resource.fromPublication(publication).fetch(resourceService).toPublication());
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest =
@@ -278,6 +280,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                 publication.getIdentifier(),
                                 DoiRequest.class)
                         .orElseThrow();
+
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(existingTicket.getIdentifier(), is(equalTo(actualTicket.getIdentifier())));
         assertThat(actualTicket.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
@@ -313,7 +316,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThrows(
                 RuntimeException.class, () -> handler.handleRequest(event, outputStream, CONTEXT));
 
-        assertThat(logger.getMessages(), containsString(RESOURCE_LACKS_REQUIRED_DATA));
+        assertThat(logger.getMessages(), containsString("Resource is not publishable"));
     }
 
     @Test
