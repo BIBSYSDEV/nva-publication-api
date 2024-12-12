@@ -64,7 +64,6 @@ public final class PublicationContextMapper {
     public static final String HTTPS_PREFIX = "https://";
     public static final URI CHANNEL_REGISTRY_V_2 = readChannelRegistryPathFromEnvironment();
     public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
-    public static final int HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER = 2;
     public static final String CURRENT_YEAR = getCurrentYear();
     public static final int SIZE_ONE = 1;
 
@@ -476,7 +475,7 @@ public final class PublicationContextMapper {
 
     private static PublicationContext generateJournal(String journalPid, String year) {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
-                               .addChild(ChannelType.JOURNAL.getType())
+                               .addChild(ChannelType.SERIAL_PUBLICATION.getType())
                                .addChild(journalPid)
                                .addChild(nonNull(year) ? year : CURRENT_YEAR)
                                .getUri());
@@ -484,7 +483,7 @@ public final class PublicationContextMapper {
 
     private static BookSeries generateSeries(String seriesPid, String year) {
         return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
-                              .addChild(ChannelType.SERIES.getType())
+                              .addChild(ChannelType.SERIAL_PUBLICATION.getType())
                               .addChild(seriesPid)
                               .addChild(nonNull(year) ? year : CURRENT_YEAR)
                               .getUri());

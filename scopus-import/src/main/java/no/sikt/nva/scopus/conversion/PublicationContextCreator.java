@@ -210,7 +210,7 @@ public class PublicationContextCreator {
         var printIssn = findPrintIssn().orElse(null);
         var electronicIssn = findElectronicIssn().orElse(null);
         var publicationYear = findPublicationYear().orElseThrow();
-        var seriesId = publicationChannelConnection.fetchSeries(printIssn, electronicIssn, sourceTitle,
+        var seriesId = publicationChannelConnection.fetchSerialPublication(printIssn, electronicIssn, sourceTitle,
                                                                 publicationYear);
         return seriesId.map(Series::new);
     }
@@ -257,8 +257,8 @@ public class PublicationContextCreator {
         var printIssn = findPrintIssn().orElse(null);
         var electronicIssn = findElectronicIssn().orElse(null);
         var publicationYear = findPublicationYear().orElseThrow();
-        var journalId = publicationChannelConnection.fetchJournal(printIssn, electronicIssn, sourceTitle,
-                                                                  publicationYear);
+        var journalId = publicationChannelConnection.fetchSerialPublication(printIssn, electronicIssn, sourceTitle,
+                                                                            publicationYear);
         return journalId.map(Journal::new);
     }
 

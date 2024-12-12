@@ -505,7 +505,7 @@ public final class ReferenceGenerator {
     private static BookSeries generateSeries(Builder builder) throws InvalidIssnException {
         if (nonNull(builder.getSeriesId())) {
             return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
-                                  .addChild(ChannelType.SERIES.getType())
+                                  .addChild(ChannelType.SERIAL_PUBLICATION.getType())
                                   .addChild(builder.getSeriesId())
                                   .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                   .getUri());
@@ -525,7 +525,7 @@ public final class ReferenceGenerator {
 
     private static PublicationContext createJournal(Builder builder) {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
-                               .addChild(ChannelType.JOURNAL.getType())
+                               .addChild(ChannelType.SERIAL_PUBLICATION.getType())
                                .addChild(builder.getJournalId())
                                .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                .getUri());

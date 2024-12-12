@@ -279,7 +279,7 @@ public class BookFeatures {
     public void theJournalUriContainsThePidCodeAndThePublicationYear(String pid, Integer year) {
         var publisherId = extractConfirmedPublisher().getId();
         assertThat(publisherId.getPath(), containsString(pid));
-        assertThat(publisherId.getPath(), containsString("journal"));
+        assertThat(publisherId.getPath(), containsString("serial-publication"));
         assertThat(publisherId.getPath(), containsString(year.toString()));
     }
 
