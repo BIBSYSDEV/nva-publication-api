@@ -22,7 +22,9 @@ class ResourceEventTest {
                 new UnpublishedResourceEvent(Instant.now(), new User(randomString()), randomUri()),
                 LogTopic.PUBLICATION_UNPUBLISHED),
                          Arguments.of(new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri()),
-                                      LogTopic.PUBLICATION_DELETED));
+                                      LogTopic.PUBLICATION_DELETED),
+                         Arguments.of(new RepublishedResourceEvent(Instant.now(), new User(randomString()), randomUri()),
+                                      LogTopic.PUBLICATION_REPUBLISHED));
     }
 
     @ParameterizedTest
