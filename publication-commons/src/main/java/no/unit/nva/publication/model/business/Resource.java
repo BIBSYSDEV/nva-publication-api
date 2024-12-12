@@ -6,7 +6,6 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -53,7 +52,7 @@ public class Resource implements Entity {
 
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
-    public static final List<@NotNull PublicationStatus> PUBLISHABLE_STATUSES = List.of(DRAFT, PUBLISHED_METADATA,
+    public static final List<PublicationStatus> PUBLISHABLE_STATUSES = List.of(DRAFT, PUBLISHED_METADATA,
                                                                                         UNPUBLISHED, DELETED);
 
     @JsonProperty
