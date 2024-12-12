@@ -2,9 +2,8 @@ package no.sikt.nva.brage.migration.mapper;
 
 public enum ChannelType {
 
-    JOURNAL("journal"),
-    PUBLISHER("publisher"),
-    SERIES("series");
+    SERIAL_PUBLICATION("serial-publication"),
+    PUBLISHER("publisher");
 
     private final String type;
 

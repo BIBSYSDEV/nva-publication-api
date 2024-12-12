@@ -22,7 +22,6 @@ public final class MappingConstants {
     public static final String PERSON_PATH = "person";
     public static final String ORGANIZATION_PATH = "organization";
     public static final String NVA_CHANNEL_REGISTRY_V2 = "publication-channels-v2";
-    public static final String NSD_PROXY_PATH_JOURNAL = "journal";
     public static final String NSD_PROXY_PATH_PUBLISHER = "publisher";
     public static final String PATH_CUSTOMER = "customer";
 

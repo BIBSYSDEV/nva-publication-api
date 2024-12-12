@@ -1,5 +1,7 @@
 package no.sikt.nva.scopus.conversion;
 
+import static no.sikt.nva.scopus.conversion.PublicationChannel.PUBLISHER;
+import static no.sikt.nva.scopus.conversion.PublicationChannel.SERIAL_PUBLICATION;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Objects;
@@ -25,27 +27,20 @@ public class PublicationChannelConnection {
         this.uriRetriever = uriRetriever;
     }
 
-    public Optional<URI> fetchJournal(String printIssn, String electronicIssn, String sourceTitle,
-                                      Integer publicationYear) {
+    public Optional<URI> fetchSerialPublication(String printIssn, String electronicIssn, String sourceTitle,
+                                                Integer publicationYear) {
         var uriStream = Stream.of(printIssn, electronicIssn, sourceTitle)
-                            .map(item -> constructSearchUri(PublicationChannel.JOURNAL, item, publicationYear));
-        return fetchPublicationChannelId(uriStream);
-    }
-
-    public Optional<URI> fetchSeries(String printIssn, String electronicIssn, String sourceTitle,
-                                     Integer publicationYear) {
-        var uriStream = Stream.of(printIssn, electronicIssn, sourceTitle)
-                            .map(item -> constructSearchUri(PublicationChannel.SERIES, item, publicationYear));
+                            .map(item -> constructSearchUri(SERIAL_PUBLICATION, item, publicationYear));
         return fetchPublicationChannelId(uriStream);
     }
 
     public Optional<URI> fetchPublisher(String publisherName, Integer publicationYer) {
-        var uriToRetrieve = constructSearchUri(PublicationChannel.PUBLISHER, publisherName, publicationYer);
+        var uriToRetrieve = constructSearchUri(PUBLISHER, publisherName, publicationYer);
         return fetchPublicationChannelId(Stream.of(uriToRetrieve));
     }
 
     private static URI getId(PublicationChannelResponse results) {
-        return results.getHits().get(0).getId();
+        return results.getHits().getFirst().getId();
     }
 
     private static boolean containsSingleResult(PublicationChannelResponse response) {
