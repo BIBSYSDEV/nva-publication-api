@@ -53,6 +53,8 @@ public class Resource implements Entity {
 
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
+    public static final List<@NotNull PublicationStatus> PUBLISHABLE_STATUSES = List.of(DRAFT, PUBLISHED_METADATA,
+                                                                                        UNPUBLISHED, DELETED);
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -228,7 +230,7 @@ public class Resource implements Entity {
         if (PUBLISHED.equals(resource.getStatus())) {
             return;
         }
-        if (!List.of(DRAFT, PUBLISHED_METADATA, UNPUBLISHED, DELETED).contains(resource.getStatus())) {
+        if (!PUBLISHABLE_STATUSES.contains(resource.getStatus())) {
             throw new IllegalStateException("Publication status %s is not al1lowed for publishing");
         } else {
             this.setStatus(PublicationStatus.PUBLISHED);
