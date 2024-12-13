@@ -4,6 +4,7 @@ import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
@@ -530,17 +531,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPublishResourceWhenClientRequestsToPublish() throws ApiGatewayException {
-        var resource = createPersistedPublicationWithDoi();
-        var userInstance = UserInstance.fromPublication(resource);
-        resourceService.publishPublication(userInstance, resource.getIdentifier());
-        var actualResource = resourceService.getPublication(resource);
-        var expectedResource = resource.copy()
+        var publication = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.fromPublication(publication);
+        Resource.fromPublication(publication).publish(resourceService, userInstance);
+        var actualPublication = resourceService.getPublication(publication);
+        var expectedPublication = publication.copy()
                                    .withStatus(PUBLISHED)
-                                   .withModifiedDate(actualResource.getModifiedDate())
-                                   .withPublishedDate(actualResource.getPublishedDate())
+                                   .withModifiedDate(actualPublication.getModifiedDate())
+                                   .withPublishedDate(actualPublication.getPublishedDate())
                                    .build();
 
-        assertThat(actualResource, is(equalTo(expectedResource)));
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
     }
 
     @Test
@@ -1292,6 +1293,33 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resource.clearResourceEvent(resourceService);
 
         assertNull(resource.getResourceEvent());
+    }
+
+    @Test
+    void shouldNotPublishAlreadyPublishedPublication() throws ApiGatewayException {
+        resourceService = mock(ResourceService.class);
+        var publishedPublication = randomPublication().copy().withStatus(PUBLISHED).build();
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publishedPublication));
+        Resource.resourceQueryObject(publishedPublication.getIdentifier()).publish(resourceService,
+                                                                                   UserInstance.fromPublication(publishedPublication));
+
+        verify(resourceService, never()).updateResource(any());
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenPublishingNotPublishableResource()
+        throws BadRequestException, NotFoundException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+        var resource = Resource.fromPublication(peristedPublication).fetch(resourceService);
+        resource.setStatus(DRAFT_FOR_DELETION);
+        resourceService.updateResource(resource);
+
+        assertThrows(IllegalStateException.class,
+                     () -> Resource.resourceQueryObject(
+                         peristedPublication.getIdentifier()).publish(resourceService, userInstance));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

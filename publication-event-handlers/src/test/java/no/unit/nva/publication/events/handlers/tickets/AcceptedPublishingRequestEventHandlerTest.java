@@ -24,7 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
@@ -260,7 +263,9 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
             throws ApiGatewayException, IOException {
         var publication = createDraftPublicationWithDoi();
-        final var existingTicket = createDoiRequestTicket(publication);
+        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
+        final var existingTicket =
+            createDoiRequestTicket(Resource.fromPublication(publication).fetch(resourceService).toPublication());
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest =
@@ -278,6 +283,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                 publication.getIdentifier(),
                                 DoiRequest.class)
                         .orElseThrow();
+
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(existingTicket.getIdentifier(), is(equalTo(actualTicket.getIdentifier())));
         assertThat(actualTicket.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
@@ -313,7 +319,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThrows(
                 RuntimeException.class, () -> handler.handleRequest(event, outputStream, CONTEXT));
 
-        assertThat(logger.getMessages(), containsString(RESOURCE_LACKS_REQUIRED_DATA));
+        assertThat(logger.getMessages(), containsString("Resource is not publishable"));
     }
 
     @Test
@@ -574,6 +580,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, randomString());
         when(resourceService.getPublicationByIdentifier(any())).thenReturn(randomPublication());
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build()));
+        doNothing().when(resourceService).updateResource(any());
         when(resourceService.updatePublication(any())).thenThrow(RuntimeException.class);
         return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
     }

@@ -1,7 +1,10 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,6 +38,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -49,6 +53,8 @@ public class Resource implements Entity {
 
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
+    public static final List<PublicationStatus> PUBLISHABLE_STATUSES = List.of(DRAFT, PUBLISHED_METADATA,
+                                                                                        UNPUBLISHED, DELETED);
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -219,15 +225,54 @@ public class Resource implements Entity {
         return resourceService.getResourceByIdentifier(this.getIdentifier());
     }
 
-    public void republish(ResourceService resourceService, UserInstance userInstance) {
-        if (!UNPUBLISHED.equals(getStatus())) {
-            throw new IllegalStateException("Only unpublished resource can be republished");
+    public void publish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
+        var resource = this.fetch(resourceService);
+        if (resource.isNotPublished()) {
+            resource.publish(userInstance);
+            resourceService.updateResource(resource);
+        }
+    }
+
+    private void publish(UserInstance userInstance) {
+        if (this.isNotPublishable()) {
+            throw new IllegalStateException("Resource is not publishable!");
+        } else if (this.isNotPublished()) {
+            this.setStatus(PUBLISHED);
+            var currentTime = Instant.now();
+            this.setPublishedDate(currentTime);
+            this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
+        }
+    }
+
+    private boolean isNotPublishable() {
+        return !PUBLISHABLE_STATUSES.contains(this.getStatus())
+               || Optional.ofNullable(this.getEntityDescription()).map(EntityDescription::getMainTitle).isEmpty();
+    }
+
+    private boolean isNotPublished() {
+        return !isPublished();
+    }
+
+    private boolean isPublished() {
+        return PUBLISHED.equals(this.getStatus());
+    }
+
+    public void republish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
+        var resource = this.fetch(resourceService);
+        if (resource.isNotPublished()) {
+            resource.republish(userInstance);
+            resourceService.updateResource(resource);
+        }
+    }
+
+    private void republish(UserInstance userInstance) {
+        if (!UNPUBLISHED.equals(this.getStatus())) {
+            throw new IllegalStateException("Only unpublished resource can be republished!");
         }
         this.setStatus(PUBLISHED);
         var timestamp = Instant.now();
         this.setPublishedDate(timestamp);
         this.setResourceEvent(RepublishedResourceEvent.create(userInstance, timestamp));
-        resourceService.updateResource(this);
     }
 
     public URI getDuplicateOf() {
