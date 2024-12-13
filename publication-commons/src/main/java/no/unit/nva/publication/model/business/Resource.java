@@ -234,12 +234,9 @@ public class Resource implements Entity {
     }
 
     private void publish(UserInstance userInstance) {
-        if (this.isPublished()) {
-            return;
-        }
         if (this.isNotPublishable()) {
             throw new IllegalStateException("Resource is not publishable!");
-        } else {
+        } else if (this.isNotPublished()) {
             this.setStatus(PUBLISHED);
             var currentTime = Instant.now();
             this.setPublishedDate(currentTime);
@@ -262,8 +259,10 @@ public class Resource implements Entity {
 
     public void republish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
         var resource = this.fetch(resourceService);
-        resource.republish(userInstance);
-        resourceService.updateResource(resource);
+        if (resource.isNotPublished()) {
+            resource.republish(userInstance);
+            resourceService.updateResource(resource);
+        }
     }
 
     private void republish(UserInstance userInstance) {
