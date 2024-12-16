@@ -2177,6 +2177,25 @@ components:
                 $ref: '#/components/schemas/RelatedDocument'
             type:
               type: string
+    ArtisticDegreePhd:
+      required:
+        - type
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            submittedDate:
+              $ref: '#/components/schemas/PublicationDate'
+            related:
+              uniqueItems: true
+              type: array
+              items:
+                $ref: '#/components/schemas/RelatedDocument'
+            type:
+              type: string
     Duration:
       required:
         - type

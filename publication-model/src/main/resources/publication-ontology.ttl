@@ -261,6 +261,11 @@ nva:DegreePhd a rdfs:Class ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:Degree .
 
+nva:ArtisticDegreePhd a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:DegreePhd .
+
 nva:PublishedFile a rdfs:Class ;
   rdfs:comment "" ;
   rdfs:isDefinedBy nva: ;

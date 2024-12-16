@@ -93,6 +93,7 @@ import no.unit.nva.model.instancetypes.chapter.Introduction;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
 import no.unit.nva.model.instancetypes.chapter.TextbookChapter;
+import no.unit.nva.model.instancetypes.degree.ArtisticDegreePhd;
 import no.unit.nva.model.instancetypes.degree.ConfirmedDocument;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
@@ -257,6 +258,8 @@ public final class PublicationInstanceBuilder {
                 return generateDegreeMaster();
             case "DegreePhd":
                 return generateDegreePhd();
+            case "ArtisticDegreePhd":
+                return generateArtisticDegreePhd();
             case "DegreeLicentiate":
                 return generateDegreeLicentiate();
             case "ReportBasic":
@@ -568,6 +571,12 @@ public final class PublicationInstanceBuilder {
     private static DegreePhd generateDegreePhd() {
         return new DegreePhd(randomMonographPages(), randomPublicationDate(),
                              Set.of(new ConfirmedDocument(randomUri(), randomInteger()),
+                                    new UnconfirmedDocument(randomString(), randomInteger())));
+    }
+
+    private static PublicationInstance<? extends Pages> generateArtisticDegreePhd() {
+        return new ArtisticDegreePhd(randomMonographPages(), randomPublicationDate(),
+                                     Set.of(new ConfirmedDocument(randomUri(), randomInteger()),
                                     new UnconfirmedDocument(randomString(), randomInteger())));
     }
 
