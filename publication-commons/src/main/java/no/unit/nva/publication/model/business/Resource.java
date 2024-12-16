@@ -54,7 +54,7 @@ public class Resource implements Entity {
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
     public static final List<PublicationStatus> PUBLISHABLE_STATUSES = List.of(DRAFT, PUBLISHED_METADATA,
-                                                                                        UNPUBLISHED, DELETED);
+                                                                                        UNPUBLISHED);
 
     @JsonProperty
     private SortableIdentifier identifier;
