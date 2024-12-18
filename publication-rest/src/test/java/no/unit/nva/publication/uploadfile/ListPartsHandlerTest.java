@@ -102,7 +102,7 @@ public class ListPartsHandlerTest {
         partSummary.setETag(SAMPLE_ETAG);
         partSummary.setSize(SAMPLE_SIZE);
 
-        var listPartsElement = ListPartsElement.of(partSummary);
+        var listPartsElement = ListPartsElement.create(partSummary);
 
         assertThat(listPartsElement.etag(), is(equalTo(SAMPLE_ETAG)));
         assertThat(listPartsElement.partNumber(), is(equalTo(Integer.toString(SAMPLE_PART_NUMBER))));

@@ -1,8 +1,6 @@
 package no.unit.nva.publication.uploadfile.restmodel;
 
 import static java.util.Objects.requireNonNull;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
 public record ListPartsRequestBody(String uploadId, String key) {

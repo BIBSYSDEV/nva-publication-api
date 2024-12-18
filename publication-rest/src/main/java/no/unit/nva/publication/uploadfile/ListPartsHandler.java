@@ -60,7 +60,7 @@ public class ListPartsHandler extends ApiGatewayHandler<ListPartsRequestBody, Li
         var partListing = amazonS3.listParts(listPartsRequest);
         boolean moreParts = true;
         while (moreParts) {
-            partListing.getParts().stream().map(ListPartsElement::of).forEach(listPartsElements::add);
+            partListing.getParts().stream().map(ListPartsElement::create).forEach(listPartsElements::add);
             if (partListing.isTruncated()) {
                 var partNumberMarker = partListing.getNextPartNumberMarker();
                 listPartsRequest.setPartNumberMarker(partNumberMarker);
