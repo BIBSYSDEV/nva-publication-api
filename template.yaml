@@ -1113,12 +1113,12 @@ Resources:
   CreateUploadFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-rest
+      CodeUri: publication-file
       Environment:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: '*'
-      Handler: no.unit.nva.publication.uploadfile.CreateUploadHandler::handleRequest
+      Handler: no.unit.nva.publication.file.upload.CreateUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
       Events:
@@ -1132,12 +1132,12 @@ Resources:
   ListPartsUploadFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-rest
+      CodeUri: publication-file
       Environment:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: '*'
-      Handler: no.unit.nva.publication.uploadfile.ListPartsHandler::handleRequest
+      Handler: no.unit.nva.publication.file.upload.ListPartsHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
       Events:
@@ -1151,12 +1151,12 @@ Resources:
   PrepareUploadPartFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-rest
+      CodeUri: publication-file
       Environment:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: '*'
-      Handler: no.unit.nva.publication.uploadfile.PrepareUploadPartHandler::handleRequest
+      Handler: no.unit.nva.publication.file.upload.PrepareUploadPartHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
       Events:
@@ -1170,12 +1170,12 @@ Resources:
   AbortUploadFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-rest
+      CodeUri: publication-file
       Environment:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: '*'
-      Handler: no.unit.nva.publication.uploadfile.AbortMultipartUploadHandler::handleRequest
+      Handler: no.unit.nva.publication.file.upload.AbortMultipartUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
       Events:
@@ -1189,12 +1189,12 @@ Resources:
   CompleteUploadFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-rest
+      CodeUri: publication-file
       Environment:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: '*'
-      Handler: no.unit.nva.publication.uploadfile.CompleteUploadHandler::handleRequest
+      Handler: no.unit.nva.publication.file.upload.CompleteUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
       Events:
