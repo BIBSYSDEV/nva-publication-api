@@ -26,6 +26,16 @@ public class MigrateSeriesIdTest {
     }
 
     @Test
+    void shouldUpdateOldSeriesIdWithNewPathSerialPublicationWhenOldPathIsJournal() {
+        var oldId = constructExampleIdWithPath("journal");
+        var expectedNewId = UriWrapper.fromUri(oldId)
+                                .replacePathElementByIndexFromEnd(2, "serial-publication")
+                                .getUri();
+        var series = new Series(oldId);
+        assertThat(series.getId(), is(equalTo(expectedNewId)));
+    }
+
+    @Test
     void shouldLogUriIfOldIdHasUnexpectedPath() {
         var oldId = constructExampleIdWithPath("unexpected-path");
         var appender = LogUtils.getTestingAppender(MigrateSerialPublicationUtil.class);
