@@ -13,14 +13,12 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Series implements BookSeries {
 
-    private static final String OLD_PATH_SERIES = "series";
-
     private final URI id;
 
     @JsonCreator
     public Series(@JsonProperty("id") URI id) {
         validate(id);
-        this.id = MigrateSerialPublicationUtil.migratePath(id, OLD_PATH_SERIES);
+        this.id = MigrateSerialPublicationUtil.migratePath(id);
     }
 
     public URI getId() {
