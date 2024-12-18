@@ -828,12 +828,8 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '204':
-          description: 'Upload Aborted'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SimpleMessage'
+        '202':
+          description: 'Accepted'
         '400':
           description: 'Bad request'
           content:
@@ -4433,15 +4429,6 @@ components:
           type: string
         type:
           type: string
-    SimpleMessage:
-      type: object
-      description: NVA file upload message
-      required:
-        - message
-      properties:
-        message:
-          type: string
-          description: Human-readable message
     SortableIdentifier:
       type: object
     StudyProtocol:
