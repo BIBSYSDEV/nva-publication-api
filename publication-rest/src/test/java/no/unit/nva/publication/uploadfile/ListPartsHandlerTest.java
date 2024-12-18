@@ -104,17 +104,16 @@ public class ListPartsHandlerTest {
 
         var listPartsElement = ListPartsElement.of(partSummary);
 
-        assertThat(listPartsElement.getEtag(), is(equalTo(SAMPLE_ETAG)));
-        assertThat(listPartsElement.getPartNumber(), is(equalTo(Integer.toString(SAMPLE_PART_NUMBER))));
-        assertThat(listPartsElement.getSize(), is(equalTo(Integer.toString(SAMPLE_SIZE))));
+        assertThat(listPartsElement.etag(), is(equalTo(SAMPLE_ETAG)));
+        assertThat(listPartsElement.partNumber(), is(equalTo(Integer.toString(SAMPLE_PART_NUMBER))));
+        assertThat(listPartsElement.size(), is(equalTo(Integer.toString(SAMPLE_SIZE))));
 
-        listPartsElement.setEtag(SAMPLE_ETAG);
-        listPartsElement.setPartNumber(Integer.toString(SAMPLE_PART_NUMBER));
-        listPartsElement.setSize(Integer.toString(SAMPLE_SIZE));
+        var listParts = new ListPartsElement(Integer.toString(SAMPLE_PART_NUMBER), Integer.toString(SAMPLE_SIZE),
+                                               SAMPLE_ETAG);
 
-        assertThat(listPartsElement.getEtag(), is(equalTo(SAMPLE_ETAG)));
-        assertThat(listPartsElement.getPartNumber(), is(equalTo(Integer.toString(SAMPLE_PART_NUMBER))));
-        assertThat(listPartsElement.getSize(), is(equalTo(Integer.toString(SAMPLE_SIZE))));
+        assertThat(listParts.etag(), is(equalTo(SAMPLE_ETAG)));
+        assertThat(listParts.partNumber(), is(equalTo(Integer.toString(SAMPLE_PART_NUMBER))));
+        assertThat(listParts.size(), is(equalTo(Integer.toString(SAMPLE_SIZE))));
     }
 
     private InputStream listPartsRequestWithoutBody() throws JsonProcessingException {
