@@ -1,0 +1,22 @@
+dependencies {
+    implementation libs.nva.apigateway
+    implementation libs.nva.core
+    implementation libs.nva.json
+    implementation libs.nva.identifiers
+
+    implementation libs.jackson.databind
+    implementation libs.jackson.core
+
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.guava
+    implementation libs.zalando
+
+    implementation libs.apache.commons.text
+
+    testImplementation libs.nva.testutils
+}
+
+test {
+    environment "ALLOWED_ORIGIN", "*"
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-persisted-bucket"
+}
