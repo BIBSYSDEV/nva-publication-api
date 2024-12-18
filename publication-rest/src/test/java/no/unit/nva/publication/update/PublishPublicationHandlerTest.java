@@ -66,7 +66,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnNotFoundWhenPublicationDoesNotExist() throws IOException {
         var publicationIdentifier = SortableIdentifier.next();
-        var request = createRequestWithRandomUser(publicationIdentifier);
+        var request = createRequestWithUserWithoutPermissions(publicationIdentifier);
         handler.handleRequest(request, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -77,7 +77,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnForbiddenWhenUserHasNoPermissionsToPublishPublication() throws IOException, BadRequestException {
         var publication = createPublication();
-        var request = createRequestWithRandomUser(publication.getIdentifier());
+        var request = createRequestWithUserWithoutPermissions(publication.getIdentifier());
         handler.handleRequest(request, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -89,7 +89,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     void shouldReturnBadRequestWhenPublishingNotPublishablePublication()
         throws IOException, BadRequestException, NotFoundException {
         var publication = createUnpublishablePublication();
-        var request = createRequest(publication);
+        var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
         handler.handleRequest(request, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -101,7 +101,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     void shouldReturnBadGatewayWhenUnexpectedExceptionOccurs()
         throws IOException, BadRequestException, NotFoundException {
         var publication = createPublication();
-        var request = createRequest(publication);
+        var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
 
         resourceService = mock(ResourceService.class);
         when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenThrow(new RuntimeException());
@@ -117,11 +117,11 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     void shouldReturnOkWhenPublishingPublication()
         throws IOException, BadRequestException {
         var publication = createPublication();
-        var request = createRequest(publication);
+        var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
 
         handler.handleRequest(request, output, context);
 
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertEquals(HTTP_OK, response.getStatusCode());
     }
@@ -145,7 +145,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private InputStream createRequestWithRandomUser(SortableIdentifier publicationIdentifier)
+    private InputStream createRequestWithUserWithoutPermissions(SortableIdentifier publicationIdentifier)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(dtoObjectMapper).withPathParameters(
                 publicationIdentifierPathParam(publicationIdentifier))
@@ -156,7 +156,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream createRequest(Publication publication) throws JsonProcessingException {
+    private InputStream createRequestWithUserWithPermissionsToPublishPublication(Publication publication) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(dtoObjectMapper).withPathParameters(
                 publicationIdentifierPathParam(publication.getIdentifier()))
                    .withCurrentCustomer(publication.getPublisher().getId())
