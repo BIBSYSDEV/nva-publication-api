@@ -1,6 +1,7 @@
 package no.unit.nva.publication.uploadfile;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.publication.uploadfile.config.MultipartUploadConfig.BUCKET_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -13,12 +14,10 @@ import no.unit.nva.publication.uploadfile.restmodel.ListPartsResponseBody;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class ListPartsHandler extends ApiGatewayHandler<ListPartsRequestBody, ListPartsResponseBody> {
 
-    public static final String BUCKET_NAME = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private final AmazonS3 amazonS3;
 
     @JacocoGenerated
@@ -40,7 +39,7 @@ public class ListPartsHandler extends ApiGatewayHandler<ListPartsRequestBody, Li
     @Override
     protected ListPartsResponseBody processInput(ListPartsRequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var listPartsRequest = toListPartsRequest(input);
+        var listPartsRequest = input.toListPartsRequest(BUCKET_NAME);
         var listParts = listParts(listPartsRequest);
         return new ListPartsResponseBody(listParts);
     }
@@ -48,10 +47,6 @@ public class ListPartsHandler extends ApiGatewayHandler<ListPartsRequestBody, Li
     @Override
     protected Integer getSuccessStatusCode(ListPartsRequestBody input, ListPartsResponseBody output) {
         return HTTP_OK;
-    }
-
-    private ListPartsRequest toListPartsRequest(ListPartsRequestBody input) {
-        return new ListPartsRequest(BUCKET_NAME, input.key(), input.uploadId());
     }
 
     private List<ListPartsElement> listParts(ListPartsRequest listPartsRequest) {

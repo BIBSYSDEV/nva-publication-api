@@ -1,6 +1,7 @@
 package no.unit.nva.publication.uploadfile;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.publication.uploadfile.config.MultipartUploadConfig.BUCKET_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -10,13 +11,10 @@ import no.unit.nva.publication.uploadfile.restmodel.CompleteUploadResponseBody;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequestBody, CompleteUploadResponseBody> {
 
-    public static final String BUCKET_NAME = new Environment().readEnv(
-        "NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private final AmazonS3 amazonS3;
 
     @JacocoGenerated
