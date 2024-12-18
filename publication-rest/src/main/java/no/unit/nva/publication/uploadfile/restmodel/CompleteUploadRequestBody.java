@@ -13,12 +13,11 @@ public record CompleteUploadRequestBody(String uploadId, String key, List<Comple
     }
 
     public CompleteMultipartUploadRequest toCompleteMultipartUploadRequest(String bucketName) {
-        var completeMultipartUploadRequest = new CompleteMultipartUploadRequest();
-        completeMultipartUploadRequest.setBucketName(bucketName);
-        completeMultipartUploadRequest.setKey(key());
-        completeMultipartUploadRequest.setUploadId(uploadId());
-        completeMultipartUploadRequest.setPartETags(partETags());
-        return completeMultipartUploadRequest;
+        return new CompleteMultipartUploadRequest()
+                   .withBucketName(bucketName)
+                   .withKey(key())
+                   .withUploadId(uploadId())
+                   .withPartETags(partETags());
     }
 
     public void validate() throws BadRequestException {
