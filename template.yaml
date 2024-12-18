@@ -512,6 +512,25 @@ Resources:
             Resource:
               - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
 
+  MultipartUploadResourceStorageBucketManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectMetadata
+              - s3:PutObject
+              - s3:CreateMultipartUpload
+              - s3:CompleteMultipartUpload
+              - s3:AbortMultipartUpload
+              - s3:ListMultipartUploadParts
+              - s3:ListBucketMultipartUploads
+            Resource:
+              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
+
   S3DeleteAccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -1089,6 +1108,101 @@ Resources:
           Properties:
             Path: /{publicationIdentifier}/log
             Method: get
+            RestApiId: !Ref NvaPublicationApi
+            
+  CreateUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Environment:
+        Variables:
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+          ALLOWED_ORIGIN: '*'
+      Handler: no.unit.nva.publication.uploadfile.CreateUploadHandler::handleRequest
+      Policies:
+        - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+      Events:
+        CreateEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/file-upload/create
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  ListPartsUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Environment:
+        Variables:
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+          ALLOWED_ORIGIN: '*'
+      Handler: no.unit.nva.publication.uploadfile.ListPartsHandler::handleRequest
+      Policies:
+        - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+      Events:
+        ListEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/file-upload/listparts
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  PrepareUploadPartFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Environment:
+        Variables:
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+          ALLOWED_ORIGIN: '*'
+      Handler: no.unit.nva.publication.uploadfile.PrepareUploadPartHandler::handleRequest
+      Policies:
+        - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+      Events:
+        PrepareEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/file-upload/prepare
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  AbortUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Environment:
+        Variables:
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+          ALLOWED_ORIGIN: '*'
+      Handler: no.unit.nva.publication.uploadfile.AbortMultipartUploadHandler::handleRequest
+      Policies:
+        - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+      Events:
+        AbortEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/file-upload/abort
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  CompleteUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Environment:
+        Variables:
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+          ALLOWED_ORIGIN: '*'
+      Handler: no.unit.nva.publication.uploadfile.CompleteUploadHandler::handleRequest
+      Policies:
+        - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+      Events:
+        CompleteEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/file-upload/complete
+            Method: post
             RestApiId: !Ref NvaPublicationApi
 
 

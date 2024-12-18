@@ -640,6 +640,264 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /{publicationIdentifier}/file-upload/create:
+    post:
+      summary: Create a upload
+      description: Creates a multipart upload for a file. This is later referenced for preparing file-parts, uploading, and finishing the upload..
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - external
+      security:
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/file-upload'
+        ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUploadRequestBody'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateUploadFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '201':
+          description: 'Upload Created'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUploadResponseBody'
+        '400':
+          description: 'Bad request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /{publicationIdentifier}/file-upload/listparts:
+    post:
+      summary: List the parts of a file that have already been uploaded.
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - external
+      security:
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/file-upload'
+        ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListPartsRequestBody'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListPartsUploadFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: 'Parts already uploaded'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPartsResponseBody'
+        '400':
+          description: 'Bad request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /{publicationIdentifier}/file-upload/prepare:
+    post:
+      summary: Generates a URL to upload a single file-part
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - external
+      security:
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/file-upload'
+        ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrepareUploadPartRequestBody'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PrepareUploadPartFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: 'presigned upload url'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepareUploadPartResponseBody'
+        '400':
+          description: 'Bad request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /{publicationIdentifier}/file-upload/abort:
+    post:
+      summary: Aborts a upload
+      description: Aborts the Multipart upload, and deletes all parts that have been uploaded so far.
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - external
+      security:
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/file-upload'
+        ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbortUploadRequestBody'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AbortUploadFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '204':
+          description: 'Upload Aborted'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleMessage'
+        '400':
+          description: 'Bad request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /{publicationIdentifier}/file-upload/complete:
+    post:
+      summary: Completes a upload
+      description: Completes a Multipart upload, combining all parts into a single object in the S3 bucket
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - external
+      security:
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/file-upload'
+        ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteUploadRequestBody'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CompleteUploadFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: 'Upload Completed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '400':
+          description: 'Bad request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /file/{fileIdentifier}:
     get:
       summary: Resolves shortened URI to original presigned URI
@@ -1015,21 +1273,21 @@ components:
   schemas:
     PublicationResponse:
       allOf:
-      - $ref: '#/components/schemas/Publication'
-      - type: object
-        properties:
-          allowedOperations:
-            type: array
-            description: >
-              Returns a list of allowed operations for the current user on the publication if a bearer token is provided. Otherwise the list will be empty
-                * update - Can edit the publication. Accessed though PUT  
-                * delete - Permanently delete. Accessed though DELETE  
-                * terminate - Can mark publication as deleted and remove associated files. Accessed though PUT
-                * unpublish - Can change published publication status to unpublished. Accessed though PUT
-                * ticket/publish - Allowed to approve a PublishingRequest ticket
-            items:
-              type: string
-              enum: ["update", "delete", "terminate", "unpublish", "republish", "update-including-files", "doi-request-create", "doi-request-approve", "publishing-request-create", "publishing-request-approve", "support-request-create", "support-request-approve"]
+        - $ref: '#/components/schemas/Publication'
+        - type: object
+          properties:
+            allowedOperations:
+              type: array
+              description: >
+                Returns a list of allowed operations for the current user on the publication if a bearer token is provided. Otherwise the list will be empty
+                  * update - Can edit the publication. Accessed though PUT  
+                  * delete - Permanently delete. Accessed though DELETE  
+                  * terminate - Can mark publication as deleted and remove associated files. Accessed though PUT
+                  * unpublish - Can change published publication status to unpublished. Accessed though PUT
+                  * ticket/publish - Allowed to approve a PublishingRequest ticket
+              items:
+                type: string
+                enum: ["update", "delete", "terminate", "unpublish", "republish", "update-including-files", "doi-request-create", "doi-request-approve", "publishing-request-create", "publishing-request-approve", "support-request-create", "support-request-approve"]
     DeletePublicationRequest:
       type: object
       description: Delete publication request
@@ -1415,7 +1673,20 @@ components:
         - PublicationDeleted
         - PublicationPublished
         - PublicationUnpublished
-#region content from "documentation/schema.yaml"
+    #region content from "documentation/schema.yaml"
+    AbortUploadRequestBody:
+      description: Request body containing which file to abort uploading
+      type: object
+      properties:
+        uploadId:
+          type: string
+          description: S3 Identifier upload
+        key:
+          type: string
+          description: Identifier (UUID) of the uploaded file, object key in the S3 bucket
+      required:
+        - uploadId
+        - key
     AcademicArticle:
       required:
         - type
@@ -1997,6 +2268,76 @@ components:
       type: object
       allOf:
         - $ref: '#/components/schemas/AdditionalIdentifierBase'
+    CreateUploadRequestBody:
+      description: Request body containing details about file to be uploaded
+      type: object
+      properties:
+        filename:
+          type: string
+          description: Name of file to upload
+          example: publication.odf
+        size:
+          type: string
+          description: Size of file in bytes
+          example: 3027
+        mimetype:
+          type: string
+          description: MIME type of file
+          example: application/pdf
+        lastmodified:
+          type: string
+          description: last modified time of the file, in millisecond since the UNIX epoch
+          example: 1462097794000
+        md5hash:
+          type: string
+          description: MD5 Hash to verify file after upload
+          example: 7fd212d09247dc3ced8e3d3e97d381f8
+      required:
+        - filename
+        - size
+        - mimetype
+    CreateUploadResponseBody:
+      description: Data for created upload
+      type: object
+      properties:
+        uploadId:
+          type: string
+          description: UploadID to access upload resource in S3
+          example: 543534gfdgdsgerFEDSGF4438rhgdg.FEfefgnijwefew8234234nfsdfweFESEGGL_MFAWRMFiewfnvsdo234950SDFM_FESAFn384234fsdDSAFNEUFAS.g8SDFNWEUFbf--
+        key:
+          type: string
+          description: Key to reference uploaded resource in S3 (UUID)
+          example: f335ab02-35b3-4fda-9204-cd999e166ce0
+    CompleteUploadRequestBody:
+      description: Request body containg the details of the file to be uploaded
+      type: object
+      properties:
+        uploadId:
+          type: string
+          description: S3 Identifier upload
+          example: 543534gfdgdsgerFEDSGF4438rhgdg.FEfefgnijwefew8234234nfsdfweFESEGGL_MFAWRMFiewfnvsdo234950SDFM_FESAFn384234fsdDSAFNEUFAS.g8SDFNWEUFbf--
+        key:
+          type: string
+          description: Identifier (UUID) of the uploaded file, object key in the S3 bucket
+          example: f335ab02-35b3-4fda-9204-cd999e166ce0
+        parts:
+          type: array
+          description: List of part numbers and ETags that identify the individual parts of the upload
+          items:
+            type: object
+            properties:
+              ETag:
+                type: string
+                description: eTag of the uploaded part
+                example: f335ab02-35b3-4fda-9204-cd999e166ce0
+              PartNumber:
+                type: integer
+                description: The index of this part in the upload
+                example: 1
+      required:
+        - uploadId
+        - key
+        - parts
     CustomerRightsRetentionStrategy:
       required:
         - type
@@ -2923,6 +3264,47 @@ components:
               $ref: '#/components/schemas/PublishingHouse'
             type:
               type: string
+    ListPartsRequestBody:
+      description: List parts already uploaded
+      type: object
+      properties:
+        uploadId:
+          type: string
+          description: S3 Identifier upload
+          example: 543534gfdgdsgerFEDSGF4438rhgdg.FEfefgnijwefew8234234nfsdfweFESEGGL_MFAWRMFiewfnvsdo234950SDFM_FESAFn384234fsdDSAFNEUFAS.g8SDFNWEUFbf--
+        key:
+          type: string
+          description: Identifier (UUID) of the uploaded file, object key in the S3 bucket
+          example: f335ab02-35b3-4fda-9204-cd999e166ce0
+      required:
+        - uploadId
+        - key
+    LocationResponse:
+      description: A Response containing the metadata for a file
+      type: object
+      properties:
+        location:
+          deprecated: true
+          type: string
+          description: UUID of uploaded file
+          example: f335ab02-35b3-4fda-9204-cd999e166ce0
+        identifier:
+          type: string
+          description: UUID of uploaded file
+          example: f335ab02-35b3-4fda-9204-cd999e166ce0
+        mimeType:
+          type: string
+          description: Mime-type of uploaded file
+          example: application/pdf
+        size:
+          type: number
+          description: Size of uploaded file
+          example: 12.22
+        fileName:
+          deprecated: true
+          type: string
+          description: Filename of uploaded file
+          example: Untitled.pdf
     Map:
       required:
         - type
@@ -2937,6 +3319,22 @@ components:
               $ref: '#/components/schemas/MonographPages'
             type:
               type: string
+    ListPartsResponseBody:
+      description: Object containing details about parts that have been uploaded
+      type: object
+      properties:
+        PartNumber:
+          type: string
+          description: The index in the file of the uploaded part.
+          example: 1
+        Size:
+          type: string
+          description: The size of the part in bytes.
+          example: 3027
+        ETag:
+          type: string
+          description: The ETag of the part, used to identify it when completing the multipart upload and combining all parts into a single file.
+          example: f335ab02-35b3-4fda-9204-cd999e166ce0
     MediaBlogPost:
       required:
         - type
@@ -3557,6 +3955,38 @@ components:
               type: string
             type:
               type: string
+    PrepareUploadPartRequestBody:
+      description: Request body containing details about parts to be uploaded
+      type: object
+      properties:
+        uploadId:
+          type: string
+          description: S3 Identifier upload
+          example: 543534gfdgdsgerFEDSGF4438rhgdg.FEfefgnijwefew8234234nfsdfweFESEGGL_MFAWRMFiewfnvsdo234950SDFM_FESAFn384234fsdDSAFNEUFAS.g8SDFNWEUFbf--
+        key:
+          type: string
+          description: Identifier (UUID) of the uploaded file, object key in the S3 bucket
+          example: f335ab02-35b3-4fda-9204-cd999e166ce0
+        body:
+          type: string
+          description: This parts content. Its provided by Uppy, but not used by the API.
+          example: { }
+        number:
+          type: integer
+          description: The index of this part in the file (PartNumber in S3 terminology). Starts at 1
+          example: 1
+      required:
+        - uploadId
+        - key
+        - number
+    PrepareUploadPartResponseBody:
+      description: A presigned url for uploading files. Upload the file to the URL with a PUT request.
+      type: object
+      properties:
+        url:
+          type: string
+          description: The presigned URL to upload a part
+          example: https://some-bucket.s3.eu-west-1.amazonaws.com/f335ab02-35b3-4fda-9204-cd999e166ce0?uploadId=543534gfdgdsgerFEDSGF4438rhgdg.FEfefgnijwefew8234234nfsdfweFESEGGL_MFAWRMFiewfnvsdo234950SDFM_FESAFn384234fsdDSAFNEUFAS.g8SDFNWEUFbf--&partNumber=1&X-Amz-Security-Token=token&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20230502T094028Z&X-Amz-SignedHeaders=host&X-Amz-Expires=899&X-Amz-Credential=credentials&X-Amz-Signature=signature
     Publication:
       required:
         - type
@@ -3608,9 +4038,9 @@ components:
         fundings:
           type: array
           items:
-              oneOf:
-                - $ref: '#/components/schemas/ConfirmedFunding'
-                - $ref: '#/components/schemas/UnconfirmedFunding'
+            oneOf:
+              - $ref: '#/components/schemas/ConfirmedFunding'
+              - $ref: '#/components/schemas/UnconfirmedFunding'
         additionalIdentifiers:
           uniqueItems: true
           type: array
@@ -4003,6 +4433,15 @@ components:
           type: string
         type:
           type: string
+    SimpleMessage:
+      type: object
+      description: NVA file upload message
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable message
     SortableIdentifier:
       type: object
     StudyProtocol:
