@@ -1141,7 +1141,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"NEW", "DRAFT_FOR_DELETION"})
+    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"NEW", "DRAFT_FOR_DELETION", "DELETED"})
     void shouldAllowPublish(PublicationStatus status) throws ApiGatewayException {
         var publication = randomPublication().copy().withStatus(status).build();
         resourceService.insertPreexistingPublication(publication);

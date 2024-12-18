@@ -737,6 +737,26 @@ Resources:
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
+  PublishPublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.update.PublishPublicationHandler::handleRequest
+      MemorySize: 8192
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
+          TABLE_NAME: !Ref NvaResourcesTable
+      Policies:
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+      Events:
+        PutEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/publish
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
   NvaDeletePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:

@@ -36,6 +36,8 @@ dependencies {
     implementation libs.aws.sdk2.urlconnectionclient
     implementation libs.bundles.validation
 
+    implementation libs.apache.commons.text
+
     testImplementation project(":publication-testing")
     testImplementation project(":tickets-test")
     testImplementation libs.bundles.testing

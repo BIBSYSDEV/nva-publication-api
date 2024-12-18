@@ -1,0 +1,18 @@
+package no.unit.nva.publication.uploadfile.restmodel;
+
+import static java.util.Objects.requireNonNull;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.apigateway.exceptions.BadRequestException;
+
+public record ListPartsRequestBody(String uploadId, String key) {
+
+    public void validate() throws BadRequestException {
+        try {
+            requireNonNull(this.key());
+            requireNonNull(this.uploadId());
+        } catch (Exception e) {
+            throw new BadRequestException("Invalid input");
+        }
+    }
+}
