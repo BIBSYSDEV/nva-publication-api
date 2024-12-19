@@ -534,12 +534,12 @@ public final class FakeUriResponse {
 
     private static URI createNviCandidateUri(String id) {
         var publicationId = URLEncoder.encode(id, StandardCharsets.UTF_8);
-        var uri = UriWrapper.fromHost(API_HOST)
+        return UriWrapper.fromHost(API_HOST)
                       .addChild("scientific-index")
-                      .addChild("candidate")
                       .addChild("publication")
+                      .addChild(publicationId)
+                      .addChild("report-status")
                       .getUri();
-        return URI.create(String.format("%s/%s", uri, publicationId));
     }
 
     private static URI getPublicationId(Publication publication) {
