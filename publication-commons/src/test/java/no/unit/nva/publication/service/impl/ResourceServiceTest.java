@@ -52,7 +52,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -388,13 +387,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         TransactionFailedException actualException = assertThrows(TransactionFailedException.class, action);
         Throwable actualCause = actualException.getCause();
         assertThat(actualCause.getMessage(), is(equalTo(expectedMessage)));
-    }
-
-    @Test
-    void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier() {
-        Publication publication = publicationWithIdentifier();
-        Publication savedPublication = resourceService.insertPreexistingPublication(publication);
-        assertThat(savedPublication.getIdentifier(), is(equalTo(publication.getIdentifier())));
     }
 
     @Test
@@ -1142,11 +1134,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"NEW", "DRAFT_FOR_DELETION", "DELETED"})
-    void shouldAllowPublish(PublicationStatus status) throws ApiGatewayException {
+    void shouldAllowPublish(PublicationStatus status) {
         var publication = randomPublication().copy().withStatus(status).build();
-        resourceService.insertPreexistingPublication(publication);
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PUBLISHED)));
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
+        resource.publish(userInstance);
+
+        assertThat(resource.getStatus(), is(equalTo(PUBLISHED)));
     }
 
     @ParameterizedTest
@@ -1154,10 +1148,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         "PUBLISHED", "DELETED", "UNPUBLISHED"})
     void shouldNotAllowPublish(PublicationStatus status) {
         var publication = randomPublication().copy().withStatus(status).build();
-        resourceService.insertPreexistingPublication(publication);
-        assertThrows(UnsupportedPublicationStatusTransition.class,
-                     () -> resourceService.publishPublication(UserInstance.fromPublication(publication),
-                                                              publication.getIdentifier()));
+        var userInstance = UserInstance.fromPublication(publication);
+        assertThrows(IllegalStateException.class, () -> Resource.fromPublication(publication).publish(userInstance));
     }
 
     @Test

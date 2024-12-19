@@ -32,12 +32,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DataCompressor;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,9 +70,10 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldWriteBackEntryAsIsWhenMigrating() throws NotFoundException {
+    void shouldWriteBackEntryAsIsWhenMigrating() throws NotFoundException, BadRequestException {
         var publication = PublicationGenerator.randomPublication();
-        var savedPublication = resourceService.insertPreexistingPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        var savedPublication = resourceService.createPublication(userInstance, publication);
         migrateResources();
 
         var migratedResource = resourceService.getResourceByIdentifier(savedPublication.getIdentifier());

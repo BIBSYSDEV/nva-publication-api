@@ -54,7 +54,7 @@ public class Resource implements Entity {
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
     public static final List<PublicationStatus> PUBLISHABLE_STATUSES = List.of(DRAFT, PUBLISHED_METADATA,
-                                                                                        UNPUBLISHED);
+                                                                                        UNPUBLISHED, PUBLISHED);
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -233,7 +233,7 @@ public class Resource implements Entity {
         }
     }
 
-    private void publish(UserInstance userInstance) {
+    public void publish(UserInstance userInstance) {
         if (this.isNotPublishable()) {
             throw new IllegalStateException("Resource is not publishable!");
         } else if (this.isNotPublished()) {
