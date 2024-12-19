@@ -90,12 +90,11 @@ public class IndexDocumentWrapperLinkedData {
 
     private static URI fetchNviCandidateUri(String publicationId) {
         var urlEncodedPublicationId = URLEncoder.encode(publicationId, StandardCharsets.UTF_8);
-        return UriWrapper.fromHost(API_HOST)
+        var uri = UriWrapper.fromHost(API_HOST)
                       .addChild(SCIENTIFIC_INDEX)
                       .addChild(PUBLICATION)
-                      .addChild(urlEncodedPublicationId)
-                      .addChild(REPORT_STATUS)
                       .getUri();
+        return URI.create(String.format("%s/%s/%s", uri, urlEncodedPublicationId, REPORT_STATUS));
     }
 
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
