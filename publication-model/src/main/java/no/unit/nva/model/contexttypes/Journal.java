@@ -13,13 +13,12 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Journal implements Periodical {
 
-    private static final String OLD_PATH_JOURNAL = "journal";
     private final URI id;
 
     @JsonCreator
     public Journal(@JsonProperty("id") URI id) {
         validate(id);
-        this.id = MigrateSerialPublicationUtil.migratePath(id, OLD_PATH_JOURNAL);
+        this.id = MigrateSerialPublicationUtil.migratePath(id);
     }
 
     public URI getId() {
