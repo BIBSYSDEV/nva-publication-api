@@ -5,7 +5,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_OK;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.MediaType;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -51,16 +49,13 @@ public final class FakeUriResponse {
     public static final URI HARD_CODED_TOP_LEVEL_ORG_URI = constructCristinOrgUri(ORGANIZATION_BASE + ".0.0.0");
     public static final URI HARD_CODED_LEVEL_2_ORG_URI = constructCristinOrgUri(ORGANIZATION_BASE + ".1.0.0");
     public static final URI HARD_CODED_LEVEL_3_ORG_URI = constructCristinOrgUri(ORGANIZATION_BASE + ".1.1.0");
-    private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private static final String PENDING_NVI_RESPONSE = """
         {
-          "type": "NviCandidateResponse",
-          "status": "Pending",
-          "period": {
-           "type": "Period",
-           "id": "https://example.org/period/1233",
-           "year": "2024"
-          }
+            "reportStatus": {
+                "status": "PENDING_REVIEW",
+                "description": "Pending review. Awaiting approval from all institutions"
+            },
+            "period": "2024"
         }""";
     private static final URI CHANNEL_SAME_AS =
         URI.create("https://kanalregister.hkdir.no/publiseringskanaler/KanalForlagInfo"
@@ -73,7 +68,8 @@ public final class FakeUriResponse {
     /**
      * This setup mutes the anthology identifier to mock the response of the parent publication.
      */
-    public static void setupFakeForType(Publication publication, FakeUriRetriever fakeUriRetriever, ResourceService resourceService) {
+    public static void setupFakeForType(Publication publication, FakeUriRetriever fakeUriRetriever,
+                                        ResourceService resourceService) {
 
         fakeContributorResponses(publication, fakeUriRetriever);
         fakeOwnerResponse(fakeUriRetriever, publication.getResourceOwner().getOwnerAffiliation());
@@ -165,17 +161,17 @@ public final class FakeUriResponse {
                 fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
             }
             case Artistic ignored -> { /* No faking expected */ }
-            case Event ignored ->  { /* No faking expected */ }
-            case ExhibitionContent ignored ->  { /* No faking expected */ }
-            case MediaContribution ignored ->  { /* No faking expected */ }
+            case Event ignored -> { /* No faking expected */ }
+            case ExhibitionContent ignored -> { /* No faking expected */ }
+            case MediaContribution ignored -> { /* No faking expected */ }
             case Report ignored -> { /* No faking expected */ }
-            case UnconfirmedJournal ignored ->  { /* No faking expected */ }
+            case UnconfirmedJournal ignored -> { /* No faking expected */ }
             default -> throw new IllegalArgumentException("Unhandled publication context: " + publicationContext);
-
         }
     }
 
-    private static void setupFakeResponsesForBookTypes(FakeUriRetriever fakeUriRetriever, Book book, Publisher publisher) {
+    private static void setupFakeResponsesForBookTypes(FakeUriRetriever fakeUriRetriever, Book book,
+                                                       Publisher publisher) {
         URI id = publisher.getId();
         fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createPublisher(id));
         fakeSeriesResponse(fakeUriRetriever, book);
@@ -186,7 +182,7 @@ public final class FakeUriResponse {
         var parentPublication = randomPublication(BookAnthology.class);
         var persistedParent =
             attempt(() -> resourceService.createPublication(UserInstance.fromPublication(parentPublication),
-                                                         parentPublication)).orElseThrow();
+                                                            parentPublication)).orElseThrow();
         anthologyContext.setId(getPublicationId(persistedParent));
         var parentResponse = PublicationResponse.fromPublication(parentPublication);
         fakePendingNviResponse(fakeUriRetriever, parentPublication);
@@ -199,8 +195,8 @@ public final class FakeUriResponse {
     private static Optional<PublicationContext> extractPublicationContext(Publication publication) {
         return nonNull(publication.getEntityDescription())
                && nonNull(publication.getEntityDescription().getReference())
-            ? Optional.of(publication.getEntityDescription().getReference().getPublicationContext())
-            : Optional.empty();
+                   ? Optional.of(publication.getEntityDescription().getReference().getPublicationContext())
+                   : Optional.empty();
     }
 
     private static void fakeContributorResponses(Publication publication, FakeUriRetriever fakeUriRetriever) {
@@ -533,13 +529,12 @@ public final class FakeUriResponse {
     }
 
     private static URI createNviCandidateUri(String id) {
-        var publicationId = URLEncoder.encode(id, StandardCharsets.UTF_8);
+        var urlEncodedPublicationId = URLEncoder.encode(id, StandardCharsets.UTF_8);
         var uri = UriWrapper.fromHost(API_HOST)
                       .addChild("scientific-index")
-                      .addChild("candidate")
                       .addChild("publication")
                       .getUri();
-        return URI.create(String.format("%s/%s", uri, publicationId));
+        return URI.create(String.format("%s/%s/%s", uri, urlEncodedPublicationId, "report-status"));
     }
 
     private static URI getPublicationId(Publication publication) {

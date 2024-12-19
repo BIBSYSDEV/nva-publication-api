@@ -740,13 +740,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private String nviCandidateResponse() {
         return """
                 {
-                    "type": "NviCandidate",
-                    "status": "Reported",
-                    "period": {
-                        "type": "NviReportingPeriod",
-                        "id": "https://api.sandbox.nva.aws.unit.no/scientific-index/period/2024",
-                        "year": "2024"
-                    }
+                    "reportStatus": {
+                        "status": "REPORTED",
+                        "description": "Reported in closed period"
+                    },
+                    "period": "2024"
                 }
                 """;
     }
