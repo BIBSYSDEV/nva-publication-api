@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
@@ -15,11 +14,11 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 @JsonTypeName(ScientificIndex.TYPE)
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record ScientificIndex(URI id, String year, String status) implements JsonSerializable {
+public record ScientificIndex(String year, String status) implements JsonSerializable {
 
     public static final String TYPE = "ScientificIndex";
     public static final String SCIENTIFIC_INDEX_FIELD = "scientificIndex";
-    private static final String REPORTED = "Reported";
+    private static final String REPORTED = "reported";
 
     public JsonNode toJsonNode() {
         return attempt(() -> JsonUtils.dtoObjectMapper.readTree(this.toJsonString())).orElse(failure -> null);
@@ -27,6 +26,6 @@ public record ScientificIndex(URI id, String year, String status) implements Jso
 
     @JsonIgnore
     public boolean isReported() {
-        return nonNull(status) && REPORTED.equals(status);
+        return nonNull(status) && REPORTED.equalsIgnoreCase(status);
     }
 }
