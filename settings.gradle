@@ -19,4 +19,5 @@ include 'scopus-generate'
 include 'scopus-import'
 include 'tickets-test'
 include 'publication-log'
+include 'publication-file'
 
