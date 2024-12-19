@@ -670,7 +670,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var nviStatusNode = json.get(ScientificIndex.SCIENTIFIC_INDEX_FIELD);
 
         assertThat(nviStatusNode.get("year").asText(), is(equalTo("2024")));
-        assertThat(nviStatusNode.get("status").asText(), is(equalTo("REPORTED")));
+        assertThat(nviStatusNode.get("status").asText(), is(equalTo("Reported")));
     }
 
     @Test

@@ -24,8 +24,17 @@ public record ScientificIndex(String year, String status) implements JsonSeriali
         return attempt(() -> JsonUtils.dtoObjectMapper.readTree(this.toJsonString())).orElse(failure -> null);
     }
 
+    @Override
+    public String status() {
+        return nonNull(status) ? capitalize(status) : null;
+    }
+
     @JsonIgnore
     public boolean isReported() {
         return nonNull(status) && REPORTED.equalsIgnoreCase(status);
+    }
+
+    private String capitalize(String input) {
+        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
     }
 }
