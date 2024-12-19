@@ -670,7 +670,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var nviStatusNode = json.get(ScientificIndex.SCIENTIFIC_INDEX_FIELD);
 
         assertThat(nviStatusNode.get("year").asText(), is(equalTo("2024")));
-        assertThat(nviStatusNode.get("status").asText(), is(equalTo("Reported")));
+        assertThat(nviStatusNode.get("status").asText(), is(equalTo("REPORTED")));
     }
 
     @Test
@@ -740,13 +740,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private String nviCandidateResponse() {
         return """
                 {
-                    "type": "NviCandidate",
-                    "status": "Reported",
-                    "period": {
-                        "type": "NviReportingPeriod",
-                        "id": "https://api.sandbox.nva.aws.unit.no/scientific-index/period/2024",
-                        "year": "2024"
-                    }
+                    "reportStatus": {
+                        "status": "REPORTED",
+                        "description": "Reported in closed period"
+                    },
+                    "period": "2024"
                 }
                 """;
     }

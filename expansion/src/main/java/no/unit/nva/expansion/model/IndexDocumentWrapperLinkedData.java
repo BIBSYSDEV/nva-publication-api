@@ -66,12 +66,12 @@ public class IndexDocumentWrapperLinkedData {
     private static final String EXCEPTION = "Exception {}:";
     private static final String ID = "id";
     private static final String SCIENTIFIC_INDEX = "scientific-index";
-    private static final String CANDIDATE = "candidate";
     private static final String PUBLICATION = "publication";
     private static final int ONE_HUNDRED = 100;
     private static final int SUCCESS_FAMILY = 2;
     private static final int CLIENT_ERROR_FAMILY = 4;
     private static final String TYPE = "type";
+    private static final String REPORT_STATUS = "report-status";
     private final RawContentRetriever uriRetriever;
     private final ResourceService resourceService;
 
@@ -89,12 +89,13 @@ public class IndexDocumentWrapperLinkedData {
     //TODO: parallelize
 
     private static URI fetchNviCandidateUri(String publicationId) {
-        var uri = UriWrapper.fromHost(API_HOST)
+        var urlEncodedPublicationId = URLEncoder.encode(publicationId, StandardCharsets.UTF_8);
+        return UriWrapper.fromHost(API_HOST)
                       .addChild(SCIENTIFIC_INDEX)
-                      .addChild(CANDIDATE)
                       .addChild(PUBLICATION)
+                      .addChild(urlEncodedPublicationId)
+                      .addChild(REPORT_STATUS)
                       .getUri();
-        return URI.create(String.format("%s/%s", uri, publicationId));
     }
 
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
@@ -115,9 +116,8 @@ public class IndexDocumentWrapperLinkedData {
 
     private JsonNode fetchNviStatus(JsonNode indexDocument) {
         var publicationId = indexDocument.get(ID).asText();
-        var urlEncodedPublicationId = URLEncoder.encode(publicationId, StandardCharsets.UTF_8);
         try {
-            return fetchNviCandidate(urlEncodedPublicationId)
+            return fetchNviCandidate(publicationId)
                        .map(this::processNviCandidateResponse)
                        .orElseThrow();
         } catch (Exception e) {
