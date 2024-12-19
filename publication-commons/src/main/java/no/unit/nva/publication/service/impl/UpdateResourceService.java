@@ -81,8 +81,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private static final List<PublicationStatus> allowedPublicationStatusesForPublishing = List.of(
         DRAFT,
         PUBLISHED_METADATA,
-        UNPUBLISHED,
-        DELETED
+        UNPUBLISHED
     );
     private final RawContentRetriever uriRetriever;
 
@@ -286,7 +285,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
+        var publication = readResourceService.getResourceByIdentifier(resourceIdentifier).toPublication();
         if (publicationIsPublished(publication)) {
             return publishCompletedStatus();
         } else if (publicationIsAllowedForPublishing(publication)) {
