@@ -257,11 +257,6 @@ public class ResourceService extends ServiceWithTransactions {
         writeToDynamoInBatches(writeRequests);
     }
 
-    public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        return readResourceService.getPublication(userInstance, resourceIdentifier);
-    }
-
     public Publication getPublication(Publication sampleResource) throws NotFoundException {
         return readResourceService.getPublication(sampleResource);
     }

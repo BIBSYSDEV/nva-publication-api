@@ -275,7 +275,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourceByIdentifierReturnsNotFoundWhenResourceDoesNotExist() {
         SortableIdentifier nonExistingIdentifier = SortableIdentifier.next();
-        Executable action = () -> resourceService.getPublication(SAMPLE_USER, nonExistingIdentifier);
+        Executable action = () -> resourceService.getPublicationByIdentifier(nonExistingIdentifier);
         assertThrows(NotFoundException.class, action);
     }
 
@@ -283,7 +283,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void getResourceByIdentifierReturnsResourceWhenResourceExists() throws ApiGatewayException {
         Publication sampleResource = createPersistedPublicationWithDoi();
         UserInstance userInstance = UserInstance.fromPublication(sampleResource);
-        Publication savedResource = resourceService.getPublication(userInstance, sampleResource.getIdentifier());
+        Publication savedResource = resourceService.getPublicationByIdentifier(sampleResource.getIdentifier());
         assertThat(savedResource, is(equalTo(sampleResource)));
     }
 
@@ -298,7 +298,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertThatResourceDoesNotExist(originalResource);
 
-        var newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
+        var newResource = resourceService.getPublicationByIdentifier(originalResource.getIdentifier());
 
         var expectedResource = expectedUpdatedResource(originalResource, newResource, newOwner);
         var diff = JAVERS.compare(expectedResource, newResource);
@@ -313,7 +313,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
 
-        Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
+        Publication newResource = resourceService.getPublicationByIdentifier(originalResource.getIdentifier());
 
         assertThat(newResource.getResourceOwner().getOwner().getValue(), is(equalTo(newOwner.getUsername())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getCustomerId())));
@@ -329,7 +329,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertThatResourceDoesNotExist(sampleResource);
 
-        Publication newResource = resourceService.getPublication(newOwner, sampleResource.getIdentifier());
+        Publication newResource = resourceService.getPublicationByIdentifier(sampleResource.getIdentifier());
 
         assertThat(newResource.getModifiedDate(), is(greaterThan(newResource.getCreatedDate())));
     }
@@ -517,14 +517,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
         Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
-        GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
-        when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
+        var responseWithInvalidItem = new QueryResult().withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
+        when(mockClient.query(any())).thenReturn(responseWithInvalidItem);
 
         ResourceService failingResourceService = getResourceServiceBuilder(mockClient).build();
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         SortableIdentifier someIdentifier = SortableIdentifier.next();
-        Executable action = () -> failingResourceService.getPublication(SAMPLE_USER, someIdentifier);
+        Executable action = () -> failingResourceService.getPublicationByIdentifier(someIdentifier);
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass, action);
     }
