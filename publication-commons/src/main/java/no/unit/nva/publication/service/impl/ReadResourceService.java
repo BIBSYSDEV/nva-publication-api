@@ -4,7 +4,6 @@ import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceService.EMPTY_RESOURCE_IDENTIFIER_ERROR;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
@@ -23,15 +22,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ReadResourceService {
@@ -47,14 +44,6 @@ public class ReadResourceService {
     protected ReadResourceService(AmazonDynamoDB client, String tableName) {
         this.client = client;
         this.tableName = tableName;
-    }
-
-    public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        if (isNull(resourceIdentifier)) {
-            throw new BadRequestException(EMPTY_RESOURCE_IDENTIFIER_ERROR);
-        }
-        return getResource(userInstance, resourceIdentifier).toPublication();
     }
 
     public Publication getPublication(Publication publication) throws NotFoundException {
