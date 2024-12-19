@@ -213,6 +213,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Publication'
+  /{publicationIdentifier}/publish:
+    post:
+      operationId: publishPublication
+      summary: Publish publication by identifier
+      security:
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/publication-upsert'
+        ]
+      requestBody:
+        required: false
+        content: {}
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          schema:
+            type: string
+          required: true
+          style: simple
+          explode: false
+          description: UUID identifier of the Publication to publish.
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PublishPublicationFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        202:
+          description: Accepted - Publication is being publish
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationResponse'
+        400:
+          description: Bad Request - Publication is not publishable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        401:
+          description: Unauthorized - User is not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        403:
+          description: Forbidden - User has no permissions to publish publication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        404:
+          description: Not found - Publication does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        502:
+          description: Bad Gateway - Error in external service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /by-owner:
     get:
       operationId: listPublicationsByOwner
@@ -241,7 +307,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Publication'
-
   /{publicationIdentifier}/doi:
     post:
       operationId: reserveDoiForDraftPublication
@@ -770,7 +835,7 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FetchPublicationLogFunction.Arn}/invocations
-        responses: {}
+        responses: { }
         httpMethod: POST
         type: AWS_PROXY
       responses:

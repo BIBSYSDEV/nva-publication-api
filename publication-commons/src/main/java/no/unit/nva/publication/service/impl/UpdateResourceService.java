@@ -81,8 +81,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private static final List<PublicationStatus> allowedPublicationStatusesForPublishing = List.of(
         DRAFT,
         PUBLISHED_METADATA,
-        UNPUBLISHED,
-        DELETED
+        UNPUBLISHED
     );
     private final RawContentRetriever uriRetriever;
 
