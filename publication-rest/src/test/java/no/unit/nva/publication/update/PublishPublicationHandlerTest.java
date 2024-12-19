@@ -1,10 +1,10 @@
 package no.unit.nva.publication.update;
 
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -105,8 +105,8 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
 
         resourceService = mock(ResourceService.class);
         when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenThrow(new RuntimeException());
-        var handler = new PublishPublicationHandler(resourceService);
-        handler.handleRequest(request, output, context);
+        var publishPublicationHandler = new PublishPublicationHandler(resourceService);
+        publishPublicationHandler.handleRequest(request, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
@@ -123,7 +123,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertEquals(HTTP_OK, response.getStatusCode());
+        assertEquals(HTTP_ACCEPTED, response.getStatusCode());
     }
 
     private static Map<String, String> publicationIdentifierPathParam(SortableIdentifier publicationIdentifier) {

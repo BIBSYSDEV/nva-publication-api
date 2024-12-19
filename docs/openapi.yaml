@@ -243,8 +243,8 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        200:
-          description: OK - Publication is published
+        202:
+          description: Accepted - Publication is being publish
           content:
             application/json:
               schema:

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.update;
 
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_OK;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -48,7 +49,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     @Override
     protected Integer getSuccessStatusCode(Void input, Void output) {
-        return HTTP_OK;
+        return HTTP_ACCEPTED;
     }
 
     private static void validatePermissions(Resource resource, UserInstance userInstance) throws ForbiddenException {
