@@ -640,7 +640,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /{publicationIdentifier}/file-upload/create:
+  /file-upload/create:
     post:
       summary: Create a upload
       description: Creates a multipart upload for a file. This is later referenced for preparing file-parts, uploading, and finishing the upload..
@@ -692,7 +692,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /{publicationIdentifier}/file-upload/listparts:
+  /file-upload/listparts:
     post:
       summary: List the parts of a file that have already been uploaded.
       parameters:
@@ -743,7 +743,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /{publicationIdentifier}/file-upload/prepare:
+  /file-upload/prepare:
     post:
       summary: Generates a URL to upload a single file-part
       parameters:
@@ -794,7 +794,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /{publicationIdentifier}/file-upload/abort:
+  /file-upload/abort:
     post:
       summary: Aborts a upload
       description: Aborts the Multipart upload, and deletes all parts that have been uploaded so far.
@@ -842,7 +842,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /{publicationIdentifier}/file-upload/complete:
+  /file-upload/complete:
     post:
       summary: Completes a upload
       description: Completes a Multipart upload, combining all parts into a single object in the S3 bucket
