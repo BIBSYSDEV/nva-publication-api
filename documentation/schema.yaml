@@ -186,25 +186,6 @@ Artistic:
     properties:
       type:
         type: string
-ArtisticDegreePhd:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/PublicationInstancePages"
-  - type: object
-    properties:
-      pages:
-        $ref: "#/components/schemas/MonographPages"
-      submittedDate:
-        $ref: "#/components/schemas/PublicationDate"
-      related:
-        uniqueItems: true
-        type: array
-        items:
-          $ref: "#/components/schemas/RelatedDocument"
-      type:
-        type: string
 ArtisticDesign:
   required:
   - type
@@ -1063,6 +1044,8 @@ File:
       license:
         type: string
         format: uri
+      administrativeAgreement:
+        type: boolean
       publisherVersion:
         type: string
         enum:
@@ -1080,6 +1063,8 @@ File:
         format: date-time
       uploadDetails:
         $ref: "#/components/schemas/UploadDetails"
+      visibleForNonOwner:
+        type: boolean
       type:
         type: string
 FunderRightsRetentionStrategy:
@@ -1449,6 +1434,9 @@ LiteraryArtsAudioVisualSubtype:
       - ShortFilm
       - Podcast
       - LiteraryArtsAudioVisualOther
+    description:
+      type: string
+      writeOnly: true
 LiteraryArtsManifestation:
   required:
   - type
@@ -1499,6 +1487,9 @@ LiteraryArtsPerformanceSubtype:
       - Reading
       - Play
       - LiteraryArtsPerformanceOther
+    description:
+      type: string
+      writeOnly: true
 LiteraryArtsSubtype:
   type: object
   properties:
