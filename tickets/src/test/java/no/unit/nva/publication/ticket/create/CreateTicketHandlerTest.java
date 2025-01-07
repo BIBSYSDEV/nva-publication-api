@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.create;
 
+import static com.github.tomakehurst.wiremock.common.ContentTypes.APPLICATION_JSON;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
@@ -7,7 +8,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithIdAndAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -35,6 +36,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,6 +46,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -672,16 +675,34 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var contributorId = randomUri();
-        publication.getEntityDescription().setContributors(List.of(randomContributorWithId(contributorId)));
+        var affiliationId = randomUri();
+        publication.getEntityDescription().setContributors(List.of(randomContributorWithIdAndAffiliation(contributorId, affiliationId)));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(affiliationId, Set.of(contributorId))));
+        mockCuratingInstitution(affiliationId);
         resourceService.updatePublication(publication);
         var requestBody = constructDto(DoiRequest.class);
 
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      randomUri(), contributorId, randomString());
+                                                      affiliationId, contributorId, randomString());
         handler.handleRequest(request, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    private void mockCuratingInstitution(URI affiliationId) {
+        when(uriRetriever.getRawContent(affiliationId, APPLICATION_JSON))
+            .thenReturn(Optional.of("""
+                                        {
+                                          "type": "Organization",
+                                          "partOf": [
+                                            {
+                                              "type": "Organization",
+                                              "id": "%s"
+                                            }
+                                          ]
+                                        }
+                                        """.formatted(affiliationId)));
     }
 
     @Test
