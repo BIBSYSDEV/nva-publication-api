@@ -162,8 +162,8 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
         var publicationStatus = getPublicationStatus(entry);
         if (publicationStatus.isPresent()) {
             return PUBLICATION_STATUS_TO_BE_ENRICHED.contains(publicationStatus.get());
-        } else if (entry instanceof DoiRequest) {
-            return isDoiRequestReadyForEvaluation((DoiRequest) entry);
+        } else if (entry instanceof DoiRequest doiRequest) {
+            return isDoiRequestReadyForEvaluation(doiRequest);
         } else {
             return true;
         }
