@@ -37,6 +37,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -52,7 +53,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -116,6 +116,8 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -1320,6 +1322,75 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(IllegalStateException.class,
                      () -> Resource.resourceQueryObject(
                          peristedPublication.getIdentifier()).publish(resourceService, userInstance));
+    }
+
+    @Test
+    void shouldSetResourceStatusToDraftForDeletionWhenDeletingDraftWithDoi() throws ApiGatewayException {
+        var publication = randomPublication();
+        var persistedPublication = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var resource = Resource.fromPublication(persistedPublication);
+        resource.delete(resourceService);
+
+        assertEquals(DRAFT_FOR_DELETION, resource.fetch(resourceService).getStatus());
+    }
+
+    @Test
+    void shouldDeleteAPublicationWhenDeletingDraftPublicationWithoutDoi() throws ApiGatewayException {
+        var publication = randomPublication().copy()
+                              .withStatus(DRAFT)
+                              .withDoi(null)
+                              .build();
+
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var resource = Resource.fromPublication(persistedPublication);
+        resource.delete(resourceService);
+
+        assertThrows(NotFoundException.class, () -> resource.fetch(resourceService));
+    }
+
+    @Test
+    void shouldDeleteAllTicketsWhenDeletingDraftPublicationWithoutDoi() throws ApiGatewayException {
+        var publication = randomPublication().copy()
+                              .withStatus(DRAFT)
+                              .withDoi(null)
+                              .build();
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        TicketTestUtils.createPersistedTicket(persistedPublication, PublishingRequestCase.class, ticketService);
+        TicketTestUtils.createPersistedTicket(persistedPublication, PublishingRequestCase.class, ticketService);
+
+        var resource = Resource.fromPublication(persistedPublication);
+        resource.delete(resourceService);
+
+        assertThrows(NotFoundException.class, () -> resource.fetch(resourceService));
+        assertTrue(resource.fetchAllTickets(resourceService).toList().isEmpty());
+    }
+
+    @Test
+    void shouldDeleteAllLogEntriesWhenDeletingDraftPublicationWithoutDoi() throws ApiGatewayException {
+        var publication = randomPublication().copy()
+                              .withStatus(DRAFT)
+                              .withDoi(null)
+                              .build();
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        CreatedResourceEvent.create(UserInstance.fromPublication(publication), Instant.now())
+            .toLogEntry(persistedPublication.getIdentifier(), LogUser.fromResourceEvent(new User(randomString()), randomUri()))
+            .persist(resourceService);
+
+        var resource = Resource.fromPublication(persistedPublication);
+
+        assertFalse(resource.fetchLogEntries(resourceService).isEmpty());
+
+        resource.delete(resourceService);
+
+        assertTrue(resource.fetchLogEntries(resourceService).isEmpty());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

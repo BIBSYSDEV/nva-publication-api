@@ -319,6 +319,14 @@ public class ResourceService extends ServiceWithTransactions {
                    .filter(ResourceService::isNotRemoved);
     }
 
+    private Stream<TicketEntry> fetchAllTickets(Resource resource) {
+        var dao = (ResourceDao) resource.toDao();
+        return dao.fetchAllTickets(getClient())
+                   .stream()
+                   .map(TicketDao::getData)
+                   .map(TicketEntry.class::cast);
+    }
+
     public Stream<TicketEntry> fetchAllTicketsForPublication(UserInstance userInstance,
                                                              SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
@@ -380,6 +388,21 @@ public class ResourceService extends ServiceWithTransactions {
                     .map(LogEntryDao::fromDynamoFormat)
                     .map(LogEntryDao::data)
                     .toList();
+    }
+
+    public void deleteResourceAndAllRelatedItems(Resource resource) {
+        var transactionItems = new ArrayList<TransactWriteItem>();
+
+        var tickets = fetchAllTickets(resource);
+        var logEntries = getLogEntriesForResource(resource);
+
+        logEntries.stream().map(LogEntryDao::fromLogEntry).map(this::newDeleteTransactionItem).forEach(transactionItems::add);
+        tickets.map(Entity::toDao).map(this::newDeleteTransactionItem).forEach(transactionItems::add);
+        transactionItems.add(newDeleteTransactionItem(resource.toDao()));
+        transactionItems.add(newDeleteTransactionItem(IdentifierEntry.create(resource.toDao())));
+
+        var transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
     }
 
     @JacocoGenerated

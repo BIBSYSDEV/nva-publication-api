@@ -1,8 +1,9 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -37,8 +38,8 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
-import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -273,6 +274,24 @@ public class Resource implements Entity {
         var timestamp = Instant.now();
         this.setPublishedDate(timestamp);
         this.setResourceEvent(RepublishedResourceEvent.create(userInstance, timestamp));
+    }
+
+    public void delete(ResourceService resourceService) throws NotFoundException {
+        var resource = this.fetch(resourceService);
+        if (resource.isDraftWithoutDoi()) {
+            resourceService.deleteResourceAndAllRelatedItems(resource);
+        } else if (resource.isDraft()) {
+            resource.setStatus(DRAFT_FOR_DELETION);
+            resourceService.updateResource(resource);
+        }
+    }
+
+    private boolean isDraft() {
+        return this.getStatus().equals(DRAFT);
+    }
+
+    private boolean isDraftWithoutDoi() {
+        return isDraft() && isNull(this.getDoi());
     }
 
     public URI getDuplicateOf() {

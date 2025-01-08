@@ -16,9 +16,10 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import nva.commons.core.JacocoGenerated;
 
 public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
-                          LogEntry data) {
+                          LogEntry data) implements DynamoEntry, WithPrimaryKey {
 
     public static final String TYPE = "LogEntry";
     public static final String KEY_PATTERN = "%s:%s";
@@ -35,6 +36,12 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
 
     public static String getLogEntriesByResourceIdentifierPartitionKey(Resource resource) {
         return KEY_PATTERN.formatted(Resource.TYPE, resource.getIdentifier());
+    }
+
+    @JacocoGenerated
+    @Override
+    public SortableIdentifier getIdentifier() {
+        return identifier;
     }
 
     public Map<String, AttributeValue> toDynamoFormat() {
@@ -54,12 +61,12 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
     }
 
     @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
-    private String getPrimaryKeyPartitionKey() {
+    public String getPrimaryKeyPartitionKey() {
         return KEY_PATTERN.formatted(Resource.TYPE, resourceIdentifier());
     }
 
     @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
-    private String getPrimaryKeySortKey() {
+    public String getPrimaryKeySortKey() {
         return KEY_PATTERN.formatted(TYPE, identifier());
     }
 }

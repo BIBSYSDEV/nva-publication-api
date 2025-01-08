@@ -129,7 +129,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var resource = Resource.fromPublication(publicationUpdate);
 
         var updateResourceTransactionItem = createPutTransaction(resource);
-        var updateTicketsTransactionItems = updateTickets(resource);
+        var updateTicketsTransactionItems = updateDoiRequests(resource);
         var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(updateResourceTransactionItem);
         transactionItems.addAll(updateTicketsTransactionItems);
@@ -315,7 +315,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         resource.setPublishedDate(currentTime);
         resource.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
         var updateResourceTransactionItem = createPutTransaction(resource);
-        var updateTicketsTransactionItems = updateTickets(resource);
+        var updateTicketsTransactionItems = updateDoiRequests(resource);
         var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(updateResourceTransactionItem);
         transactionItems.addAll(updateTicketsTransactionItems);
@@ -380,7 +380,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .build();
     }
 
-    private List<TransactWriteItem> updateTickets(Resource resource) {
+    private List<TransactWriteItem> updateDoiRequests(Resource resource) {
         var dao = new ResourceDao(resource);
         var ticketDaos = dao.fetchAllTickets(getClient());
         return ticketDaos.stream()
