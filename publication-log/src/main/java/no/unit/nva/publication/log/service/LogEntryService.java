@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.handlers.log;
+package no.unit.nva.publication.log.service;
 
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.clients.GetCustomerResponse;
