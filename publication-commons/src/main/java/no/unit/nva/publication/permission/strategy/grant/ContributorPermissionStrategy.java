@@ -25,7 +25,7 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
             case UNPUBLISH -> isPublished() && !hasApprovedFiles();
             case PUBLISHING_REQUEST_CREATE,
                  SUPPORT_REQUEST_CREATE,
-                 DOI_REQUEST_CREATE -> !isDraft();
+                 DOI_REQUEST_CREATE -> !isDraft() && userIsVerifiedContributorAtCurrentInstitution();
             case UPDATE_FILES,
                  REPUBLISH,
                  DOI_REQUEST_APPROVE,
@@ -38,13 +38,24 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userIsVerifiedContributor() {
-        return nonNull(this.userInstance.getPersonCristinId()) &&
-               Optional.ofNullable(publication.getEntityDescription())
+        return nonNull(this.userInstance.getPersonCristinId())
+               && Optional.ofNullable(publication.getEntityDescription())
                    .map(EntityDescription::getContributors)
                    .stream()
                    .flatMap(List::stream)
                    .filter(this::isVerifiedContributor)
                    .anyMatch(
                        contributor -> contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
+    }
+
+    private boolean userIsVerifiedContributorAtCurrentInstitution() {
+        return userIsVerifiedContributor() && userInstitutionIsCuratingInstitution();
+    }
+
+    private boolean userInstitutionIsCuratingInstitution() {
+        return publication.getCuratingInstitutions()
+                   .stream()
+                   .anyMatch(curatingInstitution ->
+                                 curatingInstitution.id().equals(userInstance.getTopLevelOrgCristinId()));
     }
 }
