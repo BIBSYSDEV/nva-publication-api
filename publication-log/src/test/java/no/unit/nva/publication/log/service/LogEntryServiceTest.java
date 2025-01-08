@@ -2,8 +2,9 @@ package no.unit.nva.publication.log.service;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,7 +48,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
-        assertFalse(logEntries.isEmpty());
+        assertEquals(PUBLICATION_CREATED, logEntries.getFirst().topic());
     }
 
     @Test
