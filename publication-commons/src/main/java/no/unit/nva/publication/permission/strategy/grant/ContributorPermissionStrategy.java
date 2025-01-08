@@ -38,8 +38,8 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userIsVerifiedContributor() {
-        return nonNull(this.userInstance.getPersonCristinId()) &&
-               Optional.ofNullable(publication.getEntityDescription())
+        return nonNull(this.userInstance.getPersonCristinId())
+               && Optional.ofNullable(publication.getEntityDescription())
                    .map(EntityDescription::getContributors)
                    .stream()
                    .flatMap(List::stream)
@@ -49,14 +49,13 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userIsVerifiedContributorAtCurrentInstitution() {
-        return nonNull(this.userInstance.getPersonCristinId()) &&
-               nonNull(this.userInstance.getTopLevelOrgCristinId()) &&
-               Optional.ofNullable(publication.getEntityDescription())
-                   .map(EntityDescription::getContributors)
+        return userIsVerifiedContributor() && userInstitutionIsCuratingInstitution();
+    }
+
+    private boolean userInstitutionIsCuratingInstitution() {
+        return publication.getCuratingInstitutions()
                    .stream()
-                   .flatMap(List::stream)
-                   .filter(this::isVerifiedContributor)
-                   .anyMatch(contributor -> contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId())) &&
-               publication.getCuratingInstitutions().stream().anyMatch(curatingInstitution -> curatingInstitution.id().equals(userInstance.getTopLevelOrgCristinId()));
+                   .anyMatch(curatingInstitution ->
+                                 curatingInstitution.id().equals(userInstance.getTopLevelOrgCristinId()));
     }
 }
