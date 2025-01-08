@@ -52,7 +52,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -1320,6 +1319,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(IllegalStateException.class,
                      () -> Resource.resourceQueryObject(
                          peristedPublication.getIdentifier()).publish(resourceService, userInstance));
+    }
+
+    @Test
+    void shouldSetAllTicketsToNotApplicableWhenMarkingDraftPublicationAsDraftForDeletion() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithoutDoi();
+        var ticket = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
+                         .withOwnerAffiliation(randomUri())
+                         .withOwner(randomString())
+                         .persistNewTicket(ticketService);
+        resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        assertEquals(TicketStatus.NOT_APPLICABLE,ticket.fetch(ticketService).getStatus());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
