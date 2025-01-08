@@ -17,8 +17,3 @@ The packages are named according to their purpose.
   - persistence (Handles file persistence operations)
   - recovery (Handles recovery of failed events from persistence to expansion)
   - tickets (Handles events related to tickets)
-
-## Notes
-
-- There are a few candidates for removal/moving here
-

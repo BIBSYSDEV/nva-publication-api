@@ -4,7 +4,9 @@ Provides a handler to allow reservation of DOIs (non-findable DOIs for publicati
 
 ## Why does this module exist?
 
-This is a short-circuit of a process, which would otherwise be handled as an asynchronous process.  This is an unfortunate optimization for a frontend design that had timing that was considered unacceptable by the end users.
+This is a workaround that short-circuits the usual asynchronous process for generating DOIs.
+
+This is an optimization for a frontend design that requires a synchronous response.
 
 ## Notes
 
