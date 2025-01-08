@@ -10,6 +10,8 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
@@ -18,6 +20,8 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import nva.commons.core.JacocoGenerated;
 
+@JsonTypeName(LogEntryDao.TYPE)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
                           LogEntry data) implements DynamoEntry, WithPrimaryKey {
 
