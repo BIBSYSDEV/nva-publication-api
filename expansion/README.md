@@ -1,6 +1,6 @@
 # expansion
 
-In NVAs core data model, it is not necessary to know the exact attributes of every data class (such as Journal or person).
+In NVAs core data model, it is not necessary to know the exact attributes of every data class (such as Journal or Person).
 
 In some cases, it is nice to know these things (when humans search or perform data analysis, or computers evaluate data for further processing (NVI)). This module creates a view of the data that contains all of the "missing" data that is nice to have for other processes. 
 
