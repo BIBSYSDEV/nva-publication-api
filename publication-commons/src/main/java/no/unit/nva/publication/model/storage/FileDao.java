@@ -22,7 +22,7 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 @JsonTypeName(FileDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class FileDao extends Dao implements DynamoEntryByIdentifier {
+public final class FileDao extends Dao implements DynamoEntryByIdentifier {
 
     public static final String TYPE = "File";
     private final SortableIdentifier identifier;

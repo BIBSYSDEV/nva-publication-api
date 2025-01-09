@@ -14,9 +14,10 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(FileEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class FileEntry implements Entity {
+public final class FileEntry implements Entity {
 
     public static final String TYPE = "File";
+    public static final String DO_NOT_USE_THIS_METHOD = "Do not use this method";
     private final SortableIdentifier resourceIdentifier;
     private final User owner;
     private final URI ownerAffiliation;
@@ -53,7 +54,7 @@ public class FileEntry implements Entity {
     @JacocoGenerated
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
-        // Ignore
+        throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
     }
 
     //TODO: Implement once we implement database logic
@@ -78,7 +79,7 @@ public class FileEntry implements Entity {
     @JacocoGenerated
     @Override
     public void setCreatedDate(Instant now) {
-        // Ignore
+        throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
     }
 
     @Override
@@ -89,7 +90,7 @@ public class FileEntry implements Entity {
     @JacocoGenerated
     @Override
     public void setModifiedDate(Instant now) {
-        // Ignore
+        throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
     }
 
     @Override
