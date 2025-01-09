@@ -12,6 +12,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWi
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
@@ -54,6 +55,7 @@ import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -90,6 +92,7 @@ import no.unit.nva.testutils.JwtTestToken;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -550,6 +553,45 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         assertThat(ticket.getFinalizedBy().toString(), is(not(equalTo(publication.getResourceOwner().getOwner()))));
         assertThat(ticket.getFinalizedBy().toString(), is(equalTo(curatorName)));
+    }
+
+    @Test
+    void shouldAutoApproveWhenOnlyHiddenFiles()
+        throws ApiGatewayException, IOException {
+        var publication = createNonDegreePublicationWithHiddenFile();
+
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
+                                                            secretsManagerClient));
+        this.handler = new CreateTicketHandler(ticketResolver, messageService);
+
+        var curatorName = randomString();
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
+        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(), curatingInstitution,
+                                                      randomUri(), curatorName, MANAGE_PUBLISHING_REQUESTS);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+
+        var ticket = fetchTicket(response);
+
+        assertThat(ticket.getFinalizedBy().toString(), is(not(equalTo(publication.getResourceOwner().getOwner()))));
+        assertThat(ticket.getFinalizedBy().toString(), is(equalTo(curatorName)));
+    }
+
+    private Publication createNonDegreePublicationWithHiddenFile() throws BadRequestException {
+        var publication = randomNonDegreePublication()
+                .copy()
+                .withPublisher(new Organization.Builder().withId(randomUri()).build())
+                .withStatus(DRAFT)
+                .withAssociatedArtifacts(List.of(randomHiddenFile()))
+                .build();
+
+        publication = Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        return publication;
     }
 
     @ParameterizedTest

@@ -101,10 +101,6 @@ public class TicketResolver {
         };
     }
 
-    private static boolean hasNoFiles(Publication publication) {
-        return publication.getAssociatedArtifacts().stream().noneMatch(File.class::isInstance);
-    }
-
     private void validateUserPermissions(PublicationPermissionStrategy permissionStrategy, TicketDto ticketDto,
                                          RequestUtils requestUtils)
         throws ForbiddenException, NotFoundException {
@@ -152,7 +148,7 @@ public class TicketResolver {
     private PublishingRequestCase persistPublishingRequest(PublishingRequestCase publishingRequestCase,
                                                            Publication publication, Username username)
         throws ApiGatewayException {
-        if (hasNoFiles(publication)) {
+        if (publishingRequestCase.getFilesForApproval().isEmpty()) {
             return createAutoApprovedTicket(publishingRequestCase, publication, username);
         } else {
             return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
