@@ -20,6 +20,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
     @JsonSubTypes.Type(TicketEntry.class),
+    @JsonSubTypes.Type(name = FileEntry.TYPE, value = FileEntry.class),
     @JsonSubTypes.Type(name = Message.TYPE, value = Message.class),
 })
 public interface Entity {

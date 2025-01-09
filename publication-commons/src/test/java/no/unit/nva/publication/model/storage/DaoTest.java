@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -58,6 +59,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -339,11 +341,11 @@ class DaoTest extends ResourcesLocalTest {
     private static Stream<Dao> instanceProvider() {
         return DaoUtils.instanceProvider();
     }
-    
+
     @SuppressWarnings("unchecked")
     private Object generateEntity(Class<?> entityType)
         throws ConflictException {
-        
+
         if (Resource.class.equals(entityType)) {
             return Resource.fromPublication(randomPublication());
         } else if (ImportCandidate.class.equals(entityType)) {
@@ -353,9 +355,15 @@ class DaoTest extends ResourcesLocalTest {
         } else if (Message.class.equals(entityType)) {
             var ticket = createTicket(DoiRequest.class);
             return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
+        } else if (FileEntry.class.equals(entityType)) {
+            return createRandomFileEntry();
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private FileEntry createRandomFileEntry() {
+        return FileEntry.create(randomOpenFile(), SortableIdentifier.next(), UserInstance.fromPublication(randomPublication()));
     }
 
     private ImportCandidate randomImportCandidate() {
