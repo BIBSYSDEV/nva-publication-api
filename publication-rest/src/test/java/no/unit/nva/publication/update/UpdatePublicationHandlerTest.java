@@ -7,12 +7,14 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Objects.nonNull;
+import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.associatedartifacts.file.File.INITIAL_FILE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -102,7 +104,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -280,7 +281,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                          eventBridgeClient, s3Client, secretsManagerClient, httpClient);
 
         customerId = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
-                         .addChild("customer", UUID.randomUUID().toString())
+                         .addChild("customer", randomUUID().toString())
                          .getUri();
 
         publication = randomPublicationWithPublisher();
@@ -761,8 +762,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_OK)));
 
         var artifacts = response.getBodyObject(PublicationResponseElevatedUser.class)
-                                                .getAssociatedArtifacts()
-                                                .stream().toList();
+                            .getAssociatedArtifacts()
+                            .stream().toList();
         assertFalse(artifacts.isEmpty());
         assertFalse(artifacts.stream()
                         .anyMatch(associatedArtifact -> associatedArtifact instanceof HiddenFile));
@@ -1037,7 +1038,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void publishingCuratorWithAccessRightManageResourceFilesShouldBeAbleToOverrideRrs()
         throws IOException, NotFoundException {
         var openFileRrs = File.builder()
-                              .withIdentifier(UUID.randomUUID())
+                              .withIdentifier(randomUUID())
                               .withName(randomString())
                               .withSize(10L)
                               .withMimeType("application/pdf")
@@ -1090,7 +1091,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
             .complete(publication, new Username(randomString())).persistUpdate(ticketService);
 
-        var newPendingOpenFile = File.builder().withIdentifier(UUID.randomUUID())
+        var newPendingOpenFile = File.builder().withIdentifier(randomUUID())
                                      .withLicense(randomUri()).buildPendingOpenFile();
         var files = new ArrayList<>(publication.getAssociatedArtifacts());
         files.add(newPendingOpenFile);
@@ -1675,19 +1676,16 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
-    @Test
-    void shouldSetUploadDetailsWhenFileIsUploaded() throws BadRequestException, IOException {
+    @ParameterizedTest
+    @MethodSource("initialFileTypes")
+    void shouldSetUploadDetailsWhenFileIsUploaded(File fileToUpload) throws BadRequestException, IOException {
         var publication = createAndPersistNonDegreePublication();
-        var cristinId = randomUri();
-        var contributor = createContributorForPublicationUpdate(cristinId);
-        injectContributor(publication, contributor);
+        var topLevelInstitution = publication.getCuratingInstitutions().stream().findFirst().get().id();
 
-        var fileToUpload = (File) randomPendingOpenFile();
         var publicationWithNewFile = addFileToPublication(publication, fileToUpload);
 
-        var contributorName = contributor.getIdentity().getName();
-        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationWithNewFile, cristinId,
-                                                                      contributorName);
+        var event = curatorWithAccessRightsUpdatesPublication(publicationWithNewFile, customerId, topLevelInstitution,
+                                                              MANAGE_RESOURCES_STANDARD, MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
@@ -1702,7 +1700,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertNotNull(uploadedFile.getUploadDetails());
         assertThat(((UserUploadDetails) uploadedFile.getUploadDetails()).uploadedBy().getValue(),
-                   is(equalTo(contributorName)));
+                   is(equalTo(SOME_CURATOR)));
         assertNotNull(uploadedFile.getUploadDetails().uploadedDate());
     }
 
@@ -1851,9 +1849,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(
             customerId, PUBLISHED, resourceService);
 
-        var pendingOpenFile = File.builder().withIdentifier(UUID.randomUUID())
-                                     .withLicense(randomUri())
-                                     .buildPendingOpenFile();
+        var pendingOpenFile = File.builder().withIdentifier(randomUUID())
+                                  .withLicense(randomUri())
+                                  .buildPendingOpenFile();
         updatePublicationWithFile(publication, pendingOpenFile);
 
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
@@ -2425,12 +2423,18 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private AssociatedArtifact randomPendingOpenFile() {
-        return new PendingOpenFile(UUID.randomUUID(), randomString(), randomString(),
+        return new PendingOpenFile(randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
                                    randomUri(), PublisherVersion.PUBLISHED_VERSION, null,
                                    OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
                                                                             randomString()),
                                    randomString(), new UserUploadDetails(new Username(randomString()), Instant.now()));
+    }
+
+    private static List<File> initialFileTypes() {
+        return INITIAL_FILE_TYPES.stream()
+                   .map(file -> File.builder().withIdentifier(randomUUID()).build(file))
+                   .toList();
     }
 
     private TestAppender createAppenderForLogMonitoring() {

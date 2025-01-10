@@ -26,6 +26,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.File.Builder;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
@@ -356,6 +357,7 @@ public class UpdatePublicationHandler
             case OpenFile openFile -> addUploadDetails(openFile, uploadDetails).buildOpenFile();
             case PendingInternalFile pendingInternalFile -> addUploadDetails(pendingInternalFile, uploadDetails).buildPendingInternalFile();
             case InternalFile internalFile -> addUploadDetails(internalFile, uploadDetails).buildInternalFile();
+            case HiddenFile hiddenFile -> addUploadDetails(hiddenFile, uploadDetails).buildHiddenFile();
             default -> throw new BadRequestException("Unsupported file type: " + file);
         };
     }

@@ -81,7 +81,8 @@ public final class PublicationContextMapper {
         }
         if (isUnconfirmedJournal(brageRecord)
             || isUnconfirmedScientificArticle(brageRecord)
-            || isUnconfirmedJournalIssue(brageRecord)) {
+            || isUnconfirmedJournalIssue(brageRecord)
+            || isPopularScienceArticle(brageRecord)) {
             return buildPublicationContextForUnconfirmedJournal(brageRecord);
         }
         if (isArticle(brageRecord)) {
@@ -116,6 +117,10 @@ public final class PublicationContextMapper {
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + brageRecord.getType().getNva());
         }
+    }
+
+    public static boolean isPopularScienceArticle(Record brageRecord) {
+        return NvaType.POPULAR_SCIENCE_ARTICLE.getValue().equals(brageRecord.getType().getNva());
     }
 
     private static boolean isUnconfirmedJournalIssue(Record record) {
