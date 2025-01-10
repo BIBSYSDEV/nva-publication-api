@@ -18,6 +18,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOthe
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPerformingArts;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPlanOrBlueprint;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isPopularScienceArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isReportWorkingPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isResearchReport;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificArticle;
@@ -60,6 +61,7 @@ import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.book.PopularScienceMonograph;
 import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
@@ -76,6 +78,7 @@ import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
+import no.unit.nva.model.instancetypes.journal.PopularScienceArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
@@ -107,6 +110,9 @@ public final class PublicationInstanceMapper {
         }
         if (isScientificArticle(brageRecord)) {
             return buildPublicationInstanceWhenScientificArticle(brageRecord);
+        }
+        if (isPopularScienceArticle(brageRecord)) {
+            return buildPublicationInstanceWhenPopularScienceArticle(brageRecord);
         }
         if (isMediaFeatureArticle(brageRecord)) {
             return buildPublicationInstanceWhenMediaFeatureArticle(brageRecord);
@@ -199,7 +205,7 @@ public final class PublicationInstanceMapper {
             return buildPublicationInstanceWhenExhibitionCatalog(brageRecord);
         }
         if (isPopularScienceMonograph(brageRecord)) {
-            return buildPublicationInstanceWhenExhibitionCatalog(brageRecord);
+            return buildPublicationInstanceWhenPopularScienceMonograph(brageRecord);
         }
         if (isEditorial(brageRecord)) {
             return buildPublicationInstanceWhenEditorial(brageRecord);
@@ -218,6 +224,17 @@ public final class PublicationInstanceMapper {
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPopularScienceArticle(
+        Record brageRecord) {
+        return new PopularScienceArticle(extractPages(brageRecord), extractVolume(brageRecord),
+                                         extractIssue(brageRecord), null);
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPopularScienceMonograph(
+        Record brageRecord) {
+        return new PopularScienceMonograph(extractMonographPages(brageRecord));
     }
 
     public static boolean isEditorial(Record brageRecord) {

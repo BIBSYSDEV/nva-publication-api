@@ -45,6 +45,7 @@ public enum NvaType {
     LITERARY_ARTS("Literary arts"),
     EDITORIAL("Editorial"),
     POPULAR_SCIENCE_MONOGRAPH("Popular science monograph"),
+    POPULAR_SCIENCE_ARTICLE("Popular science article"),
     CRISTIN_RECORD("CristinRecord");
 
     private final String value;
