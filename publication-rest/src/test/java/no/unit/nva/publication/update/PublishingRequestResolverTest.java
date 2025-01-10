@@ -120,6 +120,29 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         assertTrue(filesForApproval.contains(updatedFile));
     }
 
+    @Test
+    void shouldNotChangeApprovalListWhenChangingFromOnePendingToAnotherStatus()
+        throws ApiGatewayException {
+        var publication = randomPublication();
+        var randomPendingOpenFile1 = randomPendingOpenFile();
+        var randomPendingOpenFile2 = randomPendingOpenFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPendingOpenFile1, randomPendingOpenFile2)));
+        var persistedPublication = persistPublication(publication);
+        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
+
+        var randomPendingInternalFile2 = randomPendingOpenFile2.copy().buildPendingInternalFile();
+        var updatedPublication = persistedPublication.copy()
+                                     .withAssociatedArtifacts(List.of(randomPendingOpenFile1, randomPendingInternalFile2))
+                                     .build();
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublication(persistedPublication),
+                                                                updatedPublication);
+
+        var filesForApproval = getPublishingRequest(persistedPublication).getFilesForApproval();
+
+        assertTrue(filesForApproval.contains(randomPendingInternalFile2));
+        assertTrue(filesForApproval.contains(randomPendingOpenFile1));
+    }
+
     private Publication persistPublication(Publication publication) throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = resourceService.createPublication(userInstance,
