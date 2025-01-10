@@ -142,7 +142,7 @@ public abstract class Dao
     public abstract String indexingType();
 
     @Override
-    public final String getByTypeCustomerStatusPartitionKey() {
+    public String getByTypeCustomerStatusPartitionKey() {
         String publisherId = customerIdentifier();
         Optional<String> publicationStatus = extractStatus();
 
@@ -152,7 +152,7 @@ public abstract class Dao
 
     @Override
     @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
-    public final String getByTypeCustomerStatusSortKey() {
+    public String getByTypeCustomerStatusSortKey() {
         //Codacy complains that identifier is already a String
         SortableIdentifier identifier = getData().getIdentifier();
         return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, this.indexingType(), identifier.toString());

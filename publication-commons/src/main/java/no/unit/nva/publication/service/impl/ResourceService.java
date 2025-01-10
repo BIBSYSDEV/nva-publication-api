@@ -14,7 +14,10 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -45,6 +48,7 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -57,6 +61,7 @@ import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.LogEntryDao;
@@ -380,6 +385,34 @@ public class ResourceService extends ServiceWithTransactions {
                     .map(LogEntryDao::fromDynamoFormat)
                     .map(LogEntryDao::data)
                     .toList();
+    }
+
+    public void persistFile(FileEntry fileEntry) {
+        var dao = fileEntry.toDao();
+        var put = new Put()
+                      .withItem(dao.toDynamoFormat())
+                      .withTableName(tableName)
+                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        var transactWriteItem = new TransactWriteItem().withPut(put);
+        sendTransactionWriteRequest(newTransactWriteItemsRequest(transactWriteItem));
+    }
+
+    public Optional<FileEntry> fetchFile(FileEntry fileEntry) {
+        var primaryKey = fileEntry.toDao().primaryKey();
+        var result = client.getItem(new GetItemRequest().withTableName(tableName).withKey(primaryKey));
+        return Optional.ofNullable(result.getItem())
+                   .map(FileDao::fromDynamoFormat)
+                   .map(FileEntry::fromDao);
+    }
+
+    public void deleteFile(FileEntry fileEntry) {
+        var primaryKey = fileEntry.toDao().primaryKey();
+        client.deleteItem(new DeleteItemRequest().withTableName(tableName).withKey(primaryKey));
+    }
+
+    public void updateFile(FileEntry fileEntry) {
+        client.putItem(new PutItemRequest().withTableName(tableName).withItem(fileEntry.toDao().toDynamoFormat()));
     }
 
     @JacocoGenerated
