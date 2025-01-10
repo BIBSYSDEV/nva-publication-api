@@ -33,10 +33,10 @@ public final class PublishingRequestResolver {
     private final Customer customer;
 
     public PublishingRequestResolver(
-            ResourceService resourceService,
-            TicketService ticketService,
-            UserInstance userInstance,
-            Customer customer) {
+        ResourceService resourceService,
+        TicketService ticketService,
+        UserInstance userInstance,
+        Customer customer) {
         this.ticketService = ticketService;
         this.resourceService = resourceService;
         this.userInstance = userInstance;
@@ -51,14 +51,14 @@ public final class PublishingRequestResolver {
 
     private boolean customerAllowsPublishingMetadataAndFiles() {
         return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES
-                          .getValue()
-                          .equals(customer.getPublicationWorkflow());
+                   .getValue()
+                   .equals(customer.getPublicationWorkflow());
     }
 
     private static Stream<File> getPendingFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                .filter(PendingFile.class::isInstance)
-                .map(File.class::cast);
+                   .filter(PendingFile.class::isInstance)
+                   .map(File.class::cast);
     }
 
     private static boolean isPending(TicketEntry publishingRequest) {
@@ -91,25 +91,25 @@ public final class PublishingRequestResolver {
     }
 
     private void autoCompletePendingPublishingRequestsIfNeeded(
-            Publication publication, List<PublishingRequestCase> pendingPublishingRequests) {
+        Publication publication, List<PublishingRequestCase> pendingPublishingRequests) {
         pendingPublishingRequests.forEach(
-                ticket -> ticket.complete(publication, getUsername()).persistUpdate(ticketService));
+            ticket -> ticket.complete(publication, getUsername()).persistUpdate(ticketService));
     }
 
     private boolean thereAreNoPendingFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
-                .noneMatch(PendingFile.class::isInstance);
+                   .noneMatch(PendingFile.class::isInstance);
     }
 
     private List<PublishingRequestCase> fetchPendingPublishingRequestsForUserInstitution(
-            Publication publication) {
+        Publication publication) {
         return resourceService
-                .fetchAllTicketsForResource(Resource.fromPublication(publication))
-                .filter(PublishingRequestCase.class::isInstance)
-                .map(PublishingRequestCase.class::cast)
-                .filter(ticketEntry -> ticketEntry.hasSameOwnerAffiliationAs(userInstance))
-                .filter(PublishingRequestResolver::isPending)
-                .toList();
+                   .fetchAllTicketsForResource(Resource.fromPublication(publication))
+                   .filter(PublishingRequestCase.class::isInstance)
+                   .map(PublishingRequestCase.class::cast)
+                   .filter(ticketEntry -> ticketEntry.hasSameOwnerAffiliationAs(userInstance))
+                   .filter(PublishingRequestResolver::isPending)
+                   .toList();
     }
 
     private void createPublishingRequestOnFileUpdate(Publication oldImage, Publication newImage) {
@@ -119,26 +119,26 @@ public final class PublishingRequestResolver {
     }
 
     private TicketEntry persistPublishingRequest(
-            Publication newImage, PublishingRequestCase publishingRequest)
-            throws ApiGatewayException {
+        Publication newImage, PublishingRequestCase publishingRequest)
+        throws ApiGatewayException {
         return customerAllowsPublishingMetadataAndFiles()
-                ? publishingRequest
-                        .approveFiles()
-                        .persistAutoComplete(ticketService, newImage, getUsername())
-                : publishingRequest.persistNewTicket(ticketService);
+                   ? publishingRequest
+                         .approveFiles()
+                         .persistAutoComplete(ticketService, newImage, getUsername())
+                   : publishingRequest.persistNewTicket(ticketService);
     }
 
     private void persistPendingPublishingRequest(Publication oldImage, Publication newImage) {
         var files = getNewPendingFiles(oldImage, newImage).collect(Collectors.toSet());
         attempt(() -> TicketEntry.requestNewTicket(newImage, PublishingRequestCase.class))
-                .map(PublishingRequestCase.class::cast)
-                .map(publishingRequest ->
-                         publishingRequest.withOwnerAffiliation(userInstance.getTopLevelOrgCristinId()))
-                .map(publishingRequest -> publishingRequest.withWorkflow(lookUp(customer.getPublicationWorkflow())))
-                .map(publishingRequest -> publishingRequest.withFilesForApproval(files))
-                .map(publishingRequest -> publishingRequest.withOwner(userInstance.getUsername()))
-                .map(PublishingRequestCase.class::cast)
-                .map(publishingRequest -> persistPublishingRequest(newImage, publishingRequest));
+            .map(PublishingRequestCase.class::cast)
+            .map(publishingRequest ->
+                     publishingRequest.withOwnerAffiliation(userInstance.getTopLevelOrgCristinId()))
+            .map(publishingRequest -> publishingRequest.withWorkflow(lookUp(customer.getPublicationWorkflow())))
+            .map(publishingRequest -> publishingRequest.withFilesForApproval(files))
+            .map(publishingRequest -> publishingRequest.withOwner(userInstance.getUsername()))
+            .map(PublishingRequestCase.class::cast)
+            .map(publishingRequest -> persistPublishingRequest(newImage, publishingRequest));
     }
 
     private boolean containsNewPublishableFiles(Publication oldImage, Publication newImage) {
@@ -146,12 +146,12 @@ public final class PublishingRequestResolver {
     }
 
     private void updateFilesForApproval(
-            Publication oldImage,
-            Publication newImage,
-            List<PublishingRequestCase> pendingPublishingRequests) {
+        Publication oldImage,
+        Publication newImage,
+        List<PublishingRequestCase> pendingPublishingRequests) {
         pendingPublishingRequests.forEach(
-                publishingRequestCase ->
-                        updatePublishingRequest(oldImage, newImage, publishingRequestCase));
+            publishingRequestCase ->
+                updatePublishingRequest(oldImage, newImage, publishingRequestCase));
     }
 
     private Stream<File> prepareFilesForApproval(Publication oldImage, Publication newImage,
@@ -171,7 +171,7 @@ public final class PublishingRequestResolver {
     private static Set<File> getUpdatedTicketFiles(PublishingRequestCase publishingRequest, Publication newImage) {
         return publishingRequest.getFilesForApproval()
                    .stream()
-                   .map(a -> newImage.getFile(a.getIdentifier()).orElse(null))
+                   .map(fileForApproval -> newImage.getFile(fileForApproval.getIdentifier()).orElse(null))
                    .filter(
                        Objects::nonNull)
                    .collect(Collectors.toSet());
@@ -180,8 +180,9 @@ public final class PublishingRequestResolver {
     private Stream<File> getNewPendingFiles(Publication oldImage, Publication newImage) {
         var existingPendingFiles = getPendingFiles(oldImage).toList();
         var newPendingFiles = new ArrayList<>(getPendingFiles(newImage).toList());
-        newPendingFiles.removeIf(a -> existingPendingFiles.stream().map(File::getIdentifier).anyMatch(b -> b.equals(a
-        .getIdentifier())));
+        newPendingFiles.removeIf(
+            newFile -> existingPendingFiles.stream().map(File::getIdentifier).anyMatch(oldFile -> oldFile.equals(newFile
+                                                                                                                     .getIdentifier())));
         return newPendingFiles.stream();
     }
 
@@ -190,21 +191,22 @@ public final class PublishingRequestResolver {
         var files = prepareFilesForApproval(oldImage, newImage, publishingRequest).collect(Collectors.toSet());
         if (customerAllowsPublishingMetadataAndFiles()) {
             publishingRequest
-                    .withFilesForApproval(files)
-                    .approveFiles()
-                    .complete(newImage, getUsername())
-                    .persistUpdate(ticketService);
+                .withFilesForApproval(files)
+                .approveFiles()
+                .complete(newImage, getUsername())
+                .persistUpdate(ticketService);
         } else {
             publishingRequest
-                    .withFilesForApproval(files)
-                    .persistUpdate(ticketService);
+                .withFilesForApproval(files)
+                .persistUpdate(ticketService);
         }
     }
 
     private List<File> getRemovedFiles(Set<File> oldPendingFiles, Publication updatedPublication) {
         var newPendingFiles = getPendingFiles(updatedPublication).toList();
-        oldPendingFiles.removeIf(a -> newPendingFiles.stream().map(File::getIdentifier).anyMatch(b -> b.equals(a
-                                                                                                                   .getIdentifier())));
+        oldPendingFiles.removeIf(
+            oldFile -> newPendingFiles.stream().map(File::getIdentifier).anyMatch(newFile -> newFile.equals(oldFile
+                                                                                                                .getIdentifier())));
         return oldPendingFiles.stream().toList();
     }
 
