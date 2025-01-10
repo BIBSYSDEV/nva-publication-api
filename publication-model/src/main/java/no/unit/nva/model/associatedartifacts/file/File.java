@@ -236,7 +236,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         if (!(o instanceof File file)) {
             return false;
         }
-        return Objects.equals(getIdentifier(), file.getIdentifier()) && Objects.equals(getName(), file.getName()) &&
+        return Objects.equals(this.getClass(), file.getClass()) &&
+               Objects.equals(getIdentifier(), file.getIdentifier()) && Objects.equals(getName(), file.getName()) &&
                Objects.equals(getMimeType(), file.getMimeType()) && Objects.equals(getSize(), file.getSize()) &&
                Objects.equals(getLicense(), file.getLicense()) && getPublisherVersion() == file.getPublisherVersion() &&
                Objects.equals(getEmbargoDate(), file.getEmbargoDate()) &&
