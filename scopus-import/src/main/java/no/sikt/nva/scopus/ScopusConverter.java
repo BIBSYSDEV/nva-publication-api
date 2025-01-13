@@ -12,6 +12,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -210,25 +211,20 @@ public class ScopusConverter {
         return Optional.of(docTp.getMeta())
                    .map(MetaTp::getOpenAccess)
                    .map(OpenAccessType::getOaAccessEffectiveDate)
-                   .map(this::toPublicationDate)
-                   .filter(this::isCompletePublicationDate);
-    }
-
-    private boolean isCompletePublicationDate(PublicationDate date) {
-        return nonNull(date.getYear()) && nonNull(date.getMonth()) && nonNull(date.getDay());
+                   .map(this::toPublicationDate);
     }
 
     private PublicationDate toPublicationDate(String value) {
-        var dateParts = value.split("-");
-        var year = attempt(() -> dateParts[0]).toOptional();
-        var month = attempt(() -> dateParts[1]).toOptional();
-        var day = attempt(() -> dateParts[2]).toOptional();
-        return new PublicationDate.Builder()
-                   .withYear(year.orElse(null))
-                   .withMonth(month.orElse(null))
-                   .withDay(day.orElse(null))
-                   .build();
+        var localDate = attempt(() -> LocalDate.parse(value)).toOptional();
+        return localDate.map(ScopusConverter::toPublicationDate).orElse(null);
+    }
 
+    private static PublicationDate toPublicationDate(LocalDate date) {
+        return new PublicationDate.Builder()
+                   .withYear(String.valueOf(date.getYear()))
+                   .withMonth(String.valueOf(date.getMonthValue()))
+                   .withDay(String.valueOf(date.getDayOfMonth()))
+                   .build();
     }
 
     /*

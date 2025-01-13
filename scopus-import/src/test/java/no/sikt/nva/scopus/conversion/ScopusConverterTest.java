@@ -49,7 +49,7 @@ public class ScopusConverterTest {
     }
 
     @Test
-    void shouldReturnImportCandidateWithPublicationDateFromDateSortWhenOaAccessEffectiveDateIsMissingDateParts() {
+    void shouldReturnImportCandidateWithPublicationDateFromDateSortWhenOaAccessEffectiveDateIsNotISODate() {
         var generator = new ScopusGenerator();
         generator.getDocument().getMeta().setOpenAccess(new OpenAccessType());
         generator.getDocument().getMeta().getOpenAccess().setOaAccessEffectiveDate("2024");
