@@ -2,17 +2,20 @@ package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.LogEntryDao.KEY_PATTERN;
+import static no.unit.nva.publication.model.storage.TicketDao.newPutTransactionItem;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,7 +32,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 @JsonTypeName(FileDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public final class FileDao extends Dao implements DynamoEntryByIdentifier {
@@ -125,12 +127,13 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
 
     @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        return null;
+        return new TransactWriteItemsRequest().withTransactItems(newPutTransactionItem(this));
     }
 
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
-        // To implement
+        var request = new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(toDynamoFormat());
+        client.putItem(request);
     }
 
     @JacocoGenerated

@@ -228,7 +228,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .filter(this::isPendingTicket)
                    .map(this::updateToNotApplicable)
                    .map(Entity::toDao)
-                   .map(dao -> (TicketDao) dao)
+                   .map(TicketDao.class::cast)
                    .map(this::createPutTransactionItems)
                    .toList();
     }

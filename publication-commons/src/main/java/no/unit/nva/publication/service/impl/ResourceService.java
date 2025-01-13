@@ -17,7 +17,6 @@ import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -388,14 +387,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void persistFile(FileEntry fileEntry) {
-        var dao = fileEntry.toDao();
-        var put = new Put()
-                      .withItem(dao.toDynamoFormat())
-                      .withTableName(tableName)
-                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
-        var transactWriteItem = new TransactWriteItem().withPut(put);
-        sendTransactionWriteRequest(newTransactWriteItemsRequest(transactWriteItem));
+        var dao = fileEntry.toDao().createInsertionTransactionRequest();
+        sendTransactionWriteRequest(dao);
     }
 
     public Optional<FileEntry> fetchFile(FileEntry fileEntry) {
@@ -412,7 +405,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void updateFile(FileEntry fileEntry) {
-        client.putItem(new PutItemRequest().withTableName(tableName).withItem(fileEntry.toDao().toDynamoFormat()));
+        fileEntry.toDao().updateExistingEntry(client);
     }
 
     @JacocoGenerated

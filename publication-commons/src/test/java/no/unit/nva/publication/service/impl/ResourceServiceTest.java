@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -1400,10 +1401,45 @@ class ResourceServiceTest extends ResourcesLocalTest {
         fileEntry.persist(resourceService);
 
         var updatedFile = file.copy()
-                              .withIdentifier(SortableIdentifier.next())
+                              .withIdentifier(UUID.randomUUID())
                               .build(InternalFile.class);
 
         assertThrows(IllegalArgumentException.class, () -> fileEntry.update(updatedFile, resourceService));
+    }
+
+    @Test
+    void shouldFetchPublicationFromFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        assertEquals(persistedPublication, fileEntry.toPublication(resourceService));
+    }
+
+    @Test
+    void shouldCreateQueryObjectThatCanBeFetched() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+        var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        var fetchedQueryObject = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                              .fetch(resourceService)
+                              .orElseThrow();
+
+        assertEquals(persistedFileEntry, fetchedQueryObject);
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
