@@ -33,8 +33,6 @@ import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.OpenAccessType;
-import no.scopus.generated.OrigItemTp;
-import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
@@ -201,9 +199,9 @@ public class ScopusConverter {
     private PublicationDate getPublicationDateFromDateSort() {
         var dateSort = getDateSortTp();
         return new PublicationDate.Builder()
-                   .withDay(dateSort.map(DateSortTp::getDay).orElse(null))
-                   .withMonth(dateSort.map(DateSortTp::getMonth).orElse(null))
-                   .withYear(dateSort.map(DateSortTp::getYear).orElse(null))
+                   .withDay(dateSort.getDay())
+                   .withMonth(dateSort.getMonth())
+                   .withYear(dateSort.getYear())
                    .build();
     }
 
@@ -232,10 +230,8 @@ public class ScopusConverter {
      if not there are several rules to determine what's the second-best date is. See "SciVerse SCOPUS CUSTOM DATA
      DOCUMENTATION" for details.
      */
-    private Optional<DateSortTp> getDateSortTp() {
-        return Optional.ofNullable(docTp.getItem().getItem())
-                   .map(OrigItemTp::getProcessInfo)
-                   .map(ProcessInfo::getDateSort);
+    private DateSortTp getDateSortTp() {
+        return docTp.getItem().getItem().getProcessInfo().getDateSort();
     }
 
     private String extractMainAbstract() {
