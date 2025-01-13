@@ -1,9 +1,16 @@
 package no.unit.nva.publication.model.business;
 
+import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -22,12 +29,16 @@ public final class FileEntry implements Entity {
     private final User owner;
     private final URI ownerAffiliation;
     private final URI customerId;
-    private final File file;
     private final Instant createdDate;
-    private final Instant modifiedDate;
+    private Instant modifiedDate;
+    private File file;
 
-    private FileEntry(SortableIdentifier resourceIdentifier, Instant createdDate, Instant modifiedDate, User owner,
-                      URI ownerAffiliation, URI customerId, File file) {
+    @JsonCreator
+    private FileEntry(@JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
+                      @JsonProperty("createdDate") Instant createdDate,
+                      @JsonProperty("modifiedDate") Instant modifiedDate, @JsonProperty("owner") User owner,
+                      @JsonProperty("ownerAffiliation") URI ownerAffiliation,
+                      @JsonProperty("customerId") URI customerId, @JsonProperty("file") File file) {
         this.resourceIdentifier = resourceIdentifier;
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
@@ -42,6 +53,25 @@ public final class FileEntry implements Entity {
                              userInstance.getTopLevelOrgCristinId(), userInstance.getCustomerId(), file);
     }
 
+    public static FileEntry queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
+        return new FileEntry(resourceIdentifier, null, null, null, null, null, File.builder()
+                                                                                   .withIdentifier(UUID.fromString(
+                                                                                       fileIdentifier.toString()))
+                                                                                   .buildHiddenFile());
+    }
+
+    public static FileEntry fromDao(FileDao fileDao) {
+        return (FileEntry) fileDao.getData();
+    }
+
+    public void persist(ResourceService resourceService) {
+        resourceService.persistFile(this);
+    }
+
+    public Optional<FileEntry> fetch(ResourceService resourceService) {
+        return resourceService.fetchFile(this);
+    }
+
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
     }
@@ -52,16 +82,15 @@ public final class FileEntry implements Entity {
     }
 
     @JacocoGenerated
+    @JsonIgnore
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
     }
 
-    //TODO: Implement once we implement database logic
-    @JacocoGenerated
     @Override
     public Publication toPublication(ResourceService resourceService) {
-        return null;
+        return attempt(() -> resourceService.getPublicationByIdentifier(getResourceIdentifier())).orElseThrow();
     }
 
     @JacocoGenerated
@@ -77,6 +106,7 @@ public final class FileEntry implements Entity {
     }
 
     @JacocoGenerated
+    @JsonIgnore
     @Override
     public void setCreatedDate(Instant now) {
         throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
@@ -88,6 +118,7 @@ public final class FileEntry implements Entity {
     }
 
     @JacocoGenerated
+    @JsonIgnore
     @Override
     public void setModifiedDate(Instant now) {
         throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
@@ -120,5 +151,48 @@ public final class FileEntry implements Entity {
 
     public URI getOwnerAffiliation() {
         return ownerAffiliation;
+    }
+
+    public void delete(ResourceService resourceIdentifier) {
+        resourceIdentifier.deleteFile(this);
+    }
+
+    public void update(File file, ResourceService resourceService) {
+        if (identifiersDoesNotMatch(file)) {
+            throw new IllegalArgumentException("Files identifier does not match.");
+        }
+        updateFile(file);
+        resourceService.updateFile(this);
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getResourceIdentifier(), getOwner(), getOwnerAffiliation(), getCustomerId(),
+                            getCreatedDate(), getModifiedDate(), getFile());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof FileEntry fileEntry)) {
+            return false;
+        }
+        return Objects.equals(getResourceIdentifier(), fileEntry.getResourceIdentifier()) &&
+               Objects.equals(getOwner(), fileEntry.getOwner()) &&
+               Objects.equals(getOwnerAffiliation(), fileEntry.getOwnerAffiliation()) &&
+               Objects.equals(getCustomerId(), fileEntry.getCustomerId()) &&
+               Objects.equals(getCreatedDate(), fileEntry.getCreatedDate()) &&
+               Objects.equals(getModifiedDate(), fileEntry.getModifiedDate()) &&
+               Objects.equals(getFile(), fileEntry.getFile());
+    }
+
+    private void updateFile(File file) {
+        this.file = file;
+        this.modifiedDate = Instant.now();
+    }
+
+    private boolean identifiersDoesNotMatch(File file) {
+        return !file.getIdentifier().toString().equals(getIdentifier().toString());
     }
 }

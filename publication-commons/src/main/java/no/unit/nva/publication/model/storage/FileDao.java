@@ -1,25 +1,37 @@
 package no.unit.nva.publication.model.storage;
 
+import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.LogEntryDao.KEY_PATTERN;
+import static no.unit.nva.publication.model.storage.TicketDao.newPutTransactionItem;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
-@JacocoGenerated
 @JsonTypeName(FileDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public final class FileDao extends Dao implements DynamoEntryByIdentifier {
@@ -28,6 +40,17 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
     private final SortableIdentifier identifier;
     private final SortableIdentifier resourceIdentifier;
     private final Instant modifiedDate;
+
+    @JsonCreator
+    public FileDao(@JsonProperty("identifier") SortableIdentifier identifier,
+                   @JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
+                   @JsonProperty("modifiedDate") Instant modifiedDate,
+                   @JsonProperty("data") FileEntry data) {
+        super(data);
+        this.identifier = identifier;
+        this.resourceIdentifier = resourceIdentifier;
+        this.modifiedDate = modifiedDate;
+    }
 
     private FileDao(FileEntry fileEntry) {
         super(fileEntry);
@@ -40,6 +63,13 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
         return new FileDao(fileEntry);
     }
 
+    public static FileDao fromDynamoFormat(Map<String, AttributeValue> attributeValueMap) {
+        return attempt(() -> ItemUtils.toItem(attributeValueMap)).map(Item::toJSON)
+                   .map(json -> dynamoDbObjectMapper.readValue(json, FileDao.class))
+                   .orElseThrow();
+    }
+
+    @JsonProperty("resourceIdentifier")
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
     }
@@ -66,23 +96,44 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
     }
 
     @Override
+    @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME)
+    public String getByTypeCustomerStatusPartitionKey() {
+        return null;
+    }
+
+    @Override
+    @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
+    public String getByTypeCustomerStatusSortKey() {
+        return null;
+    }
+
+    @Override
     public URI getCustomerId() {
         return getData().getCustomerId();
     }
 
+    @JsonProperty("identifier")
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
 
     @Override
+    public Map<String, AttributeValue> toDynamoFormat() {
+        return attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(this)).map(Item::fromJSON)
+                   .map(ItemUtils::toAttributeValues)
+                   .orElseThrow();
+    }
+
+    @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        return null;
+        return new TransactWriteItemsRequest().withTransactItems(newPutTransactionItem(this));
     }
 
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
-        // To implement
+        var request = new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(toDynamoFormat());
+        client.putItem(request);
     }
 
     @JacocoGenerated
