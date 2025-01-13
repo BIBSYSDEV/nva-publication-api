@@ -8,6 +8,7 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
 import java.time.Instant;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -29,6 +31,10 @@ import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
+import no.scopus.generated.MetaTp;
+import no.scopus.generated.OpenAccessType;
+import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
@@ -55,6 +61,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactor
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("PMD.GodClass")
 public class ScopusConverter {
@@ -188,11 +195,42 @@ public class ScopusConverter {
     }
 
     private PublicationDate extractPublicationDate() {
-        var publicationDate = getDateSortTp();
-        return new PublicationDate.Builder().withDay(publicationDate.getDay())
-                   .withMonth(publicationDate.getMonth())
-                   .withYear(publicationDate.getYear())
+        return getPublicationDateFromOaAccessEffectiveDate()
+                   .orElseGet(this::getPublicationDateFromDateSort);
+    }
+
+    private PublicationDate getPublicationDateFromDateSort() {
+        var dateSort = getDateSortTp();
+        return new PublicationDate.Builder()
+                   .withDay(dateSort.map(DateSortTp::getDay).orElse(null))
+                   .withMonth(dateSort.map(DateSortTp::getMonth).orElse(null))
+                   .withYear(dateSort.map(DateSortTp::getYear).orElse(null))
                    .build();
+    }
+
+    private Optional<PublicationDate> getPublicationDateFromOaAccessEffectiveDate() {
+        return Optional.of(docTp.getMeta())
+                   .map(MetaTp::getOpenAccess)
+                   .map(OpenAccessType::getOaAccessEffectiveDate)
+                   .map(this::toPublicationDate)
+                   .filter(this::isCompletePublicationDate);
+    }
+
+    private boolean isCompletePublicationDate(PublicationDate date) {
+        return nonNull(date.getYear()) && nonNull(date.getMonth()) && nonNull(date.getDay());
+    }
+
+    private PublicationDate toPublicationDate(String value) {
+        var dateParts = value.split("-");
+        var year = attempt(() -> dateParts[0]).toOptional();
+        var month = attempt(() -> dateParts[1]).toOptional();
+        var day = attempt(() -> dateParts[2]).toOptional();
+        return new PublicationDate.Builder()
+                   .withYear(year.orElse(null))
+                   .withMonth(month.orElse(null))
+                   .withDay(day.orElse(null))
+                   .build();
+
     }
 
     /*
@@ -200,8 +238,10 @@ public class ScopusConverter {
      if not there are several rules to determine what's the second-best date is. See "SciVerse SCOPUS CUSTOM DATA
      DOCUMENTATION" for details.
      */
-    private DateSortTp getDateSortTp() {
-        return docTp.getItem().getItem().getProcessInfo().getDateSort();
+    private Optional<DateSortTp> getDateSortTp() {
+        return Optional.ofNullable(docTp.getItem().getItem())
+                   .map(OrigItemTp::getProcessInfo)
+                   .map(ProcessInfo::getDateSort);
     }
 
     private String extractMainAbstract() {
