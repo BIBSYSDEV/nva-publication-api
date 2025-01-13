@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -61,7 +60,6 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactor
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("PMD.GodClass")
 public class ScopusConverter {
