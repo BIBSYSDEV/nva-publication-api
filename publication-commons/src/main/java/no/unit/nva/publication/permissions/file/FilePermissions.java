@@ -13,16 +13,16 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FilePermissionStrategy {
+public class FilePermissions {
 
-    private static final Logger logger = LoggerFactory.getLogger(FilePermissionStrategy.class);
+    private static final Logger logger = LoggerFactory.getLogger(FilePermissions.class);
     public static final String COMMA_DELIMITER = ", ";
     private final Set<FileGrantStrategy> grantStrategies;
     private final Set<FileDenyStrategy> denyStrategies;
     private final UserInstance userInstance;
     private final File file;
 
-    public FilePermissionStrategy(
+    public FilePermissions(
         File file,
         UserInstance userInstance) {
         this.userInstance = userInstance;
@@ -35,8 +35,8 @@ public class FilePermissionStrategy {
         );
     }
 
-    public static FilePermissionStrategy create(File file, UserInstance userInstance) {
-        return new FilePermissionStrategy(file, userInstance);
+    public static FilePermissions create(File file, UserInstance userInstance) {
+        return new FilePermissions(file, userInstance);
     }
 
     public boolean allowsAction(FileOperation permission) {

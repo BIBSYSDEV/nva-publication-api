@@ -35,7 +35,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(operation));
     }
@@ -60,7 +60,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(operation));
     }
@@ -80,7 +80,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
                                                            randomUri(), randomUri());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissions
                                    .create(publication, userInstance)
                                    .allowsAction(operation));
     }
@@ -104,7 +104,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
                                                            randomUri(),
                                                            topLevelCristinOrgId);
 
-        Assertions.assertFalse(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissions
                                    .create(publication,
                                            RequestUtil.createUserInstanceFromRequest(
                                                requestInfo,

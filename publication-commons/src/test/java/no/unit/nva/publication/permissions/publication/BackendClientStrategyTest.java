@@ -29,7 +29,7 @@ class BackendClientStrategyTest extends PublicationPermissionStrategyTest {
                 .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
                 .build();
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(operation));
     }

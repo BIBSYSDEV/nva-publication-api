@@ -17,7 +17,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -74,7 +74,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return HttpURLConnection.HTTP_CREATED;
     }
 
-    private static boolean userHasPermissionToCreateMessageForTicket(PublicationPermissionStrategy permissionStrategy,
+    private static boolean userHasPermissionToCreateMessageForTicket(PublicationPermissions permissionStrategy,
                                                                      TicketEntry ticketDto) {
         return switch (ticketDto) {
             case DoiRequest ignored -> permissionStrategy.allowsAction(DOI_REQUEST_CREATE);
@@ -94,12 +94,12 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         }
     }
 
-    private PublicationPermissionStrategy fetchPermissions(RequestInfo requestInfo, Publication publication)
+    private PublicationPermissions fetchPermissions(RequestInfo requestInfo, Publication publication)
         throws UnauthorizedException {
-        return PublicationPermissionStrategy.create(publication, UserInstance.fromRequestInfo(requestInfo));
+        return PublicationPermissions.create(publication, UserInstance.fromRequestInfo(requestInfo));
     }
 
-    private void isAuthorizedToManageTicket(PublicationPermissionStrategy permissions, TicketEntry ticket)
+    private void isAuthorizedToManageTicket(PublicationPermissions permissions, TicketEntry ticket)
         throws ForbiddenException {
         if (!userHasPermissionToCreateMessageForTicket(permissions, ticket)) {
             throw new ForbiddenException();

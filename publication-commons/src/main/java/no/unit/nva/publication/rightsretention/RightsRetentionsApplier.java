@@ -11,7 +11,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 
@@ -21,13 +21,13 @@ public final class RightsRetentionsApplier {
     private final Publication updatedPublication;
     private final CustomerApiRightsRetention configuredRrsOnCustomer;
     private final String actingUser;
-    private final PublicationPermissionStrategy permissionStrategy;
+    private final PublicationPermissions permissionStrategy;
 
     private RightsRetentionsApplier(Optional<Publication> existingPublication,
                                     Publication updatedPublication,
                                     CustomerApiRightsRetention configuredRrsOnCustomer,
                                     String actingUser,
-                                    PublicationPermissionStrategy permissionStrategy) {
+                                    PublicationPermissions permissionStrategy) {
         this.existingPublication = existingPublication;
         this.updatedPublication = updatedPublication;
         this.configuredRrsOnCustomer = configuredRrsOnCustomer;
@@ -144,7 +144,7 @@ public final class RightsRetentionsApplier {
                                                                           Publication updatedPublication,
                                                                           CustomerApiRightsRetention customerRrs,
                                                                           String actingUser,
-                                                                          PublicationPermissionStrategy strategy) {
+                                                                          PublicationPermissions strategy) {
         return new RightsRetentionsApplier(Optional.of(existingPublication),
                                            updatedPublication,
                                            customerRrs,

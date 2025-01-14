@@ -18,16 +18,16 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PublicationPermissionStrategy {
+public class PublicationPermissions {
 
-    private static final Logger logger = LoggerFactory.getLogger(PublicationPermissionStrategy.class);
+    private static final Logger logger = LoggerFactory.getLogger(PublicationPermissions.class);
     public static final String COMMA_DELIMITER = ", ";
     private final Set<PublicationGrantStrategy> grantStrategies;
     private final Set<PublicationDenyStrategy> denyStrategies;
     private final UserInstance userInstance;
     private final Publication publication;
 
-    public PublicationPermissionStrategy(
+    public PublicationPermissions(
         Publication publication,
         UserInstance userInstance) {
         this.userInstance = userInstance;
@@ -45,8 +45,8 @@ public class PublicationPermissionStrategy {
         );
     }
 
-    public static PublicationPermissionStrategy create(Publication publication, UserInstance userInstance) {
-        return new PublicationPermissionStrategy(publication, userInstance);
+    public static PublicationPermissions create(Publication publication, UserInstance userInstance) {
+        return new PublicationPermissions(publication, userInstance);
     }
 
     public boolean isCuratorOnPublication() {

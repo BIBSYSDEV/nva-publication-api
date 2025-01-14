@@ -8,7 +8,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -18,17 +18,17 @@ public class RepublishUtil {
 
     private final ResourceService resourceService;
     private final TicketService ticketService;
-    private final PublicationPermissionStrategy permissionStrategy;
+    private final PublicationPermissions permissionStrategy;
 
     public RepublishUtil(ResourceService resourceService, TicketService ticketService,
-                         PublicationPermissionStrategy permissionStrategy) {
+                         PublicationPermissions permissionStrategy) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.permissionStrategy = permissionStrategy;
     }
 
     public static RepublishUtil create(ResourceService resourceService, TicketService ticketService,
-                                       PublicationPermissionStrategy permissionStrategy) {
+                                       PublicationPermissions permissionStrategy) {
         return new RepublishUtil(resourceService, ticketService, permissionStrategy);
     }
 

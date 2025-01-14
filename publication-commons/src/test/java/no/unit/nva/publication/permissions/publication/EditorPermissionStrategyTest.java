@@ -37,7 +37,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissions
                                    .create(publication, userInstance)
                                    .allowsAction(operation));
     }
@@ -56,7 +56,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(UPDATE));
     }
@@ -80,7 +80,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(operation));
     }
@@ -98,7 +98,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissions
                                    .create(publication, userInstance)
                                    .allowsAction(operation));
     }
@@ -118,7 +118,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                               .withStatus(UNPUBLISHED).build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(REPUBLISH));
     }

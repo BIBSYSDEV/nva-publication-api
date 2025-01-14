@@ -12,7 +12,7 @@ import io.cucumber.java.en.When;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permissions.file.FilePermissionStrategy;
+import no.unit.nva.publication.permissions.file.FilePermissions;
 
 public class FileAccessReadFeatures {
     private final FileScenarioContext scenarioContext;
@@ -52,7 +52,7 @@ public class FileAccessReadFeatures {
 
     @Then("the action outcome is {string}")
     public void theNvaResourceHasAPublicationContextWithPublisherWithNameEqualTo(String outcome) {
-        var permissionStrategy = new FilePermissionStrategy(scenarioContext.getFile(), scenarioContext.getUser());
+        var permissionStrategy = new FilePermissions(scenarioContext.getFile(), scenarioContext.getUser());
         var expected = outcome.equals("Allowed");
 
         var actual = permissionStrategy.allowsAction(scenarioContext.getFileOperation());

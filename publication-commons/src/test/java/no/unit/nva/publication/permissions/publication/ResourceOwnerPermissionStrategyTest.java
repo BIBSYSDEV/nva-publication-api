@@ -48,7 +48,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         publication.setAssociatedArtifacts(new AssociatedArtifactList());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(operation));
     }
@@ -67,7 +67,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissions
                                    .create(publication, userInstance)
                                    .allowsAction(operation));
     }
@@ -90,7 +90,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissions
                                    .create(publication, userInstance)
                                    .allowsAction(PublicationOperation.UNPUBLISH));
     }
@@ -113,7 +113,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissions
                                    .create(publication, userInstance)
                                    .allowsAction(PublicationOperation.UNPUBLISH));
     }
@@ -133,7 +133,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var publication = createDegreePhd(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissions
                                    .create(publication, userInstance)
                                    .allowsAction(operation));
     }

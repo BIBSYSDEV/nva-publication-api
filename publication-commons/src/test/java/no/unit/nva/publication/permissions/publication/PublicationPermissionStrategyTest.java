@@ -103,7 +103,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createUserRequestInfo(randomString(), randomUri(), new ArrayList<>(), cristinId, null);
         var publication = createPublication(randomString(), randomUri(), randomUri());
 
-        Assertions.assertFalse(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissions
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
                                        requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
@@ -117,7 +117,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(randomString(), randomUri(), randomUri());
 
         Assertions.assertThrows(UnauthorizedException.class, () ->
-                                                                 PublicationPermissionStrategy
+                                                                 PublicationPermissions
                                                                      .create(publication,
                                                                              RequestUtil.createUserInstanceFromRequest(
                                                                                  requestInfo, identityServiceClient))
@@ -129,7 +129,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(randomString(), randomUri());
         var requestInfo = createThirdPartyRequestInfo(getAccessRightsForCurator());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var strategy = PublicationPermissionStrategy.create(publication, userInstance);
+        var strategy = PublicationPermissions.create(publication, userInstance);
 
         Assertions.assertThrows(UnauthorizedException.class, () -> strategy.authorize(UPDATE));
     }
@@ -146,7 +146,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, editorInstitution, randomUri());
 
         assertThat(
-            PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
+            PublicationPermissions.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
                 .getAllAllowedActions(), is(empty()));
     }
@@ -165,7 +165,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, editorInstitution, topLevelCristinOrgId);
 
         assertThat(
-            PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
+            PublicationPermissions.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
                 .getAllAllowedActions(), hasItems(UPDATE, UNPUBLISH, UPDATE_FILES));
     }
@@ -183,7 +183,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
                                                            randomUri(), randomUri());
 
-        PublicationPermissionStrategy
+        PublicationPermissions
             .create(publication, RequestUtil.createUserInstanceFromRequest(
                 requestInfo, identityServiceClient))
             .authorize(UPDATE);
@@ -206,7 +206,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, editorInstitution, topLevelCristinOrgId);
 
         assertTrue(
-            PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
+            PublicationPermissions.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
                 .isPublishingCuratorOnPublication());
     }

@@ -34,7 +34,7 @@ import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
@@ -127,7 +127,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             var publicationStrategy = getPublicationPermissionStrategy(requestInfo, publication);
 
             Set<PublicationOperation> allowedOperations =
-                publicationStrategy.map(PublicationPermissionStrategy::getAllAllowedActions).orElse(emptySet());
+                publicationStrategy.map(PublicationPermissions::getAllAllowedActions).orElse(emptySet());
             var tombstone = DeletedPublicationResponse.fromPublication(publication, allowedOperations);
             throw new GoneException(GONE_MESSAGE, tombstone);
         }
@@ -190,10 +190,10 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
     }
 
-    private Optional<PublicationPermissionStrategy> getPublicationPermissionStrategy(RequestInfo requestInfo,
-                                                                                     Publication publication) {
+    private Optional<PublicationPermissions> getPublicationPermissionStrategy(RequestInfo requestInfo,
+                                                                              Publication publication) {
         return attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance));
+                   .map(userInstance -> PublicationPermissions.create(publication, userInstance));
     }
 
     private String createDataCiteMetadata(Publication publication) {

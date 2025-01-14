@@ -17,8 +17,8 @@ class FilePermissionTest {
 
     @Test
     void shouldListReadForOpenFileWhenRandomUser() {
-        var permissions = FilePermissionStrategy.create(File.builder().withIdentifier(randomUUID()).buildOpenFile(),
-                                                        UserInstance.create(randomString(), randomUri()));
+        var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildOpenFile(),
+                                                 UserInstance.create(randomString(), randomUri()));
 
         var actual = permissions.getAllAllowedActions();
 
@@ -27,15 +27,15 @@ class FilePermissionTest {
 
     @Test
     void shouldThrowOnAuthorizeOnReadForRandomUserWhenFileIsHidden() {
-        var permissions = FilePermissionStrategy.create(File.builder().withIdentifier(randomUUID()).buildHiddenFile(),
-                                                        UserInstance.create(randomString(), randomUri()));
+        var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildHiddenFile(),
+                                                 UserInstance.create(randomString(), randomUri()));
 
         assertThrows(UnauthorizedException.class, () -> permissions.authorize(FileOperation.READ_METADATA));
     }
 
     @Test
     void shouldThrowOnAuthorizeOnWriteWhenRandomUserAndNoHitOnStrategies() {
-        var permissions = FilePermissionStrategy.create(
+        var permissions = FilePermissions.create(
             File.builder().withIdentifier(randomUUID()).buildPendingInternalFile(),
             UserInstance.create(randomString(), randomUri()));
 
@@ -44,8 +44,8 @@ class FilePermissionTest {
 
     @Test
     void shouldNotThrowOnAuthorizeWhenReadForOpenFileAndRandomUser() {
-        var permissions = FilePermissionStrategy.create(File.builder().withIdentifier(randomUUID()).buildOpenFile(),
-                                                        UserInstance.create(randomString(), randomUri()));
+        var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildOpenFile(),
+                                                 UserInstance.create(randomString(), randomUri()));
 
         assertDoesNotThrow(() -> permissions.authorize(FileOperation.READ_METADATA));
     }
