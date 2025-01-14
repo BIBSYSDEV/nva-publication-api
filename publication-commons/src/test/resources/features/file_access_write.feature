@@ -10,7 +10,7 @@ Feature: File metadata write and file delete permissions
   Scenario Outline: Verify file write permissions
     Given a file in the "<FileState>" state
     When a user with the role "<UserRole>"
-    And the user attempts to edit or delete the file
+    And the user attempts to "write-metadata" a file
     Then the action outcome is "<Outcome>"
 
 

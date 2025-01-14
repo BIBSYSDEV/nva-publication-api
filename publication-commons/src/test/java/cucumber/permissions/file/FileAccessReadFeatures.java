@@ -30,24 +30,14 @@ public class FileAccessReadFeatures {
     }
 
     @When("a user with the role {string}")
-    public void a_user_with_the_role(String userRole) {
+    public void a_user_with_the_role(String useraRole) {
         var user = UserInstance.create(randomString(), randomUri());
         scenarioContext.setUser(user);
     }
 
-    @When("the user attempts to read-metadata")
-    public void user_attempts_to_read_metadata() {
-        scenarioContext.setFileOperation(FileOperation.lookup("read-metadata"));
-    }
-
-    @And("the user attempts to upload a file")
-    public void user_attempts_to_upload() {
-        // TODO
-    }
-
-    @And("the user attempts to edit or delete the file")
-    public void user_attempts_to_write() {
-        // TODO
+    @And("the user attempts to {string} a file")
+    public void user_attempts_to(String string) {
+        scenarioContext.setFileOperation(FileOperation.lookup(string));
     }
 
     @Then("the action outcome is {string}")

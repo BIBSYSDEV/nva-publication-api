@@ -6,7 +6,7 @@ Feature: File metadata read and file download permissions
   Scenario Outline: Verify file metadata read permissions
     Given a file in the "<FileState>" state
     When a user with the role "<UserRole>"
-    And the user attempts to read-metadata
+    And the user attempts to "read-metadata" a file
     Then the action outcome is "<Outcome>"
 
     Examples:

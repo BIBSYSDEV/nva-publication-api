@@ -11,7 +11,7 @@ Feature: File upload permissions
   Scenario Outline: Verify file upload permissions
     Given a file in the "<FileState>" state
     When a user with the role "<UserRole>"
-    And the user attempts to upload a file
+    And the user attempts to "upload" a file
     Then the action outcome is "<Outcome>"
 
     Examples:
