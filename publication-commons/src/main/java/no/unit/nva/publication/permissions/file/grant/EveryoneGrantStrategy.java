@@ -7,7 +7,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FileGrantStrategy;
 import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
-public class EveryoneGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
+public final class EveryoneGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
 
     public EveryoneGrantStrategy(File file,
                                     UserInstance userInstance) {

@@ -7,7 +7,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FileDenyStrategy;
 import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
-public class HiddenFileDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
+public final class HiddenFileDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
 
     public HiddenFileDenyStrategy(File file,
                                   UserInstance userInstance) {

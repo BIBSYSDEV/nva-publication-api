@@ -13,7 +13,7 @@ import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CuratorGrantStrategy extends PublicationStrategyBase implements PublicationGrantStrategy {
+public final class CuratorGrantStrategy extends PublicationStrategyBase implements PublicationGrantStrategy {
 
     public static final Logger logger = LoggerFactory.getLogger(CuratorGrantStrategy.class);
 
