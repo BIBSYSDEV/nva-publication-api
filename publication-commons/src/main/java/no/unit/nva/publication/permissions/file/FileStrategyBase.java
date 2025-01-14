@@ -5,7 +5,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class FileStrategyBase {
+public class FileStrategyBase {
 
     public static final Logger logger = LoggerFactory.getLogger(FileStrategyBase.class);
 
