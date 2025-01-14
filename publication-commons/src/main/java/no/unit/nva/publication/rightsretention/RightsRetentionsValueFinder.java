@@ -20,7 +20,7 @@ import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
@@ -32,11 +32,11 @@ public class RightsRetentionsValueFinder {
 
     public static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE = "Illegal RightsRetentionStrategy on file ";
     private final RightsRetentionStrategyConfiguration configuredRightsRetention;
-    private final PublicationPermissionStrategy permissionStrategy;
+    private final PublicationPermissions permissionStrategy;
     private final String username;
 
     public RightsRetentionsValueFinder(CustomerApiRightsRetention configuredRrsOnCustomer,
-                                       PublicationPermissionStrategy permissionStrategy,
+                                       PublicationPermissions permissionStrategy,
                                        String username) {
         this.configuredRightsRetention = getConfigFromCustomerDto(configuredRrsOnCustomer);
         this.permissionStrategy = permissionStrategy;
@@ -96,7 +96,7 @@ public class RightsRetentionsValueFinder {
     }
 
     private boolean isAllowedToOverrideRrs(RightsRetentionStrategy rrs,
-                                           PublicationPermissionStrategy permissionStrategy) {
+                                           PublicationPermissions permissionStrategy) {
         if (nonNull(permissionStrategy) && rrs instanceof OverriddenRightsRetentionStrategy) {
             return permissionStrategy.isPublishingCuratorOnPublication();
         }

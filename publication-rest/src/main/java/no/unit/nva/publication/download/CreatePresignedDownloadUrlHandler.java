@@ -7,7 +7,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.download.exception.S3ServiceException;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Instant;
@@ -119,7 +119,7 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     }
 
     private boolean hasUpdatePermission(Publication publication, UserInstance user) {
-        return PublicationPermissionStrategy.create(publication, user)
+        return PublicationPermissions.create(publication, user)
                    .allowsAction(PublicationOperation.UPDATE);
     }
 

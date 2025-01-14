@@ -40,7 +40,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -233,7 +233,7 @@ class RightsRetentionsApplierTest {
                                                                        RIGHTS_RETENTION_STRATEGY))))
                 .build();
         var userName = randomString();
-        var permissionStrategy = mock(PublicationPermissionStrategy.class);
+        var permissionStrategy = mock(PublicationPermissions.class);
         when(permissionStrategy.isPublishingCuratorOnPublication()).thenReturn(true);
         var fileWithOverridenRrs = createPendingOpenFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION,
                                                                 OverriddenRightsRetentionStrategy.create(
@@ -280,7 +280,7 @@ class RightsRetentionsApplierTest {
         publication.setAssociatedArtifacts(new AssociatedArtifactList(files));
     }
 
-    private static class FakePublicationPermissionStrategy extends PublicationPermissionStrategy {
+    private static class FakePublicationPermissionStrategy extends PublicationPermissions {
 
         private final boolean isCurator;
 

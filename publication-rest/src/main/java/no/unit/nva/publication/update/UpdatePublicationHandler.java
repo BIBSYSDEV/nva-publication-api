@@ -43,7 +43,7 @@ import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -156,7 +156,7 @@ public class UpdatePublicationHandler
         Publication existingPublication = fetchPublication(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
+        var permissionStrategy = PublicationPermissions.create(existingPublication, userInstance);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
@@ -180,7 +180,7 @@ public class UpdatePublicationHandler
         return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
     }
 
-    private Publication republish(Publication existingPublication, PublicationPermissionStrategy permissionStrategy,
+    private Publication republish(Publication existingPublication, PublicationPermissions permissionStrategy,
                                   UserInstance userInstance)
         throws ApiGatewayException {
         return RepublishUtil.create(resourceService, ticketService, permissionStrategy)
@@ -188,7 +188,7 @@ public class UpdatePublicationHandler
     }
 
     private Publication terminatePublication(Publication existingPublication,
-                                             PublicationPermissionStrategy permissionStrategy,
+                                             PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
         throws UnauthorizedException, BadRequestException, NotFoundException {
         permissionStrategy.authorize(TERMINATE);
@@ -212,7 +212,7 @@ public class UpdatePublicationHandler
 
     private Publication unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,
                                              Publication existingPublication,
-                                             PublicationPermissionStrategy permissionStrategy,
+                                             PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
         throws ApiGatewayException {
         validateUnpublishRequest(unpublishPublicationRequest);
@@ -282,7 +282,7 @@ public class UpdatePublicationHandler
     private Publication updateMetadata(UpdatePublicationRequest input,
                                        SortableIdentifier identifierInPath,
                                        Publication existingPublication,
-                                       PublicationPermissionStrategy permissionStrategy,
+                                       PublicationPermissions permissionStrategy,
                                        UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
@@ -367,7 +367,7 @@ public class UpdatePublicationHandler
     }
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
-                               String actingUser, PublicationPermissionStrategy permissionStrategy)
+                               String actingUser, PublicationPermissions permissionStrategy)
         throws BadRequestException, UnauthorizedException {
         RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingPublication, publicationUpdate,
                                                                 customer.getRightsRetentionStrategy(), actingUser,

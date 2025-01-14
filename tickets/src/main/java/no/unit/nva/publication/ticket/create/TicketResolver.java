@@ -19,7 +19,7 @@ import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.DoiRequestDto;
@@ -62,7 +62,7 @@ public class TicketResolver {
     public TicketEntry resolveAndPersistTicket(TicketDto ticketDto, RequestUtils requestUtils)
         throws ApiGatewayException {
         var publication = fetchPublication(requestUtils);
-        var permissionStrategy = PublicationPermissionStrategy
+        var permissionStrategy = PublicationPermissions
                                      .create(publication, requestUtils.toUserInstance());
 
         validateUserPermissions(permissionStrategy, ticketDto, requestUtils);
@@ -90,7 +90,7 @@ public class TicketResolver {
                    .collect(Collectors.toSet());
     }
 
-    private static boolean userHasPermissionToCreateTicket(PublicationPermissionStrategy permissionStrategy,
+    private static boolean userHasPermissionToCreateTicket(PublicationPermissions permissionStrategy,
                                                            TicketDto ticketDto) {
         var allowedActions = permissionStrategy.getAllAllowedActions();
         return switch (ticketDto) {
@@ -101,7 +101,7 @@ public class TicketResolver {
         };
     }
 
-    private void validateUserPermissions(PublicationPermissionStrategy permissionStrategy, TicketDto ticketDto,
+    private void validateUserPermissions(PublicationPermissions permissionStrategy, TicketDto ticketDto,
                                          RequestUtils requestUtils)
         throws ForbiddenException, NotFoundException {
         if (!userHasPermissionToCreateTicket(permissionStrategy, ticketDto)) {

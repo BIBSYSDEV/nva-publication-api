@@ -6,7 +6,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -61,8 +61,8 @@ public class FetchPublicationLogHandler extends ApiGatewayHandler<Void, Publicat
 
     private static boolean userHasNoAccessToLog(RequestInfo requestInfo, Resource resource)
         throws UnauthorizedException {
-        return !PublicationPermissionStrategy.create(resource.toPublication(),
-                                                     UserInstance.fromRequestInfo(requestInfo))
+        return !PublicationPermissions.create(resource.toPublication(),
+                                              UserInstance.fromRequestInfo(requestInfo))
                     .allowsAction(PublicationOperation.UPDATE);
     }
 }

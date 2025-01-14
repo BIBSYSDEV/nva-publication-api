@@ -7,7 +7,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -52,7 +52,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
     }
 
     private static void validatePermissions(Resource resource, UserInstance userInstance) throws ForbiddenException {
-        var permissionStrategy = PublicationPermissionStrategy.create(resource.toPublication(), userInstance);
+        var permissionStrategy = PublicationPermissions.create(resource.toPublication(), userInstance);
         if (!permissionStrategy.allowsAction(PublicationOperation.UPDATE)) {
             throw new ForbiddenException();
         }

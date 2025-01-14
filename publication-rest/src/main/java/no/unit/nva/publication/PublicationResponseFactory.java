@@ -12,7 +12,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.RequestInfo;
 
 public final class PublicationResponseFactory {
@@ -28,7 +28,7 @@ public final class PublicationResponseFactory {
                    .orElse(createPublicResponse(publication));
     }
 
-    private static boolean hasAuthenticatedAccessOnPublication(PublicationPermissionStrategy userStrategy) {
+    private static boolean hasAuthenticatedAccessOnPublication(PublicationPermissions userStrategy) {
         return userStrategy.allowsAction(PublicationOperation.UPDATE);
     }
 
@@ -38,7 +38,7 @@ public final class PublicationResponseFactory {
         return publicationResponse;
     }
 
-    private static PublicationResponseElevatedUser createAuthenticatedResponse(PublicationPermissionStrategy strategy,
+    private static PublicationResponseElevatedUser createAuthenticatedResponse(PublicationPermissions strategy,
                                                                                Publication publication) {
         var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
         publicationResponse.setAllowedOperations(strategy.getAllAllowedActions());
@@ -47,8 +47,8 @@ public final class PublicationResponseFactory {
         return publicationResponse;
     }
 
-    private static AssociatedArtifactList extractFilteredAssociatedArtifactsList(PublicationPermissionStrategy strategy,
-                                                               Publication publication) {
+    private static AssociatedArtifactList extractFilteredAssociatedArtifactsList(PublicationPermissions strategy,
+                                                                                 Publication publication) {
         return new AssociatedArtifactList(publication.getAssociatedArtifacts()
                                               .stream()
                                               .filter(
@@ -57,17 +57,17 @@ public final class PublicationResponseFactory {
                                               .toList());
     }
 
-    private static boolean hasAccessToArtifact(PublicationPermissionStrategy strategy,
+    private static boolean hasAccessToArtifact(PublicationPermissions strategy,
                                                AssociatedArtifact associatedArtifact) {
         return !(associatedArtifact instanceof HiddenFile)
                || strategy.allowsAction(
             PublicationOperation.READ_HIDDEN_FILES);
     }
 
-    private static Optional<PublicationPermissionStrategy> getPublicationPermissionStrategy(RequestInfo requestInfo,
-                                                                                            Publication publication,
-                                                                                            IdentityServiceClient identityServiceClient) {
+    private static Optional<PublicationPermissions> getPublicationPermissionStrategy(RequestInfo requestInfo,
+                                                                                     Publication publication,
+                                                                                     IdentityServiceClient identityServiceClient) {
         return attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance));
+                   .map(userInstance -> PublicationPermissions.create(publication, userInstance));
     }
 }
