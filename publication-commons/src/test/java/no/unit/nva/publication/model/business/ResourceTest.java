@@ -35,7 +35,9 @@ public class ResourceTest {
     public static final String IMPORT_DETAILS = "importDetails";
     public static final String REVISION = "entityDescription.reference.publicationContext.revision";
     public static final String RESOURCE_EVENT = "resourceEvent";
-    public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS, RESOURCE_EVENT);
+    public static final String FILES_FIELD = "files";
+    public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS, RESOURCE_EVENT,
+                                                              FILES_FIELD);
     private final Javers javers = JaversBuilder.javers().build();
     private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
 

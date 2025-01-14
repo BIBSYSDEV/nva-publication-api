@@ -81,7 +81,7 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
     @Override
     @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
     public String getPrimaryKeyPartitionKey() {
-        return KEY_PATTERN.formatted(Resource.TYPE, getResourceIdentifier());
+        return KEY_PATTERN.formatted(TYPE, getIdentifier());
     }
 
     @Override
@@ -164,12 +164,16 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
     @Override
     @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME)
     public String getByTypeAndIdentifierPartitionKey() {
-        return KEY_PATTERN.formatted(TYPE, getIdentifier());
+        return KEY_PATTERN.formatted(Resource.TYPE, getResourceIdentifier());
     }
 
     @Override
     @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME)
     public String getByTypeAndIdentifierSortKey() {
         return KEY_PATTERN.formatted(TYPE, getIdentifier());
+    }
+
+    public FileEntry getFileEntry() {
+        return (FileEntry) getData();
     }
 }

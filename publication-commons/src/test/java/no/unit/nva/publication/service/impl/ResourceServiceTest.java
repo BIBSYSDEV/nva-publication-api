@@ -1442,6 +1442,23 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertEquals(persistedFileEntry, fetchedQueryObject);
     }
 
+    @Test
+    void shouldFetchResourceWithFiles() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        var resource = Resource.fromPublication(persistedPublication).fetchResourceWithFiles(resourceService);
+
+        assertTrue(resource.orElseThrow().getFiles().contains(file));
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }
