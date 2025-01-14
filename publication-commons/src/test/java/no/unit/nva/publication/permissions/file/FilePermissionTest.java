@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class FilePermissionTest {
 
     @Test
-    void shouldListReadForOpenFileWhenRandomUser() {
+    void shouldReturnAllowedActionsSuccessfullyAsRandomUser() {
         var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildOpenFile(),
                                                  UserInstance.create(randomString(), randomUri()));
 
@@ -26,7 +26,7 @@ class FilePermissionTest {
     }
 
     @Test
-    void shouldThrowOnAuthorizeOnReadForRandomUserWhenFileIsHidden() {
+    void shouldThrowUnauthorizedExceptionWhenReadingHiddenFileAsRandomUser() {
         var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildHiddenFile(),
                                                  UserInstance.create(randomString(), randomUri()));
 
@@ -34,7 +34,7 @@ class FilePermissionTest {
     }
 
     @Test
-    void shouldThrowOnAuthorizeOnWriteWhenRandomUserAndNoHitOnStrategies() {
+    void shouldThrowUnauthorizedExceptionWhenAuthorizingWriteAsRandomUserAndNoHitOnStrategies() {
         var permissions = FilePermissions.create(
             File.builder().withIdentifier(randomUUID()).buildPendingInternalFile(),
             UserInstance.create(randomString(), randomUri()));
@@ -43,7 +43,7 @@ class FilePermissionTest {
     }
 
     @Test
-    void shouldNotThrowOnAuthorizeWhenReadForOpenFileAndRandomUser() {
+    void shouldNotThrowExceptionWhenAuthorizingReadForOpenFileAndRandomUser() {
         var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildOpenFile(),
                                                  UserInstance.create(randomString(), randomUri()));
 
