@@ -20,7 +20,7 @@ import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;

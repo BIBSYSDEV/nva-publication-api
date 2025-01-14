@@ -12,7 +12,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
 import nva.commons.apigateway.RequestInfo;
 
 public final class PublicationResponseFactory {

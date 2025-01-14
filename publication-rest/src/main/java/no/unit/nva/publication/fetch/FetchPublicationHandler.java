@@ -34,7 +34,7 @@ import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;

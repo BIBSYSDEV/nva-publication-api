@@ -12,7 +12,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;

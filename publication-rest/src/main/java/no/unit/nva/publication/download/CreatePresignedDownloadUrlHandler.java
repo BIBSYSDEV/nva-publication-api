@@ -7,7 +7,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.download.exception.S3ServiceException;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Instant;

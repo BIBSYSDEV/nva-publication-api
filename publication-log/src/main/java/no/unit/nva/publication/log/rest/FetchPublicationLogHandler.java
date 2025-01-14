@@ -6,7 +6,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;

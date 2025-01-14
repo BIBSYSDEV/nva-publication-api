@@ -42,7 +42,7 @@ import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissionStrategy;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;

@@ -49,7 +49,6 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.funding.MonetaryAmount;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -57,7 +56,6 @@ import nva.commons.core.paths.UriWrapper;
 public final class PublicationGenerator {
 
     private static final BaseFaker FAKER = new BaseFaker();
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
 
     @JacocoGenerated
     private PublicationGenerator() {
@@ -160,7 +158,7 @@ public final class PublicationGenerator {
     }
 
     private static URI randomUriWithPath(String path) {
-        return UriWrapper.fromHost(API_HOST)
+        return UriWrapper.fromHost("example.org")
                    .addChild(path)
                    .addChild(UUID.randomUUID().toString())
                    .getUri();
