@@ -69,6 +69,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     private Set<PublicationOperation> allowedOperations;
 
     private URI duplicateOf;
+    private long pendingOpenFileCount;
 
     public static PublicationResponse fromPublication(Publication publication) {
         var response = new PublicationResponse();
@@ -94,6 +95,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         response.setRightsHolder(publication.getRightsHolder());
         response.setAllowedOperations(Set.of());
         response.setImportDetails(publication.getImportDetails());
+        response.setPendingOpenFileCount(publication.getPendingOpenFileCount());
         return response;
     }
 
@@ -341,6 +343,14 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         this.allowedOperations = allowedOperations;
     }
 
+    public long getPendingOpenFileCount() {
+        return pendingOpenFileCount;
+    }
+
+    public void setPendingOpenFileCount(long count) {
+        this.pendingOpenFileCount = count;
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
@@ -365,7 +375,8 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
                             getAssociatedArtifacts(),
                             getRightsHolder(),
                             getAllowedOperations(),
-                            getImportDetails());
+                            getImportDetails(),
+                            getPendingOpenFileCount());
     }
 
     @Override
@@ -398,6 +409,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
                && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
                && Objects.equals(getRightsHolder(), that.getRightsHolder())
                && Objects.equals(getAllowedOperations(), that.getAllowedOperations())
-               && Objects.equals(getImportDetails(), that.getImportDetails());
+               && Objects.equals(getImportDetails(), that.getImportDetails())
+               && Objects.equals(getPendingOpenFileCount(), that.getPendingOpenFileCount());
     }
 }

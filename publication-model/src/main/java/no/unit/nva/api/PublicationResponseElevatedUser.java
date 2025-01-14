@@ -43,6 +43,7 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
         response.setPublicationNotes(publication.getPublicationNotes());
         response.setAllowedOperations(Set.of());
         response.setImportDetails(publication.getImportDetails());
+        response.setPendingOpenFileCount(publication.getPendingOpenFileCount());
         return response;
     }
 
