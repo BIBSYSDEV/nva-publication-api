@@ -15,6 +15,6 @@ public class HiddenFileDenyStrategy extends FileDenyStrategy {
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        return file instanceof HiddenFile;//TODO
+        return file instanceof HiddenFile;//TODO add exception of curator on same institution
     }
 }

@@ -15,7 +15,9 @@ public class EveryoneGrantStrategy extends FileGrantStrategy {
 
     @Override
     public boolean allowsAction(FileOperation permission) {
-        if (FileOperation.READ_METADATA == permission) {//TODO
+        if (FileOperation.READ_METADATA == permission) {
+            //TODO make sure embargo and other restrictions are checked
+            // and download is allowed
             return file instanceof OpenFile;
         }
         return false;
