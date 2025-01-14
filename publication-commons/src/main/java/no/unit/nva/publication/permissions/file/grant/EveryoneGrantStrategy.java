@@ -5,8 +5,9 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FileGrantStrategy;
+import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
-public class EveryoneGrantStrategy extends FileGrantStrategy {
+public class EveryoneGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
 
     public EveryoneGrantStrategy(File file,
                                     UserInstance userInstance) {

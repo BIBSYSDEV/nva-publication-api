@@ -13,8 +13,9 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationDenyStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
-public class DegreeDenyStrategy extends PublicationDenyStrategy {
+public class DegreeDenyStrategy extends PublicationStrategyBase implements PublicationDenyStrategy  {
 
     public DegreeDenyStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
