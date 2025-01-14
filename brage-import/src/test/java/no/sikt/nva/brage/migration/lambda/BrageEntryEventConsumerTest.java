@@ -7,6 +7,7 @@ import static no.sikt.nva.brage.migration.NvaType.EXHIBITION_CATALOGUE;
 import static no.sikt.nva.brage.migration.NvaType.FILM;
 import static no.sikt.nva.brage.migration.NvaType.LITERARY_ARTS;
 import static no.sikt.nva.brage.migration.NvaType.PERFORMING_ARTS;
+import static no.sikt.nva.brage.migration.NvaType.POPULAR_SCIENCE_ARTICLE;
 import static no.sikt.nva.brage.migration.NvaType.POPULAR_SCIENCE_MONOGRAPH;
 import static no.sikt.nva.brage.migration.NvaType.PROFESSIONAL_ARTICLE;
 import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
@@ -208,6 +209,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Type TYPE_POPULAR_SCIENCE_MONOGRAPH = new Type(List.of(POPULAR_SCIENCE_MONOGRAPH.getValue()),
                                                                        POPULAR_SCIENCE_MONOGRAPH.getValue());
     public static final Type TYPE_EDITORIAL = new Type(List.of(EDITORIAL.getValue()), EDITORIAL.getValue());
+    public static final Type TYPE_POPULAR_SCIENCE_ARTICLE = new Type(List.of(POPULAR_SCIENCE_ARTICLE.getValue()),
+                                                                     POPULAR_SCIENCE_ARTICLE.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
@@ -889,6 +892,18 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldConvertEditorialToPublication() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_EDITORIAL)
+                                 .withJournalTitle(randomString())
+                                 .withVolume(randomString())
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
+    }
+
+    @Test
+    void shouldConvertPopularScienceArticle() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_POPULAR_SCIENCE_ARTICLE)
                                  .withJournalTitle(randomString())
                                  .withVolume(randomString())
                                  .build();

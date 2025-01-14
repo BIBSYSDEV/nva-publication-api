@@ -73,6 +73,7 @@ import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
+import no.unit.nva.model.instancetypes.journal.PopularScienceArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
@@ -373,6 +374,16 @@ public final class ReferenceGenerator {
                 return new Reference.Builder()
                            .withPublicationInstance(new ConferenceLecture())
                            .withPublishingContext(new Event.Builder().build())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.POPULAR_SCIENCE_ARTICLE.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new PopularScienceArticle(generateRange(builder), builder.getVolume(), null,
+                                                                              null))
+                           .withPublishingContext(new UnconfirmedJournal(builder.getJournalTitle(),
+                                                                         builder.getIssnList().get(0),
+                                                                         builder.getIssnList().get(1)))
                            .withDoi(builder.getDoi())
                            .build();
             }

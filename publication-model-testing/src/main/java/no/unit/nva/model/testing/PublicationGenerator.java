@@ -243,6 +243,14 @@ public final class PublicationGenerator {
                    .build();
     }
 
+    public static Contributor randomContributorWithIdAndAffiliation(URI contributorId, URI affiliationId) {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(Role.OTHER))
+                   .withIdentity(new Identity.Builder().withId(contributorId).build())
+                   .withAffiliations(List.of(new Organization.Builder().withId(affiliationId).build()))
+                   .build();
+    }
+
     private static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
         return new Builder()
                    .withIdentifier(SortableIdentifier.next())

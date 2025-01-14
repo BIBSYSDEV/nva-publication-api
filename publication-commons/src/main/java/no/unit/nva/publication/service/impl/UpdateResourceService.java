@@ -105,13 +105,25 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throw new IllegalStateException("Attempting to update publication status when it is not allowed");
     }
 
-    public Publication updatePublicationDraftToDraftForDeletion(Publication publicationUpdate)
+    public Publication updatePublicationDraftToDraftForDeletion(Publication publication)
         throws NotFoundException {
-        var persistedPublication = attempt(() -> fetchExistingPublication(publicationUpdate))
+        var persistedPublication = attempt(() -> fetchExistingPublication(publication))
                                        .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
         if (persistedPublication.getStatus().equals(DRAFT)) {
-            publicationUpdate.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
-            return updatePublicationIncludingStatus(publicationUpdate);
+            publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
+            publication.setModifiedDate(clockForTimestamps.instant());
+            var resource = Resource.fromPublication(publication);
+
+            var tickets = new ResourceDao(resource).fetchAllTickets(getClient()).stream()
+                       .map(Dao::getData)
+                       .map(TicketEntry.class::cast);
+
+            var transactionItems = new ArrayList<TransactWriteItem>();
+            transactionItems.add(createPutTransaction(resource));
+            transactionItems.addAll(updateExistingPendingTicketsToNotApplicable(tickets));
+            var request = newTransactWriteItemsRequest(transactionItems);
+            sendTransactionWriteRequest(request);
+            return updatePublicationIncludingStatus(publication);
         }
         throw new IllegalStateException(ILLEGAL_DELETE_WHEN_NOT_DRAFT);
     }
@@ -216,7 +228,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .filter(this::isPendingTicket)
                    .map(this::updateToNotApplicable)
                    .map(Entity::toDao)
-                   .map(dao -> (TicketDao) dao)
+                   .map(TicketDao.class::cast)
                    .map(this::createPutTransactionItems)
                    .toList();
     }

@@ -709,14 +709,6 @@ paths:
     post:
       summary: Create a upload
       description: Creates a multipart upload for a file. This is later referenced for preparing file-parts, uploading, and finishing the upload..
-      parameters:
-        - in: path
-          name: publicationIdentifier
-          description: UUID identifier of the Publication.
-          required: true
-          schema:
-            type: string
-            format: uuid
       tags:
         - external
       security:
@@ -760,14 +752,6 @@ paths:
   /file-upload/listparts:
     post:
       summary: List the parts of a file that have already been uploaded.
-      parameters:
-        - in: path
-          name: publicationIdentifier
-          description: UUID identifier of the Publication.
-          required: true
-          schema:
-            type: string
-            format: uuid
       tags:
         - external
       security:
@@ -811,14 +795,6 @@ paths:
   /file-upload/prepare:
     post:
       summary: Generates a URL to upload a single file-part
-      parameters:
-        - in: path
-          name: publicationIdentifier
-          description: UUID identifier of the Publication.
-          required: true
-          schema:
-            type: string
-            format: uuid
       tags:
         - external
       security:
@@ -863,14 +839,6 @@ paths:
     post:
       summary: Aborts a upload
       description: Aborts the Multipart upload, and deletes all parts that have been uploaded so far.
-      parameters:
-        - in: path
-          name: publicationIdentifier
-          description: UUID identifier of the Publication.
-          required: true
-          schema:
-            type: string
-            format: uuid
       tags:
         - external
       security:
@@ -911,14 +879,6 @@ paths:
     post:
       summary: Completes a upload
       description: Completes a Multipart upload, combining all parts into a single object in the S3 bucket
-      parameters:
-        - in: path
-          name: publicationIdentifier
-          description: UUID identifier of the Publication.
-          required: true
-          schema:
-            type: string
-            format: uuid
       tags:
         - external
       security:

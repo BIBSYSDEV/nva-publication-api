@@ -11,6 +11,7 @@ import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDes
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
@@ -52,7 +53,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -94,6 +95,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -106,6 +108,7 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -1320,6 +1323,123 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(IllegalStateException.class,
                      () -> Resource.resourceQueryObject(
                          peristedPublication.getIdentifier()).publish(resourceService, userInstance));
+    }
+
+    @Test
+    void shouldSetAllTicketsToNotApplicableWhenMarkingDraftPublicationAsDraftForDeletion() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithoutDoi();
+        var ticket = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
+                         .withOwnerAffiliation(randomUri())
+                         .withOwner(randomString())
+                         .persistNewTicket(ticketService);
+        resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        assertEquals(TicketStatus.NOT_APPLICABLE,ticket.fetch(ticketService).getStatus());
+    }
+
+    @Test
+    void shouldPersistFileEntry() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        var persistedFile = fileEntry.fetch(resourceService);
+
+        assertEquals(persistedFile.orElseThrow().getFile(), file);
+    }
+
+    @Test
+    void shouldDeleteFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+        fileEntry.delete(resourceService);
+
+        assertEquals(Optional.empty(), fileEntry.fetch(resourceService));
+    }
+
+    @Test
+    void shouldUpdateFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        var updatedFile = file.toInternalFile();
+        fileEntry.update(updatedFile, resourceService);
+
+        assertEquals(updatedFile, fileEntry.fetch(resourceService).orElseThrow().getFile());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAttemptingToUpdateFileWithDifferentIdentifiers() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        var updatedFile = file.copy()
+                              .withIdentifier(UUID.randomUUID())
+                              .build(InternalFile.class);
+
+        assertThrows(IllegalArgumentException.class, () -> fileEntry.update(updatedFile, resourceService));
+    }
+
+    @Test
+    void shouldFetchPublicationFromFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        assertEquals(persistedPublication, fileEntry.toPublication(resourceService));
+    }
+
+    @Test
+    void shouldCreateQueryObjectThatCanBeFetched() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+        var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        var fetchedQueryObject = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                              .fetch(resourceService)
+                              .orElseThrow();
+
+        assertEquals(persistedFileEntry, fetchedQueryObject);
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

@@ -19,7 +19,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
 
     @ParameterizedTest(name = "Should allow verified contributor {0} operation on published non-degree resources")
     @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
-        names = {"UPDATE", "UNPUBLISH", "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE", "DOI_REQUEST_CREATE"})
+        names = {"UPDATE", "UNPUBLISH"})
     void shouldAllowVerifiedContributorOnPublishedNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -30,6 +30,31 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var requestInfo = createUserRequestInfo(contributor, institution, cristinId, randomUri());
         var publication = createPublicationWithContributor(contributor, cristinId, Role.CREATOR,
                                                            randomUri(), randomUri());
+        publication.setAssociatedArtifacts(new AssociatedArtifactList());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+
+        Assertions.assertTrue(PublicationPermissionStrategy
+                                  .create(publication, userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow user to perform {0} operation on published non-degree resources when" +
+                              "user is contributor at current signed in institution.")
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
+        names = {"UPDATE", "UNPUBLISH", "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE", "DOI_REQUEST_CREATE"})
+    void shouldAllowVerifiedContributorAtCurrentInstitutionOnPublishedNonDegree(PublicationOperation operation)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var institution = randomUri();
+        var contributor = randomString();
+        var cristinId = randomUri();
+        var topLevelCristinOrgId = randomUri();
+
+        var requestInfo = createUserRequestInfo(contributor, institution, cristinId, topLevelCristinOrgId);
+        var publication = createPublicationWithContributor(contributor, cristinId, Role.CREATOR,
+                                                           randomUri(), topLevelCristinOrgId);
         publication.setAssociatedArtifacts(new AssociatedArtifactList());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);

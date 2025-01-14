@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.bodies;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -13,7 +15,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
 import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -56,6 +61,14 @@ class DataEntryUpdateEventTest {
 
     private Entity createDataEntry(Class<?> type)
         throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        return (Entity) type.getDeclaredConstructor().newInstance();
+        if (type.getSimpleName().equals(FileEntry.class.getSimpleName())) {
+            return randomFileEntry();
+        } else {
+            return (Entity) type.getDeclaredConstructor().newInstance();
+        }
+    }
+
+    private FileEntry randomFileEntry() {
+        return FileEntry.create(randomHiddenFile(), SortableIdentifier.next(), UserInstance.fromPublication(randomPublication()));
     }
 }

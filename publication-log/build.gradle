@@ -7,9 +7,12 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
+    implementation libs.nva.clients
 
     implementation libs.jackson.core
     implementation libs.jackson.databind
+
+    implementation libs.bundles.logging
 
     testImplementation libs.bundles.testing
 
@@ -20,4 +23,7 @@ dependencies {
 test {
     environment "ALLOWED_ORIGIN", "*"
     environment "AWS_REGION", "eu-west-1"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
+    environment "BACKEND_CLIENT_SECRET_NAME", "secret"
+    environment "TABLE_NAME", "someTable"
 }

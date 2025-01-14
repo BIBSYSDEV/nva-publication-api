@@ -8,9 +8,11 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,8 @@ import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
+import no.scopus.generated.MetaTp;
+import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
@@ -188,10 +192,36 @@ public class ScopusConverter {
     }
 
     private PublicationDate extractPublicationDate() {
-        var publicationDate = getDateSortTp();
-        return new PublicationDate.Builder().withDay(publicationDate.getDay())
-                   .withMonth(publicationDate.getMonth())
-                   .withYear(publicationDate.getYear())
+        return getPublicationDateFromOaAccessEffectiveDate()
+                   .orElseGet(this::getPublicationDateFromDateSort);
+    }
+
+    private PublicationDate getPublicationDateFromDateSort() {
+        var dateSort = getDateSortTp();
+        return new PublicationDate.Builder()
+                   .withDay(dateSort.getDay())
+                   .withMonth(dateSort.getMonth())
+                   .withYear(dateSort.getYear())
+                   .build();
+    }
+
+    private Optional<PublicationDate> getPublicationDateFromOaAccessEffectiveDate() {
+        return Optional.of(docTp.getMeta())
+                   .map(MetaTp::getOpenAccess)
+                   .map(OpenAccessType::getOaAccessEffectiveDate)
+                   .map(this::toPublicationDate);
+    }
+
+    private PublicationDate toPublicationDate(String value) {
+        var localDate = attempt(() -> LocalDate.parse(value)).toOptional();
+        return localDate.map(ScopusConverter::toPublicationDate).orElse(null);
+    }
+
+    private static PublicationDate toPublicationDate(LocalDate date) {
+        return new PublicationDate.Builder()
+                   .withYear(String.valueOf(date.getYear()))
+                   .withMonth(String.valueOf(date.getMonthValue()))
+                   .withDay(String.valueOf(date.getDayOfMonth()))
                    .build();
     }
 
