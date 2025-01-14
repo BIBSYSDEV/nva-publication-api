@@ -21,7 +21,7 @@ import nva.commons.apigateway.AccessRight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class PublicationStrategyBase {
+public class PublicationStrategyBase {
 
     public static final Logger logger = LoggerFactory.getLogger(PublicationStrategyBase.class);
 
