@@ -9,6 +9,7 @@ import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeVa
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -42,6 +43,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -267,6 +269,42 @@ public class ResourceService extends ServiceWithTransactions {
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return readResourceService.getResourceByIdentifier(identifier);
+    }
+
+    public Optional<Resource> getResourceAndFilesByIdentifier(SortableIdentifier identifier) {
+        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
+        var queryRequest = new QueryRequest()
+                               .withTableName(tableName)
+                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                               .withKeyConditionExpression("#PK3 = :value")
+                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
+                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+
+        var entries = client.query(queryRequest).getItems().stream()
+                          .map(map -> parseAttributeValuesMap(map, Dao.class))
+                          .toList();
+
+        var resource = extractResource(entries);
+        var files = extractFiles(entries);
+
+        return resource.map(res -> res.copy().withFiles(files).build());
+    }
+
+    private static Optional<Resource> extractResource(List<Dao> entries) {
+        return entries.stream()
+                   .filter(ResourceDao.class::isInstance)
+                   .map(ResourceDao.class::cast)
+                   .map(ResourceDao::getResource)
+                   .findFirst();
+    }
+
+    private static List<File> extractFiles(List<Dao> entries) {
+        return entries.stream()
+                   .filter(FileDao.class::isInstance)
+                   .map(FileDao.class::cast)
+                   .map(FileDao::getFileEntry)
+                   .map(FileEntry::getFile)
+                   .toList();
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
