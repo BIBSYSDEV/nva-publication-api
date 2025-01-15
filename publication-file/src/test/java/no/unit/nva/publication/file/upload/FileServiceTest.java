@@ -9,12 +9,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
+import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -25,6 +32,7 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class FileServiceTest extends ResourcesLocalTest {
 
@@ -80,6 +88,35 @@ class FileServiceTest extends ResourcesLocalTest {
         var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), customerId, uploadRequest);
 
         assertNotNull(uploadResponse.getKey());
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenPersistingFileForNotExistingPublication() throws ForbiddenException,
+                                                                                   NotFoundException, BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var uploadRequest = randomUploadRequest();
+
+        mockCompleteMultipartUpload();
+        var request = new CompleteUploadRequestBody(randomString(), randomString(), List.of());
+        var uploadResponse = fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
+
+    }
+
+    private void mockCompleteMultipartUpload() {
+        var completeMultipartUploadResult = new CompleteMultipartUploadResult();
+        completeMultipartUploadResult.setKey(UUID.randomUUID().toString());
+        when(s3client.completeMultipartUpload(Mockito.any(CompleteMultipartUploadRequest.class))).thenReturn(
+            completeMultipartUploadResult);
+        var s3object = new S3Object();
+        s3object.setKey(randomString());
+        var metadata = new ObjectMetadata();
+        metadata.setContentLength(12345);
+        metadata.setContentDisposition(randomString());
+        metadata.setContentType("application/pdf");
+        s3object.setObjectMetadata(metadata);
+        when(s3client.getObjectMetadata(any())).thenReturn(metadata);
     }
 
     protected InitiateMultipartUploadResult uploadResult() {
