@@ -4,6 +4,8 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
@@ -23,10 +25,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.Set;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.commons.customer.Customer;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadResponseBody;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -50,6 +60,8 @@ public class CreateUploadHandlerTest {
     private ByteArrayOutputStream outputStream;
     private Context context;
     private AmazonS3Client s3client;
+    private CustomerApiClient customerApiClient;
+    private ResourceService resourceService;
 
     protected String getGeneratedKey(GatewayResponse<CreateUploadResponseBody> actual) throws JsonProcessingException {
         return actual.getBodyObject(CreateUploadResponseBody.class).key();
@@ -73,16 +85,25 @@ public class CreateUploadHandlerTest {
     @BeforeEach
     void setUp() {
         s3client = mock(AmazonS3Client.class);
-        createUploadHandler = new CreateUploadHandler(s3client);
+        customerApiClient = mock(CustomerApiClient.class);
+        resourceService = mock(ResourceService.class);
+        createUploadHandler = new CreateUploadHandler(s3client, customerApiClient, resourceService);
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }
 
     @Test
     void canCreateUpload() throws Exception {
-        when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
+        var resource = Resource.fromPublication(randomPublication());
 
-        createUploadHandler.handleRequest(createUploadRequestWithBody(createUploadRequestBody()), outputStream, context);
+        when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
+        when(customerApiClient.fetch(any())).thenReturn(new Customer(Set.of(resource.getEntityDescription().getReference().getPublicationInstance().getInstanceType()), null, null));
+
+        createUploadHandler.handleRequest(createUploadRequestWithBody(resource.getIdentifier(),
+                                                                      createUploadRequestBody()),
+                                          outputStream,
+                                          context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, CreateUploadResponseBody.class);
         var actualBody = actual.getBodyObject(CreateUploadResponseBody.class);
@@ -100,10 +121,12 @@ public class CreateUploadHandlerTest {
     }
 
     @Test
-    void createUploadWithS3ErrorReturnsNotFound() throws IOException {
+    void createUploadWithS3ErrorReturnsNotFound() throws IOException, NotFoundException {
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class)))
             .thenThrow(SdkClientException.class);
-        createUploadHandler.handleRequest(createUploadRequestWithBody(createUploadRequestBody()), outputStream, context);
+        var resource = Resource.fromPublication(randomPublication());
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
+        createUploadHandler.handleRequest(createUploadRequestWithBody(resource.getIdentifier(), createUploadRequestBody()), outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
         assertThat(response, is(notNullValue()));
@@ -112,10 +135,13 @@ public class CreateUploadHandlerTest {
     }
 
     @Test
-    void createUploadWithRuntimeErrorReturnsServerError() throws IOException {
+    void createUploadWithRuntimeErrorReturnsServerError() throws IOException, NotFoundException {
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class)))
             .thenThrow(RuntimeException.class);
-        createUploadHandler.handleRequest(createUploadRequestWithBody(createUploadRequestBody()), outputStream, context);
+        var resource = Resource.fromPublication(randomPublication());
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
+        createUploadHandler.handleRequest(createUploadRequestWithBody(SortableIdentifier.next(), createUploadRequestBody()), outputStream,
+                                          context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
         assertThat(response, is(notNullValue()));
@@ -125,7 +151,8 @@ public class CreateUploadHandlerTest {
 
     @Test
     void setCreateUploadHandlerWithMissingFileParametersReturnsBadRequest() throws IOException {
-        createUploadHandler.handleRequest(createUploadRequestWithBody(createUploadRequestBodyNoFilename()),
+        createUploadHandler.handleRequest(createUploadRequestWithBody(SortableIdentifier.next(),
+                                                                      createUploadRequestBodyNoFilename()),
                                           outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream,
                                                                                               CreateUploadResponseBody.class);
@@ -200,9 +227,13 @@ public class CreateUploadHandlerTest {
         return String.format("filename=\"%s\"", filename);
     }
 
-    private InputStream createUploadRequestWithBody(CreateUploadRequestBody uploadRequestBody)
+    private InputStream createUploadRequestWithBody(SortableIdentifier identifier, CreateUploadRequestBody uploadRequestBody)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<CreateUploadRequestBody>(objectMapper).withBody(uploadRequestBody).build();
+        return new HandlerRequestBuilder<CreateUploadRequestBody>(objectMapper)
+                   .withPathParameters(Map.of("publicationIdentifier", identifier.toString()))
+                   .withBody(uploadRequestBody)
+                   .withCurrentCustomer(randomUri())
+                   .build();
     }
 
     private InputStream createUploadRequestWithoutBody() throws JsonProcessingException {

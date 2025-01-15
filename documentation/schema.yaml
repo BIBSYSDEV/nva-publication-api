@@ -1097,6 +1097,8 @@ Funding:
   - type
   type: object
   properties:
+    identifier:
+      type: string
     labels:
       type: object
       additionalProperties:
@@ -1112,8 +1114,6 @@ Funding:
     activeTo:
       type: string
       format: date-time
-    identifier:
-      type: string
     type:
       type: string
 GeographicalContent:

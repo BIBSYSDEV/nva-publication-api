@@ -74,6 +74,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.swing.text.html.Option;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -1246,6 +1247,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
                            .fetch(resourceService);
 
         assertEquals(peristedPublication, resource.toPublication());
+    }
+
+    @Test
+    void shouldFetchResourceAndReturnOptional() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                           .fetchOptional(resourceService);
+
+        assertEquals(Optional.of(Resource.fromPublication(peristedPublication)), resource);
     }
 
     @Test
