@@ -757,7 +757,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /file-upload/listparts:
+  /{publicationIdentifier}/file-upload/listparts:
     post:
       summary: List the parts of a file that have already been uploaded.
       tags:
@@ -769,6 +769,14 @@ paths:
           'aws.cognito.signin.user.admin',
           'https://api.nva.unit.no/scopes/third-party/file-upload'
         ]
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -800,7 +808,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /file-upload/prepare:
+  /{publicationIdentifier}/file-upload/prepare:
     post:
       summary: Generates a URL to upload a single file-part
       tags:
@@ -812,6 +820,14 @@ paths:
           'aws.cognito.signin.user.admin',
           'https://api.nva.unit.no/scopes/third-party/file-upload'
         ]
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -843,7 +859,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /file-upload/abort:
+  /{publicationIdentifier}/file-upload/abort:
     post:
       summary: Aborts a upload
       description: Aborts the Multipart upload, and deletes all parts that have been uploaded so far.
@@ -856,6 +872,14 @@ paths:
           'aws.cognito.signin.user.admin',
           'https://api.nva.unit.no/scopes/third-party/file-upload'
         ]
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -883,7 +907,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /file-upload/complete:
+  /{publicationIdentifier}/file-upload/complete:
     post:
       summary: Completes a upload
       description: Completes a Multipart upload, combining all parts into a single object in the S3 bucket
@@ -896,6 +920,14 @@ paths:
           'aws.cognito.signin.user.admin',
           'https://api.nva.unit.no/scopes/third-party/file-upload'
         ]
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:

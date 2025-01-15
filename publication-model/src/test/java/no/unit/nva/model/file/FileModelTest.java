@@ -34,6 +34,7 @@ import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import org.junit.jupiter.api.DisplayName;
@@ -76,8 +77,14 @@ public class FileModelTest {
     void shouldRoundTripAllFileTypes(AssociatedArtifact file) throws JsonProcessingException {
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(file);
         var deserialized = JsonUtils.dtoObjectMapper.readValue(json, File.class);
-        assertThat(deserialized, doesNotHaveEmptyValuesIgnoringFields(Set.of(".rightsRetentionStrategy", "legalNote")));
-        assertThat(deserialized, is(equalTo(file)));
+        if (deserialized instanceof UploadedFile) {
+            assertThat(deserialized,
+                       doesNotHaveEmptyValuesIgnoringFields(Set.of(
+                           ".rightsRetentionStrategy", "legalNote", ".publisherVersion", ".license")));
+        } else {
+            assertThat(deserialized, doesNotHaveEmptyValuesIgnoringFields(Set.of(".rightsRetentionStrategy", "legalNote")));
+            assertThat(deserialized, is(equalTo(file)));
+        }
     }
 
     @Test

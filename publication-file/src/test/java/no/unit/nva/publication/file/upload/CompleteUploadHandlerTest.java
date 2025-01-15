@@ -4,6 +4,8 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,11 +30,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadPart;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
-import no.unit.nva.publication.file.upload.restmodel.CompleteUploadResponseBody;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,7 +50,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 
-public class CompleteUploadHandlerTest {
+public class CompleteUploadHandlerTest extends ResourcesLocalTest {
 
     public static final String SAMPLE_KEY = "key";
     public static final String SAMPLE_UPLOAD_ID = "uploadID";
@@ -52,14 +62,17 @@ public class CompleteUploadHandlerTest {
     private ByteArrayOutputStream outputStream;
     private Context context;
     private AmazonS3Client s3client;
+    private ResourceService resourceService;
 
     /**
      * Setup test env.
      */
     @BeforeEach
     void setUp() {
+        super.init();
         s3client = mock(AmazonS3Client.class);
-        handler = new CompleteUploadHandler(s3client);
+        resourceService = getResourceServiceBuilder().build();
+        handler = new CompleteUploadHandler(new FileService(s3client, resourceService));
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }
@@ -67,10 +80,14 @@ public class CompleteUploadHandlerTest {
     @ParameterizedTest
     @ValueSource(strings = {"filename=\"filename.pdf\"", "", "filename=\"\"", "filename.pdf",
         "filename=\"Screenshot 2023-08-17 at 19.18.56.png\""})
-    void canCompleteUpload(String filename) throws IOException {
+    void canCompleteUpload(String filename) throws IOException, BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
         mockS3(filename);
-        handler.handleRequest(completeUploadRequestWithBody(), outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, CompleteUploadResponseBody.class);
+        handler.handleRequest(request(resource.getIdentifier(), userInstance), outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, UploadedFile.class);
 
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
@@ -86,11 +103,15 @@ public class CompleteUploadHandlerTest {
     }
 
     @Test
-    void completeUploadWithS3ErrorReturnsInternalServerError() throws IOException {
+    void completeUploadWithS3ErrorReturnsInternalServerError() throws IOException, BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
         when(s3client.completeMultipartUpload(Mockito.any(CompleteMultipartUploadRequest.class)))
             .thenThrow(AmazonS3Exception.class);
 
-        handler.handleRequest(completeUploadRequestWithBody(), outputStream, context);
+        handler.handleRequest(request(resource.getIdentifier(), userInstance), outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
         assertThat(response, is(notNullValue()));
@@ -130,8 +151,10 @@ public class CompleteUploadHandlerTest {
     }
 
     private void mockS3(String filename) {
+        var completeMultipartUploadResult = new CompleteMultipartUploadResult();
+        completeMultipartUploadResult.setKey(UUID.randomUUID().toString());
         when(s3client.completeMultipartUpload(Mockito.any(CompleteMultipartUploadRequest.class))).thenReturn(
-            new CompleteMultipartUploadResult());
+            completeMultipartUploadResult);
         var s3object = new S3Object();
         s3object.setKey(randomString());
         var metadata = new ObjectMetadata();
@@ -142,9 +165,14 @@ public class CompleteUploadHandlerTest {
         when(s3client.getObjectMetadata(any())).thenReturn(metadata);
     }
 
-    private InputStream completeUploadRequestWithBody() throws JsonProcessingException {
+    private InputStream request(SortableIdentifier identifier, UserInstance userInstance) throws JsonProcessingException {
         return new HandlerRequestBuilder<CompleteUploadRequestBody>(dtoObjectMapper)
-                   .withBody(completeUploadRequestBody()).build();
+                   .withBody(completeUploadRequestBody())
+                   .withPathParameters(Map.of("publicationIdentifier", identifier.toString()))
+                   .withUserName(userInstance.getUsername())
+                   .withCurrentCustomer(userInstance.getCustomerId())
+                   .withPersonCristinId(randomUri())
+                   .build();
     }
 
     private InputStream completeUploadRequestWithoutBody() throws JsonProcessingException {

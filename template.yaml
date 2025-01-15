@@ -1167,7 +1167,7 @@ Resources:
         ListEvent:
           Type: Api
           Properties:
-            Path: /file-upload/listparts
+            Path: /{publicationIdentifier}/file-upload/listparts
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -1186,7 +1186,7 @@ Resources:
         PrepareEvent:
           Type: Api
           Properties:
-            Path: /file-upload/prepare
+            Path: /{publicationIdentifier}/file-upload/prepare
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -1205,7 +1205,7 @@ Resources:
         AbortEvent:
           Type: Api
           Properties:
-            Path: /file-upload/abort
+            Path: /{publicationIdentifier}/file-upload/abort
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -1217,6 +1217,7 @@ Resources:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: !Ref AllowedOrigins
+          TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.CompleteUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
@@ -1224,7 +1225,7 @@ Resources:
         CompleteEvent:
           Type: Api
           Properties:
-            Path: /file-upload/complete
+            Path: /{publicationIdentifier}/file-upload/complete
             Method: post
             RestApiId: !Ref NvaPublicationApi
 

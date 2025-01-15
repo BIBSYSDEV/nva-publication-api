@@ -1,30 +1,28 @@
 package no.unit.nva.publication.file.upload;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.publication.file.upload.config.MultipartUploadConfig.BUCKET_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
+import no.unit.nva.model.associatedartifacts.file.UploadedFile;
+import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
-import no.unit.nva.publication.file.upload.restmodel.CompleteUploadResponseBody;
+import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 
-public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequestBody, CompleteUploadResponseBody> {
+public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequestBody, UploadedFile> {
 
-    private final AmazonS3 amazonS3;
+    private final FileService fileService;
 
     @JacocoGenerated
     public CompleteUploadHandler() {
-        this(AmazonS3ClientBuilder.defaultClient());
+        this(FileService.defaultFileService());
     }
 
-    public CompleteUploadHandler(AmazonS3 amazonS3) {
+    public CompleteUploadHandler(FileService fileService) {
         super(CompleteUploadRequestBody.class);
-        this.amazonS3 = amazonS3;
+        this.fileService = fileService;
     }
 
     @Override
@@ -34,18 +32,17 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
     }
 
     @Override
-    protected CompleteUploadResponseBody processInput(CompleteUploadRequestBody input, RequestInfo requestInfo,
-                                                      Context context) throws ApiGatewayException {
+    protected UploadedFile processInput(CompleteUploadRequestBody input, RequestInfo requestInfo,
+                                        Context context) throws ApiGatewayException {
 
-        var request = input.toCompleteMultipartUploadRequest(BUCKET_NAME);
-        var result = amazonS3.completeMultipartUpload(request);
-        var objectMetadata = amazonS3.getObjectMetadata(new GetObjectMetadataRequest(BUCKET_NAME, result.getKey()));
+        var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
+        var userInstance = UserInstance.fromRequestInfo(requestInfo);
 
-        return CompleteUploadResponseBody.create(objectMetadata, result.getKey());
+        return fileService.completeMultipartUpload(resourceIdentifier, input, userInstance);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(CompleteUploadRequestBody input, CompleteUploadResponseBody output) {
+    protected Integer getSuccessStatusCode(CompleteUploadRequestBody input, UploadedFile output) {
         return HTTP_OK;
     }
 }
