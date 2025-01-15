@@ -1144,6 +1144,8 @@ Resources:
       Handler: no.unit.nva.publication.file.upload.CreateUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
       Events:
         CreateEvent:
           Type: Api
@@ -1221,6 +1223,7 @@ Resources:
       Handler: no.unit.nva.publication.file.upload.CompleteUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
       Events:
         CompleteEvent:
           Type: Api
