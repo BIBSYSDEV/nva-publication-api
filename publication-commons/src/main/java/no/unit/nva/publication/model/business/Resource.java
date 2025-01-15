@@ -227,6 +227,11 @@ public class Resource implements Entity {
         return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).toOptional();
     }
 
+    @JacocoGenerated
+    public Optional<Resource> fetchOptional(ResourceService resourceService) {
+        return attempt(() -> this.fetch(resourceService)).toOptional();
+    }
+
     // TODO: Implementation in this method should be used every place we fetch resource and publication after we have
     //  migrated files
     public Optional<Resource> fetchResourceWithFiles(ResourceService resourceService) {

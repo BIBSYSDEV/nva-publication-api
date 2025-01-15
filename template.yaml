@@ -1138,6 +1138,9 @@ Resources:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: !Ref AllowedOrigins
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.CreateUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
@@ -1145,7 +1148,7 @@ Resources:
         CreateEvent:
           Type: Api
           Properties:
-            Path: /file-upload/create
+            Path: /{publicationIdentifier}/file-upload/create
             Method: post
             RestApiId: !Ref NvaPublicationApi
 

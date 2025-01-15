@@ -1249,6 +1249,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldFetchResourceAndReturnOptional() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                           .fetchOptional(resourceService);
+
+        assertEquals(Optional.of(Resource.fromPublication(peristedPublication)), resource);
+    }
+
+    @Test
     void shouldRepublishResourceAndSetResourceEvent() throws ApiGatewayException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
