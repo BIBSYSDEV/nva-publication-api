@@ -94,9 +94,10 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
 
         resourceService = mock(ResourceService.class);
-        when(resourceService.getResourceByIdentifier(any())).thenThrow(new RuntimeException());
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publication));
+        when(resourceService.getLogEntriesForResource(Resource.fromPublication(publication))).thenThrow(new RuntimeException());
 
-        new FetchPublicationLogHandler(resourceService).handleRequest(createRequest(publication), output, context);
+        new FetchPublicationLogHandler(resourceService).handleRequest(createAuthorizedRequest(publication), output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
@@ -129,11 +130,12 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
         assertFalse(response.getBodyObject(PublicationLogResponse.class).logEntries().isEmpty());
     }
 
-    private void persistLogEntry(Publication publication) throws NotFoundException {
+    private void persistLogEntry(Publication publication) {
         var user = new LogUser(randomString(), randomString(), randomString(), randomUri(),
                                new LogOrganization(randomUri(), randomUri(), randomString(), randomString()));
         Resource.resourceQueryObject(publication.getIdentifier())
             .fetch(resourceService)
+            .orElseThrow()
             .getResourceEvent()
             .toLogEntry(publication.getIdentifier(), user)
             .persist(resourceService);

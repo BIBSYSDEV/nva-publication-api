@@ -253,6 +253,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private void persistLogEntry(Publication persistedPublication) throws NotFoundException {
         Resource.resourceQueryObject(persistedPublication.getIdentifier())
             .fetch(resourceService)
+            .orElseThrow()
             .getResourceEvent()
             .toLogEntry(persistedPublication.getIdentifier(), randomLogUser())
             .persist(resourceService);

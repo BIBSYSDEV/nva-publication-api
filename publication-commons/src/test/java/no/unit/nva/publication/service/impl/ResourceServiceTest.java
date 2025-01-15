@@ -1236,7 +1236,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFetchResource() throws BadRequestException, NotFoundException {
+    void shouldFetchResource() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
@@ -1245,19 +1245,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
                            .fetch(resourceService);
 
-        assertEquals(peristedPublication, resource.toPublication());
-    }
-
-    @Test
-    void shouldFetchResourceAndReturnOptional() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var peristedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-
-        var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
-                           .fetchOptional(resourceService);
-
-        assertEquals(Optional.of(Resource.fromPublication(peristedPublication)), resource);
+        assertEquals(peristedPublication, resource.orElseThrow().toPublication());
     }
 
     @Test
@@ -1271,10 +1259,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.unpublishPublication(peristedPublication, userInstance);
         Resource.resourceQueryObject(peristedPublication.getIdentifier())
             .fetch(resourceService)
+            .orElseThrow()
             .republish(resourceService, userInstance);
 
         var republishedResource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
-                                      .fetch(resourceService);
+                                      .fetch(resourceService).orElseThrow();
 
         assertEquals(PUBLISHED, republishedResource.getStatus());
         assertInstanceOf(RepublishedResourceEvent.class, republishedResource.getResourceEvent());
@@ -1290,18 +1279,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(IllegalStateException.class,
                      () -> Resource.resourceQueryObject(peristedPublication.getIdentifier())
                                .fetch(resourceService)
+                               .orElseThrow()
                                .republish(resourceService, userInstance));
     }
 
     @Test
-    void shouldSetResourceEventToNull() throws BadRequestException, NotFoundException {
+    void shouldSetResourceEventToNull() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
                                       .persistNew(resourceService, userInstance);
 
         var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
-                           .fetch(resourceService);
+                           .fetch(resourceService).orElseThrow();
 
         assertNotNull(resource.getResourceEvent());
 
@@ -1328,7 +1318,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
                                       .persistNew(resourceService, userInstance);
-        var resource = Resource.fromPublication(peristedPublication).fetch(resourceService);
+        var resource = Resource.fromPublication(peristedPublication).fetch(resourceService).orElseThrow();
         resource.setStatus(DRAFT_FOR_DELETION);
         resourceService.updateResource(resource);
 
