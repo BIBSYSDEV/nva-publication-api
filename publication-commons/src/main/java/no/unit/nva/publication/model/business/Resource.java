@@ -234,16 +234,18 @@ public class Resource implements Entity {
     }
 
     public void publish(ResourceService resourceService, UserInstance userInstance) {
-        var resource = this.fetch(resourceService);
-        if (resource.isPresent() && resource.get().isNotPublished()) {
-            var resourceToPublish = resource.get();
-            resourceToPublish.publish(userInstance);
-            resourceService.updateResource(resourceToPublish);
-        }
+        fetch(resourceService)
+            .filter(Resource::isNotPublished)
+            .ifPresent(resource -> resource.publish(userInstance, resourceService));
+    }
+
+    private void publish(UserInstance userInstance, ResourceService resourceService) {
+        publish(userInstance);
+        resourceService.updateResource(this);
     }
 
     private void publish(UserInstance userInstance) {
-        if (this.isNotPublishable()) {
+        if (isNotPublishable()) {
             throw new IllegalStateException("Resource is not publishable!");
         } else if (this.isNotPublished()) {
             this.setStatus(PUBLISHED);
@@ -267,12 +269,14 @@ public class Resource implements Entity {
     }
 
     public void republish(ResourceService resourceService, UserInstance userInstance) {
-        var resource = this.fetch(resourceService);
-        if (resource.isPresent() && resource.get().isNotPublished()) {
-            var resourceToRepublish = resource.get();
-            resourceToRepublish.republish(userInstance);
-            resourceService.updateResource(resourceToRepublish);
-        }
+        fetch(resourceService)
+            .filter(Resource::isNotPublished)
+            .ifPresent(resource -> resource.republish(userInstance, resourceService));
+    }
+
+    private void republish(UserInstance userInstance, ResourceService resourceService) {
+        republish(userInstance);
+        resourceService.updateResource(this);
     }
 
     private void republish(UserInstance userInstance) {

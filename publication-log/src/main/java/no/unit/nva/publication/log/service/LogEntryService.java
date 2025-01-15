@@ -35,19 +35,21 @@ public class LogEntryService {
     }
 
     private void persistLogEntry(SortableIdentifier identifier) {
-        var resourceOpt = Resource.resourceQueryObject(identifier).fetch(resourceService);
-        if (resourceOpt.isPresent() && resourceOpt.get().hasResourceEvent()) {
-            var resource = resourceOpt.get();
-            var resourceEvent = resource.getResourceEvent();
-
-            var user = createUser(resourceEvent);
-
-            resourceEvent.toLogEntry(resource.getIdentifier(), user).persist(resourceService);
-
-            logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
-            resource.clearResourceEvent(resourceService);
-        }
+        Resource.resourceQueryObject(identifier)
+            .fetch(resourceService)
+            .filter(Resource::hasResourceEvent)
+            .ifPresent(this::persistLogEntry);
     }
+
+    private void persistLogEntry(Resource resource) {
+        var resourceEvent = resource.getResourceEvent();
+        var user = createUser(resourceEvent);
+        resourceEvent.toLogEntry(resource.getIdentifier(), user).persist(resourceService);
+
+        logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
+        resource.clearResourceEvent(resourceService);
+    }
+
 
     private LogUser createUser(ResourceEvent resourceEvent) {
         return attempt(() -> LogUser.create(getUser(resourceEvent), getCustomer(resourceEvent)))
