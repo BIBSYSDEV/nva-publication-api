@@ -705,7 +705,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /file-upload/create:
+  /{publicationIdentifier}/file-upload/create:
     post:
       summary: Create a upload
       description: Creates a multipart upload for a file. This is later referenced for preparing file-parts, uploading, and finishing the upload..
@@ -718,6 +718,14 @@ paths:
           'aws.cognito.signin.user.admin',
           'https://api.nva.unit.no/scopes/third-party/file-upload'
         ]
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: UUID identifier of the Publication.
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:

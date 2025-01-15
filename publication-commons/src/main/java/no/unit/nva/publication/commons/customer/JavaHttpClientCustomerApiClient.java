@@ -36,7 +36,7 @@ public class JavaHttpClientCustomerApiClient implements CustomerApiClient {
         var secretsReader = new SecretsReader(SecretsReader.defaultSecretsManagerClient());
         var secret = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
         var credentials = secretsReader.fetchClassSecret(secret, BackendClientCredentials.class);
-        var cognitoServerUri = URI.create(environment.readEnv("BACKEND_CLIENT_SECRET_NAME"));
+        var cognitoServerUri = URI.create(environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
         var cognitoCredentials = new CognitoCredentials(credentials::getId, credentials::getSecret, cognitoServerUri);
         return new JavaHttpClientCustomerApiClient(HttpClient.newHttpClient(), cognitoCredentials);
     }
