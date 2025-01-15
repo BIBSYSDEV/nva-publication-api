@@ -12,6 +12,8 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENT
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -104,7 +106,8 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
 
         resourceService = mock(ResourceService.class);
-        when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenThrow(new RuntimeException());
+        when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenReturn(Resource.fromPublication(publication));
+        doThrow(new RuntimeException()).when(resourceService).updateResource(any(Resource.class));
         var publishPublicationHandler = new PublishPublicationHandler(resourceService);
         publishPublicationHandler.handleRequest(request, output, context);
 

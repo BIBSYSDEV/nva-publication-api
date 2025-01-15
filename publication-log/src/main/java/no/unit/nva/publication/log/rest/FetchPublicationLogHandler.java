@@ -12,6 +12,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
@@ -39,7 +40,9 @@ public class FetchPublicationLogHandler extends ApiGatewayHandler<Void, Publicat
     protected PublicationLogResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var resourceIdentifier = new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));
-        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
+        var resource = Resource.resourceQueryObject(resourceIdentifier)
+                           .fetch(resourceService)
+                           .orElseThrow(() -> new NotFoundException("Resource not found!"));
 
         validateUserRights(requestInfo, resource);
 

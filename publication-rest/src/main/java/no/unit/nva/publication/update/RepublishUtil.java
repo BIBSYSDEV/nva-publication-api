@@ -13,6 +13,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class RepublishUtil {
 
@@ -37,7 +38,9 @@ public class RepublishUtil {
         var resource = Resource.fromPublication(publication);
         resource.republish(resourceService, userInstance);
         persistCompletedPublishingRequest(publication, userInstance);
-        return resource.fetch(resourceService).toPublication();
+        return resource.fetch(resourceService)
+                   .orElseThrow(() -> new NotFoundException("Resource not found!"))
+                   .toPublication();
     }
 
     private void persistCompletedPublishingRequest(Publication publication, UserInstance userInstance)

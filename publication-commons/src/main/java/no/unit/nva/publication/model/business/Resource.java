@@ -38,14 +38,13 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
-import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
@@ -224,13 +223,8 @@ public class Resource implements Entity {
         return resourceService.getLogEntriesForResource(this);
     }
 
-    public Resource fetch(ResourceService resourceService) throws NotFoundException {
-        return resourceService.getResourceByIdentifier(this.getIdentifier());
-    }
-
-    @JacocoGenerated
-    public Optional<Resource> fetchOptional(ResourceService resourceService) {
-        return attempt(() -> this.fetch(resourceService)).toOptional();
+    public Optional<Resource> fetch(ResourceService resourceService) {
+        return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).toOptional();
     }
 
     // TODO: Implementation in this method should be used every place we fetch resource and publication after we have
@@ -239,16 +233,19 @@ public class Resource implements Entity {
         return resourceService.getResourceAndFilesByIdentifier(this.getIdentifier());
     }
 
-    public void publish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
-        var resource = this.fetch(resourceService);
-        if (resource.isNotPublished()) {
-            resource.publish(userInstance);
-            resourceService.updateResource(resource);
-        }
+    public void publish(ResourceService resourceService, UserInstance userInstance) {
+        fetch(resourceService)
+            .filter(Resource::isNotPublished)
+            .ifPresent(resource -> resource.publish(userInstance, resourceService));
+    }
+
+    private void publish(UserInstance userInstance, ResourceService resourceService) {
+        publish(userInstance);
+        resourceService.updateResource(this);
     }
 
     private void publish(UserInstance userInstance) {
-        if (this.isNotPublishable()) {
+        if (isNotPublishable()) {
             throw new IllegalStateException("Resource is not publishable!");
         } else if (this.isNotPublished()) {
             this.setStatus(PUBLISHED);
@@ -271,12 +268,15 @@ public class Resource implements Entity {
         return PUBLISHED.equals(this.getStatus());
     }
 
-    public void republish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
-        var resource = this.fetch(resourceService);
-        if (resource.isNotPublished()) {
-            resource.republish(userInstance);
-            resourceService.updateResource(resource);
-        }
+    public void republish(ResourceService resourceService, UserInstance userInstance) {
+        fetch(resourceService)
+            .filter(Resource::isNotPublished)
+            .ifPresent(resource -> resource.republish(userInstance, resourceService));
+    }
+
+    private void republish(UserInstance userInstance, ResourceService resourceService) {
+        republish(userInstance);
+        resourceService.updateResource(this);
     }
 
     private void republish(UserInstance userInstance) {
