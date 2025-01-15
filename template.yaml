@@ -1219,10 +1219,13 @@ Resources:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: !Ref AllowedOrigins
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.CompleteUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
       Events:
         CompleteEvent:
