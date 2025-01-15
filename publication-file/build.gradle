@@ -1,8 +1,15 @@
 dependencies {
+    implementation project(":publication-commons")
+    implementation project(":publication-rest")
+    implementation project(":publication-model")
+
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
+    implementation libs.nva.secrets
+    implementation libs.nva.auth
+    implementation libs.nva.clients
 
     implementation libs.jackson.databind
     implementation libs.jackson.core
@@ -14,9 +21,14 @@ dependencies {
     implementation libs.apache.commons.text
 
     testImplementation libs.nva.testutils
+
+    testImplementation project(":publication-testing")
+    testImplementation project(":publication-model-testing")
 }
 
 test {
     environment "ALLOWED_ORIGIN", "*"
+    environment "AWS_REGION", "region"
+    environment "TABLE_NAME", "table"
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-persisted-bucket"
 }

@@ -11,6 +11,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.publication.model.BackendClientCredentials;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +28,17 @@ public class JavaHttpClientCustomerApiClient implements CustomerApiClient {
                                            final CognitoCredentials cognitoCredentials) {
         this.httpClient = httpClient;
         this.cognitoCredentials = cognitoCredentials;
+    }
+
+    @JacocoGenerated
+    public static JavaHttpClientCustomerApiClient defaultInstance() {
+        var environment = new Environment();
+        var secretsReader = new SecretsReader(SecretsReader.defaultSecretsManagerClient());
+        var secret = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
+        var credentials = secretsReader.fetchClassSecret(secret, BackendClientCredentials.class);
+        var cognitoServerUri = URI.create(environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
+        var cognitoCredentials = new CognitoCredentials(credentials::getId, credentials::getSecret, cognitoServerUri);
+        return new JavaHttpClientCustomerApiClient(HttpClient.newHttpClient(), cognitoCredentials);
     }
 
     @Override

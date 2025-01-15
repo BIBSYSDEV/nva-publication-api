@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -225,6 +226,11 @@ public class Resource implements Entity {
 
     public Resource fetch(ResourceService resourceService) throws NotFoundException {
         return resourceService.getResourceByIdentifier(this.getIdentifier());
+    }
+
+    @JacocoGenerated
+    public Optional<Resource> fetchOptional(ResourceService resourceService) {
+        return attempt(() -> this.fetch(resourceService)).toOptional();
     }
 
     // TODO: Implementation in this method should be used every place we fetch resource and publication after we have
