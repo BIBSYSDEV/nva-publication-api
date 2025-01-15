@@ -82,7 +82,10 @@ public class FileService {
 
     public UploadedFile completeMultipartUpload(SortableIdentifier resourceIdentifier,
                                                 CompleteUploadRequestBody completeUploadRequestBody,
-                                                UserInstance userInstance) {
+                                                UserInstance userInstance) throws NotFoundException {
+
+        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService)
+            .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
 
         var completeMultipartUploadRequest = completeUploadRequestBody.toCompleteMultipartUploadRequest(BUCKET_NAME);
         var completeMultipartUploadResult = amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
@@ -91,7 +94,7 @@ public class FileService {
 
         var file = constructUploadedFile(s3ObjectKey, objectMetadata, userInstance);
 
-        FileEntry.create(file, resourceIdentifier, userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
 
         return file;
     }
