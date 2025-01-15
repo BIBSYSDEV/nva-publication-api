@@ -43,13 +43,11 @@ public class FileService {
                                                                  CreateUploadRequestBody createUploadRequestBody)
         throws NotFoundException, ForbiddenException {
 
-        var resource = Resource.resourceQueryObject(resourceIdentifier).fetchOptional(resourceService);
-        if (resource.isEmpty()) {
-            throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
-        }
+        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService)
+                           .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
 
         var customer = customerApiClient.fetch(customerId);
-        if (customerDoesNotAllowUploadingFile(customer, resource.get())) {
+        if (customerDoesNotAllowUploadingFile(customer, resource)) {
             throw new ForbiddenException();
         }
 

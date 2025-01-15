@@ -1236,7 +1236,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFetchResource() throws BadRequestException, NotFoundException {
+    void shouldFetchResource() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
@@ -1246,18 +1246,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                            .fetch(resourceService);
 
         assertEquals(peristedPublication, resource.orElseThrow().toPublication());
-    }
-
-    @Test
-    void shouldFetchResourceAndReturnOptional() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var peristedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-
-        var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
-                           .fetchOptional(resourceService);
-
-        assertEquals(Optional.of(Resource.fromPublication(peristedPublication)), resource);
     }
 
     @Test
@@ -1296,7 +1284,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetResourceEventToNull() throws BadRequestException, NotFoundException {
+    void shouldSetResourceEventToNull() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
