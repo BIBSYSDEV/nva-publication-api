@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -37,14 +38,13 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
-import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
@@ -223,8 +223,8 @@ public class Resource implements Entity {
         return resourceService.getLogEntriesForResource(this);
     }
 
-    public Resource fetch(ResourceService resourceService) throws NotFoundException {
-        return resourceService.getResourceByIdentifier(this.getIdentifier());
+    public Optional<Resource> fetch(ResourceService resourceService) {
+        return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).toOptional();
     }
 
     // TODO: Implementation in this method should be used every place we fetch resource and publication after we have
@@ -233,11 +233,12 @@ public class Resource implements Entity {
         return resourceService.getResourceAndFilesByIdentifier(this.getIdentifier());
     }
 
-    public void publish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
+    public void publish(ResourceService resourceService, UserInstance userInstance) {
         var resource = this.fetch(resourceService);
-        if (resource.isNotPublished()) {
-            resource.publish(userInstance);
-            resourceService.updateResource(resource);
+        if (resource.isPresent() && resource.get().isNotPublished()) {
+            var resourceToPublish = resource.get();
+            resourceToPublish.publish(userInstance);
+            resourceService.updateResource(resourceToPublish);
         }
     }
 
@@ -265,11 +266,12 @@ public class Resource implements Entity {
         return PUBLISHED.equals(this.getStatus());
     }
 
-    public void republish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
+    public void republish(ResourceService resourceService, UserInstance userInstance) {
         var resource = this.fetch(resourceService);
-        if (resource.isNotPublished()) {
-            resource.republish(userInstance);
-            resourceService.updateResource(resource);
+        if (resource.isPresent() && resource.get().isNotPublished()) {
+            var resourceToRepublish = resource.get();
+            resourceToRepublish.republish(userInstance);
+            resourceService.updateResource(resourceToRepublish);
         }
     }
 

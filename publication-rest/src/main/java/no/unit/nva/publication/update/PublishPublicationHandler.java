@@ -15,6 +15,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
@@ -61,7 +62,9 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
     private void publishResource(SortableIdentifier resourceIdentifier, UserInstance userInstance)
         throws ApiGatewayException {
         try {
-            var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
+            var resource = Resource.resourceQueryObject(resourceIdentifier)
+                               .fetch(resourceService)
+                               .orElseThrow(() -> new NotFoundException("Resource not found!"));
             validatePermissions(resource, userInstance);
             resource.publish(resourceService, userInstance);
         } catch (Exception e) {

@@ -37,7 +37,7 @@ public class RepublishUtil {
         var resource = Resource.fromPublication(publication);
         resource.republish(resourceService, userInstance);
         persistCompletedPublishingRequest(publication, userInstance);
-        return resource.fetch(resourceService).toPublication();
+        return resource.fetch(resourceService).orElseThrow().toPublication();
     }
 
     private void persistCompletedPublishingRequest(Publication publication, UserInstance userInstance)

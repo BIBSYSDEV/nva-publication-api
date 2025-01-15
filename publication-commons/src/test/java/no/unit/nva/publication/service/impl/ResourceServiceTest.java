@@ -1245,7 +1245,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
                            .fetch(resourceService);
 
-        assertEquals(peristedPublication, resource.toPublication());
+        assertEquals(peristedPublication, resource.orElseThrow().toPublication());
     }
 
     @Test
@@ -1259,10 +1259,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.unpublishPublication(peristedPublication, userInstance);
         Resource.resourceQueryObject(peristedPublication.getIdentifier())
             .fetch(resourceService)
+            .orElseThrow()
             .republish(resourceService, userInstance);
 
         var republishedResource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
-                                      .fetch(resourceService);
+                                      .fetch(resourceService).orElseThrow();
 
         assertEquals(PUBLISHED, republishedResource.getStatus());
         assertInstanceOf(RepublishedResourceEvent.class, republishedResource.getResourceEvent());
@@ -1278,6 +1279,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(IllegalStateException.class,
                      () -> Resource.resourceQueryObject(peristedPublication.getIdentifier())
                                .fetch(resourceService)
+                               .orElseThrow()
                                .republish(resourceService, userInstance));
     }
 
@@ -1289,7 +1291,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                       .persistNew(resourceService, userInstance);
 
         var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
-                           .fetch(resourceService);
+                           .fetch(resourceService).orElseThrow();
 
         assertNotNull(resource.getResourceEvent());
 
@@ -1316,7 +1318,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
                                       .persistNew(resourceService, userInstance);
-        var resource = Resource.fromPublication(peristedPublication).fetch(resourceService);
+        var resource = Resource.fromPublication(peristedPublication).fetch(resourceService).orElseThrow();
         resource.setStatus(DRAFT_FOR_DELETION);
         resourceService.updateResource(resource);
 

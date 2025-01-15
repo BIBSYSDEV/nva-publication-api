@@ -35,8 +35,9 @@ public class LogEntryService {
     }
 
     private void persistLogEntry(SortableIdentifier identifier) {
-        var resource = fetchResource(identifier);
-        if (resource.hasResourceEvent()) {
+        var resourceOpt = Resource.resourceQueryObject(identifier).fetch(resourceService);
+        if (resourceOpt.isPresent() && resourceOpt.get().hasResourceEvent()) {
+            var resource = resourceOpt.get();
             var resourceEvent = resource.getResourceEvent();
 
             var user = createUser(resourceEvent);
@@ -51,10 +52,6 @@ public class LogEntryService {
     private LogUser createUser(ResourceEvent resourceEvent) {
         return attempt(() -> LogUser.create(getUser(resourceEvent), getCustomer(resourceEvent)))
                    .orElse(failure -> LogUser.fromResourceEvent(resourceEvent.user(), resourceEvent.institution()));
-    }
-
-    private Resource fetchResource(SortableIdentifier identifier) {
-        return attempt(() -> Resource.resourceQueryObject(identifier).fetch(resourceService)).orElseThrow();
     }
 
     private GetCustomerResponse getCustomer(ResourceEvent resourceEvent) {
