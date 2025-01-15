@@ -91,14 +91,16 @@ class DaoTest extends ResourcesLocalTest {
     public static final String DATA_REVISION = "data.entityDescription.reference.publicationContext.revision";
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
     public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
+    public static final String RESOURCE_FILES = ".resource.files";
+    private static final String DATA_FILES = ".data.files";
     public static final Set<String> IGNORED_FIELDS = Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE,
-                                                                     DATA_FINALIZED_BY,
-                                                                     DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
-                                                                     RESOURCE_IMPORT_STATUS, RESOURCE_REVISION,
-                                                                     DATA_REVISION,
-                                                                     DATA_APPROVED_FILES,
-                                                                     DATA_FILES_FOR_APPROVAL,
-                                                                     DATA_STATE, RESOURCE_STATE);
+                                                            DATA_FINALIZED_BY,
+                                                            DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
+                                                            RESOURCE_IMPORT_STATUS, RESOURCE_REVISION,
+                                                            DATA_REVISION,
+                                                            DATA_APPROVED_FILES,
+                                                            DATA_FILES_FOR_APPROVAL,
+                                                            DATA_STATE, RESOURCE_STATE, RESOURCE_FILES, DATA_FILES);
 
     public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);

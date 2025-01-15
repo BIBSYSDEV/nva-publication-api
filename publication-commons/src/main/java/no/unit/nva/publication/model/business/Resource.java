@@ -32,6 +32,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -76,6 +77,8 @@ public class Resource implements Entity {
     private URI link;
     @JsonProperty
     private AssociatedArtifactList associatedArtifacts;
+    @JsonProperty
+    private List<File> files;
     @JsonProperty
     private List<ResearchProject> projects;
     @JsonProperty
@@ -228,6 +231,12 @@ public class Resource implements Entity {
     @JacocoGenerated
     public Optional<Resource> fetchOptional(ResourceService resourceService) {
         return attempt(() -> this.fetch(resourceService)).toOptional();
+    }
+
+    // TODO: Implementation in this method should be used every place we fetch resource and publication after we have
+    //  migrated files
+    public Optional<Resource> fetchResourceWithFiles(ResourceService resourceService) {
+        return resourceService.getResourceAndFilesByIdentifier(this.getIdentifier());
     }
 
     public void publish(ResourceService resourceService, UserInstance userInstance) throws NotFoundException {
@@ -499,6 +508,14 @@ public class Resource implements Entity {
 
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
+    }
+
+    public List<File> getFiles() {
+        return files;
+    }
+
+    public void setFiles(List<File> files) {
+        this.files = files;
     }
 
     public List<ResearchProject> getProjects() {

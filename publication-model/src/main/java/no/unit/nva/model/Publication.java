@@ -33,6 +33,7 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.config.ResourcesBuildConfig;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.model.funding.Funding;
@@ -346,10 +347,9 @@ public class Publication
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Publication)) {
+        if (!(o instanceof Publication that)) {
             return false;
         }
-        Publication that = (Publication) o;
         boolean firstHalf = Objects.equals(getIdentifier(), that.getIdentifier())
                             && getStatus() == that.getStatus()
                             && Objects.equals(getResourceOwner(), that.getResourceOwner())
@@ -439,6 +439,12 @@ public class Publication
             .map(File.class::cast)
             .filter(element -> fileIdentifier.equals(element.getIdentifier()))
             .findFirst();
+    }
+
+    public long getPendingOpenFileCount() {
+        return getAssociatedArtifacts().stream()
+                   .filter(PendingOpenFile.class::isInstance)
+                   .count();
     }
 
     private void verifyStatusTransition(PublicationStatus nextStatus)

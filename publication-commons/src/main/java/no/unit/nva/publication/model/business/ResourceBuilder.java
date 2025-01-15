@@ -8,14 +8,15 @@ import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -33,6 +34,7 @@ public final class ResourceBuilder {
     private Instant indexedDate;
     private URI link;
     private AssociatedArtifactList associatedArtifacts;
+    private List<File> files;
     private List<ResearchProject> projects;
     private EntityDescription entityDescription;
     private URI doi;
@@ -171,6 +173,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withFiles(List<File> files) {
+        this.files = files;
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -197,6 +204,7 @@ public final class ResourceBuilder {
         resource.setCuratingInstitutions(curatingInstitutions);
         resource.setImportDetails(importDetails);
         resource.setResourceEvent(resourceEvent);
+        resource.setFiles(files);
         return resource;
     }
 }

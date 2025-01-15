@@ -1992,6 +1992,13 @@ nva:curatingInstitution a rdf:Property ;
   rdfs:domain nva:Publication ;
   rdfs:range xsd:anyURI .
 
+nva:pendingOpenFileCount a rdf:Property ;
+  rdfs:comment "Number of files that are of the type PendingOpenFile" ;
+  rdfs:label "Pending open file count" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:nonNegativeInteger .
+
 nva:contributorOrganization a rdf:Property ;
   rdfs:comment "Any organization that has a relation the publication via a contributor affiliation" ;
   rdfs:label "Contributor Organization" ;
