@@ -45,29 +45,18 @@ public class FileService {
         this.resourceService = resourceService;
     }
 
-    public FileService(AmazonS3 amazonS3, ResourceService resourceService) {
-        this.amazonS3 = amazonS3;
-        this.customerApiClient = null;
-        this.resourceService = resourceService;
-    }
-
     @JacocoGenerated
     public static FileService defaultFileService() {
         return new FileService(AmazonS3ClientBuilder.defaultClient(), JavaHttpClientCustomerApiClient.defaultInstance(),
                                ResourceService.defaultService());
     }
 
-    public static String toFileName(String contentDisposition) {
-        var pattern = Pattern.compile(FILE_NAME_REGEX);
-        var matcher = pattern.matcher(contentDisposition);
-        return matcher.matches() ? matcher.group(1) : contentDisposition;
-    }
-
     public InitiateMultipartUploadResult initiateMultipartUpload(SortableIdentifier resourceIdentifier, URI customerId,
                                                                  CreateUploadRequestBody createUploadRequestBody)
         throws NotFoundException, ForbiddenException {
 
-        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService)
+        var resource = Resource.resourceQueryObject(resourceIdentifier)
+                           .fetch(resourceService)
                            .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
 
         var customer = customerApiClient.fetch(customerId);
@@ -84,30 +73,39 @@ public class FileService {
                                                 CompleteUploadRequestBody completeUploadRequestBody,
                                                 UserInstance userInstance) throws NotFoundException {
 
-        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService)
-            .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+        var resource = Resource.resourceQueryObject(resourceIdentifier)
+                           .fetch(resourceService)
+                           .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
 
         var completeMultipartUploadRequest = completeUploadRequestBody.toCompleteMultipartUploadRequest(BUCKET_NAME);
         var completeMultipartUploadResult = amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
         var s3ObjectKey = completeMultipartUploadResult.getKey();
         var objectMetadata = getObjectMetadata(s3ObjectKey);
 
-        var file = constructUploadedFile(s3ObjectKey, objectMetadata, userInstance);
+        var file = constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
 
         FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
 
         return file;
     }
 
+    private static String toFileName(String contentDisposition) {
+        var pattern = Pattern.compile(FILE_NAME_REGEX);
+        var matcher = pattern.matcher(contentDisposition);
+        return matcher.matches() ? matcher.group(1) : contentDisposition;
+    }
+
+    private static UserUploadDetails createUploadDetails(UserInstance userInstance) {
+        return new UserUploadDetails(new Username(userInstance.getUsername()), Instant.now());
+    }
+
     private ObjectMetadata getObjectMetadata(String key) {
         return amazonS3.getObjectMetadata(new GetObjectMetadataRequest(BUCKET_NAME, key));
     }
 
-    private UploadedFile constructUploadedFile(String identifier, ObjectMetadata objectMetadata,
-                                               UserInstance userInstance) {
-        return new UploadedFile(UUID.fromString(identifier), toFileName(objectMetadata.getContentDisposition()),
-                                objectMetadata.getContentType(), objectMetadata.getContentLength(),
-                                new UserUploadDetails(new Username(userInstance.getUsername()), Instant.now()));
+    private UploadedFile constructUploadedFile(UUID identifier, ObjectMetadata metadata, UserInstance userInstance) {
+        return new UploadedFile(identifier, toFileName(metadata.getContentDisposition()), metadata.getContentType(),
+                                metadata.getContentLength(), createUploadDetails(userInstance));
     }
 
     private boolean customerDoesNotAllowUploadingFile(Customer customer, Resource resource) {

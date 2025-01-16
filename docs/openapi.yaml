@@ -946,7 +946,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LocationResponse'
+                $ref: '#/components/schemas/File'
         '400':
           description: 'Bad request'
           content:
@@ -3340,32 +3340,6 @@ components:
       required:
         - uploadId
         - key
-    LocationResponse:
-      description: A Response containing the metadata for a file
-      type: object
-      properties:
-        location:
-          deprecated: true
-          type: string
-          description: UUID of uploaded file
-          example: f335ab02-35b3-4fda-9204-cd999e166ce0
-        identifier:
-          type: string
-          description: UUID of uploaded file
-          example: f335ab02-35b3-4fda-9204-cd999e166ce0
-        mimeType:
-          type: string
-          description: Mime-type of uploaded file
-          example: application/pdf
-        size:
-          type: number
-          description: Size of uploaded file
-          example: 12.22
-        fileName:
-          deprecated: true
-          type: string
-          description: Filename of uploaded file
-          example: Untitled.pdf
     Map:
       required:
         - type
