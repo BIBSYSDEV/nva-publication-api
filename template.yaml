@@ -1144,6 +1144,8 @@ Resources:
       Handler: no.unit.nva.publication.file.upload.CreateUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
       Events:
         CreateEvent:
           Type: Api
@@ -1167,7 +1169,7 @@ Resources:
         ListEvent:
           Type: Api
           Properties:
-            Path: /file-upload/listparts
+            Path: /{publicationIdentifier}/file-upload/listparts
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -1186,7 +1188,7 @@ Resources:
         PrepareEvent:
           Type: Api
           Properties:
-            Path: /file-upload/prepare
+            Path: /{publicationIdentifier}/file-upload/prepare
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -1205,7 +1207,7 @@ Resources:
         AbortEvent:
           Type: Api
           Properties:
-            Path: /file-upload/abort
+            Path: /{publicationIdentifier}/file-upload/abort
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -1217,14 +1219,19 @@ Resources:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: !Ref AllowedOrigins
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.CompleteUploadHandler::handleRequest
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
       Events:
         CompleteEvent:
           Type: Api
           Properties:
-            Path: /file-upload/complete
+            Path: /{publicationIdentifier}/file-upload/complete
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -1245,6 +1252,25 @@ Resources:
           Properties:
             Path: /{publicationIdentifier}/file/{fileIdentifier}
             Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  DeleteFileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-file
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
+          TABLE_NAME: !Ref NvaResourcesTable
+      Handler: no.unit.nva.publication.file.upload.DeleteFileHandler::handleRequest
+      Policies:
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+      Events:
+        CompleteEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/file/{fileIdentifier}
+            Method: delete
             RestApiId: !Ref NvaPublicationApi
 
 

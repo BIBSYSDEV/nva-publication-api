@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.google.common.net.MediaType;
-import no.unit.nva.identifiers.SortableIdentifier;
+import java.util.UUID;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import org.apache.commons.text.translate.UnicodeEscaper;
 
@@ -14,7 +14,7 @@ public record CreateUploadRequestBody(String filename, String size, String mimet
     public static final int LAST_ASCII_CODEPOINT = 127;
 
     public InitiateMultipartUploadRequest toInitiateMultipartUploadRequest(String bucketName) {
-        var key = SortableIdentifier.next().toString();
+        var key = UUID.randomUUID().toString();
         return new InitiateMultipartUploadRequest(bucketName, key, constructObjectMetadata());
     }
 
