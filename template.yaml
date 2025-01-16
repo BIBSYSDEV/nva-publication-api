@@ -1228,6 +1228,25 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
+  UpdateFileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-file
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
+          TABLE_NAME: !Ref NvaResourcesTable
+      Handler: no.unit.nva.publication.file.upload.UpdateFileHandler::handleRequest
+      Policies:
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+      Events:
+        CompleteEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/file/{fileIdentifier}
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
 
   #==========================Event Lambda functions====================================================
 

@@ -927,6 +927,82 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
+
+  /{publicationIdentifier}/file/{fileIdentifier}:
+    post:
+      summary: Update file
+      description: Updates file metadata
+      tags:
+        - external
+      security:
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/file-upload'
+        ]
+      parameters:
+        - in: path
+          name: publicationIdentifier
+          description: Identifier of the Publication.
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: fileIdentifier
+          description: Identifier of the Publication File.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFileRequest'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateFileFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: File Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /file/{fileIdentifier}:
     get:
       summary: Resolves shortened URI to original presigned URI
@@ -4645,6 +4721,11 @@ components:
           properties:
             type:
               type: string
+    UpdateFileRequest:
+      type: object
+      properties:
+        identifier:
+          type: string
     UnpublishingNote:
       type: object
       allOf:
