@@ -1069,12 +1069,6 @@ paths:
       responses:
         '202':
           description: Accepted
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         '401':
           description: Unauthorized
           content:

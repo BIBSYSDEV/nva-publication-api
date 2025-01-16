@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
@@ -26,6 +27,7 @@ import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -33,8 +35,9 @@ import nva.commons.core.JacocoGenerated;
 
 public class FileService {
 
-    public static final String FILE_NAME_REGEX = "filename=\"(.*)\"";
-    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Resource not found!";
+    private static final String FILE_NAME_REGEX = "filename=\"(.*)\"";
+    private static final String RESOURCE_NOT_FOUND_MESSAGE = "Resource not found!";
+    private static final String FILE_NOT_FOUND_MESSAGE = "File not found!";
     private final AmazonS3 amazonS3;
     private final CustomerApiClient customerApiClient;
     private final ResourceService resourceService;
@@ -55,9 +58,7 @@ public class FileService {
                                                                  CreateUploadRequestBody createUploadRequestBody)
         throws NotFoundException, ForbiddenException {
 
-        var resource = Resource.resourceQueryObject(resourceIdentifier)
-                           .fetch(resourceService)
-                           .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+        var resource = fetchResource(resourceIdentifier);
 
         var customer = customerApiClient.fetch(customerId);
         if (customerDoesNotAllowUploadingFile(customer, resource)) {
@@ -73,9 +74,7 @@ public class FileService {
                                                 CompleteUploadRequestBody completeUploadRequestBody,
                                                 UserInstance userInstance) throws NotFoundException {
 
-        var resource = Resource.resourceQueryObject(resourceIdentifier)
-                           .fetch(resourceService)
-                           .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+        var resource = fetchResource(resourceIdentifier);
 
         var completeMultipartUploadRequest = completeUploadRequestBody.toCompleteMultipartUploadRequest(BUCKET_NAME);
         var completeMultipartUploadResult = amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
@@ -89,6 +88,26 @@ public class FileService {
         return file;
     }
 
+    public void deleteFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance)
+        throws ForbiddenException, NotFoundException {
+        var resource = fetchResource(resourceIdentifier);
+
+        validateDeletePermissions(userInstance, resource);
+
+        FileEntry.queryObject(fileIdentifier, resourceIdentifier)
+            .fetch(resourceService)
+            .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE))
+            .delete(resourceService);
+    }
+
+    private static void validateDeletePermissions(UserInstance userInstance, Resource resource)
+        throws ForbiddenException {
+        if (!PublicationPermissions.create(resource.toPublication(), userInstance)
+                 .allowsAction(PublicationOperation.UPDATE)) {
+            throw new ForbiddenException();
+        }
+    }
+
     private static String toFileName(String contentDisposition) {
         var pattern = Pattern.compile(FILE_NAME_REGEX);
         var matcher = pattern.matcher(contentDisposition);
@@ -97,6 +116,12 @@ public class FileService {
 
     private static UserUploadDetails createUploadDetails(UserInstance userInstance) {
         return new UserUploadDetails(new Username(userInstance.getUsername()), Instant.now());
+    }
+
+    private Resource fetchResource(SortableIdentifier resourceIdentifier) throws NotFoundException {
+        return Resource.resourceQueryObject(resourceIdentifier)
+                   .fetch(resourceService)
+                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
     private ObjectMetadata getObjectMetadata(String key) {
