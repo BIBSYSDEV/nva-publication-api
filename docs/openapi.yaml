@@ -967,7 +967,7 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        '202':
           description: File Updated
           content:
             application/json:

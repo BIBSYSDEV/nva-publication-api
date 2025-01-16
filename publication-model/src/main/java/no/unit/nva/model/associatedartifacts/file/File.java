@@ -35,7 +35,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = PendingInternalFile.TYPE, value = PendingInternalFile.class),
     @JsonSubTypes.Type(name = HiddenFile.TYPE, value = HiddenFile.class),
     @JsonSubTypes.Type(name = RejectedFile.TYPE, value = RejectedFile.class)})
-public abstract class File implements JsonSerializable, AssociatedArtifact {
+public abstract class File implements JsonSerializable, AssociatedArtifact, MutableFileMetadata {
 
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String NAME_FIELD = "name";
