@@ -2,7 +2,6 @@ package no.unit.nva.publication.file.upload;
 
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.file.upload.restmodel.UpdateFileRequest;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -12,7 +11,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
-public class UpdateFileHandler extends ApiGatewayHandler<UpdateFileRequest, File> {
+public class UpdateFileHandler extends ApiGatewayHandler<UpdateFileRequest, Void> {
 
     private final FileService fileService;
 
@@ -35,7 +34,7 @@ public class UpdateFileHandler extends ApiGatewayHandler<UpdateFileRequest, File
     }
 
     @Override
-    protected File processInput(UpdateFileRequest input, RequestInfo requestInfo, Context context)
+    protected Void processInput(UpdateFileRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
@@ -48,7 +47,7 @@ public class UpdateFileHandler extends ApiGatewayHandler<UpdateFileRequest, File
     }
 
     @Override
-    protected Integer getSuccessStatusCode(UpdateFileRequest input, File output) {
+    protected Integer getSuccessStatusCode(UpdateFileRequest input, Void output) {
         return HTTP_ACCEPTED;
     }
 }
