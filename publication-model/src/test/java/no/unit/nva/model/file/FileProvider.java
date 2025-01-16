@@ -19,6 +19,7 @@ import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -53,6 +54,7 @@ public class FileProvider implements ArgumentsProvider {
             case InternalFile.TYPE -> randomInternalFile();
             case PendingInternalFile.TYPE -> randomPendingInternalFile();
             case HiddenFile.TYPE -> randomHiddenFile();
+            case UploadedFile.TYPE -> randomUploadedFile();
             default -> throw new IllegalArgumentException(
                 "Unexpected value, make sure to include new types here: " + aClass.getSimpleName());
         };
@@ -60,6 +62,11 @@ public class FileProvider implements ArgumentsProvider {
 
     private static File randomHiddenFile() {
         return buildNonAdministrativeAgreement().buildHiddenFile();
+    }
+
+    private static File randomUploadedFile() {
+        return new UploadedFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
+                                randomInserted());
     }
 
     private static File randomOpenFile() {
