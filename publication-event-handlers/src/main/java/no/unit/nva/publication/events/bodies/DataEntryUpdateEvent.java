@@ -1,11 +1,11 @@
 package no.unit.nva.publication.events.bodies;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
@@ -28,20 +28,12 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         "PublicationService.GeneralSupportRequest.Update";
     private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
     private static final String UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.UnpublishRequest.Update";
-    private static final String FILE_ENTRY_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.FileEntry.Update";
+    public static final String FILE_ENTRY_UPDATE_EVENT_TOPIC = "PublicationService.FileEntry.Update";
+    public static final String FILE_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.FileEntry.Delete";
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
-    
-    private static final Map<Class<?>, String> ENTRY_TYPE_TO_TOPIC_MAP = Map.of(
-        Resource.class, RESOURCE_UPDATE_EVENT_TOPIC,
-        DoiRequest.class, DOI_REQUEST_UPDATE_EVENT_TOPIC,
-        PublishingRequestCase.class, PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC,
-        Message.class, MESSAGE_UPDATE_EVENT_TOPIC,
-        GeneralSupportRequest.class, GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC,
-        UnpublishRequest.class, UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC,
-        FileEntry.class, FILE_ENTRY_REQUEST_UPDATE_EVENT_TOPIC
-    );
+
     @JsonProperty(ACTION)
     private final String action;
     @JsonProperty(OLD_DATA)
@@ -82,6 +74,11 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public Entity getNewData() {
         return newData;
     }
+
+    @JsonIgnore
+    public boolean isDeleteEvent() {
+        return nonNull(oldData) && isNull(newData);
+    }
     
     @Override
     @JacocoGenerated
@@ -113,10 +110,21 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     @JsonProperty("topic")
     public String getTopic() {
         var type = extractDataEntryType();
-        return ENTRY_TYPE_TO_TOPIC_MAP.get(type);
+        return switch (type) {
+            case Resource resource -> RESOURCE_UPDATE_EVENT_TOPIC;
+            case DoiRequest doiRequest -> DOI_REQUEST_UPDATE_EVENT_TOPIC;
+            case PublishingRequestCase publishingRequestCase -> PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC;
+            case Message message -> MESSAGE_UPDATE_EVENT_TOPIC;
+            case GeneralSupportRequest generalSupportRequest -> GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC;
+            case UnpublishRequest unpublishRequest -> UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC;
+            case FileEntry fileEntry -> this.isDeleteEvent()
+                                            ? FILE_ENTRY_DELETE_EVENT_TOPIC
+                                            : FILE_ENTRY_UPDATE_EVENT_TOPIC;
+            default -> throw new IllegalArgumentException("Unknown entry type: " + type);
+        };
     }
     
-    private Class<? extends Entity> extractDataEntryType() {
-        return nonNull(newData) ? newData.getClass() : oldData.getClass();
+    private Entity extractDataEntryType() {
+        return nonNull(newData) ? newData : oldData;
     }
 }
