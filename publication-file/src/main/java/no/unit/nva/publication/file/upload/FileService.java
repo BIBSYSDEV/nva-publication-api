@@ -16,6 +16,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.MutableFileMetadata;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -140,5 +141,29 @@ public class FileService {
                                .map(Reference::getPublicationInstance)
                                .map(PublicationInstance::getInstanceType);
         return instanceType.isPresent() && !customer.getAllowFileUploadForTypes().contains(instanceType.get());
+    }
+
+    public void updateFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance,
+                           MutableFileMetadata mutableFileMetadata) throws ForbiddenException, NotFoundException {
+
+        var resource = Resource.resourceQueryObject(resourceIdentifier)
+                           .fetch(resourceService)
+                           .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+
+        validateUpdateFilePermissions(resource, userInstance);
+
+        var fileEntry = FileEntry.queryObject(fileIdentifier, resourceIdentifier)
+                            .fetch(resourceService)
+                            .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE));
+
+        fileEntry.update(mutableFileMetadata, resourceService);
+    }
+
+    private static void validateUpdateFilePermissions(Resource resource, UserInstance userInstance)
+        throws ForbiddenException {
+        if (!PublicationPermissions.create(resource.toPublication(), userInstance)
+                 .allowsAction(PublicationOperation.UPDATE)) {
+            throw new ForbiddenException();
+        }
     }
 }
