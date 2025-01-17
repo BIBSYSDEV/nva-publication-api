@@ -69,18 +69,18 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnNotFoundWhenPublicationDoesNotExist() throws IOException {
+    void shouldReturnAcceptedWhenPublicationDoesNotExist() throws IOException {
         var request = createAuthorizedRequestWithRandomUser(UUID.randomUUID(), SortableIdentifier.next());
 
         handler.handleRequest(request, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertEquals(HTTP_NOT_FOUND, response.getStatusCode());
+        assertEquals(HTTP_ACCEPTED, response.getStatusCode());
     }
 
     @Test
-    void shouldReturnNotFoundWhenFileDoesNotExist() throws IOException, BadRequestException {
+    void shouldReturnAcceptedWhenFileDoesNotExist() throws IOException, BadRequestException {
         var publication = randomPublication(JournalArticle.class);
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -92,7 +92,7 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertEquals(HTTP_NOT_FOUND, response.getStatusCode());
+        assertEquals(HTTP_ACCEPTED, response.getStatusCode());
     }
 
     @Test

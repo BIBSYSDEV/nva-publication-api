@@ -89,15 +89,16 @@ public class FileService {
     }
 
     public void deleteFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance)
-        throws ForbiddenException, NotFoundException {
-        var resource = fetchResource(resourceIdentifier);
+        throws ForbiddenException {
+        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
 
-        validateDeletePermissions(userInstance, resource);
+        if (resource.isPresent()) {
+            validateDeletePermissions(userInstance, resource.get());
 
-        FileEntry.queryObject(fileIdentifier, resourceIdentifier)
-            .fetch(resourceService)
-            .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE))
-            .delete(resourceService);
+            FileEntry.queryObject(fileIdentifier, resourceIdentifier)
+                .fetch(resourceService)
+                .ifPresent(resourceService::deleteFile);
+        }
     }
 
     private static void validateDeletePermissions(UserInstance userInstance, Resource resource)
