@@ -96,6 +96,10 @@ public final class PublicationGenerator {
         return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
     }
 
+    public static Publication randomDegreePublication() {
+        return fromInstanceClasses(PROTECTED_DEGREE_INSTANCE_TYPES);
+    }
+
     public static Publication fromInstanceClasses(Class<?>... targetClasses) {
         var listOfTargetClasses = Arrays.asList(targetClasses);
         var otherTargetClasses = PublicationInstanceBuilder.listPublicationInstanceTypes()

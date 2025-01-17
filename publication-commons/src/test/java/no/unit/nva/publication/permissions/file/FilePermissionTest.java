@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -17,8 +18,7 @@ class FilePermissionTest {
 
     @Test
     void shouldReturnAllowedActionsSuccessfullyAsRandomUser() {
-        var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildOpenFile(),
-                                                 UserInstance.create(randomString(), randomUri()));
+        var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildOpenFile());
 
         var actual = permissions.getAllAllowedActions();
 
@@ -27,26 +27,28 @@ class FilePermissionTest {
 
     @Test
     void shouldThrowUnauthorizedExceptionWhenReadingHiddenFileAsRandomUser() {
-        var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildHiddenFile(),
-                                                 UserInstance.create(randomString(), randomUri()));
+        var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildHiddenFile());
 
         assertThrows(UnauthorizedException.class, () -> permissions.authorize(FileOperation.READ_METADATA));
     }
 
     @Test
     void shouldThrowUnauthorizedExceptionWhenAuthorizingWriteAsRandomUserAndNoHitOnStrategies() {
-        var permissions = FilePermissions.create(
-            File.builder().withIdentifier(randomUUID()).buildPendingInternalFile(),
-            UserInstance.create(randomString(), randomUri()));
+        var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildPendingInternalFile());
 
         assertThrows(UnauthorizedException.class, () -> permissions.authorize(FileOperation.WRITE_METADATA));
     }
 
     @Test
     void shouldNotThrowExceptionWhenAuthorizingReadForOpenFileAndRandomUser() {
-        var permissions = FilePermissions.create(File.builder().withIdentifier(randomUUID()).buildOpenFile(),
-                                                 UserInstance.create(randomString(), randomUri()));
+        var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildOpenFile());
 
         assertDoesNotThrow(() -> permissions.authorize(FileOperation.READ_METADATA));
+    }
+
+    private static FilePermissions getFilePermissions(File file) {
+        return FilePermissions.create(file,
+                                      UserInstance.create(randomString(), randomUri()),
+                                      randomNonDegreePublication());
     }
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.deny.HiddenFileDenyStrategy;
@@ -21,12 +22,15 @@ public class FilePermissions {
     private final Set<FileDenyStrategy> denyStrategies;
     private final UserInstance userInstance;
     private final File file;
+    private final Publication publication;
 
     public FilePermissions(
         File file,
-        UserInstance userInstance) {
+        UserInstance userInstance,
+        Publication publication) {
         this.userInstance = userInstance;
         this.file = file;
+        this.publication = publication;
         this.grantStrategies = Set.of(
             new EveryoneGrantStrategy(file, userInstance)
         );
@@ -35,8 +39,8 @@ public class FilePermissions {
         );
     }
 
-    public static FilePermissions create(File file, UserInstance userInstance) {
-        return new FilePermissions(file, userInstance);
+    public static FilePermissions create(File file, UserInstance userInstance, Publication publication) {
+        return new FilePermissions(file, userInstance, publication);
     }
 
     public boolean allowsAction(FileOperation permission) {
