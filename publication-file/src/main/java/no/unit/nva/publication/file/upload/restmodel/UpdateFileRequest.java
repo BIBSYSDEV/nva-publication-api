@@ -29,7 +29,7 @@ public record UpdateFileRequest(UUID identifier, URI license, PublisherVersion p
 
     @Override
     public Optional<Instant> getEmbargoDate() {
-        return Optional.of(embargoDate);
+        return Optional.ofNullable(embargoDate);
     }
 
     @Override
