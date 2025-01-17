@@ -392,6 +392,10 @@ public abstract class File implements JsonSerializable, AssociatedArtifact, Muta
                                   embargoDate, rightsRetentionStrategy, legalNote, uploadDetails);
         }
 
+        public File buildUploadedFile() {
+            return new UploadedFile(identifier, name, mimeType, size, uploadDetails);
+        }
+
         public File build(Class<? extends File> clazz) {
             if (clazz.equals(RejectedFile.class)) {
                 return buildRejectedFile();
@@ -405,6 +409,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact, Muta
                 return buildInternalFile();
             } else if (clazz.equals(HiddenFile.class)) {
                 return buildHiddenFile();
+            } else if (clazz.equals(UploadedFile.class)) {
+                return buildUploadedFile();
             } else {
                 throw new IllegalArgumentException("Invalid file type");
             }
