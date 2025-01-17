@@ -66,6 +66,13 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
     }
 
     @Override
+    public PendingOpenFile toPendingOpenFile() {
+        return new PendingOpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                   getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
+                                   getLegalNote(), getUploadDetails());
+    }
+
+    @Override
     public RejectedFile reject() {
         return new RejectedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
                                 getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),

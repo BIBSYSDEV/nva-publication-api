@@ -22,16 +22,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.file.upload.restmodel.UpdateFileRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -178,9 +177,9 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
 
     private InputStream createRequestForUserWithPermissions(UUID fileIdentifier,
                                                             SortableIdentifier publicationIdentifier,
-                                                            UserInstance userInstance, UpdateFileRequest requestBody)
+                                                            UserInstance userInstance, File requestBody)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<UpdateFileRequest>(dtoObjectMapper).withBody(requestBody)
+        return new HandlerRequestBuilder<File>(dtoObjectMapper).withBody(requestBody)
                    .withPathParameters(toPathParameters(fileIdentifier, publicationIdentifier))
                    .withUserName(userInstance.getUsername())
                    .withCurrentCustomer(userInstance.getCustomerId())
@@ -189,14 +188,13 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private UpdateFileRequest randomUpdateFileRequest(UUID fileIdentifier) {
-        return new UpdateFileRequest(fileIdentifier, randomUri(), PublisherVersion.ACCEPTED_VERSION, Instant.now(),
-                                     randomString());
+    private File randomUpdateFileRequest(UUID fileIdentifier) {
+        return randomOpenFile().copy().withIdentifier(fileIdentifier).build(PendingOpenFile.class);
     }
 
     private InputStream createRandomUserAuthorizedRequest(UUID fileIdentifier, SortableIdentifier publicationIdentifier)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<UpdateFileRequest>(dtoObjectMapper).withBody(
+        return new HandlerRequestBuilder<File>(dtoObjectMapper).withBody(
                 randomUpdateFileRequest(fileIdentifier))
                    .withPathParameters(toPathParameters(fileIdentifier, publicationIdentifier))
                    .withUserName(randomString())
@@ -209,7 +207,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     private InputStream createUnauthorizedRequest(UUID fileIdentifier, SortableIdentifier publicationIdentifier)
         throws JsonProcessingException {
 
-        return new HandlerRequestBuilder<UpdateFileRequest>(dtoObjectMapper).withBody(
+        return new HandlerRequestBuilder<File>(dtoObjectMapper).withBody(
                 randomUpdateFileRequest(fileIdentifier))
                    .withPathParameters(toPathParameters(fileIdentifier, publicationIdentifier))
                    .build();
@@ -218,7 +216,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     private InputStream createNotSupportedRequest(SortableIdentifier publicationIdentifier)
         throws JsonProcessingException {
 
-        return new HandlerRequestBuilder<UpdateFileRequest>(dtoObjectMapper).withBody(
+        return new HandlerRequestBuilder<File>(dtoObjectMapper).withBody(
                 randomUpdateFileRequest(UUID.randomUUID()))
                    .withPathParameters(toPathParameters(UUID.randomUUID(), publicationIdentifier))
                    .build();

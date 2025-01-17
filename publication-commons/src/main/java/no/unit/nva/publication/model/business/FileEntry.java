@@ -158,16 +158,16 @@ public final class FileEntry implements Entity {
         resourceIdentifier.deleteFile(this);
     }
 
-    public void update(MutableFileMetadata mutableFileMetadata, ResourceService resourceService) {
-        var updatedFile = file.copy()
-                         .withLicense(mutableFileMetadata.getLicense())
-                         .withEmbargoDate(mutableFileMetadata.getEmbargoDate().orElse(null))
-                         .withLegalNote(mutableFileMetadata.getLegalNote())
-                         .withPublisherVersion(mutableFileMetadata.getPublisherVersion())
+    public void update(File file, ResourceService resourceService) {
+        var updatedFile = this.file.copy()
+                         .withLicense(file.getLicense())
+                         .withEmbargoDate(file.getEmbargoDate().orElse(null))
+                         .withLegalNote(file.getLegalNote())
+                         .withPublisherVersion(file.getPublisherVersion())
                          .build(file.getClass());
 
 
-        if (!updatedFile.equals(file)) {
+        if (!updatedFile.equals(this.file)) {
             this.file = updatedFile;
             this.modifiedDate = Instant.now();
             resourceService.updateFile(this);

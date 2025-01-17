@@ -2,8 +2,8 @@ package no.unit.nva.publication.file.upload;
 
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.file.upload.restmodel.UpdateFileRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -11,7 +11,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
-public class UpdateFileHandler extends ApiGatewayHandler<UpdateFileRequest, Void> {
+public class UpdateFileHandler extends ApiGatewayHandler<File, Void> {
 
     private final FileService fileService;
 
@@ -21,20 +21,20 @@ public class UpdateFileHandler extends ApiGatewayHandler<UpdateFileRequest, Void
     }
 
     public UpdateFileHandler(FileService fileService) {
-        super(UpdateFileRequest.class);
+        super(File.class);
         this.fileService = fileService;
     }
 
     @Override
-    protected void validateRequest(UpdateFileRequest updateFileRequest, RequestInfo requestInfo, Context context)
+    protected void validateRequest(File file, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        if (!RequestUtil.getFileIdentifier(requestInfo).equals(updateFileRequest.identifier())) {
+        if (!RequestUtil.getFileIdentifier(requestInfo).equals(file.getIdentifier())) {
             throw new BadRequestException("File identifier in request body does not match file identifier in path!");
         }
     }
 
     @Override
-    protected Void processInput(UpdateFileRequest input, RequestInfo requestInfo, Context context)
+    protected Void processInput(File input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
@@ -47,7 +47,7 @@ public class UpdateFileHandler extends ApiGatewayHandler<UpdateFileRequest, Void
     }
 
     @Override
-    protected Integer getSuccessStatusCode(UpdateFileRequest input, Void output) {
+    protected Integer getSuccessStatusCode(File input, Void output) {
         return HTTP_ACCEPTED;
     }
 }

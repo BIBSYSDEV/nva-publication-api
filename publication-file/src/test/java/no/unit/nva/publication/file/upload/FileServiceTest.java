@@ -2,6 +2,7 @@ package no.unit.nva.publication.file.upload;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -154,6 +155,27 @@ class FileServiceTest extends ResourcesLocalTest {
                               .withLegalNote(randomString())
                               .withPublisherVersion(PublisherVersion.ACCEPTED_VERSION)
                               .buildHiddenFile();
+
+        fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), userInstance, updatedFile);
+
+        var fetchedFile = FileEntry.queryObject(file.getIdentifier(), resource.getIdentifier())
+                              .fetch(resourceService)
+                              .orElseThrow()
+                              .getFile();
+
+        assertEquals(updatedFile, fetchedFile);
+    }
+
+    @Test
+    void shouldUpdateFileTypeWhenAllowed() throws BadRequestException, ForbiddenException, NotFoundException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingInternalFile();
+        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+
+        var updatedFile = file.toPendingOpenFile();
 
         fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), userInstance, updatedFile);
 
