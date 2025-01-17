@@ -24,14 +24,13 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.role.RoleTypeOther;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 @JacocoGenerated
 public final class EntityDescriptionBuilder {
 
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
+    public static final String EXAMPLE_HOST = "example.org";
 
     private EntityDescriptionBuilder() {
         // NO-OP
@@ -124,7 +123,7 @@ public final class EntityDescriptionBuilder {
     }
 
     private static URI randomUriWithPath(String path) {
-        return UriWrapper.fromHost(API_HOST)
+        return UriWrapper.fromHost(EXAMPLE_HOST)
                    .addChild(path)
                    .addChild(UUID.randomUUID().toString())
                    .getUri();

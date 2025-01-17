@@ -1,6 +1,7 @@
 package cucumber.permissions.file;
 
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.UserInstance;
 
@@ -9,6 +10,7 @@ public class FileScenarioContext {
     private File file;
     private UserInstance user;
     private FileOperation fileOperation;
+    private Publication publication;
 
     public void setFile(File file) {
         this.file = file;
@@ -32,5 +34,13 @@ public class FileScenarioContext {
 
     public FileOperation getFileOperation() {
         return fileOperation;
+    }
+
+    public Publication getPublication() {
+        return publication;
+    }
+
+    public void setPublication(Publication publication) {
+        this.publication = publication;
     }
 }

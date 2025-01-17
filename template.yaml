@@ -1244,10 +1244,13 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.UpdateFileHandler::handleRequest
       Policies:
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Events:
         CompleteEvent:
           Type: Api
@@ -1263,10 +1266,13 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.DeleteFileHandler::handleRequest
       Policies:
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Events:
         CompleteEvent:
           Type: Api

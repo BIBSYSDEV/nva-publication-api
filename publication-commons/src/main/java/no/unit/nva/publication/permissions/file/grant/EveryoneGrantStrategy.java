@@ -16,11 +16,14 @@ public final class EveryoneGrantStrategy extends FileStrategyBase implements Fil
 
     @Override
     public boolean allowsAction(FileOperation permission) {
-        if (FileOperation.READ_METADATA == permission) {
-            //TODO make sure embargo and other restrictions are checked
-            // and download is allowed
-            return file instanceof OpenFile;
+        if (file instanceof OpenFile openFile) {
+            return switch (permission) {
+                case READ_METADATA -> true;
+                case DOWNLOAD -> openFile.fileDoesNotHaveActiveEmbargo();
+                default -> false;
+            };
         }
+
         return false;
     }
 }

@@ -1,6 +1,7 @@
 package no.unit.nva.publication.file.upload;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,11 +17,13 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -29,12 +32,14 @@ import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -105,6 +110,84 @@ class FileServiceTest extends ResourcesLocalTest {
         var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), customerId, uploadRequest);
 
         assertNotNull(uploadResponse.getKey());
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenUpdatingNonExistingFile() {
+        assertThrows(NotFoundException.class,
+                     () -> fileService.updateFile(UUID.randomUUID(), SortableIdentifier.next(), null, null));
+    }
+
+    @Test
+    void shouldThrowForbiddenWhenUserHasNoPermissionToUpdateFile() throws BadRequestException {
+        var publication = randomPublication();
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var userInstance = UserInstance.create(new User(randomString()), randomUri());
+
+        assertThrows(ForbiddenException.class,
+                     () -> fileService.updateFile(UUID.randomUUID(), resource.getIdentifier(), userInstance, null));
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenFileDoesNotExist() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        assertThrows(NotFoundException.class,
+                     () -> fileService.updateFile(UUID.randomUUID(), resource.getIdentifier(), userInstance, null));
+    }
+
+    @Test
+    void shouldUpdateMutableFileFields() throws BadRequestException, ForbiddenException, NotFoundException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomHiddenFile();
+        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+
+        var updatedFile = file.copy()
+                              .withLicense(randomUri())
+                              .withEmbargoDate(Instant.now())
+                              .withLegalNote(randomString())
+                              .withPublisherVersion(PublisherVersion.ACCEPTED_VERSION)
+                              .buildHiddenFile();
+
+        fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), userInstance, updatedFile);
+
+        var fetchedFile = FileEntry.queryObject(file.getIdentifier(), resource.getIdentifier())
+                              .fetch(resourceService)
+                              .orElseThrow()
+                              .getFile();
+
+        assertEquals(updatedFile, fetchedFile);
+    }
+
+    @Test
+    void shouldIgnoreImmutableFileFieldsWhenUpdatingFile() throws BadRequestException, ForbiddenException,
+                                                                  NotFoundException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var originalFile = randomHiddenFile();
+        FileEntry.create(originalFile, resource.getIdentifier(), userInstance).persist(resourceService);
+
+        var updatedFile = originalFile.copy()
+                              .withIdentifier(UUID.randomUUID())
+                              .buildHiddenFile();
+
+        fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance, updatedFile);
+
+        var fetchedFile = FileEntry.queryObject(originalFile.getIdentifier(), resource.getIdentifier())
+                              .fetch(resourceService)
+                              .orElseThrow()
+                              .getFile();
+
+        assertEquals(originalFile.getIdentifier(), fetchedFile.getIdentifier());
+        Assertions.assertNotEquals(updatedFile.getIdentifier(), fetchedFile.getIdentifier());
     }
 
     @Test

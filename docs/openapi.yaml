@@ -999,12 +999,8 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        '202':
           description: File Updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/File'
         '400':
           description: Bad request
           content:
@@ -1069,12 +1065,6 @@ paths:
       responses:
         '202':
           description: Accepted
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         '401':
           description: Unauthorized
           content:
@@ -4793,8 +4783,28 @@ components:
               type: string
     UpdateFileRequest:
       type: object
+      required:
+        - type
+        - identifier
       properties:
+        type:
+          type: string
+          enum:
+            - UpdateFileRequest
         identifier:
+          type: string
+        license:
+          type: string
+          format: uri
+        publisherVersion:
+          type: string
+          enum:
+            - PublishedVersion
+            - AcceptedVersion
+        embargoDate:
+          type: string
+          format: date-time
+        legalNote:
           type: string
     UnpublishingNote:
       type: object
