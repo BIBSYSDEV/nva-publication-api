@@ -991,7 +991,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateFileRequest'
+              $ref: '#/components/schemas/File'
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateFileFunction.Arn}/invocations
@@ -4787,31 +4787,6 @@ components:
           properties:
             type:
               type: string
-    UpdateFileRequest:
-      type: object
-      required:
-        - type
-        - identifier
-      properties:
-        type:
-          type: string
-          enum:
-            - UpdateFileRequest
-        identifier:
-          type: string
-        license:
-          type: string
-          format: uri
-        publisherVersion:
-          type: string
-          enum:
-            - PublishedVersion
-            - AcceptedVersion
-        embargoDate:
-          type: string
-          format: date-time
-        legalNote:
-          type: string
     UnpublishingNote:
       type: object
       allOf:
