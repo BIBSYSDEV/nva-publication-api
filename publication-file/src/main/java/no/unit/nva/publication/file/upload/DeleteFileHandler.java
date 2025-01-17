@@ -14,7 +14,7 @@ public class DeleteFileHandler extends ApiGatewayHandler<Void, Void> {
     private final FileService fileService;
 
     @JacocoGenerated
-    private DeleteFileHandler() {
+    public DeleteFileHandler() {
         this(FileService.defaultFileService());
     }
 
