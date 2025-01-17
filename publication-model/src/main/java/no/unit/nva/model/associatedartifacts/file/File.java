@@ -36,7 +36,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = HiddenFile.TYPE, value = HiddenFile.class),
     @JsonSubTypes.Type(name = RejectedFile.TYPE, value = RejectedFile.class),
     @JsonSubTypes.Type(name = UploadedFile.TYPE, value = UploadedFile.class)})
-public abstract class File implements JsonSerializable, AssociatedArtifact {
+public abstract class File implements JsonSerializable, AssociatedArtifact, MutableFileMetadata {
 
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String NAME_FIELD = "name";
@@ -392,6 +392,10 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                                   embargoDate, rightsRetentionStrategy, legalNote, uploadDetails);
         }
 
+        public File buildUploadedFile() {
+            return new UploadedFile(identifier, name, mimeType, size, uploadDetails);
+        }
+
         public File build(Class<? extends File> clazz) {
             if (clazz.equals(RejectedFile.class)) {
                 return buildRejectedFile();
@@ -405,6 +409,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                 return buildInternalFile();
             } else if (clazz.equals(HiddenFile.class)) {
                 return buildHiddenFile();
+            } else if (clazz.equals(UploadedFile.class)) {
+                return buildUploadedFile();
             } else {
                 throw new IllegalArgumentException("Invalid file type");
             }

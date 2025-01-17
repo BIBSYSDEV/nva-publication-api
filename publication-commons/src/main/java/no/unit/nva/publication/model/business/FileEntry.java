@@ -14,6 +14,7 @@ import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.MutableFileMetadata;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -157,12 +158,20 @@ public final class FileEntry implements Entity {
         resourceIdentifier.deleteFile(this);
     }
 
-    public void update(File file, ResourceService resourceService) {
-        if (identifiersDoesNotMatch(file)) {
-            throw new IllegalArgumentException("Files identifier does not match.");
+    public void update(MutableFileMetadata mutableFileMetadata, ResourceService resourceService) {
+        var updatedFile = file.copy()
+                         .withLicense(mutableFileMetadata.getLicense())
+                         .withEmbargoDate(mutableFileMetadata.getEmbargoDate().orElse(null))
+                         .withLegalNote(mutableFileMetadata.getLegalNote())
+                         .withPublisherVersion(mutableFileMetadata.getPublisherVersion())
+                         .build(file.getClass());
+
+
+        if (!updatedFile.equals(file)) {
+            this.file = updatedFile;
+            this.modifiedDate = Instant.now();
+            resourceService.updateFile(this);
         }
-        updateFile(file);
-        resourceService.updateFile(this);
     }
 
     @JacocoGenerated
@@ -185,14 +194,5 @@ public final class FileEntry implements Entity {
                Objects.equals(getCreatedDate(), fileEntry.getCreatedDate()) &&
                Objects.equals(getModifiedDate(), fileEntry.getModifiedDate()) &&
                Objects.equals(getFile(), fileEntry.getFile());
-    }
-
-    private void updateFile(File file) {
-        this.file = file;
-        this.modifiedDate = Instant.now();
-    }
-
-    private boolean identifiersDoesNotMatch(File file) {
-        return !file.getIdentifier().toString().equals(getIdentifier().toString());
     }
 }
