@@ -18,24 +18,24 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 
-public class FileAccessReadFeatures {
+public class FileAccessFeatures {
 
     public static final String EMPTY_PROPERTY = "";
     private final FileScenarioContext scenarioContext;
 
-    public FileAccessReadFeatures(FileScenarioContext scenarioContext) {
+    public FileAccessFeatures(FileScenarioContext scenarioContext) {
         this.scenarioContext = scenarioContext;
     }
 
     @Given("a file of type {string}")
-    public void a_file_in_the_state(String string) throws ClassNotFoundException {
+    public void aFileOfTheType(String string) throws ClassNotFoundException {
         var file = getFile(string, EMPTY_PROPERTY);
         scenarioContext.setPublication(randomNonDegreePublication());
         scenarioContext.setFile(file);
     }
 
     @Given("a file of type {string} with property {string}")
-    public void a_file_in_the_state(String fileType, String fileProperty) throws ClassNotFoundException {
+    public void aFileOfTheTypeAndWithProperty(String fileType, String fileProperty) throws ClassNotFoundException {
         var file = getFile(fileType, fileProperty);
         if (fileProperty.toLowerCase().contains("degree")) {
             scenarioContext.setPublication(randomDegreePublication());
@@ -56,13 +56,13 @@ public class FileAccessReadFeatures {
     }
 
     @When("a user have the role {string}")
-    public void a_user_with_the_role(String useraRole) {
+    public void aUserHaveTheRole(String useraRole) {
         var user = UserInstance.create(randomString(), randomUri());
         scenarioContext.setUser(user);
     }
 
     @And("the user attempts to {string}")
-    public void user_attempts_to(String string) {
+    public void theUserAttemptsTo(String string) {
         scenarioContext.setFileOperation(FileOperation.lookup(string));
     }
 
