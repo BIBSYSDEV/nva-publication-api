@@ -5,7 +5,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationDate;
 
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -16,6 +15,7 @@ import java.util.Map;
 public class RandomUtils {
 
     private static final String PUBLICATION_ENDPOINT_NAME = "publication";
+    public static final String EXAMPLE_HOST = "example.org";
 
     private RandomUtils() {
         // NO-OP
@@ -31,7 +31,7 @@ public class RandomUtils {
 
     public static URI randomPublicationId() {
         var publicationId = SortableIdentifier.next().toString();
-        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+        return UriWrapper.fromHost(EXAMPLE_HOST)
                 .addChild(PUBLICATION_ENDPOINT_NAME)
                 .addChild(publicationId)
                 .getUri();
