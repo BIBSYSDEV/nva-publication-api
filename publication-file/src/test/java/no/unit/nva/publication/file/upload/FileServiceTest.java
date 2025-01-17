@@ -5,6 +5,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -22,9 +23,17 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -43,6 +52,9 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 class FileServiceTest extends ResourcesLocalTest {
@@ -54,6 +66,73 @@ class FileServiceTest extends ResourcesLocalTest {
     private FileService fileService;
     private CustomerApiClient customerApiClient;
     private AmazonS3Client s3client;
+
+    public static Stream<Arguments> invalidFileConversionsProvider() {
+        return Stream.of(Arguments.of(PendingOpenFile.class, OpenFile.class),
+                         Arguments.of(PendingOpenFile.class, InternalFile.class),
+                         Arguments.of(PendingOpenFile.class, RejectedFile.class),
+                         Arguments.of(PendingOpenFile.class, UploadedFile.class),
+
+                         Arguments.of(PendingInternalFile.class, OpenFile.class),
+                         Arguments.of(PendingInternalFile.class, InternalFile.class),
+                         Arguments.of(PendingInternalFile.class, RejectedFile.class),
+                         Arguments.of(PendingInternalFile.class, UploadedFile.class),
+
+                         Arguments.of(HiddenFile.class, OpenFile.class),
+                         Arguments.of(HiddenFile.class, InternalFile.class),
+                         Arguments.of(HiddenFile.class, RejectedFile.class),
+                         Arguments.of(HiddenFile.class, UploadedFile.class),
+
+                         Arguments.of(RejectedFile.class, OpenFile.class),
+                         Arguments.of(RejectedFile.class, InternalFile.class),
+                         Arguments.of(RejectedFile.class, UploadedFile.class),
+
+                         Arguments.of(UploadedFile.class, OpenFile.class),
+                         Arguments.of(UploadedFile.class, InternalFile.class),
+                         Arguments.of(UploadedFile.class, RejectedFile.class),
+
+                         Arguments.of(OpenFile.class, OpenFile.class),
+                         Arguments.of(OpenFile.class, InternalFile.class),
+                         Arguments.of(OpenFile.class, RejectedFile.class),
+                         Arguments.of(OpenFile.class, UploadedFile.class),
+
+                         Arguments.of(InternalFile.class, OpenFile.class),
+                         Arguments.of(InternalFile.class, InternalFile.class),
+                         Arguments.of(InternalFile.class, RejectedFile.class),
+                         Arguments.of(InternalFile.class, UploadedFile.class)
+
+        );
+    }
+
+    public static Stream<Arguments> validFileConversionsProvider() {
+        return Stream.of(Arguments.of(PendingOpenFile.class, PendingOpenFile.class),
+                         Arguments.of(PendingOpenFile.class, PendingInternalFile.class),
+                         Arguments.of(PendingOpenFile.class, HiddenFile.class),
+
+                         Arguments.of(PendingInternalFile.class, PendingOpenFile.class),
+                         Arguments.of(PendingInternalFile.class, PendingInternalFile.class),
+                         Arguments.of(PendingInternalFile.class, HiddenFile.class),
+
+                         Arguments.of(HiddenFile.class, PendingOpenFile.class),
+                         Arguments.of(HiddenFile.class, PendingInternalFile.class),
+                         Arguments.of(HiddenFile.class, HiddenFile.class),
+
+                         Arguments.of(RejectedFile.class, PendingOpenFile.class),
+                         Arguments.of(RejectedFile.class, PendingInternalFile.class),
+                         Arguments.of(RejectedFile.class, HiddenFile.class),
+
+                         Arguments.of(UploadedFile.class, PendingOpenFile.class),
+                         Arguments.of(UploadedFile.class, PendingInternalFile.class),
+                         Arguments.of(UploadedFile.class, HiddenFile.class),
+
+                         Arguments.of(OpenFile.class, PendingOpenFile.class),
+                         Arguments.of(OpenFile.class, PendingInternalFile.class),
+                         Arguments.of(OpenFile.class, HiddenFile.class),
+
+                         Arguments.of(InternalFile.class, PendingOpenFile.class),
+                         Arguments.of(InternalFile.class, PendingInternalFile.class),
+                         Arguments.of(InternalFile.class, HiddenFile.class));
+    }
 
     protected InitiateMultipartUploadResult uploadResult() {
         var uploadResult = new InitiateMultipartUploadResult();
@@ -187,9 +266,45 @@ class FileServiceTest extends ResourcesLocalTest {
         assertEquals(updatedFile, fetchedFile);
     }
 
+    @ParameterizedTest
+    @MethodSource("invalidFileConversionsProvider")
+    void shouldNotAllowFileTypeConversions(Class<? extends File> clazz, Class<? extends File> updatedClazz)
+        throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var originalFile = randomHiddenFile().copy().build(clazz);
+        FileEntry.create(originalFile, resource.getIdentifier(), userInstance).persist(resourceService);
+
+        var updatedFile = originalFile.copy().build(updatedClazz);
+
+        assertThrows(BadRequestException.class,
+                     () -> fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance,
+                                                  updatedFile));
+    }
+
+    @ParameterizedTest
+    @MethodSource("validFileConversionsProvider")
+    void shouldAllowFileTypeConversions(Class<? extends File> clazz, Class<? extends File> updatedClazz)
+        throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var originalFile = randomHiddenFile().copy().build(clazz);
+        FileEntry.create(originalFile, resource.getIdentifier(), userInstance).persist(resourceService);
+
+        var updatedFile = originalFile.copy().build(updatedClazz);
+
+        assertDoesNotThrow(
+            () -> fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance,
+                                         updatedFile));
+    }
+
     @Test
-    void shouldIgnoreImmutableFileFieldsWhenUpdatingFile() throws BadRequestException, ForbiddenException,
-                                                                  NotFoundException {
+    void shouldIgnoreImmutableFileFieldsWhenUpdatingFile()
+        throws BadRequestException, ForbiddenException, NotFoundException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -197,9 +312,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var originalFile = randomHiddenFile();
         FileEntry.create(originalFile, resource.getIdentifier(), userInstance).persist(resourceService);
 
-        var updatedFile = originalFile.copy()
-                              .withIdentifier(UUID.randomUUID())
-                              .buildHiddenFile();
+        var updatedFile = originalFile.copy().withIdentifier(UUID.randomUUID()).buildHiddenFile();
 
         fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance, updatedFile);
 

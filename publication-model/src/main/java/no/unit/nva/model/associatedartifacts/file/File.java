@@ -217,6 +217,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact, Muta
 
     @JsonIgnore
     public abstract boolean isVisibleForNonOwner();
+    @JsonIgnore
+    public abstract boolean canBeConvertedTo(File file);
 
     public abstract Builder copy();
 

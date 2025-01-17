@@ -16,7 +16,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.file.MutableFileMetadata;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -30,6 +30,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -121,7 +122,7 @@ public class FileService {
     }
 
     public void updateFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance,
-                           MutableFileMetadata mutableFileMetadata) throws ForbiddenException, NotFoundException {
+                           File file) throws ForbiddenException, NotFoundException, BadRequestException {
 
         var resource = Resource.resourceQueryObject(resourceIdentifier)
                            .fetch(resourceService)
@@ -133,7 +134,17 @@ public class FileService {
                             .fetch(resourceService)
                             .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE));
 
-        fileEntry.update(mutableFileMetadata, resourceService);
+        validateUpdate(fileEntry, file);
+
+        fileEntry.update(file, resourceService);
+    }
+
+    private void validateUpdate(FileEntry fileEntry, File file) throws BadRequestException {
+        var currentFile = fileEntry.getFile();
+        if (!currentFile.canBeConvertedTo(file)) {
+            throw new BadRequestException("Can not update file of type %s to type %s".formatted(
+                currentFile.getClass().getSimpleName(), file.getClass().getSimpleName()));
+        }
     }
 
     private static void validateUpdateFilePermissions(Resource resource, UserInstance userInstance)
