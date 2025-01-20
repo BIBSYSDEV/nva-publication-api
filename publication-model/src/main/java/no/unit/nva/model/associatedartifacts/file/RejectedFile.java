@@ -68,4 +68,14 @@ public class RejectedFile extends File {
                    .withLegalNote(this.getLegalNote())
                    .withUploadDetails(this.getUploadDetails());
     }
+
+    @Override
+    public boolean canBeConvertedTo(File file) {
+        return switch (file) {
+            case PendingInternalFile ignore -> true;
+            case PendingOpenFile ignore -> true;
+            case HiddenFile ignore -> true;
+            default -> false;
+        };
+    }
 }

@@ -14,7 +14,6 @@ import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.MutableFileMetadata;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -158,17 +157,14 @@ public final class FileEntry implements Entity {
         resourceIdentifier.deleteFile(this);
     }
 
-    public void update(MutableFileMetadata mutableFileMetadata, ResourceService resourceService) {
-        var updatedFile = file.copy()
-                         .withLicense(mutableFileMetadata.getLicense())
-                         .withEmbargoDate(mutableFileMetadata.getEmbargoDate().orElse(null))
-                         .withLegalNote(mutableFileMetadata.getLegalNote())
-                         .withPublisherVersion(mutableFileMetadata.getPublisherVersion())
-                         .build(file.getClass());
-
-
-        if (!updatedFile.equals(file)) {
-            this.file = updatedFile;
+    public void update(File fileUpdate, ResourceService resourceService) {
+        if (!fileUpdate.equals(this.file)) {
+            this.file = file.copy()
+                .withPublisherVersion(fileUpdate.getPublisherVersion())
+                .withLicense(fileUpdate.getLicense())
+                .withEmbargoDate(fileUpdate.getEmbargoDate().orElse(null))
+                .withLegalNote(fileUpdate.getLegalNote())
+                .build(fileUpdate.getClass());
             this.modifiedDate = Instant.now();
             resourceService.updateFile(this);
         }

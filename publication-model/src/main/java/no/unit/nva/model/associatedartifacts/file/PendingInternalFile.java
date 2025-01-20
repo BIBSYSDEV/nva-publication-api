@@ -66,6 +66,13 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
     }
 
     @Override
+    public PendingOpenFile toPendingOpenFile() {
+        return new PendingOpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                   getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
+                                   getLegalNote(), getUploadDetails());
+    }
+
+    @Override
     public RejectedFile reject() {
         return new RejectedFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
                                 getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
@@ -85,5 +92,15 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
     @Override
     public boolean isNotApprovable() {
         return false;
+    }
+
+    @Override
+    public boolean canBeConvertedTo(File file) {
+        return switch (file) {
+            case PendingInternalFile ignore -> true;
+            case PendingOpenFile ignore -> true;
+            case HiddenFile ignore -> true;
+            default -> false;
+        };
     }
 }
