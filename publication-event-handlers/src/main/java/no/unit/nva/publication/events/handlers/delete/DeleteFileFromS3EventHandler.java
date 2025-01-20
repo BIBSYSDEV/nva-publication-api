@@ -18,8 +18,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    public static final Logger logger = LoggerFactory.getLogger(DeleteFileFromS3EventHandler.class);
-    public static final String FILE_DELETED_MESSAGE =
+    private static final Logger logger = LoggerFactory.getLogger(DeleteFileFromS3EventHandler.class);
+    private static final String FILE_DELETED_MESSAGE =
         "File with key {} has been deleted from S3 bucket for publication {}";
     private static final String PERSISTED_STORAGE_BUCKET_NAME = new Environment().readEnv(
         "NVA_PERSISTED_STORAGE_BUCKET_NAME");

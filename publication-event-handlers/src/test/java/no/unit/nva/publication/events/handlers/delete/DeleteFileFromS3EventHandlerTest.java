@@ -49,9 +49,8 @@ class DeleteFileFromS3EventHandlerTest {
         var persistedStorageS3Driver = new S3Driver(s3Client,
                                                     new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"));
         persistedStorageS3Driver.insertEvent(UnixPath.of(fileEntry.getIdentifier().toString()), randomString());
-
+        insertFile(fileEntry, persistedStorageS3Driver);
         var event = createEvent(fileEntry, null);
-
         handler.handleRequest(event, output, CONTEXT);
 
         assertThrows(NoSuchKeyException.class,
