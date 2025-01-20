@@ -158,6 +158,11 @@ public final class FileEntry implements Entity {
     }
 
     public void update(File fileUpdate, ResourceService resourceService) {
+        if (!file.canBeConvertedTo(fileUpdate)) {
+            throw new IllegalStateException("%s can not be updated to %s"
+                                                .formatted(file.getClass().getSimpleName(),
+                                                           fileUpdate.getClass().getSimpleName()));
+        }
         if (!fileUpdate.equals(this.file)) {
             this.file = file.copy()
                 .withPublisherVersion(fileUpdate.getPublisherVersion())

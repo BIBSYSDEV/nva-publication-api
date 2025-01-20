@@ -279,7 +279,7 @@ class FileServiceTest extends ResourcesLocalTest {
 
         var updatedFile = originalFile.copy().build(updatedClazz);
 
-        assertThrows(BadRequestException.class,
+        assertThrows(IllegalStateException.class,
                      () -> fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance,
                                                   updatedFile));
     }
