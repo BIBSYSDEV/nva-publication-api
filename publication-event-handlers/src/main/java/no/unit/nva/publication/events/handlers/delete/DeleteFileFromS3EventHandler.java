@@ -26,7 +26,7 @@ public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHa
     private final S3Client s3Client;
 
     @JacocoGenerated
-    protected DeleteFileFromS3EventHandler() {
+    public DeleteFileFromS3EventHandler() {
         this(S3Driver.defaultS3Client().build());
     }
 
