@@ -40,8 +40,9 @@ public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHa
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> awsEventBridgeEvent,
                                        Context context) {
 
-        var event = getEvent(eventReference);
+        logger.info("Consuming event: {}", eventReference.toJsonString());
 
+        var event = getEvent(eventReference);
         if (event.isDeleteEvent()) {
             var fileEntry = (FileEntry) event.getOldData();
             var key = fileEntry.getIdentifier().toString();
