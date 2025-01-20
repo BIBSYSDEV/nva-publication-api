@@ -73,4 +73,5 @@ test {
     environment "ALLOWED_ORIGIN", "*"
     environment "RECOVERY_QUEUE", "queue"
     environment "CRISTIN_UNITS_S3_URI", "s3://cristin-units"
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "persistedStorage"
 }
