@@ -2129,6 +2129,7 @@ Resources:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
       Policies:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3AccessManagedPolicy.PolicyArn
         - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
       Events:
         EventBridgeEvent:
