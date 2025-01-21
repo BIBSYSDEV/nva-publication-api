@@ -109,9 +109,9 @@ public final class TicketTestUtils {
     public static Stream<Arguments> invalidAccessRightForTicketTypeProvider() {
         return Stream.of(
                 Arguments.of(DoiRequest.class,
-                             new AccessRight[] {MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD}),
+                             new AccessRight[] {MANAGE_PUBLISHING_REQUESTS}),
                 Arguments.of(PublishingRequestCase.class,
-                             new AccessRight[] {MANAGE_DOI, MANAGE_RESOURCES_STANDARD}));
+                             new AccessRight[] {MANAGE_DOI}));
     }
 
     public static Publication createNonPersistedPublication(PublicationStatus status) {
