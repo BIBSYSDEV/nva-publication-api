@@ -43,6 +43,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -303,7 +304,7 @@ public class ResourceService extends ServiceWithTransactions {
         resource.ifPresent(r -> {
             var associatedArtifacts = r.getAssociatedArtifacts();
             associatedArtifacts.addAll(files);
-            r.setAssociatedArtifacts(associatedArtifacts);
+            r.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts.stream().distinct().toList()));
         });
         return resource;
     }
