@@ -152,14 +152,13 @@ public class UpdatePublicationHandler
                                                RequestInfo requestInfo,
                                                Context context)
         throws ApiGatewayException {
-        SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
+        var identifierInPath = RequestUtil.getIdentifier(requestInfo);
 
         var existingPublication = fetchPublication(identifierInPath);
 
-
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissions.create(existingPublication, userInstance);
-        Publication updatedPublication = switch (input) {
+        var updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
                                                                                 existingPublication,
@@ -183,19 +182,6 @@ public class UpdatePublicationHandler
     }
 
     private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
-        return isShouldUseNewFiles()
-                   ? fetchPublicationWithFilesAsDatabaseEntries(identifierInPath)
-                   : fetchPublicationWithFilesInAssociatedArtifacts(identifierInPath);
-    }
-
-    private Publication fetchPublicationWithFilesAsDatabaseEntries(SortableIdentifier identifierInPath) throws NotFoundException {
-        return Resource.resourceQueryObject(identifierInPath)
-                   .fetchResourceWithFiles(resourceService)
-                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE))
-                   .toPublication();
-    }
-
-    private Publication fetchPublicationWithFilesInAssociatedArtifacts(SortableIdentifier identifierInPath) throws NotFoundException {
         return Resource.resourceQueryObject(identifierInPath)
                    .fetch(resourceService)
                    .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE))

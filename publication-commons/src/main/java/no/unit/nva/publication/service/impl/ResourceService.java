@@ -43,7 +43,6 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -77,6 +76,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
@@ -111,12 +111,13 @@ public class ResourceService extends ServiceWithTransactions {
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
     private final RawContentRetriever uriRetriever;
+    private final Environment environment;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient,
                               String tableName,
                               Clock clock,
                               Supplier<SortableIdentifier> identifierSupplier,
-                              RawContentRetriever uriRetriever) {
+                              RawContentRetriever uriRetriever, Environment environment) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
@@ -126,6 +127,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService, uriRetriever);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
+        this.environment = environment;
     }
 
     @JacocoGenerated
@@ -269,7 +271,15 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        return readResourceService.getResourceByIdentifier(identifier);
+        if (shouldUseNewFiles()) {
+            return getResourceAndFilesByIdentifier(identifier).orElseThrow();
+        } else {
+            return readResourceService.getResourceByIdentifier(identifier);
+        }
+    }
+
+    public boolean shouldUseNewFiles() {
+        return environment.readEnvOpt("SHOULD_USE_NEW_FILES").isPresent();
     }
 
     public Optional<Resource> getResourceAndFilesByIdentifier(SortableIdentifier identifier) {

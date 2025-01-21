@@ -36,7 +36,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -97,7 +96,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -190,7 +188,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(input, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     @ParameterizedTest
@@ -289,17 +287,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         var existingTicket = fetchTicket(secondResponse);
         assertThat(existingTicket.getModifiedDate(), is(greaterThan(createdTicket.getModifiedDate())));
-    }
-
-    @Test
-    void shouldLogErrorWhenErrorOccurs() throws IOException {
-        final TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
-        var requestBody = constructDto(DoiRequest.class);
-        var ownerForOnePublication = UserInstance.fromPublication(randomPublication());
-        var anotherPublication = randomPublication();
-        var input = createHttpTicketCreationRequest(requestBody, anotherPublication, ownerForOnePublication);
-        handler.handleRequest(input, output, CONTEXT);
-        assertThat(appender.getMessages(), containsString("Request failed:"));
     }
 
     @Test

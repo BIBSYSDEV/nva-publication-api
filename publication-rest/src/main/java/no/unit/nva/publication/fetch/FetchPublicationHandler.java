@@ -12,7 +12,6 @@ import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
-import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -117,30 +116,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         };
     }
 
-    private Publication fetchPublication(SortableIdentifier identifier) throws NotFoundException {
-        return isShouldUseNewFiles()
-                   ? fetchPublicationWithFilesAsDatabaseEntries(identifier)
-                   : fetchPublicationWithFilesInAssociatedArtifacts(identifier);
-    }
-
-    private Publication fetchPublicationWithFilesInAssociatedArtifacts(SortableIdentifier identifier)
+    private Publication fetchPublication(SortableIdentifier identifier)
         throws NotFoundException {
         return Resource.resourceQueryObject(identifier)
                    .fetch(resourceService)
                    .orElseThrow(() -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier))
                    .toPublication();
-    }
-
-    private Publication fetchPublicationWithFilesAsDatabaseEntries(SortableIdentifier identifier)
-        throws NotFoundException {
-        return Resource.resourceQueryObject(identifier)
-                   .fetchResourceWithFiles(resourceService)
-                   .orElseThrow(() -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier))
-                   .toPublication();
-    }
-
-    private boolean isShouldUseNewFiles() {
-        return environment.readEnvOpt("SHOULD_USE_NEW_FILES").isPresent();
     }
 
     @Override

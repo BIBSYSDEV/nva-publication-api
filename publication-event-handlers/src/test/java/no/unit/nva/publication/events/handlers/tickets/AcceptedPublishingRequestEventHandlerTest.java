@@ -333,13 +333,10 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var handlerThrowingException =
                 handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication();
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        var logger = LogUtils.getTestingAppenderForRootLogger();
 
         assertThrows(
                 RuntimeException.class,
                 () -> handlerThrowingException.handleRequest(event, outputStream, CONTEXT));
-
-        assertThat(logger.getMessages(), containsString("Could not update publication"));
     }
 
     @Test

@@ -11,7 +11,6 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
@@ -52,10 +51,8 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -74,7 +71,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -88,7 +84,6 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.MediaTypes;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
@@ -457,52 +452,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof InternalFile));
         assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof HiddenFile));
-    }
-
-    @Test
-    void shouldReturnPublicationWithFilesFromDatabaseWhenShouldUseNewFiles()
-        throws IOException, BadRequestException {
-        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication)
-                                       .persistNew(publicationService, userInstance);
-        Resource.fromPublication(persistedPublication).publish(publicationService, userInstance);
-        var file = randomPendingInternalFile();
-        FileEntry.create(file, persistedPublication.getIdentifier(),
-                         userInstance).persist(publicationService);
-
-        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
-        var handler = new FetchPublicationHandler(publicationService,
-                                    uriRetriever,
-                                    environment,
-                                    identityServiceClient,
-                                    mock(HttpClient.class));
-        handler.handleRequest(generateCuratorRequest(persistedPublication), output, context);
-        var gatewayResponse = parseHandlerResponse();
-
-        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
-                                                                      PublicationResponseElevatedUser.class);
-
-        assertTrue(publicationResponse.getAssociatedArtifacts().contains(file));
-    }
-
-    @Test
-    void shouldReturnNotFoundWhenPublicationWithFilesFromDatabaseDoesNotExist() throws IOException {
-        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
-
-        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
-        var handler = new FetchPublicationHandler(publicationService,
-                                                  uriRetriever,
-                                                  environment,
-                                                  identityServiceClient,
-                                                  mock(HttpClient.class));
-        handler.handleRequest(generateCuratorRequest(publication), output, context);
-        var gatewayResponse = parseHandlerResponse();
-
-        var response = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
-                                                                      Problem.class);
-
-        assertThat(response.getStatus().getStatusCode(), is(equalTo(SC_NOT_FOUND)));
     }
 
     private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo)

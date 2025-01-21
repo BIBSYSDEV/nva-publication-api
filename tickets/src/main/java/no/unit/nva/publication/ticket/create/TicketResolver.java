@@ -18,6 +18,7 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -114,13 +115,11 @@ public class TicketResolver {
     }
 
     private Publication fetchPublication(RequestUtils requestUtils) throws ApiGatewayException {
-        return attempt(requestUtils::publicationIdentifier).map(resourceService::getPublicationByIdentifier)
-                   .orElseThrow(fail -> loggingFailureReporter(fail.getException()));
-    }
-
-    private ApiGatewayException loggingFailureReporter(Exception exception) {
-        logger.error("Request failed: {}", exception.getMessage());
-        return new ForbiddenException();
+        var resourceIdentifier = requestUtils.publicationIdentifier();
+        return Resource.resourceQueryObject(resourceIdentifier)
+                   .fetch(resourceService)
+                   .orElseThrow(() -> new NotFoundException("Publication not found"))
+                   .toPublication();
     }
 
     private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase,
