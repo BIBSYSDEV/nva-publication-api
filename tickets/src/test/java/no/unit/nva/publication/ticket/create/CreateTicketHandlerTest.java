@@ -544,7 +544,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var requestBody = constructDto(PublishingRequestCase.class);
         var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(), curatingInstitution,
-                                                      randomUri(), curatorName, MANAGE_PUBLISHING_REQUESTS);
+                                                      randomUri(), curatorName, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -556,7 +556,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldAutoApproveWhenOnlyHiddenFiles()
+    void shouldAutoApprovePublishingRequestWhenItContainsOnlyHiddenFiles()
         throws ApiGatewayException, IOException {
         var publication = createNonDegreePublicationWithHiddenFile();
 
@@ -569,7 +569,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var requestBody = constructDto(PublishingRequestCase.class);
         var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(), curatingInstitution,
-                                                      randomUri(), curatorName, MANAGE_PUBLISHING_REQUESTS);
+                                                      randomUri(), curatorName, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -758,7 +758,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
                                                       curatingInstitution, randomUri(), randomString(),
-                                                      MANAGE_PUBLISHING_REQUESTS);
+                                                      MANAGE_RESOURCES_STANDARD);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
