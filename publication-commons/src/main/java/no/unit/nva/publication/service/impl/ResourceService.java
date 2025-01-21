@@ -303,6 +303,7 @@ public class ResourceService extends ServiceWithTransactions {
 //        resource.ifPresent(res -> res.getAssociatedArtifacts().addAll(files));
         resource.ifPresent(r -> {
             var associatedArtifacts = r.getAssociatedArtifacts();
+            associatedArtifacts.removeIf(File.class::isInstance);
             associatedArtifacts.addAll(files);
             r.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts.stream().distinct().toList()));
         });
