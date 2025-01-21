@@ -1438,7 +1438,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var resource = Resource.fromPublication(persistedPublication).fetchResourceWithFiles(resourceService);
 
-        assertTrue(resource.orElseThrow().getFiles().contains(file));
+        assertTrue(resource.orElseThrow().getAssociatedArtifacts().contains(file));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

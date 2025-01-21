@@ -11,6 +11,8 @@ import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
+import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -34,6 +36,7 @@ import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
@@ -104,7 +107,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation
 
         var identifier = RequestUtil.getIdentifier(requestInfo);
-        var publication = resourceService.getPublicationByIdentifier(identifier);
+        var publication = fetchPublication(identifier);
 
         return switch (publication.getStatus()) {
             case DRAFT -> produceDraftPublicationResponse(requestInfo, publication);
@@ -112,6 +115,32 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(publication, requestInfo);
             default -> throwNotFoundException();
         };
+    }
+
+    private Publication fetchPublication(SortableIdentifier identifier) throws NotFoundException {
+        return isShouldUseNewFiles()
+                   ? fetchPublicationWithFilesAsDatabaseEntries(identifier)
+                   : fetchPublicationWithFilesInAssociatedArtifacts(identifier);
+    }
+
+    private Publication fetchPublicationWithFilesInAssociatedArtifacts(SortableIdentifier identifier)
+        throws NotFoundException {
+        return Resource.resourceQueryObject(identifier)
+                   .fetch(resourceService)
+                   .orElseThrow(() -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier))
+                   .toPublication();
+    }
+
+    private Publication fetchPublicationWithFilesAsDatabaseEntries(SortableIdentifier identifier)
+        throws NotFoundException {
+        return Resource.resourceQueryObject(identifier)
+                   .fetchResourceWithFiles(resourceService)
+                   .orElseThrow(() -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier))
+                   .toPublication();
+    }
+
+    private boolean isShouldUseNewFiles() {
+        return environment.readEnvOpt("SHOULD_USE_NEW_FILES").isPresent();
     }
 
     @Override

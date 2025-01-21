@@ -1943,9 +1943,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var file = (File) randomPendingOpenFile();
         var publication = randomPublication().copy()
                               .withPublisher(Organization.fromUri(customerId))
-                              .withAssociatedArtifacts(new ArrayList<>(List.of(file)))
+                              .withAssociatedArtifacts(List.of())
                               .build();
-        var resource = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
         FileEntry.create(file, resource.getIdentifier(),
                          UserInstance.create(randomString(), customerId))
             .persist(resourceService);
@@ -1953,7 +1954,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(resource, contributor);
         var updatedFile = file.copy().buildPendingInternalFile();
-        var updatedPublication = resource.copy().withAssociatedArtifacts(new ArrayList<>(List.of(updatedFile))).build();
+        var updatedPublication = resource.copy().withAssociatedArtifacts(List.of(updatedFile)).build();
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         var input = ownerUpdatesOwnPublication(resource.getIdentifier(), updatedPublication);
 

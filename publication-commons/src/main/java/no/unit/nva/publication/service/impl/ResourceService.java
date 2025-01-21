@@ -43,6 +43,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -287,7 +288,14 @@ public class ResourceService extends ServiceWithTransactions {
         var resource = extractResource(entries);
         var files = extractFiles(entries);
 
-        return resource.map(res -> res.copy().withFiles(files).build());
+
+//        resource.ifPresent(res -> res.getAssociatedArtifacts().addAll(files));
+        resource.ifPresent(r -> {
+            var associatedArtifacts = r.getAssociatedArtifacts();
+            associatedArtifacts.addAll(files);
+            r.setAssociatedArtifacts(associatedArtifacts);
+        });
+        return resource;
     }
 
     private static Optional<Resource> extractResource(List<Dao> entries) {

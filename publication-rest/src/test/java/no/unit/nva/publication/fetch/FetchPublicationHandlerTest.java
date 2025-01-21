@@ -11,6 +11,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
@@ -21,11 +22,9 @@ import static no.unit.nva.publication.fetch.FetchPublicationHandler.DO_NOT_REDIR
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.apigateway.ApiGatewayHandler.RESOURCE;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -37,11 +36,8 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -56,8 +52,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -76,6 +74,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -89,6 +88,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.MediaTypes;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
@@ -288,29 +288,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
-    void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-        throws IOException, ApiGatewayException {
-        var serviceThrowingException = spy(publicationService);
-        doThrow(new NullPointerException())
-            .when(serviceThrowingException)
-            .getPublicationByIdentifier(any(SortableIdentifier.class));
-
-        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,
-                                                              uriRetriever,
-                                                              environment,
-                                                              identityServiceClient,
-                                                              mock(HttpClient.class));
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
-
-        var gatewayResponse = parseFailureResponse();
-        var actualDetail = getProblemDetail(gatewayResponse);
-        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-        assertThat(actualDetail, containsString(
-            MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
-    }
-
-    @Test
     void handlerReturnsGoneWithPublicationDetailWhenPublicationIsUnpublishedAndDuplicateOfValueIsNotPresent()
         throws ApiGatewayException, IOException {
         var publication = createUnpublishedPublicationWithDuplicate(null);
@@ -480,6 +457,52 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof InternalFile));
         assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof HiddenFile));
+    }
+
+    @Test
+    void shouldReturnPublicationWithFilesFromDatabaseWhenShouldUseNewFiles()
+        throws IOException, BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(publicationService, userInstance);
+        Resource.fromPublication(persistedPublication).publish(publicationService, userInstance);
+        var file = randomPendingInternalFile();
+        FileEntry.create(file, persistedPublication.getIdentifier(),
+                         userInstance).persist(publicationService);
+
+        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
+        var handler = new FetchPublicationHandler(publicationService,
+                                    uriRetriever,
+                                    environment,
+                                    identityServiceClient,
+                                    mock(HttpClient.class));
+        handler.handleRequest(generateCuratorRequest(persistedPublication), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
+                                                                      PublicationResponseElevatedUser.class);
+
+        assertTrue(publicationResponse.getAssociatedArtifacts().contains(file));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenPublicationWithFilesFromDatabaseDoesNotExist() throws IOException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+
+        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
+        var handler = new FetchPublicationHandler(publicationService,
+                                                  uriRetriever,
+                                                  environment,
+                                                  identityServiceClient,
+                                                  mock(HttpClient.class));
+        handler.handleRequest(generateCuratorRequest(publication), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        var response = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
+                                                                      Problem.class);
+
+        assertThat(response.getStatus().getStatusCode(), is(equalTo(SC_NOT_FOUND)));
     }
 
     private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo)

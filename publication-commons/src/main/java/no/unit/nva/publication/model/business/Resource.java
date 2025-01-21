@@ -31,8 +31,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -76,8 +76,6 @@ public class Resource implements Entity {
     private URI link;
     @JsonProperty
     private AssociatedArtifactList associatedArtifacts;
-    @JsonProperty
-    private List<File> files;
     @JsonProperty
     private List<ResearchProject> projects;
     @JsonProperty
@@ -503,19 +501,13 @@ public class Resource implements Entity {
     }
 
     public AssociatedArtifactList getAssociatedArtifacts() {
-        return associatedArtifacts;
+        return nonNull(associatedArtifacts) ?
+                   new AssociatedArtifactList(new ArrayList<AssociatedArtifact>(associatedArtifacts)) :
+                                                                             new AssociatedArtifactList(new ArrayList<>());
     }
 
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
-    }
-
-    public List<File> getFiles() {
-        return files;
-    }
-
-    public void setFiles(List<File> files) {
-        this.files = files;
     }
 
     public List<ResearchProject> getProjects() {
