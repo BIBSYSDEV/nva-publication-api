@@ -5,7 +5,7 @@ Feature: File metadata read and file download permissions
 
   Scenario Outline: Verify file metadata read permissions
     Given a file of type "<FileType>"
-    When a user have the role "<UserRole>"
+    When the user have the role "<UserRole>"
     And the user attempts to "read-metadata"
     Then the action outcome is "<Outcome>"
 

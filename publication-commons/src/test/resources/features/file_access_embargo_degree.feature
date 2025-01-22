@@ -3,9 +3,9 @@ Feature: File operations permissions
   I want file operations permissions (read-metadata, download, write-metadata, delete) to be enforced based on file properties and user roles
   So that only authorized users can perform operations on files
 
-  Scenario Outline: Verify file operation permissions
+  Scenario Outline: Verify embargo and degree file operation permissions
     Given a file of type "OpenFile" with property "<FileProperty>"
-    When a user have the role "<UserRole>"
+    When the user have the role "<UserRole>"
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 

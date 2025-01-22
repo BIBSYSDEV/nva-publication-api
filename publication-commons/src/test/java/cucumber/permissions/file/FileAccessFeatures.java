@@ -29,14 +29,14 @@ public class FileAccessFeatures {
 
     @Given("a file of type {string}")
     public void aFileOfTheType(String string) throws ClassNotFoundException {
-        var file = getFile(string, EMPTY_PROPERTY);
+        var file = createFile(string, EMPTY_PROPERTY);
         scenarioContext.setPublication(randomNonDegreePublication());
         scenarioContext.setFile(file);
     }
 
     @Given("a file of type {string} with property {string}")
     public void aFileOfTheTypeAndWithProperty(String fileType, String fileProperty) throws ClassNotFoundException {
-        var file = getFile(fileType, fileProperty);
+        var file = createFile(fileType, fileProperty);
         if (fileProperty.toLowerCase().contains("degree")) {
             scenarioContext.setPublication(randomDegreePublication());
         } else {
@@ -46,8 +46,8 @@ public class FileAccessFeatures {
     }
 
     @SuppressWarnings("unchecked")
-    private static File getFile(String fileType, String fileProperty) throws ClassNotFoundException {
-        var clazz = (Class<File>)Class.forName(File.class.getPackageName() + "." + fileType);
+    private static File createFile(String fileType, String fileProperty) throws ClassNotFoundException {
+        var clazz = (Class<File>) Class.forName(File.class.getPackageName() + "." + fileType);
         var file = File.builder();
         if (fileProperty.toLowerCase().contains("embargo")) {
             file.withEmbargoDate(Instant.now().plus(100, DAYS));
@@ -55,19 +55,19 @@ public class FileAccessFeatures {
         return file.build(clazz);
     }
 
-    @When("a user have the role {string}")
-    public void aUserHaveTheRole(String useraRole) {
+    @When("the user have the role {string}")
+    public void theUserHaveTheRole(String useraRole) {
         var user = UserInstance.create(randomString(), randomUri());
         scenarioContext.setUser(user);
     }
 
     @And("the user attempts to {string}")
-    public void theUserAttemptsTo(String string) {
-        scenarioContext.setFileOperation(FileOperation.lookup(string));
+    public void theUserAttemptsTo(String operation) {
+        scenarioContext.setFileOperation(FileOperation.lookup(operation));
     }
 
     @Then("the action outcome is {string}")
-    public void theNvaResourceHasAPublicationContextWithPublisherWithNameEqualTo(String outcome) {
+    public void theActionOutcomeIs(String outcome) {
         var permissionStrategy = new FilePermissions(scenarioContext.getFile(), scenarioContext.getUser(),
                                                      scenarioContext.getPublication());
         var expected = outcome.equals("Allowed");
