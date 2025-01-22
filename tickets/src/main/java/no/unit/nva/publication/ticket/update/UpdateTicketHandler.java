@@ -202,7 +202,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
 
         if (COMPLETED.equals(ticketRequest.getStatus())) {
             validateFilesForApproval(ticket);
-            ticket.approveFiles().persistUpdate(ticketService);
+            ticket.publishApprovedFile().persistUpdate(ticketService);
         }
     }
 

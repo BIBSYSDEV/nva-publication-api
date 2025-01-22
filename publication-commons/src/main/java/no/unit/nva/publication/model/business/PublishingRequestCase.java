@@ -45,19 +45,18 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("PMD.GodClass")
 public class PublishingRequestCase extends TicketEntry {
 
+    public static final String RESOURCE_LACKS_REQUIRED_DATA =
+        "Resource does not have required data to be " + "published: ";
+    public static final String TYPE = "PublishingRequestCase";
+    public static final String MARKED_FOR_DELETION_ERROR = "Publication is marked for deletion and cannot be " +
+                                                           "published.";
+    public static final String APPROVED_FILES_FIELD = "approvedFiles";
+    public static final String NOT_COMPLETED_PUBLISHING_REQUEST_MESSAGE = "Not allowed to set approved files for not " +
+                                                                          "Completed PublishingRequest";
+    public static final String FILES_FOR_APPROVAL_FIELD = "filesForApproval";
     private static final Logger logger = LoggerFactory.getLogger(PublishingRequestCase.class);
-    public static final String RESOURCE_LACKS_REQUIRED_DATA = "Resource does not have required data to be "
-                                                              + "published: ";
     private static final String PUBLISHING_FILE_MESSAGE =
         "Publishing file {} of type {} from approved " + "PublishingRequest {} for publication {}";
-    public static final String TYPE = "PublishingRequestCase";
-    public static final String MARKED_FOR_DELETION_ERROR =
-        "Publication is marked for deletion and cannot be published.";
-    public static final String APPROVED_FILES_FIELD = "approvedFiles";
-    public static final String NOT_COMPLETED_PUBLISHING_REQUEST_MESSAGE =
-        "Not allowed to set approved files for not Completed PublishingRequest";
-    public static final String FILES_FOR_APPROVAL_FIELD = "filesForApproval";
-
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
     @JsonProperty(STATUS_FIELD)
@@ -96,10 +95,8 @@ public class PublishingRequestCase extends TicketEntry {
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,
                                                           SortableIdentifier publicationIdentifier,
                                                           SortableIdentifier publishingRequestIdentifier) {
-        return createPublishingRequestIdentifyingObject(
-            userInstance,
-            publicationIdentifier,
-            publishingRequestIdentifier);
+        return createPublishingRequestIdentifyingObject(userInstance, publicationIdentifier,
+                                                        publishingRequestIdentifier);
     }
 
     public static PublishingRequestCase createQueryObject(SortableIdentifier resourceIdentifier, URI customerId) {
@@ -126,8 +123,7 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     @Override
-    public void validateCreationRequirements(Publication publication)
-        throws ConflictException {
+    public void validateCreationRequirements(Publication publication) throws ConflictException {
         if (PublicationStatus.DRAFT_FOR_DELETION == publication.getStatus()) {
             throw new ConflictException(MARKED_FOR_DELETION_ERROR);
         }
@@ -185,6 +181,26 @@ public class PublishingRequestCase extends TicketEntry {
         this.assignee = assignee;
     }
 
+    @Override
+    public URI getOwnerAffiliation() {
+        return ownerAffiliation;
+    }
+
+    @Override
+    public void setOwnerAffiliation(URI ownerAffiliation) {
+        this.ownerAffiliation = ownerAffiliation;
+    }
+
+    @Override
+    public void validateAssigneeRequirements(Publication publication) {
+    }
+
+    @Override
+    public PublishingRequestCase withOwnerAffiliation(URI ownerAffiliation) {
+        this.setOwnerAffiliation(ownerAffiliation);
+        return this;
+    }
+
     public Set<File> getFilesForApproval() {
         return nonNull(filesForApproval) ? filesForApproval : Set.of();
     }
@@ -197,26 +213,12 @@ public class PublishingRequestCase extends TicketEntry {
         this.filesForApproval = Set.of();
     }
 
-    @Override
-    public URI getOwnerAffiliation() {
-        return ownerAffiliation;
-    }
-
-    @Override
-    public void setOwnerAffiliation(URI ownerAffiliation) {
-        this.ownerAffiliation = ownerAffiliation;
-    }
-
     public Set<File> getApprovedFiles() {
         return nonNull(approvedFiles) ? approvedFiles : Collections.emptySet();
     }
 
     public void setApprovedFiles(Set<File> approvedFiles) {
         this.approvedFiles = approvedFiles;
-    }
-
-    @Override
-    public void validateAssigneeRequirements(Publication publication) {
     }
 
     @Override
@@ -231,8 +233,7 @@ public class PublishingRequestCase extends TicketEntry {
 
     @Override
     public Publication toPublication(ResourceService resourceService) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(getResourceIdentifier()))
-                   .orElseThrow();
+        return attempt(() -> resourceService.getPublicationByIdentifier(getResourceIdentifier())).orElseThrow();
     }
 
     @Override
@@ -284,7 +285,7 @@ public class PublishingRequestCase extends TicketEntry {
         return this;
     }
 
-    public PublishingRequestCase approveFiles() {
+    public PublishingRequestCase publishApprovedFile() {
         this.approvedFiles = getFilesForApproval().stream().map(this::toApprovedFile).collect(Collectors.toSet());
         this.filesForApproval = Set.of();
         return this;
@@ -292,10 +293,9 @@ public class PublishingRequestCase extends TicketEntry {
 
     public void publishApprovedFiles(ResourceService resourceService) {
         if (resourceService.shouldUseNewFiles()) {
-            getApprovedFiles().forEach(file ->
-                                           FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
-                                               .fetch(resourceService)
-                                               .ifPresent(fileEntry -> fileEntry.approve(resourceService)));
+            getApprovedFiles().forEach(file -> FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
+                                                   .fetch(resourceService)
+                                                   .ifPresent(fileEntry -> fileEntry.approve(resourceService)));
         } else {
             var resource = Resource.resourceQueryObject(getResourceIdentifier()).fetch(resourceService).orElseThrow();
             var resourceWithUpdatedAssociatedArtifacts = toPublicationWithApprovedFiles(resource).toPublication();
@@ -313,51 +313,11 @@ public class PublishingRequestCase extends TicketEntry {
         } else {
             var resource = Resource.resourceQueryObject(getResourceIdentifier()).fetch(resourceService).orElseThrow();
             var resourceWithRejectedFiles = resource.copy()
-                                                             .withAssociatedArtifactsList(new AssociatedArtifactList(rejectFiles(resource)))
-                                                             .build();
+                                                .withAssociatedArtifactsList(
+                                                    new AssociatedArtifactList(rejectFiles(resource)))
+                                                .build();
             resourceService.updatePublication(resourceWithRejectedFiles.toPublication());
         }
-    }
-
-    private List<AssociatedArtifact> rejectFiles(Resource resource) {
-        var associatedArtifacts = resource.getAssociatedArtifacts();
-        return associatedArtifacts.stream()
-                   .map(this::rejectFile)
-                   .toList();
-    }
-
-    private AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
-        if (associatedArtifact instanceof PendingFile<?,?> pendingFile) {
-            return pendingFile.reject();
-        } else {
-            return associatedArtifact;
-        }
-    }
-
-    private Resource toPublicationWithApprovedFiles(Resource resource) {
-        var updatedAssociatedArtifacts = approveFilesFromPublishingRequest(resource.getAssociatedArtifacts());
-        return resource.copy().withAssociatedArtifactsList(new AssociatedArtifactList(updatedAssociatedArtifacts)).build();
-    }
-
-    private List<AssociatedArtifact> approveFilesFromPublishingRequest(AssociatedArtifactList associatedArtifacts) {
-        return associatedArtifacts.stream().map(this::approveFiles).toList();
-    }
-
-    private AssociatedArtifact approveFiles(AssociatedArtifact associatedArtifact) {
-        return switch (associatedArtifact) {
-            case PendingFile<?,?> pendingFile when fileIsApproved((File) pendingFile) -> {
-                var approvedFile = pendingFile.approve();
-                logger.info(PUBLISHING_FILE_MESSAGE, pendingFile.getIdentifier(),
-                            pendingFile.getClass().getSimpleName(), getIdentifier(), getResourceIdentifier());
-                yield approvedFile;
-            }
-
-            case null, default -> associatedArtifact;
-        };
-    }
-
-    private File toApprovedFile(File file) {
-        return file instanceof PendingFile<?,?> pendingFile ? pendingFile.approve() : file;
     }
 
     public PublishingRequestCase withWorkflow(PublishingWorkflow workflow) {
@@ -366,17 +326,10 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     @Override
-    public PublishingRequestCase withOwnerAffiliation(URI ownerAffiliation) {
-        this.setOwnerAffiliation(ownerAffiliation);
-        return this;
-    }
-
-    @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
-                            getCreatedDate(), getAssignee(), getWorkflow(), getOwnerAffiliation(),
-                            getApprovedFiles());
+                            getCreatedDate(), getAssignee(), getWorkflow(), getOwnerAffiliation(), getApprovedFiles());
     }
 
     @Override
@@ -385,25 +338,20 @@ public class PublishingRequestCase extends TicketEntry {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PublishingRequestCase)) {
+        if (!(o instanceof PublishingRequestCase that)) {
             return false;
         }
-        PublishingRequestCase that = (PublishingRequestCase) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
-               && getStatus() == that.getStatus()
-               && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getWorkflow(), that.getWorkflow())
-               && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
-               && Objects.equals(getApprovedFiles(), that.getApprovedFiles());
+        return Objects.equals(getIdentifier(), that.getIdentifier()) && getStatus() == that.getStatus() &&
+               Objects.equals(getCustomerId(), that.getCustomerId()) && Objects.equals(getOwner(), that.getOwner()) &&
+               Objects.equals(getModifiedDate(), that.getModifiedDate()) &&
+               Objects.equals(getCreatedDate(), that.getCreatedDate()) &&
+               Objects.equals(getWorkflow(), that.getWorkflow()) && Objects.equals(getAssignee(), that.getAssignee()) &&
+               Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation()) &&
+               Objects.equals(getApprovedFiles(), that.getApprovedFiles());
     }
 
     public PublishingRequestCase persistAutoComplete(TicketService ticketService, Publication publication,
-                                                     Username finalizedBy)
-        throws ApiGatewayException {
+                                                     Username finalizedBy) throws ApiGatewayException {
         return (PublishingRequestCase) this.complete(publication, finalizedBy).persistNewTicket(ticketService);
     }
 
@@ -411,10 +359,9 @@ public class PublishingRequestCase extends TicketEntry {
         return getApprovedFiles().stream().map(File::getIdentifier).toList().contains(file.getIdentifier());
     }
 
-    private static PublishingRequestCase createPublishingRequestIdentifyingObject(
-        UserInstance userInstance,
-        SortableIdentifier publicationIdentifier,
-        SortableIdentifier publishingRequestIdentifier) {
+    private static PublishingRequestCase createPublishingRequestIdentifyingObject(UserInstance userInstance,
+                                                                                  SortableIdentifier publicationIdentifier,
+                                                                                  SortableIdentifier publishingRequestIdentifier) {
 
         var newPublishingRequest = new PublishingRequestCase();
         newPublishingRequest.setOwner(userInstance.getUser());
@@ -427,5 +374,44 @@ public class PublishingRequestCase extends TicketEntry {
     private static void throwErrorWhenPublishingResourceThatDoesNotHaveRequiredData(Publication resource)
         throws InvalidPublicationException {
         throw new InvalidPublicationException(RESOURCE_LACKS_REQUIRED_DATA + resource.getIdentifier().toString());
+    }
+
+    private List<AssociatedArtifact> rejectFiles(Resource resource) {
+        var associatedArtifacts = resource.getAssociatedArtifacts();
+        return associatedArtifacts.stream().map(this::rejectFile).toList();
+    }
+
+    private AssociatedArtifact rejectFile(AssociatedArtifact associatedArtifact) {
+        if (associatedArtifact instanceof PendingFile<?, ?> pendingFile) {
+            return pendingFile.reject();
+        } else {
+            return associatedArtifact;
+        }
+    }
+
+    private Resource toPublicationWithApprovedFiles(Resource resource) {
+        var updatedAssociatedArtifacts = approveFilesFromPublishingRequest();
+        return resource.copy()
+                   .withAssociatedArtifactsList(new AssociatedArtifactList(updatedAssociatedArtifacts))
+                   .build();
+    }
+
+    private List<AssociatedArtifact> approveFilesFromPublishingRequest() {
+        return getApprovedFiles().stream().map(this::publishApprovedFile).toList();
+    }
+
+    private AssociatedArtifact publishApprovedFile(AssociatedArtifact associatedArtifact) {
+        if (associatedArtifact instanceof PendingFile<?,?> pendingFile) {
+            var approvedFile = pendingFile.approve();
+            logger.info(PUBLISHING_FILE_MESSAGE, pendingFile.getIdentifier(),
+                        pendingFile.getClass().getSimpleName(), getIdentifier(), getResourceIdentifier());
+            return approvedFile;
+        } else {
+            return associatedArtifact;
+        }
+    }
+
+    private File toApprovedFile(File file) {
+        return file instanceof PendingFile<?, ?> pendingFile ? pendingFile.approve() : file;
     }
 }

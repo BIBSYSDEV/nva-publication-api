@@ -1524,7 +1524,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
 
-        publishingRequest.approveFiles().persistUpdate(ticketService);
+        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
         publishingRequest.publishApprovedFiles(resourceService);
 
 
@@ -1547,7 +1547,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withFilesForApproval(Set.of(file))
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
-        publishingRequest.approveFiles().persistUpdate(ticketService);
+        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
 
         publishingRequest.publishApprovedFiles(resourceService);
 
@@ -1596,7 +1596,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withFilesForApproval(Set.of(file))
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
-        publishingRequest.approveFiles().persistUpdate(ticketService);
+        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
 
         publishingRequest.rejectRejectedFiles(resourceService);
 

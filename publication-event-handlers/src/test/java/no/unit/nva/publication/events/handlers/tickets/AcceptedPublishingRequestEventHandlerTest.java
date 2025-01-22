@@ -193,7 +193,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(publishingWorkflow);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .approveFiles()
+                        .publishApprovedFile()
                         .complete(publication, USERNAME)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
@@ -327,7 +327,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var pendingPublishingRequest =
             (PublishingRequestCase) persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest = pendingPublishingRequest.approveFiles()
+        var approvedPublishingRequest = pendingPublishingRequest.publishApprovedFile()
                         .complete(publication, USERNAME)
                         .persistNewTicket(ticketService);
         var handlerThrowingException =

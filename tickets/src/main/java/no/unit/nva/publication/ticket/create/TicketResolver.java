@@ -141,7 +141,7 @@ public class TicketResolver {
         PublishingRequestCase publishingRequestCase, Publication publication, Username curator)
         throws ApiGatewayException {
         publishingRequestCase.setAssignee(curator);
-        return publishingRequestCase.approveFiles().persistAutoComplete(ticketService, publication, curator);
+        return publishingRequestCase.publishApprovedFile().persistAutoComplete(ticketService, publication, curator);
     }
 
     private PublishingRequestCase persistPublishingRequest(PublishingRequestCase publishingRequestCase,

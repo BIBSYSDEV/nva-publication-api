@@ -31,7 +31,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
@@ -501,9 +500,9 @@ public class Resource implements Entity {
     }
 
     public AssociatedArtifactList getAssociatedArtifacts() {
-        return nonNull(associatedArtifacts) ?
-                   new AssociatedArtifactList(new ArrayList<AssociatedArtifact>(associatedArtifacts)) :
-                                                                             new AssociatedArtifactList(new ArrayList<>());
+        return nonNull(associatedArtifacts)
+                   ? associatedArtifacts
+                   : new AssociatedArtifactList(new ArrayList<>());
     }
 
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {

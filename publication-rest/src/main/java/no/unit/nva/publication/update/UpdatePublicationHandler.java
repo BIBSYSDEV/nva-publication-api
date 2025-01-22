@@ -318,6 +318,7 @@ public class UpdatePublicationHandler
                 .filter(File.class::isInstance)
                 .map(File.class::cast)
                 .forEach(file -> updateFile(existingPublication, file));
+            publicationUpdate.getAssociatedArtifacts().removeIf(File.class::isInstance);
         }
 
         return resourceService.updatePublication(publicationUpdate);
