@@ -75,6 +75,7 @@ public class RejectedFile extends File {
             case PendingInternalFile ignore -> true;
             case PendingOpenFile ignore -> true;
             case HiddenFile ignore -> true;
+            case RejectedFile ignore -> true;
             default -> false;
         };
     }

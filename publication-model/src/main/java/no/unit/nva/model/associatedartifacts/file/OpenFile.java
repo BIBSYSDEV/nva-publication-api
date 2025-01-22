@@ -78,6 +78,7 @@ public class OpenFile extends File implements PublicAssociatedArtifact {
             case PendingInternalFile ignore -> true;
             case PendingOpenFile ignore -> true;
             case HiddenFile ignore -> true;
+            case OpenFile ignore -> true;
             default -> false;
         };
     }

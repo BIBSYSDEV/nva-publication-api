@@ -188,10 +188,6 @@ public class UpdatePublicationHandler
                    .toPublication();
     }
 
-    private boolean isShouldUseNewFiles() {
-        return environment.readEnvOpt("SHOULD_USE_NEW_FILES").isPresent();
-    }
-
     private Publication republish(Publication existingPublication, PublicationPermissions permissionStrategy,
                                   UserInstance userInstance)
         throws ApiGatewayException {
@@ -317,7 +313,7 @@ public class UpdatePublicationHandler
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
-        if (isShouldUseNewFiles()) {
+        if (resourceService.shouldUseNewFiles()) {
             Resource.fromPublication(publicationUpdate).getAssociatedArtifacts().stream()
                 .filter(File.class::isInstance)
                 .map(File.class::cast)
