@@ -8,6 +8,7 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.core.Environment;
 
 public class FakeResourceServiceThrowingException extends ResourceService {
 
@@ -16,7 +17,7 @@ public class FakeResourceServiceThrowingException extends ResourceService {
 
     public FakeResourceServiceThrowingException(AmazonDynamoDB client) {
         super(client, FAKE_TABLE_NAME, Clock.systemDefaultZone(), DEFAULT_IDENTIFIER_SUPPLIER,
-              mock(UriRetriever.class));
+              mock(UriRetriever.class), mock(Environment.class));
     }
 
     @Override

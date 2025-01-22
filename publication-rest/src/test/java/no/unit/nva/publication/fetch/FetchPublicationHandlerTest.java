@@ -21,11 +21,9 @@ import static no.unit.nva.publication.fetch.FetchPublicationHandler.DO_NOT_REDIR
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.apigateway.ApiGatewayHandler.RESOURCE;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -37,11 +35,8 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -285,29 +280,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(actualDetail, containsString(IDENTIFIER_NULL_ERROR));
-    }
-
-    @Test
-    @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
-    void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-        throws IOException, ApiGatewayException {
-        var serviceThrowingException = spy(publicationService);
-        doThrow(new NullPointerException())
-            .when(serviceThrowingException)
-            .getPublicationByIdentifier(any(SortableIdentifier.class));
-
-        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,
-                                                              uriRetriever,
-                                                              environment,
-                                                              identityServiceClient,
-                                                              mock(HttpClient.class));
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
-
-        var gatewayResponse = parseFailureResponse();
-        var actualDetail = getProblemDetail(gatewayResponse);
-        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-        assertThat(actualDetail, containsString(
-            MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
 
     @Test

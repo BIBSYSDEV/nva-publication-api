@@ -77,6 +77,7 @@ public class InternalFile extends File {
             case PendingInternalFile ignore -> true;
             case PendingOpenFile ignore -> true;
             case HiddenFile ignore -> true;
+            case InternalFile ignore -> true;
             default -> false;
         };
     }

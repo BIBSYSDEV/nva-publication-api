@@ -13,6 +13,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
@@ -95,6 +97,9 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -127,6 +132,7 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
@@ -1438,7 +1444,166 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var resource = Resource.fromPublication(persistedPublication).fetchResourceWithFiles(resourceService);
 
-        assertTrue(resource.orElseThrow().getFiles().contains(file));
+        assertTrue(resource.orElseThrow().getAssociatedArtifacts().contains(file));
+    }
+
+    @Test
+    void shouldRejectPersistedFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        fileEntry.reject(resourceService);
+
+        var rejectedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        assertInstanceOf(RejectedFile.class, rejectedFileEntry.getFile());
+    }
+
+    @Test
+    void shouldApprovePersistedFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        fileEntry.approve(resourceService);
+
+        var rejectedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        assertInstanceOf(OpenFile.class, rejectedFileEntry.getFile());
+    }
+
+    @Test
+    void shouldFetchResourceWithNewFilesWhenEnvironmentVariableShouldUseNewFileIsSet() throws BadRequestException {
+        var environment = mock(Environment.class);
+        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
+        var resourceService = getResourceServiceBuilder(client)
+                                  .withEnvironment(environment)
+                                  .build();
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        FileEntry.create(file, resourceIdentifier, userInstance).persist(resourceService);
+
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+
+        assertTrue(resource.getAssociatedArtifacts().contains(file));
+    }
+
+    @Test
+    void shouldApproveApprovedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
+        var environment = mock(Environment.class);
+        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
+        var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
+
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingInternalFile();
+        FileEntry.create(file, persistedPublication.getIdentifier(), userInstance).persist(resourceService);
+
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
+                                                            .withFilesForApproval(Set.of(file))
+                                                            .withOwner(randomString())
+                                                            .persistNewTicket(ticketService);
+
+        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
+        publishingRequest.publishApprovedFiles(resourceService);
+
+
+
+        assertInstanceOf(InternalFile.class, FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                                                 .fetch(resourceService)
+                           .orElseThrow()
+                           .getFile());
+    }
+
+    @Test
+    void shouldApproveApprovedFilesWhenFilesAreInAssociatedArtifacts() throws ApiGatewayException {
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
+                                                            .withFilesForApproval(Set.of(file))
+                                                            .withOwner(randomString())
+                                                            .persistNewTicket(ticketService);
+        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
+
+        publishingRequest.publishApprovedFiles(resourceService);
+
+        var associatedArtifact = Resource.fromPublication(persistedPublication)
+                                     .fetch(resourceService).orElseThrow().getAssociatedArtifacts().getFirst();
+        assertInstanceOf(InternalFile.class, associatedArtifact);
+    }
+
+    @Test
+    void shouldRejectRejectedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
+        var environment = mock(Environment.class);
+        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
+        var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
+
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingInternalFile();
+        FileEntry.create(file, persistedPublication.getIdentifier(), userInstance).persist(resourceService);
+
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
+                                                            .withFilesForApproval(Set.of(file))
+                                                            .withOwner(randomString())
+                                                            .persistNewTicket(ticketService);
+
+        publishingRequest.rejectRejectedFiles(resourceService);
+
+
+
+        assertInstanceOf(RejectedFile.class, FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                                                 .fetch(resourceService)
+                                                 .orElseThrow()
+                                                 .getFile());
+    }
+
+    @Test
+    void shouldRejectRejectedFilesWhenFilesAreInAssociatedArtifacts() throws ApiGatewayException {
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
+                                                            .withFilesForApproval(Set.of(file))
+                                                            .withOwner(randomString())
+                                                            .persistNewTicket(ticketService);
+        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
+
+        publishingRequest.rejectRejectedFiles(resourceService);
+
+        var associatedArtifact = Resource.fromPublication(persistedPublication)
+                                     .fetch(resourceService).orElseThrow().getAssociatedArtifacts().getFirst();
+
+        assertInstanceOf(RejectedFile.class, associatedArtifact);
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

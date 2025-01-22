@@ -9,7 +9,6 @@ import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -42,6 +41,8 @@ import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
@@ -151,13 +152,13 @@ public class UpdatePublicationHandler
                                                RequestInfo requestInfo,
                                                Context context)
         throws ApiGatewayException {
-        SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
+        var identifierInPath = RequestUtil.getIdentifier(requestInfo);
 
-        Publication existingPublication = fetchPublication(identifierInPath);
+        var existingPublication = fetchPublication(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissions.create(existingPublication, userInstance);
-        Publication updatedPublication = switch (input) {
+        var updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
                                                                                 existingPublication,
@@ -178,6 +179,13 @@ public class UpdatePublicationHandler
         };
 
         return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
+    }
+
+    private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
+        return Resource.resourceQueryObject(identifierInPath)
+                   .fetch(resourceService)
+                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE))
+                   .toPublication();
     }
 
     private Publication republish(Publication existingPublication, PublicationPermissions permissionStrategy,
@@ -305,7 +313,21 @@ public class UpdatePublicationHandler
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
+        if (resourceService.shouldUseNewFiles()) {
+            Resource.fromPublication(publicationUpdate).getAssociatedArtifacts().stream()
+                .filter(File.class::isInstance)
+                .map(File.class::cast)
+                .forEach(file -> updateFile(existingPublication, file));
+            publicationUpdate.getAssociatedArtifacts().removeIf(File.class::isInstance);
+        }
+
         return resourceService.updatePublication(publicationUpdate);
+    }
+
+    private void updateFile(Publication existingPublication, File file) {
+        FileEntry.queryObject(file.getIdentifier(), existingPublication.getIdentifier())
+            .fetch(resourceService)
+            .ifPresent(fileEntry -> fileEntry.update(file, resourceService));
     }
 
     private static UserUploadDetails extractUploadDetails(UserInstance userInstance) {
@@ -420,11 +442,6 @@ public class UpdatePublicationHandler
     private boolean identifiersDoNotMatch(SortableIdentifier identifierInPath,
                                           UpdatePublicationRequest input) {
         return !identifierInPath.equals(input.getIdentifier());
-    }
-
-    private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
-        return attempt(() -> resourceService.getPublicationByIdentifier(identifierInPath))
-                   .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)

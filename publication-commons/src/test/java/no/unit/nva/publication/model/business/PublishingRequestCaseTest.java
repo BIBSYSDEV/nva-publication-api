@@ -28,7 +28,7 @@ class PublishingRequestCaseTest {
     void shouldReturnTrueWhenApprovedFilesListContainsFileIdentifier() {
         var file = OpenFile.builder().withIdentifier(UUID.randomUUID()).buildOpenFile();
         var publishingRequestCase = createSample(randomElement(TicketStatus.values())).withFilesForApproval(
-            Set.of(file)).approveFiles();
+            Set.of(file)).publishApprovedFile();
 
         assertTrue(publishingRequestCase.fileIsApproved(file));
     }

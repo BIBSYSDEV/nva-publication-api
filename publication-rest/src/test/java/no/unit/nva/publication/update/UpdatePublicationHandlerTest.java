@@ -157,6 +157,7 @@ import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -257,7 +258,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
         when(environment.readEnv(API_HOST_KEY)).thenReturn("example.com");
         lenient().when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
-
         var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
         lenient().when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
             .thenReturn(baseUrl.toString());
@@ -1935,6 +1935,55 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(publishingRequest.getFilesForApproval().stream().map(File::getIdentifier).toList(),
                    containsInAnyOrder(newUnpublishedFile.getIdentifier()));
+    }
+
+    @Test
+    void shouldUpdateFileMetadataOnUpdatePublicationRequest()
+        throws IOException, BadRequestException {
+        var file = (File) randomPendingOpenFile();
+        var publication = randomPublication().copy()
+                              .withPublisher(Organization.fromUri(customerId))
+                              .withAssociatedArtifacts(List.of())
+                              .build();
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FileEntry.create(file, resource.getIdentifier(),
+                         UserInstance.create(randomString(), customerId))
+            .persist(resourceService);
+        var cristinId = randomUri();
+        var contributor = createContributorForPublicationUpdate(cristinId);
+        injectContributor(resource, contributor);
+        var updatedFile = file.copy().buildPendingInternalFile();
+        var updatedPublication = resource.copy().withAssociatedArtifacts(List.of(updatedFile)).build();
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = ownerUpdatesOwnPublication(resource.getIdentifier(), updatedPublication);
+
+        lenient().when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
+        var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
+        var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
+                                                   eventBridgeClient, s3Client, secretsManagerClient,
+                                                   WiremockHttpClient.create());
+        handler.handleRequest(input, output, context);
+
+        assertEquals(updatedFile,
+                     FileEntry.queryObject(file.getIdentifier(), resource.getIdentifier())
+                         .fetch(resourceService).orElseThrow().getFile());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenFetchingPublicationWithFilesAndPublicationDoesNotExist() throws IOException {
+        var publication = randomPublication();
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+
+        lenient().when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
+        var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
+                                                   eventBridgeClient, s3Client, secretsManagerClient,
+                                                   WiremockHttpClient.create());
+        handler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)

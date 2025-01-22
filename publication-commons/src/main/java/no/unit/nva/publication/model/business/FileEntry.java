@@ -14,6 +14,7 @@ import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -158,6 +159,11 @@ public final class FileEntry implements Entity {
     }
 
     public void update(File fileUpdate, ResourceService resourceService) {
+        if (!file.canBeConvertedTo(fileUpdate)) {
+            throw new IllegalStateException("%s can not be updated to %s"
+                                                .formatted(file.getClass().getSimpleName(),
+                                                           fileUpdate.getClass().getSimpleName()));
+        }
         if (!fileUpdate.equals(this.file)) {
             this.file = file.copy()
                 .withPublisherVersion(fileUpdate.getPublisherVersion())
@@ -165,6 +171,22 @@ public final class FileEntry implements Entity {
                 .withEmbargoDate(fileUpdate.getEmbargoDate().orElse(null))
                 .withLegalNote(fileUpdate.getLegalNote())
                 .build(fileUpdate.getClass());
+            this.modifiedDate = Instant.now();
+            resourceService.updateFile(this);
+        }
+    }
+
+    public void approve(ResourceService resourceService) {
+        if (file instanceof PendingFile<?,?> pendingFile) {
+            this.file = pendingFile.approve();
+            this.modifiedDate = Instant.now();
+            resourceService.updateFile(this);
+        }
+    }
+
+    public void reject(ResourceService resourceService) {
+        if (file instanceof PendingFile<?,?> pendingFile) {
+            this.file = pendingFile.reject();
             this.modifiedDate = Instant.now();
             resourceService.updateFile(this);
         }

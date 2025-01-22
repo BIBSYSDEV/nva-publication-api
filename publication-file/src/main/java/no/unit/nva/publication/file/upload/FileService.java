@@ -145,7 +145,7 @@ public class FileService {
     }
 
     public void updateFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance,
-                           File file) throws ForbiddenException, NotFoundException, BadRequestException {
+                           File file) throws ForbiddenException, NotFoundException {
 
         var resource = Resource.resourceQueryObject(resourceIdentifier)
                            .fetch(resourceService)
@@ -157,17 +157,7 @@ public class FileService {
                             .fetch(resourceService)
                             .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE));
 
-        validateUpdate(fileEntry, file);
-
         fileEntry.update(file, resourceService);
-    }
-
-    private void validateUpdate(FileEntry fileEntry, File file) throws BadRequestException {
-        var currentFile = fileEntry.getFile();
-        if (!currentFile.canBeConvertedTo(file)) {
-            throw new BadRequestException("Can not update file of type %s to type %s".formatted(
-                currentFile.getClass().getSimpleName(), file.getClass().getSimpleName()));
-        }
     }
 
     private static void validateUpdateFilePermissions(Resource resource, UserInstance userInstance)

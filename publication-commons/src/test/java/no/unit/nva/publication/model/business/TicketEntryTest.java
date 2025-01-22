@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Set;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -91,7 +90,7 @@ class TicketEntryTest {
             publication, PublishingRequestCase.class, SortableIdentifier::next);
         ticket.withFilesForApproval(Set.of(randomPendingOpenFile()))
             .withWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .approveFiles();
+            .publishApprovedFile();
 
         assertThat(ticket.getApprovedFiles().size(), is(equalTo(1)));
     }

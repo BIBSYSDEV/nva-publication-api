@@ -91,13 +91,11 @@ class FileServiceTest extends ResourcesLocalTest {
                          Arguments.of(UploadedFile.class, InternalFile.class),
                          Arguments.of(UploadedFile.class, RejectedFile.class),
 
-                         Arguments.of(OpenFile.class, OpenFile.class),
                          Arguments.of(OpenFile.class, InternalFile.class),
                          Arguments.of(OpenFile.class, RejectedFile.class),
                          Arguments.of(OpenFile.class, UploadedFile.class),
 
                          Arguments.of(InternalFile.class, OpenFile.class),
-                         Arguments.of(InternalFile.class, InternalFile.class),
                          Arguments.of(InternalFile.class, RejectedFile.class),
                          Arguments.of(InternalFile.class, UploadedFile.class)
 
@@ -279,7 +277,7 @@ class FileServiceTest extends ResourcesLocalTest {
 
         var updatedFile = originalFile.copy().build(updatedClazz);
 
-        assertThrows(BadRequestException.class,
+        assertThrows(IllegalStateException.class,
                      () -> fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance,
                                                   updatedFile));
     }
