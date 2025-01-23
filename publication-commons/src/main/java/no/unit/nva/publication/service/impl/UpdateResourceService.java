@@ -105,10 +105,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throw new IllegalStateException("Attempting to update publication status when it is not allowed");
     }
 
-    public Publication updatePublicationDraftToDraftForDeletion(Publication publication)
-        throws NotFoundException {
-        var persistedPublication = attempt(() -> fetchExistingPublication(publication))
-                                       .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+    public Publication updatePublicationDraftToDraftForDeletion(Publication publication) {
+        var persistedPublication = attempt(() -> fetchExistingPublication(publication)).orElseThrow();
         if (persistedPublication.getStatus().equals(DRAFT)) {
             publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
             publication.setModifiedDate(clockForTimestamps.instant());
@@ -163,9 +161,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    : List.of();
     }
 
-    public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
+    public void updateOwner(SortableIdentifier identifier, UserInstance newOwner)
         throws NotFoundException {
-        Resource existingResource = readResourceService.getResource(oldOwner, identifier);
+        Resource existingResource = readResourceService.getResourceByIdentifier(identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(new ResourceDao(existingResource));
         TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource), tableName);
@@ -378,7 +376,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private Publication fetchExistingPublication(Publication publication) {
-        return attempt(() -> readResourceService.getPublication(publication))
+        return attempt(() -> readResourceService.getResourceByIdentifier(publication.getIdentifier()).toPublication())
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 

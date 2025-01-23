@@ -64,12 +64,12 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createPublishedResource() throws ApiGatewayException {
         Publication resource = createPersistedPublicationWithoutDoi();
         publishResource(resource);
-        return resourceService.getPublication(resource);
+        return resourceService.getPublicationByIdentifier(resource.getIdentifier());
     }
 
     private Publication publishResource(Publication resource) throws ApiGatewayException {
         resourceService.publishPublication(UserInstance.fromPublication(resource), resource.getIdentifier());
-        return resourceService.getPublication(resource);
+        return resourceService.getPublicationByIdentifier(resource.getIdentifier());
     }
 
     private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {

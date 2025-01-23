@@ -473,7 +473,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 resourceService.publishPublication(UserInstance.fromPublication(publication),
                                                    publication.getIdentifier());
-                var publishedPublication = resourceService.getPublication(publication);
+                var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
                 return new ExpandedDataEntryWithAssociatedPublication(
                     randomDoiRequest(publishedPublication, expansionService, resourceService, messageService,
                                      ticketService));

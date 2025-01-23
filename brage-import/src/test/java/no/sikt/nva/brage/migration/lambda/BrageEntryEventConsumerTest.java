@@ -1047,7 +1047,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .withType(new Type(List.of(), "Book")).build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var notUpdatedPublication = resourceService.getPublication(existingPublication);
+        var notUpdatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
         assertThat(notUpdatedPublication, is(equalTo(existingPublication)));
     }
 
@@ -1080,7 +1080,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .withType(new Type(List.of(), "DegreeBachelor")).build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var notUpdatedPublication = resourceService.getPublication(existingPublication);
+        var notUpdatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
         assertThat(notUpdatedPublication, is(equalTo(existingPublication)));
     }
 
@@ -1458,7 +1458,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                     existingPublication,
                                                     nvaBrageMigrationDataGenerator.getBrageRecord().getId(), "CRISTIN");
         var storedMergeReport = JsonUtils.dtoObjectMapper.readValue(storedMergeReportString, BrageMergingReport.class);
-        var updatedPublication = resourceService.getPublication(existingPublication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
         assertThat(storedMergeReport.oldImage(), is(equalTo(existingPublication)));
         assertThat(storedMergeReport.newImage(), is(equalTo(updatedPublication)));
     }
@@ -1992,7 +1992,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var updatedPublication = resourceService.getPublication(existingPublication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
         var expectedCristinIdentifierFromBrage =
             new CristinIdentifier(SourceName.fromBrage(generator.getBrageRecord().getCustomer().getName()),
                                   brageCristinIdentifier);

@@ -1191,7 +1191,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createUnpublishHandlerRequest(publication, userName,
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var updatedPublication = resourceService.getPublication(publication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThat(updatedPublication.getStatus(), is(equalTo(PUBLISHED)));
@@ -1209,7 +1209,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createUnpublishHandlerRequest(publication, userName,
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var updatedPublication = resourceService.getPublication(publication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThat(updatedPublication.getStatus(), is(equalTo(PUBLISHED)));
@@ -1242,7 +1242,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var ticketsAfterUnpublishing =
             resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        var updatedPublication = resourceService.getPublication(publication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(updatedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
         assertThat(ticketsAfterUnpublishing,
                    hasItem(allOf(instanceOf(UnpublishRequest.class),
@@ -1278,7 +1278,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var input = createUnpublishHandlerRequest(publication, randomString(), customerId, accessRight);
         updatePublicationHandler.handleRequest(input, output, context);
 
-        var unpublishedPublication = resourceService.getPublication(publication);
+        var unpublishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var ticketsAfterUnpublishing =
             resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
 
@@ -1465,7 +1465,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
 
-        var unpublishedPublication = resourceService.getPublication(publication);
+        var unpublishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(unpublishedPublication.getStatus(), Is.is(IsEqual.equalTo(PublicationStatus.UNPUBLISHED)));
     }
 
@@ -1510,7 +1510,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                  MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        var updatedPublication = resourceService.getPublication(publication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
         assertThat(updatedPublication.getDuplicateOf(), Is.is(IsEqual.equalTo(duplicate)));
@@ -1588,7 +1588,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                 MANAGE_DEGREE);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        var deletePublication = resourceService.getPublication(publication);
+        var deletePublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
         assertThat(deletePublication.getStatus(), Is.is(IsEqual.equalTo(PublicationStatus.DELETED)));
@@ -1806,7 +1806,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(input, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
-        var republishedPublication = resourceService.getPublication(publication);
+        var republishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(republishedPublication.getStatus(), is(equalTo(PUBLISHED)));
@@ -2013,8 +2013,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistDegreeWithoutDoi();
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var userInstance = UserInstance.fromPublication(publication);
-        resourceService.unpublishPublication(resourceService.getPublication(publication), userInstance);
-        return resourceService.getPublication(publication);
+        resourceService.unpublishPublication(resourceService.getPublicationByIdentifier(publication.getIdentifier()), userInstance);
+        return resourceService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
     private InputStream createUnpublishHandlerRequest(Publication publication, String username,

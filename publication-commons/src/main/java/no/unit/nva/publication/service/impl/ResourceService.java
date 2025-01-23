@@ -90,7 +90,6 @@ public class ResourceService extends ServiceWithTransactions {
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String RESOURCE_REFRESHED_MESSAGE = "Resource has been refreshed successfully: {}";
-    public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
@@ -266,12 +265,6 @@ public class ResourceService extends ServiceWithTransactions {
         writeToDynamoInBatches(writeRequests);
     }
 
-    // TODO: Remove all usages of this method in tests and use getPublicationByIdentifier instead
-    @Deprecated(forRemoval = true)
-    public Publication getPublication(Publication sampleResource) throws NotFoundException {
-        return readResourceService.getPublication(sampleResource);
-    }
-
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         if (shouldUseNewFiles()) {
             return getResourceAndFilesByIdentifier(identifier).orElseThrow();
@@ -348,9 +341,9 @@ public class ResourceService extends ServiceWithTransactions {
         logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE, importCandidate.getIdentifier());
     }
 
-    public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
+    public void updateOwner(SortableIdentifier identifier, UserInstance newOwner)
         throws NotFoundException {
-        updateResourceService.updateOwner(identifier, oldOwner, newOwner);
+        updateResourceService.updateOwner(identifier, newOwner);
     }
 
     public Publication updatePublication(Publication resourceUpdate) {
@@ -376,10 +369,9 @@ public class ResourceService extends ServiceWithTransactions {
                    .filter(ResourceService::isNotRemoved);
     }
 
-    public Stream<TicketEntry> fetchAllTicketsForPublication(UserInstance userInstance,
-                                                             SortableIdentifier publicationIdentifier)
+    public Stream<TicketEntry> fetchAllTicketsForPublication(SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
-        var resource = readResourceService.getResource(userInstance, publicationIdentifier);
+        var resource = readResourceService.getResourceByIdentifier(publicationIdentifier);
         return resource.fetchAllTickets(this).filter(ResourceService::isNotRemoved);
     }
 
@@ -398,8 +390,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void unpublishPublication(Publication publication, UserInstance userInstance) throws BadRequestException,
                                                                                     NotFoundException {
-        var existingPublication = readResourceService.getPublication(publication);
-        if (!PUBLISHED.equals(existingPublication.getStatus())) {
+        var existingResource = readResourceService.getResourceByIdentifier(publication.getIdentifier());
+        if (!PUBLISHED.equals(existingResource.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
         var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
@@ -659,11 +651,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private boolean primaryKeyConditionFailed(Exception exception) {
-        return exception instanceof NotFoundException && messageRefersToResourceNotFound(exception);
-    }
-
-    private boolean messageRefersToResourceNotFound(Exception exception) {
-        return exception.getMessage().contains(RESOURCE_NOT_FOUND_MESSAGE);
+        return exception instanceof NotFoundException;
     }
 
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {

@@ -50,7 +50,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -258,7 +257,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
-        assertThat(resourceService.getPublication(publication).getDoi(), is(nullValue()));
+        assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getDoi(), is(nullValue()));
     }
 
     @Test

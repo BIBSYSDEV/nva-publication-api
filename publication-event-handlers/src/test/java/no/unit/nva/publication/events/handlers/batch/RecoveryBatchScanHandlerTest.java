@@ -69,7 +69,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
         recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
-        var refreshedPublication = resourceService.getPublication(publication);
+        var refreshedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var resourceVersionAfterRefresh = Resource.fromPublication(refreshedPublication).toDao().getVersion();
 
         assertThat(resourceVersionAfterRefresh, is(not(equalTo(resourceVersion))));

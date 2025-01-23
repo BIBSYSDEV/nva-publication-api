@@ -649,7 +649,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         assertThat(regeneratedTicket, is(equalTo(ticket)));
 
-        var expectedFilesForApproval = resourceService.getPublication(publication)
+        var expectedFilesForApproval = resourceService.getPublicationByIdentifier(publication.getIdentifier())
                                                 .getAssociatedArtifacts().stream()
                                                 .filter(PendingOpenFile.class::isInstance)
                                                 .toArray();

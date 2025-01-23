@@ -219,7 +219,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
 
-        var updatedPublication = resourceService.getPublication(publication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(updatedPublication.getDoi(), is(equalTo(expectedDoi)));
         var response = GatewayResponse.fromOutputStream(output, DoiResponse.class);
         assertEquals(HttpURLConnection.HTTP_CREATED, response.getStatusCode());

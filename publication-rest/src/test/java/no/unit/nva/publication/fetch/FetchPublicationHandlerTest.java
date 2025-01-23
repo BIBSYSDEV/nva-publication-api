@@ -490,7 +490,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
         publicationService.updatePublishedStatusToDeleted(publication.getIdentifier());
-        return publicationService.getPublication(publication);
+        return publicationService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
     private InputStream generateCuratorRequest(Publication publication) throws JsonProcessingException {
@@ -521,10 +521,10 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        var publishedPublication = publicationService.getPublication(publication);
+        var publishedPublication = publicationService.getPublicationByIdentifier(publication.getIdentifier());
         var userInstance = UserInstance.fromPublication(publication);
         publicationService.unpublishPublication(publishedPublication, userInstance);
-        return publicationService.getPublication(publication);
+        return publicationService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {

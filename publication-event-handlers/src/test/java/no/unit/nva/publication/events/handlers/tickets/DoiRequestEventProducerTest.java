@@ -315,7 +315,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
             resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
                                                persistedPublication.getIdentifier());
         }
-        return resourceService.getPublication(persistedPublication);
+        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 
     private Publication updateTitle(Publication publication) {

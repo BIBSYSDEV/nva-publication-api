@@ -597,7 +597,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     void shouldReturnAllTicketsForPublicationWhenRequesterIsPublicationOwner() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var originalTickets = createAllTypesOfTickets(publication);
-        var fetchedTickets = resourceService.fetchAllTicketsForPublication(owner, publication.getIdentifier())
+        var fetchedTickets = resourceService.fetchAllTicketsForPublication(publication.getIdentifier())
                                  .toList();
 
         assertThat(fetchedTickets, containsInAnyOrder(originalTickets.toArray(TicketEntry[]::new)));
@@ -619,7 +619,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
                                      .boxed()
                                      .map(ticketType -> createPersistedTicket(publication, PublishingRequestCase.class))
                                      .toList());
-        var ticketsFromDatabase = resourceService.fetchAllTicketsForPublication(owner, publication.getIdentifier())
+        var ticketsFromDatabase = resourceService.fetchAllTicketsForPublication(publication.getIdentifier())
                                       .toList();
         assertThat(ticketsFromDatabase, allOf(hasSize(2), everyItem(instanceOf(PublishingRequestCase.class))));
     }
@@ -901,7 +901,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         publication.setCuratingInstitutions(getCuratingInstitutions(publication));
         var persistedPublication = resourceService.insertPreexistingPublication(publication);
 
-        return resourceService.getPublication(persistedPublication);
+        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 
     private TicketEntry createMockResponsesImitatingEventualConsistency(Class<? extends TicketEntry> ticketType,
