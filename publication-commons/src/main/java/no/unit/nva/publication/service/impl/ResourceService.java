@@ -43,6 +43,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -360,9 +361,24 @@ public class ResourceService extends ServiceWithTransactions {
         updateResourceService.updateResource(resource);
     }
 
+    // TODO: Update method once we have migrated files: https://sikt.atlassian.net/browse/NP-48480
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
+        if (dataEntry instanceof Resource resource && !resource.getFiles().isEmpty()) {
+            resource.getFiles().forEach(file -> persistFileEntry(resource, file));
+
+            var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
+            associatedArtifacts.removeIf(File.class::isInstance);
+            resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+            return resource;
+        }
         return dataEntry;
+    }
+
+    private void persistFileEntry(Resource resource, File file) {
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var resourceIdentifier = resource.getIdentifier();
+        FileEntry.create(file, resourceIdentifier, userInstance).persist(this);
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
