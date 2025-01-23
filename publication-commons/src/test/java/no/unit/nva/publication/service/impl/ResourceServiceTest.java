@@ -1494,7 +1494,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceService = getResourceServiceBuilder(client)
                                   .withEnvironment(environment)
                                   .build();
-        var publication = randomPublication();
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 

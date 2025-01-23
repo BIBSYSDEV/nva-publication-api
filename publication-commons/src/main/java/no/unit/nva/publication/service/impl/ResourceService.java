@@ -299,8 +299,11 @@ public class ResourceService extends ServiceWithTransactions {
         var resource = extractResource(entries);
         var files = extractFiles(entries);
 
-        resource.ifPresent(res -> res.getAssociatedArtifacts().addAll(files));
-
+        resource.ifPresent(res -> {
+            var associatedArtifacts = new ArrayList<>(res.getAssociatedArtifacts());
+            associatedArtifacts.addAll(files);
+            res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+        });
         return resource;
     }
 
