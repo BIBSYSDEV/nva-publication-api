@@ -1631,6 +1631,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldRemoveFileFromAssociatedArtifactsWhenFileIsPresentInBothDatabaseAndAssociatedArtifacts()
+        throws BadRequestException, NotFoundException {
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        FileEntry.create(file, persistedPublication.getIdentifier(), userInstance).persist(resourceService);
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+                                                    .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
+        var migratedResource = migratedResourceDao.getResource();
+
+        assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
+    }
+
+    @Test
     void shouldRemoveFileMetadataFromAssociatedArtifactsOnceItHasBeenMigrated()
         throws BadRequestException, NotFoundException {
         var file = randomPendingInternalFile();

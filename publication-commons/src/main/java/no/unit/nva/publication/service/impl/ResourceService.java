@@ -378,7 +378,11 @@ public class ResourceService extends ServiceWithTransactions {
     private void persistFileEntry(Resource resource, File file) {
         var userInstance = UserInstance.fromPublication(resource.toPublication());
         var resourceIdentifier = resource.getIdentifier();
-        FileEntry.create(file, resourceIdentifier, userInstance).persist(this);
+        var existingFile = FileEntry.queryObject(file.getIdentifier(), resourceIdentifier)
+                               .fetch(this);
+        if (existingFile.isEmpty()) {
+            FileEntry.create(file, resourceIdentifier, userInstance).persist(this);
+        }
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
