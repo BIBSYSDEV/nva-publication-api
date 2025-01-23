@@ -204,7 +204,7 @@ public class UpdatePublicationHandler
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication, userInstance);
 
-        return resourceService.getPublication(existingPublication);
+        return resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
     }
 
     private void deleteFiles(Publication publication) {
@@ -230,7 +230,7 @@ public class UpdatePublicationHandler
                                                             existingPublication,
                                                             userInstance);
         resourceService.unpublishPublication(updatedPublication, userInstance);
-        updatedPublication = resourceService.getPublication(updatedPublication);
+        updatedPublication = resourceService.getPublicationByIdentifier(updatedPublication.getIdentifier());
         updateNvaDoi(updatedPublication);
         return updatedPublication;
     }

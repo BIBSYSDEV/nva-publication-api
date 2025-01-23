@@ -266,6 +266,8 @@ public class ResourceService extends ServiceWithTransactions {
         writeToDynamoInBatches(writeRequests);
     }
 
+    // TODO: Remove all usages of this method in tests and use getPublicationByIdentifier instead
+    @Deprecated(forRemoval = true)
     public Publication getPublication(Publication sampleResource) throws NotFoundException {
         return readResourceService.getPublication(sampleResource);
     }
