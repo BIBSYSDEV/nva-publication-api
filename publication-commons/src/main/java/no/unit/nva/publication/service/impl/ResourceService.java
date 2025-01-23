@@ -364,15 +364,23 @@ public class ResourceService extends ServiceWithTransactions {
     // TODO: Update method once we have migrated files: https://sikt.atlassian.net/browse/NP-48480
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
-        if (dataEntry instanceof Resource resource && !resource.getFiles().isEmpty()) {
-            resource.getFiles().forEach(file -> persistFileEntry(resource, file));
-
-            var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
-            associatedArtifacts.removeIf(File.class::isInstance);
-            resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-            return resource;
+        if (isResourceWithFiles(dataEntry)) {
+            return migrateResourceWithFiles((Resource) dataEntry);
         }
         return dataEntry;
+    }
+
+    @Deprecated
+    private Resource migrateResourceWithFiles(Resource resource) {
+        resource.getFiles().forEach(file -> persistFileEntry(resource, file));
+        var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
+        associatedArtifacts.removeIf(File.class::isInstance);
+        resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+        return resource;
+    }
+
+    private static boolean isResourceWithFiles(Entity dataEntry) {
+        return dataEntry instanceof Resource resource && !resource.getFiles().isEmpty();
     }
 
     private void persistFileEntry(Resource resource, File file) {

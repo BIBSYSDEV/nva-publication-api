@@ -98,6 +98,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
@@ -1607,6 +1608,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertInstanceOf(RejectedFile.class, associatedArtifact);
     }
 
+    @Deprecated
     @Test
     void shouldMigrateFilesToFileEntriesAndPersistDatabaseEntryForEachFileWithTheSameUserInstanceAsPublicationOwner()
         throws BadRequestException {
@@ -1630,6 +1632,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertEquals(userInstance, userInstanceFromPersistedFile);
     }
 
+    @Deprecated
     @Test
     void shouldRemoveFileFromAssociatedArtifactsWhenFileIsPresentInBothDatabaseAndAssociatedArtifacts()
         throws BadRequestException, NotFoundException {
@@ -1648,6 +1651,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
     }
 
+    @Deprecated
     @Test
     void shouldRemoveFileMetadataFromAssociatedArtifactsOnceItHasBeenMigrated()
         throws BadRequestException, NotFoundException {
@@ -1665,6 +1669,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
     }
 
+    @Deprecated
     @Test
     void shouldKeepAssociatedLinkWhenMigratingFiles()
         throws BadRequestException, NotFoundException {
@@ -1682,6 +1687,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertTrue( migratedResource.getAssociatedArtifacts().contains(associatedLink));
         assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
+    }
+
+    @Deprecated
+    @Test
+    void shouldKeepNullAssociatedArtifactWhenMigratingFiles()
+        throws BadRequestException, NotFoundException {
+        var nullAssociatedArtifact = new NullAssociatedArtifact();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(nullAssociatedArtifact)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+                                                    .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
+        var migratedResource = migratedResourceDao.getResource();
+
+        assertTrue( migratedResource.getAssociatedArtifacts().contains(nullAssociatedArtifact));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
