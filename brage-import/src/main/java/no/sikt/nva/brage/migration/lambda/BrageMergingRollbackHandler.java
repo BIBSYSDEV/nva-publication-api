@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
@@ -12,10 +13,10 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
@@ -66,7 +67,7 @@ public class BrageMergingRollbackHandler extends EventHandler<EventReference, Vo
     }
 
     private BrageMergingReport processReport(BrageMergingReport mergeReport,
-                                             EventReference eventReference) throws NotFoundException {
+                                             EventReference eventReference) {
         validateCurrentVersion(mergeReport);
         rollbackInDatabase(mergeReport);
         persistSuccessReport(mergeReport, eventReference);
@@ -90,8 +91,11 @@ public class BrageMergingRollbackHandler extends EventHandler<EventReference, Vo
         resourceService.updatePublication(mergeReport.oldImage());
     }
 
-    private void validateCurrentVersion(BrageMergingReport mergeReport) throws NotFoundException {
-        var currentVersionOfPublication = resourceService.getPublication(mergeReport.newImage());
+    private void validateCurrentVersion(BrageMergingReport mergeReport) {
+        var currentVersionOfPublication = Resource.fromPublication(mergeReport.newImage())
+                                              .fetch(resourceService)
+                                              .orElseThrow(() -> new NotFoundException("Publication not found"))
+                                              .toPublication();
         if (publicationHasBeenModifiedAfterBrageMerging(mergeReport, currentVersionOfPublication)) {
             throw new RollBackConflictException(NEWER_VERSION_OF_THE_PUBLICATION_EXISTS);
         }
