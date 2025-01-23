@@ -361,6 +361,9 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void updateResource(Resource resource) {
         resource.setModifiedDate(Instant.now());
+        var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
+        associatedArtifacts.removeIf(File.class::isInstance);
+        resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
         updateResourceService.updateResource(resource);
     }
 

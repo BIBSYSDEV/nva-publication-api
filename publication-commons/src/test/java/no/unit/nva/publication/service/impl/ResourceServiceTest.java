@@ -544,14 +544,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPersistedPublicationWithDoi();
         var userInstance = UserInstance.fromPublication(publication);
         Resource.fromPublication(publication).publish(resourceService, userInstance);
-        var actualPublication = resourceService.getPublication(publication);
-        var expectedPublication = publication.copy()
-                                   .withStatus(PUBLISHED)
-                                   .withModifiedDate(actualPublication.getModifiedDate())
-                                   .withPublishedDate(actualPublication.getPublishedDate())
-                                   .build();
+        var publishedPublication = resourceService.getPublication(publication);
 
-        assertThat(actualPublication, is(equalTo(expectedPublication)));
+        assertEquals(PUBLISHED, publishedPublication.getStatus());
+        assertNotNull(publishedPublication.getPublishedDate());
     }
 
     @Test
