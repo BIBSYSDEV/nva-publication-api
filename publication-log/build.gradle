@@ -2,6 +2,7 @@ dependencies {
 
     implementation project(":publication-commons")
     implementation project(":publication-model")
+    implementation project(":publication-event-handlers")
 
     implementation libs.nva.apigateway
     implementation libs.nva.core

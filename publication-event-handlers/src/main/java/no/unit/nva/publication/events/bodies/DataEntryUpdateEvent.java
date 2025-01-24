@@ -29,6 +29,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
     private static final String UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.UnpublishRequest.Update";
     public static final String FILE_ENTRY_UPDATE_EVENT_TOPIC = "PublicationService.FileEntry.Update";
+    public static final String FILE_ENTRY_CREATE_EVENT_TOPIC = "PublicationService.FileEntry.Create";
     public static final String FILE_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.FileEntry.Delete";
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
@@ -79,6 +80,11 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public boolean isDeleteEvent() {
         return nonNull(oldData) && isNull(newData);
     }
+
+    @JsonIgnore
+    private boolean isCreateEvent() {
+        return isNull(oldData) && nonNull(newData);
+    }
     
     @Override
     @JacocoGenerated
@@ -117,13 +123,21 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             case Message message -> MESSAGE_UPDATE_EVENT_TOPIC;
             case GeneralSupportRequest generalSupportRequest -> GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC;
             case UnpublishRequest unpublishRequest -> UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC;
-            case FileEntry fileEntry -> this.isDeleteEvent()
-                                            ? FILE_ENTRY_DELETE_EVENT_TOPIC
-                                            : FILE_ENTRY_UPDATE_EVENT_TOPIC;
+            case FileEntry fileEntry -> createTopicForFile();
             default -> throw new IllegalArgumentException("Unknown entry type: " + type);
         };
     }
-    
+
+    private String createTopicForFile() {
+        if (isDeleteEvent()) {
+            return FILE_ENTRY_DELETE_EVENT_TOPIC;
+        } else if (isCreateEvent()) {
+            return FILE_ENTRY_CREATE_EVENT_TOPIC;
+        } else {
+            return FILE_ENTRY_UPDATE_EVENT_TOPIC;
+        }
+    }
+
     private Entity extractDataEntryType() {
         return nonNull(newData) ? newData : oldData;
     }
