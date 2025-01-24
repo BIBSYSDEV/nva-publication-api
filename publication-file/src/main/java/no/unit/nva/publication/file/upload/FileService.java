@@ -16,12 +16,15 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.UploadedFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
+import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
@@ -30,7 +33,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -72,9 +74,9 @@ public class FileService {
         return amazonS3.initiateMultipartUpload(request);
     }
 
-    public UploadedFile completeMultipartUpload(SortableIdentifier resourceIdentifier,
-                                                CompleteUploadRequestBody completeUploadRequestBody,
-                                                UserInstance userInstance) throws NotFoundException {
+    public PendingOpenFile completeMultipartUpload(SortableIdentifier resourceIdentifier,
+                                                   CompleteUploadRequestBody completeUploadRequestBody,
+                                                   UserInstance userInstance) throws NotFoundException {
 
         var resource = fetchResource(resourceIdentifier);
 
@@ -131,9 +133,20 @@ public class FileService {
         return amazonS3.getObjectMetadata(new GetObjectMetadataRequest(BUCKET_NAME, key));
     }
 
-    private UploadedFile constructUploadedFile(UUID identifier, ObjectMetadata metadata, UserInstance userInstance) {
-        return new UploadedFile(identifier, toFileName(metadata.getContentDisposition()), metadata.getContentType(),
-                                metadata.getContentLength(), createUploadDetails(userInstance));
+    private PendingOpenFile constructUploadedFile(UUID identifier, ObjectMetadata metadata, UserInstance userInstance) {
+        return new PendingOpenFile(identifier, toFileName(metadata.getContentDisposition()), metadata.getContentType(),
+                                   metadata.getContentLength(), null, null, null,
+                                   getRrs(userInstance.getCustomerId()),
+                                   null, createUploadDetails(userInstance));
+    }
+
+    private CustomerRightsRetentionStrategy getRrs(URI customerId) {
+        return Optional.ofNullable(customerApiClient.fetch(customerId))
+                   .map(Customer::getRightsRetentionStrategy)
+                   .map(CustomerApiRightsRetention::getType)
+                   .map(RightsRetentionStrategyConfiguration::fromValue)
+                   .map(CustomerRightsRetentionStrategy::create)
+                   .orElse(null);
     }
 
     private boolean customerDoesNotAllowUploadingFile(Customer customer, Resource resource) {
