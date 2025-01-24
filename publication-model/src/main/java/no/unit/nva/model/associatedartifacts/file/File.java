@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,7 +57,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
             "https://creativecommons.org/licenses/by-nd/4.0"), "CC BY-SA", URI.create(
             "https://creativecommons.org/licenses/by-sa/4.0"), "CC0", URI.create(
             "https://creativecommons.org/publicdomain/zero/1.0"), "RightsReserved",
-                                                              URI.create("http://rightsstatements.org/vocab/InC/1.0/"));
+                                                              URI.create("https://rightsstatements.org/vocab/InC/1.0/"));
 
     public static final String MISSING_LICENSE = "This file public and should therefore have a license";
     public static final String LEGAL_NOTE_FIELD = "legalNote";
@@ -275,8 +276,10 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
      * @throws IllegalArgumentException if the license is null or not valid
      */
     private URI validateUriLicense(URI license) {
-        if (nonNull(license) && isValidUriLicense(license)) {
-            LICENSE_MAP.get("RightsReserved");
+        if (isNull(license)
+            || !isValidUriLicense(license)
+            || license.getPath().equals(LICENSE_MAP.get("RightsReserved").getPath())) {
+            return license;
         }
         return formatValidUriLicense(license);
     }
@@ -287,11 +290,11 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     }
 
     private URI formatValidUriLicense(URI license) {
-        return Optional.ofNullable(license)
-                   .map(URI::toString)
-                   .map(value -> value.replaceFirst(license.getScheme(), "https"))
-                   .map(URI::create)
-                   .orElse(null);
+        String formatedLicenseURL = license.toString()
+                                        .replaceFirst(license.getScheme(), "https")
+                                        .replaceAll("/$", "")
+                                        .toLowerCase(Locale.ROOT);
+        return URI.create(formatedLicenseURL);
     }
 
     public static final class Builder {
