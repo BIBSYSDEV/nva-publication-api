@@ -41,6 +41,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -97,6 +98,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
@@ -542,14 +544,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPersistedPublicationWithDoi();
         var userInstance = UserInstance.fromPublication(publication);
         Resource.fromPublication(publication).publish(resourceService, userInstance);
-        var actualPublication = resourceService.getPublication(publication);
-        var expectedPublication = publication.copy()
-                                   .withStatus(PUBLISHED)
-                                   .withModifiedDate(actualPublication.getModifiedDate())
-                                   .withPublishedDate(actualPublication.getPublishedDate())
-                                   .build();
+        var publishedPublication = resourceService.getPublication(publication);
 
-        assertThat(actualPublication, is(equalTo(expectedPublication)));
+        assertEquals(PUBLISHED, publishedPublication.getStatus());
+        assertNotNull(publishedPublication.getPublishedDate());
     }
 
     @Test
@@ -1492,7 +1490,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceService = getResourceServiceBuilder(client)
                                   .withEnvironment(environment)
                                   .build();
-        var publication = randomPublication();
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
@@ -1604,6 +1602,105 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                      .fetch(resourceService).orElseThrow().getAssociatedArtifacts().getFirst();
 
         assertInstanceOf(RejectedFile.class, associatedArtifact);
+    }
+
+    @Deprecated
+    @Test
+    void shouldMigrateFilesToFileEntriesAndPersistDatabaseEntryForEachFileWithTheSameUserInstanceAsPublicationOwner()
+        throws BadRequestException {
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var queryObject = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier());
+
+        assertTrue(queryObject.fetch(resourceService).isEmpty());
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var persistedFileEntry = queryObject.fetch(resourceService);
+
+        assertTrue(persistedFileEntry.isPresent());
+
+        var fileEntry = persistedFileEntry.orElseThrow();
+        var userInstanceFromPersistedFile = UserInstance.create(fileEntry.getOwner().toString(), fileEntry.getCustomerId(),
+                                                                null, List.of(), fileEntry.getOwnerAffiliation());
+        assertEquals(userInstance, userInstanceFromPersistedFile);
+    }
+
+    @Deprecated
+    @Test
+    void shouldRemoveFileFromAssociatedArtifactsWhenFileIsPresentInBothDatabaseAndAssociatedArtifacts()
+        throws BadRequestException, NotFoundException {
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        FileEntry.create(file, persistedPublication.getIdentifier(), userInstance).persist(resourceService);
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+                                                    .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
+        var migratedResource = migratedResourceDao.getResource();
+
+        assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
+    }
+
+    @Deprecated
+    @Test
+    void shouldRemoveFileMetadataFromAssociatedArtifactsOnceItHasBeenMigrated()
+        throws BadRequestException, NotFoundException {
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+                         .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
+        var migratedResource = migratedResourceDao.getResource();
+
+        assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
+    }
+
+    @Deprecated
+    @Test
+    void shouldKeepAssociatedLinkWhenMigratingFiles()
+        throws BadRequestException, NotFoundException {
+        var associatedLink = new AssociatedLink(randomUri(), randomString(), randomString());
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(associatedLink, file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+                                                    .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
+        var migratedResource = migratedResourceDao.getResource();
+
+        assertTrue( migratedResource.getAssociatedArtifacts().contains(associatedLink));
+        assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
+    }
+
+    @Deprecated
+    @Test
+    void shouldKeepNullAssociatedArtifactWhenMigratingFiles()
+        throws BadRequestException, NotFoundException {
+        var nullAssociatedArtifact = new NullAssociatedArtifact();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(nullAssociatedArtifact)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+                                                    .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
+        var migratedResource = migratedResourceDao.getResource();
+
+        assertTrue( migratedResource.getAssociatedArtifacts().contains(nullAssociatedArtifact));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

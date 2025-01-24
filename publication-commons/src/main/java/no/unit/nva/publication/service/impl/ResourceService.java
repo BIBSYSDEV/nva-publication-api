@@ -43,6 +43,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -300,8 +301,11 @@ public class ResourceService extends ServiceWithTransactions {
         var resource = extractResource(entries);
         var files = extractFiles(entries);
 
-        resource.ifPresent(res -> res.getAssociatedArtifacts().addAll(files));
-
+        resource.ifPresent(res -> {
+            var associatedArtifacts = new ArrayList<>(res.getAssociatedArtifacts());
+            associatedArtifacts.addAll(files);
+            res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+        });
         return resource;
     }
 
@@ -359,12 +363,42 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void updateResource(Resource resource) {
         resource.setModifiedDate(Instant.now());
+        var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
+        associatedArtifacts.removeIf(File.class::isInstance);
+        resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
         updateResourceService.updateResource(resource);
     }
 
+    // TODO: Update method once we have migrated files: https://sikt.atlassian.net/browse/NP-48480
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
+        if (isResourceWithFiles(dataEntry)) {
+            return migrateResourceWithFiles((Resource) dataEntry);
+        }
         return dataEntry;
+    }
+
+    @Deprecated
+    private Resource migrateResourceWithFiles(Resource resource) {
+        resource.getFiles().forEach(file -> persistFileEntry(resource, file));
+        var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
+        associatedArtifacts.removeIf(File.class::isInstance);
+        resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+        return resource;
+    }
+
+    private static boolean isResourceWithFiles(Entity dataEntry) {
+        return dataEntry instanceof Resource resource && !resource.getFiles().isEmpty();
+    }
+
+    private void persistFileEntry(Resource resource, File file) {
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var resourceIdentifier = resource.getIdentifier();
+        var existingFile = FileEntry.queryObject(file.getIdentifier(), resourceIdentifier)
+                               .fetch(this);
+        if (existingFile.isEmpty()) {
+            FileEntry.create(file, resourceIdentifier, userInstance).persist(this);
+        }
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {

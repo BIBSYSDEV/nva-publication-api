@@ -32,6 +32,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -144,6 +145,14 @@ public class Resource implements Entity {
     public void clearResourceEvent(ResourceService resourceService) {
         this.setResourceEvent(null);
         resourceService.updateResource(this);
+    }
+
+    @JsonIgnore
+    public List<File> getFiles() {
+        return getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .toList();
     }
 
     private static Resource convertToResource(Publication publication) {
