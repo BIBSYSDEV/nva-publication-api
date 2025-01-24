@@ -3,6 +3,7 @@ package no.unit.nva.model.file;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -12,6 +13,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -167,6 +169,14 @@ public class FileModelTest {
 
         assertThrows(IllegalStateException.class, pendingFile::approve,
                      "Cannot publish a file without a license: " + fileWithoutLicense.getIdentifier());
+    }
+
+    @Test
+    void shouldKeepLicenseAsIs() {
+        var license = URI.create("https://rightsstatements.org/vocab/InC/1.0/");
+        var file = randomOpenFile().copy().withLicense(license).build(OpenFile.class);
+
+        assertEquals(license, file.getLicense());
     }
 
     private static Username randomUsername() {

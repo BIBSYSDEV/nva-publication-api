@@ -1097,6 +1097,8 @@ Funding:
   - type
   type: object
   properties:
+    identifier:
+      type: string
     labels:
       type: object
       additionalProperties:
@@ -1112,8 +1114,6 @@ Funding:
     activeTo:
       type: string
       format: date-time
-    identifier:
-      type: string
     type:
       type: string
 GeographicalContent:
@@ -2287,6 +2287,9 @@ Publication:
       type: array
       items:
         $ref: "#/components/schemas/ImportDetail"
+    pendingOpenFileCount:
+      type: integer
+      format: int64
     modelVersion:
       type: string
     type:
@@ -2833,6 +2836,16 @@ UploadDetails:
   properties:
     type:
       type: string
+UploadedFile:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: "#/components/schemas/File"
+  - type: object
+    properties:
+      type:
+        type: string
 UserUploadDetails:
   required:
   - type

@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -276,8 +275,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
      * @throws IllegalArgumentException if the license is null or not valid
      */
     private URI validateUriLicense(URI license) {
-        if (isNull(license) || !isValidUriLicense(license) || license.equals(LICENSE_MAP.get("RightsReserved"))) {
-            return license;
+        if (nonNull(license) && isValidUriLicense(license)) {
+            LICENSE_MAP.get("RightsReserved");
         }
         return formatValidUriLicense(license);
     }
@@ -288,11 +287,11 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     }
 
     private URI formatValidUriLicense(URI license) {
-        String formatedLicenseURL = license.toString()
-                                        .replaceFirst(license.getScheme(), "https")
-                                        .replaceAll("/$", "")
-                                        .toLowerCase(Locale.ROOT);
-        return URI.create(formatedLicenseURL);
+        return Optional.ofNullable(license)
+                   .map(URI::toString)
+                   .map(value -> value.replaceFirst(license.getScheme(), "https"))
+                   .map(URI::create)
+                   .orElse(null);
     }
 
     public static final class Builder {
