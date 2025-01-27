@@ -1814,7 +1814,7 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.Resource.Update" ]
+                  topic: [ "PublicationService.Resource.Update", "PublicationService.FileEntry.Update" ]
 
   EventBasedBatchScanHandlerTest:
     DependsOn: EventsLambdaManagedPolicy
