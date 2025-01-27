@@ -4,6 +4,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,16 @@ class FileEntryTest {
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
 
         assertEquals(file, fileEntry.getFile());
+    }
+
+    @Test
+    void shouldReturnFalseWhenFileEventIsNull() {
+        var file = randomOpenFile();
+        var userInstance = randomUserInstance();
+        var resourceIdentifier = SortableIdentifier.next();
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+
+        assertFalse(fileEntry.hasFileEvent());
     }
 
     private static UserInstance randomUserInstance() {

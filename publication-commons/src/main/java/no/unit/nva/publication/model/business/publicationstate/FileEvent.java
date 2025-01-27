@@ -4,16 +4,15 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
-import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
+import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(CreatedResourceEvent.class), @JsonSubTypes.Type(PublishedResourceEvent.class),
-    @JsonSubTypes.Type(UnpublishedResourceEvent.class), @JsonSubTypes.Type(DeletedResourceEvent.class),
-    @JsonSubTypes.Type(RepublishedResourceEvent.class)})
-public interface ResourceEvent {
+@JsonSubTypes({@JsonSubTypes.Type(FileUploadedEvent.class), @JsonSubTypes.Type(FileApprovedEvent.class),
+    @JsonSubTypes.Type(FileRejectedEvent.class)})
+public interface FileEvent {
 
     Instant date();
 
@@ -24,5 +23,5 @@ public interface ResourceEvent {
      */
     URI institution();
 
-    PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user);
+    FileLogEntry toLogEntry(FileEntry fileEntry, LogUser user);
 }

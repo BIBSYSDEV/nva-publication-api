@@ -295,7 +295,8 @@ public class PublishingRequestCase extends TicketEntry {
         if (resourceService.shouldUseNewFiles()) {
             getApprovedFiles().forEach(file -> FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
                                                    .fetch(resourceService)
-                                                   .ifPresent(fileEntry -> fileEntry.approve(resourceService)));
+                                                   .ifPresent(fileEntry -> fileEntry.approve(resourceService,
+                                                                                             new User(getFinalizedBy().getValue()))));
         } else {
             var resource = Resource.resourceQueryObject(getResourceIdentifier()).fetch(resourceService).orElseThrow();
             var resourceWithUpdatedAssociatedArtifacts = toPublicationWithApprovedFiles(resource).toPublication();
@@ -309,7 +310,7 @@ public class PublishingRequestCase extends TicketEntry {
                 .map(PendingFile.class::cast)
                 .forEach(file -> FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
                                      .fetch(resourceService)
-                                     .ifPresent(fileEntry -> fileEntry.reject(resourceService)));
+                                     .ifPresent(fileEntry -> fileEntry.reject(resourceService, new User(getFinalizedBy().getValue()))));
         } else {
             var resource = Resource.resourceQueryObject(getResourceIdentifier()).fetch(resourceService).orElseThrow();
             var resourceWithRejectedFiles = resource.copy()

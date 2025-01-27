@@ -2,6 +2,8 @@ package no.unit.nva.publication.log.service;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.publication.model.business.logentry.LogTopic.FILE_UPLOADED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,7 +18,9 @@ import no.unit.nva.clients.GetCustomerResponse;
 import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -75,6 +79,37 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
         assertTrue(logEntries.isEmpty());
+    }
+
+    @Test
+    void shouldCreateLogEntryWhenFileEventIsPresent() throws BadRequestException {
+        var publication = createPublication();
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), UserInstance.fromPublication(publication));
+        fileEntry.persist(resourceService);
+        fileEntry.approve(resourceService, new User(randomString()));
+
+        logEntryService.persistLogEntry(fileEntry);
+
+        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
+
+        assertEquals(FILE_UPLOADED, logEntries.getFirst().topic());
+    }
+
+    @Test
+    void shouldCreateFileLogEntryWithUserUsernameOnlyWhenFailingWhenFetchingUser()
+        throws BadRequestException, NotFoundException {
+        when(identityServiceClient.getUser(any())).thenThrow(new NotFoundException("User not found"));
+
+        var publication = createPublication();
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), UserInstance.fromPublication(publication));
+        fileEntry.persist(resourceService);
+        fileEntry.approve(resourceService, new User(randomString()));
+
+        logEntryService.persistLogEntry(fileEntry);
+        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
+
+        var logUser = logEntries.getFirst().performedBy();
+        assertNotNull(logUser.userName());
     }
 
     private Publication createPublication() throws BadRequestException {

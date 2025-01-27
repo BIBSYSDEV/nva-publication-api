@@ -1457,7 +1457,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
         fileEntry.persist(resourceService);
 
-        fileEntry.reject(resourceService);
+        fileEntry.reject(resourceService, new User(randomString()));
 
         var rejectedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
 
@@ -1476,7 +1476,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
         fileEntry.persist(resourceService);
 
-        fileEntry.approve(resourceService);
+        fileEntry.approve(resourceService, new User(randomString()));
 
         var rejectedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
 
@@ -1523,6 +1523,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .persistNewTicket(ticketService);
 
         publishingRequest.publishApprovedFile().persistUpdate(ticketService);
+        publishingRequest.setFinalizedBy(new Username(randomString()));
         publishingRequest.publishApprovedFiles(resourceService);
 
 
@@ -1572,6 +1573,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
 
+        publishingRequest.setFinalizedBy(new Username(randomString()));
         publishingRequest.rejectRejectedFiles(resourceService);
 
 
@@ -1701,6 +1703,23 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var migratedResource = migratedResourceDao.getResource();
 
         assertTrue( migratedResource.getAssociatedArtifacts().contains(nullAssociatedArtifact));
+    }
+
+    @Test
+    void shouldClearFileEvent() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var file = randomOpenFile();
+
+        var fileEntry = FileEntry.create(file, persistedPublication.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        assertNotNull(fileEntry.fetch(resourceService).orElseThrow().getFileEvent());
+
+        fileEntry.clearResourceEvent(resourceService);
+
+        assertNull(fileEntry.fetch(resourceService).orElseThrow().getFileEvent());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

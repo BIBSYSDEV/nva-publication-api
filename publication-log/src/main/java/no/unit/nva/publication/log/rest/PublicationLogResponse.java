@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collection;
 import java.util.List;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PublicationLogResponse.TYPE)

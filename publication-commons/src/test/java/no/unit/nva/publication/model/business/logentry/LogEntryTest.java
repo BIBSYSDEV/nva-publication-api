@@ -16,6 +16,7 @@ import no.unit.nva.clients.GetCustomerResponse;
 import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -45,7 +46,7 @@ class LogEntryTest extends ResourcesLocalTest {
         var logEntry = randomLogEntry(SortableIdentifier.next(), logTopic);
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(logEntry);
 
-        var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, LogEntry.class);
+        var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, PublicationLogEntry.class);
 
         assertEquals(logEntry, roundTrippedLogEntry);
     }
@@ -103,8 +104,37 @@ class LogEntryTest extends ResourcesLocalTest {
         assertNotNull(LogOrganization.fromCristinId(randomUri()));
     }
 
-    private static LogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
-        return LogEntry.builder()
+    @Test
+    void shouldPersistFileLogEntry() throws BadRequestException {
+        var publication = randomPublication();
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var fileLogEntry = randomFileLogEntry(persistedPublication);
+
+        fileLogEntry.persist(resourceService);
+
+        var logEntries = Resource.fromPublication(persistedPublication).fetchLogEntries(resourceService);
+
+        assertTrue(logEntries.contains(fileLogEntry));
+
+    }
+
+    private static FileLogEntry randomFileLogEntry(Publication persistedPublication) {
+        return FileLogEntry.builder()
+                   .withIdentifier(SortableIdentifier.next())
+                   .withFileIdentifier(SortableIdentifier.next())
+                   .withResourceIdentifier(persistedPublication.getIdentifier())
+                   .withTopic(LogTopic.FILE_UPLOADED)
+                   .withTimestamp(Instant.now())
+                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
+                                                new LogOrganization(randomUri(), randomUri(), randomString(),
+                                                                    randomString())))
+                   .withFilename(randomString())
+                   .build();
+    }
+
+    private static PublicationLogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
+        return PublicationLogEntry.builder()
                    .withIdentifier(SortableIdentifier.next())
                    .withResourceIdentifier(resourceIdentifier)
                    .withTopic(logTopic)
