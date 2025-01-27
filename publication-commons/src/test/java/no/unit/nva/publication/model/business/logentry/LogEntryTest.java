@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business.logentry;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.model.business.logentry.LogTopic.FILE_APPROVED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -41,11 +42,22 @@ class LogEntryTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @EnumSource(value = LogTopic.class, mode = Mode.EXCLUDE)
-    void shouldDoRoundTripWithoutLossOfData(LogTopic logTopic) throws JsonProcessingException {
-        var logEntry = randomLogEntry(SortableIdentifier.next(), logTopic);
+    void shouldDoRoundTripWithoutLossOfDataWhenPublicationLogEntry(LogTopic logTopic) throws JsonProcessingException {
+        var logEntry = randomPublicationLogEntry(SortableIdentifier.next(), logTopic);
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(logEntry);
 
-        var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, PublicationLogEntry.class);
+        var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, LogEntry.class);
+
+        assertEquals(logEntry, roundTrippedLogEntry);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = LogTopic.class, mode = Mode.EXCLUDE)
+    void shouldDoRoundTripWithoutLossOfDataWhenFileLogEntry(LogTopic logTopic) throws JsonProcessingException {
+        var logEntry = randomFileLogEntry(SortableIdentifier.next(), logTopic);
+        var json = JsonUtils.dtoObjectMapper.writeValueAsString(logEntry);
+
+        var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, LogEntry.class);
 
         assertEquals(logEntry, roundTrippedLogEntry);
     }
@@ -61,8 +73,8 @@ class LogEntryTest extends ResourcesLocalTest {
         var persistedPublication = Resource.fromPublication(publication)
                                        .persistNew(resourceService, UserInstance.fromPublication(publication));
 
-        var firstLogEntry = randomLogEntry(persistedPublication.getIdentifier(), LogTopic.PUBLICATION_UNPUBLISHED);
-        var secondLogEntry = randomLogEntry(persistedPublication.getIdentifier(), LogTopic.PUBLICATION_DELETED);
+        var firstLogEntry = randomPublicationLogEntry(persistedPublication.getIdentifier(), LogTopic.PUBLICATION_UNPUBLISHED);
+        var secondLogEntry = randomPublicationLogEntry(persistedPublication.getIdentifier(), LogTopic.PUBLICATION_DELETED);
 
         firstLogEntry.persist(resourceService);
         secondLogEntry.persist(resourceService);
@@ -70,6 +82,21 @@ class LogEntryTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(persistedPublication).fetchLogEntries(resourceService);
 
         assertTrue(logEntries.containsAll(List.of(firstLogEntry, secondLogEntry)));
+    }
+
+    @Test
+    void shouldPersistFileLogEntry() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, userInstance);
+        var logEntry = randomFileLogEntry(persistedPublication.getIdentifier(), FILE_APPROVED);
+
+        logEntry.persist(resourceService);
+
+        var logEntries = Resource.fromPublication(persistedPublication).fetchLogEntries(resourceService);
+
+        assertTrue(logEntries.contains(logEntry));
     }
 
     @Test
@@ -103,11 +130,24 @@ class LogEntryTest extends ResourcesLocalTest {
         assertNotNull(LogOrganization.fromCristinId(randomUri()));
     }
 
-    private static PublicationLogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
+    private static PublicationLogEntry randomPublicationLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
         return PublicationLogEntry.builder()
                    .withIdentifier(SortableIdentifier.next())
                    .withResourceIdentifier(resourceIdentifier)
                    .withTopic(logTopic)
+                   .withTimestamp(Instant.now())
+                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
+                                                new LogOrganization(randomUri(), randomUri(), randomString(), randomString())))
+                   .build();
+    }
+
+    private FileLogEntry randomFileLogEntry(SortableIdentifier identifier, LogTopic logTopic) {
+        return FileLogEntry.builder()
+                   .withIdentifier(SortableIdentifier.next())
+                   .withResourceIdentifier(identifier)
+                   .withFileIdentifier(SortableIdentifier.next())
+                   .withTopic(logTopic)
+                   .withFilename(randomString())
                    .withTimestamp(Instant.now())
                    .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
                                                 new LogOrganization(randomUri(), randomUri(), randomString(), randomString())))

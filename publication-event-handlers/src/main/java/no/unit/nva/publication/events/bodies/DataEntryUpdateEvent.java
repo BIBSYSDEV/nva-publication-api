@@ -36,6 +36,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public static final String FILE_ENTRY_REJECTED_EVENT_TOPIC = "PublicationService.FileEntry.Reject";
     public static final String FILE_ENTRY_CREATE_EVENT_TOPIC = "PublicationService.FileEntry.Create";
     public static final String FILE_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.FileEntry.Delete";
+    public static final String FILE_ENTRY_UPDATE_EVENT_TOPIC = "PublicationService.FileEntry.Update";
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
@@ -91,11 +92,6 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         return isNull(oldData) && nonNull(newData);
     }
 
-    @JsonIgnore
-    private boolean isUpdateEvent() {
-        return nonNull(oldData) && nonNull(newData);
-    }
-
     @Override
     @JacocoGenerated
     public int hashCode() {
@@ -138,6 +134,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         };
     }
 
+    @JacocoGenerated
     private String createTopicForFile() {
         if (isDeleteEvent()) {
             return FILE_ENTRY_DELETE_EVENT_TOPIC;
@@ -150,7 +147,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
                 case OpenFile ignore when oldFile instanceof PendingFile<?,?> -> FILE_ENTRY_APPROVED_EVENT_TOPIC;
                 case InternalFile ignore when oldFile instanceof PendingFile<?,?> -> FILE_ENTRY_APPROVED_EVENT_TOPIC;
                 case RejectedFile ignore when oldFile instanceof PendingFile<?,?> -> FILE_ENTRY_REJECTED_EVENT_TOPIC;
-                default -> null;
+                default -> FILE_ENTRY_UPDATE_EVENT_TOPIC;
             };
         }
     }
