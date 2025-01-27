@@ -101,7 +101,7 @@ public class FileService {
 
             FileEntry.queryObject(fileIdentifier, resourceIdentifier)
                 .fetch(resourceService)
-                .ifPresent(resourceService::deleteFile);
+                .ifPresent(fileEntry -> fileEntry.softDelete(resourceService, userInstance.getUser()));
         }
     }
 

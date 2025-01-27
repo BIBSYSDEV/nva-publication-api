@@ -2,7 +2,6 @@ package no.unit.nva.publication.log.service;
 
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import java.util.UUID;
 import no.unit.nva.clients.GetCustomerResponse;
 import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -34,19 +33,17 @@ public class LogEntryService {
     public void persistLogEntry(Entity entity) {
         switch (entity) {
             case Resource resource -> persistLogEntry(resource.getIdentifier());
-            case FileEntry fileEntry -> persistLogEntry(fileEntry.getFile().getIdentifier(),
-                                                        fileEntry.getResourceIdentifier());
+            case FileEntry fileEntry -> persistLogEntry(fileEntry);
             case null, default -> {
                 // Ignore
             }
         }
     }
 
-    private void persistLogEntry(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
-        FileEntry.queryObject(fileIdentifier, resourceIdentifier)
-            .fetch(resourceService)
-            .filter(FileEntry::hasFileEvent)
-            .ifPresent(this::persistFileLogEntry);
+    private void persistLogEntry(FileEntry fileEntry) {
+        if (fileEntry.hasFileEvent()) {
+            persistFileLogEntry(fileEntry);
+        }
     }
 
     private void persistLogEntry(SortableIdentifier identifier) {

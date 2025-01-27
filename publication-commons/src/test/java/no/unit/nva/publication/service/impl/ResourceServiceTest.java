@@ -125,6 +125,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -1360,7 +1361,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDeleteFile() throws BadRequestException {
+    void shouldHardDeleteFile() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -1370,9 +1371,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
         fileEntry.persist(resourceService);
-        fileEntry.delete(resourceService);
+        fileEntry.hardDelete(resourceService);
 
         assertEquals(Optional.empty(), fileEntry.fetch(resourceService));
+    }
+
+    @Test
+    void shouldSoftDeleteFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+        fileEntry.softDelete(resourceService, new User(randomString()));
+
+        assertInstanceOf(FileDeletedEvent.class, fileEntry.fetch(resourceService).orElseThrow().getFileEvent());
     }
 
     @Test

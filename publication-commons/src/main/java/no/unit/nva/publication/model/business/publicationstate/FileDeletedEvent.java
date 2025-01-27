@@ -8,10 +8,10 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 
-public record FileApprovedEvent(Instant date, User user) implements FileEvent {
+public record FileDeletedEvent(Instant date, User user) implements FileEvent {
 
-    public static FileApprovedEvent create(User user, Instant timestamp) {
-        return new FileApprovedEvent(timestamp, user);
+    public static FileDeletedEvent create(User user, Instant timestamp) {
+        return new FileDeletedEvent(timestamp, user);
     }
 
     @Override
@@ -20,7 +20,7 @@ public record FileApprovedEvent(Instant date, User user) implements FileEvent {
                    .withIdentifier(SortableIdentifier.next())
                    .withFileIdentifier(fileEntry.getIdentifier())
                    .withResourceIdentifier(fileEntry.getResourceIdentifier())
-                   .withTopic(LogTopic.FILE_APPROVED)
+                   .withTopic(LogTopic.FILE_DELETED)
                    .withTimestamp(date)
                    .withPerformedBy(user)
                    .withFilename(fileEntry.getFile().getName())

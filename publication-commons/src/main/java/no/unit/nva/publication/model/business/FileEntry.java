@@ -17,6 +17,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
@@ -76,7 +77,7 @@ public final class FileEntry implements Entity {
     public void persist(ResourceService resourceService) {
         var now = Instant.now();
         this.modifiedDate = now;
-        this.setFileEvent(FileUploadedEvent.create(getOwner(), getOwnerAffiliation(), now));
+        this.setFileEvent(FileUploadedEvent.create(getOwner(), now));
         resourceService.persistFile(this);
     }
 
@@ -165,7 +166,14 @@ public final class FileEntry implements Entity {
         return ownerAffiliation;
     }
 
-    public void delete(ResourceService resourceIdentifier) {
+    public void softDelete(ResourceService resourceIdentifier, User user) {
+        var now = Instant.now();
+        this.setFileEvent(FileDeletedEvent.create(user, now));
+        this.modifiedDate = now;
+        resourceIdentifier.updateFile(this);
+    }
+
+    public void hardDelete(ResourceService resourceIdentifier) {
         resourceIdentifier.deleteFile(this);
     }
 

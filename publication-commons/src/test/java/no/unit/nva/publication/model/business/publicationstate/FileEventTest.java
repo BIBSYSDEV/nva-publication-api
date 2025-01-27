@@ -21,10 +21,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class FileEventTest {
 
     public static Stream<Arguments> stateProvider() {
-        return Stream.of(Arguments.of(new FileUploadedEvent(Instant.now(), randomUser(), randomUri())),
+        return Stream.of(Arguments.of(new FileUploadedEvent(Instant.now(), randomUser())),
                          Arguments.of(
-                             new FileApprovedEvent(Instant.now(), randomUser(), randomUri())),
-                         Arguments.of(new FileRejectedEvent(Instant.now(), randomUser(), randomUri())));
+                             new FileApprovedEvent(Instant.now(), randomUser())),
+                         Arguments.of(new FileRejectedEvent(Instant.now(), randomUser())),
+                         Arguments.of(new FileDeletedEvent(Instant.now(), randomUser())));
     }
 
     @ParameterizedTest
