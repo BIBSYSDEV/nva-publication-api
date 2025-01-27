@@ -9,14 +9,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
@@ -48,24 +44,12 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final String RIGHTS_RETENTION_STRATEGY = "rightsRetentionStrategy";
     public static final String PUBLISHED_DATE_FIELD = "publishedDate";
     public static final String UPLOAD_DETAILS_FIELD = "uploadDetails";
-    public static final Map<String, URI> LICENSE_MAP = Map.of("CC BY",
-                                                              URI.create("https://creativecommons.org/licenses/by/4.0"),
-                                                              "CC BY-NC", URI.create(
-            "https://creativecommons.org/licenses/by-nc/4.0"), "CC BY-NC-ND", URI.create(
-            "https://creativecommons.org/licenses/by-nc-nd/4.0"), "CC BY-NC-SA", URI.create(
-            "https://creativecommons.org/licenses/by-nc-sa/4.0"), "CC BY-ND", URI.create(
-            "https://creativecommons.org/licenses/by-nd/4.0"), "CC BY-SA", URI.create(
-            "https://creativecommons.org/licenses/by-sa/4.0"), "CC0", URI.create(
-            "https://creativecommons.org/publicdomain/zero/1.0"), "RightsReserved",
-                                                              URI.create("http://rightsstatements.org/vocab/InC/1.0/"));
-
     public static final String MISSING_LICENSE = "This file public and should therefore have a license";
     public static final String LEGAL_NOTE_FIELD = "legalNote";
     public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     public static final Set<Class<? extends File>> INITIAL_FILE_TYPES = Set.of(PendingOpenFile.class,
                                                                                PendingInternalFile.class,
                                                                                HiddenFile.class);
-    private static final Supplier<Pattern> LICENSE_VALIDATION_PATTERN = () -> Pattern.compile("^(http|https)://.*$");
     @JsonProperty(IDENTIFIER_FIELD)
     private final UUID identifier;
     @JsonProperty(NAME_FIELD)
@@ -119,7 +103,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         this.name = name;
         this.mimeType = mimeType;
         this.size = size;
-        this.license = validateUriLicense(license);
+        this.license = license;
         this.publisherVersion = publisherVersion;
         this.embargoDate = embargoDate;
         this.rightsRetentionStrategy = assignDefaultStrategyIfNull(rightsRetentionStrategy);
@@ -265,34 +249,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     private RightsRetentionStrategy assignDefaultStrategyIfNull(RightsRetentionStrategy strategy) {
         return nonNull(strategy) ? strategy
                    : NullRightsRetentionStrategy.create(RightsRetentionStrategyConfiguration.UNKNOWN);
-    }
-
-    /**
-     * Validates and formats a provided URI license.
-     *
-     * @param license the URI license to be validated
-     * @return the formatted license if the provided license is valid and not a "RightsReserved" license, or the
-     *     original license if it's valid and a "RightsReserved" license
-     * @throws IllegalArgumentException if the license is null or not valid
-     */
-    private URI validateUriLicense(URI license) {
-        if (isNull(license) || !isValidUriLicense(license) || license.equals(LICENSE_MAP.get("RightsReserved"))) {
-            return license;
-        }
-        return formatValidUriLicense(license);
-    }
-
-    private boolean isValidUriLicense(URI license) {
-        var matcher = LICENSE_VALIDATION_PATTERN.get().matcher(license.toString());
-        return matcher.matches();
-    }
-
-    private URI formatValidUriLicense(URI license) {
-        String formatedLicenseURL = license.toString()
-                                        .replaceFirst(license.getScheme(), "https")
-                                        .replaceAll("/$", "")
-                                        .toLowerCase(Locale.ROOT);
-        return URI.create(formatedLicenseURL);
     }
 
     public static final class Builder {

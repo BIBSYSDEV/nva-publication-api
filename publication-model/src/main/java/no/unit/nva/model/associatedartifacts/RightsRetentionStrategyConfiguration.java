@@ -1,6 +1,8 @@
 package no.unit.nva.model.associatedartifacts;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
+import nva.commons.core.SingletonCollector;
 
 public enum RightsRetentionStrategyConfiguration {
     UNKNOWN("Unknown"),
@@ -17,5 +19,12 @@ public enum RightsRetentionStrategyConfiguration {
     @JsonValue
     public String getValue() {
         return value;
+    }
+
+    public static RightsRetentionStrategyConfiguration fromValue(String value) {
+        return Arrays.stream(RightsRetentionStrategyConfiguration.values())
+                   .filter(enumValue -> enumValue.getValue().equalsIgnoreCase(value))
+                   .collect(SingletonCollector.tryCollect())
+                   .orElseThrow();
     }
 }

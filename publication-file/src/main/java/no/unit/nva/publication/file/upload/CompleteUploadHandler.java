@@ -2,7 +2,7 @@ package no.unit.nva.publication.file.upload;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.model.associatedartifacts.file.UploadedFile;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -11,7 +11,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 
-public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequestBody, UploadedFile> {
+public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequestBody, File> {
 
     private final FileService fileService;
 
@@ -32,8 +32,8 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
     }
 
     @Override
-    protected UploadedFile processInput(CompleteUploadRequestBody input, RequestInfo requestInfo,
-                                        Context context) throws ApiGatewayException {
+    protected File processInput(CompleteUploadRequestBody input, RequestInfo requestInfo,
+                                Context context) throws ApiGatewayException {
 
         var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
@@ -42,7 +42,7 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
     }
 
     @Override
-    protected Integer getSuccessStatusCode(CompleteUploadRequestBody input, UploadedFile output) {
+    protected Integer getSuccessStatusCode(CompleteUploadRequestBody input, File output) {
         return HTTP_OK;
     }
 }

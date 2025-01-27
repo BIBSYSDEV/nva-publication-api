@@ -1,5 +1,6 @@
 package no.unit.nva.publication.file.upload;
 
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
@@ -26,6 +27,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
@@ -38,6 +40,7 @@ import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
+import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -342,6 +345,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var completeMultipartUploadResult = mockCompleteMultipartUpload();
         var request = new CompleteUploadRequestBody(randomString(), randomString(), List.of());
 
+        mockCustomerResponse(userInstance);
         fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
 
         var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
@@ -352,10 +356,17 @@ class FileServiceTest extends ResourcesLocalTest {
         assertEquals(expectedFile, fileEntry.getFile());
     }
 
-    private static UploadedFile constructExpectedFile(CompleteMultipartUploadResult completeMultipartUploadResult,
+    private void mockCustomerResponse(UserInstance userInstance) {
+        when(customerApiClient.fetch(userInstance.getCustomerId())).thenReturn(new Customer(null, null,
+                                                                                            new CustomerApiRightsRetention(RIGHTS_RETENTION_STRATEGY.getValue(), randomString())));
+    }
+
+    private static File constructExpectedFile(CompleteMultipartUploadResult completeMultipartUploadResult,
                                                       UserInstance userInstance, FileEntry fileEntry) {
-        return new UploadedFile(UUID.fromString(completeMultipartUploadResult.getKey()), FILE_NAME, CONTENT_TYPE,
-                                (long) CONTENT_LENGTH, new UserUploadDetails(new Username(userInstance.getUsername()),
+        return new PendingOpenFile(UUID.fromString(completeMultipartUploadResult.getKey()), FILE_NAME, CONTENT_TYPE,
+                                (long) CONTENT_LENGTH, null, null, null,
+                                   CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), null,
+                                   new UserUploadDetails(new Username(userInstance.getUsername()),
                                                                              fileEntry.getFile()
                                                                                  .getUploadDetails()
                                                                                  .uploadedDate()));
