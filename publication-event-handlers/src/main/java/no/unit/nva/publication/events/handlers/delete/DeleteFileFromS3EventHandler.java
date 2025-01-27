@@ -8,7 +8,6 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
@@ -21,8 +20,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(DeleteFileFromS3EventHandler.class);
-    private static final String FILE_DELETED_MESSAGE =
-        "File with key {} has been deleted from S3 bucket for publication {}";
+    private static final String FILE_DELETED_MESSAGE = "File with key {} has been deleted from S3 bucket for " +
+                                                       "publication {}";
     private static final String PERSISTED_STORAGE_BUCKET_NAME = new Environment().readEnv(
         "NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private final S3Client s3Client;
@@ -45,13 +44,11 @@ public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHa
                                        Context context) {
 
         var fileEntry = (FileEntry) getEvent(eventReference).getNewData();
-        if (fileEntry.getFileEvent() instanceof FileDeletedEvent) {
-            var key = fileEntry.getIdentifier().toString();
-            deleteFile(key);
-            FileEntry.queryObject(fileEntry.getFile().getIdentifier(), fileEntry.getResourceIdentifier())
-                         .hardDelete(resourceService);
-            logger.info(FILE_DELETED_MESSAGE, key, fileEntry.getResourceIdentifier());
-        }
+        var key = fileEntry.getIdentifier().toString();
+        deleteFile(key);
+        FileEntry.queryObject(fileEntry.getFile().getIdentifier(), fileEntry.getResourceIdentifier())
+            .hardDelete(resourceService);
+        logger.info(FILE_DELETED_MESSAGE, key, fileEntry.getResourceIdentifier());
 
         return null;
     }

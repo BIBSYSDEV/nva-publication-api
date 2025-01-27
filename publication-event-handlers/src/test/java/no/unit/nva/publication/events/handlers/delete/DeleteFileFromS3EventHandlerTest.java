@@ -5,7 +5,6 @@ import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.FILE_EN
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -17,7 +16,6 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -53,7 +51,6 @@ class DeleteFileFromS3EventHandlerTest extends ResourcesLocalTest {
         var fileEntry = FileEntry.create(randomOpenFile(), SortableIdentifier.next(),
                                          UserInstance.create(randomString(), randomUri()));
         fileEntry.persist(resourceService);
-        fileEntry.softDelete(resourceService, new User(randomString()));
 
         var persistedStorageS3Driver = new S3Driver(s3Client,
                                                     new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"));
@@ -67,25 +64,9 @@ class DeleteFileFromS3EventHandlerTest extends ResourcesLocalTest {
         assertTrue(fileEntry.fetch(resourceService).isEmpty());
     }
 
-    @Test
-    void shouldDoNothingWhenEventIsNotDeleteEvent() throws IOException {
-        var fileEntry = FileEntry.create(randomOpenFile(), SortableIdentifier.next(),
-                                         UserInstance.create(randomString(), randomUri()));
-
-        var persistedStorageS3Driver = new S3Driver(s3Client, new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"));
-        var fileKey = insertFile(fileEntry, persistedStorageS3Driver);
-
-        var event = createEvent(fileEntry, fileEntry);
-
-        handler.handleRequest(event, output, CONTEXT);
-
-        assertNotNull(persistedStorageS3Driver.getFile(UnixPath.of(fileKey)));
-    }
-
-    private static String insertFile(FileEntry fileEntry, S3Driver persistedStorageS3Driver) throws IOException {
+    private static void insertFile(FileEntry fileEntry, S3Driver persistedStorageS3Driver) throws IOException {
         var s3Key = fileEntry.getIdentifier().toString();
         persistedStorageS3Driver.insertFile(UnixPath.of(s3Key), randomString());
-        return s3Key;
     }
 
     private InputStream createEvent(FileEntry oldImage, FileEntry newImage) throws IOException {
