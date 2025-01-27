@@ -9,6 +9,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -20,7 +24,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import nva.commons.core.JacocoGenerated;
 
 public class DataEntryUpdateEvent implements JsonSerializable {
-    
+
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     public static final String MESSAGE_UPDATE_EVENT_TOPIC = "PublicationService.Message.Update";
     public static final String PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.PublishingRequest.Update";
@@ -28,7 +32,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         "PublicationService.GeneralSupportRequest.Update";
     private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
     private static final String UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.UnpublishRequest.Update";
-    public static final String FILE_ENTRY_UPDATE_EVENT_TOPIC = "PublicationService.FileEntry.Update";
+    public static final String FILE_ENTRY_APPROVED_EVENT_TOPIC = "PublicationService.FileEntry.Approve";
+    public static final String FILE_ENTRY_REJECTED_EVENT_TOPIC = "PublicationService.FileEntry.Reject";
     public static final String FILE_ENTRY_CREATE_EVENT_TOPIC = "PublicationService.FileEntry.Create";
     public static final String FILE_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.FileEntry.Delete";
     private static final String ACTION = "action";
@@ -41,7 +46,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     private final Entity oldData;
     @JsonProperty(NEW_DATA)
     private final Entity newData;
-    
+
     /**
      * Constructor for creating DynamoEntryUpdateEvent.
      *
@@ -54,24 +59,24 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         @JsonProperty(ACTION) String action,
         @JsonProperty(OLD_DATA) Entity oldData,
         @JsonProperty(NEW_DATA) Entity newData) {
-        
+
         this.action = action;
         this.oldData = oldData;
         this.newData = newData;
     }
-    
+
     public static DataEntryUpdateEvent fromJson(String json) {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(json, DataEntryUpdateEvent.class)).orElseThrow();
     }
-    
+
     public String getAction() {
         return action;
     }
-    
+
     public Entity getOldData() {
         return oldData;
     }
-    
+
     public Entity getNewData() {
         return newData;
     }
@@ -85,13 +90,18 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     private boolean isCreateEvent() {
         return isNull(oldData) && nonNull(newData);
     }
-    
+
+    @JsonIgnore
+    private boolean isUpdateEvent() {
+        return nonNull(oldData) && nonNull(newData);
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getTopic(), getTopic(), getOldData(), getNewData());
     }
-    
+
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -107,12 +117,12 @@ public class DataEntryUpdateEvent implements JsonSerializable {
                && Objects.equals(getOldData(), that.getOldData())
                && Objects.equals(getNewData(), that.getNewData());
     }
-    
+
     @JsonIgnore
     public boolean notEmpty() {
         return nonNull(oldData) || nonNull(newData);
     }
-    
+
     @JsonProperty("topic")
     public String getTopic() {
         var type = extractDataEntryType();
@@ -134,7 +144,14 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         } else if (isCreateEvent()) {
             return FILE_ENTRY_CREATE_EVENT_TOPIC;
         } else {
-            return FILE_ENTRY_UPDATE_EVENT_TOPIC;
+            var newFile = ((FileEntry) getNewData()).getFile();
+            var oldFile = ((FileEntry) getOldData()).getFile();
+            return switch (newFile) {
+                case OpenFile ignore when oldFile instanceof PendingFile<?,?> -> FILE_ENTRY_APPROVED_EVENT_TOPIC;
+                case InternalFile ignore when oldFile instanceof PendingFile<?,?> -> FILE_ENTRY_APPROVED_EVENT_TOPIC;
+                case RejectedFile ignore when oldFile instanceof PendingFile<?,?> -> FILE_ENTRY_REJECTED_EVENT_TOPIC;
+                default -> null;
+            };
         }
     }
 

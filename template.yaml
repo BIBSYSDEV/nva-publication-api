@@ -1793,8 +1793,8 @@ Resources:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.log.PersistLogEntryEventHandler::handleRequest
+      CodeUri: publication-log
+      Handler: no.unit.nva.publication.log.eventhandler.PersistLogEntryEventHandler::handleRequest
       Timeout: 200
       Policies:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn

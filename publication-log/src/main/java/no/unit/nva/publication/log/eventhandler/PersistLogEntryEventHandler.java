@@ -1,17 +1,17 @@
-package no.unit.nva.publication.events.handlers.log;
+package no.unit.nva.publication.log.eventhandler;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Optional;
 import no.unit.nva.clients.IdentityServiceClient;
+
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.log.service.LogEntryService;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;

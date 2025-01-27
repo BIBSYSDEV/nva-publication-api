@@ -1,4 +1,4 @@
-package no.unit.nva.publication.events.handlers.log;
+package no.unit.nva.publication.log.eventhandler;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -24,7 +24,6 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.log.eventhandler.PersistLogEntryEventHandler;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;

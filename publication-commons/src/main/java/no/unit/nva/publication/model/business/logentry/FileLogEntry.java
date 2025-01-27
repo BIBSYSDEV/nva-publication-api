@@ -1,0 +1,74 @@
+package no.unit.nva.publication.model.business.logentry;
+
+import java.time.Instant;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.service.impl.ResourceService;
+
+public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fileIdentifier,
+                           SortableIdentifier resourceIdentifier, LogTopic topic, String filename, Instant timestamp,
+                           LogUser performedBy) implements LogEntry {
+
+    public static final String TYPE = "FileLogEntry";
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public void persist(ResourceService resourceService) {
+        resourceService.persistLogEntry(this);
+    }
+
+    public static final class Builder {
+
+        private SortableIdentifier identifier;
+        private SortableIdentifier fileIdentifier;
+        private SortableIdentifier resourceIdentifier;
+        private LogTopic topic;
+        private String filename;
+        private Instant timestamp;
+        private LogUser performedBy;
+
+        private Builder() {
+        }
+
+        public Builder withIdentifier(SortableIdentifier identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder withFileIdentifier(SortableIdentifier fileIdentifier) {
+            this.fileIdentifier = fileIdentifier;
+            return this;
+        }
+
+        public Builder withResourceIdentifier(SortableIdentifier resourceIdentifier) {
+            this.resourceIdentifier = resourceIdentifier;
+            return this;
+        }
+
+        public Builder withTopic(LogTopic topic) {
+            this.topic = topic;
+            return this;
+        }
+
+        public Builder withFilename(String filename) {
+            this.filename = filename;
+            return this;
+        }
+
+        public Builder withTimestamp(Instant timestamp) {
+            this.timestamp = timestamp;
+            return this;
+        }
+
+        public Builder withPerformedBy(LogUser performedBy) {
+            this.performedBy = performedBy;
+            return this;
+        }
+
+        public FileLogEntry build() {
+            return new FileLogEntry(identifier, fileIdentifier, resourceIdentifier, topic, filename, timestamp,
+                                    performedBy);
+        }
+    }
+}

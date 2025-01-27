@@ -2,7 +2,6 @@ dependencies {
     implementation project(":publication-doi-commons")
     implementation project(":expansion")
     implementation project(":publication-commons")
-    implementation project(":publication-log")
     testImplementation project(":tickets-test")
 
     implementation project(":publication-model")

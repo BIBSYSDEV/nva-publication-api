@@ -5,10 +5,14 @@ dependencies {
     implementation project(":publication-event-handlers")
 
     implementation libs.nva.apigateway
+    implementation libs.nva.events
     implementation libs.nva.core
     implementation libs.nva.json
+    implementation libs.nva.s3
     implementation libs.nva.identifiers
     implementation libs.nva.clients
+
+    implementation libs.aws.sdk2.s3
 
     implementation libs.jackson.core
     implementation libs.jackson.databind
@@ -26,5 +30,6 @@ test {
     environment "AWS_REGION", "eu-west-1"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "BACKEND_CLIENT_SECRET_NAME", "secret"
+    environment "EVENTS_BUCKET", "theEventsBucket"
     environment "TABLE_NAME", "someTable"
 }

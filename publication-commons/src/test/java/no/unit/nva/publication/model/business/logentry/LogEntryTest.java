@@ -45,7 +45,7 @@ class LogEntryTest extends ResourcesLocalTest {
         var logEntry = randomLogEntry(SortableIdentifier.next(), logTopic);
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(logEntry);
 
-        var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, LogEntry.class);
+        var roundTrippedLogEntry = JsonUtils.dtoObjectMapper.readValue(json, PublicationLogEntry.class);
 
         assertEquals(logEntry, roundTrippedLogEntry);
     }
@@ -103,8 +103,8 @@ class LogEntryTest extends ResourcesLocalTest {
         assertNotNull(LogOrganization.fromCristinId(randomUri()));
     }
 
-    private static LogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
-        return LogEntry.builder()
+    private static PublicationLogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
+        return PublicationLogEntry.builder()
                    .withIdentifier(SortableIdentifier.next())
                    .withResourceIdentifier(resourceIdentifier)
                    .withTopic(logTopic)
