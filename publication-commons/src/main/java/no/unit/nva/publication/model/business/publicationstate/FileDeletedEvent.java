@@ -24,6 +24,7 @@ public record FileDeletedEvent(Instant date, User user) implements FileEvent {
                    .withTimestamp(date)
                    .withPerformedBy(user)
                    .withFilename(fileEntry.getFile().getName())
+                   .withFileType(fileEntry.getFile().getClass().getSimpleName())
                    .build();
     }
 }

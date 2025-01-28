@@ -7,7 +7,8 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fileIdentifier,
-                           SortableIdentifier resourceIdentifier, LogTopic topic, String filename, Instant timestamp,
+                           SortableIdentifier resourceIdentifier, LogTopic topic, String filename,
+                           String fileType, Instant timestamp,
                            LogUser performedBy) implements LogEntry {
 
     public static final String TYPE = "FileLogEntry";
@@ -27,6 +28,7 @@ public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fil
         private SortableIdentifier resourceIdentifier;
         private LogTopic topic;
         private String filename;
+        private String fileType;
         private Instant timestamp;
         private LogUser performedBy;
 
@@ -68,8 +70,14 @@ public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fil
             return this;
         }
 
+        public Builder withFileType(String fileType) {
+            this.fileType = fileType;
+            return this;
+        }
+
         public FileLogEntry build() {
-            return new FileLogEntry(identifier, fileIdentifier, resourceIdentifier, topic, filename, timestamp,
+            return new FileLogEntry(identifier, fileIdentifier, resourceIdentifier, topic, filename, fileType,
+                                    timestamp,
                                     performedBy);
         }
     }

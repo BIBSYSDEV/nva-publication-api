@@ -1,19 +1,22 @@
 package no.unit.nva.publication.log.rest;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.time.Instant;
-import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 
-@JsonTypeName(LogEntryDto.TYPE)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public record LogEntryDto(LogTopic topic, Instant timestamp, LogUser performedBy) {
+@JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonSubTypes({@JsonSubTypes.Type(name = FileLogEntryDto.TYPE, value = FileLogEntryDto.class),
+    @JsonSubTypes.Type(name = PublicationLogEntryDto.TYPE, value = PublicationLogEntryDto.class),
+    })
+public interface LogEntryDto {
 
-    public static final String TYPE = "LogEntry";
+    LogTopic topic();
 
-    public static LogEntryDto fromLogEntry(LogEntry logEntry) {
-        return new LogEntryDto(logEntry.topic(), logEntry.timestamp(), logEntry.performedBy());
-    }
+    Instant timestamp();
+
+    LogUser performedBy();
+
 }
