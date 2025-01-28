@@ -82,9 +82,9 @@ public final class FakeUriResponse {
     }
 
     public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
-        var ownerAffiliation = ticket.getOwnerAffiliation();
-        fakeUriRetriever.registerResponse(ownerAffiliation, SC_OK, APPLICATION_JSON_LD,
-                                          createCristinOrganizationResponse(ownerAffiliation));
+        var responsibilityArea = ticket.getResponsibilityArea();
+        fakeUriRetriever.registerResponse(responsibilityArea, SC_OK, APPLICATION_JSON_LD,
+                                          createCristinOrganizationResponse(responsibilityArea));
         fakeUriRetriever.registerResponse(ticket.getCustomerId(), SC_OK, APPLICATION_JSON_LD,
                                           createCristinOrganizationResponse(ticket.getCustomerId()));
         setUpPersonResponse(fakeUriRetriever, ticket.getOwner());

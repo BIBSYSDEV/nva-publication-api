@@ -96,8 +96,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry ticketEntry) {
 
-            var organizationId = Objects.nonNull(ticketEntry.getOwnerAffiliation())
-                                      ? ticketEntry.getOwnerAffiliation()
+            var organizationId = Objects.nonNull(ticketEntry.getResponsibilityArea())
+                                      ? ticketEntry.getResponsibilityArea()
                                       : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
                                           .getResourceOwner().getOwnerAffiliation();
 

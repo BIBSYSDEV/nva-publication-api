@@ -70,6 +70,7 @@ public class TicketResolver {
 
         var ticket = TicketEntry.requestNewTicket(publication, ticketDto.ticketType())
                          .withOwnerAffiliation(requestUtils.topLevelCristinOrgId())
+                         .withOwnerResponsibilityArea(requestUtils.personAffiliation())
                          .withOwner(requestUtils.username());
         if (ticket instanceof PublishingRequestCase publishingRequest) {
             var customerId = requestUtils.customerId();

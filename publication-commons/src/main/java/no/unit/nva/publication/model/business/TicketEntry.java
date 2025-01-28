@@ -60,6 +60,8 @@ public abstract class TicketEntry implements Entity {
     private Username finalizedBy;
     @JsonProperty(FINALIZED_DATE)
     private Instant finalizedDate;
+    @JsonProperty("responsibilityArea")
+    private URI responsibilityArea;
 
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -236,6 +238,19 @@ public abstract class TicketEntry implements Entity {
     public TicketEntry withOwner(String username) {
         this.owner = new User(username);
         return this;
+    }
+
+    public URI getResponsibilityArea() {
+        return responsibilityArea;
+    }
+
+    public TicketEntry withOwnerResponsibilityArea(URI responsibilityArea) {
+        this.setResponsibilityArea(responsibilityArea);
+        return this;
+    }
+
+    public void setResponsibilityArea(URI responsibilityArea) {
+        this.responsibilityArea = responsibilityArea;
     }
 
     private void validateTicketOwner(UserInstance userInstance) throws UnauthorizedException {
