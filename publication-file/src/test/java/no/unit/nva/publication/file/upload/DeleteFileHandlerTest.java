@@ -186,7 +186,7 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
             Resource.fromPublication(publication));
         when(resourceService.fetchFile(any())).thenReturn(
             Optional.of(FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance)));
-        doThrow(new RuntimeException()).when(resourceService).deleteFile(any());
+        doThrow(new RuntimeException()).when(resourceService).updateFile(any());
         return new DeleteFileHandler(
             new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService));
     }

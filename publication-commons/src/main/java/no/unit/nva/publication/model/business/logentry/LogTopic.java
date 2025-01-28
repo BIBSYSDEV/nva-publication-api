@@ -5,9 +5,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum LogTopic {
 
-    FILE_PUBLISHED("FilePublished"),
+    FILE_APPROVED("FileApproved"),
     FILE_REJECTED("FileRejected"),
     FILE_UPLOADED("FileUploaded"),
+    FILE_DELETED("FileDeleted"),
     PUBLICATION_CREATED("PublicationCreated"),
     PUBLICATION_DELETED("PublicationDeleted"),
     PUBLICATION_PUBLISHED("PublicationPublished"),

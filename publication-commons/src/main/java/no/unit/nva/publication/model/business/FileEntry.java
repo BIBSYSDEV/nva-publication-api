@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -15,6 +16,11 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -33,13 +39,15 @@ public final class FileEntry implements Entity {
     private final Instant createdDate;
     private Instant modifiedDate;
     private File file;
+    private FileEvent fileEvent;
 
     @JsonCreator
     private FileEntry(@JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
                       @JsonProperty("createdDate") Instant createdDate,
                       @JsonProperty("modifiedDate") Instant modifiedDate, @JsonProperty("owner") User owner,
                       @JsonProperty("ownerAffiliation") URI ownerAffiliation,
-                      @JsonProperty("customerId") URI customerId, @JsonProperty("file") File file) {
+                      @JsonProperty("customerId") URI customerId, @JsonProperty("file") File file,
+                      @JsonProperty("fileEvent") FileEvent fileEvent) {
         this.resourceIdentifier = resourceIdentifier;
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
@@ -47,18 +55,19 @@ public final class FileEntry implements Entity {
         this.ownerAffiliation = ownerAffiliation;
         this.customerId = customerId;
         this.file = file;
+        this.fileEvent = fileEvent;
     }
 
     public static FileEntry create(File file, SortableIdentifier resourceIdentifier, UserInstance userInstance) {
         return new FileEntry(resourceIdentifier, Instant.now(), Instant.now(), userInstance.getUser(),
-                             userInstance.getTopLevelOrgCristinId(), userInstance.getCustomerId(), file);
+                             userInstance.getTopLevelOrgCristinId(), userInstance.getCustomerId(), file, null);
     }
 
     public static FileEntry queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
         return new FileEntry(resourceIdentifier, null, null, null, null, null, File.builder()
                                                                                    .withIdentifier(UUID.fromString(
                                                                                        fileIdentifier.toString()))
-                                                                                   .buildHiddenFile());
+                                                                                   .buildHiddenFile(), null);
     }
 
     public static FileEntry fromDao(FileDao fileDao) {
@@ -66,6 +75,9 @@ public final class FileEntry implements Entity {
     }
 
     public void persist(ResourceService resourceService) {
+        var now = Instant.now();
+        this.modifiedDate = now;
+        this.setFileEvent(FileUploadedEvent.create(getOwner(), now));
         resourceService.persistFile(this);
     }
 
@@ -154,7 +166,14 @@ public final class FileEntry implements Entity {
         return ownerAffiliation;
     }
 
-    public void delete(ResourceService resourceIdentifier) {
+    public void softDelete(ResourceService resourceIdentifier, User user) {
+        var now = Instant.now();
+        this.setFileEvent(FileDeletedEvent.create(user, now));
+        this.modifiedDate = now;
+        resourceIdentifier.updateFile(this);
+    }
+
+    public void hardDelete(ResourceService resourceIdentifier) {
         resourceIdentifier.deleteFile(this);
     }
 
@@ -176,20 +195,29 @@ public final class FileEntry implements Entity {
         }
     }
 
-    public void approve(ResourceService resourceService) {
+    public void approve(ResourceService resourceService, User user) {
         if (file instanceof PendingFile<?,?> pendingFile) {
             this.file = pendingFile.approve();
-            this.modifiedDate = Instant.now();
+            var now = Instant.now();
+            this.modifiedDate = now;
+            this.setFileEvent(FileApprovedEvent.create(user, now));
             resourceService.updateFile(this);
         }
     }
 
-    public void reject(ResourceService resourceService) {
+    public void reject(ResourceService resourceService, User user) {
         if (file instanceof PendingFile<?,?> pendingFile) {
             this.file = pendingFile.reject();
-            this.modifiedDate = Instant.now();
+            var now = Instant.now();
+            this.modifiedDate = now;
+            this.setFileEvent(FileRejectedEvent.create(user, now));
             resourceService.updateFile(this);
         }
+    }
+
+    @JsonIgnore
+    public boolean hasFileEvent() {
+        return nonNull(getFileEvent());
     }
 
     @JacocoGenerated
@@ -212,5 +240,18 @@ public final class FileEntry implements Entity {
                Objects.equals(getCreatedDate(), fileEntry.getCreatedDate()) &&
                Objects.equals(getModifiedDate(), fileEntry.getModifiedDate()) &&
                Objects.equals(getFile(), fileEntry.getFile());
+    }
+
+    public FileEvent getFileEvent() {
+        return fileEvent;
+    }
+
+    public void clearResourceEvent(ResourceService resourceService) {
+        this.setFileEvent(null);
+        resourceService.updateFile(this);
+    }
+
+    private void setFileEvent(FileEvent fileEvent) {
+        this.fileEvent = fileEvent;
     }
 }

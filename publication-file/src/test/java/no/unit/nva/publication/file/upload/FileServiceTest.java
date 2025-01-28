@@ -363,9 +363,9 @@ class FileServiceTest extends ResourcesLocalTest {
 
     private static File constructExpectedFile(CompleteMultipartUploadResult completeMultipartUploadResult,
                                                       UserInstance userInstance, FileEntry fileEntry) {
-        return new PendingOpenFile(UUID.fromString(completeMultipartUploadResult.getKey()), FILE_NAME, CONTENT_TYPE,
-                                (long) CONTENT_LENGTH, null, null, null,
-                                   CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), null,
+        return new UploadedFile(UUID.fromString(completeMultipartUploadResult.getKey()), FILE_NAME, CONTENT_TYPE,
+                                (long) CONTENT_LENGTH,
+                                CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY),
                                    new UserUploadDetails(new Username(userInstance.getUsername()),
                                                                              fileEntry.getFile()
                                                                                  .getUploadDetails()

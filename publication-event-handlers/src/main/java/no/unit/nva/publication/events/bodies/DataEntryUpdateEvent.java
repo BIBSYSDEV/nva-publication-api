@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.bodies;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -17,6 +16,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UnpublishRequest;
+import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import nva.commons.core.JacocoGenerated;
 
 public class DataEntryUpdateEvent implements JsonSerializable {
@@ -74,11 +74,6 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public Entity getNewData() {
         return newData;
     }
-
-    @JsonIgnore
-    public boolean isDeleteEvent() {
-        return nonNull(oldData) && isNull(newData);
-    }
     
     @Override
     @JacocoGenerated
@@ -117,7 +112,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             case Message message -> MESSAGE_UPDATE_EVENT_TOPIC;
             case GeneralSupportRequest generalSupportRequest -> GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC;
             case UnpublishRequest unpublishRequest -> UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC;
-            case FileEntry fileEntry -> this.isDeleteEvent()
+            case FileEntry fileEntry -> nonNull(fileEntry.getFileEvent()) && fileEntry.getFileEvent() instanceof FileDeletedEvent
                                             ? FILE_ENTRY_DELETE_EVENT_TOPIC
                                             : FILE_ENTRY_UPDATE_EVENT_TOPIC;
             default -> throw new IllegalArgumentException("Unknown entry type: " + type);

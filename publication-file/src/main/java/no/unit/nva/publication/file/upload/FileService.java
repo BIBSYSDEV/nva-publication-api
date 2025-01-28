@@ -20,6 +20,7 @@ import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
+import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -74,7 +75,7 @@ public class FileService {
         return amazonS3.initiateMultipartUpload(request);
     }
 
-    public PendingOpenFile completeMultipartUpload(SortableIdentifier resourceIdentifier,
+    public UploadedFile completeMultipartUpload(SortableIdentifier resourceIdentifier,
                                                    CompleteUploadRequestBody completeUploadRequestBody,
                                                    UserInstance userInstance) throws NotFoundException {
 
@@ -101,7 +102,7 @@ public class FileService {
 
             FileEntry.queryObject(fileIdentifier, resourceIdentifier)
                 .fetch(resourceService)
-                .ifPresent(resourceService::deleteFile);
+                .ifPresent(fileEntry -> fileEntry.softDelete(resourceService, userInstance.getUser()));
         }
     }
 
@@ -133,11 +134,10 @@ public class FileService {
         return amazonS3.getObjectMetadata(new GetObjectMetadataRequest(BUCKET_NAME, key));
     }
 
-    private PendingOpenFile constructUploadedFile(UUID identifier, ObjectMetadata metadata, UserInstance userInstance) {
-        return new PendingOpenFile(identifier, toFileName(metadata.getContentDisposition()), metadata.getContentType(),
-                                   metadata.getContentLength(), null, null, null,
-                                   getRrs(userInstance.getCustomerId()),
-                                   null, createUploadDetails(userInstance));
+    private UploadedFile constructUploadedFile(UUID identifier, ObjectMetadata metadata, UserInstance userInstance) {
+        return new UploadedFile(identifier, toFileName(metadata.getContentDisposition()), metadata.getContentType(),
+                                metadata.getContentLength(), getRrs(userInstance.getCustomerId()),
+                                createUploadDetails(userInstance));
     }
 
     private CustomerRightsRetentionStrategy getRrs(URI customerId) {
