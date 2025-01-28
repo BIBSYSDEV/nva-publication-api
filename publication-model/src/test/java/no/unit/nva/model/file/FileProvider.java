@@ -66,7 +66,7 @@ public class FileProvider implements ArgumentsProvider {
 
     private static File randomUploadedFile() {
         return new UploadedFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
-                                randomInserted());
+                                null, randomInserted());
     }
 
     private static File randomOpenFile() {

@@ -351,7 +351,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         }
 
         public File buildUploadedFile() {
-            return new UploadedFile(identifier, name, mimeType, size, uploadDetails);
+            return new UploadedFile(identifier, name, mimeType, size, rightsRetentionStrategy, uploadDetails);
         }
 
         public File build(Class<? extends File> clazz) {

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.UUID;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(UploadedFile.TYPE)
@@ -18,8 +19,9 @@ public class UploadedFile extends File {
                         @JsonProperty(NAME_FIELD) String name,
                         @JsonProperty(MIME_TYPE_FIELD) String mimeType,
                         @JsonProperty(SIZE_FIELD) Long size,
+                        @JsonProperty(RIGHTS_RETENTION_STRATEGY) RightsRetentionStrategy rightsRetentionStrategy,
                         @JsonProperty(UPLOAD_DETAILS_FIELD) UploadDetails uploadDetails) {
-        super(identifier, name, mimeType, size, null, null, null, null, null, null, uploadDetails);
+        super(identifier, name, mimeType, size, null, null, null, rightsRetentionStrategy, null, null, uploadDetails);
     }
 
     @Override
