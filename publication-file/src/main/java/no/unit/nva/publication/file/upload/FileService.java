@@ -80,26 +80,24 @@ public class FileService {
     }
 
     public File completeMultipartUpload(SortableIdentifier resourceIdentifier,
-                                        CompleteUploadRequest completeUploadRequest, UserInstance userInstance)
+                                        CompleteUploadRequest request, UserInstance userInstance)
         throws NotFoundException, BadRequestException {
 
         var resource = fetchResource(resourceIdentifier);
 
-        var completeMultipartUploadRequest = completeUploadRequest.toCompleteMultipartUploadRequest(BUCKET_NAME);
+        var completeMultipartUploadRequest = request.toCompleteMultipartUploadRequest(BUCKET_NAME);
         var completeMultipartUploadResult = amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
         var s3ObjectKey = completeMultipartUploadResult.getKey();
         var objectMetadata = getObjectMetadata(s3ObjectKey);
 
-        if (userInstance.isExternalClient()
-            && completeUploadRequest instanceof ExternalCompleteUploadRequest externalCompleteUploadRequest) {
-            var file = constructFileForExternalClient(UUID.fromString(s3ObjectKey), externalCompleteUploadRequest, objectMetadata);
-            FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
-            return file;
+        File file;
+        if (userInstance.isExternalClient() && request instanceof ExternalCompleteUploadRequest externalRequest) {
+            file = constructFileForExternalClient(UUID.fromString(s3ObjectKey), externalRequest, objectMetadata);
         } else {
-            var file = constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
-            FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
-            return file;
+            file = constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
         }
+        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        return file;
     }
 
     public void deleteFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance)

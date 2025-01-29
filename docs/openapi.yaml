@@ -2542,7 +2542,7 @@ components:
         type:
           type: string
           enum:
-            - InternalCompleteUpload
+            - ExternalCompleteUpload
         uploadId:
           type: string
           description: S3 Identifier upload
