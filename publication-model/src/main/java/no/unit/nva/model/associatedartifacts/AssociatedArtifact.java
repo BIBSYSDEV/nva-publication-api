@@ -1,5 +1,6 @@
 package no.unit.nva.model.associatedartifacts;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Set;
@@ -24,6 +25,7 @@ public interface AssociatedArtifact {
                    .collect(Collectors.toSet());
     }
 
+    @JsonIgnore
     String getType();
     AssociatedArtifactResponse toDto();
 }
