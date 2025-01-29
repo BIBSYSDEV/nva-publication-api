@@ -69,16 +69,16 @@ public final class PublicationResponseFactory {
                    .filter(
                        associatedArtifact -> isVisibleArtifact(publicationPermissions, associatedArtifact))
                    .map(artifact -> dtoObjectMapper.convertValue(artifact, AssociatedArtifactResponse.class))
-                   .map(artifact -> setAllowedOperationsForAssociatedArtifact(artifact, userInstance, publication))
+                   .map(artifact -> applyArtifactOperations(artifact, userInstance, publication))
                    .toList();
     }
 
-    private static AssociatedArtifactResponse setAllowedOperationsForAssociatedArtifact(
+    private static AssociatedArtifactResponse applyArtifactOperations(
         AssociatedArtifactResponse artifact, UserInstance userInstance, Publication publication) {
         if (artifact instanceof FileResponse fileResponse) {
             var file = publication.getFile(fileResponse.identifier()).orElseThrow();
             var filePermissions = FilePermissions.create(file, userInstance, publication);
-            artifact = fileResponse.copy().allowedOperations(filePermissions.getAllAllowedActions()).build();
+            artifact = fileResponse.copy().withAllowedOperations(filePermissions.getAllAllowedActions()).build();
         }
 
         return artifact;

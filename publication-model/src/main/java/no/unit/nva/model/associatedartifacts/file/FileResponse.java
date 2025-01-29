@@ -50,67 +50,67 @@ public record FileResponse(
         private Set<FileOperation> allowedOperations;
 
         // Builder methods to set each field
-        public Builder identifier(UUID identifier) {
+        public Builder withIdentifier(UUID identifier) {
             this.identifier = identifier;
             return this;
         }
 
-        public Builder type(String type) {
+        public Builder withType(String type) {
             this.type = type;
             return this;
         }
 
-        public Builder name(String name) {
+        public Builder withName(String name) {
             this.name = name;
             return this;
         }
 
-        public Builder mimeType(String mimeType) {
+        public Builder withMimeType(String mimeType) {
             this.mimeType = mimeType;
             return this;
         }
 
-        public Builder size(Long size) {
+        public Builder withSize(Long size) {
             this.size = size;
             return this;
         }
 
-        public Builder license(URI license) {
+        public Builder withLicense(URI license) {
             this.license = license;
             return this;
         }
 
-        public Builder publisherVersion(PublisherVersion publisherVersion) {
+        public Builder withPublisherVersion(PublisherVersion publisherVersion) {
             this.publisherVersion = publisherVersion;
             return this;
         }
 
-        public Builder embargoDate(Instant embargoDate) {
+        public Builder withEmbargoDate(Instant embargoDate) {
             this.embargoDate = embargoDate;
             return this;
         }
 
-        public Builder rightsRetentionStrategy(RightsRetentionStrategy rightsRetentionStrategy) {
+        public Builder withRightsRetentionStrategy(RightsRetentionStrategy rightsRetentionStrategy) {
             this.rightsRetentionStrategy = rightsRetentionStrategy;
             return this;
         }
 
-        public Builder legalNote(String legalNote) {
+        public Builder withLegalNote(String legalNote) {
             this.legalNote = legalNote;
             return this;
         }
 
-        public Builder publishedDate(Instant publishedDate) {
+        public Builder withPublishedDate(Instant publishedDate) {
             this.publishedDate = publishedDate;
             return this;
         }
 
-        public Builder uploadDetails(UploadDetails uploadDetails) {
+        public Builder withUploadDetails(UploadDetails uploadDetails) {
             this.uploadDetails = uploadDetails;
             return this;
         }
 
-        public Builder allowedOperations(Set<FileOperation> allowedOperations) {
+        public Builder withAllowedOperations(Set<FileOperation> allowedOperations) {
             this.allowedOperations = allowedOperations;
             return this;
         }
@@ -138,18 +138,18 @@ public record FileResponse(
     // Static method to create a builder from an existing instance
     public Builder copy() {
         return new Builder()
-                   .identifier(this.identifier())
-                   .type(this.type())
-                   .name(this.name())
-                   .mimeType(this.mimeType())
-                   .size(this.size())
-                   .license(this.license())
-                   .publisherVersion(this.publisherVersion())
-                   .embargoDate(this.embargoDate())
-                   .rightsRetentionStrategy(this.rightsRetentionStrategy())
-                   .legalNote(this.legalNote())
-                   .publishedDate(this.publishedDate())
-                   .uploadDetails(this.uploadDetails())
-                   .allowedOperations(this.allowedOperations());
+                   .withIdentifier(this.identifier())
+                   .withType(this.type())
+                   .withName(this.name())
+                   .withMimeType(this.mimeType())
+                   .withSize(this.size())
+                   .withLicense(this.license())
+                   .withPublisherVersion(this.publisherVersion())
+                   .withEmbargoDate(this.embargoDate())
+                   .withRightsRetentionStrategy(this.rightsRetentionStrategy())
+                   .withLegalNote(this.legalNote())
+                   .withPublishedDate(this.publishedDate())
+                   .withUploadDetails(this.uploadDetails())
+                   .withAllowedOperations(this.allowedOperations());
     }
 }
