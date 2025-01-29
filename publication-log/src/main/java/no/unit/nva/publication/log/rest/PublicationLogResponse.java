@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collection;
 import java.util.List;
+import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PublicationLogResponse.TYPE)
@@ -14,7 +16,15 @@ public record PublicationLogResponse(List<LogEntryDto> logEntries) {
     public static final String TYPE = "PublicationLog";
 
     public static PublicationLogResponse fromLogEntries(Collection<LogEntry> logEntries) {
-        var logEntriesDto = logEntries.stream().map(LogEntryDto::fromLogEntry).toList();
+        var logEntriesDto = logEntries.stream().map(PublicationLogResponse::toLogEntryDto).toList();
         return new PublicationLogResponse(logEntriesDto);
+    }
+
+    private static LogEntryDto toLogEntryDto(LogEntry logEntry) {
+        return switch (logEntry) {
+            case PublicationLogEntry publicationLogEntry -> PublicationLogEntryDto.fromLogEntry(publicationLogEntry);
+            case FileLogEntry fileLogEntry -> FileLogEntryDto.fromLogEntry(fileLogEntry);
+            default -> throw new IllegalStateException("Unknown logentry: " + logEntry.getClass().getSimpleName());
+        };
     }
 }

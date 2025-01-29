@@ -7,6 +7,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,6 +25,7 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
@@ -121,7 +123,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLog() throws IOException, BadRequestException,
                                                                                 NotFoundException {
         var publication = createPublication();
-        persistLogEntry(publication);
+        persistLogEntries(publication);
         handler.handleRequest(createAuthorizedRequest(publication), output, context);
 
         var response = GatewayResponse.fromOutputStream(output, PublicationLogResponse.class);
@@ -130,7 +132,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
         assertFalse(response.getBodyObject(PublicationLogResponse.class).logEntries().isEmpty());
     }
 
-    private void persistLogEntry(Publication publication) {
+    private void persistLogEntries(Publication publication) {
         var user = new LogUser(randomString(), randomString(), randomString(), randomUri(),
                                new LogOrganization(randomUri(), randomUri(), randomString(), randomString()));
         Resource.resourceQueryObject(publication.getIdentifier())
@@ -139,6 +141,11 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
             .getResourceEvent()
             .toLogEntry(publication.getIdentifier(), user)
             .persist(resourceService);
+
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
+                                               UserInstance.fromPublication(publication));
+        fileEntry.persist(resourceService);
+        fileEntry.getFileEvent().toLogEntry(fileEntry, user).persist(resourceService);
     }
 
     private InputStream createRequest(Publication publication) throws JsonProcessingException {
