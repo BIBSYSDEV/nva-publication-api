@@ -78,7 +78,7 @@ public final class PublicationResponseFactory {
         if (artifact instanceof FileResponse fileResponse) {
             var file = publication.getFile(fileResponse.identifier()).orElseThrow();
             var filePermissions = FilePermissions.create(file, userInstance, publication);
-            artifact = fileResponse.copy().withAllowedOperations(filePermissions.getAllAllowedActions()).build();
+            return fileResponse.copy().withAllowedOperations(filePermissions.getAllAllowedActions()).build();
         }
 
         return artifact;
