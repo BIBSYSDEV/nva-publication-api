@@ -19,7 +19,6 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -27,7 +26,9 @@ import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
-import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
+import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
+import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadRequest;
+import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -76,21 +77,27 @@ public class FileService {
     }
 
     public UploadedFile completeMultipartUpload(SortableIdentifier resourceIdentifier,
-                                                   CompleteUploadRequestBody completeUploadRequestBody,
-                                                   UserInstance userInstance) throws NotFoundException {
+                                                CompleteUploadRequest completeUploadRequest,
+                                                UserInstance userInstance) throws NotFoundException {
 
         var resource = fetchResource(resourceIdentifier);
 
-        var completeMultipartUploadRequest = completeUploadRequestBody.toCompleteMultipartUploadRequest(BUCKET_NAME);
+
+        var completeMultipartUploadRequest = completeUploadRequest.toCompleteMultipartUploadRequest(BUCKET_NAME);
         var completeMultipartUploadResult = amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
         var s3ObjectKey = completeMultipartUploadResult.getKey();
         var objectMetadata = getObjectMetadata(s3ObjectKey);
 
-        var file = constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
 
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
-
-        return file;
+        if (userInstance.isExternalClient() && completeUploadRequest instanceof ExternalCompleteUploadRequest externalCompleteUploadRequest) {
+            var file = externalCompleteUploadRequest.toFile();
+            FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+            return file;
+        } else {
+            var file = constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
+            FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+            return file;
+        }
     }
 
     public void deleteFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance)

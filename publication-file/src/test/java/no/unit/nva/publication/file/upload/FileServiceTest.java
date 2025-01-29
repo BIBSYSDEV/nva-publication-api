@@ -41,7 +41,7 @@ import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
+import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -331,7 +331,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         mockCompleteMultipartUpload();
-        var request = new CompleteUploadRequestBody(randomString(), randomString(), List.of());
+        var request = new InternalCompleteUploadRequest(randomString(), randomString(), List.of());
 
         assertThrows(NotFoundException.class,
                      () -> fileService.completeMultipartUpload(publication.getIdentifier(), request, userInstance));
@@ -343,7 +343,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
         var completeMultipartUploadResult = mockCompleteMultipartUpload();
-        var request = new CompleteUploadRequestBody(randomString(), randomString(), List.of());
+        var request = new InternalCompleteUploadRequest(randomString(), randomString(), List.of());
 
         mockCustomerResponse(userInstance);
         fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);

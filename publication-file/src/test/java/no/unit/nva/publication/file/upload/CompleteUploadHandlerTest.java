@@ -36,7 +36,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadPart;
-import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
+import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -124,7 +124,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     void canCreateRequestWithEmptyElement() throws IOException {
         var stream = inputStreamFromResources(COMPLETE_UPLOAD_REQUEST_WITH_EMPTY_ELEMENT_JSON);
         var completeUploadRequestBody = dtoObjectMapper.readValue(
-            new InputStreamReader(stream), CompleteUploadRequestBody.class);
+            new InputStreamReader(stream), InternalCompleteUploadRequest.class);
 
         var completeMultipartUploadRequest =
             completeUploadRequestBody.toCompleteMultipartUploadRequest(randomString());
@@ -139,7 +139,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     void canCreateRequestWithOnePart() throws IOException {
         var stream = inputStreamFromResources(COMPLETE_UPLOAD_REQUEST_WITH_ONE_PART_JSON);
         var completeUploadRequestBody = dtoObjectMapper.readValue(
-            new InputStreamReader(stream), CompleteUploadRequestBody.class);
+            new InputStreamReader(stream), InternalCompleteUploadRequest.class);
 
         assertThat(completeUploadRequestBody, is(notNullValue()));
         assertThat(completeUploadRequestBody.parts(), is(notNullValue()));
@@ -167,7 +167,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream request(SortableIdentifier identifier, UserInstance userInstance) throws JsonProcessingException {
-        return new HandlerRequestBuilder<CompleteUploadRequestBody>(dtoObjectMapper)
+        return new HandlerRequestBuilder<InternalCompleteUploadRequest>(dtoObjectMapper)
                    .withBody(completeUploadRequestBody())
                    .withPathParameters(Map.of("publicationIdentifier", identifier.toString()))
                    .withUserName(userInstance.getUsername())
@@ -182,9 +182,9 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private CompleteUploadRequestBody completeUploadRequestBody() {
+    private InternalCompleteUploadRequest completeUploadRequestBody() {
         var partEtags = new ArrayList<CompleteUploadPart>();
         partEtags.add(new CompleteUploadPart(1, "eTag1"));
-        return new CompleteUploadRequestBody(SAMPLE_UPLOAD_ID, SAMPLE_KEY, partEtags);
+        return new InternalCompleteUploadRequest(SAMPLE_UPLOAD_ID, SAMPLE_KEY, partEtags);
     }
 }
