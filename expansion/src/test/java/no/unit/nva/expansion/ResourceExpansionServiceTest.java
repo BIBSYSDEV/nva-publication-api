@@ -143,7 +143,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnExpandedTicketContainingTheOrganizationOfTheOwnersResponsibilityAreAsIs(
+    void shouldReturnExpandedTicketContainingTheOrganizationOfTheOwnersResponsibilityAreaAsIs(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
