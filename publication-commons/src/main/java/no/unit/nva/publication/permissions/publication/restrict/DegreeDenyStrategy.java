@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.model.role.Role.SUPERVISOR;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
@@ -58,10 +59,18 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private boolean currentUserHaveSameTopLevelAsOwner() {
+        if (isNull(userInstance)) {
+            return false;
+        }
+
         return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
     }
 
     private Optional<CuratingInstitution> getCuratingInstitutionsForCurrentUser() {
+        if (isNull(userInstance)) {
+            return Optional.empty();
+        }
+
         return Optional.ofNullable(publication.getCuratingInstitutions())
                    .stream()
                    .flatMap(Collection::stream)

@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithInternal;
 import no.unit.nva.WithMetadata;
@@ -44,7 +43,7 @@ import nva.commons.core.StringUtils;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
 public class Publication
-    implements WithIdentifier, WithInternal, WithAssociatedArtifact, WithMetadata, WithCopy<Publication.Builder> {
+    implements WithIdentifier, WithInternal, WithMetadata, WithCopy<Publication.Builder> {
 
     public static final Map<PublicationStatus, List<PublicationStatus>> validStatusTransitionsMap = Map.of(
         PublicationStatus.NEW, List.of(PublicationStatus.DRAFT),
@@ -280,14 +279,12 @@ public class Publication
         this.publicationNotes = publicationNotes;
     }
 
-    @Override
     public AssociatedArtifactList getAssociatedArtifacts() {
         return nonNull(associatedArtifacts)
                    ? associatedArtifacts
                    : AssociatedArtifactList.empty();
     }
 
-    @Override
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
     }

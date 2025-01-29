@@ -52,5 +52,10 @@ public class UploadedFile extends File {
             default -> false;
         };
     }
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 }
 

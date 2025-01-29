@@ -103,4 +103,9 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
             default -> false;
         };
     }
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 }

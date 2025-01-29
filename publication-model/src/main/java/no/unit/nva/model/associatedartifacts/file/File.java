@@ -2,6 +2,7 @@ package no.unit.nva.model.associatedartifacts.file;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -19,6 +20,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
@@ -253,6 +255,11 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     @Override
     public String toString() {
         return toJsonString();
+    }
+
+    @Override
+    public AssociatedArtifactResponse toDto() {
+        return dtoObjectMapper.convertValue(this, FileResponse.class);
     }
 
     /**

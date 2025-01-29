@@ -8,13 +8,12 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
-import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(OpenFile.TYPE)
-public class OpenFile extends File implements PublicAssociatedArtifact {
+public class OpenFile extends File {
 
     public static final String TYPE = "OpenFile";
 
@@ -81,5 +80,10 @@ public class OpenFile extends File implements PublicAssociatedArtifact {
             case OpenFile ignore -> true;
             default -> false;
         };
+    }
+
+    @Override
+    public String getType() {
+        return TYPE;
     }
 }

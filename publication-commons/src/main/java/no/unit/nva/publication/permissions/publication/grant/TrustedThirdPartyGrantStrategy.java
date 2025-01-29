@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permissions.publication.grant;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
@@ -34,6 +35,10 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
     }
 
     private boolean canModify() {
+        if (isNull(userInstance)) {
+            return false;
+        }
+
         return userInstance.isExternalClient()
                && attempt(
                    () -> userInstance.getCustomerId().equals(publication.getPublisher().getId()))

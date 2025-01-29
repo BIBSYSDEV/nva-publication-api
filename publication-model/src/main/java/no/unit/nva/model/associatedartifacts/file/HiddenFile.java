@@ -78,4 +78,9 @@ public class HiddenFile extends File {
             default -> false;
         };
     }
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 }

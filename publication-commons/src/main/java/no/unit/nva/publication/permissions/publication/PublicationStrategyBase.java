@@ -34,6 +34,10 @@ public class PublicationStrategyBase {
     }
 
     protected boolean hasAccessRight(AccessRight accessRight) {
+        if (isNull(userInstance)) {
+            return false;
+        }
+
         return userInstance.getAccessRights().contains(accessRight);
     }
 
@@ -50,6 +54,10 @@ public class PublicationStrategyBase {
     }
 
     private boolean userBelongsToCuratingInstitution() {
+        if (isNull(userInstance)) {
+            return false;
+        }
+
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("found topLevels {} for user {} of {}.",
@@ -60,7 +68,7 @@ public class PublicationStrategyBase {
     }
 
     protected boolean userIsFromSameInstitutionAsPublicationOwner() {
-        if (isNull(userInstance.getTopLevelOrgCristinId()) || isNull(publication.getResourceOwner())) {
+        if (isNull(userInstance) || isNull(userInstance.getTopLevelOrgCristinId()) || isNull(publication.getResourceOwner())) {
             return false;
         }
 
@@ -90,6 +98,10 @@ public class PublicationStrategyBase {
     }
 
     protected Boolean isOwner() {
+        if (isNull(userInstance)) {
+            return false;
+        }
+
         return attempt(userInstance::getUsername)
                    .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
                    .orElse(fail -> false);

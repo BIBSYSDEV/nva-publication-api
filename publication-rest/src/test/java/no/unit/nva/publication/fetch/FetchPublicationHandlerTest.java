@@ -123,8 +123,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private UriRetriever uriRetriever;
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
-    private Environment environment;
-    private IdentityServiceClient identityServiceClient;
 
     /**
      * Set up environment.
@@ -132,7 +130,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp(@Mock Environment environment, @Mock IdentityServiceClient identityServiceClient) {
         super.init();
-        this.environment = environment;
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
 
@@ -417,11 +414,11 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
                                                                       PublicationResponseElevatedUser.class);
 
-        var artifacts = publicationResponse.getAssociatedArtifacts().stream().toList();
+        var artifacts = publicationResponse.getAssociatedArtifacts();
 
         assertFalse(artifacts.isEmpty());
-        assertFalse(artifacts.stream().anyMatch(artifact -> artifact instanceof HiddenFile));
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof InternalFile));
+        assertFalse(artifacts.stream().anyMatch(artifact -> artifact.getType().equals(HiddenFile.TYPE)));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getType().equals(InternalFile.TYPE)));
     }
 
     @Test
@@ -450,8 +447,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         var artifacts = publicationResponse.getAssociatedArtifacts().stream().toList();
 
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof InternalFile));
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof HiddenFile));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getType().equals(InternalFile.TYPE)));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getType().equals(HiddenFile.TYPE)));
     }
 
     private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo)

@@ -14,7 +14,7 @@ import nva.commons.core.SingletonCollector;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(AssociatedLink.TYPE_NAME)
-public class AssociatedLink implements AssociatedArtifact, PublicAssociatedArtifact {
+public class AssociatedLink implements AssociatedArtifact, AssociatedArtifactResponse {
 
     public static final String ID_FIELD = "id";
     public static final String NAME_FIELD = "name";
@@ -69,6 +69,16 @@ public class AssociatedLink implements AssociatedArtifact, PublicAssociatedArtif
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getId(), getName(), getDescription());
+    }
+
+    @Override
+    public String getType() {
+        return TYPE_NAME;
+    }
+
+    @Override
+    public AssociatedArtifactResponse toDto() {
+        return this;
     }
 
     public enum RelationType {
