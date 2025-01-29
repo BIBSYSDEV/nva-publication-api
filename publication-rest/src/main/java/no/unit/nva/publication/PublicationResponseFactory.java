@@ -2,7 +2,6 @@ package no.unit.nva.publication;
 
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.List;
 import no.unit.nva.PublicationMapper;
@@ -68,7 +67,7 @@ public final class PublicationResponseFactory {
                    .stream()
                    .filter(
                        associatedArtifact -> isVisibleArtifact(publicationPermissions, associatedArtifact))
-                   .map(artifact -> dtoObjectMapper.convertValue(artifact, AssociatedArtifactResponse.class))
+                   .map(AssociatedArtifact::toDto)
                    .map(artifact -> applyArtifactOperations(artifact, userInstance, publication))
                    .toList();
     }

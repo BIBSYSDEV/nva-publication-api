@@ -1694,7 +1694,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var uploadedFile = body.getAssociatedArtifacts().stream()
-                               .filter(artifact -> artifact.getType().contains("File"))
+                               .filter(artifact -> artifact.getArtifactType().contains("File"))
                                .map(FileResponse.class::cast)
                                .filter(f -> f.identifier().equals(fileToUpload.getIdentifier()))
                                .toList().getFirst();
@@ -1724,7 +1724,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var existingFiles = body.getAssociatedArtifacts().stream()
-                                .filter(a -> a.getType().contains("File"))
+                                .filter(a -> a.getArtifactType().contains("File"))
                                 .map(FileResponse.class::cast)
                                 .filter(f -> !f.identifier().equals(fileToUpload.getIdentifier()))
                                 .toList();
@@ -1762,7 +1762,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var updatedFile = body.getAssociatedArtifacts().stream()
-                              .filter(a -> a.getType().contains("File"))
+                              .filter(a -> a.getArtifactType().contains("File"))
                               .map(FileResponse.class::cast)
                               .filter(f -> f.identifier().equals(fileUpdate.getIdentifier()))
                               .toList().getFirst();

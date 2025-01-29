@@ -36,7 +36,7 @@ public class NullAssociatedArtifact implements AssociatedArtifact, AssociatedArt
     }
 
     @Override
-    public String getType() {
+    public String getArtifactType() {
         return TYPE_NAME;
     }
 

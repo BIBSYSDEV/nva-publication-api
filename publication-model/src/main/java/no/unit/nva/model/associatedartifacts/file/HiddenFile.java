@@ -80,7 +80,7 @@ public class HiddenFile extends File {
     }
 
     @Override
-    public String getType() {
+    public String getArtifactType() {
         return TYPE;
     }
 }

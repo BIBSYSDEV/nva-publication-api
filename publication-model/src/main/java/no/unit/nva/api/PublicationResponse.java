@@ -299,7 +299,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     @Override
     public List<AssociatedArtifactResponse> getAssociatedArtifacts() {
         return this.associatedArtifacts.stream()
-                   .filter(a -> AssociatedArtifact.getPublicArtifactTypeNames().contains(a.getType()))
+                   .filter(a -> AssociatedArtifact.getPublicArtifactTypeNames().contains(a.getArtifactType()))
                    .toList();
     }
 

@@ -29,7 +29,7 @@ public record FileResponse(
     public static final String TYPE_NAME_FIELD = "type";
 
     @Override
-    public String getType() {
+    public String getArtifactType() {
         return type;
     }
 
@@ -135,7 +135,10 @@ public record FileResponse(
         }
     }
 
-    // Static method to create a builder from an existing instance
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public Builder copy() {
         return new Builder()
                    .withIdentifier(this.identifier())

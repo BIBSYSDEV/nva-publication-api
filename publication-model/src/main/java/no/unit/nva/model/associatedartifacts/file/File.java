@@ -2,7 +2,6 @@ package no.unit.nva.model.associatedartifacts.file;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -259,7 +258,20 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
 
     @Override
     public AssociatedArtifactResponse toDto() {
-        return dtoObjectMapper.convertValue(this, FileResponse.class);
+        return FileResponse.builder()
+                   .withType(getArtifactType())
+                   .withIdentifier(getIdentifier())
+                   .withName(getName())
+                   .withMimeType(getMimeType())
+                   .withSize(getSize())
+                   .withLicense(getLicense())
+                   .withPublisherVersion(getPublisherVersion())
+                   .withEmbargoDate(getEmbargoDate().orElse(null))
+                   .withRightsRetentionStrategy(getRightsRetentionStrategy())
+                   .withLegalNote(getLegalNote())
+                   .withPublishedDate(getPublishedDate().orElse(null))
+                   .withUploadDetails(getUploadDetails())
+                   .build();
     }
 
     /**

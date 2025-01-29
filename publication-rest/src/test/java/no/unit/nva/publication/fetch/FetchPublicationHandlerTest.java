@@ -417,8 +417,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var artifacts = publicationResponse.getAssociatedArtifacts();
 
         assertFalse(artifacts.isEmpty());
-        assertFalse(artifacts.stream().anyMatch(artifact -> artifact.getType().equals(HiddenFile.TYPE)));
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getType().equals(InternalFile.TYPE)));
+        assertFalse(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(HiddenFile.TYPE)));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(InternalFile.TYPE)));
     }
 
     @Test
@@ -447,8 +447,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         var artifacts = publicationResponse.getAssociatedArtifacts().stream().toList();
 
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getType().equals(InternalFile.TYPE)));
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getType().equals(HiddenFile.TYPE)));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(InternalFile.TYPE)));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(HiddenFile.TYPE)));
     }
 
     private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo)

@@ -72,7 +72,7 @@ public class AssociatedLink implements AssociatedArtifact, AssociatedArtifactRes
     }
 
     @Override
-    public String getType() {
+    public String getArtifactType() {
         return TYPE_NAME;
     }
 

@@ -100,7 +100,7 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
     }
 
     @Override
-    public String getType() {
+    public String getArtifactType() {
         return TYPE;
     }
 }

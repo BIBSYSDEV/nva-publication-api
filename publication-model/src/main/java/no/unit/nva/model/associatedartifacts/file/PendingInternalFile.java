@@ -105,7 +105,7 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
     }
 
     @Override
-    public String getType() {
+    public String getArtifactType() {
         return TYPE;
     }
 }

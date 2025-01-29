@@ -26,6 +26,7 @@ public interface AssociatedArtifact {
     }
 
     @JsonIgnore
-    String getType();
+    String getArtifactType();
+
     AssociatedArtifactResponse toDto();
 }

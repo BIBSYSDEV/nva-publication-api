@@ -1,5 +1,6 @@
 package no.unit.nva.model.associatedartifacts;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.associatedartifacts.file.FileResponse;
@@ -22,5 +23,6 @@ import no.unit.nva.model.associatedartifacts.file.UploadedFile;
     @JsonSubTypes.Type(name = NullAssociatedArtifact.TYPE_NAME, value = NullAssociatedArtifact.class)
 })
 public interface AssociatedArtifactResponse {
-    String getType();
+    @JsonIgnore
+    String getArtifactType();
 }
