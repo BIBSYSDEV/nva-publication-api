@@ -36,6 +36,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadPart;
+import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
+import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadRequest;
 import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -96,8 +98,16 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void completeUploadWithInvalidInputReturnsBadRequest() throws IOException {
-        handler.handleRequest(completeUploadRequestWithoutBody(), outputStream, context);
+    void completeUploadWithInvalidInputReturnsBadRequestWhenInternalClient() throws IOException {
+        handler.handleRequest(completeInternalUploadRequestWithoutBody(), outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+    }
+
+    @Test
+    void completeUploadWithInvalidInputReturnsBadRequestWhenExternalClient() throws IOException {
+        handler.handleRequest(completeExternalUploadRequestWithoutBody(), outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
@@ -176,9 +186,15 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream completeUploadRequestWithoutBody() throws JsonProcessingException {
-        return new HandlerRequestBuilder<CompleteMultipartUploadRequest>(dtoObjectMapper)
-                   .withBody(new CompleteMultipartUploadRequest(null, null, null, null))
+    private InputStream completeExternalUploadRequestWithoutBody() throws JsonProcessingException {
+        return new HandlerRequestBuilder<CompleteUploadRequest>(dtoObjectMapper)
+                   .withBody(new ExternalCompleteUploadRequest(null, null, null, null, null, null, null))
+                   .build();
+    }
+
+    private InputStream completeInternalUploadRequestWithoutBody() throws JsonProcessingException {
+        return new HandlerRequestBuilder<CompleteUploadRequest>(dtoObjectMapper)
+                   .withBody(new InternalCompleteUploadRequest(null, null, null))
                    .build();
     }
 

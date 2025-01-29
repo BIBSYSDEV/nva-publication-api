@@ -6,21 +6,16 @@ import com.amazonaws.services.s3.model.PartETag;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
-import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
-import no.unit.nva.model.time.Instant;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
 @JsonTypeName(ExternalCompleteUploadRequest.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record ExternalCompleteUploadRequest(String uploadId, String key, List<CompleteUploadPart> parts,
-                                            String fileType, String name,
-                                            String mimeType, Long size, URI license, PublisherVersion publisherVersion,
-                                            Instant embargoDate, UploadDetails uploadDetails,
-                                            RightsRetentionStrategy rightsRetentionStrategy)
+                                            String fileType, URI license,
+                                            PublisherVersion publisherVersion, Instant embargoDate)
     implements CompleteUploadRequest {
 
     public static final String TYPE = "ExternalCompleteUpload";
@@ -40,10 +35,6 @@ public record ExternalCompleteUploadRequest(String uploadId, String key, List<Co
         } catch (Exception e) {
             throw new BadRequestException("Invalid input");
         }
-    }
-
-    public File toFile() {
-        return null;
     }
 
     private List<PartETag> partETags() {

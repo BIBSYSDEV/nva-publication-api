@@ -19,6 +19,9 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -27,14 +30,14 @@ import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
-import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadRequest;
-import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
+import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -76,21 +79,20 @@ public class FileService {
         return amazonS3.initiateMultipartUpload(request);
     }
 
-    public UploadedFile completeMultipartUpload(SortableIdentifier resourceIdentifier,
-                                                CompleteUploadRequest completeUploadRequest,
-                                                UserInstance userInstance) throws NotFoundException {
+    public File completeMultipartUpload(SortableIdentifier resourceIdentifier,
+                                        CompleteUploadRequest completeUploadRequest, UserInstance userInstance)
+        throws NotFoundException, BadRequestException {
 
         var resource = fetchResource(resourceIdentifier);
-
 
         var completeMultipartUploadRequest = completeUploadRequest.toCompleteMultipartUploadRequest(BUCKET_NAME);
         var completeMultipartUploadResult = amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
         var s3ObjectKey = completeMultipartUploadResult.getKey();
         var objectMetadata = getObjectMetadata(s3ObjectKey);
 
-
-        if (userInstance.isExternalClient() && completeUploadRequest instanceof ExternalCompleteUploadRequest externalCompleteUploadRequest) {
-            var file = externalCompleteUploadRequest.toFile();
+        if (userInstance.isExternalClient()
+            && completeUploadRequest instanceof ExternalCompleteUploadRequest externalCompleteUploadRequest) {
+            var file = constructFileForExternalClient(UUID.fromString(s3ObjectKey), externalCompleteUploadRequest, objectMetadata);
             FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
             return file;
         } else {
@@ -113,6 +115,43 @@ public class FileService {
         }
     }
 
+    public File constructFileForExternalClient(UUID identifier,
+                                               ExternalCompleteUploadRequest uploadRequest,
+                                               ObjectMetadata metadata) throws BadRequestException {
+        var builder = File.builder()
+                          .withIdentifier(identifier)
+                          .withName(toFileName(metadata.getContentDisposition()))
+                          .withSize(metadata.getContentLength())
+                          .withMimeType(metadata.getContentType())
+                          .withLicense(uploadRequest.license())
+                          .withPublisherVersion(uploadRequest.publisherVersion())
+                          .withEmbargoDate(uploadRequest.embargoDate());
+        return switch (uploadRequest.fileType()) {
+            case OpenFile.TYPE:
+                yield builder.build(OpenFile.class);
+            case InternalFile.TYPE:
+                yield builder.build(InternalFile.class);
+            default:
+                throw new BadRequestException("Unknown file type: " + uploadRequest.fileType());
+        };
+    }
+
+    public void updateFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance,
+                           File file) throws ForbiddenException, NotFoundException {
+
+        var resource = Resource.resourceQueryObject(resourceIdentifier)
+                           .fetch(resourceService)
+                           .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+
+        validateUpdateFilePermissions(resource, userInstance);
+
+        var fileEntry = FileEntry.queryObject(fileIdentifier, resourceIdentifier)
+                            .fetch(resourceService)
+                            .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE));
+
+        fileEntry.update(file, resourceService);
+    }
+
     private static void validateDeletePermissions(UserInstance userInstance, Resource resource)
         throws ForbiddenException {
         if (!PublicationPermissions.create(resource.toPublication(), userInstance)
@@ -129,6 +168,14 @@ public class FileService {
 
     private static UserUploadDetails createUploadDetails(UserInstance userInstance) {
         return new UserUploadDetails(new Username(userInstance.getUsername()), Instant.now());
+    }
+
+    private static void validateUpdateFilePermissions(Resource resource, UserInstance userInstance)
+        throws ForbiddenException {
+        if (!PublicationPermissions.create(resource.toPublication(), userInstance)
+                 .allowsAction(PublicationOperation.UPDATE)) {
+            throw new ForbiddenException();
+        }
     }
 
     private Resource fetchResource(SortableIdentifier resourceIdentifier) throws NotFoundException {
@@ -162,29 +209,5 @@ public class FileService {
                                .map(Reference::getPublicationInstance)
                                .map(PublicationInstance::getInstanceType);
         return instanceType.isPresent() && !customer.getAllowFileUploadForTypes().contains(instanceType.get());
-    }
-
-    public void updateFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance,
-                           File file) throws ForbiddenException, NotFoundException {
-
-        var resource = Resource.resourceQueryObject(resourceIdentifier)
-                           .fetch(resourceService)
-                           .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
-
-        validateUpdateFilePermissions(resource, userInstance);
-
-        var fileEntry = FileEntry.queryObject(fileIdentifier, resourceIdentifier)
-                            .fetch(resourceService)
-                            .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE));
-
-        fileEntry.update(file, resourceService);
-    }
-
-    private static void validateUpdateFilePermissions(Resource resource, UserInstance userInstance)
-        throws ForbiddenException {
-        if (!PublicationPermissions.create(resource.toPublication(), userInstance)
-                 .allowsAction(PublicationOperation.UPDATE)) {
-            throw new ForbiddenException();
-        }
     }
 }

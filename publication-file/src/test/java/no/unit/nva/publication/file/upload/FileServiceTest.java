@@ -8,6 +8,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,11 +42,13 @@ import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
+import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadRequest;
+import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -133,6 +136,10 @@ class FileServiceTest extends ResourcesLocalTest {
                          Arguments.of(InternalFile.class, PendingOpenFile.class),
                          Arguments.of(InternalFile.class, PendingInternalFile.class),
                          Arguments.of(InternalFile.class, HiddenFile.class));
+    }
+
+    public static Stream<Arguments> fileTypeProvider() {
+        return Stream.of(Arguments.of(OpenFile.class, "OpenFile"), Arguments.of(InternalFile.class, "InternalFile"));
     }
 
     protected InitiateMultipartUploadResult uploadResult() {
@@ -338,7 +345,8 @@ class FileServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistFileEntryInDatabaseWhenCompletingMultipartUpload() throws BadRequestException, NotFoundException {
+    void shouldPersistUploadedFileEntryInDatabaseWhenCompletingMultipartUpload()
+        throws BadRequestException, NotFoundException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -356,24 +364,63 @@ class FileServiceTest extends ResourcesLocalTest {
         assertEquals(expectedFile, fileEntry.getFile());
     }
 
-    private void mockCustomerResponse(UserInstance userInstance) {
-        when(customerApiClient.fetch(userInstance.getCustomerId())).thenReturn(new Customer(null, null,
-                                                                                            new CustomerApiRightsRetention(RIGHTS_RETENTION_STRATEGY.getValue(), randomString())));
+    @ParameterizedTest
+    @MethodSource("fileTypeProvider")
+    void shouldPersistRequestedFinalizedFileEntryInDatabaseWhenCompletingMultipartUploadAsExternalClient(
+        Class<? extends File> expectedFileClass, String fileType) throws BadRequestException, NotFoundException {
+        var publication = randomPublication();
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var completeMultipartUploadResult = mockCompleteMultipartUpload();
+        var request = new ExternalCompleteUploadRequest(randomString(), randomString(), List.of(), fileType, null, null,
+                                                        null);
+        var userInstance = constructExternalClient();
+        fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
+
+        var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
+                                              resource.getIdentifier()).fetch(resourceService).orElseThrow();
+
+        assertInstanceOf(expectedFileClass, fileEntry.getFile());
+    }
+
+    @Test
+    void shouldThrowForbiddenWhenAttemptingToPersistNotSupportedFileTypeAsExternalClient()
+        throws BadRequestException {
+        var publication = randomPublication();
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        mockCompleteMultipartUpload();
+        var request = new ExternalCompleteUploadRequest(randomString(), randomString(), List.of(), "PendingOpenFile",
+                                                        null, null, null);
+        var userInstance = constructExternalClient();
+
+        assertThrows(BadRequestException.class,
+                     () -> fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance));
+    }
+
+    private static UserInstance constructExternalClient() {
+        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), List.of(),
+                                UserClientType.EXTERNAL);
     }
 
     private static File constructExpectedFile(CompleteMultipartUploadResult completeMultipartUploadResult,
-                                                      UserInstance userInstance, FileEntry fileEntry) {
+                                              UserInstance userInstance, FileEntry fileEntry) {
         return new UploadedFile(UUID.fromString(completeMultipartUploadResult.getKey()), FILE_NAME, CONTENT_TYPE,
                                 (long) CONTENT_LENGTH,
                                 CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY),
-                                   new UserUploadDetails(new Username(userInstance.getUsername()),
-                                                                             fileEntry.getFile()
-                                                                                 .getUploadDetails()
-                                                                                 .uploadedDate()));
+                                new UserUploadDetails(new Username(userInstance.getUsername()),
+                                                      fileEntry.getFile().getUploadDetails().uploadedDate()));
     }
 
     private static CreateUploadRequestBody randomUploadRequest() {
         return new CreateUploadRequestBody(randomString(), randomString(), randomString());
+    }
+
+    private void mockCustomerResponse(UserInstance userInstance) {
+        when(customerApiClient.fetch(userInstance.getCustomerId())).thenReturn(new Customer(null, null,
+                                                                                            new CustomerApiRightsRetention(
+                                                                                                RIGHTS_RETENTION_STRATEGY.getValue(),
+                                                                                                randomString())));
     }
 
     private CompleteMultipartUploadResult mockCompleteMultipartUpload() {
