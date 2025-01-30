@@ -26,6 +26,7 @@ public record RequestUtils(List<AccessRight> accessRights,
                            URI topLevelCristinOrgId,
                            String username,
                            URI personCristinId,
+                           URI personAffiliation,
                            Map<String, String> pathParameters) {
 
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
@@ -39,6 +40,7 @@ public record RequestUtils(List<AccessRight> accessRights,
                                 requestInfo.getTopLevelOrgCristinId().orElse(null),
                                 requestInfo.getUserName(),
                                 requestInfo.getPersonCristinId(),
+                                attempt(requestInfo::getPersonAffiliation).toOptional().orElse(null),
                                 requestInfo.getPathParameters());
     }
 

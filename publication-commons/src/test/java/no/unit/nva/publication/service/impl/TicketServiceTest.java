@@ -118,6 +118,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private static final String DOI = "doi";
     public static final String APPROVED_FILES = "approvedFiles";
     public static final String FILES_FOR_APPROVAL = "filesForApproval";
+    private static final String RESPONSIBILITY_AREA = "responsibilityArea";
     private ResourceService resourceService;
     private TicketService ticketService;
     private UserInstance owner;
@@ -153,7 +154,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, DOI, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE)));
+                                                               FINALIZED_DATE, RESPONSIBILITY_AREA)));
     }
 
     @ParameterizedTest(name = "Publication status: {0}")
@@ -184,7 +185,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, APPROVED_FILES, FILES_FOR_APPROVAL)));
+                                                               FINALIZED_DATE, APPROVED_FILES, FILES_FOR_APPROVAL, RESPONSIBILITY_AREA)));
     }
 
     @Test
@@ -197,7 +198,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE)));
+                                                               FINALIZED_DATE, RESPONSIBILITY_AREA)));
     }
 
     @Test
@@ -960,7 +961,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
                                                                                               SortableIdentifier::next)
                                                             .withOwner(UserInstance.fromPublication(publication).getUsername())
-                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                                                            .withOwnerResponsibilityArea(randomUri());
         publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
         return publishingRequest.persistNewTicket(ticketService);
     }

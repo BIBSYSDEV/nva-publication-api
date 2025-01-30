@@ -119,6 +119,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static final String FINALIZED_BY = "finalizedBy";
     public static final String APPROVED_FILES = "approvedFiles";
     public static final String FILES_FOR_APPROVAL = "filesForApproval";
+    public static final String RESPONSIBILITY_AREA = "responsibilityArea";
 
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
@@ -142,15 +143,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnExpandedTicketContainingTheOrganizationOfTheOwnersAffiliationAsIs(
+    void shouldReturnExpandedTicketContainingTheOrganizationOfTheOwnersResponsibilityAreaAsIs(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.setOwnerAffiliation(randomUri());
+        ticket.setResponsibilityArea(PublicationGenerator.randomUri());
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket, false);
-        assertThat(expandedTicket.getOrganization().id(), is(equalTo(ticket.getOwnerAffiliation())));
+        assertThat(expandedTicket.getOrganization().id(), is(equalTo(ticket.getResponsibilityArea())));
     }
 
     @ParameterizedTest
@@ -162,6 +163,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.setResponsibilityArea(PublicationGenerator.randomUri());
         ticket.setFinalizedBy(new Username(randomString()));
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
 
@@ -188,7 +190,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(ticket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
                                                                FINALIZED_DATE, OWNERAFFILIATION, APPROVED_FILES,
-                                                               FILES_FOR_APPROVAL)));
+                                                               FILES_FOR_APPROVAL,
+                                                               RESPONSIBILITY_AREA)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
@@ -360,10 +363,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.setOwnerAffiliation(randomUri());
+        ticket.setResponsibilityArea(PublicationGenerator.randomUri());
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
 
-        var expectedOrgId = ticket.getOwnerAffiliation();
+        var expectedOrgId = ticket.getResponsibilityArea();
         var actualAffiliation  = expansionService.getOrganization(ticket).id();
         assertThat(actualAffiliation, is(equalTo(expectedOrgId)));
     }

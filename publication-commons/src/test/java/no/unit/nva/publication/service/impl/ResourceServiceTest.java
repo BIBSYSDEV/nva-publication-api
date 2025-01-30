@@ -178,6 +178,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final String ASSIGNEE = "assignee";
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String OWNER_AFFILIATION = "ownerAffiliation";
+    private static final String RESPONSIBILITY_AREA = "responsibilityArea";
     private ResourceService resourceService;
 
     private TicketService ticketService;
@@ -733,10 +734,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
                                                                                   FINALIZED_BY,
-                                                                                  FINALIZED_DATE)));
+                                                                                  FINALIZED_DATE,
+                                                                                  RESPONSIBILITY_AREA)));
         assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
                                                                                    FINALIZED_BY,
-                                                                                   FINALIZED_DATE)));
+                                                                                   FINALIZED_DATE,
+                                                                                   RESPONSIBILITY_AREA)));
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }

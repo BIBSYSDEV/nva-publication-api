@@ -1,11 +1,11 @@
 package no.unit.nva.expansion;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
-import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
@@ -96,8 +96,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry ticketEntry) {
 
-            var organizationId = Objects.nonNull(ticketEntry.getOwnerAffiliation())
-                                      ? ticketEntry.getOwnerAffiliation()
+            var organizationId = nonNull(ticketEntry.getResponsibilityArea())
+                                      ? ticketEntry.getResponsibilityArea()
                                       : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
                                           .getResourceOwner().getOwnerAffiliation();
 
