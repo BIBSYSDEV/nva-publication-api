@@ -10,7 +10,7 @@ Feature: File upload permissions
 
   Scenario Outline: Verify file upload permissions
     Given a file of type "<FileType>"
-    When a user have the role "<UserRole>"
+    When the user have the role "<UserRole>"
     And the user attempts to "upload"
     Then the action outcome is "<Outcome>"
 
