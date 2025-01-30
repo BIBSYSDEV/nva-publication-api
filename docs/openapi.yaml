@@ -2536,7 +2536,7 @@ components:
         - key
         - parts
     ExternalCompleteUploadRequestBody:
-      description: Request body containing the details of the file to be uploaded for external use
+      description: Request body containing the details of the file and file to be uploaded for external use
       type: object
       properties:
         type:

@@ -90,12 +90,9 @@ public class FileService {
         var s3ObjectKey = completeMultipartUploadResult.getKey();
         var objectMetadata = getObjectMetadata(s3ObjectKey);
 
-        File file;
-        if (userInstance.isExternalClient() && request instanceof ExternalCompleteUploadRequest externalRequest) {
-            file = constructFileForExternalClient(UUID.fromString(s3ObjectKey), externalRequest, objectMetadata);
-        } else {
-            file = constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
-        }
+        var file = userInstance.isExternalClient() && request instanceof ExternalCompleteUploadRequest externalRequest
+                       ? constructFileForExternalClient(UUID.fromString(s3ObjectKey), externalRequest, objectMetadata)
+                       : constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
         FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
         return file;
     }

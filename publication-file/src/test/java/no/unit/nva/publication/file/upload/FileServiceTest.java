@@ -380,6 +380,10 @@ class FileServiceTest extends ResourcesLocalTest {
         var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
                                               resource.getIdentifier()).fetch(resourceService).orElseThrow();
 
+
+        assertEquals(request.license(), fileEntry.getFile().getLicense());
+        assertEquals(request.publisherVersion(), fileEntry.getFile().getPublisherVersion());
+        assertEquals(request.embargoDate(), fileEntry.getFile().getEmbargoDate().orElse(null));
         assertInstanceOf(expectedFileClass, fileEntry.getFile());
     }
 
