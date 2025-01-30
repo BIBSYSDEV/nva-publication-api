@@ -961,11 +961,11 @@ nva:DegreeLicentiate a rdfs:Class ;
   rdfs:subClassOf nva:Degree .
 
 nva:AllowedFileOperation a rdfs:Class ;
-  rdfs:comment "A permitted action that the user can apply to the file" ;
+  rdfs:comment "An operation that the user is authorized to perform on a File" ;
   rdfs:isDefinedBy nva: .
 
 nva:AllowedPublicationOperation a rdfs:Class ;
-  rdfs:comment "A permitted action that the user can apply to the Publication" ;
+  rdfs:comment "An operation that the user is authorized to perform on a Publication" ;
   rdfs:isDefinedBy nva: .
 
 nva:read_metadata a nva:AllowedFileOperation ;
@@ -985,7 +985,7 @@ nva:download a nva:AllowedFileOperation ;
   rdfs:isDefinedBy nva: .
 
 nva:update a nva:AllowedPublicationOperation ;
-  rdfs:comment "Indicates the publication may be updated" ;
+  rdfs:comment "Indicates the Publication may be updated" ;
   rdfs:isDefinedBy nva: .
 
 nva:update_files a nva:AllowedPublicationOperation ;
@@ -1001,15 +1001,15 @@ nva:unpublish a nva:AllowedPublicationOperation ;
   rdfs:isDefinedBy nva: .
 
 nva:republish a nva:AllowedPublicationOperation ;
-  rdfs:comment "Indicates the user may re-publish a previously unpublished publication" ;
+  rdfs:comment "Indicates the user may re-publish a previously unpublished Publication" ;
   rdfs:isDefinedBy nva: .
 
 nva:delete a nva:AllowedPublicationOperation ;
-  rdfs:comment "Indicates the user may delete the draft publication" ;
+  rdfs:comment "Indicates the user may delete the draft Publication" ;
   rdfs:isDefinedBy nva: .
 
 nva:terminate a nva:AllowedPublicationOperation ;
-  rdfs:comment "Indicates the user may remove files and metadata from the publication by terminating the publication" ;
+  rdfs:comment "Indicates the user may remove files and metadata from the Publication by terminating the Publication" ;
   rdfs:isDefinedBy nva: .
 
 nva:doi_request_create a nva:AllowedPublicationOperation ;
