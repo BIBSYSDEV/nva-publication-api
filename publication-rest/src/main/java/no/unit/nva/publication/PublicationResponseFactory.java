@@ -29,7 +29,7 @@ public final class PublicationResponseFactory {
         var userInstance = getUserInstance(requestInfo, identityServiceClient);
         var publicationPermissions = PublicationPermissions.create(publication, userInstance);
 
-        if(hasAuthenticatedAccessOnPublication(publicationPermissions)) {
+        if (hasAuthenticatedAccessOnPublication(publicationPermissions)) {
             return createAuthenticatedResponse(publicationPermissions, publication, userInstance);
         } else {
             return createPublicResponse(publicationPermissions, publication, userInstance);

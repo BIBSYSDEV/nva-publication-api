@@ -115,7 +115,6 @@ public record FileResponse(
             return this;
         }
 
-        // Build method to create a new FileResponse instance
         public FileResponse build() {
             return new FileResponse(
                 identifier,

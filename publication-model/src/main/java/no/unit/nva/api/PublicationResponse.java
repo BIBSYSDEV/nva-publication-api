@@ -104,7 +104,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
 
     private static List<AssociatedArtifactResponse> getPublicAssociatedArtifacts(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(a -> AssociatedArtifact.PUBLIC_ARTIFACT_TYPES.contains(a.getClass()))
+                   .filter(artifact -> AssociatedArtifact.PUBLIC_ARTIFACT_TYPES.contains(artifact.getClass()))
                    .map(AssociatedArtifact::toDto)
                    .toList();
     }
@@ -299,7 +299,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     @Override
     public List<AssociatedArtifactResponse> getAssociatedArtifacts() {
         return this.associatedArtifacts.stream()
-                   .filter(a -> AssociatedArtifact.getPublicArtifactTypeNames().contains(a.getArtifactType()))
+                   .filter(artifactResponse -> AssociatedArtifact.getPublicArtifactTypeNames().contains(artifactResponse.getArtifactType()))
                    .toList();
     }
 
