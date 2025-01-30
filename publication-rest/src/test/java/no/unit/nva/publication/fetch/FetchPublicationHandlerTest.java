@@ -61,12 +61,15 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.FileResponse;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -155,6 +158,28 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+    @Test
+    @DisplayName("handler should return allowdOperations on files")
+    void handlerReturnsAllowedOperationsOnFiles() throws IOException, ApiGatewayException {
+        var publication = createPublication();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var publicationIdentifier = publication.getIdentifier().toString();
+
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        var file = gatewayResponse.getBodyObject(PublicationResponse.class)
+                       .getAssociatedArtifacts()
+                       .stream()
+                       .filter(
+                           artifact -> artifact.getArtifactType().equals(OpenFile.TYPE))
+                       .map(FileResponse.class::cast)
+                       .findFirst()
+                       .get();
+
+        assertTrue(file.allowedOperations().contains(FileOperation.READ_METADATA));
     }
 
     @Test
