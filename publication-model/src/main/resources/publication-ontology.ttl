@@ -960,6 +960,82 @@ nva:DegreeLicentiate a rdfs:Class ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:Degree .
 
+nva:AllowedFileOperation a rdfs:Class ;
+  rdfs:comment "A thing that indicates what you can do with a file" ;
+  rdfs:isDefinedBy nva: .
+
+nva:AllowedPublicationOperation a rdfs:Class ;
+  rdfs:comment "A thing that indicates what you can do with a publication" ;
+  rdfs:isDefinedBy nva: .
+
+nva:read_metadata a nva:AllowedFileOperation ;
+  rdfs:comment "Indicates read access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:write_metadata a nva:AllowedFileOperation ;
+  rdfs:comment "Indicates write access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:delete a nva:AllowedFileOperation ;
+  rdfs:comment "Indicates delete access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:download a nva:AllowedFileOperation ;
+  rdfs:comment "Indicates download access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:update a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates update access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:update_files a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates update including files access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:read_hidden_files a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates read hidden files access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:unpublish a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates unpublish access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:republish a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates republish access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:delete_pub a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates delete publication access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:terminate a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates terminate access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:doi_request_create a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates DOI request create access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:doi_request_approve a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates DOI request approve access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:publishing_request_create a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates publishing request create access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:publishing_request_approve a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates publishing request approve access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:support_request_create a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates support request create access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
+nva:support_request_approve a nva:AllowedPublicationOperation ;
+  rdfs:comment "Indicates support request approve access is allowed" ;
+  rdfs:isDefinedBy nva: .
+
 nva:extent a rdf:Property ;
   rdfs:comment "" ;
   rdfs:label "" ;
@@ -1516,13 +1592,6 @@ nva:activeTo a rdf:Property ;
   rdfs:domain nva:UnconfirmedFunding, nva:ConfirmedFunding ;
   rdfs:range xsd:dateTime .
 
-nva:administrativeAgreement a rdf:Property ;
-  rdfs:comment "" ;
-  rdfs:label "" ;
-  rdfs:isDefinedBy nva: ;
-  rdfs:domain nva:File ;
-  rdfs:range xsd:boolean .
-
 nva:language a rdf:Property ;
   rdfs:comment "" ;
   rdfs:label "" ;
@@ -1733,13 +1802,6 @@ nva:UnconfirmedDocument a rdf:Property ;
             rdfs:comment "A document representing unverified material related to the NVA publication." ;
             rdfs:isDefinedBy nva: ;
             rdfs:subClassOf nva:RelatedDocument .
-
-nva:visibleForNonOwner a rdf:Property ;
-  rdfs:comment "" ;
-  rdfs:label "" ;
-  rdfs:isDefinedBy nva: ;
-  rdfs:domain nva:File ;
-  rdfs:range xsd:boolean .
 
 nva:venue a rdf:Property ;
   rdfs:comment "" ;

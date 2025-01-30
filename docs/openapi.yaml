@@ -1953,16 +1953,6 @@ components:
           type: string
         type:
           type: string
-    AdministrativeAgreement:
-      required:
-        - type
-      type: object
-      allOf:
-        - $ref: '#/components/schemas/File'
-        - type: object
-          properties:
-            type:
-              type: string
     Agent:
       required:
         - type
@@ -2996,8 +2986,6 @@ components:
             license:
               type: string
               format: uri
-            administrativeAgreement:
-              type: boolean
             publisherVersion:
               type: string
               enum:
@@ -3015,8 +3003,15 @@ components:
               format: date-time
             uploadDetails:
               $ref: '#/components/schemas/UploadDetails'
-            visibleForNonOwner:
-              type: boolean
+            allowedOperations:
+              type: array
+              items:
+                type: string
+                enum:
+                  - download
+                  - read-metadata
+                  - write-metadata
+                  - delete
             type:
               type: string
     FunderRightsRetentionStrategy:
@@ -4246,6 +4241,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ImportDetail'
+        allowedOperations:
+          type: array
+          items:
+            type: string
+            enum:
+              - update
+              - update-including-files
+              - read-hidden-files
+              - unpublish
+              - republish
+              - delete
+              - terminate
+              - doi-request-create
+              - doi-request-approve
+              - publishing-request-create
+              - publishing-request-approve
+              - support-request-create
+              - support-request-approve
         modelVersion:
           type: string
         type:
