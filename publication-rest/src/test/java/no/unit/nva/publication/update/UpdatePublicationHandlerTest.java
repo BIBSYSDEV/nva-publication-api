@@ -131,6 +131,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
@@ -1694,7 +1695,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var uploadedFile = body.getAssociatedArtifacts().stream()
-                               .filter(artifact -> artifact.getArtifactType().contains("File"))
+                               .filter(UpdatePublicationHandlerTest::isFileResponse)
                                .map(FileResponse.class::cast)
                                .filter(f -> f.identifier().equals(fileToUpload.getIdentifier()))
                                .toList().getFirst();
@@ -1703,6 +1704,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(((UserUploadDetails) uploadedFile.uploadDetails()).uploadedBy().getValue(),
                    is(equalTo(SOME_CURATOR)));
         assertNotNull(uploadedFile.uploadDetails().uploadedDate());
+    }
+
+    private static boolean isFileResponse(AssociatedArtifactResponse artifact) {
+        return artifact.getArtifactType().contains("File");
     }
 
     @Test
@@ -1724,7 +1729,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var existingFiles = body.getAssociatedArtifacts().stream()
-                                .filter(a -> a.getArtifactType().contains("File"))
+                                .filter(UpdatePublicationHandlerTest::isFileResponse)
                                 .map(FileResponse.class::cast)
                                 .filter(f -> !f.identifier().equals(fileToUpload.getIdentifier()))
                                 .toList();
@@ -1762,7 +1767,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var updatedFile = body.getAssociatedArtifacts().stream()
-                              .filter(a -> a.getArtifactType().contains("File"))
+                              .filter(UpdatePublicationHandlerTest::isFileResponse)
                               .map(FileResponse.class::cast)
                               .filter(f -> f.identifier().equals(fileUpdate.getIdentifier()))
                               .toList().getFirst();

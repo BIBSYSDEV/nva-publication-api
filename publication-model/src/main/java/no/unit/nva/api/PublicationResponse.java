@@ -104,9 +104,13 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
 
     private static List<AssociatedArtifactResponse> getPublicAssociatedArtifacts(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(artifact -> AssociatedArtifact.PUBLIC_ARTIFACT_TYPES.contains(artifact.getClass()))
+                   .filter(PublicationResponse::isPublicArtifact)
                    .map(AssociatedArtifact::toDto)
                    .toList();
+    }
+
+    private static boolean isPublicArtifact(AssociatedArtifact artifact) {
+        return AssociatedArtifact.PUBLIC_ARTIFACT_TYPES.contains(artifact.getClass());
     }
 
     public static PublicationResponse fromPublicationWithAllowedOperations(

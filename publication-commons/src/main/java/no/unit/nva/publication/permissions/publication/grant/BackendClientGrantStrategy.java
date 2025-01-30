@@ -1,6 +1,6 @@
 package no.unit.nva.publication.permissions.publication.grant;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -14,10 +14,6 @@ public final class BackendClientGrantStrategy extends PublicationStrategyBase im
     }
 
     public boolean allowsAction(PublicationOperation permission) {
-        if (isNull(userInstance)) {
-            return false;
-        }
-
-        return userInstance.isBackendClient();
+        return nonNull(userInstance) && userInstance.isBackendClient();
     }
 }

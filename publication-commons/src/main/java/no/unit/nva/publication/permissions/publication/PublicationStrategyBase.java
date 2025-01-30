@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.publication;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
@@ -34,11 +35,7 @@ public class PublicationStrategyBase {
     }
 
     protected boolean hasAccessRight(AccessRight accessRight) {
-        if (isNull(userInstance)) {
-            return false;
-        }
-
-        return userInstance.getAccessRights().contains(accessRight);
+        return nonNull(userInstance) && userInstance.getAccessRights().contains(accessRight);
     }
 
     protected boolean isProtectedDegreeInstanceType() {
@@ -98,11 +95,7 @@ public class PublicationStrategyBase {
     }
 
     protected Boolean isOwner() {
-        if (isNull(userInstance)) {
-            return false;
-        }
-
-        return attempt(userInstance::getUsername)
+        return nonNull(userInstance) && attempt(userInstance::getUsername)
                    .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
                    .orElse(fail -> false);
     }
