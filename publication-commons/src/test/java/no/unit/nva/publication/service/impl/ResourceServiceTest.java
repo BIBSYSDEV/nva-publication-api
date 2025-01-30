@@ -1726,6 +1726,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldLogExceptionWhenFailingMigratingFiles() throws BadRequestException {
+        var file = randomOpenFile().copy().withIdentifier(null).buildOpenFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        assertThrows(NullPointerException.class,
+                     () -> resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication))));
+    }
+
+    @Test
     void shouldClearFileEvent() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);

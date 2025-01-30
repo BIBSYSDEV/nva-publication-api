@@ -394,12 +394,17 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private void persistFileEntry(Resource resource, File file) {
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
-        var resourceIdentifier = resource.getIdentifier();
-        var existingFile = FileEntry.queryObject(file.getIdentifier(), resourceIdentifier)
-                               .fetch(this);
-        if (existingFile.isEmpty()) {
-            FileEntry.create(file, resourceIdentifier, userInstance).persist(this);
+        try {
+            var userInstance = UserInstance.fromPublication(resource.toPublication());
+            var resourceIdentifier = resource.getIdentifier();
+            var existingFile = FileEntry.queryObject(file.getIdentifier(), resourceIdentifier)
+                                   .fetch(this);
+            if (existingFile.isEmpty()) {
+                FileEntry.create(file, resourceIdentifier, userInstance).persist(this);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to persist file entry: {} {}", file.toJsonString(), e);
+            throw e;
         }
     }
 
