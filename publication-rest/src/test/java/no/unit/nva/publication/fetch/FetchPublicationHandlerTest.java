@@ -54,6 +54,7 @@ import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -180,6 +181,23 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                        .get();
 
         assertTrue(file.allowedOperations().contains(FileOperation.READ_METADATA));
+    }
+
+    @Test
+    @DisplayName("handler should only define file type once")
+    void handlerShouldOnlyMentionTypeOnce() throws IOException, ApiGatewayException {
+        // had an issue that "type" was serialized zero or multiple times in the response of a FileResponse
+        var publication = createPublication();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var publicationIdentifier = publication.getIdentifier().toString();
+
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        assertEquals(1, Pattern.compile(Pattern.quote("\"OpenFile\""), Pattern.DOTALL)
+                       .matcher(gatewayResponse.getBody())
+                       .results()
+                       .count());
     }
 
     @Test
