@@ -400,7 +400,7 @@ public class ResourceService extends ServiceWithTransactions {
             var existingFile = FileEntry.queryObject(file.getIdentifier(), resourceIdentifier)
                                    .fetch(this);
             if (existingFile.isEmpty()) {
-                FileEntry.create(file, resourceIdentifier, userInstance).persist(this);
+                FileEntry.create(file, resourceIdentifier, userInstance).migrate(this, resource);
             }
         } catch (Exception e) {
             logger.error("Failed to persist file entry: {} {}", file.toJsonString(), e);

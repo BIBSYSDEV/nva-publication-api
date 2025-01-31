@@ -77,6 +77,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -101,6 +102,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
@@ -125,7 +127,9 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -1734,6 +1738,153 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertThrows(NullPointerException.class,
                      () -> resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication))));
+    }
+
+    @Deprecated
+    @Test
+    void shouldCreateFileEventWithFilePublishingDateWhenMigratingOpenFileWithPublishedDate()
+        throws BadRequestException, JsonProcessingException {
+        var json = """
+                {
+                  "type" : "OpenFile",
+                  "identifier" : "c2116b5c-6914-4673-a598-10d0d0cf911c",
+                  "publishedDate" : "2025-01-31T09:45:52.755867Z",
+                  "name" : "uKUJbh1QcWPi4"
+                }
+            """;
+        var file = JsonUtils.dtoObjectMapper.readValue(json, OpenFile.class);
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var fileEvent = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                            .fetch(resourceService)
+                            .orElseThrow()
+                            .getFileEvent();
+
+        assertEquals(file.getPublishedDate().orElseThrow(), fileEvent.date());
+    }
+
+    @Deprecated
+    @Test
+    void shouldCreateFileEventWithPublicationPublishingDateWhenMigratingOpenFileWithoutPublishedDate()
+        throws BadRequestException, JsonProcessingException {
+        var json = """
+                {
+                  "type" : "OpenFile",
+                  "identifier" : "c2116b5c-6914-4673-a598-10d0d0cf911c",
+                  "name" : "uKUJbh1QcWPi4"
+                }
+            """;
+        var file = JsonUtils.dtoObjectMapper.readValue(json, OpenFile.class);
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var resource = Resource.fromPublication(persistedPublication);
+        resource.publish(resourceService, userInstance);
+        resourceService.refreshResources(List.of(resource));
+
+        var fileEvent = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                            .fetch(resourceService)
+                            .orElseThrow()
+                            .getFileEvent();
+
+        var publishedResource = resource.fetch(resourceService).orElseThrow();
+
+        assertInstanceOf(FileApprovedEvent.class, fileEvent);
+        assertEquals(publishedResource.getPublishedDate(), fileEvent.date());
+    }
+
+    @Deprecated
+    @Test
+    void shouldCreateFileEventWithPublicationCreatedDateWhenMigratingOpenFileAndPublicationMissesPublishedDate()
+        throws BadRequestException, JsonProcessingException {
+        var json = """
+                {
+                  "type" : "OpenFile",
+                  "identifier" : "c2116b5c-6914-4673-a598-10d0d0cf911c",
+                  "name" : "uKUJbh1QcWPi4"
+                }
+            """;
+        var file = JsonUtils.dtoObjectMapper.readValue(json, OpenFile.class);
+        var publication =
+            randomPublication().copy().withPublishedDate(null).withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        resourceService.refreshResources(List.of(resource));
+
+        var fileEvent = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                            .fetch(resourceService)
+                            .orElseThrow()
+                            .getFileEvent();
+
+
+        assertEquals(resource.getCreatedDate(), fileEvent.date());
+    }
+
+    @Deprecated
+    @Test
+    void shouldCreateFileEventWithPublicationCreatedDateWhenMigratingNotFinalizedFile()
+        throws BadRequestException, JsonProcessingException {
+        var json = """
+                {
+                  "type" : "PendingOpenFile",
+                  "identifier" : "c2116b5c-6914-4673-a598-10d0d0cf911c",
+                  "name" : "uKUJbh1QcWPi4"
+                }
+            """;
+        var file = JsonUtils.dtoObjectMapper.readValue(json, PendingOpenFile.class);
+        var publication =
+            randomPublication().copy().withPublishedDate(null).withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        resourceService.refreshResources(List.of(resource));
+
+        var fileEvent = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                            .fetch(resourceService)
+                            .orElseThrow()
+                            .getFileEvent();
+
+
+        assertInstanceOf(FileUploadedEvent.class, fileEvent);
+        assertEquals(resource.getCreatedDate(), fileEvent.date());
+    }
+
+    @Deprecated
+    @Test
+    void shouldCreateFileEventWithImportDetailsUploadedDateWhenMigratingNotFinalizedFile()
+        throws BadRequestException, JsonProcessingException {
+        var json = """
+                {
+                  "type" : "PendingOpenFile",
+                  "identifier" : "c2116b5c-6914-4673-a598-10d0d0cf911c",
+                  "name" : "uKUJbh1QcWPi4",
+                  "uploadDetails": {
+                    "type": "UserUploadDetails",
+                    "uploadedDate": "2025-01-31T09:45:52.755867Z"
+                  }
+                }
+            """;
+        var file = JsonUtils.dtoObjectMapper.readValue(json, PendingOpenFile.class);
+        var publication =
+            randomPublication().copy().withPublishedDate(null).withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        resourceService.refreshResources(List.of(resource));
+
+        var fileEvent = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                            .fetch(resourceService)
+                            .orElseThrow()
+                            .getFileEvent();
+
+
+        assertInstanceOf(FileUploadedEvent.class, fileEvent);
+        assertEquals(file.getUploadDetails().uploadedDate(), fileEvent.date());
     }
 
     @Test
