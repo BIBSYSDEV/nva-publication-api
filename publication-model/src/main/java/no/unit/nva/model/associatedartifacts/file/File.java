@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
@@ -237,6 +238,24 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     @Override
     public String toString() {
         return toJsonString();
+    }
+
+    @Override
+    public AssociatedArtifactResponse toDto() {
+        return FileResponse.builder()
+                   .withType(getArtifactType())
+                   .withIdentifier(getIdentifier())
+                   .withName(getName())
+                   .withMimeType(getMimeType())
+                   .withSize(getSize())
+                   .withLicense(getLicense())
+                   .withPublisherVersion(getPublisherVersion())
+                   .withEmbargoDate(getEmbargoDate().orElse(null))
+                   .withRightsRetentionStrategy(getRightsRetentionStrategy())
+                   .withLegalNote(getLegalNote())
+                   .withPublishedDate(getPublishedDate().orElse(null))
+                   .withUploadDetails(getUploadDetails())
+                   .build();
     }
 
     /**

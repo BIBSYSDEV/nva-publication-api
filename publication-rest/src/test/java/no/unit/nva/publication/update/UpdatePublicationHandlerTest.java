@@ -131,10 +131,12 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.FileResponse;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
@@ -766,7 +768,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                             .stream().toList();
         assertFalse(artifacts.isEmpty());
         assertFalse(artifacts.stream()
-                        .anyMatch(associatedArtifact -> associatedArtifact instanceof HiddenFile));
+                        .anyMatch(HiddenFile.class::isInstance));
     }
 
     @Test
@@ -1693,15 +1695,19 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var uploadedFile = body.getAssociatedArtifacts().stream()
-                               .filter(File.class::isInstance)
-                               .map(File.class::cast)
-                               .filter(f -> f.getIdentifier().equals(fileToUpload.getIdentifier()))
+                               .filter(UpdatePublicationHandlerTest::isFileResponse)
+                               .map(FileResponse.class::cast)
+                               .filter(f -> f.identifier().equals(fileToUpload.getIdentifier()))
                                .toList().getFirst();
 
-        assertNotNull(uploadedFile.getUploadDetails());
-        assertThat(((UserUploadDetails) uploadedFile.getUploadDetails()).uploadedBy().getValue(),
+        assertNotNull(uploadedFile.uploadDetails());
+        assertThat(((UserUploadDetails) uploadedFile.uploadDetails()).uploadedBy().getValue(),
                    is(equalTo(SOME_CURATOR)));
-        assertNotNull(uploadedFile.getUploadDetails().uploadedDate());
+        assertNotNull(uploadedFile.uploadDetails().uploadedDate());
+    }
+
+    private static boolean isFileResponse(AssociatedArtifactResponse artifact) {
+        return artifact.getArtifactType().contains("File");
     }
 
     @Test
@@ -1723,19 +1729,19 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var existingFiles = body.getAssociatedArtifacts().stream()
-                                .filter(File.class::isInstance)
-                                .map(File.class::cast)
-                                .filter(f -> !f.getIdentifier().equals(fileToUpload.getIdentifier()))
+                                .filter(UpdatePublicationHandlerTest::isFileResponse)
+                                .map(FileResponse.class::cast)
+                                .filter(f -> !f.identifier().equals(fileToUpload.getIdentifier()))
                                 .toList();
 
         assertNotNull(existingFiles);
         assertFalse(existingFiles.isEmpty());
         assertTrue(existingFiles.stream()
                        .allMatch(
-                           file -> nonNull(file.getUploadDetails())
-                                   && nonNull(((UserUploadDetails) file.getUploadDetails()).uploadedBy())));
+                           file -> nonNull(file.uploadDetails())
+                                   && nonNull(((UserUploadDetails) file.uploadDetails()).uploadedBy())));
         assertTrue(existingFiles.stream()
-                       .noneMatch(file -> ((UserUploadDetails) file.getUploadDetails()).uploadedBy()
+                       .noneMatch(file -> ((UserUploadDetails) file.uploadDetails()).uploadedBy()
                                               .getValue()
                                               .equals(contributorName)));
     }
@@ -1761,13 +1767,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var updatedFile = body.getAssociatedArtifacts().stream()
-                              .filter(File.class::isInstance)
-                              .map(File.class::cast)
-                              .filter(f -> f.getIdentifier().equals(fileUpdate.getIdentifier()))
+                              .filter(UpdatePublicationHandlerTest::isFileResponse)
+                              .map(FileResponse.class::cast)
+                              .filter(f -> f.identifier().equals(fileUpdate.getIdentifier()))
                               .toList().getFirst();
 
-        assertNotNull(updatedFile.getUploadDetails());
-        assertThat(((UserUploadDetails) updatedFile.getUploadDetails()).uploadedBy().getValue(),
+        assertNotNull(updatedFile.uploadDetails());
+        assertThat(((UserUploadDetails) updatedFile.uploadDetails()).uploadedBy().getValue(),
                    is(not(equalTo(contributorName))));
     }
 

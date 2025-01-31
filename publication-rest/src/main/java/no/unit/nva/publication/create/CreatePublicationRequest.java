@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
@@ -26,8 +25,8 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
-public class CreatePublicationRequest implements WithMetadata, WithAssociatedArtifact, WithContext {
-    
+public class CreatePublicationRequest implements WithMetadata, WithContext {
+
     private EntityDescription entityDescription;
     private AssociatedArtifactList associatedArtifacts;
     @JsonProperty("@context")
@@ -60,15 +59,15 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         createPublicationRequest.setImportDetails(publication.getImportDetails());
         return createPublicationRequest;
     }
-    
+
     public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
         return additionalIdentifiers;
     }
-    
+
     public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
         this.additionalIdentifiers = additionalIdentifiers;
     }
-    
+
     public Publication toPublication() {
         Publication publication = new Publication();
         publication.setEntityDescription(getEntityDescription());
@@ -90,44 +89,42 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     public EntityDescription getEntityDescription() {
         return entityDescription;
     }
-    
+
     @JacocoGenerated
     @Override
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }
-    
+
     @JacocoGenerated
     @Override
     public List<ResearchProject> getProjects() {
         return projects;
     }
-    
+
     @Override
     @JacocoGenerated
     public void setProjects(List<ResearchProject> projects) {
         this.projects = projects;
     }
-    
+
     @Override
     @JacocoGenerated
     public List<URI> getSubjects() {
         return subjects;
     }
-    
+
     @Override
     @JacocoGenerated
     public void setSubjects(List<URI> subjects) {
         this.subjects = subjects;
     }
-    
-    @Override
+
     @JacocoGenerated
     public AssociatedArtifactList getAssociatedArtifacts() {
-        return associatedArtifacts;
+        return associatedArtifacts != null ? associatedArtifacts : AssociatedArtifactList.empty();
     }
 
-    @Override
     @JacocoGenerated
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
@@ -240,5 +237,4 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getStatus(), that.getStatus())
                && Objects.equals(getImportDetails(), that.getImportDetails());
     }
-
 }

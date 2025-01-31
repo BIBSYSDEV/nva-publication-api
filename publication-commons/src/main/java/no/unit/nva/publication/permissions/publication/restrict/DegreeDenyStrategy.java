@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.role.Role.SUPERVISOR;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
@@ -15,7 +16,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationDenyStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
-public class DegreeDenyStrategy extends PublicationStrategyBase implements PublicationDenyStrategy  {
+public class DegreeDenyStrategy extends PublicationStrategyBase implements PublicationDenyStrategy {
 
     public DegreeDenyStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
@@ -45,27 +46,28 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
 
     private boolean userIsCuratingSupervisorsOnly() {
         var roles = getCuratingInstitutionsForCurrentUser().map(CuratingInstitution::contributorCristinIds)
-                                 .stream()
-                                 .flatMap(Collection::stream)
-                                 .map(this::getContributor)
-                                 .filter(Optional::isPresent)
-                                 .map(Optional::get)
-                                 .map(Contributor::getRole)
-                                 .map(RoleType::getType)
-                                 .toList();
+                        .stream()
+                        .flatMap(Collection::stream)
+                        .map(this::getContributor)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .map(Contributor::getRole)
+                        .map(RoleType::getType)
+                        .toList();
 
         return !roles.isEmpty() && roles.stream().allMatch(role -> role.equals(SUPERVISOR));
     }
 
     private boolean currentUserHaveSameTopLevelAsOwner() {
-        return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
+        return nonNull(userInstance) && userInstance.getTopLevelOrgCristinId()
+                                            .equals(publication.getResourceOwner().getOwnerAffiliation());
     }
 
     private Optional<CuratingInstitution> getCuratingInstitutionsForCurrentUser() {
         return Optional.ofNullable(publication.getCuratingInstitutions())
                    .stream()
                    .flatMap(Collection::stream)
-                   .filter(org -> org.id().equals(userInstance.getTopLevelOrgCristinId()))
+                   .filter(org -> nonNull(userInstance) && org.id().equals(userInstance.getTopLevelOrgCristinId()))
                    .findFirst();
     }
 

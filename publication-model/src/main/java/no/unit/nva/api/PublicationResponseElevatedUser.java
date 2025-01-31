@@ -8,7 +8,8 @@ import java.util.Set;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
@@ -37,7 +38,9 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
         response.setFundings(publication.getFundings());
         response.setSubjects(publication.getSubjects());
         response.setContext(PublicationContext.getContext(publication));
-        response.setAssociatedArtifacts(publication.getAssociatedArtifacts());
+        response.setAssociatedArtifacts(publication.getAssociatedArtifacts().stream()
+            .map(AssociatedArtifact::toDto)
+            .toList());
         response.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
         response.setRightsHolder(publication.getRightsHolder());
         response.setPublicationNotes(publication.getPublicationNotes());
@@ -65,7 +68,7 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
     }
 
     @Override
-    public AssociatedArtifactList getAssociatedArtifacts() {
+    public List<AssociatedArtifactResponse> getAssociatedArtifacts() {
         return super.getAssociatedArtifactsForElevatedUser();
     }
 

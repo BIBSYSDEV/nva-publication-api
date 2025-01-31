@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.publication;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
@@ -34,7 +35,7 @@ public class PublicationStrategyBase {
     }
 
     protected boolean hasAccessRight(AccessRight accessRight) {
-        return userInstance.getAccessRights().contains(accessRight);
+        return nonNull(userInstance) && userInstance.getAccessRights().contains(accessRight);
     }
 
     protected boolean isProtectedDegreeInstanceType() {
@@ -50,6 +51,10 @@ public class PublicationStrategyBase {
     }
 
     private boolean userBelongsToCuratingInstitution() {
+        if (isNull(userInstance)) {
+            return false;
+        }
+
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("found topLevels {} for user {} of {}.",
@@ -60,7 +65,7 @@ public class PublicationStrategyBase {
     }
 
     protected boolean userIsFromSameInstitutionAsPublicationOwner() {
-        if (isNull(userInstance.getTopLevelOrgCristinId()) || isNull(publication.getResourceOwner())) {
+        if (isNull(userInstance) || isNull(userInstance.getTopLevelOrgCristinId()) || isNull(publication.getResourceOwner())) {
             return false;
         }
 
@@ -90,7 +95,7 @@ public class PublicationStrategyBase {
     }
 
     protected Boolean isOwner() {
-        return attempt(userInstance::getUsername)
+        return nonNull(userInstance) && attempt(userInstance::getUsername)
                    .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
                    .orElse(fail -> false);
     }

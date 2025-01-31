@@ -266,6 +266,7 @@ public final class TicketTestUtils {
         var publication =
                 fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
                         .copy()
+                        .withStatus(PUBLISHED)
                         .withAssociatedArtifacts(List.of(randomInternalFile()))
                         .build();
 

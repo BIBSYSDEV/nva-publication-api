@@ -184,7 +184,8 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private boolean wasKeptByImporter(File file, Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(File.class::isInstance)
-                   .anyMatch(publicationFile -> isSameFile((File) publicationFile, file));
+                   .map(File.class::cast)
+                   .anyMatch(publicationFile -> isSameFile(publicationFile, file));
     }
 
     private boolean isSameFile(File a, File b) {

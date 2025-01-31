@@ -9,13 +9,12 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
-import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PendingOpenFile.TYPE)
-public class PendingOpenFile extends File implements PendingFile<OpenFile, RejectedFile>, PublicAssociatedArtifact {
+public class PendingOpenFile extends File implements PendingFile<OpenFile, RejectedFile> {
     public static final String TYPE = "PendingOpenFile";
 
     /**
@@ -98,5 +97,10 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
             case HiddenFile ignore -> true;
             default -> false;
         };
+    }
+
+    @Override
+    public String getArtifactType() {
+        return TYPE;
     }
 }

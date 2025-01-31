@@ -54,6 +54,7 @@ import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -61,12 +62,15 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.FileResponse;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -123,8 +127,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private UriRetriever uriRetriever;
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
-    private Environment environment;
-    private IdentityServiceClient identityServiceClient;
 
     /**
      * Set up environment.
@@ -132,7 +134,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp(@Mock Environment environment, @Mock IdentityServiceClient identityServiceClient) {
         super.init();
-        this.environment = environment;
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
 
@@ -158,6 +159,45 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+    @Test
+    @DisplayName("handler should return allowdOperations on files")
+    void handlerReturnsAllowedOperationsOnFiles() throws IOException, ApiGatewayException {
+        var publication = createPublication();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var publicationIdentifier = publication.getIdentifier().toString();
+
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        var file = gatewayResponse.getBodyObject(PublicationResponse.class)
+                       .getAssociatedArtifacts()
+                       .stream()
+                       .filter(
+                           artifact -> artifact.getArtifactType().equals(OpenFile.TYPE))
+                       .map(FileResponse.class::cast)
+                       .findFirst()
+                       .get();
+
+        assertTrue(file.allowedOperations().contains(FileOperation.READ_METADATA));
+    }
+
+    @Test
+    @DisplayName("handler should only define file type once")
+    void handlerShouldOnlyMentionTypeOnce() throws IOException, ApiGatewayException {
+        // had an issue that "type" was serialized zero or multiple times in the response of a FileResponse
+        var publication = createPublication();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var publicationIdentifier = publication.getIdentifier().toString();
+
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        assertEquals(1, Pattern.compile(Pattern.quote("\"OpenFile\""), Pattern.DOTALL)
+                       .matcher(gatewayResponse.getBody())
+                       .results()
+                       .count());
     }
 
     @Test
@@ -417,11 +457,11 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
                                                                       PublicationResponseElevatedUser.class);
 
-        var artifacts = publicationResponse.getAssociatedArtifacts().stream().toList();
+        var artifacts = publicationResponse.getAssociatedArtifacts();
 
         assertFalse(artifacts.isEmpty());
-        assertFalse(artifacts.stream().anyMatch(artifact -> artifact instanceof HiddenFile));
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof InternalFile));
+        assertFalse(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(HiddenFile.TYPE)));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(InternalFile.TYPE)));
     }
 
     @Test
@@ -450,8 +490,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         var artifacts = publicationResponse.getAssociatedArtifacts().stream().toList();
 
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof InternalFile));
-        assertTrue(artifacts.stream().anyMatch(artifact -> artifact instanceof HiddenFile));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(InternalFile.TYPE)));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(HiddenFile.TYPE)));
     }
 
     private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo)

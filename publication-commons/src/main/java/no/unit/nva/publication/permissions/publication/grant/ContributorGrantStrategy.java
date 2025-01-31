@@ -40,8 +40,9 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase impl
     }
 
     private boolean userIsVerifiedContributor() {
-        return nonNull(this.userInstance.getPersonCristinId())
-               && Optional.ofNullable(publication.getEntityDescription())
+        return nonNull(userInstance)
+                && nonNull(this.userInstance.getPersonCristinId())
+                && Optional.ofNullable(publication.getEntityDescription())
                    .map(EntityDescription::getContributors)
                    .stream()
                    .flatMap(List::stream)

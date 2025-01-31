@@ -32,8 +32,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.PublicAssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
@@ -60,7 +59,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     private List<ResearchProject> projects;
     private List<Funding> fundings;
     private List<URI> subjects;
-    private AssociatedArtifactList associatedArtifacts;
+    private List<AssociatedArtifactResponse> associatedArtifacts;
     private List<ImportDetail> importDetails;
 
     private Set<AdditionalIdentifierBase> additionalIdentifiers;
@@ -99,15 +98,19 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         return response;
     }
 
-    private static AssociatedArtifactList getPublicAssociatedArtifacts(Publication publication) {
-        var artifacts = publication.getAssociatedArtifacts().stream()
-                            .filter(PublicationResponse::isPublicAssociatedArtifact)
-                            .toList();
-        return new AssociatedArtifactList(artifacts);
+    public void setAssociatedArtifacts(List<AssociatedArtifactResponse> associatedArtifactResponses) {
+        this.associatedArtifacts = associatedArtifactResponses;
     }
 
-    private static boolean isPublicAssociatedArtifact(AssociatedArtifact artifact) {
-        return artifact instanceof PublicAssociatedArtifact;
+    private static List<AssociatedArtifactResponse> getPublicAssociatedArtifacts(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(PublicationResponse::isPublicArtifact)
+                   .map(AssociatedArtifact::toDto)
+                   .toList();
+    }
+
+    private static boolean isPublicArtifact(AssociatedArtifact artifact) {
+        return AssociatedArtifact.PUBLIC_ARTIFACT_TYPES.contains(artifact.getClass());
     }
 
     public static PublicationResponse fromPublicationWithAllowedOperations(
@@ -298,21 +301,15 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     }
 
     @Override
-    public AssociatedArtifactList getAssociatedArtifacts() {
-        var artifacts = this.associatedArtifacts.stream()
-                   .filter(PublicationResponse::isPublicAssociatedArtifact)
+    public List<AssociatedArtifactResponse> getAssociatedArtifacts() {
+        return this.associatedArtifacts.stream()
+                   .filter(artifactResponse -> AssociatedArtifact.getPublicArtifactTypeNames().contains(artifactResponse.getArtifactType()))
                    .toList();
-        return new AssociatedArtifactList(artifacts);
     }
 
     @JsonIgnore
-    public AssociatedArtifactList getAssociatedArtifactsForElevatedUser() {
+    public List<AssociatedArtifactResponse> getAssociatedArtifactsForElevatedUser() {
         return associatedArtifacts;
-    }
-
-    @Override
-    public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
-        this.associatedArtifacts = associatedArtifacts;
     }
 
     @Override

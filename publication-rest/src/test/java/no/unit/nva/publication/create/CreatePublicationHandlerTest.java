@@ -69,7 +69,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.FileResponse;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
@@ -458,10 +458,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         file.setRightsRetentionStrategy(NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
 
-        var associatedArtifactsInPublication = new AssociatedArtifactList(file);
-
         var request = createEmptyPublicationRequest();
-        request.setAssociatedArtifacts(associatedArtifactsInPublication);
+        request.setAssociatedArtifacts(new AssociatedArtifactList(file));
         request.setEntityDescription(publishableEntityDescription(AcademicArticle.class));
 
         var inputStream = createPublicationRequest(request);
@@ -496,10 +494,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         // configuredType null as it
         // should not be used
 
-        var associatedArtifactsInPublication = new AssociatedArtifactList(file);
-
         var request = createEmptyPublicationRequest();
-        request.setAssociatedArtifacts(associatedArtifactsInPublication);
+        request.setAssociatedArtifacts(new AssociatedArtifactList(file));
         request.setEntityDescription(publishableEntityDescription(AcademicArticle.class));
 
         var inputStream = createPublicationRequest(request);
@@ -510,11 +506,11 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
 
         var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
-        var actualFile = (File)
+        var actualFile = (FileResponse)
                              Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator())
                                  .getFirst();
-        assertInstanceOf(OverriddenRightsRetentionStrategy.class, actualFile.getRightsRetentionStrategy());
-        assertThat(((OverriddenRightsRetentionStrategy) actualFile.getRightsRetentionStrategy()).getOverriddenBy(),
+        assertInstanceOf(OverriddenRightsRetentionStrategy.class, actualFile.rightsRetentionStrategy());
+        assertThat(((OverriddenRightsRetentionStrategy) actualFile.rightsRetentionStrategy()).getOverriddenBy(),
                    is(equalTo(testUserName)));
     }
 

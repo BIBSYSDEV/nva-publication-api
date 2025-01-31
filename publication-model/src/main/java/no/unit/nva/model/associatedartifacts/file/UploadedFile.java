@@ -54,5 +54,10 @@ public class UploadedFile extends File {
             default -> false;
         };
     }
+
+    @Override
+    public String getArtifactType() {
+        return TYPE;
+    }
 }
 

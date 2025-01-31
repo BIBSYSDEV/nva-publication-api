@@ -79,4 +79,9 @@ public class RejectedFile extends File {
             default -> false;
         };
     }
+
+    @Override
+    public String getArtifactType() {
+        return TYPE;
+    }
 }
