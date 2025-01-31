@@ -28,7 +28,6 @@ import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
-import org.apache.thrift.Option;
 
 @JsonTypeName(FileEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
