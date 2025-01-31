@@ -3,18 +3,20 @@ package no.unit.nva.publication.file.upload.restmodel;
 import static java.util.Objects.requireNonNull;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.PartETag;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
-public record CompleteUploadRequestBody(String uploadId, String key, List<CompleteUploadPart> parts) {
+@JsonTypeName(InternalCompleteUploadRequest.TYPE)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+public record InternalCompleteUploadRequest(String uploadId, String key, List<CompleteUploadPart> parts)
+    implements CompleteUploadRequest {
 
-    public List<PartETag> partETags() {
-        return parts().stream().filter(CompleteUploadPart::hasValue).map(CompleteUploadPart::toPartETag).toList();
-    }
+    public static final String TYPE = "InternalCompleteUpload";
 
     public CompleteMultipartUploadRequest toCompleteMultipartUploadRequest(String bucketName) {
-        return new CompleteMultipartUploadRequest()
-                   .withBucketName(bucketName)
+        return new CompleteMultipartUploadRequest().withBucketName(bucketName)
                    .withKey(key())
                    .withUploadId(uploadId())
                    .withPartETags(partETags());
@@ -28,5 +30,9 @@ public record CompleteUploadRequestBody(String uploadId, String key, List<Comple
         } catch (Exception e) {
             throw new BadRequestException("Invalid input");
         }
+    }
+
+    private List<PartETag> partETags() {
+        return parts().stream().filter(CompleteUploadPart::hasValue).map(CompleteUploadPart::toPartETag).toList();
     }
 }

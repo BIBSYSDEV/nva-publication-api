@@ -4,14 +4,14 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequestBody;
+import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 
-public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequestBody, File> {
+public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequest, File> {
 
     private final FileService fileService;
 
@@ -21,18 +21,18 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
     }
 
     public CompleteUploadHandler(FileService fileService) {
-        super(CompleteUploadRequestBody.class);
+        super(CompleteUploadRequest.class);
         this.fileService = fileService;
     }
 
     @Override
-    protected void validateRequest(CompleteUploadRequestBody completeUploadRequestBody, RequestInfo requestInfo,
+    protected void validateRequest(CompleteUploadRequest completeUploadRequestBody, RequestInfo requestInfo,
                                    Context context) throws ApiGatewayException {
         completeUploadRequestBody.validate();
     }
 
     @Override
-    protected File processInput(CompleteUploadRequestBody input, RequestInfo requestInfo,
+    protected File processInput(CompleteUploadRequest input, RequestInfo requestInfo,
                                 Context context) throws ApiGatewayException {
 
         var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
@@ -42,7 +42,7 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
     }
 
     @Override
-    protected Integer getSuccessStatusCode(CompleteUploadRequestBody input, File output) {
+    protected Integer getSuccessStatusCode(CompleteUploadRequest input, File output) {
         return HTTP_OK;
     }
 }
