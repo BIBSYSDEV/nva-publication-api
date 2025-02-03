@@ -61,6 +61,8 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -375,9 +377,26 @@ public class ResourceService extends ServiceWithTransactions {
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
         if (isResourceWithFiles(dataEntry)) {
+            persistLogEntriesIfNeeded((Resource) dataEntry);
             return migrateResourceWithFiles((Resource) dataEntry);
         }
         return dataEntry;
+    }
+
+    private void persistLogEntriesIfNeeded(Resource resource) {
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var publishedDate = Optional.of(resource)
+                                .map(Resource::getPublishedDate)
+                                .or(() -> Optional.ofNullable(resource.getCreatedDate()))
+                                .orElseGet(Instant::now);
+        if ("nve@5948.0.0.0".equals(resource.getResourceOwner().getUser().toString())) {
+            resource.setResourceEvent(ImportedResourceEvent.create(userInstance, publishedDate));
+        }
+        if (PUBLISHED.equals(resource.getStatus())) {
+            resource.setResourceEvent(PublishedResourceEvent.create(userInstance, publishedDate));
+        } else {
+            resource.setResourceEvent(CreatedResourceEvent.create(userInstance, publishedDate));
+        }
     }
 
     @Deprecated
