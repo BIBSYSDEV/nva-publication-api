@@ -1908,6 +1908,22 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Deprecated
     @Test
+    void shouldNotPersistPublicationCreatedLogEntryWhenLogEntryExists() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var logEntry = CreatedResourceEvent.create(userInstance, Instant.now())
+                           .toLogEntry(persistedPublication.getIdentifier(), null);
+        logEntry.persist(resourceService);
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+
+        assertNull(migratedResource.getResourceEvent());
+    }
+
+    @Deprecated
+    @Test
     void shouldPersistPublicationPublishedLogEntryWhenMigratingPublishedResource() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1921,6 +1937,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertEquals(publishedPublication.getPublishedDate(), resourceEvent.date());
         assertInstanceOf(PublishedResourceEvent.class, resourceEvent);
+    }
+
+    @Deprecated
+    @Test
+    void shouldNotPersistPublicationPublishedLogEntryWhenPresent() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
+        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow().toPublication();
+        var logEntry = PublishedResourceEvent.create(userInstance, Instant.now())
+                                           .toLogEntry(publishedPublication.getIdentifier(), null);
+        logEntry.persist(resourceService);
+        resourceService.refreshResources(List.of(Resource.fromPublication(publishedPublication)));
+
+        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+
+        assertNull(migratedResource.getResourceEvent());
     }
 
     @Deprecated

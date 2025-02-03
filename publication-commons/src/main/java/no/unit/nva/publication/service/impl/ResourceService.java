@@ -60,6 +60,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
@@ -385,15 +386,16 @@ public class ResourceService extends ServiceWithTransactions {
 
     private void persistLogEntriesIfNeeded(Resource resource) {
         var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var logEntries = resource.fetchLogEntries(this);
         if ("nve@5948.0.0.0".equals(resource.getResourceOwner().getUser().toString())) {
             resource.setResourceEvent(ImportedResourceEvent.fromImportSource(ImportSource.fromBrageArchive("NVE"),
                                                                    resource.getCreatedDate()));
-        } else if (PUBLISHED.equals(resource.getStatus())) {
+        } else if (PUBLISHED.equals(resource.getStatus()) && logEntries.stream().noneMatch(entry -> LogTopic.PUBLICATION_PUBLISHED.equals(entry.topic()))) {
             var publishedDate = Optional.of(resource)
                                     .map(Resource::getPublishedDate)
                                     .orElse(resource.getCreatedDate());
             resource.setResourceEvent(PublishedResourceEvent.create(userInstance, publishedDate));
-        } else {
+        } else if (!PUBLISHED.equals(resource.getStatus()) && logEntries.stream().noneMatch(entry -> LogTopic.PUBLICATION_CREATED.equals(entry.topic()))) {
             resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
         }
     }
