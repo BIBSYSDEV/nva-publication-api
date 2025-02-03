@@ -15,7 +15,10 @@ import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
@@ -249,6 +252,30 @@ public final class FileEntry implements Entity {
     public void clearResourceEvent(ResourceService resourceService) {
         this.setFileEvent(null);
         resourceService.updateFile(this);
+    }
+
+    public void migrate(ResourceService resourceService, Resource resource) {
+        var now = Instant.now();
+        this.modifiedDate = now;
+        this.setFileEvent(createFileEventWhenMigratingFile(resource));
+        resourceService.persistFile(this);
+    }
+
+    private FileEvent createFileEventWhenMigratingFile(Resource resource) {
+        if (file instanceof OpenFile || file instanceof InternalFile) {
+            var timeStamp = file.getPublishedDate()
+                           .or(() -> Optional.ofNullable(resource.getPublishedDate()))
+                           .or(() -> Optional.ofNullable(resource.getCreatedDate()))
+                           .orElseGet(Instant::now);
+            return FileApprovedEvent.create(getOwner(), timeStamp);
+        } else {
+            var timeStamp = Optional.ofNullable(file)
+                                .map(File::getUploadDetails)
+                                .map(UploadDetails::uploadedDate)
+                                .or(() -> Optional.ofNullable(resource.getCreatedDate()))
+                                .orElseGet(Instant::now);
+            return FileUploadedEvent.create(getOwner(), timeStamp);
+        }
     }
 
     private void setFileEvent(FileEvent fileEvent) {
