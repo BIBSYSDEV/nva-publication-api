@@ -104,6 +104,8 @@ public class Resource implements Entity {
     private List<ImportDetail> importDetails;
     @JsonProperty
     private ResourceEvent resourceEvent;
+    @JsonIgnore
+    private List<FileEntry> files;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -147,12 +149,24 @@ public class Resource implements Entity {
         resourceService.updateResource(this);
     }
 
-    @JsonIgnore
     public List<File> getFiles() {
         return getAssociatedArtifacts().stream()
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .toList();
+    }
+
+    @JsonIgnore
+    public List<FileEntry> getFileEntries() {
+        return nonNull(files) ? files : Collections.emptyList();
+    }
+
+    public Optional<FileEntry> getFileEntry(SortableIdentifier identifier) {
+        return getFileEntries().stream().filter(file -> file.getIdentifier().equals(identifier)).findFirst();
+    }
+
+    public void setFileEntries(List<FileEntry> files) {
+        this.files = files;
     }
 
     private static Resource convertToResource(Publication publication) {
@@ -165,6 +179,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
+                   //.withFiles() TODO: Implement this
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -570,6 +585,7 @@ public class Resource implements Entity {
                    .withIndexedDate(getIndexedDate())
                    .withLink(getLink())
                    .withAssociatedArtifactsList(getAssociatedArtifacts())
+                   .withFiles(getFileEntries())
                    .withProjects(getProjects())
                    .withEntityDescription(getEntityDescription())
                    .withDoi(getDoi())

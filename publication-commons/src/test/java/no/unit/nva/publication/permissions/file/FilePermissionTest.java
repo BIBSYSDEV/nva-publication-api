@@ -8,8 +8,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
@@ -47,8 +50,9 @@ class FilePermissionTest {
     }
 
     private static FilePermissions getFilePermissions(File file) {
-        return FilePermissions.create(file,
+        var fileEntry = FileEntry.create(file, SortableIdentifier.next(), UserInstance.create(randomString(), randomUri()));
+        return FilePermissions.create(fileEntry,
                                       UserInstance.create(randomString(), randomUri()),
-                                      randomNonDegreePublication());
+                                      Resource.fromPublication(randomNonDegreePublication()));
     }
 }

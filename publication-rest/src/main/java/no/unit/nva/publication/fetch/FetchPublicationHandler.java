@@ -29,7 +29,6 @@ import java.util.Set;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
@@ -106,22 +105,19 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation
 
         var identifier = RequestUtil.getIdentifier(requestInfo);
-        var publication = fetchPublication(identifier);
+        var resource = fetchResource(identifier);
 
-        return switch (publication.getStatus()) {
-            case DRAFT -> produceDraftPublicationResponse(requestInfo, publication);
-            case PUBLISHED -> producePublishedPublicationResponse(requestInfo, publication);
-            case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(publication, requestInfo);
+        return switch (resource.getStatus()) {
+            case DRAFT -> produceDraftPublicationResponse(requestInfo, resource);
+            case PUBLISHED -> producePublishedPublicationResponse(requestInfo, resource);
+            case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
             default -> throwNotFoundException();
         };
     }
 
-    private Publication fetchPublication(SortableIdentifier identifier)
-        throws NotFoundException {
-        return Resource.resourceQueryObject(identifier)
-                   .fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier))
-                   .toPublication();
+    private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
+        return resourceService.getResourceAndFilesByIdentifier(identifierInPath).orElseThrow(
+            () -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifierInPath));
     }
 
     @Override
@@ -129,16 +125,16 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return statusCode;
     }
 
-    private String produceRemovedPublicationResponse(Publication publication, RequestInfo requestInfo)
+    private String produceRemovedPublicationResponse(Resource resource, RequestInfo requestInfo)
         throws GoneException {
-        if (nonNull(publication.getDuplicateOf()) && shouldRedirect(requestInfo)) {
-            return produceRedirect(publication.getDuplicateOf());
+        if (nonNull(resource.getDuplicateOf()) && shouldRedirect(requestInfo)) {
+            return produceRedirect(resource.getDuplicateOf());
         } else {
-            var publicationStrategy = getPublicationPermissionStrategy(requestInfo, publication);
+            var publicationStrategy = getPublicationPermissionStrategy(requestInfo, resource);
 
             Set<PublicationOperation> allowedOperations =
                 publicationStrategy.map(PublicationPermissions::getAllAllowedActions).orElse(emptySet());
-            var tombstone = DeletedPublicationResponse.fromPublication(publication, allowedOperations);
+            var tombstone = DeletedPublicationResponse.fromPublication(resource.toPublication(), allowedOperations);
             throw new GoneException(GONE_MESSAGE, tombstone);
         }
     }
@@ -160,9 +156,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return null;
     }
 
-    private String produceDraftPublicationResponse(RequestInfo requestInfo, Publication publication)
+    private String produceDraftPublicationResponse(RequestInfo requestInfo, Resource resource)
         throws UnsupportedAcceptHeaderException {
-        return producePublishedPublicationResponse(requestInfo, publication);
+        return producePublishedPublicationResponse(requestInfo, resource);
     }
 
     @JacocoGenerated
@@ -170,21 +166,21 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         throw new NotFoundException("Publication is not found");
     }
 
-    private String producePublishedPublicationResponse(RequestInfo requestInfo, Publication publication)
+    private String producePublishedPublicationResponse(RequestInfo requestInfo, Resource resource)
         throws UnsupportedAcceptHeaderException {
 
         String response = null;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
 
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
-            response = createDataCiteMetadata(publication);
+            response = createDataCiteMetadata(resource);
         } else if (SCHEMA_ORG.equals(contentType)) {
-            response = createSchemaOrgRepresentation(publication);
+            response = createSchemaOrgRepresentation(resource);
         } else if (contentType.is(ANY_TEXT_TYPE) || XHTML_UTF_8.equals(contentType)) {
             statusCode = HTTP_SEE_OTHER;
-            addAdditionalHeaders(() -> Map.of(LOCATION, landingPageLocation(publication.getIdentifier()).toString()));
+            addAdditionalHeaders(() -> Map.of(LOCATION, landingPageLocation(resource.getIdentifier()).toString()));
         } else {
-            response = createPublicationResponse(requestInfo, publication);
+            response = createPublicationResponse(requestInfo, resource);
         }
         return response;
     }
@@ -195,23 +191,24 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
                    .getUri();
     }
 
-    private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
-        var response = PublicationResponseFactory.create(publication, requestInfo, identityServiceClient);
+    private String createPublicationResponse(RequestInfo requestInfo, Resource resource) {
+        var response = PublicationResponseFactory.create(resource, requestInfo, identityServiceClient);
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
     }
 
     private Optional<PublicationPermissions> getPublicationPermissionStrategy(RequestInfo requestInfo,
-                                                                              Publication publication) {
+                                                                              Resource resource) {
         return attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissions.create(publication, userInstance));
+                   .map(userInstance -> PublicationPermissions.create(resource.toPublication(), userInstance));
     }
 
-    private String createDataCiteMetadata(Publication publication) {
-        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication, authorizedBackendUriRetriever);
+    private String createDataCiteMetadata(Resource resource) {
+        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(resource.toPublication(),
+                                                                            authorizedBackendUriRetriever);
         return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
     }
 
-    private String createSchemaOrgRepresentation(Publication publication) {
-        return SchemaOrgDocument.fromPublication(publication);
+    private String createSchemaOrgRepresentation(Resource resource) {
+        return SchemaOrgDocument.fromPublication(resource.toPublication());
     }
 }

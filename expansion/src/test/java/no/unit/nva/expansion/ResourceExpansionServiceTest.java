@@ -1,6 +1,7 @@
 package no.unit.nva.expansion;
 
 import static java.util.Objects.nonNull;
+import static java.util.UUID.randomUUID;
 import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
@@ -252,7 +253,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnIndexDocumentWithoutLicenseWhenNoLicense() throws JsonProcessingException, NotFoundException {
-        var fileWithoutLicense = File.builder().buildOpenFile();
+        var fileWithoutLicense = File.builder().withIdentifier(randomUUID()).buildOpenFile();
         var link = new AssociatedLink(randomUri(), null, null);
         var publication = PublicationGenerator.randomPublication()
                               .copy()

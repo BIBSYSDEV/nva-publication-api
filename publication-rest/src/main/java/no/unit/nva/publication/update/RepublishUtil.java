@@ -33,14 +33,13 @@ public class RepublishUtil {
         return new RepublishUtil(resourceService, ticketService, permissionStrategy);
     }
 
-    public Publication republish(Publication publication, UserInstance userInstance) throws ApiGatewayException {
+    public Resource republish(Publication publication, UserInstance userInstance) throws ApiGatewayException {
         validateRepublishing();
         var resource = Resource.fromPublication(publication);
         resource.republish(resourceService, userInstance);
         persistCompletedPublishingRequest(publication, userInstance);
         return resource.fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException("Resource not found!"))
-                   .toPublication();
+                   .orElseThrow(() -> new NotFoundException("Resource not found!"));
     }
 
     private void persistCompletedPublishingRequest(Publication publication, UserInstance userInstance)

@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
@@ -244,7 +245,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public AssociatedArtifactResponse toDto() {
         return FileResponse.builder()
                    .withType(getArtifactType())
-                   .withIdentifier(getIdentifier())
+                   .withIdentifier(new SortableIdentifier(getIdentifier().toString()))
                    .withName(getName())
                    .withMimeType(getMimeType())
                    .withSize(getSize())

@@ -239,12 +239,31 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
-        List<Dao> daos = readResourceService.fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance,
-                                                                                              resourceIdentifier);
+        var daos = readResourceService.fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance,
+                                                                                        resourceIdentifier);
+        var deleteFilesTransactions = deleteResourceFilesTransaction(resourceIdentifier);
 
-        List<TransactWriteItem> transactionItems = transactionItemsForDraftPublicationDeletion(daos);
+        var transactionItems = transactionItemsForDraftPublicationDeletion(daos);
+        transactionItems.addAll(deleteFilesTransactions);
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(transactWriteItemsRequest);
+    }
+
+    private List<TransactWriteItem> deleteResourceFilesTransaction(SortableIdentifier identifier) {
+        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
+        var queryRequest = new QueryRequest()
+                               .withTableName(tableName)
+                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                               .withKeyConditionExpression("#PK3 = :value")
+                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
+                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+
+        return client.query(queryRequest).getItems().stream()
+                   .map(map -> parseAttributeValuesMap(map, Dao.class))
+                   .filter(FileDao.class::isInstance)
+                   .map(FileDao.class::cast)
+                   .map(FileDao::toDeleteTransactionItem)
+                   .toList();
     }
 
     public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
@@ -303,7 +322,8 @@ public class ResourceService extends ServiceWithTransactions {
 
         resource.ifPresent(res -> {
             var associatedArtifacts = new ArrayList<>(res.getAssociatedArtifacts());
-            associatedArtifacts.addAll(files);
+            associatedArtifacts.addAll(files.stream().map(FileEntry::getFile).toList());
+            res.setFileEntries(files);
             res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
         });
         return resource;
@@ -317,12 +337,11 @@ public class ResourceService extends ServiceWithTransactions {
                    .findFirst();
     }
 
-    private static List<File> extractFiles(List<Dao> entries) {
+    private static List<FileEntry> extractFiles(List<Dao> entries) {
         return entries.stream()
                    .filter(FileDao.class::isInstance)
                    .map(FileDao.class::cast)
                    .map(FileDao::getFileEntry)
-                   .map(FileEntry::getFile)
                    .toList();
     }
 
@@ -594,18 +613,34 @@ public class ResourceService extends ServiceWithTransactions {
                    .stream()
                    .map(value -> parseAttributeValuesMap(value, Dao.class))
                    .map(Dao::getData)
-                   .map(Entity.class::cast)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private Publication insertResource(Resource newResource) {
         if (newResource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(newResource);
         }
-        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(putRequest);
 
+        var userInstance = UserInstance.fromPublication(newResource.toPublication());
+        var fileTransactionWriteItems = newResource.getFiles().stream()
+                                            .map(file -> FileEntry.create(file, newResource.getIdentifier(), userInstance))
+                                            .map(FileEntry::toDao)
+                                            .map(FileDao::toPutTransactionItem)
+                                            .toList();
+
+        var allAssociatedArtifacts = newResource.getAssociatedArtifacts();
+        var associatedArtifactsWithoutFiles = new ArrayList<>(allAssociatedArtifacts);
+        associatedArtifactsWithoutFiles.removeIf(File.class::isInstance);
+        newResource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifactsWithoutFiles));
+
+        var transactions = new ArrayList<>(fileTransactionWriteItems);
+        transactions.add(newPutTransactionItem(new ResourceDao(newResource), tableName));
+        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource));
+
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
+
+        newResource.setAssociatedArtifacts(new AssociatedArtifactList(allAssociatedArtifacts));
         return newResource.toPublication();
     }
 

@@ -188,23 +188,23 @@ public class UpdatePublicationHandler
                    .toPublication();
     }
 
-    private Publication republish(Publication existingPublication, PublicationPermissions permissionStrategy,
+    private Resource republish(Publication existingPublication, PublicationPermissions permissionStrategy,
                                   UserInstance userInstance)
         throws ApiGatewayException {
         return RepublishUtil.create(resourceService, ticketService, permissionStrategy)
                    .republish(existingPublication, userInstance);
     }
 
-    private Publication terminatePublication(Publication existingPublication,
+    private Resource terminatePublication(Publication existingPublication,
                                              PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
-        throws UnauthorizedException, BadRequestException, NotFoundException {
+        throws UnauthorizedException, BadRequestException {
         permissionStrategy.authorize(TERMINATE);
 
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication, userInstance);
 
-        return resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
+        return Resource.resourceQueryObject(existingPublication.getIdentifier()).fetch(resourceService).orElseThrow();
     }
 
     private void deleteFiles(Publication publication) {
@@ -218,7 +218,7 @@ public class UpdatePublicationHandler
             .forEach(s3Driver::deleteFile);
     }
 
-    private Publication unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,
+    private Resource unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,
                                              Publication existingPublication,
                                              PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
@@ -230,9 +230,10 @@ public class UpdatePublicationHandler
                                                             existingPublication,
                                                             userInstance);
         resourceService.unpublishPublication(updatedPublication, userInstance);
-        updatedPublication = resourceService.getPublicationByIdentifier(updatedPublication.getIdentifier());
-        updateNvaDoi(updatedPublication);
-        return updatedPublication;
+        var updatedResource = Resource.resourceQueryObject(updatedPublication.getIdentifier()).fetch(resourceService)
+                               .orElseThrow();
+        updateNvaDoi(updatedResource);
+        return updatedResource;
     }
 
     private void validateUnpublishRequest(UnpublishPublicationRequest unpublishPublicationRequest)
@@ -249,25 +250,26 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void updateNvaDoi(Publication publication) {
-        if (nonNull(publication.getDoi())) {
-            logger.info("Publication {} has NVA-DOI, sending event to EventBridge", publication.getIdentifier());
+    private void updateNvaDoi(Resource resource) {
+        if (nonNull(resource.getDoi())) {
+            logger.info("Publication {} has NVA-DOI, sending event to EventBridge", resource.getIdentifier());
             var putEventsRequest = PutEventsRequest.builder()
                                        .entries(PutEventsRequestEntry.builder()
                                                     .eventBusName(nvaEventBusName)
                                                     .source(NVA_PUBLICATION_DELETE_SOURCE)
                                                     .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
                                                     .detail(new LambdaDestinationInvocationDetail<>(
-                                                        DoiMetadataUpdateEvent.createUpdateDoiEvent(publication, apiHost))
+                                                        DoiMetadataUpdateEvent.createUpdateDoiEvent(resource.toPublication(),
+                                                                                                    apiHost))
                                                                 .toJsonString())
-                                                    .resources(publication.getIdentifier().toString()).build())
+                                                    .resources(resource.getIdentifier().toString()).build())
                                        .build();
             var ebResult =
                 eventBridgeClient.putEvents(putEventsRequest);
 
             logger.info("failedEntryCount={}", ebResult.failedEntryCount());
         } else {
-            logger.info("Publication {} has no NVA-DOI, no event sent to EventBridge", publication.getIdentifier());
+            logger.info("Publication {} has no NVA-DOI, no event sent to EventBridge", resource.getIdentifier());
         }
     }
 
@@ -287,7 +289,7 @@ public class UpdatePublicationHandler
                    .build();
     }
 
-    private Publication updateMetadata(UpdatePublicationRequest input,
+    private Resource updateMetadata(UpdatePublicationRequest input,
                                        SortableIdentifier identifierInPath,
                                        Publication existingPublication,
                                        PublicationPermissions permissionStrategy,
@@ -321,7 +323,9 @@ public class UpdatePublicationHandler
             publicationUpdate.getAssociatedArtifacts().removeIf(File.class::isInstance);
         }
 
-        return resourceService.updatePublication(publicationUpdate);
+        resourceService.updatePublication(publicationUpdate);
+
+        return Resource.resourceQueryObject(identifierInPath).fetch(resourceService).orElseThrow();
     }
 
     private void updateFile(Publication existingPublication, File file) {

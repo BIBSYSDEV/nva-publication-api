@@ -24,7 +24,6 @@ import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
@@ -44,6 +43,17 @@ public final class FileEntry implements Entity {
     private File file;
     private FileEvent fileEvent;
 
+    /**
+     * Constructor for FileEntry.
+     * @param resourceIdentifier
+     * @param createdDate
+     * @param modifiedDate
+     * @param owner
+     * @param ownerAffiliation Top level cristin unit id
+     * @param customerId
+     * @param file
+     * @param fileEvent
+     */
     @JsonCreator
     private FileEntry(@JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
                       @JsonProperty("createdDate") Instant createdDate,
@@ -151,7 +161,7 @@ public final class FileEntry implements Entity {
     }
 
     @Override
-    public Dao toDao() {
+    public FileDao toDao() {
         return FileDao.fromFileEntry(this);
     }
 

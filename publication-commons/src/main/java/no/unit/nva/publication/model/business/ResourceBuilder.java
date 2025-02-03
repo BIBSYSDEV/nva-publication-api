@@ -33,6 +33,7 @@ public final class ResourceBuilder {
     private Instant indexedDate;
     private URI link;
     private AssociatedArtifactList associatedArtifacts;
+    private List<FileEntry> files;
     private List<ResearchProject> projects;
     private EntityDescription entityDescription;
     private URI doi;
@@ -98,6 +99,11 @@ public final class ResourceBuilder {
 
     public ResourceBuilder withAssociatedArtifactsList(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = new AssociatedArtifactList(associatedArtifacts);
+        return this;
+    }
+
+    public ResourceBuilder withFiles(List<FileEntry> files) {
+        this.files = files;
         return this;
     }
 
@@ -183,6 +189,7 @@ public final class ResourceBuilder {
         resource.setIndexedDate(indexedDate);
         resource.setLink(link);
         resource.setAssociatedArtifacts(associatedArtifacts);
+        resource.setFileEntries(files);
         resource.setProjects(projects);
         resource.setEntityDescription(entityDescription);
         resource.setDoi(doi);
