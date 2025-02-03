@@ -1924,6 +1924,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Deprecated
     @Test
+    void shouldNotPersistPublicationCreatedLogEntryWhenConsumingEventTwice() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var logEntry = CreatedResourceEvent.create(userInstance, Instant.now())
+                           .toLogEntry(persistedPublication.getIdentifier(), null);
+        logEntry.persist(resourceService);
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var resourceMigratedTwice = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+
+        assertEquals(migratedResource, resourceMigratedTwice);
+    }
+
+    @Deprecated
+    @Test
     void shouldPersistPublicationPublishedLogEntryWhenMigratingPublishedResource() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
