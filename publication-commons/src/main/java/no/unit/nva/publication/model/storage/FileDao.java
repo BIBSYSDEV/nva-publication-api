@@ -113,10 +113,9 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
         return getData().getCustomerId();
     }
 
-    @JsonProperty("identifier")
     @Override
     public SortableIdentifier getIdentifier() {
-        return getData().getIdentifier();
+        return identifier;
     }
 
     @Override
