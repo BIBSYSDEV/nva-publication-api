@@ -37,6 +37,7 @@ import nva.commons.core.JacocoGenerated;
 public final class FileDao extends Dao implements DynamoEntryByIdentifier {
 
     public static final String TYPE = "File";
+    @JsonProperty("identifier")
     private final SortableIdentifier identifier;
     private final SortableIdentifier resourceIdentifier;
     private final Instant modifiedDate;
@@ -112,7 +113,6 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
         return getData().getCustomerId();
     }
 
-    @JsonProperty("identifier")
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
