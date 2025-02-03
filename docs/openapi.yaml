@@ -933,7 +933,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompleteUploadRequestBody'
+              oneOf:
+                - $ref: '#/components/schemas/InternalCompleteUploadRequestBody'
+                - $ref: '#/components/schemas/ExternalCompleteUploadRequestBody'
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CompleteUploadFunction.Arn}/invocations
@@ -2489,10 +2491,14 @@ components:
           type: string
           description: Key to reference uploaded resource in S3 (UUID)
           example: f335ab02-35b3-4fda-9204-cd999e166ce0
-    CompleteUploadRequestBody:
-      description: Request body containg the details of the file to be uploaded
+    InternalCompleteUploadRequestBody:
+      description: Request body containing the details of the file to be uploaded for internal use
       type: object
       properties:
+        type:
+          type: string
+          enum:
+            - InternalCompleteUpload
         uploadId:
           type: string
           description: S3 Identifier upload
@@ -2519,6 +2525,57 @@ components:
         - uploadId
         - key
         - parts
+    ExternalCompleteUploadRequestBody:
+      description: Request body containing the details of the file and file to be uploaded for external use
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - ExternalCompleteUpload
+        uploadId:
+          type: string
+          description: S3 Identifier upload
+          example: 543534gfdgdsgerFEDSGF4438rhgdg.FEfefgnijwefew8234234nfsdfweFESEGGL_MFAWRMFiewfnvsdo234950SDFM_FESAFn384234fsdDSAFNEUFAS.g8SDFNWEUFbf--
+        key:
+          type: string
+          description: Identifier (UUID) of the uploaded file, object key in the S3 bucket
+          example: f335ab02-35b3-4fda-9204-cd999e166ce0
+        parts:
+          type: array
+          description: List of part numbers and ETags that identify the individual parts of the upload
+          items:
+            type: object
+            properties:
+              ETag:
+                type: string
+                description: eTag of the uploaded part
+                example: f335ab02-35b3-4fda-9204-cd999e166ce0
+              PartNumber:
+                type: integer
+                description: The index of this part in the upload
+                example: 1
+        fileType:
+          type: string
+          enum:
+            - OpenFile
+            - InternalFile
+        license:
+          type: string
+          format: uri
+        publisherVersion:
+          type: string
+          enum:
+            - PublishedVersion
+            - AcceptedVersion
+        embargoDate:
+          type: string
+          format: date-time
+      required:
+        - uploadId
+        - key
+        - parts
+        - fileType
     CustomerRightsRetentionStrategy:
       required:
         - type
