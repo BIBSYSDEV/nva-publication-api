@@ -3,11 +3,13 @@ package no.unit.nva.publication.model.business.logentry;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record PublicationLogEntry(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, LogTopic topic,
-                                  Instant timestamp, LogUser performedBy) implements LogEntry {
+                                  Instant timestamp, LogUser performedBy, ImportSource importSource)
+    implements LogEntry {
 
     public static final String TYPE = "PublicationLogEntry";
 
@@ -26,6 +28,7 @@ public record PublicationLogEntry(SortableIdentifier identifier, SortableIdentif
         private LogTopic topic;
         private Instant timestamp;
         private LogUser performedBy;
+        private ImportSource importSource;
 
         private Builder() {
         }
@@ -55,9 +58,13 @@ public record PublicationLogEntry(SortableIdentifier identifier, SortableIdentif
             return this;
         }
 
-        public PublicationLogEntry build() {
-            return new PublicationLogEntry(identifier, resourceIdentifier, topic, timestamp, performedBy);
+        public Builder withImportSource(ImportSource importSource) {
+            this.importSource = importSource;
+            return this;
         }
 
+        public PublicationLogEntry build() {
+            return new PublicationLogEntry(identifier, resourceIdentifier, topic, timestamp, performedBy, importSource);
+        }
     }
 }

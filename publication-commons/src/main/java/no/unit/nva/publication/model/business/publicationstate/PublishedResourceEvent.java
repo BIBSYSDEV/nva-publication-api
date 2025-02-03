@@ -21,7 +21,7 @@ public record PublishedResourceEvent(Instant date, User user, URI institution) i
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(SortableIdentifier.next())
                    .withTopic(LogTopic.PUBLICATION_PUBLISHED)
-                   .withTimestamp(Instant.now())
+                   .withTimestamp(date)
                    .withPerformedBy(user)
                    .build();
     }

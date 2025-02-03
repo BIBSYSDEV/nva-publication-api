@@ -1,5 +1,6 @@
 package no.unit.nva.publication.log.service;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import no.unit.nva.clients.GetCustomerResponse;
@@ -11,6 +12,7 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
 import org.slf4j.Logger;
@@ -55,8 +57,12 @@ public class LogEntryService {
 
     private void persistLogEntry(Resource resource) {
         var resourceEvent = resource.getResourceEvent();
-        var user = createUser(resourceEvent);
-        resourceEvent.toLogEntry(resource.getIdentifier(), user).persist(resourceService);
+        if (resourceEvent instanceof ImportedResourceEvent importedResourceEvent && isNull(resourceEvent.user())) {
+            importedResourceEvent.toLogEntry(resource.getIdentifier(), null).persist(resourceService);
+        } else {
+            var user = createUser(resourceEvent);
+            resourceEvent.toLogEntry(resource.getIdentifier(), user).persist(resourceService);
+        }
 
         logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
         resource.clearResourceEvent(resourceService);

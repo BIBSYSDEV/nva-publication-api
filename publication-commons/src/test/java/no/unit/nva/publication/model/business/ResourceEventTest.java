@@ -7,8 +7,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
@@ -22,7 +25,9 @@ public class ResourceEventTest {
         return Stream.of(Arguments.of(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri())),
                          Arguments.of(new UnpublishedResourceEvent(Instant.now(), new User(randomString()), randomUri())),
                          Arguments.of(new PublishedResourceEvent(Instant.now(), new User(randomString()), randomUri())),
-                         Arguments.of(new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri())));
+                         Arguments.of(new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri())),
+                         Arguments.of(ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
+                                                                             Instant.now())));
     }
 
     @ParameterizedTest
