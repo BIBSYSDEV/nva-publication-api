@@ -385,17 +385,16 @@ public class ResourceService extends ServiceWithTransactions {
 
     private void persistLogEntriesIfNeeded(Resource resource) {
         var userInstance = UserInstance.fromPublication(resource.toPublication());
-        var publishedDate = Optional.of(resource)
-                                .map(Resource::getPublishedDate)
-                                .or(() -> Optional.ofNullable(resource.getCreatedDate()))
-                                .orElseGet(Instant::now);
         if ("nve@5948.0.0.0".equals(resource.getResourceOwner().getUser().toString())) {
-            resource.setResourceEvent(ImportedResourceEvent.create(userInstance, publishedDate));
-        }
-        if (PUBLISHED.equals(resource.getStatus())) {
+            resource.setResourceEvent(ImportedResourceEvent.fromImportSource(ImportSource.fromBrageArchive("NVE"),
+                                                                   resource.getCreatedDate()));
+        } else if (PUBLISHED.equals(resource.getStatus())) {
+            var publishedDate = Optional.of(resource)
+                                    .map(Resource::getPublishedDate)
+                                    .orElse(resource.getCreatedDate());
             resource.setResourceEvent(PublishedResourceEvent.create(userInstance, publishedDate));
         } else {
-            resource.setResourceEvent(CreatedResourceEvent.create(userInstance, publishedDate));
+            resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
         }
     }
 

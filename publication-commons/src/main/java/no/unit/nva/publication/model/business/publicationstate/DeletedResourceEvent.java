@@ -22,7 +22,7 @@ public record DeletedResourceEvent(Instant date, User user, URI institution) imp
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(SortableIdentifier.next())
                    .withTopic(LogTopic.PUBLICATION_DELETED)
-                   .withTimestamp(Instant.now())
+                   .withTimestamp(date)
                    .withPerformedBy(user)
                    .build();
     }

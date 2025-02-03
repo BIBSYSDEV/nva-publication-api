@@ -127,9 +127,12 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -1885,6 +1888,58 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertInstanceOf(FileUploadedEvent.class, fileEvent);
         assertEquals(file.getUploadDetails().uploadedDate(), fileEvent.date());
+    }
+
+    @Deprecated
+    @Test
+    void shouldPersistPublicationCreatedLogEntryWhenMigratingResource() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
+
+        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        var resourceEvent = migratedResource.getResourceEvent();
+
+        assertEquals(persistedPublication.getCreatedDate(), resourceEvent.date());
+        assertInstanceOf(CreatedResourceEvent.class, resourceEvent);
+    }
+
+    @Deprecated
+    @Test
+    void shouldPersistPublicationPublishedLogEntryWhenMigratingPublishedResource() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
+        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow().toPublication();
+        resourceService.refreshResources(List.of(Resource.fromPublication(publishedPublication)));
+
+        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        var resourceEvent = migratedResource.getResourceEvent();
+
+        assertEquals(publishedPublication.getPublishedDate(), resourceEvent.date());
+        assertInstanceOf(PublishedResourceEvent.class, resourceEvent);
+    }
+
+    @Deprecated
+    @Test
+    void shouldPersistPublicationImportedLogEntryWhenMigratingPublicationWithNVEAsResourceOwner() throws BadRequestException {
+        var publication = randomPublication().copy()
+                              .withResourceOwner(new ResourceOwner(new Username("nve@5948.0.0.0"), randomUri()))
+                              .build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
+        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow().toPublication();
+        resourceService.refreshResources(List.of(Resource.fromPublication(publishedPublication)));
+
+        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        var resourceEvent = migratedResource.getResourceEvent();
+
+        assertEquals(publishedPublication.getCreatedDate(), resourceEvent.date());
+        assertInstanceOf(ImportedResourceEvent.class, resourceEvent);
     }
 
     @Test

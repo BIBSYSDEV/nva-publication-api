@@ -21,7 +21,7 @@ public record RepublishedResourceEvent(Instant date, User user, URI institution)
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(SortableIdentifier.next())
                    .withTopic(LogTopic.PUBLICATION_REPUBLISHED)
-                   .withTimestamp(Instant.now())
+                   .withTimestamp(date)
                    .withPerformedBy(user)
                    .build();
     }
