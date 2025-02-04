@@ -349,6 +349,16 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
+        if (shouldUseNewFiles()) {
+            return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier).stream()
+                       .map(Resource::fromPublication)
+                       .map(Resource::getIdentifier)
+                       .map(this::getResourceAndFilesByIdentifier)
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .map(Resource::toPublication)
+                       .toList();
+        }
         return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
     }
 
