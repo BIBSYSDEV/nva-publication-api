@@ -243,7 +243,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var userInstance = UserInstance.fromPublication(input);
         var savedResource = Resource.fromPublication(input).persistNew(resourceService, userInstance);
-        var readResource = resourceService.getPublication(savedResource);
+        var readResource = resourceService.getResourceByIdentifier(savedResource.getIdentifier()).toPublication();
         var expectedResource = input.copy()
                                    .withIdentifier(savedResource.getIdentifier())
                                    .withStatus(DRAFT)
@@ -473,7 +473,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    @Disabled //TODO: Decide how to manage multiple cristin identifiers that exist in the data
+    @Disabled
+        //TODO: Decide how to manage multiple cristin identifiers that exist in the data
     void combinationOfTrustedAndUntrustedCristinIdentifiersIsNotAllowed()
         throws BadRequestException, NotFoundException {
 
@@ -1219,7 +1220,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         assertThrows(BadRequestException.class,
-                     () -> resourceService.deletePublication(resourceService.getPublication(publication), userInstance));
+                     () -> resourceService.deletePublication(resourceService.getPublication(publication),
+                                                             userInstance));
     }
 
     @Test
@@ -1227,7 +1229,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         publication.setDoi(randomDoi());
         var updatedPublication = resourceService.updatePublicationByImportEntry(publication,
-                                                                   ImportSource.fromSource(Source.CRISTIN));
+                                                                                ImportSource.fromSource(
+                                                                                    Source.CRISTIN));
 
         assertThat(updatedPublication.getImportDetails().size(), is(equalTo(1)));
         assertThat(updatedPublication.getImportDetails().getFirst().importSource().getSource(),
@@ -1239,7 +1242,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
-                           .persistNew(resourceService, userInstance);
+                                      .persistNew(resourceService, userInstance);
 
         var resource = resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
 
@@ -1317,7 +1320,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publishedPublication = randomPublication().copy().withStatus(PUBLISHED).build();
         when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publishedPublication));
         Resource.resourceQueryObject(publishedPublication.getIdentifier()).publish(resourceService,
-                                                                                   UserInstance.fromPublication(publishedPublication));
+                                                                                   UserInstance.fromPublication(
+                                                                                       publishedPublication));
 
         verify(resourceService, never()).updateResource(any());
     }
@@ -1345,9 +1349,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
                          .withOwnerAffiliation(randomUri())
                          .withOwner(randomString())
                          .persistNewTicket(ticketService);
-        resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
+                                                   publication.getIdentifier());
 
-        assertEquals(TicketStatus.NOT_APPLICABLE,ticket.fetch(ticketService).getStatus());
+        assertEquals(TicketStatus.NOT_APPLICABLE, ticket.fetch(ticketService).getStatus());
     }
 
     @Test
@@ -1446,8 +1451,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
 
         var fetchedQueryObject = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
-                              .fetch(resourceService)
-                              .orElseThrow();
+                                     .fetch(resourceService)
+                                     .orElseThrow();
 
         assertEquals(persistedFileEntry, fetchedQueryObject);
     }
@@ -1550,12 +1555,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publishingRequest.setFinalizedBy(new Username(randomString()));
         publishingRequest.publishApprovedFiles(resourceService);
 
-
-
-        assertInstanceOf(InternalFile.class, FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
-                                                 .fetch(resourceService)
-                           .orElseThrow()
-                           .getFile());
+        assertInstanceOf(InternalFile.class,
+                         FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                             .fetch(resourceService)
+                             .orElseThrow()
+                             .getFile());
     }
 
     @Test
@@ -1564,7 +1568,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-
 
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
                                                             .withFilesForApproval(Set.of(file))
@@ -1600,12 +1603,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publishingRequest.setFinalizedBy(new Username(randomString()));
         publishingRequest.rejectRejectedFiles(resourceService);
 
-
-
-        assertInstanceOf(RejectedFile.class, FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
-                                                 .fetch(resourceService)
-                                                 .orElseThrow()
-                                                 .getFile());
+        assertInstanceOf(RejectedFile.class,
+                         FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                             .fetch(resourceService)
+                             .orElseThrow()
+                             .getFile());
     }
 
     @Test
@@ -1614,7 +1616,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-
 
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
                                                             .withFilesForApproval(Set.of(file))
@@ -1649,7 +1650,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertTrue(persistedFileEntry.isPresent());
 
         var fileEntry = persistedFileEntry.orElseThrow();
-        var userInstanceFromPersistedFile = UserInstance.create(fileEntry.getOwner().toString(), fileEntry.getCustomerId(),
+        var userInstanceFromPersistedFile = UserInstance.create(fileEntry.getOwner().toString(),
+                                                                fileEntry.getCustomerId(),
                                                                 null, List.of(), fileEntry.getOwnerAffiliation());
         assertEquals(userInstance, userInstanceFromPersistedFile);
     }
@@ -1666,11 +1668,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
 
-        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance,
+                                                                        persistedPublication.getIdentifier())
                                                     .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
         var migratedResource = migratedResourceDao.getResource();
 
-        assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
+        assertFalse(migratedResource.getAssociatedArtifacts().contains(file));
     }
 
     @Deprecated
@@ -1684,11 +1687,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
 
-        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
-                         .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance,
+                                                                        persistedPublication.getIdentifier())
+                                                    .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
         var migratedResource = migratedResourceDao.getResource();
 
-        assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
+        assertFalse(migratedResource.getAssociatedArtifacts().contains(file));
     }
 
     @Deprecated
@@ -1703,12 +1707,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
 
-        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance,
+                                                                        persistedPublication.getIdentifier())
                                                     .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
         var migratedResource = migratedResourceDao.getResource();
 
-        assertTrue( migratedResource.getAssociatedArtifacts().contains(associatedLink));
-        assertFalse( migratedResource.getAssociatedArtifacts().contains(file));
+        assertTrue(migratedResource.getAssociatedArtifacts().contains(associatedLink));
+        assertFalse(migratedResource.getAssociatedArtifacts().contains(file));
     }
 
     @Deprecated
@@ -1722,11 +1727,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
 
-        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance, persistedPublication.getIdentifier())
+        var migratedResourceDao = (ResourceDao) ResourceDao.queryObject(userInstance,
+                                                                        persistedPublication.getIdentifier())
                                                     .fetchByIdentifier(client, DatabaseConstants.RESOURCES_TABLE_NAME);
         var migratedResource = migratedResourceDao.getResource();
 
-        assertTrue( migratedResource.getAssociatedArtifacts().contains(nullAssociatedArtifact));
+        assertTrue(migratedResource.getAssociatedArtifacts().contains(nullAssociatedArtifact));
     }
 
     @Test
@@ -1821,7 +1827,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                             .orElseThrow()
                             .getFileEvent();
 
-
         assertEquals(resource.getCreatedDate(), fileEvent.date());
     }
 
@@ -1848,7 +1853,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                             .fetch(resourceService)
                             .orElseThrow()
                             .getFileEvent();
-
 
         assertInstanceOf(FileUploadedEvent.class, fileEvent);
         assertEquals(resource.getCreatedDate(), fileEvent.date());
@@ -1881,7 +1885,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                             .fetch(resourceService)
                             .orElseThrow()
                             .getFileEvent();
-
 
         assertInstanceOf(FileUploadedEvent.class, fileEvent);
         assertEquals(file.getUploadDetails().uploadedDate(), fileEvent.date());
