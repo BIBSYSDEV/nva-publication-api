@@ -21,7 +21,7 @@ public record CreatedResourceEvent(Instant date, User user, URI institution) imp
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(SortableIdentifier.next())
                    .withTopic(LogTopic.PUBLICATION_CREATED)
-                   .withTimestamp(Instant.now())
+                   .withTimestamp(date)
                    .withPerformedBy(user)
                    .build();
     }

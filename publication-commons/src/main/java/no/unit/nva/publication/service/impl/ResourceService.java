@@ -61,6 +61,8 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -394,9 +396,29 @@ public class ResourceService extends ServiceWithTransactions {
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
         if (isResourceWithFiles(dataEntry)) {
+            persistLogEntriesIfNeeded((Resource) dataEntry);
             return migrateResourceWithFiles((Resource) dataEntry);
         }
         return dataEntry;
+    }
+
+    @Deprecated
+    private void persistLogEntriesIfNeeded(Resource resource) {
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var logEntries = resource.fetchLogEntries(this);
+        if (logEntries.isEmpty()) {
+            if ("nve@5948.0.0.0".equals(resource.getResourceOwner().getUser().toString())) {
+                resource.setResourceEvent(ImportedResourceEvent.fromImportSource(
+                    ImportSource.fromBrageArchive("NVE"), resource.getCreatedDate()));
+            } else if (PUBLISHED.equals(resource.getStatus())) {
+                var publishedDate = Optional.of(resource)
+                                        .map(Resource::getPublishedDate)
+                                        .orElse(resource.getCreatedDate());
+                resource.setResourceEvent(PublishedResourceEvent.create(userInstance, publishedDate));
+            } else if (!PUBLISHED.equals(resource.getStatus())) {
+                resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
+            }
+        }
     }
 
     @Deprecated

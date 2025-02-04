@@ -13,15 +13,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.clients.GetCustomerResponse;
 import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogTopic;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -110,6 +114,20 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
         var logUser = logEntries.getFirst().performedBy();
         assertNotNull(logUser.userName());
+    }
+
+    @Test
+    void shouldPersistLogEntryFromImportedResourceEvent() throws BadRequestException {
+        var publication = createPublication();
+        var resource = Resource.fromPublication(publication);
+        resource.setResourceEvent(ImportedResourceEvent.fromImportSource(ImportSource.fromBrageArchive("A"),
+                                                                         Instant.now()));
+        resourceService.updateResource(resource);
+        logEntryService.persistLogEntry(Resource.fromPublication(publication));
+
+        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
+
+        assertEquals(LogTopic.PUBLICATION_IMPORTED, logEntries.getFirst().topic());
     }
 
     private Publication createPublication() throws BadRequestException {
