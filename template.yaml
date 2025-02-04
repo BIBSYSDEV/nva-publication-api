@@ -2116,12 +2116,12 @@ Resources:
                 topic: [ "PublicationService.DataImport.Filename" ]
                 subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.CristinData.NviPatch", "PublicationService.BrageData.PatchEntry" ]
 
-  DeleteFileFromS3EventHandler:
+  DeleteFileEventHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.delete.DeleteFileFromS3EventHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.delete.DeleteFileEventHandler::handleRequest
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
