@@ -1047,7 +1047,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .withType(new Type(List.of(), "Book")).build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var notUpdatedPublication = resourceService.getPublication(existingPublication);
+        var notUpdatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
         assertThat(notUpdatedPublication, is(equalTo(existingPublication)));
     }
 
@@ -1080,7 +1080,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .withType(new Type(List.of(), "DegreeBachelor")).build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var notUpdatedPublication = resourceService.getPublication(existingPublication);
+        var notUpdatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
         assertThat(notUpdatedPublication, is(equalTo(existingPublication)));
     }
 

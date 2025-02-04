@@ -378,7 +378,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private Publication fetchExistingPublication(Publication publication) {
-        return attempt(() -> readResourceService.getPublication(publication))
+        return attempt(() -> readResourceService.getResourceByIdentifier(publication.getIdentifier()))
+                   .map(Resource::toPublication)
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 
@@ -409,6 +410,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem createPutTransaction(Resource resourceUpdate) {
+
 
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 
