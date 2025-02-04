@@ -167,6 +167,16 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
+    public Resource persistResource(Resource resource) {
+        if (resource.getCuratingInstitutions().isEmpty()) {
+            setCuratingInstitutions(resource);
+        }
+        var transactionItems = transactionItemsForNewResourceInsertion(resource);
+        var putRequest = newTransactWriteItemsRequest(transactionItems);
+        sendTransactionWriteRequest(putRequest);
+        return resource;
+    }
+
     public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
         var now = clockForTimestamps.instant();
         if (nonNull(importSource)) {

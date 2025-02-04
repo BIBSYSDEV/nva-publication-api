@@ -24,6 +24,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
@@ -38,6 +39,8 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -223,6 +226,16 @@ public class Resource implements Entity {
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
         throws BadRequestException {
         return resourceService.createPublication(userInstance, this.toPublication());
+    }
+
+    public Resource importResource(ResourceService resourceService, ImportSource importSource) {
+        var now = Instant.now();
+        this.setCreatedDate(now);
+        this.setModifiedDate(now);
+        this.setIdentifier(SortableIdentifier.next());
+        this.setStatus(PUBLISHED);
+        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, now));
+        return resourceService.persistResource(this);
     }
 
     public List<LogEntry> fetchLogEntries(ResourceService resourceService) {

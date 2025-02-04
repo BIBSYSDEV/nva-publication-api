@@ -40,6 +40,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -375,9 +376,12 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
+        var importSource = createImportSource(publicationRepresentation);
+        Resource.fromPublication(publicationRepresentation.publication())
+            .importResource(resourceService, importSource);
         var updatedPublication =
             resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication(),
-                                                               createImportSource(publicationRepresentation));
+                                                               importSource);
         return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);
     }
 
