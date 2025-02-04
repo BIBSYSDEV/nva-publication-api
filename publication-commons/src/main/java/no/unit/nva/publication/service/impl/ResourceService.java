@@ -469,7 +469,7 @@ public class ResourceService extends ServiceWithTransactions {
         try {
             updatePublication(getPublicationByIdentifier(identifier));
             logger.info(RESOURCE_REFRESHED_MESSAGE, identifier);
-        } catch (NotFoundException e) {
+        } catch (Exception e) {
             logger.error(RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE, identifier);
         }
     }
