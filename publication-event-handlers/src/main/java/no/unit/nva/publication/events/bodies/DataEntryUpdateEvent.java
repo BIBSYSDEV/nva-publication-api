@@ -112,7 +112,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             case Message message -> MESSAGE_UPDATE_EVENT_TOPIC;
             case GeneralSupportRequest generalSupportRequest -> GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC;
             case UnpublishRequest unpublishRequest -> UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC;
-            case FileEntry fileEntry when isUpdateEvent() -> fileEntry.getFileEvent() instanceof FileDeletedEvent
+            case FileEntry fileEntry when hasNewImage() -> fileEntry.getFileEvent() instanceof FileDeletedEvent
                                             ? FILE_ENTRY_DELETE_EVENT_TOPIC
                                             : FILE_ENTRY_UPDATE_EVENT_TOPIC;
             default -> throw new IllegalArgumentException("Unknown entry type: " + type);
@@ -123,7 +123,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         return nonNull(newData) ? newData : oldData;
     }
 
-    private boolean isUpdateEvent() {
-        return nonNull(oldData) && nonNull(newData);
+    private boolean hasNewImage() {
+        return nonNull(newData);
     }
 }
