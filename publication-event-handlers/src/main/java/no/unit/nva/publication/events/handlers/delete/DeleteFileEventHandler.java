@@ -17,9 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+public class DeleteFileEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(DeleteFileFromS3EventHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DeleteFileEventHandler.class);
     private static final String FILE_DELETED_MESSAGE = "File with key {} has been deleted from S3 bucket for " +
                                                        "publication {}";
     private static final String PERSISTED_STORAGE_BUCKET_NAME = new Environment().readEnv(
@@ -28,11 +28,11 @@ public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHa
     private final ResourceService resourceService;
 
     @JacocoGenerated
-    public DeleteFileFromS3EventHandler() {
+    public DeleteFileEventHandler() {
         this(S3Driver.defaultS3Client().build(), ResourceService.defaultService());
     }
 
-    protected DeleteFileFromS3EventHandler(S3Client s3Client, ResourceService resourceService) {
+    protected DeleteFileEventHandler(S3Client s3Client, ResourceService resourceService) {
         super(EventReference.class);
         this.s3Client = s3Client;
         this.resourceService = resourceService;
@@ -45,7 +45,7 @@ public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHa
 
         var fileEntry = (FileEntry) getEvent(eventReference).getNewData();
         var key = fileEntry.getIdentifier().toString();
-        deleteFile(key);
+        deleteFileFromS3(key);
         FileEntry.queryObject(fileEntry.getFile().getIdentifier(), fileEntry.getResourceIdentifier())
             .hardDelete(resourceService);
         logger.info(FILE_DELETED_MESSAGE, key, fileEntry.getResourceIdentifier());
@@ -53,7 +53,7 @@ public class DeleteFileFromS3EventHandler extends DestinationsEventBridgeEventHa
         return null;
     }
 
-    private void deleteFile(String key) {
+    private void deleteFileFromS3(String key) {
         new S3Driver(s3Client, PERSISTED_STORAGE_BUCKET_NAME).deleteFile(UnixPath.of(key));
     }
 
