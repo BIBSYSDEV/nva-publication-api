@@ -296,7 +296,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         if (shouldUseNewFiles()) {
-            return getResourceAndFilesByIdentifier(identifier).orElseThrow();
+            return getResourceAndFilesByIdentifier(identifier).orElseThrow(() -> new NotFoundException(
+                RESOURCE_NOT_FOUND_MESSAGE + identifier));
         } else {
             return readResourceService.getResourceByIdentifier(identifier);
         }

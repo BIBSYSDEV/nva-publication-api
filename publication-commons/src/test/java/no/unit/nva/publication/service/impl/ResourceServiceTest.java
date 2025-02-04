@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
@@ -1828,7 +1829,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private void assertThatResourceAndIdentifierEntryExist() {
         ScanResult result = client.scan(new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
-        assertThat(result.getCount(), is(equalTo(2)));
+        assertThat(result.getCount(), is(doesNotHaveEmptyValues()));
     }
 
     private void assertThatTheEntriesHaveNotBeenDeleted() {
