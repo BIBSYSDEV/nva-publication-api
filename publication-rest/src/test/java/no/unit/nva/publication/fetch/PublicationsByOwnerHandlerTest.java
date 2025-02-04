@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;

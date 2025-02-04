@@ -42,7 +42,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -57,7 +56,6 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -414,7 +412,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
         var client = mock(AmazonDynamoDB.class);
         var expectedMessage = new RuntimeException("expectedMessage");
-        when(client.getItem(any(GetItemRequest.class))).thenThrow(expectedMessage);
+        when(client.query(any(QueryRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
         var failingResourceService = getResourceServiceBuilder(client).build();
@@ -940,7 +938,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
         resource.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
-        var publishedResource = publishResource(createPersistedPublicationWithoutDoi(resource));
+        resourceService.updateResource(Resource.fromPublication(resource));
+        var publishedResource = publishResource(resource);
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
@@ -1579,7 +1578,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withFilesForApproval(Set.of(file))
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
-        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
+        publishingRequest.publishApprovedFile().close(randomPerson()).persistUpdate(ticketService);
+        publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
         publishingRequest.publishApprovedFiles(resourceService);
 
@@ -1627,8 +1627,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withFilesForApproval(Set.of(file))
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
-        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
-
+        publishingRequest.close(randomPerson()).persistUpdate(ticketService);
+        publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
         publishingRequest.rejectRejectedFiles(resourceService);
 
         var associatedArtifact = Resource.fromPublication(persistedPublication)
