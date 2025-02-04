@@ -51,7 +51,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     public static final Set<Class<? extends File>> INITIAL_FILE_TYPES = Set.of(PendingOpenFile.class,
                                                                                PendingInternalFile.class,
-                                                                               HiddenFile.class);
+                                                                               HiddenFile.class,
+                                                                               UploadedFile.class);
     @JsonProperty(IDENTIFIER_FIELD)
     private final UUID identifier;
     @JsonProperty(NAME_FIELD)
