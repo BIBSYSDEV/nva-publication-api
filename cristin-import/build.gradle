@@ -77,6 +77,7 @@ test {
     environment "TABLE_NAME", "sometable"
     environment "AWS_REGION", "eu-west-1"
     environment "CRISTIN_IMPORT_BUCKET", "cristinBucket"
+    environment "SHOULD_USE_NEW_FILES", "Yes"
 }
 
 configurations {

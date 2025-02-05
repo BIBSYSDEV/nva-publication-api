@@ -366,7 +366,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        var publishedPublication = resourceService.getPublication(publication);
+        var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
         assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(PendingOpenFile.class)));
         assertThat(getTicketStatusForPublication(publication), is(equalTo(TicketStatus.PENDING)));
@@ -403,7 +403,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)));
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
+        assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(), is(equalTo(DRAFT)));
     }
 
     @Test
@@ -424,7 +424,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var problem = response.getBodyObject(Problem.class);
 
         assertThat(problem.getDetail(), is(equalTo("Unable to fetch customerId publishing workflow from upstream")));
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
+        assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(), is(equalTo(DRAFT)));
     }
 
     @Test
@@ -517,7 +517,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                 requestBody, publication, AccessRight.MANAGE_DOI), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        var updatedPublication = resourceService.getPublication(publication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var file = (File) updatedPublication.getAssociatedArtifacts().getFirst();
 
         assertThat(file, is(instanceOf(PendingOpenFile.class)));
@@ -1004,7 +1004,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        return resourceService.getPublication(publication);
+        return resourceService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
     private Publication createPersistedNonDegreePublishedPublication() throws ApiGatewayException {
@@ -1013,7 +1013,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        return resourceService.getPublication(publication);
+        return resourceService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
     private InputStream createHttpTicketCreationRequest(TicketDto ticketDto,
