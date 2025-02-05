@@ -1483,8 +1483,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         final var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
-        resourceService.createPublicationFromImportedEntry(existingPublication,
-                                                           ImportSource.fromBrageArchive(randomString()));
         assertThat(existingPublication.getHandle(), is(nullValue()));
 
         var listOfExistingPublications =
