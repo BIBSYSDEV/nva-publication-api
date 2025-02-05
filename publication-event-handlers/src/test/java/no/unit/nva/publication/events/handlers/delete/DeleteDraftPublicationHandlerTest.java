@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -57,7 +56,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         NotFoundException exception = assertThrows(NotFoundException.class,
             () -> resourceService.getPublicationByIdentifier(
                 publication.getIdentifier()));
-        String message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + publication.getIdentifier();
+        String message = ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE + publication.getIdentifier();
         assertThat(exception.getMessage(), equalTo(message));
     }
     
@@ -69,7 +68,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         
         RuntimeException exception = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(inputStream, outputStream, context));
-        String message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier;
+        String message = ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE + identifier;
         assertThat(exception.getMessage(), containsString(message));
     }
     

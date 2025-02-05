@@ -36,7 +36,7 @@ public class ReadResourceService {
 
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
 
-    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
+    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource ";
     public static final int DEFAULT_LIMIT = 100;
     private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
     private final AmazonDynamoDB client;
