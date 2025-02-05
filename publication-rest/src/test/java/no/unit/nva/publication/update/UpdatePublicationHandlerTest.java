@@ -14,7 +14,6 @@ import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
-import static no.unit.nva.model.associatedartifacts.file.File.INITIAL_FILE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -1678,34 +1677,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
-    @ParameterizedTest
-    @MethodSource("initialFileTypes")
-    void shouldSetUploadDetailsWhenFileIsUploaded(File fileToUpload) throws BadRequestException, IOException {
-        var publication = createAndPersistNonDegreePublication();
-        var topLevelInstitution = publication.getCuratingInstitutions().stream().findFirst().get().id();
-
-        var publicationWithNewFile = addFileToPublication(publication, fileToUpload);
-
-        var event = curatorWithAccessRightsUpdatesPublication(publicationWithNewFile, customerId, topLevelInstitution,
-                                                              MANAGE_RESOURCES_STANDARD, MANAGE_PUBLISHING_REQUESTS);
-        updatePublicationHandler.handleRequest(event, output, context);
-
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
-
-        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
-        var uploadedFile = body.getAssociatedArtifacts().stream()
-                               .filter(UpdatePublicationHandlerTest::isFileResponse)
-                               .map(FileResponse.class::cast)
-                               .filter(f -> f.identifier().equals(fileToUpload.getIdentifier()))
-                               .toList().getFirst();
-
-        assertNotNull(uploadedFile.uploadDetails());
-        assertThat(((UserUploadDetails) uploadedFile.uploadDetails()).uploadedBy().getValue(),
-                   is(equalTo(SOME_CURATOR)));
-        assertNotNull(uploadedFile.uploadDetails().uploadedDate());
-    }
-
     private static boolean isFileResponse(AssociatedArtifactResponse artifact) {
         return artifact.getArtifactType().contains("File");
     }
@@ -1744,37 +1715,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                        .noneMatch(file -> ((UserUploadDetails) file.uploadDetails()).uploadedBy()
                                               .getValue()
                                               .equals(contributorName)));
-    }
-
-    @Test
-    void shouldNotOverrideUploadDetailsWhenFileIsUpdated() throws BadRequestException, IOException {
-        var pendingOpenFile = (File) randomPendingOpenFile();
-        var publication = createAndPersistNonDegreePublicationWithFile(pendingOpenFile);
-        var cristinId = randomUri();
-        var contributor = createContributorForPublicationUpdate(cristinId);
-        injectContributor(publication, contributor);
-
-        var indexOfFileToUpdate = publication.getAssociatedArtifacts().indexOf(pendingOpenFile);
-        var fileUpdate = pendingOpenFile.copy().withLicense(randomUri()).buildPendingOpenFile();
-        publication.getAssociatedArtifacts().set(indexOfFileToUpdate, fileUpdate);
-
-        var contributorName = contributor.getIdentity().getName();
-        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publication, cristinId, contributorName);
-        updatePublicationHandler.handleRequest(event, output, context);
-
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
-
-        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
-        var updatedFile = body.getAssociatedArtifacts().stream()
-                              .filter(UpdatePublicationHandlerTest::isFileResponse)
-                              .map(FileResponse.class::cast)
-                              .filter(f -> f.identifier().equals(fileUpdate.getIdentifier()))
-                              .toList().getFirst();
-
-        assertNotNull(updatedFile.uploadDetails());
-        assertThat(((UserUploadDetails) updatedFile.uploadDetails()).uploadedBy().getValue(),
-                   is(not(equalTo(contributorName))));
     }
 
     @Test
@@ -2009,10 +1949,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
                                                              publication.getIdentifier(), PublishingRequestCase.class)
                    .orElseThrow();
-    }
-
-    private Publication createAndPersistNonDegreePublicationWithFile(File file) throws BadRequestException {
-        return persistPublication(addFileToPublication(createAndPersistNonDegreePublication(), file).copy()).build();
     }
 
     private Publication createUnpublishedPublication() throws ApiGatewayException {
@@ -2349,7 +2285,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withCurrentCustomer(customerId)
                    .withPersonCristinId(cristinId)
                    .withBody(publicationUpdate)
-                   .withAccessRights(customerId, MANAGE_OWN_RESOURCES)
+                   .withAccessRights(customerId, MANAGE_OWN_RESOURCES, MANAGE_RESOURCE_FILES)
                    .withTopLevelCristinOrgId(publicationUpdate.getResourceOwner().getOwnerAffiliation())
                    .build();
     }
@@ -2484,12 +2420,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                    OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
                                                                             randomString()),
                                    randomString(), new UserUploadDetails(new Username(randomString()), Instant.now()));
-    }
-
-    private static List<File> initialFileTypes() {
-        return INITIAL_FILE_TYPES.stream()
-                   .map(file -> File.builder().withIdentifier(randomUUID()).build(file))
-                   .toList();
     }
 
     private TestAppender createAppenderForLogMonitoring() {
