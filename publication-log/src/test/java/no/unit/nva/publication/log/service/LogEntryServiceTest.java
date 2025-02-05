@@ -25,6 +25,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -57,6 +58,28 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
         assertEquals(PUBLICATION_CREATED, logEntries.getFirst().topic());
+    }
+
+    @Test
+    void shouldNotCreateTheSameLogEntryMultipleTimesForResource() throws BadRequestException {
+        var publication = createPublication();
+        var resource = Resource.fromPublication(publication);
+        var resourceEvent = CreatedResourceEvent.create(
+            UserInstance.fromPublication(publication), Instant.now());
+
+        resource.setResourceEvent(resourceEvent);
+        resourceService.updateResource(resource);
+
+        logEntryService.persistLogEntry(resource);
+
+        resource.setResourceEvent(resourceEvent);
+        resourceService.updateResource(resource);
+
+        logEntryService.persistLogEntry(resource);
+
+        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
+
+        assertEquals(1, logEntries.size());
     }
 
     @Test

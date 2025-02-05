@@ -11,6 +11,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -57,15 +58,22 @@ public class LogEntryService {
 
     private void persistLogEntry(Resource resource) {
         var resourceEvent = resource.getResourceEvent();
-        if (resourceEvent instanceof ImportedResourceEvent importedResourceEvent && isNull(resourceEvent.user())) {
-            importedResourceEvent.toLogEntry(resource.getIdentifier(), null).persist(resourceService);
-        } else {
-            var user = createUser(resourceEvent);
-            resourceEvent.toLogEntry(resource.getIdentifier(), user).persist(resourceService);
+        var logEntry = createLogEntry(resource, resourceEvent);
+        if (logEntryHasNotBeenPersistedBefore(logEntry)) {
+            logEntry.persist(resourceService);
         }
 
         logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
         resource.clearResourceEvent(resourceService);
+    }
+
+    private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {
+        if (resourceEvent instanceof ImportedResourceEvent importedResourceEvent && isNull(resourceEvent.user())) {
+            return importedResourceEvent.toLogEntry(resource.getIdentifier(), null);
+        } else {
+            var user = createUser(resourceEvent);
+            return resourceEvent.toLogEntry(resource.getIdentifier(), user);
+        }
     }
 
     private void persistFileLogEntry(FileEntry fileEntry) {
@@ -73,10 +81,19 @@ public class LogEntryService {
         var user = createUser(fileEvent.user());
         var fileIdentifier = fileEntry.getIdentifier();
         var resourceIdentifier = fileEntry.getResourceIdentifier();
-        fileEvent.toLogEntry(fileEntry, user).persist(resourceService);
+
+        var logEntry = fileEvent.toLogEntry(fileEntry, user);
+        if (logEntryHasNotBeenPersistedBefore(logEntry)) {
+            logEntry.persist(resourceService);
+        }
 
         logger.info(PERSISTING_FILE_LOG_ENTRY_MESSAGE, fileEntry.getFile().getClass().getSimpleName(), fileIdentifier, resourceIdentifier);
         fileEntry.clearResourceEvent(resourceService);
+    }
+
+    private boolean logEntryHasNotBeenPersistedBefore(LogEntry logEntry) {
+        return Resource.resourceQueryObject(logEntry.resourceIdentifier()).fetchLogEntries(resourceService).stream()
+                   .noneMatch(entry -> entry.identifier().equals(logEntry.identifier()));
     }
 
     private LogUser createUser(User user) {
