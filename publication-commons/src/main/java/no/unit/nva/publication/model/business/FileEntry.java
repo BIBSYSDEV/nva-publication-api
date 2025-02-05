@@ -202,6 +202,7 @@ public final class FileEntry implements Entity {
                 .withLicense(fileUpdate.getLicense())
                 .withEmbargoDate(fileUpdate.getEmbargoDate().orElse(null))
                 .withLegalNote(fileUpdate.getLegalNote())
+                .withRightsRetentionStrategy(fileUpdate.getRightsRetentionStrategy())
                 .build(fileUpdate.getClass());
             this.modifiedDate = Instant.now();
             resourceService.updateFile(this);
