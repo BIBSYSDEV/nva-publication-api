@@ -42,7 +42,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -57,7 +56,6 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -78,7 +76,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -100,10 +97,8 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
@@ -114,6 +109,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ListingResult;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -128,12 +124,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
-import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
-import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -316,7 +307,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
 
-        assertThatResourceDoesNotExist(originalResource);
+        assertThatResourceHaveNewOwner(originalResource);
 
         var newResource = resourceService.getPublicationByIdentifier(originalResource.getIdentifier());
 
@@ -347,7 +338,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.updateOwner(sampleResource.getIdentifier(), oldOwner, newOwner);
 
-        assertThatResourceDoesNotExist(sampleResource);
+        assertThatResourceHaveNewOwner(sampleResource);
 
         Publication newResource = resourceService.getPublicationByIdentifier(sampleResource.getIdentifier());
 
@@ -421,7 +412,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
         var client = mock(AmazonDynamoDB.class);
         var expectedMessage = new RuntimeException("expectedMessage");
-        when(client.getItem(any(GetItemRequest.class))).thenThrow(expectedMessage);
+        when(client.query(any(QueryRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
         var failingResourceService = getResourceServiceBuilder(client).build();
@@ -436,20 +427,21 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldReturnPublicationsForOwnerWithStatus(PublicationStatus status) {
         var userInstance = UserInstance.create(randomString(), randomUri());
         var publication = createPublicationWithStatus(userInstance, status);
-        var actualResources = resourceService.getPublicationsByOwner(userInstance);
+        var actualResources = resourceService.getPublicationSummaryByOwner(userInstance);
         var resourceSet = new HashSet<>(actualResources);
-        assertThat(resourceSet, containsInAnyOrder(publication));
+        assertThat(resourceSet, containsInAnyOrder(PublicationSummary.create(publication)));
     }
 
     @Test
     void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
         UserInstance userInstance = UserInstance.create(randomString(), randomUri());
-        Set<Publication> userResources = createSamplePublicationsOfSingleOwner(userInstance);
+        Set<PublicationSummary> userResources = createSamplePublicationsOfSingleOwner(userInstance)
+                                             .stream().map(PublicationSummary::create).collect(Collectors.toSet());
 
-        List<Publication> actualResources = resourceService.getPublicationsByOwner(userInstance);
-        HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
+        List<PublicationSummary> actualResources = resourceService.getPublicationSummaryByOwner(userInstance);
+        HashSet<PublicationSummary> actualResourcesSet = new HashSet<>(actualResources);
 
-        assertThat(actualResourcesSet, containsInAnyOrder(userResources.toArray(Publication[]::new)));
+        assertThat(actualResourcesSet, containsInAnyOrder(userResources.toArray(PublicationSummary[]::new)));
     }
 
     @Test
@@ -497,8 +489,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourcesByOwnerReturnsEmptyListWhenUseHasNoPublications() {
 
-        List<Publication> actualResources = resourceService.getPublicationsByOwner(SAMPLE_USER);
-        HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
+        List<PublicationSummary> actualResources = resourceService.getPublicationSummaryByOwner(SAMPLE_USER);
+        HashSet<PublicationSummary> actualResourcesSet = new HashSet<>(actualResources);
 
         assertThat(actualResourcesSet, is(equalTo(Collections.emptySet())));
     }
@@ -513,7 +505,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var failingResourceService = getResourceServiceBuilder(client).build();
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                                                  () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
+                                                  () -> failingResourceService.getPublicationSummaryByOwner(SAMPLE_USER));
 
         assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
     }
@@ -530,7 +522,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
-                                                    () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
+                                                    () -> failingResourceService.getPublicationSummaryByOwner(SAMPLE_USER));
     }
 
     @Test
@@ -946,7 +938,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
         resource.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
-        var publishedResource = publishResource(createPersistedPublicationWithoutDoi(resource));
+        resourceService.updateResource(Resource.fromPublication(resource));
+        var publishedResource = publishResource(resource);
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
@@ -1585,7 +1578,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withFilesForApproval(Set.of(file))
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
-        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
+        publishingRequest.publishApprovedFile().close(randomPerson()).persistUpdate(ticketService);
+        publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
         publishingRequest.publishApprovedFiles(resourceService);
 
@@ -1633,8 +1627,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withFilesForApproval(Set.of(file))
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
-        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
-
+        publishingRequest.close(randomPerson()).persistUpdate(ticketService);
+        publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
         publishingRequest.rejectRejectedFiles(resourceService);
 
         var associatedArtifact = Resource.fromPublication(persistedPublication)
@@ -1982,9 +1976,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
             fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
     }
 
-    private void assertThatResourceDoesNotExist(Publication sampleResource) {
-        assertThrows(NotFoundException.class,
-                     () -> resourceService.getResourceByIdentifier(sampleResource.getIdentifier()));
+    private void assertThatResourceHaveNewOwner(Publication sampleResource) {
+        try {
+            assertThat(resourceService.getPublicationByIdentifier(sampleResource.getIdentifier())
+                           .getResourceOwner()
+                           .getOwner(),
+                       is(not(equalTo(sampleResource.getResourceOwner().getOwner()))));
+        } catch (NotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private UserInstance someOtherUser() {

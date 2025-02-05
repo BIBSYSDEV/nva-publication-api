@@ -48,6 +48,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -362,7 +363,7 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
     }
 
-    public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
+    public List<PublicationSummary> getPublicationSummaryByOwner(UserInstance sampleUser) {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
 

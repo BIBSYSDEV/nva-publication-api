@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -50,14 +51,14 @@ public class ReadResourceService {
         return getResource(Resource.fromPublication(publication)).toPublication();
     }
 
-    public List<Publication> getResourcesByOwner(UserInstance userInstance) {
+    public List<PublicationSummary> getResourcesByOwner(UserInstance userInstance) {
         var partitionKey = constructPrimaryPartitionKey(userInstance);
         var querySpec = partitionKeyToQuerySpec(partitionKey);
         var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
         var namesMap = querySpec.getNameMap();
         var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap, DEFAULT_LIMIT);
 
-        return queryResultToListOfPublications(result);
+        return queryResultToListOfPublicationSummaries(result);
     }
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
@@ -117,7 +118,14 @@ public class ReadResourceService {
         return queryResultToResourceList(result)
                    .stream()
                    .map(Resource::toPublication)
-                   .collect(Collectors.toList());
+                   .toList();
+    }
+
+    private List<PublicationSummary> queryResultToListOfPublicationSummaries(QueryResult result) {
+        return queryResultToResourceList(result)
+                   .stream()
+                   .map(Resource::toSummary)
+                   .toList();
     }
 
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,

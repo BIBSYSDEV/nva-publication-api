@@ -35,6 +35,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -167,6 +168,10 @@ public class Resource implements Entity {
 
     public void setFileEntries(List<FileEntry> files) {
         this.files = files;
+    }
+
+    public PublicationSummary toSummary() {
+        return PublicationSummary.create(this.toPublication());
     }
 
     private static Resource convertToResource(Publication publication) {

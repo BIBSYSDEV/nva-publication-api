@@ -1089,7 +1089,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithInternalFile(customerId,
                                                                                      resourceService);
         publication.getEntityDescription().getReference().setDoi(null);
-        resourceService.updatePublication(publication);
+        resourceService.updateResource(Resource.fromPublication(publication));
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
             .complete(publication, new Username(randomString())).persistUpdate(ticketService);
 
@@ -2228,7 +2228,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
         contributors.add(contributor);
         savedPublication.getEntityDescription().setContributors(contributors);
-        resourceService.updatePublication(savedPublication);
+        resourceService.updateResource(Resource.fromPublication(savedPublication));
     }
 
     private Contributor createContributorForPublicationUpdate(URI cristinId) {
