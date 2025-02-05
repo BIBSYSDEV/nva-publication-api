@@ -70,7 +70,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
         var logUser = logEntries.getFirst().performedBy();
-        assertNotNull(logUser.userName());
+        assertNotNull(logUser.username());
         assertNull(logUser.cristinId());
     }
 
@@ -113,7 +113,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
         var logUser = logEntries.getFirst().performedBy();
-        assertNotNull(logUser.userName());
+        assertNotNull(logUser.username());
     }
 
     @Test
