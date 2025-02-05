@@ -58,10 +58,7 @@ public class LogEntryService {
 
     private void persistLogEntry(Resource resource) {
         var resourceEvent = resource.getResourceEvent();
-        var logEntry = createLogEntry(resource, resourceEvent);
-        if (logEntryHasNotBeenPersistedBefore(logEntry)) {
-            logEntry.persist(resourceService);
-        }
+        createLogEntry(resource, resourceEvent).persist(resourceService);
 
         logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
         resource.clearResourceEvent(resourceService);
@@ -81,19 +78,10 @@ public class LogEntryService {
         var user = createUser(fileEvent.user());
         var fileIdentifier = fileEntry.getIdentifier();
         var resourceIdentifier = fileEntry.getResourceIdentifier();
-
-        var logEntry = fileEvent.toLogEntry(fileEntry, user);
-        if (logEntryHasNotBeenPersistedBefore(logEntry)) {
-            logEntry.persist(resourceService);
-        }
+        fileEvent.toLogEntry(fileEntry, user).persist(resourceService);
 
         logger.info(PERSISTING_FILE_LOG_ENTRY_MESSAGE, fileEntry.getFile().getClass().getSimpleName(), fileIdentifier, resourceIdentifier);
         fileEntry.clearResourceEvent(resourceService);
-    }
-
-    private boolean logEntryHasNotBeenPersistedBefore(LogEntry logEntry) {
-        return Resource.resourceQueryObject(logEntry.resourceIdentifier()).fetchLogEntries(resourceService).stream()
-                   .noneMatch(entry -> entry.identifier().equals(logEntry.identifier()));
     }
 
     private LogUser createUser(User user) {
