@@ -659,7 +659,7 @@ public class ResourceService extends ServiceWithTransactions {
         var fileTransactionWriteItems = newResource.getFiles().stream()
                                             .map(file -> FileEntry.create(file, newResource.getIdentifier(), userInstance))
                                             .map(FileEntry::toDao)
-                                            .map(FileDao::toPutTransactionItem)
+                                            .map(dao -> dao.toPutTransactionItem(tableName))
                                             .toList();
 
         var allAssociatedArtifacts = newResource.getAssociatedArtifacts();

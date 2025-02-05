@@ -162,10 +162,10 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
                Objects.equals(getModifiedDate(), fileDao.getModifiedDate());
     }
 
-    public TransactWriteItem toPutTransactionItem() {
+    public TransactWriteItem toPutTransactionItem(String tableName) {
         var put = new Put()
                       .withItem(this.toDynamoFormat())
-                      .withTableName(RESOURCES_TABLE_NAME)
+                      .withTableName(tableName)
                       .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);

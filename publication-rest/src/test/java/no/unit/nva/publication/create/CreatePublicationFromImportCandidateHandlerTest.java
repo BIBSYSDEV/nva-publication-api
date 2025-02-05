@@ -380,7 +380,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void publishedDateShoulBeSetToTimeWhenPublicationEntersDatabase() throws NotFoundException,
+    void publishedDateShouldBeSetToTimeWhenPublicationEntersDatabase() throws NotFoundException,
                                                                              IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
