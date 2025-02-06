@@ -43,5 +43,4 @@ test {
     environment "API_HOST", "https://example.com"
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
-    environment "SHOULD_USE_NEW_FILES", "yes"
 }
