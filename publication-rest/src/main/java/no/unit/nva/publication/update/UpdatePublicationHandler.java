@@ -327,10 +327,13 @@ public class UpdatePublicationHandler
         return Resource.resourceQueryObject(identifierInPath).fetch(resourceService).orElseThrow();
     }
 
-    private void updateFile(Publication existingPublication, File file) {
+    private void updateFile(Publication existingPublication, File file)  {
         FileEntry.queryObject(file.getIdentifier(), existingPublication.getIdentifier())
             .fetch(resourceService)
-            .ifPresent(fileEntry -> fileEntry.update(file, resourceService));
+            .ifPresentOrElse(
+                fileEntry -> fileEntry.update(file, resourceService),
+                () -> { throw new FileNotFound(file.getIdentifier()); }
+            );
     }
 
     private static UserUploadDetails extractUploadDetails(UserInstance userInstance) {
@@ -451,6 +454,12 @@ public class UpdatePublicationHandler
         throws BadRequestException {
         if (identifiersDoNotMatch(identifierInPath, input)) {
             throw new BadRequestException(IDENTIFIER_MISMATCH_ERROR_MESSAGE);
+        }
+    }
+
+    public static class FileNotFound extends RuntimeException {
+        public FileNotFound(UUID id) {
+            super("File not found: "+id.toString());
         }
     }
 }
