@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import java.lang.reflect.InvocationTargetException;
@@ -19,10 +20,11 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class DataEntryUpdateEventTest {
+public class DataEntryUpdateEventTest {
     
     public static Stream<Class<?>> dataEntryTypeProvider() {
         var types = fetchDirectSubtypes(Entity.class);
@@ -48,6 +50,14 @@ class DataEntryUpdateEventTest {
         var dataEntry = createDataEntry(type);
         var updateEvent = new DataEntryUpdateEvent(randomString(), dataEntry, dataEntry);
         assertThat(updateEvent.getTopic(), is(not(nullValue())));
+    }
+
+    @Test
+    public void shouldNotProduceEventTopicForFileEntryWhenNewImageIsMissing() {
+        var fileEntry = FileEntry.create(randomHiddenFile(), SortableIdentifier.next(), UserInstance.fromPublication(randomPublication()));
+        var dataEntryUpdateEvent = new DataEntryUpdateEvent(randomString(), fileEntry, null);
+
+        assertThrows(IllegalArgumentException.class, dataEntryUpdateEvent::getTopic);
     }
     
     private static boolean isTypeWithSubtypes(Type type) {

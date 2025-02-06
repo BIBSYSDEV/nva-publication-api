@@ -127,7 +127,7 @@ public class ResourceTest {
     @Test
     void shouldReturnTrueWhenResourceIsPresent() {
         var resource = Resource.resourceQueryObject(SortableIdentifier.next());
-        resource.setResourceEvent(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri()));
+        resource.setResourceEvent(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next()));
 
         assertTrue(resource.hasResourceEvent());
     }

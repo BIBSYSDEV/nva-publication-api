@@ -29,10 +29,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
-class DeleteFileFromS3EventHandlerTest extends ResourcesLocalTest {
+class DeleteFileEventHandlerTest extends ResourcesLocalTest {
 
     private static final Context CONTEXT = new FakeContext();
-    private DeleteFileFromS3EventHandler handler;
+    private DeleteFileEventHandler handler;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
     private ByteArrayOutputStream output;
@@ -43,7 +43,7 @@ class DeleteFileFromS3EventHandlerTest extends ResourcesLocalTest {
         output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
         resourceService = getResourceServiceBuilder().build();
-        handler = new DeleteFileFromS3EventHandler(s3Client, resourceService);
+        handler = new DeleteFileEventHandler(s3Client, resourceService);
     }
 
     @Test

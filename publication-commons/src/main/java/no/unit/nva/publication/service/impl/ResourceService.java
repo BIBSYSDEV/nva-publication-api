@@ -456,7 +456,7 @@ public class ResourceService extends ServiceWithTransactions {
                       .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         var transactWriteItem = new TransactWriteItem().withPut(put);
-        sendTransactionWriteRequest(newTransactWriteItemsRequest(transactWriteItem));
+        attempt(() -> getClient().transactWriteItems(newTransactWriteItemsRequest(transactWriteItem)));
     }
 
     public List<LogEntry> getLogEntriesForResource(Resource resource) {

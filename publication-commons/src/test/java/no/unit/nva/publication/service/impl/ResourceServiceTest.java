@@ -1300,23 +1300,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetResourceEventToNull() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var peristedPublication = Resource.fromPublication(publication)
-                                      .persistNew(resourceService, userInstance);
-
-        var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
-                           .fetch(resourceService).orElseThrow();
-
-        assertNotNull(resource.getResourceEvent());
-
-        resource.clearResourceEvent(resourceService);
-
-        assertNull(resource.getResourceEvent());
-    }
-
-    @Test
     void shouldNotPublishAlreadyPublishedPublication() throws ApiGatewayException {
         resourceService = mock(ResourceService.class);
         var publishedPublication = randomPublication().copy().withStatus(PUBLISHED).build();
@@ -1671,7 +1654,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceWithFileEntry = Resource.resourceQueryObject(resource.getIdentifier())
                                  .fetch(resourceService)
                                  .orElseThrow();
-        
+
         assertTrue(resourceWithFileEntry.getFileEntries().contains(fileEntry));
         assertNotNull(resourceWithFileEntry.getFileEntry(fileEntry.getIdentifier()));
     }

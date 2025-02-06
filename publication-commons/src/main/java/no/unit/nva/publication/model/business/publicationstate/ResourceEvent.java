@@ -20,6 +20,8 @@ public interface ResourceEvent {
 
     User user();
 
+    SortableIdentifier identifier();
+
     /**
      * @return id of the top level cristin organizations
      */

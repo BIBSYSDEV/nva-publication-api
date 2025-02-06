@@ -116,7 +116,22 @@ class LogEntryTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(persistedPublication).fetchLogEntries(resourceService);
 
         assertTrue(logEntries.contains(fileLogEntry));
+    }
 
+    @Test
+    void shouldSerializeLogUserWithUserName() throws JsonProcessingException {
+        var json = """
+            {
+              "type": "FileLogEntry",
+              "performedBy": {
+                "type": "LogUser",
+                "userName": "som user"
+              }
+            }
+            """;
+        var entry = JsonUtils.dtoObjectMapper.readValue(json, FileLogEntry.class);
+
+        assertNotNull(entry.performedBy().username());
     }
 
     private static FileLogEntry randomFileLogEntry(Publication persistedPublication) {
