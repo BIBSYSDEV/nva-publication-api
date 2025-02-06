@@ -249,17 +249,6 @@ public final class FileEntry implements Entity {
         return fileEvent;
     }
 
-    /**
-     * Clear the file event if it is not a FileDeletedEvent. FileDeletedEvent should not be cleared because
-     * it is a final state and file will be deleted by event consumed by DeleteFileEventHandler.
-     */
-    public void clearResourceEvent(ResourceService resourceService) {
-        if (!(fileEvent instanceof FileDeletedEvent)) {
-            this.setFileEvent(null);
-            resourceService.updateFile(this);
-        }
-    }
-
     public void migrate(ResourceService resourceService, Resource resource) {
         var now = Instant.now();
         this.modifiedDate = now;
