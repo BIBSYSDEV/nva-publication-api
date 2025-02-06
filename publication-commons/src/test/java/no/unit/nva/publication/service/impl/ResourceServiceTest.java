@@ -1733,7 +1733,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withFundings(List.of())
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
+                   .withAssociatedArtifacts(List.of(randomOpenFile()))
                    .withEntityDescription(randomEntityDescription(JournalArticle.class))
                    .build();
     }

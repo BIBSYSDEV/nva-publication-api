@@ -29,6 +29,7 @@ import com.google.common.collect.Lists;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -624,8 +625,19 @@ public class ResourceService extends ServiceWithTransactions {
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(putRequest);
+
+        var fileTransactionWriteItems = newResource.getFiles().stream()
+                                            .map(file -> FileEntry.create(file, newResource.getIdentifier(),
+                                                                          UserInstance.fromPublication(newResource.toPublication())))
+                                            .map(FileEntry::toDao)
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
+                                            .toList();
+
+        var transactions = new ArrayList<TransactWriteItem>();
+        transactions.addAll(Arrays.stream(transactionItems).toList());
+        transactions.addAll(fileTransactionWriteItems);
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
 
         return newResource.toImportCandidate();
     }

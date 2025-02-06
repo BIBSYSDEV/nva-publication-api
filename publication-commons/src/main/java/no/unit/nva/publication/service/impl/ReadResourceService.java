@@ -47,10 +47,6 @@ public class ReadResourceService {
         this.tableName = tableName;
     }
 
-    public Publication getPublication(Publication publication) throws NotFoundException {
-        return getResource(Resource.fromPublication(publication)).toPublication();
-    }
-
     public List<PublicationSummary> getResourcesByOwner(UserInstance userInstance) {
         var partitionKey = constructPrimaryPartitionKey(userInstance);
         var querySpec = partitionKeyToQuerySpec(partitionKey);
