@@ -73,7 +73,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
             var expandedResource = ExpandedResource.fromPublication(uriRetriever,
                                                                     resourceService,
-                                                                    resource.fetch(resourceService).orElseThrow().toPublication());
+                                                                    resource.toPublication());
             var resourceWithContextUri = useUriContext
                                              ? replaceInlineContextWithUriContext(expandedResource)
                                              : replaceContextWithInlineContext(expandedResource);
