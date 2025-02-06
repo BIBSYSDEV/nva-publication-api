@@ -40,6 +40,10 @@ public final class AssociatedArtifactsGenerator {
         return randomFileBuilder().buildPendingOpenFile();
     }
 
+    public static File randomUploadedFile() {
+        return randomFileBuilder().buildUploadedFile();
+    }
+
     public static File randomOpenFile() {
         return randomFileBuilder().buildOpenFile();
     }
