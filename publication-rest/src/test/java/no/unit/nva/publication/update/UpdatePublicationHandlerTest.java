@@ -1910,7 +1910,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         var input = ownerUpdatesOwnPublication(resource.getIdentifier(), updatedPublication);
 
-        lenient().when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
         var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
         var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
                                                    eventBridgeClient, s3Client, secretsManagerClient,
@@ -1928,7 +1927,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
 
-        lenient().when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
         var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
                                                    eventBridgeClient, s3Client, secretsManagerClient,
                                                    WiremockHttpClient.create());

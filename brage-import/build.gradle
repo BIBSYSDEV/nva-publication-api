@@ -49,5 +49,4 @@ test {
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "AWS_REGION", "eu-west-1"
     environment "API_HOST", "test.nva.aws.unit.no"
-    environment "SHOULD_USE_NEW_FILES", "Yes"
 }

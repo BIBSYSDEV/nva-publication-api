@@ -1527,7 +1527,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldFetchResourceWithNewFilesWhenEnvironmentVariableShouldUseNewFileIsSet() throws BadRequestException {
         var environment = mock(Environment.class);
-        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
         var resourceService = getResourceServiceBuilder(client)
                                   .withEnvironment(environment)
                                   .build();
@@ -1548,7 +1547,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldApproveApprovedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
         var environment = mock(Environment.class);
-        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
         var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
 
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
@@ -1598,7 +1596,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldRejectRejectedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
         var environment = mock(Environment.class);
-        when(environment.readEnvOpt("SHOULD_USE_NEW_FILES")).thenReturn(Optional.of("Yes"));
         var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
 
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
