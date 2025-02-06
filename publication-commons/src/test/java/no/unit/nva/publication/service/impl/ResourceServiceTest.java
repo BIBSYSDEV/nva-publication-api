@@ -1358,6 +1358,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldThrowBadRequestExceptionWhenMarkingNotExistingPublicationAsDraftForDeletion() {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        Executable action = () -> resourceService.markPublicationForDeletion(userInstance, publication.getIdentifier());
+        assertThrows(BadRequestException.class, action);
+    }
+
+    @Test
     void shouldPersistFileEntry() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1652,6 +1660,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertNull(fileEntry.fetch(resourceService).orElseThrow().getFileEvent());
     }
+
+    @Test
+    void resourceShouldContainFileEntries() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                        userInstance);
+
+        var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var resourceWithFileEntry = Resource.resourceQueryObject(resource.getIdentifier())
+                                 .fetch(resourceService)
+                                 .orElseThrow();
+        
+        assertTrue(resourceWithFileEntry.getFileEntries().contains(fileEntry));
+        assertNotNull(resourceWithFileEntry.getFileEntry(fileEntry.getIdentifier()));
+    }
+
 
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());

@@ -157,13 +157,13 @@ public final class PublishingRequestResolver {
     private Stream<File> prepareFilesForApproval(Publication oldImage, Publication newImage,
                                                  PublishingRequestCase publishingRequest) {
         // get updated files on the ticket
-        Set<File> updatedTicketFiles = getUpdatedTicketFiles(publishingRequest, newImage);
+        var updatedTicketFiles = getUpdatedTicketFiles(publishingRequest, newImage);
         // start with a list of updated files on the ticket
         var files = new ArrayList<>(updatedTicketFiles);
         // add new files that should be on the ticket (we assume all new files belongs to the current ticket)
         files.addAll(getNewPendingFiles(oldImage, newImage).toList());
         // remove files from ticket that has been removed
-        files.removeAll(getRemovedFiles(updatedTicketFiles, newImage));
+//        files.removeAll(getRemovedFiles(updatedTicketFiles, newImage));
 
         return files.stream();
     }
@@ -202,13 +202,13 @@ public final class PublishingRequestResolver {
         }
     }
 
-    private List<File> getRemovedFiles(Set<File> oldPendingFiles, Publication updatedPublication) {
-        var newPendingFiles = getPendingFiles(updatedPublication).toList();
-        oldPendingFiles.removeIf(
-            oldFile -> newPendingFiles.stream().map(File::getIdentifier).anyMatch(newFile -> newFile.equals(oldFile
-                                                                                                                .getIdentifier())));
-        return oldPendingFiles.stream().toList();
-    }
+//    private List<File> getRemovedFiles(Set<File> oldPendingFiles, Publication updatedPublication) {
+//        var newPendingFiles = getPendingFiles(updatedPublication).toList();
+//        oldPendingFiles.removeIf(
+//            oldFile -> newPendingFiles.stream().map(File::getIdentifier).anyMatch(newFile -> newFile.equals(oldFile
+//                                                                                                                .getIdentifier())));
+//        return oldPendingFiles.stream().toList();
+//    }
 
     private boolean isAlreadyPublished(Publication existingPublication) {
         var status = existingPublication.getStatus();

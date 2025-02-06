@@ -71,7 +71,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     public static final String DOI = "doi";
     public static final String NOT_OWNER = "notOwner";
     public static final String OWNER = "owner";
-    public static final String NOT_FOUND_MESSAGE = "Publication not found: ";
+    public static final String NOT_FOUND_MESSAGE = "Could not find resource ";
     public static final String EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE = "ExpectedResponseMessage";
     public static final String ACCESS_TOKEN_RESPONSE_BODY = """
         { "access_token" : "%s"}
