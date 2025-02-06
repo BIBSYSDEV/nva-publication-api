@@ -61,7 +61,6 @@ public class LogEntryService {
         createLogEntry(resource, resourceEvent).persist(resourceService);
 
         logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
-        resource.clearResourceEvent(resourceService);
     }
 
     private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {
@@ -81,7 +80,6 @@ public class LogEntryService {
         fileEvent.toLogEntry(fileEntry, user).persist(resourceService);
 
         logger.info(PERSISTING_FILE_LOG_ENTRY_MESSAGE, fileEntry.getFile().getClass().getSimpleName(), fileIdentifier, resourceIdentifier);
-        fileEntry.clearResourceEvent(resourceService);
     }
 
     private LogUser createUser(User user) {

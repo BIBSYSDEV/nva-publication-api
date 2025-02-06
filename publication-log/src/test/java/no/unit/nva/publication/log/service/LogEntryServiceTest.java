@@ -9,7 +9,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -95,17 +94,6 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         var logUser = logEntries.getFirst().performedBy();
         assertNotNull(logUser.username());
         assertNull(logUser.cristinId());
-    }
-
-    @Test
-    void shouldNotCreateLogEntryWhenConsumedEventHasResourceWithNewImageWhereResourceEventIsNull()
-        throws BadRequestException {
-        var publication = createPublication();
-        Resource.fromPublication(publication).clearResourceEvent(resourceService);
-
-        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
-
-        assertTrue(logEntries.isEmpty());
     }
 
     @Test

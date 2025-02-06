@@ -142,11 +142,6 @@ public class Resource implements Entity {
         return nonNull(getResourceEvent());
     }
 
-    public void clearResourceEvent(ResourceService resourceService) {
-        this.setResourceEvent(null);
-        resourceService.updateResource(this);
-    }
-
     @JsonIgnore
     public List<File> getFiles() {
         return getAssociatedArtifacts().stream()
