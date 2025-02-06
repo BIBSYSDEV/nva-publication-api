@@ -177,10 +177,15 @@ public final class FileEntry implements Entity {
     }
 
     public void softDelete(ResourceService resourceIdentifier, User user) {
+        var fileEntry = this.softDelete(user);
+        resourceIdentifier.updateFile(fileEntry);
+    }
+
+    public FileEntry softDelete(User user) {
         var now = Instant.now();
         this.setFileEvent(FileDeletedEvent.create(user, now));
         this.modifiedDate = now;
-        resourceIdentifier.updateFile(this);
+        return this;
     }
 
     public void hardDelete(ResourceService resourceIdentifier) {

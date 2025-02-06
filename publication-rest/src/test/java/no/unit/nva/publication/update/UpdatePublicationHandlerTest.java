@@ -66,7 +66,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasProperty;
@@ -1606,12 +1605,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
         assertThat(deletePublication.getStatus(), Is.is(IsEqual.equalTo(PublicationStatus.DELETED)));
-        assertThat(deletePublication.getAssociatedArtifacts(), Is.is(emptyIterable()));
-        publication.getAssociatedArtifacts().stream().filter(File.class::isInstance).map(File.class::cast).forEach(
-            file -> verify(s3Client).deleteObject(DeleteObjectRequest.builder()
-                                                      .bucket(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)
-                                                      .key(file.getIdentifier().toString())
-                                                      .build()));
     }
 
     @Test

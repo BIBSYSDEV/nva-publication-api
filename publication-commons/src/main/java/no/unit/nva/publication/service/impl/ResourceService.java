@@ -43,6 +43,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -289,8 +290,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     // TODO: Remove all usages of this method in tests and use getPublicationByIdentifier instead
     @Deprecated(forRemoval = true)
-    public Publication getPublication(Publication sampleResource) throws NotFoundException {
-        return readResourceService.getPublication(sampleResource);
+    public Publication getPublication(Publication publication) throws NotFoundException {
+        return getResourceByIdentifier(publication.getIdentifier()).toPublication();
     }
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
@@ -312,12 +313,17 @@ public class ResourceService extends ServiceWithTransactions {
                           .toList();
 
         var resource = extractResource(entries);
-        var files = extractFiles(entries);
+        var fileEntries = extractFiles(entries);
 
         resource.ifPresent(res -> {
-            var associatedArtifacts = new ArrayList<>(res.getAssociatedArtifacts());
-            associatedArtifacts.addAll(files.stream().map(FileEntry::getFile).toList());
-            res.setFileEntries(files);
+            var associatedArtifacts = new ArrayList<AssociatedArtifact>(fileEntries.stream().map(FileEntry::getFile).toList());
+            var associatedLinks = res.getAssociatedArtifacts().stream()
+                                      .filter(associatedArtifact -> !(associatedArtifact instanceof File))
+                                      .toList();
+
+            associatedArtifacts.addAll(associatedLinks);
+
+            res.setFileEntries(fileEntries);
             res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
         });
         return resource;
@@ -425,7 +431,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void unpublishPublication(Publication publication, UserInstance userInstance) throws BadRequestException,
                                                                                     NotFoundException {
-        var existingPublication = readResourceService.getPublication(publication);
+        var existingPublication = getResourceByIdentifier(publication.getIdentifier()).toPublication();
         if (!PUBLISHED.equals(existingPublication.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
@@ -592,7 +598,7 @@ public class ResourceService extends ServiceWithTransactions {
         var fileTransactionWriteItems = newResource.getFiles().stream()
                                             .map(file -> FileEntry.create(file, newResource.getIdentifier(), userInstance))
                                             .map(FileEntry::toDao)
-                                            .map(dao -> dao.toPutTransactionItem(tableName))
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();
 
         var allAssociatedArtifacts = newResource.getAssociatedArtifacts();

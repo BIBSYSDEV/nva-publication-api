@@ -60,7 +60,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UnixPath;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -201,21 +200,9 @@ public class UpdatePublicationHandler
         throws UnauthorizedException, BadRequestException {
         permissionStrategy.authorize(TERMINATE);
 
-        deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication, userInstance);
 
         return Resource.resourceQueryObject(existingPublication.getIdentifier()).fetch(resourceService).orElseThrow();
-    }
-
-    private void deleteFiles(Publication publication) {
-        publication.getAssociatedArtifacts()
-            .stream()
-            .filter(File.class::isInstance)
-            .map(File.class::cast)
-            .map(File::getIdentifier)
-            .map(UUID::toString)
-            .map(UnixPath::of)
-            .forEach(s3Driver::deleteFile);
     }
 
     private Resource unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,
