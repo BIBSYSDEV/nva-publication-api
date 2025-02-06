@@ -25,7 +25,10 @@ public final class ManuallyUpdatePublicationUtil {
         switch (request.type()) {
             case PUBLISHER -> updatePublisher(resources, request);
             case LICENSE -> updateLicense(resources, request);
-        };
+            default -> {
+                // No action
+            }
+        }
     }
 
     private static Resource update(Resource resource, String oldPublisher, String newPublisher) {
@@ -67,25 +70,23 @@ public final class ManuallyUpdatePublicationUtil {
         resources.forEach(resource -> updateFiles(resource, request));
     }
 
-    private void updateFiles(Resource resource, ManuallyUpdatePublicationsRequest request) {
-        resource.getFileEntries().stream()
-            .filter(fileEntry -> hasLicense(fileEntry, request.oldValue()))
-            .forEach(fileEntry -> updateLicense(fileEntry, request.newValue()));
+    private void updateLicense(FileEntry fileEntry, String license) {
+        var file = fileEntry.getFile().copy().withLicense(URI.create(license)).build(fileEntry.getFile().getClass());
+        fileEntry.update(file, resourceService);
     }
 
-    private void updateLicense(FileEntry fileEntry, String license) {
-        var file = fileEntry.getFile().copy()
-                       .withLicense(URI.create(license))
-                       .build(fileEntry.getFile().getClass());
-        fileEntry.update(file, resourceService);
+    private void updateFiles(Resource resource, ManuallyUpdatePublicationsRequest request) {
+        resource.getFileEntries()
+            .stream()
+            .filter(fileEntry -> hasLicense(fileEntry, request.oldValue()))
+            .forEach(fileEntry -> updateLicense(fileEntry, request.newValue()));
     }
 
     private boolean hasLicense(FileEntry fileEntry, String oldValue) {
         return fileEntry.getFile().getLicense().toString().equals(oldValue);
     }
 
-    private void updatePublisher(List<Resource> resources,
-                                              ManuallyUpdatePublicationsRequest request) {
+    private void updatePublisher(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
         resources.stream()
             .filter(resource -> hasPublisher(resource, request.oldValue()))
             .map(resource -> update(resource, request.oldValue(), request.newValue()))
