@@ -129,7 +129,6 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
@@ -2401,16 +2400,18 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return update;
     }
 
-    private Publication addFileToPublication(Publication savedPublication, AssociatedArtifact file) {
-        var update = savedPublication.copy().build();
-        var associatedArtifacts = new ArrayList<>(update.getAssociatedArtifacts());
-        associatedArtifacts.add(file);
-        update.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-        return update;
+    private Publication addFileToPublication(Publication savedPublication, File file) {
+        FileEntry.create(file, savedPublication.getIdentifier(), UserInstance.fromPublication(savedPublication))
+            .persist(resourceService);
+        try {
+            return resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
+        } catch (NotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Publication addAnotherPendingOpenFile(Publication savedPublication) {
-        return addFileToPublication(savedPublication, randomPendingOpenFile());
+        return addFileToPublication(savedPublication, (File)randomPendingOpenFile());
     }
 
     private AssociatedArtifact randomPendingOpenFile() {
