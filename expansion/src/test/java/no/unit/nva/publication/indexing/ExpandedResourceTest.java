@@ -404,13 +404,15 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                               + "identifier. Instance type:{0}")
     @MethodSource("publicationInstanceProvider")
     void shouldReturnDocumentWithIdBasedOnIdNameSpaceAndResourceIdentifier(Class<?> publicationInstance)
-        throws JsonProcessingException {
+        throws JsonProcessingException, BadRequestException {
 
         var publication = PublicationGenerator.randomPublication(publicationInstance);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, publication);
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        var indexDocument = fromPublication(fakeUriRetriever, resourceService, resource);
         var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
-        var expectedUri = UriWrapper.fromUri(HOST_URI).addChild(publication.getIdentifier().toString()).getUri();
+        var expectedUri = UriWrapper.fromUri(HOST_URI).addChild(resource.getIdentifier().toString()).getUri();
         var actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
         assertThat(actualUri, is(equalTo(expectedUri)));
     }
@@ -569,10 +571,12 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
-        throws IOException {
+        throws IOException, BadRequestException {
         var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
-        FakeUriResponse.setupFakeForType(academicChapter, fakeUriRetriever, resourceService);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, academicChapter);
+        var resource = Resource.fromPublication(academicChapter)
+                           .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, resource);
         var expandedResourceJsonNode = expandedResource.asJsonNode();
         var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
         var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
@@ -582,10 +586,12 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("validAnthologyContainersProvider")
-    void shouldSetHasPartsRelationForBookAnthology(Class<?> publicationType) throws IOException {
+    void shouldSetHasPartsRelationForBookAnthology(Class<?> publicationType) throws IOException, BadRequestException {
         var bookAnthology = PublicationGenerator.randomPublication(publicationType);
-        FakeUriResponse.setupFakeForType(bookAnthology, fakeUriRetriever, resourceService);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, bookAnthology).asJsonNode();
+        var resource = Resource.fromPublication(bookAnthology)
+            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, resource).asJsonNode();
 
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
@@ -604,16 +610,18 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
         expectedNode.put("name", "partOf");
-        expectedNode.put("parent", SortableIdentifier.fromUri(((Anthology) publicationContext).getId()).toString());
+        expectedNode.put("parent", SortableIdentifier.fromUri(publicationContext.getId()).toString());
 
         assertThat(actualNode, is(equalTo(expectedNode)));
     }
 
     @Test
-    void shouldUseApiVersionWhenLookingUpOrganizations() throws JsonProcessingException {
+    void shouldUseApiVersionWhenLookingUpOrganizations() throws JsonProcessingException, BadRequestException {
         var publication = PublicationGenerator.randomPublication();
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
         var uriRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(publication, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService);
         var versionedType = MediaType.parse("application/ld+json; version=2023-05-26");
         publication.getEntityDescription().getContributors().stream()
             .map(Contributor::getAffiliations)
@@ -641,16 +649,18 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("validAnthologyMembersProvider")
     void shouldNotFailWhenAnthologyParentIsMissing(Class<?> publicationType)
-        throws IOException {
+        throws IOException, BadRequestException {
         var academicChapter = PublicationGenerator.randomPublication(publicationType);
-        var context = (Anthology) academicChapter.getEntityDescription().getReference().getPublicationContext();
+        var resource = Resource.fromPublication(academicChapter)
+                           .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
+        var context = (Anthology) resource.getEntityDescription().getReference().getPublicationContext();
 
-        FakeUriResponse.setupFakeForType(academicChapter, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
 
         // Remove the publication context ID to simulate a publication that is missing the parent reference
         context.setId(null);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, academicChapter).asJsonNode();
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, resource).asJsonNode();
 
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());

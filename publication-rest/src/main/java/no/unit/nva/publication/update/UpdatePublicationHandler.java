@@ -315,13 +315,12 @@ public class UpdatePublicationHandler
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
-        if (resourceService.shouldUseNewFiles()) {
-            Resource.fromPublication(publicationUpdate).getAssociatedArtifacts().stream()
-                .filter(File.class::isInstance)
-                .map(File.class::cast)
-                .forEach(file -> updateFile(existingPublication, file));
-            publicationUpdate.getAssociatedArtifacts().removeIf(File.class::isInstance);
-        }
+        Resource.fromPublication(publicationUpdate).getAssociatedArtifacts().stream()
+            .filter(File.class::isInstance)
+            .map(File.class::cast)
+            .forEach(file -> updateFile(existingPublication, file));
+        publicationUpdate.getAssociatedArtifacts().removeIf(File.class::isInstance);
+
 
         resourceService.updatePublication(publicationUpdate);
 

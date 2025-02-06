@@ -336,14 +336,15 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
     @MethodSource("publicationInstanceProvider")
     void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized(
-        Class<?> instanceType) throws JsonProcessingException {
+        Class<?> instanceType) throws JsonProcessingException, BadRequestException {
 
         var publication = randomPublication(instanceType);
         var fakeUriRetriever = FakeUriRetriever.newInstance();
+        var resource = Resource.fromPublication(publication).persistNew(resourceService,
+                                                             UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
 
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
-
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, publication);
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, resource);
         var json = objectMapper.readTree(expandedResource.toJsonString());
         assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
@@ -473,7 +474,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 resourceService.publishPublication(UserInstance.fromPublication(publication),
                                                    publication.getIdentifier());
-                var publishedPublication = resourceService.getPublication(publication);
+                var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
                 return new ExpandedDataEntryWithAssociatedPublication(
                     randomDoiRequest(publishedPublication, expansionService, resourceService, messageService,
                                      ticketService));
