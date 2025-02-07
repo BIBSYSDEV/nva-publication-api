@@ -146,7 +146,7 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         var identifierInPath = RequestUtil.getIdentifier(requestInfo);
 
-        var existingResource = fetchPublication(identifierInPath);
+        var existingResource = fetchResource(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissions.create(existingResource.toPublication(), userInstance);
@@ -173,7 +173,7 @@ public class UpdatePublicationHandler
         return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
     }
 
-    private Resource fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
+    private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
         return Resource.resourceQueryObject(identifierInPath)
                    .fetch(resourceService)
                    .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
