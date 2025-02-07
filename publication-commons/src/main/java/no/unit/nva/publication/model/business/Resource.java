@@ -586,7 +586,7 @@ public class Resource implements Entity {
                    .withIndexedDate(getIndexedDate())
                    .withLink(getLink())
                    .withAssociatedArtifactsList(getAssociatedArtifacts())
-                   .withFiles(getFileEntries())
+                   .withFilesEntries(getFileEntries())
                    .withProjects(getProjects())
                    .withEntityDescription(getEntityDescription())
                    .withDoi(getDoi())

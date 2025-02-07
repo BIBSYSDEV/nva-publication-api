@@ -177,11 +177,11 @@ public final class FileEntry implements Entity {
     }
 
     public void softDelete(ResourceService resourceService, User user) {
-        var fileEntry = this.setSoftDelete(user);
+        var fileEntry = this.softDelete(user);
         resourceService.updateFile(fileEntry);
     }
 
-    public FileEntry setSoftDelete(User user) {
+    public FileEntry softDelete(User user) {
         var now = Instant.now();
         this.setFileEvent(FileDeletedEvent.create(user, now));
         this.modifiedDate = now;
@@ -260,11 +260,6 @@ public final class FileEntry implements Entity {
 
     public FileEvent getFileEvent() {
         return fileEvent;
-    }
-
-    public void clearResourceEvent(ResourceService resourceService) {
-        this.setFileEvent(null);
-        resourceService.updateFile(this);
     }
 
     private void setFileEvent(FileEvent fileEvent) {

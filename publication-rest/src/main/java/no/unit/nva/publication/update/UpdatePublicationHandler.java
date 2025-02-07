@@ -50,7 +50,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
-import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -67,7 +66,6 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @SuppressWarnings("PMD.GodClass")
@@ -89,10 +87,8 @@ public class UpdatePublicationHandler
     public static final String LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS =
         "Lambda Function Invocation Result - Success";
     public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
-    public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private final EventBridgeClient eventBridgeClient;
     private final String nvaEventBusName;
-    private final S3Driver s3Driver;
     private final SecretsReader secretsReader;
     private final HttpClient httpClient;
     private final DefaultPublicationValidator publicationValidator;
@@ -108,7 +104,6 @@ public class UpdatePublicationHandler
              new Environment(),
              IdentityServiceClient.prepare(),
              defaultEventBridgeClient(),
-             S3Driver.defaultS3Client().build(),
              SecretsReader.defaultSecretsManagerClient(),
              HttpClient.newHttpClient());
     }
@@ -124,7 +119,6 @@ public class UpdatePublicationHandler
                                     Environment environment,
                                     IdentityServiceClient identityServiceClient,
                                     EventBridgeClient eventBridgeClient,
-                                    S3Client s3Client,
                                     SecretsManagerClient secretsManagerClient,
                                     HttpClient httpClient) {
         super(PublicationRequest.class, environment, httpClient);
@@ -134,7 +128,6 @@ public class UpdatePublicationHandler
         this.eventBridgeClient = eventBridgeClient;
         this.nvaEventBusName = environment.readEnv(NVA_EVENT_BUS_NAME_KEY);
         this.apiHost = environment.readEnv(API_HOST_ENV_KEY);
-        this.s3Driver = new S3Driver(s3Client, environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY));
         this.secretsReader = new SecretsReader(secretsManagerClient);
         this.publicationValidator = new DefaultPublicationValidator();
         this.httpClient = httpClient;
@@ -276,6 +269,7 @@ public class UpdatePublicationHandler
                    .build();
     }
 
+    // TODO: Move file update to resourceService and perform update in single transaction
     private Resource updateMetadata(UpdatePublicationRequest input,
                                        SortableIdentifier identifierInPath,
                                        Publication existingPublication,
@@ -306,8 +300,6 @@ public class UpdatePublicationHandler
             .filter(File.class::isInstance)
             .map(File.class::cast)
             .forEach(file -> updateFile(existingPublication, file));
-        publicationUpdate.getAssociatedArtifacts().removeIf(File.class::isInstance);
-
 
         resourceService.updatePublication(publicationUpdate);
 

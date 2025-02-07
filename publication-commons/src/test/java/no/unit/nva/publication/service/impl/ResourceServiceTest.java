@@ -43,7 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -1622,23 +1621,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                      .fetch(resourceService).orElseThrow().getAssociatedArtifacts().getFirst();
 
         assertInstanceOf(RejectedFile.class, associatedArtifact);
-    }
-
-    @Test
-    void shouldClearFileEvent() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        var file = randomOpenFile();
-
-        var fileEntry = FileEntry.create(file, persistedPublication.getIdentifier(), userInstance);
-        fileEntry.persist(resourceService);
-
-        assertNotNull(fileEntry.fetch(resourceService).orElseThrow().getFileEvent());
-
-        fileEntry.clearResourceEvent(resourceService);
-
-        assertNull(fileEntry.fetch(resourceService).orElseThrow().getFileEvent());
     }
 
     @Test

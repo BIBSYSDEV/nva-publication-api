@@ -81,9 +81,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -169,7 +167,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -199,8 +196,6 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 @WireMockTest(httpsEnabled = true)
 class UpdatePublicationHandlerTest extends ResourcesLocalTest {
@@ -233,7 +228,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private FakeSecretsManagerClient secretsManagerClient;
     private FakeEventBridgeClient eventBridgeClient;
-    private S3Client s3Client;
     private URI customerId;
 
     public static Stream<Named<AccessRight[]>> privilegedUserProvider() {
@@ -273,11 +267,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("secret", credentials.toString());
         output = new ByteArrayOutputStream();
-        s3Client = mock(S3Client.class);
         var httpClient = WiremockHttpClient.create();
         updatePublicationHandler =
             new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
-                                         eventBridgeClient, s3Client, secretsManagerClient, httpClient);
+                                         eventBridgeClient, secretsManagerClient, httpClient);
 
         customerId = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
                          .addChild("customer", randomUUID().toString())
@@ -553,7 +546,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                 environment,
                                                                 identityServiceClient,
                                                                 eventBridgeClient,
-                                                                S3Driver.defaultS3Client().build(),
                                                                 secretsManagerClient,
                                                                 WiremockHttpClient.create());
 
@@ -578,7 +570,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                 environment,
                                                                 identityServiceClient,
                                                                 eventBridgeClient,
-                                                                S3Driver.defaultS3Client().build(),
                                                                 secretsManagerClient,
                                                                 WiremockHttpClient.create());
 
@@ -1620,7 +1611,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
-        verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
     }
 
     @Test
@@ -1912,7 +1902,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
         var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
-                                                   eventBridgeClient, s3Client, secretsManagerClient,
+                                                   eventBridgeClient, secretsManagerClient,
                                                    WiremockHttpClient.create());
         handler.handleRequest(input, output, context);
 
@@ -1928,7 +1918,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
 
         var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
-                                                   eventBridgeClient, s3Client, secretsManagerClient,
+                                                   eventBridgeClient, secretsManagerClient,
                                                    WiremockHttpClient.create());
         handler.handleRequest(input, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);

@@ -240,6 +240,7 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
+    // TODO: Should we delete all tickets for delete draft publication?
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
         var daos = readResourceService.fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance,
@@ -252,6 +253,7 @@ public class ResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
 
+    // TODO: Should we fetch files here?
     private List<TransactWriteItem> deleteResourceFilesTransaction(SortableIdentifier identifier) {
         var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
         var queryRequest = new QueryRequest()
@@ -314,14 +316,17 @@ public class ResourceService extends ServiceWithTransactions {
                           .toList();
 
         var resource = extractResource(entries);
-        var fileEntries = extractFiles(entries);
+        var fileEntries = extractFileEntries(entries);
 
         resource.ifPresent(res -> {
-            var associatedArtifacts = new ArrayList<AssociatedArtifact>(fileEntries.stream().map(FileEntry::getFile).toList());
+            var associatedArtifacts = new ArrayList<AssociatedArtifact>();
+
+            var files = fileEntries.stream().map(FileEntry::getFile).toList();
             var associatedLinks = res.getAssociatedArtifacts().stream()
                                       .filter(associatedArtifact -> !(associatedArtifact instanceof File))
                                       .toList();
 
+            associatedArtifacts.addAll(files);
             associatedArtifacts.addAll(associatedLinks);
 
             res.setFileEntries(fileEntries);
@@ -338,7 +343,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .findFirst();
     }
 
-    private static List<FileEntry> extractFiles(List<Dao> entries) {
+    private static List<FileEntry> extractFileEntries(List<Dao> entries) {
         return entries.stream()
                    .filter(FileDao.class::isInstance)
                    .map(FileDao.class::cast)
@@ -602,11 +607,6 @@ public class ResourceService extends ServiceWithTransactions {
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();
 
-        var allAssociatedArtifacts = newResource.getAssociatedArtifacts();
-        var associatedArtifactsWithoutFiles = new ArrayList<>(allAssociatedArtifacts);
-        associatedArtifactsWithoutFiles.removeIf(File.class::isInstance);
-        newResource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifactsWithoutFiles));
-
         var transactions = new ArrayList<>(fileTransactionWriteItems);
         transactions.add(newPutTransactionItem(new ResourceDao(newResource), tableName));
         transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource));
@@ -614,7 +614,6 @@ public class ResourceService extends ServiceWithTransactions {
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);
 
-        newResource.setAssociatedArtifacts(new AssociatedArtifactList(allAssociatedArtifacts));
         return newResource.toPublication();
     }
 

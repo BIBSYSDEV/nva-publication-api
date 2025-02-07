@@ -278,7 +278,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private List<TransactWriteItem> createSofDeleteFilesTransactions(Publication publication, UserInstance userInstance) {
         return Resource.fromPublication(publication).getFiles().stream()
                    .map(file -> FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier()))
-                   .map(fileEntry -> fileEntry.setSoftDelete(userInstance.getUser()))
+                   .map(fileEntry -> fileEntry.softDelete(userInstance.getUser()))
                    .map(FileEntry::toDao)
                    .map(fileDao -> fileDao.toPutTransactionItem(tableName))
                    .toList();
