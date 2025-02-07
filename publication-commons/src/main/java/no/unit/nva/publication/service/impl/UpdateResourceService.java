@@ -15,7 +15,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -57,7 +56,6 @@ import no.unit.nva.publication.model.business.publicationstate.PublishedResource
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
-import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
@@ -262,15 +260,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public void deletePublication(Publication publication, UserInstance userInstance) {
-        var softDeleteFilesTransactions = Resource.fromPublication(publication).getFiles().stream()
-                                          .map(file -> FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier()))
-                                          .map(file -> client.getItem(new GetItemRequest().withTableName(tableName).withKey(file.toDao().primaryKey())).getItem())
-                                          .map(FileDao::fromDynamoFormat)
-                                          .map(FileEntry::fromDao)
-                                          .map(f -> f.softDelete(userInstance.getUser()))
-                                          .map(FileEntry::toDao)
-                                          .map(fileDao -> fileDao.toPutTransactionItem(tableName))
-                                          .toList();
+        var softDeleteFilesTransactions = createSofDeleteFilesTransactions(publication, userInstance);
         var currentTime = clockForTimestamps.instant();
         var deletePublication = toDeletedPublication(publication, currentTime);
         var resource = Resource.fromPublication(deletePublication);
@@ -282,6 +272,16 @@ public class UpdateResourceService extends ServiceWithTransactions {
         transactions.addAll(softDeleteFilesTransactions);
         var request = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(request);
+    }
+
+    //TODO: Do we need to fetch files before soft deleting them? Maybe there is a better way of doing it?
+    private List<TransactWriteItem> createSofDeleteFilesTransactions(Publication publication, UserInstance userInstance) {
+        return Resource.fromPublication(publication).getFiles().stream()
+                   .map(file -> FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier()))
+                   .map(fileEntry -> fileEntry.setSoftDelete(userInstance.getUser()))
+                   .map(FileEntry::toDao)
+                   .map(fileDao -> fileDao.toPutTransactionItem(tableName))
+                   .toList();
     }
 
     private Publication toDeletedPublication(Publication publication, Instant currentTime) {
