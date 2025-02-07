@@ -398,20 +398,25 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldHandleClosedPublishingRequestWhenPublishingRequestIsBeingRejected() throws ApiGatewayException, IOException {
-        var publication = createPublication();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(), randomPendingOpenFile()));
-        resourceService.updatePublication(publication);
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
+        var publication = randomPublication();
+        var internalFileToReject = randomPendingInternalFile();
+        var openFileToReject = randomPendingOpenFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(internalFileToReject, openFileToReject));
+        var persistedPublication = Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
+                                                            .withFilesForApproval(Set.of(internalFileToReject, openFileToReject))
                                                             .withOwner(randomString())
                                                             .withOwnerAffiliation(randomUri());
-        publishingRequest.setStatus(TicketStatus.CLOSED);
-        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var ticket = publishingRequest.persistNewTicket(ticketService);
-        var event = createEvent(null, ticket);
+        ticket.close(new Username(randomString())).persistUpdate(ticketService);
+
+        var closedPublishingRequest = ticketService.fetchTicket(ticket);
+        var event = createEvent(null, closedPublishingRequest);
 
         handler.handleRequest(event, outputStream, CONTEXT);
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
 
         assertTrue(updatedPublication.getAssociatedArtifacts().stream().allMatch(RejectedFile.class::isInstance));
     }
@@ -471,6 +476,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         publishingRequest.setStatus(TicketStatus.COMPLETED);
         publishingRequest.setApprovedFiles(Set.of(file));
         publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        publishingRequest.setFinalizedBy(new Username(randomString()));
         return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
     }
 

@@ -1,7 +1,6 @@
 package no.unit.nva.publication.update;
 
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -33,23 +32,21 @@ public class RepublishUtil {
         return new RepublishUtil(resourceService, ticketService, permissionStrategy);
     }
 
-    public Publication republish(Publication publication, UserInstance userInstance) throws ApiGatewayException {
+    public Resource republish(Resource resource, UserInstance userInstance) throws ApiGatewayException {
         validateRepublishing();
-        var resource = Resource.fromPublication(publication);
         resource.republish(resourceService, userInstance);
-        persistCompletedPublishingRequest(publication, userInstance);
-        return resource.fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException("Resource not found!"))
-                   .toPublication();
+        persistCompletedPublishingRequest(resource, userInstance);
+        return resource.fetch(resourceService).orElseThrow(() -> new NotFoundException("Resource not found!"));
     }
 
-    private void persistCompletedPublishingRequest(Publication publication, UserInstance userInstance)
+    private void persistCompletedPublishingRequest(Resource resource, UserInstance userInstance)
         throws ApiGatewayException {
-        var publishingRequest = (PublishingRequestCase) TicketEntry
-                                                            .createNewTicket(publication, PublishingRequestCase.class,
-                                                                             SortableIdentifier::next)
+        var publishingRequest = (PublishingRequestCase) TicketEntry.createNewTicket(resource.toPublication(),
+                                                                                    PublishingRequestCase.class,
+                                                                                    SortableIdentifier::next)
                                                             .withOwner(userInstance.getUsername());
-        publishingRequest.persistAutoComplete(ticketService, publication, new Username(userInstance.getUsername()));
+        publishingRequest.persistAutoComplete(ticketService, resource.toPublication(),
+                                              new Username(userInstance.getUsername()));
     }
 
     private void validateRepublishing() throws ForbiddenException {

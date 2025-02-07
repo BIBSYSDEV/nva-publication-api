@@ -24,9 +24,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.http.HttpClient;
 import java.util.List;
+import java.util.stream.Stream;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
@@ -44,52 +45,52 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class PublicationsByOwnerHandlerTest {
-    
+
     private ResourceService resourceService;
     private final Context context = new FakeContext();
-    
+
     private ByteArrayOutputStream output;
     private PublicationsByOwnerHandler publicationsByOwnerHandler;
     private GetExternalClientResponse getExternalClientResponse;
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
-    
+
     @BeforeEach
     public void setUp(@Mock Environment environment,
                       @Mock ResourceService resourceService,
                       @Mock IdentityServiceClient identityServiceClient) throws NotFoundException {
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        
+
         this.resourceService = resourceService;
         getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
                                                                   "someone@123",
                                                                   randomUri(),
                                                                   randomUri());
         lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
-        
+
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
             new PublicationsByOwnerHandler(resourceService, environment, identityServiceClient, mock(HttpClient.class));
     }
-    
+
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     void handlerReturnsOkResponseOnValidInput() throws IOException {
-        when(resourceService.getPublicationsByOwner(any(UserInstance.class)))
+        when(resourceService.getPublicationSummaryByOwner(any(UserInstance.class)))
             .thenReturn(publicationSummaries());
-    
+
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
                                 .withNvaUsername(randomString())
                                 .withCurrentCustomer(randomUri())
                                 .build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
-        
+
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationsByOwnerResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
-    
+
     @Test
     void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper).build();
@@ -100,7 +101,7 @@ class PublicationsByOwnerHandlerTest {
 
     @Test
     void returnsOkWhenIssuedByExternalClient() throws IOException {
-        when(resourceService.getPublicationsByOwner(any(UserInstance.class)))
+        when(resourceService.getPublicationSummaryByOwner(any(UserInstance.class)))
             .thenReturn(publicationSummaries());
 
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
@@ -114,8 +115,10 @@ class PublicationsByOwnerHandlerTest {
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
-    
-    private List<Publication> publicationSummaries() {
-        return List.of(randomPublication(), randomPublication(), randomPublication());
+
+    private List<PublicationSummary> publicationSummaries() {
+        return Stream.of(randomPublication(), randomPublication(), randomPublication())
+                   .map(PublicationSummary::create)
+                   .toList();
     }
 }

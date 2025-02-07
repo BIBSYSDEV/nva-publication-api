@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
@@ -35,9 +36,11 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -104,6 +107,8 @@ public class Resource implements Entity {
     private List<ImportDetail> importDetails;
     @JsonProperty
     private ResourceEvent resourceEvent;
+    @JsonIgnore
+    private List<FileEntry> files;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -150,6 +155,38 @@ public class Resource implements Entity {
                    .toList();
     }
 
+    @JsonIgnore
+    public List<FileEntry> getFileEntries() {
+        return nonNull(files) ? files : Collections.emptyList();
+    }
+
+    public Optional<FileEntry> getFileEntry(SortableIdentifier identifier) {
+        return getFileEntries().stream().filter(file -> file.getIdentifier().equals(identifier)).findFirst();
+    }
+
+    public void setFileEntries(List<FileEntry> files) {
+        this.files = files;
+    }
+
+    public PublicationSummary toSummary() {
+        return PublicationSummary.create(this.toPublication());
+    }
+
+    public Resource delete(UserInstance userInstance, Instant currentTime) {
+        return new ResourceBuilder()
+                   .withIdentifier(getIdentifier())
+                   .withStatus(DELETED)
+                   .withDoi(getDoi())
+                   .withPublisher(getPublisher())
+                   .withResourceOwner(getResourceOwner())
+                   .withEntityDescription(getEntityDescription())
+                   .withCreatedDate(getCreatedDate())
+                   .withPublishedDate(getPublishedDate())
+                   .withModifiedDate(currentTime)
+                   .withResourceEvent(DeletedResourceEvent.create(userInstance, currentTime))
+                   .build();
+    }
+
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
@@ -160,6 +197,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
+                   //.withFiles() TODO: Implement this
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -550,7 +588,7 @@ public class Resource implements Entity {
     }
 
     public void setImportDetails(Collection<ImportDetail> importDetails) {
-        this.importDetails = new ArrayList<>(importDetails);
+        this.importDetails = nonNull(importDetails) ? new ArrayList<>(importDetails) : new ArrayList<>();
     }
 
     public ResourceBuilder copy() {
@@ -565,6 +603,7 @@ public class Resource implements Entity {
                    .withIndexedDate(getIndexedDate())
                    .withLink(getLink())
                    .withAssociatedArtifactsList(getAssociatedArtifacts())
+                   .withFilesEntries(getFileEntries())
                    .withProjects(getProjects())
                    .withEntityDescription(getEntityDescription())
                    .withDoi(getDoi())

@@ -36,6 +36,7 @@ class RepublishUtilTest extends ResourcesLocalTest {
             .thenReturn(Resource.fromPublication(publication))
             .thenThrow(NotFoundException.class);
 
-        assertThrows(NotFoundException.class, () -> republishUtil.republish(publication, userInstance));
+        assertThrows(NotFoundException.class, () -> republishUtil.republish(Resource.fromPublication(publication),
+                                                                            userInstance));
     }
 }

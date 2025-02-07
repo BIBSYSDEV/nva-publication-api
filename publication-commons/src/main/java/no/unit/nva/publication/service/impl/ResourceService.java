@@ -29,6 +29,7 @@ import com.google.common.collect.Lists;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +44,13 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -61,8 +64,6 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -239,14 +240,35 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
+    // TODO: Should we delete all tickets for delete draft publication?
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
-        List<Dao> daos = readResourceService.fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance,
-                                                                                              resourceIdentifier);
+        var daos = readResourceService.fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance,
+                                                                                        resourceIdentifier);
+        var deleteFilesTransactions = deleteResourceFilesTransaction(resourceIdentifier);
 
-        List<TransactWriteItem> transactionItems = transactionItemsForDraftPublicationDeletion(daos);
+        var transactionItems = transactionItemsForDraftPublicationDeletion(daos);
+        transactionItems.addAll(deleteFilesTransactions);
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(transactWriteItemsRequest);
+    }
+
+    // TODO: Should we fetch files here?
+    private List<TransactWriteItem> deleteResourceFilesTransaction(SortableIdentifier identifier) {
+        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
+        var queryRequest = new QueryRequest()
+                               .withTableName(tableName)
+                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                               .withKeyConditionExpression("#PK3 = :value")
+                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
+                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+
+        return client.query(queryRequest).getItems().stream()
+                   .map(map -> parseAttributeValuesMap(map, Dao.class))
+                   .filter(FileDao.class::isInstance)
+                   .map(FileDao.class::cast)
+                   .map(FileDao::toDeleteTransactionItem)
+                   .toList();
     }
 
     public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
@@ -271,20 +293,13 @@ public class ResourceService extends ServiceWithTransactions {
 
     // TODO: Remove all usages of this method in tests and use getPublicationByIdentifier instead
     @Deprecated(forRemoval = true)
-    public Publication getPublication(Publication sampleResource) throws NotFoundException {
-        return readResourceService.getPublication(sampleResource);
+    public Publication getPublication(Publication publication) throws NotFoundException {
+        return getResourceByIdentifier(publication.getIdentifier()).toPublication();
     }
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        if (shouldUseNewFiles()) {
-            return getResourceAndFilesByIdentifier(identifier).orElseThrow();
-        } else {
-            return readResourceService.getResourceByIdentifier(identifier);
-        }
-    }
-
-    public boolean shouldUseNewFiles() {
-        return environment.readEnvOpt("SHOULD_USE_NEW_FILES").isPresent();
+        return getResourceAndFilesByIdentifier(identifier).orElseThrow(() -> new NotFoundException(
+            RESOURCE_NOT_FOUND_MESSAGE + identifier));
     }
 
     public Optional<Resource> getResourceAndFilesByIdentifier(SortableIdentifier identifier) {
@@ -301,11 +316,20 @@ public class ResourceService extends ServiceWithTransactions {
                           .toList();
 
         var resource = extractResource(entries);
-        var files = extractFiles(entries);
+        var fileEntries = extractFileEntries(entries);
 
         resource.ifPresent(res -> {
-            var associatedArtifacts = new ArrayList<>(res.getAssociatedArtifacts());
+            var associatedArtifacts = new ArrayList<AssociatedArtifact>();
+
+            var files = fileEntries.stream().map(FileEntry::getFile).toList();
+            var associatedLinks = res.getAssociatedArtifacts().stream()
+                                      .filter(associatedArtifact -> !(associatedArtifact instanceof File))
+                                      .toList();
+
             associatedArtifacts.addAll(files);
+            associatedArtifacts.addAll(associatedLinks);
+
+            res.setFileEntries(fileEntries);
             res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
         });
         return resource;
@@ -319,20 +343,26 @@ public class ResourceService extends ServiceWithTransactions {
                    .findFirst();
     }
 
-    private static List<File> extractFiles(List<Dao> entries) {
+    private static List<FileEntry> extractFileEntries(List<Dao> entries) {
         return entries.stream()
                    .filter(FileDao.class::isInstance)
                    .map(FileDao.class::cast)
                    .map(FileDao::getFileEntry)
-                   .map(FileEntry::getFile)
                    .toList();
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
-        return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+        return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier).stream()
+                       .map(Resource::fromPublication)
+                       .map(Resource::getIdentifier)
+                       .map(this::getResourceAndFilesByIdentifier)
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .map(Resource::toPublication)
+                       .toList();
     }
 
-    public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
+    public List<PublicationSummary> getPublicationSummaryByOwner(UserInstance sampleUser) {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
 
@@ -365,69 +395,15 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void updateResource(Resource resource) {
         resource.setModifiedDate(Instant.now());
-        if (shouldUseNewFiles()) {
-            var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
-            associatedArtifacts.removeIf(File.class::isInstance);
-            resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-        }
-        updateResourceService.updateResource(resource);
-    }
-
-    // TODO: Update method once we have migrated files: https://sikt.atlassian.net/browse/NP-48480
-    // update this method according to current needs.
-    public Entity migrate(Entity dataEntry) {
-        if (isResourceWithFiles(dataEntry)) {
-            persistLogEntriesIfNeeded((Resource) dataEntry);
-            return migrateResourceWithFiles((Resource) dataEntry);
-        }
-        return dataEntry;
-    }
-
-    @Deprecated
-    private void persistLogEntriesIfNeeded(Resource resource) {
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
-        var logEntries = resource.fetchLogEntries(this);
-        if (logEntries.isEmpty()) {
-            if ("nve@5948.0.0.0".equals(resource.getResourceOwner().getUser().toString())) {
-                resource.setResourceEvent(ImportedResourceEvent.fromImportSource(
-                    ImportSource.fromBrageArchive("NVE"), resource.getCreatedDate()));
-            } else if (PUBLISHED.equals(resource.getStatus())) {
-                var publishedDate = Optional.of(resource)
-                                        .map(Resource::getPublishedDate)
-                                        .orElse(resource.getCreatedDate());
-                resource.setResourceEvent(PublishedResourceEvent.create(userInstance, publishedDate));
-            } else if (!PUBLISHED.equals(resource.getStatus())) {
-                resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
-            }
-        }
-    }
-
-    @Deprecated
-    private Resource migrateResourceWithFiles(Resource resource) {
-        resource.getFiles().forEach(file -> persistFileEntry(resource, file));
         var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
         associatedArtifacts.removeIf(File.class::isInstance);
         resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-        return resource;
+        updateResourceService.updateResource(resource);
     }
 
-    private static boolean isResourceWithFiles(Entity dataEntry) {
-        return dataEntry instanceof Resource resource && !resource.getFiles().isEmpty();
-    }
-
-    private void persistFileEntry(Resource resource, File file) {
-        try {
-            var userInstance = UserInstance.fromPublication(resource.toPublication());
-            var resourceIdentifier = resource.getIdentifier();
-            var existingFile = FileEntry.queryObject(file.getIdentifier(), resourceIdentifier)
-                                   .fetch(this);
-            if (existingFile.isEmpty()) {
-                FileEntry.create(file, resourceIdentifier, userInstance).migrate(this, resource);
-            }
-        } catch (Exception e) {
-            logger.error("Failed to persist file entry: {} {}", file.toJsonString(), e);
-            throw e;
-        }
+    // update this method according to current needs.
+    public Entity migrate(Entity dataEntry) {
+        return dataEntry;
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
@@ -450,7 +426,7 @@ public class ResourceService extends ServiceWithTransactions {
         try {
             updatePublication(getPublicationByIdentifier(identifier));
             logger.info(RESOURCE_REFRESHED_MESSAGE, identifier);
-        } catch (NotFoundException e) {
+        } catch (Exception e) {
             logger.error(RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE, identifier);
         }
     }
@@ -461,7 +437,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void unpublishPublication(Publication publication, UserInstance userInstance) throws BadRequestException,
                                                                                     NotFoundException {
-        var existingPublication = readResourceService.getPublication(publication);
+        var existingPublication = getResourceByIdentifier(publication.getIdentifier()).toPublication();
         if (!PUBLISHED.equals(existingPublication.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
@@ -470,11 +446,11 @@ public class ResourceService extends ServiceWithTransactions {
         updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket, userInstance);
     }
 
-    public void deletePublication(Publication publication, UserInstance userInstance) throws BadRequestException {
-        if (!UNPUBLISHED.equals(publication.getStatus())) {
+    public void terminateResource(Resource resource, UserInstance userInstance) throws BadRequestException {
+        if (!UNPUBLISHED.equals(resource.getStatus())) {
             throw new BadRequestException(DELETE_PUBLICATION_ERROR_MESSAGE);
         }
-        updateResourceService.deletePublication(publication, userInstance);
+        updateResourceService.terminateResource(resource, userInstance);
     }
 
     public void persistLogEntry(LogEntry logEntry) {
@@ -616,17 +592,27 @@ public class ResourceService extends ServiceWithTransactions {
                    .stream()
                    .map(value -> parseAttributeValuesMap(value, Dao.class))
                    .map(Dao::getData)
-                   .map(Entity.class::cast)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private Publication insertResource(Resource newResource) {
         if (newResource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(newResource);
         }
-        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(putRequest);
+
+        var userInstance = UserInstance.fromPublication(newResource.toPublication());
+        var fileTransactionWriteItems = newResource.getFiles().stream()
+                                            .map(file -> FileEntry.create(file, newResource.getIdentifier(), userInstance))
+                                            .map(FileEntry::toDao)
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
+                                            .toList();
+
+        var transactions = new ArrayList<>(fileTransactionWriteItems);
+        transactions.add(newPutTransactionItem(new ResourceDao(newResource), tableName));
+        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource));
+
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
 
         return newResource.toPublication();
     }
@@ -638,8 +624,19 @@ public class ResourceService extends ServiceWithTransactions {
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(putRequest);
+
+        var fileTransactionWriteItems = newResource.getFiles().stream()
+                                            .map(file -> FileEntry.create(file, newResource.getIdentifier(),
+                                                                          UserInstance.fromPublication(newResource.toPublication())))
+                                            .map(FileEntry::toDao)
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
+                                            .toList();
+
+        var transactions = new ArrayList<TransactWriteItem>();
+        transactions.addAll(Arrays.stream(transactionItems).toList());
+        transactions.addAll(fileTransactionWriteItems);
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
 
         return newResource.toImportCandidate();
     }
@@ -657,12 +654,6 @@ public class ResourceService extends ServiceWithTransactions {
         transactionItems.addAll(deleteResourceTransactionItems(daos));
         transactionItems.addAll(deleteDoiRequestTransactionItems(daos));
         return transactionItems;
-    }
-
-    private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
-        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {

@@ -136,9 +136,10 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     private Publication createUnpublishablePublication() throws BadRequestException, NotFoundException {
         var publication = createPublication();
         UserInstance userInstance = UserInstance.fromPublication(publication);
-        Resource.fromPublication(publication).publish(resourceService, userInstance);
+        var resource = Resource.fromPublication(publication);
+        resource.publish(resourceService, userInstance);
         resourceService.unpublishPublication(publication, userInstance);
-        resourceService.deletePublication(publication, userInstance);
+        resourceService.terminateResource(resource.fetch(resourceService).orElseThrow(), userInstance);
         return publication;
     }
 
