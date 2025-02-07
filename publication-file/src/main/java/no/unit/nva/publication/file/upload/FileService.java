@@ -19,7 +19,6 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
@@ -63,20 +62,27 @@ public class FileService {
                                ResourceService.defaultService());
     }
 
-    public InitiateMultipartUploadResult initiateMultipartUpload(SortableIdentifier resourceIdentifier, URI customerId,
+    public InitiateMultipartUploadResult initiateMultipartUpload(SortableIdentifier resourceIdentifier,
+                                                                 UserInstance userInstance,
                                                                  CreateUploadRequestBody createUploadRequestBody)
         throws NotFoundException, ForbiddenException {
 
         var resource = fetchResource(resourceIdentifier);
 
-        var customer = customerApiClient.fetch(customerId);
-        if (customerDoesNotAllowUploadingFile(customer, resource)) {
-            throw new ForbiddenException();
+        if (!userInstance.isExternalClient()) {
+            validateCustomerConfig(userInstance, resource);
         }
 
         var request = createUploadRequestBody.toInitiateMultipartUploadRequest(BUCKET_NAME);
 
         return amazonS3.initiateMultipartUpload(request);
+    }
+
+    private void validateCustomerConfig(UserInstance userInstance, Resource resource) throws ForbiddenException {
+        var customer = customerApiClient.fetch(userInstance.getCustomerId());
+        if (customerDoesNotAllowUploadingFile(customer, resource)) {
+            throw new ForbiddenException();
+        }
     }
 
     public File completeMultipartUpload(SortableIdentifier resourceIdentifier,

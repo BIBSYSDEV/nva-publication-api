@@ -7,6 +7,7 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadResponseBody;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -42,10 +43,10 @@ public class CreateUploadHandler extends ApiGatewayHandler<CreateUploadRequestBo
     @Override
     protected CreateUploadResponseBody processInput(CreateUploadRequestBody input, RequestInfo requestInfo,
                                                     Context context) throws ApiGatewayException {
-        var customerId = requestInfo.getCurrentCustomer();
+        var userInstance = UserInstance.fromRequestInfo(requestInfo);
         var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
 
-        var createUploadResponseBody =  fileService.initiateMultipartUpload(resourceIdentifier, customerId, input);
+        var createUploadResponseBody =  fileService.initiateMultipartUpload(resourceIdentifier, userInstance, input);
 
         return CreateUploadResponseBody.fromInitiateMultipartUploadResult(createUploadResponseBody);
     }

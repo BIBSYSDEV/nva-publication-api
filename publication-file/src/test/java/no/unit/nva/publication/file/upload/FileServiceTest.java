@@ -13,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
@@ -161,11 +163,11 @@ class FileServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowNotFoundExceptionWhenInitiatingMultipartUploadForFileWithoutPublication() {
         var resourceIdentifier = SortableIdentifier.next();
-        var customerId = randomUri();
+        var userInstance = UserInstance.create(new User(randomString()), randomUri());
         var uploadRequest = randomUploadRequest();
 
         assertThrows(NotFoundException.class,
-                     () -> fileService.initiateMultipartUpload(resourceIdentifier, customerId, uploadRequest));
+                     () -> fileService.initiateMultipartUpload(resourceIdentifier, userInstance, uploadRequest));
     }
 
     @Test
@@ -175,12 +177,13 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         var customerId = randomUri();
+        var userInstance = UserInstance.create(new User(randomString()), customerId);
         var uploadRequest = randomUploadRequest();
 
         when(customerApiClient.fetch(customerId)).thenReturn(new Customer(Set.of(), null, null));
 
         assertThrows(ForbiddenException.class,
-                     () -> fileService.initiateMultipartUpload(resource.getIdentifier(), customerId, uploadRequest));
+                     () -> fileService.initiateMultipartUpload(resource.getIdentifier(), userInstance, uploadRequest));
     }
 
     @Test
@@ -191,11 +194,27 @@ class FileServiceTest extends ResourcesLocalTest {
         var customerId = randomUri();
         var uploadRequest = randomUploadRequest();
         var instanceType = publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
-
+        var userInstance = UserInstance.create(new User(randomString()), customerId);
         when(customerApiClient.fetch(customerId)).thenReturn(new Customer(Set.of(instanceType), null, null));
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
 
-        var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), customerId, uploadRequest);
+        var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), userInstance, uploadRequest);
+
+        assertNotNull(uploadResponse.getKey());
+    }
+
+    @Test
+    void shouldInitiateMultipartUploadForExternalClientWithoutValidatingCustomerConfig()
+        throws ForbiddenException, NotFoundException, BadRequestException {
+        var publication = randomPublication();
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var uploadRequest = randomUploadRequest();
+        var userInstance = externalUserInstance();
+
+        when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
+        var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), userInstance, uploadRequest);
+        verify(customerApiClient, never()).fetch(any());
 
         assertNotNull(uploadResponse.getKey());
     }
@@ -380,7 +399,6 @@ class FileServiceTest extends ResourcesLocalTest {
         var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
                                               resource.getIdentifier()).fetch(resourceService).orElseThrow();
 
-
         assertEquals(request.license(), fileEntry.getFile().getLicense());
         assertEquals(request.publisherVersion(), fileEntry.getFile().getPublisherVersion());
         assertEquals(request.embargoDate(), fileEntry.getFile().getEmbargoDate().orElse(null));
@@ -388,8 +406,7 @@ class FileServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowForbiddenWhenAttemptingToPersistNotSupportedFileTypeAsExternalClient()
-        throws BadRequestException {
+    void shouldThrowForbiddenWhenAttemptingToPersistNotSupportedFileTypeAsExternalClient() throws BadRequestException {
         var publication = randomPublication();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -418,6 +435,11 @@ class FileServiceTest extends ResourcesLocalTest {
 
     private static CreateUploadRequestBody randomUploadRequest() {
         return new CreateUploadRequestBody(randomString(), randomString(), randomString());
+    }
+
+    private UserInstance externalUserInstance() {
+        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), List.of(),
+                                UserClientType.EXTERNAL);
     }
 
     private void mockCustomerResponse(UserInstance userInstance) {
