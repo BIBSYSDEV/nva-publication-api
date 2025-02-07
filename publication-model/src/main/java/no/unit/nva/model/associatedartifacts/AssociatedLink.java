@@ -26,7 +26,8 @@ public class AssociatedLink implements AssociatedArtifact, AssociatedArtifactRes
     private final String name;
     @JsonProperty(DESCRIPTION_FIELD)
     private final String description;
-    
+    //@JsonProperty("type")
+    //private final String type = TYPE_NAME;
 
     @JsonCreator
     public AssociatedLink(@JsonProperty(ID_FIELD) URI id,

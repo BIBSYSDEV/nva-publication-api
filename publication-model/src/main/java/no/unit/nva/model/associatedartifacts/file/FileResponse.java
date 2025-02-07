@@ -1,6 +1,8 @@
 package no.unit.nva.model.associatedartifacts.file;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Set;
@@ -9,6 +11,8 @@ import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
+@JsonSerialize
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record FileResponse(
     @JsonProperty(File.IDENTIFIER_FIELD) UUID identifier,
     @JsonProperty(FileResponse.TYPE_NAME_FIELD) String type,

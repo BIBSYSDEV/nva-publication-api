@@ -1,11 +1,16 @@
 package no.unit.nva.model.associatedartifacts;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.FileResponse;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 
@@ -27,6 +32,19 @@ public interface AssociatedArtifact {
 
     @JsonIgnore
     String getArtifactType();
+
+    @JsonCreator
+    static AssociatedArtifact create(JsonNode node) throws IOException {
+        var mapper = JsonUtils.dtoObjectMapper;
+        var type = node.get("type").asText();
+        return switch (type) {
+            case "PendingOpenFile", "OpenFile", "InternalFile", "PendingInternalFile", "HiddenFile", "RejectedFile",
+                 "UploadedFile" -> mapper.treeToValue(node, File.class);
+            case "AssociatedLink" -> mapper.treeToValue(node, AssociatedLink.class);
+            case "NullAssociatedArtifact" -> mapper.treeToValue(node, NullAssociatedArtifact.class);
+            default -> throw new IOException("Unknown type: " + type);
+        };
+    }
 
     AssociatedArtifactResponse toDto();
 }
