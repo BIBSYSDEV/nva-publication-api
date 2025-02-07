@@ -146,26 +146,26 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         var identifierInPath = RequestUtil.getIdentifier(requestInfo);
 
-        var existingPublication = fetchPublication(identifierInPath);
+        var existingResource = fetchPublication(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var permissionStrategy = PublicationPermissions.create(existingPublication, userInstance);
+        var permissionStrategy = PublicationPermissions.create(existingResource.toPublication(), userInstance);
         var updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
-                                                                                existingPublication,
+                                                                                existingResource.toPublication(),
                                                                                 permissionStrategy,
                                                                                 userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
-                                     existingPublication,
+                                     existingResource.toPublication(),
                                      permissionStrategy,
                                      userInstance);
 
-            case RepublishPublicationRequest ignored -> republish(existingPublication, permissionStrategy, userInstance);
+            case RepublishPublicationRequest ignored -> republish(existingResource, permissionStrategy, userInstance);
 
-            case DeletePublicationRequest ignored -> terminatePublication(existingPublication, permissionStrategy, userInstance);
+            case DeletePublicationRequest ignored -> terminatePublication(existingResource, permissionStrategy, userInstance);
 
             default -> throw new BadRequestException("Unknown input body type");
         };
@@ -173,29 +173,28 @@ public class UpdatePublicationHandler
         return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
     }
 
-    private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
+    private Resource fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
         return Resource.resourceQueryObject(identifierInPath)
                    .fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE))
-                   .toPublication();
+                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
-    private Resource republish(Publication existingPublication, PublicationPermissions permissionStrategy,
+    private Resource republish(Resource resource, PublicationPermissions permissionStrategy,
                                   UserInstance userInstance)
         throws ApiGatewayException {
         return RepublishUtil.create(resourceService, ticketService, permissionStrategy)
-                   .republish(existingPublication, userInstance);
+                   .republish(resource, userInstance);
     }
 
-    private Resource terminatePublication(Publication existingPublication,
+    private Resource terminatePublication(Resource resource,
                                              PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
         throws UnauthorizedException, BadRequestException {
         permissionStrategy.authorize(TERMINATE);
 
-        resourceService.deletePublication(existingPublication, userInstance);
+        resourceService.terminateResource(resource, userInstance);
 
-        return Resource.resourceQueryObject(existingPublication.getIdentifier()).fetch(resourceService).orElseThrow();
+        return Resource.resourceQueryObject(resource.getIdentifier()).fetch(resourceService).orElseThrow();
     }
 
     private Resource unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,

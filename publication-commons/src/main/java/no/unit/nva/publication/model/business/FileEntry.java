@@ -73,6 +73,7 @@ public final class FileEntry implements Entity {
                              userInstance.getTopLevelOrgCristinId(), userInstance.getCustomerId(), file, null);
     }
 
+    //TODO: Should return interface ONLY that can perform fetch and hard delete only
     public static FileEntry queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
         return new FileEntry(resourceIdentifier, null, null, null, null, null, File.builder()
                                                                                    .withIdentifier(UUID.fromString(

@@ -1187,7 +1187,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         resourceService.unpublishPublication(resourceService.getPublicationByIdentifier(publication.getIdentifier()),
                                              userInstance);
-        resourceService.deletePublication(resourceService.getPublicationByIdentifier(publication.getIdentifier()),
+        resourceService.terminateResource(resourceService.getResourceByIdentifier(publication.getIdentifier()),
                                           userInstance);
 
         var deletedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -1220,8 +1220,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         assertThrows(BadRequestException.class,
-                     () -> resourceService.deletePublication(
-                         resourceService.getPublicationByIdentifier(publication.getIdentifier()),
+                     () -> resourceService.terminateResource(
+                         resourceService.getResourceByIdentifier(publication.getIdentifier()),
                          userInstance));
     }
 

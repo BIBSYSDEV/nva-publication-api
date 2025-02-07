@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
@@ -39,6 +40,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -168,6 +170,21 @@ public class Resource implements Entity {
 
     public PublicationSummary toSummary() {
         return PublicationSummary.create(this.toPublication());
+    }
+
+    public Resource delete(UserInstance userInstance, Instant currentTime) {
+        return new ResourceBuilder()
+                   .withIdentifier(getIdentifier())
+                   .withStatus(DELETED)
+                   .withDoi(getDoi())
+                   .withPublisher(getPublisher())
+                   .withResourceOwner(getResourceOwner())
+                   .withEntityDescription(getEntityDescription())
+                   .withCreatedDate(getCreatedDate())
+                   .withPublishedDate(getPublishedDate())
+                   .withModifiedDate(currentTime)
+                   .withResourceEvent(DeletedResourceEvent.create(userInstance, currentTime))
+                   .build();
     }
 
     private static Resource convertToResource(Publication publication) {
@@ -571,7 +588,7 @@ public class Resource implements Entity {
     }
 
     public void setImportDetails(Collection<ImportDetail> importDetails) {
-        this.importDetails = new ArrayList<>(importDetails);
+        this.importDetails = nonNull(importDetails) ? new ArrayList<>(importDetails) : new ArrayList<>();
     }
 
     public ResourceBuilder copy() {

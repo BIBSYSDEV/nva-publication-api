@@ -446,11 +446,11 @@ public class ResourceService extends ServiceWithTransactions {
         updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket, userInstance);
     }
 
-    public void deletePublication(Publication publication, UserInstance userInstance) throws BadRequestException {
-        if (!UNPUBLISHED.equals(publication.getStatus())) {
+    public void terminateResource(Resource resource, UserInstance userInstance) throws BadRequestException {
+        if (!UNPUBLISHED.equals(resource.getStatus())) {
             throw new BadRequestException(DELETE_PUBLICATION_ERROR_MESSAGE);
         }
-        updateResourceService.deletePublication(publication, userInstance);
+        updateResourceService.terminateResource(resource, userInstance);
     }
 
     public void persistLogEntry(LogEntry logEntry) {
