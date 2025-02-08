@@ -10,6 +10,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Set;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
@@ -91,6 +92,12 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
                                                                               randomUri()));
         var updatedImportCandidate = update(importCandidate);
         assertThrows(BadRequestException.class, () -> resourceService.updateImportCandidate(updatedImportCandidate));
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenUpdatingStatusForNotExistingImportCandidate() {
+        assertThrows(NotFoundException.class,
+                     () -> resourceService.updateImportStatus(SortableIdentifier.next(), null));
     }
 
     @Test

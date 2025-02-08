@@ -45,6 +45,14 @@ class FileEntryTest {
         assertFalse(fileEntry.hasFileEvent());
     }
 
+    @Test
+    void queryObjectShouldReturnQueryObject() {
+        var file = randomOpenFile();
+        var resourceIdentifier = SortableIdentifier.next();
+        var queryObject = FileEntry.queryObject(file.getIdentifier(), resourceIdentifier);
+
+    }
+
     private static UserInstance randomUserInstance() {
         return new UserInstance(randomHiddenFile().toJsonString(), randomUri(), randomUri(), randomUri(), List.of(),
                                 UserClientType.INTERNAL);

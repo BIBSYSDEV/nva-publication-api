@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -98,7 +99,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
-        var originalPublication = fetchExistingPublication(publication);
+        var originalPublication = fetchExistingResource(publication).toPublication();
         if (originalPublication.getStatus().equals(publication.getStatus())) {
             return updatePublicationIncludingStatus(publication);
         }
@@ -107,7 +108,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     public Publication updatePublicationDraftToDraftForDeletion(Publication publication)
         throws NotFoundException {
-        var persistedPublication = attempt(() -> fetchExistingPublication(publication))
+        var persistedPublication = attempt(() -> fetchExistingResource(publication))
+                                       .map(Resource::toPublication)
                                        .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
         if (persistedPublication.getStatus().equals(DRAFT)) {
             publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
@@ -129,27 +131,41 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
-        var persistedPublication = fetchExistingPublication(publicationUpdate);
-        publicationUpdate.setCreatedDate(persistedPublication.getCreatedDate());
+        var persistedResource = fetchExistingResource(publicationUpdate);
+        publicationUpdate.setCreatedDate(persistedResource.getCreatedDate());
         publicationUpdate.setModifiedDate(clockForTimestamps.instant());
 
-        if (isContributorsChanged(publicationUpdate, persistedPublication)) {
+        if (isContributorsChanged(publicationUpdate, persistedResource.toPublication())) {
             publicationUpdate.setCuratingInstitutions(
                 CuratingInstitutionsUtil.getCuratingInstitutionsOnline(publicationUpdate, uriRetriever));
         }
+
+        var updatedFileEntriesTransactionWriteItems = persistedResource.getFileEntries().stream()
+                                     .map(fileEntry -> updateFileEntry(fileEntry, publicationUpdate))
+                                     .map(FileEntry::toDao)
+                                     .map(dao -> dao.toPutTransactionItem(tableName))
+                                     .toList();
 
         var resource = Resource.fromPublication(publicationUpdate);
 
         var updateResourceTransactionItem = createPutTransaction(resource);
         var updateTicketsTransactionItems = updateTickets(resource);
+
         var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(updateResourceTransactionItem);
         transactionItems.addAll(updateTicketsTransactionItems);
+        transactionItems.addAll(updatedFileEntriesTransactionWriteItems);
 
         var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
 
         return publicationUpdate;
+    }
+
+    private static FileEntry updateFileEntry(FileEntry fileEntry, Publication publication) {
+        return publication.getFile(fileEntry.getFile().getIdentifier())
+                   .map(fileEntry::update)
+                   .orElse(fileEntry);
     }
 
     private static boolean isContributorsChanged(Publication publicationUpdate, Publication persistedPublication) {
@@ -290,7 +306,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        var publication = readResourceService.getResourceByIdentifier(resourceIdentifier).toPublication();
+        var publication = readResourceService.getResourceByIdentifier(resourceIdentifier).orElseThrow().toPublication();
         if (publicationIsPublished(publication)) {
             return publishCompletedStatus();
         } else if (publicationIsAllowedForPublishing(publication)) {
@@ -311,11 +327,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private void publishPublication(Publication publication, UserInstance userInstance) throws InvalidPublicationException {
         assertThatPublicationHasMinimumMandatoryFields(publication);
-        var persistedPublication = fetchExistingPublication(publication);
+        var persistedResource = fetchExistingResource(publication);
         var resource = Resource.fromPublication(publication);
         resource.setStatus(PublicationStatus.PUBLISHED);
         var currentTime = clockForTimestamps.instant();
-        resource.setCreatedDate(persistedPublication.getCreatedDate());
+        resource.setCreatedDate(persistedResource.getCreatedDate());
         resource.setModifiedDate(currentTime);
         resource.setPublishedDate(currentTime);
         resource.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
@@ -332,7 +348,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
         throws NotFoundException {
         var publication =
-            readResourceService.getResourceByIdentifier(resourceIdentifier).toPublication();
+            readResourceService.getResourceByIdentifier(resourceIdentifier).orElseThrow().toPublication();
         if (DELETED.equals(publication.getStatus())) {
             return deletionStatusIsCompleted();
         } else {
@@ -343,9 +359,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
         }
     }
 
-    ImportCandidate updateStatus(SortableIdentifier identifier, ImportStatus status)
+    public ImportCandidate updateStatus(SortableIdentifier identifier, ImportStatus status)
         throws NotFoundException {
-        var importCandidate = readResourceService.getResourceByIdentifier(identifier).toImportCandidate();
+        var importCandidate = readResourceService.getResourceByIdentifier(identifier)
+                                  .orElseThrow(() -> new NotFoundException("Import candidate not found!"))
+                                  .toImportCandidate();
         importCandidate.setImportStatus(status);
         importCandidate.setModifiedDate(Instant.now());
         var resource = Resource.fromImportCandidate(importCandidate);
@@ -366,13 +384,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private ImportCandidate fetchImportCandidate(ImportCandidate importCandidate) {
         return attempt(() -> readResourceService.getResourceByIdentifier(importCandidate.getIdentifier()))
+                   .map(Optional::orElseThrow)
                    .map(Resource::toImportCandidate)
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 
-    private Publication fetchExistingPublication(Publication publication) {
+    private Resource fetchExistingResource(Publication publication) {
         return attempt(() -> readResourceService.getResourceByIdentifier(publication.getIdentifier()))
-                   .map(Resource::toPublication)
+                   .map(Optional::orElseThrow)
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 

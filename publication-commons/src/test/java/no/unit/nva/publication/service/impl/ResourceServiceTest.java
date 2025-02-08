@@ -1375,7 +1375,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
         fileEntry.persist(resourceService);
-        fileEntry.hardDelete(resourceService);
+        fileEntry.delete(resourceService);
 
         assertEquals(Optional.empty(), fileEntry.fetch(resourceService));
     }
@@ -1463,7 +1463,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
         fileEntry.persist(resourceService);
 
-        var resource = Resource.fromPublication(persistedPublication).fetchResourceWithFiles(resourceService);
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService);
 
         assertTrue(resource.orElseThrow().getAssociatedArtifacts().contains(file));
     }

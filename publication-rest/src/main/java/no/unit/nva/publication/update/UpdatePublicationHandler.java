@@ -14,7 +14,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.UUID;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -41,7 +40,6 @@ import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
-import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
@@ -295,23 +293,9 @@ public class UpdatePublicationHandler
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
-        Resource.fromPublication(publicationUpdate).getAssociatedArtifacts().stream()
-            .filter(File.class::isInstance)
-            .map(File.class::cast)
-            .forEach(file -> updateFile(existingPublication, file));
-
         resourceService.updatePublication(publicationUpdate);
 
         return Resource.resourceQueryObject(identifierInPath).fetch(resourceService).orElseThrow();
-    }
-
-    private void updateFile(Publication existingPublication, File file)  {
-        FileEntry.queryObject(file.getIdentifier(), existingPublication.getIdentifier())
-            .fetch(resourceService)
-            .ifPresentOrElse(
-                fileEntry -> fileEntry.update(file, resourceService),
-                () -> { throw new FileNotFound(file.getIdentifier()); }
-            );
     }
 
     private static UserUploadDetails extractUploadDetails(UserInstance userInstance) {
@@ -435,9 +419,4 @@ public class UpdatePublicationHandler
         }
     }
 
-    public static class FileNotFound extends RuntimeException {
-        public FileNotFound(UUID id) {
-            super("File not found: "+id.toString());
-        }
-    }
 }
