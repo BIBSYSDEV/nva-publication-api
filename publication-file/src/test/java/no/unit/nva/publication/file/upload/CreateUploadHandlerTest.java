@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
+import no.unit.nva.clients.GetExternalClientResponse;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
@@ -83,11 +85,16 @@ public class CreateUploadHandlerTest {
     }
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws NotFoundException {
         s3client = mock(AmazonS3Client.class);
         customerApiClient = mock(CustomerApiClient.class);
         resourceService = mock(ResourceService.class);
-        createUploadHandler = new CreateUploadHandler(s3client, customerApiClient, resourceService);
+        var identityServiceClient = mock(IdentityServiceClient.class);
+        when(identityServiceClient.getExternalClient(any())).thenReturn(
+            new GetExternalClientResponse(randomString(), randomString(), randomUri(), randomUri())
+        );
+        createUploadHandler = new CreateUploadHandler(s3client, customerApiClient, resourceService,
+                                                      identityServiceClient);
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }

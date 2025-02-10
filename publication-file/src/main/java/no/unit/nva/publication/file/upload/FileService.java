@@ -1,12 +1,12 @@
 package no.unit.nva.publication.file.upload;
 
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.publication.file.upload.config.MultipartUploadConfig.BUCKET_NAME;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +17,8 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
@@ -191,17 +193,25 @@ public class FileService {
 
     private UploadedFile constructUploadedFile(UUID identifier, ObjectMetadata metadata, UserInstance userInstance) {
         return new UploadedFile(identifier, toFileName(metadata.getContentDisposition()), metadata.getContentType(),
-                                metadata.getContentLength(), getRrs(userInstance.getCustomerId()),
+                                metadata.getContentLength(), getRrs(userInstance),
                                 createUploadDetails(userInstance));
     }
 
-    private CustomerRightsRetentionStrategy getRrs(URI customerId) {
-        return Optional.ofNullable(customerApiClient.fetch(customerId))
+    private RightsRetentionStrategy getRrs(UserInstance userInstance) {
+        return Optional.ofNullable(customerApiClient.fetch(userInstance.getCustomerId()))
                    .map(Customer::getRightsRetentionStrategy)
                    .map(CustomerApiRightsRetention::getType)
                    .map(RightsRetentionStrategyConfiguration::fromValue)
-                   .map(CustomerRightsRetentionStrategy::create)
+                   .map(this::createRightsRetentionStrategy)
                    .orElse(null);
+    }
+
+    private RightsRetentionStrategy createRightsRetentionStrategy(RightsRetentionStrategyConfiguration configuration) {
+        if (RIGHTS_RETENTION_STRATEGY.equals(configuration)) {
+            return CustomerRightsRetentionStrategy.create(configuration);
+        } else {
+            return  NullRightsRetentionStrategy.create(configuration);
+        }
     }
 
     private boolean customerDoesNotAllowUploadingFile(Customer customer, Resource resource) {

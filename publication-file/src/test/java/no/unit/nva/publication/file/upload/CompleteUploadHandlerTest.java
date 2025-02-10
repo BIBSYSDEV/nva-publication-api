@@ -32,6 +32,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
@@ -75,7 +76,8 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
         super.init();
         s3client = mock(AmazonS3Client.class);
         resourceService = getResourceServiceBuilder().build();
-        handler = new CompleteUploadHandler(new FileService(s3client, mock(CustomerApiClient.class), resourceService));
+        handler = new CompleteUploadHandler(new FileService(s3client, mock(CustomerApiClient.class), resourceService)
+            , mock(IdentityServiceClient.class));
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }

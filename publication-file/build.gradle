@@ -31,4 +31,6 @@ test {
     environment "AWS_REGION", "region"
     environment "TABLE_NAME", "table"
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-persisted-bucket"
+    environment "BACKEND_CLIENT_AUTH_URL", "url"
+    environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
 }
