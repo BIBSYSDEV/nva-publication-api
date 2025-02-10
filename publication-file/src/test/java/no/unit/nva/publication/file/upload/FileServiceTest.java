@@ -1,5 +1,6 @@
 package no.unit.nva.publication.file.upload;
 
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
@@ -31,6 +32,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
@@ -419,6 +421,24 @@ class FileServiceTest extends ResourcesLocalTest {
                      () -> fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance));
     }
 
+    @Test
+    void shouldSetNullRrsWhenNullRrsAtCustomer()
+        throws BadRequestException, NotFoundException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var completeMultipartUploadResult = mockCompleteMultipartUpload();
+        var request = new InternalCompleteUploadRequest(randomString(), randomString(), List.of());
+
+        mockCustomerResponseWithNullRrs(userInstance);
+        fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
+
+        var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
+                                              resource.getIdentifier()).fetch(resourceService).orElseThrow();
+
+        assertEquals(fileEntry.getFile().getRightsRetentionStrategy(), NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
+    }
+
     private static UserInstance constructExternalClient() {
         return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), List.of(),
                                 UserClientType.EXTERNAL);
@@ -446,6 +466,13 @@ class FileServiceTest extends ResourcesLocalTest {
         when(customerApiClient.fetch(userInstance.getCustomerId())).thenReturn(new Customer(null, null,
                                                                                             new CustomerApiRightsRetention(
                                                                                                 RIGHTS_RETENTION_STRATEGY.getValue(),
+                                                                                                randomString())));
+    }
+
+    private void mockCustomerResponseWithNullRrs(UserInstance userInstance) {
+        when(customerApiClient.fetch(userInstance.getCustomerId())).thenReturn(new Customer(null, null,
+                                                                                            new CustomerApiRightsRetention(
+                                                                                                NULL_RIGHTS_RETENTION_STRATEGY.getValue(),
                                                                                                 randomString())));
     }
 

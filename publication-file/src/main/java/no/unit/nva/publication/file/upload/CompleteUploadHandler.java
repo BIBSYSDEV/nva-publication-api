@@ -2,10 +2,10 @@ package no.unit.nva.publication.file.upload;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
-import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -14,15 +14,17 @@ import nva.commons.core.JacocoGenerated;
 public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequest, File> {
 
     private final FileService fileService;
+    private final IdentityServiceClient identityServiceClient;
 
     @JacocoGenerated
     public CompleteUploadHandler() {
-        this(FileService.defaultFileService());
+        this(FileService.defaultFileService(), IdentityServiceClient.prepare());
     }
 
-    public CompleteUploadHandler(FileService fileService) {
+    public CompleteUploadHandler(FileService fileService, IdentityServiceClient identityServiceClient) {
         super(CompleteUploadRequest.class);
         this.fileService = fileService;
+        this.identityServiceClient = identityServiceClient;
     }
 
     @Override
@@ -36,7 +38,7 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
                                 Context context) throws ApiGatewayException {
 
         var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
-        var userInstance = UserInstance.fromRequestInfo(requestInfo);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         return fileService.completeMultipartUpload(resourceIdentifier, input, userInstance);
     }
