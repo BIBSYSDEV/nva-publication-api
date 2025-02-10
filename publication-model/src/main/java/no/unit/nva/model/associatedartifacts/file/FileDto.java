@@ -1,21 +1,18 @@
 package no.unit.nva.model.associatedartifacts.file;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
-@JsonSerialize
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public record FileResponse(
+
+public record FileDto(
     @JsonProperty(File.IDENTIFIER_FIELD) UUID identifier,
-    @JsonProperty(FileResponse.TYPE_NAME_FIELD) String type,
+    @JsonProperty(FileDto.TYPE_NAME_FIELD) String type,
     @JsonProperty(File.NAME_FIELD) String name,
     @JsonProperty(File.MIME_TYPE_FIELD) String mimeType,
     @JsonProperty(File.SIZE_FIELD) Long size,
@@ -26,8 +23,8 @@ public record FileResponse(
     @JsonProperty(File.LEGAL_NOTE_FIELD) String legalNote,
     @JsonProperty(File.PUBLISHED_DATE_FIELD) Instant publishedDate,
     @JsonProperty(File.UPLOAD_DETAILS_FIELD) UploadDetails uploadDetails,
-    @JsonProperty(FileResponse.ALLOWED_OPERATIONS_FIELD) Set<FileOperation> allowedOperations
-) implements AssociatedArtifactResponse {
+    @JsonProperty(FileDto.ALLOWED_OPERATIONS_FIELD) Set<FileOperation> allowedOperations
+) implements AssociatedArtifactDto {
 
     public static final String ALLOWED_OPERATIONS_FIELD = "allowedOperations";
     public static final String TYPE_NAME_FIELD = "type";
@@ -119,8 +116,8 @@ public record FileResponse(
             return this;
         }
 
-        public FileResponse build() {
-            return new FileResponse(
+        public FileDto build() {
+            return new FileDto(
                 identifier,
                 type,
                 name,

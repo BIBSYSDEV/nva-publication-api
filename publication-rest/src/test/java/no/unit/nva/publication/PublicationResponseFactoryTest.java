@@ -4,19 +4,27 @@ import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Set;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.FileDto;
 import nva.commons.apigateway.RequestInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class PublicationResponseFactoryTest {
+
     @Test
-    void associatedLinkShouldHaveType() throws JsonProcessingException {
+    void associatedLinkShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
         var publication =
             randomPublication().copy().withAssociatedArtifacts(List.of(randomAssociatedLink())).build();
 
@@ -28,7 +36,7 @@ class PublicationResponseFactoryTest {
     }
 
     @Test
-    void nullAssociatedArtifactShouldHaveType() throws JsonProcessingException {
+    void nullAssociatedArtifactShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
         var publication =
             randomPublication().copy().withAssociatedArtifacts(List.of(new NullAssociatedArtifact())).build();
 
@@ -40,7 +48,7 @@ class PublicationResponseFactoryTest {
     }
 
     @Test
-    void fileShouldHaveType() throws JsonProcessingException {
+    void fileShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
         var publication =
             randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build();
 
@@ -61,7 +69,7 @@ class PublicationResponseFactoryTest {
 
     @Test
     void shouldHaveOnlyOneTypeForFile() throws JsonProcessingException {
-        var file =randomOpenFile().toDto();
+        var file = randomOpenFile().toDto();
 
         var actualString = dtoObjectMapper.writeValueAsString(file);
 
@@ -70,7 +78,7 @@ class PublicationResponseFactoryTest {
 
     @Test
     void shouldHaveOnlyOneTypeForAssociatedLink() throws JsonProcessingException {
-        var file =randomAssociatedLink().toDto();
+        var file = randomAssociatedLink().toDto();
 
         var actualString = dtoObjectMapper.writeValueAsString(file);
 
@@ -84,5 +92,33 @@ class PublicationResponseFactoryTest {
         var actualString = dtoObjectMapper.writeValueAsString(file);
 
         Assertions.assertEquals(1, StringUtils.countMatches(actualString, "NullAssociatedArtifact\""));
+    }
+
+    @Test
+    void shouldSerializeFileOperationsDirectly() throws JsonProcessingException {
+        var file = ((FileDto) randomOpenFile().toDto()).copy()
+                       .withAllowedOperations(Set.of(FileOperation.READ_METADATA))
+                       .build();
+
+        var actualString = dtoObjectMapper.writeValueAsString(file);
+
+        assertThat(actualString, containsString(FileOperation.READ_METADATA.getValue()));
+    }
+
+    @Test
+    void shouldRoundTripFileOperationsWhenSerializedThroughResponse() throws JsonProcessingException {
+        var publication =
+            randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build();
+
+        var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
+
+        var actualString = dtoObjectMapper.writeValueAsString(response);
+
+        assertThat(actualString, containsString(FileOperation.READ_METADATA.getValue()));
+
+        var object = dtoObjectMapper.readValue(actualString, PublicationResponse.class);
+        assertThat(
+            object.getAssociatedArtifacts().stream().findFirst().map(FileDto.class::cast).get().allowedOperations(),
+            equalTo(Set.of(FileOperation.READ_METADATA, FileOperation.DOWNLOAD)));
     }
 }

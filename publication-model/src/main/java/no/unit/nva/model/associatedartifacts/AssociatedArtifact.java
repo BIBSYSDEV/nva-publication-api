@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.FileResponse;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 
@@ -22,8 +21,9 @@ import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 })
 public interface AssociatedArtifact {
     Set<Class<? extends AssociatedArtifact>> PUBLIC_ARTIFACT_TYPES = Set.of(OpenFile.class,
-                                                                              PendingOpenFile.class,
-                                                                              AssociatedLink.class);
+                                                                            PendingOpenFile.class,
+                                                                            AssociatedLink.class,
+                                                                            NullAssociatedArtifact.class);
     static Set<String> getPublicArtifactTypeNames() {
         return PUBLIC_ARTIFACT_TYPES.stream()
                    .map(Class::getSimpleName)
@@ -46,5 +46,5 @@ public interface AssociatedArtifact {
         };
     }
 
-    AssociatedArtifactResponse toDto();
+    AssociatedArtifactDto toDto();
 }

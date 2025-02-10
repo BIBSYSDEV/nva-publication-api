@@ -69,7 +69,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.file.FileResponse;
+import no.unit.nva.model.associatedartifacts.file.FileDto;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
@@ -506,7 +506,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
 
         var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
-        var actualFile = (FileResponse)
+        var actualFile = (FileDto)
                              Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator())
                                  .getFirst();
         assertInstanceOf(OverriddenRightsRetentionStrategy.class, actualFile.rightsRetentionStrategy());
