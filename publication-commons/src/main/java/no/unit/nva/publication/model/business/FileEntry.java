@@ -15,16 +15,12 @@ import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
@@ -44,6 +40,17 @@ public final class FileEntry implements Entity {
     private File file;
     private FileEvent fileEvent;
 
+    /**
+     * Constructor for FileEntry.
+     * @param resourceIdentifier
+     * @param createdDate
+     * @param modifiedDate
+     * @param owner
+     * @param ownerAffiliation Top level cristin unit id
+     * @param customerId
+     * @param file
+     * @param fileEvent
+     */
     @JsonCreator
     private FileEntry(@JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
                       @JsonProperty("createdDate") Instant createdDate,
@@ -66,6 +73,7 @@ public final class FileEntry implements Entity {
                              userInstance.getTopLevelOrgCristinId(), userInstance.getCustomerId(), file, null);
     }
 
+    //TODO: Should return interface ONLY that can perform fetch and hard delete only
     public static FileEntry queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
         return new FileEntry(resourceIdentifier, null, null, null, null, null, File.builder()
                                                                                    .withIdentifier(UUID.fromString(
@@ -151,7 +159,7 @@ public final class FileEntry implements Entity {
     }
 
     @Override
-    public Dao toDao() {
+    public FileDao toDao() {
         return FileDao.fromFileEntry(this);
     }
 
@@ -169,11 +177,16 @@ public final class FileEntry implements Entity {
         return ownerAffiliation;
     }
 
-    public void softDelete(ResourceService resourceIdentifier, User user) {
+    public void softDelete(ResourceService resourceService, User user) {
+        var fileEntry = this.softDelete(user);
+        resourceService.updateFile(fileEntry);
+    }
+
+    public FileEntry softDelete(User user) {
         var now = Instant.now();
         this.setFileEvent(FileDeletedEvent.create(user, now));
         this.modifiedDate = now;
-        resourceIdentifier.updateFile(this);
+        return this;
     }
 
     public void hardDelete(ResourceService resourceIdentifier) {
@@ -192,6 +205,7 @@ public final class FileEntry implements Entity {
                 .withLicense(fileUpdate.getLicense())
                 .withEmbargoDate(fileUpdate.getEmbargoDate().orElse(null))
                 .withLegalNote(fileUpdate.getLegalNote())
+                .withRightsRetentionStrategy(fileUpdate.getRightsRetentionStrategy())
                 .build(fileUpdate.getClass());
             this.modifiedDate = Instant.now();
             resourceService.updateFile(this);
@@ -247,35 +261,6 @@ public final class FileEntry implements Entity {
 
     public FileEvent getFileEvent() {
         return fileEvent;
-    }
-
-    public void clearResourceEvent(ResourceService resourceService) {
-        this.setFileEvent(null);
-        resourceService.updateFile(this);
-    }
-
-    public void migrate(ResourceService resourceService, Resource resource) {
-        var now = Instant.now();
-        this.modifiedDate = now;
-        this.setFileEvent(createFileEventWhenMigratingFile(resource));
-        resourceService.persistFile(this);
-    }
-
-    private FileEvent createFileEventWhenMigratingFile(Resource resource) {
-        if (file instanceof OpenFile || file instanceof InternalFile) {
-            var timeStamp = file.getPublishedDate()
-                           .or(() -> Optional.ofNullable(resource.getPublishedDate()))
-                           .or(() -> Optional.ofNullable(resource.getCreatedDate()))
-                           .orElseGet(Instant::now);
-            return FileApprovedEvent.create(getOwner(), timeStamp);
-        } else {
-            var timeStamp = Optional.ofNullable(file)
-                                .map(File::getUploadDetails)
-                                .map(UploadDetails::uploadedDate)
-                                .or(() -> Optional.ofNullable(resource.getCreatedDate()))
-                                .orElseGet(Instant::now);
-            return FileUploadedEvent.create(getOwner(), timeStamp);
-        }
     }
 
     private void setFileEvent(FileEvent fileEvent) {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(names = {PublicationLogEntry.TYPE, "LogEntry"}, value = PublicationLogEntry.class),
@@ -19,4 +20,6 @@ public interface LogEntry {
     Instant timestamp();
 
     LogUser performedBy();
+
+    void persist(ResourceService resourceService);
 }

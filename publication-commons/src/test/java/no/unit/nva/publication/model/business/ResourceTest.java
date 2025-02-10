@@ -36,8 +36,9 @@ public class ResourceTest {
     public static final String REVISION = "entityDescription.reference.publicationContext.revision";
     public static final String RESOURCE_EVENT = "resourceEvent";
     public static final String FILES_FIELD = "files";
+    public static final String FILE_ENTRIES_FIELD = "fileEntries";
     public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS, RESOURCE_EVENT,
-                                                              FILES_FIELD);
+                                                              FILES_FIELD, FILE_ENTRIES_FIELD);
     private final Javers javers = JaversBuilder.javers().build();
     private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
 
@@ -126,7 +127,7 @@ public class ResourceTest {
     @Test
     void shouldReturnTrueWhenResourceIsPresent() {
         var resource = Resource.resourceQueryObject(SortableIdentifier.next());
-        resource.setResourceEvent(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri()));
+        resource.setResourceEvent(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next()));
 
         assertTrue(resource.hasResourceEvent());
     }

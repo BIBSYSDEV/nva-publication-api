@@ -25,6 +25,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.SearchService.SearchServiceException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -58,7 +59,8 @@ class SearchServiceTest extends ResourcesLocalTest {
 
         var fetchedPublications = searchService.searchPublicationsByParam(searchParams);
 
-        assertThat(fetchedPublications, hasItem(publication));
+        var resource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
+        assertThat(fetchedPublications, hasItem(resource));
     }
 
     @Test

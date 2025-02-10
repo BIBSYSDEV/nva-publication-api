@@ -13,8 +13,11 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.time.Instant;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 
@@ -30,19 +33,21 @@ public class FileAccessFeatures {
     @Given("a file of type {string}")
     public void aFileOfTheType(String string) throws ClassNotFoundException {
         var file = createFile(string, EMPTY_PROPERTY);
-        scenarioContext.setPublication(randomNonDegreePublication());
-        scenarioContext.setFile(file);
+        scenarioContext.setResource(Resource.fromPublication(randomNonDegreePublication()));
+        scenarioContext.setFile(FileEntry.create(file, SortableIdentifier.next(), UserInstance.create(randomString(),
+                                                                                                      randomUri())));
     }
 
     @Given("a file of type {string} with property {string}")
     public void aFileOfTheTypeAndWithProperty(String fileType, String fileProperty) throws ClassNotFoundException {
         var file = createFile(fileType, fileProperty);
         if (fileProperty.toLowerCase().contains("degree")) {
-            scenarioContext.setPublication(randomDegreePublication());
+            scenarioContext.setResource(Resource.fromPublication(randomDegreePublication()));
         } else {
-            scenarioContext.setPublication(randomNonDegreePublication());
+            scenarioContext.setResource(Resource.fromPublication(randomNonDegreePublication()));
         }
-        scenarioContext.setFile(file);
+        scenarioContext.setFile(FileEntry.create(file, SortableIdentifier.next(), UserInstance.create(randomString(),
+                                                                                                         randomUri())));
     }
 
     @SuppressWarnings("unchecked")
@@ -69,7 +74,7 @@ public class FileAccessFeatures {
     @Then("the action outcome is {string}")
     public void theActionOutcomeIs(String outcome) {
         var permissionStrategy = new FilePermissions(scenarioContext.getFile(), scenarioContext.getUser(),
-                                                     scenarioContext.getPublication());
+                                                     scenarioContext.getResource());
         var expected = outcome.equals("Allowed");
 
         var actual = permissionStrategy.allowsAction(scenarioContext.getFileOperation());

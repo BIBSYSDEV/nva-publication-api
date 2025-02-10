@@ -743,13 +743,10 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
       Policies:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
-        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
-        - !GetAtt S3AccessManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -2116,12 +2113,12 @@ Resources:
                 topic: [ "PublicationService.DataImport.Filename" ]
                 subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.CristinData.NviPatch", "PublicationService.BrageData.PatchEntry" ]
 
-  DeleteFileFromS3EventHandler:
+  DeleteFileEventHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.delete.DeleteFileFromS3EventHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.delete.DeleteFileEventHandler::handleRequest
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName

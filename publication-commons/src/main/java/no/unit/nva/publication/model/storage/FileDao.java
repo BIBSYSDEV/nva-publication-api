@@ -3,6 +3,8 @@ package no.unit.nva.publication.model.storage;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.LogEntryDao.KEY_PATTERN;
 import static no.unit.nva.publication.model.storage.TicketDao.newPutTransactionItem;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
@@ -15,7 +17,10 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,6 +30,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -60,7 +66,7 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
         this.modifiedDate = fileEntry.getModifiedDate();
     }
 
-    public static Dao fromFileEntry(FileEntry fileEntry) {
+    public static FileDao fromFileEntry(FileEntry fileEntry) {
         return new FileDao(fileEntry);
     }
 
@@ -154,6 +160,32 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
         return Objects.equals(getIdentifier(), fileDao.getIdentifier()) &&
                Objects.equals(getResourceIdentifier(), fileDao.getResourceIdentifier()) &&
                Objects.equals(getModifiedDate(), fileDao.getModifiedDate());
+    }
+
+    public TransactWriteItem toPutNewTransactionItem(String tableName) {
+        var put = new Put()
+                      .withItem(this.toDynamoFormat())
+                      .withTableName(tableName)
+                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        return new TransactWriteItem().withPut(put);
+    }
+
+    public TransactWriteItem toPutTransactionItem(String tableName) {
+        var put = new Put().withItem(this.toDynamoFormat()).withTableName(tableName);
+        return new TransactWriteItem().withPut(put);
+    }
+
+    public TransactWriteItem toDeleteTransactionItem() {
+        var map = new ConcurrentHashMap<String, AttributeValue>();
+        var partKeyValue = new AttributeValue(getPrimaryKeyPartitionKey());
+        var sortKeyValue = new AttributeValue(getPrimaryKeySortKey());
+        map.put(PRIMARY_KEY_PARTITION_KEY_NAME, partKeyValue);
+        map.put(PRIMARY_KEY_SORT_KEY_NAME, sortKeyValue);
+        var delete = new Delete()
+                         .withTableName(RESOURCES_TABLE_NAME)
+                         .withKey(map);
+        return new TransactWriteItem().withDelete(delete);
     }
 
     @Override

@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -84,22 +83,8 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
         var logUser = logEntries.getFirst().performedBy();
-        assertNotNull(logUser.userName());
+        assertNotNull(logUser.username());
         assertNull(logUser.cristinId());
-    }
-
-    @Test
-    void shouldNotCreateLogEntryWhenConsumedEventHasResourceWithNewImageWhereResourceEventIsNull()
-        throws BadRequestException, IOException {
-        var publication = createPublication();
-        Resource.fromPublication(publication).clearResourceEvent(resourceService);
-        var event = createEvent(null, publication);
-
-        handler.handleRequest(event, outputStream, context);
-
-        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
-
-        assertTrue(logEntries.isEmpty());
     }
 
     @Test

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
@@ -22,10 +23,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class ResourceEventTest {
 
     public static Stream<Arguments> stateProvider() {
-        return Stream.of(Arguments.of(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri())),
-                         Arguments.of(new UnpublishedResourceEvent(Instant.now(), new User(randomString()), randomUri())),
-                         Arguments.of(new PublishedResourceEvent(Instant.now(), new User(randomString()), randomUri())),
-                         Arguments.of(new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri())),
+        return Stream.of(Arguments.of(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
+                                                               SortableIdentifier.next())),
+                         Arguments.of(new UnpublishedResourceEvent(Instant.now(), new User(randomString()),
+                                                                   randomUri(), SortableIdentifier.next())),
+                         Arguments.of(new PublishedResourceEvent(Instant.now(), new User(randomString()), randomUri()
+                             , SortableIdentifier.next())),
+                         Arguments.of(new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
                          Arguments.of(ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
                                                                              Instant.now())));
     }
