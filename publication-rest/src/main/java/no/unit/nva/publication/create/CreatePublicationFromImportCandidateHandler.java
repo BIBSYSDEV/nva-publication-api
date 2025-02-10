@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Organization.Builder;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -18,6 +18,7 @@ import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.create.pia.PiaClient;
 import no.unit.nva.publication.exception.NotAuthorizedException;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
@@ -205,7 +206,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                        ImportCandidate userInput,
                                                        ImportCandidate databaseVersion)
         throws UnauthorizedException {
-        var organization = new Builder().withId(requestInfo.getCurrentCustomer()).build();
+        var userInstance = UserInstance.fromRequestInfo(requestInfo);
         return databaseVersion.copyImportCandidate()
                    .withEntityDescription(userInput.getEntityDescription())
                    .withAssociatedArtifacts(userInput.getAssociatedArtifacts())
@@ -217,8 +218,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                    .withRightsHolder(userInput.getRightsHolder())
                    .withHandle(userInput.getHandle())
                    .withLink(userInput.getLink())
-                   .withPublisher(organization)
-                   .withResourceOwner(new ResourceOwner(new Username(requestInfo.getUserName()), organization.getId()))
+                   .withPublisher(Organization.fromUri(userInstance.getCustomerId()))
+                   .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()),
+                                                        userInstance.getTopLevelOrgCristinId()))
                    .build();
     }
 

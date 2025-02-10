@@ -270,6 +270,11 @@ public class Resource implements Entity {
         return resourceService.persistResource(this);
     }
 
+    public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
+        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, Instant.now()));
+        resourceService.updateResource(this);
+    }
+
     public List<LogEntry> fetchLogEntries(ResourceService resourceService) {
         return resourceService.getLogEntriesForResource(this);
     }

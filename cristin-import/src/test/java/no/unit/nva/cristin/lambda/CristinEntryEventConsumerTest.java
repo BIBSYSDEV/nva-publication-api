@@ -109,6 +109,8 @@ import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -1109,15 +1111,12 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
-        var importDetail = publication.getImportDetails()
-                               .stream()
-                               .filter(f -> f.importSource().getSource().equals(Source.CRISTIN))
-                               .findFirst()
-                               .orElse(null);
+        var resource = Resource.resourceQueryObject(publication.getIdentifier())
+                           .fetch(resourceService)
+                           .orElseThrow();
+        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 
-        assertNotNull(importDetail);
-        assertNotNull(importDetail.importDate());
-        assertNull(importDetail.importSource().getArchive());
+        assertEquals(Source.CRISTIN, resourceEvent.importSource().getSource());
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
@@ -1228,7 +1227,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
         var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
-            .createPublicationFromImportedEntry(any(), any());
+            .persistResource(any());
         return resourceService;
     }
 }

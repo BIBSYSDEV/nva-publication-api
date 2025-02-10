@@ -280,7 +280,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                                                      Publication existinPublication,
                                                                      PublicationRepresentation representation) {
         var importSource = createImportSource(representation);
-        var newImage = resourceService.updatePublicationByImportEntry(publicationForUpdate, importSource);
+        var resource = Resource.fromPublication(publicationForUpdate);
+        resource.updateResourceFromImport(resourceService, importSource);
+        var newImage = resource.fetch(resourceService).orElseThrow().toPublication();
         return new BrageMergingReport(existinPublication, newImage);
     }
 
@@ -333,8 +335,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private PublicationRepresentation handleSavingError(Failure<PublicationRepresentation> fail, S3Event s3Event) {
-        String brageObjectKey = extractObjectKey(s3Event);
-        String errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectKey;
+        var brageObjectKey = extractObjectKey(s3Event);
+        var errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectKey;
         logger.error(errorMessage, fail.getException());
         saveReportToS3(fail, s3Event);
         return null;
@@ -377,12 +379,11 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
         var importSource = createImportSource(publicationRepresentation);
-        Resource.fromPublication(publicationRepresentation.publication())
-            .importResource(resourceService, importSource);
-        var updatedPublication =
-            resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication(),
-                                                               importSource);
-        return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);
+        var publication = publicationRepresentation.publication();
+
+        var resource = Resource.fromPublication(publication).importResource(resourceService, importSource);
+
+        return new PublicationRepresentation(publicationRepresentation.brageRecord(), resource.toPublication());
     }
 
     private ImportSource createImportSource(PublicationRepresentation publicationRepresentation) {

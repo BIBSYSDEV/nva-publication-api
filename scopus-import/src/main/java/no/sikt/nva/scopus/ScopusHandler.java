@@ -51,7 +51,6 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     public static final String PATH_SEPERATOR = "/";
     public static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
-    public static final String SCOPUS_IDENTIFIER = "Scopus";
     public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
     private static final String ERROR_SAVING_SCOPUS_PUBLICATION = "Error saving imported scopus publication object "
                                                                   + "key: {}";
