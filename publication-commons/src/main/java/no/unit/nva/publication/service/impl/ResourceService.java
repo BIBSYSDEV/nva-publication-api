@@ -242,7 +242,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublishedDate(currentTime);
         newResource.setStatus(PUBLISHED);
         var importSource = ImportSource.fromSource(Source.SCOPUS);
-        newResource.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, currentTime));
+        newResource.setResourceEvent(ImportedResourceEvent.fromImportSource(userInstance, importSource, currentTime));
         return insertResource(newResource).toPublication();
     }
 
