@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Objects;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
@@ -18,6 +20,7 @@ import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.create.pia.PiaClient;
 import no.unit.nva.publication.exception.NotAuthorizedException;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -127,15 +130,17 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                                                   nvaPublicationUri));
     }
 
-    private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate input,
+    private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate importCandidate,
                                                                             RequestInfo requestInfo)
         throws NotFoundException, UnauthorizedException {
-        var rawImportCandidate = candidateService.getImportCandidateByIdentifier(input.getIdentifier());
-        var inputWithOwner = injectOrganizationAndOwner(requestInfo, input, rawImportCandidate);
-        var nvaPublication = publicationService.autoImportPublicationFromScopus(inputWithOwner);
-        copyArtifacts(nvaPublication, rawImportCandidate);
-        updatePiaContributors(input, rawImportCandidate);
-        return nvaPublication;
+        var rawImportCandidate = candidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+        var inputWithOwner = injectOrganizationAndOwner(requestInfo, importCandidate, rawImportCandidate);
+        var publication = Resource.fromImportCandidate(inputWithOwner)
+                              .importResource(publicationService, ImportSource.fromSource(Source.SCOPUS))
+                              .toPublication();
+        copyArtifacts(publication, rawImportCandidate);
+        updatePiaContributors(importCandidate, rawImportCandidate);
+        return publication;
     }
 
     private void updatePiaContributors(ImportCandidate input, ImportCandidate rawImportCandidate) {
