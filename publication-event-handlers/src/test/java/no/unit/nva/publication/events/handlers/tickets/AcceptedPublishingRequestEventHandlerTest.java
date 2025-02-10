@@ -258,6 +258,32 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldCreateDoiRequestTicketWhenPublishingMetadataOnPendingPublishingRequest()
+        throws IOException, ApiGatewayException {
+        var publication = createDraftPublicationWithDoi();
+        var publishingRequest = pendingPublishingRequest(publication);
+        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var pendingPublishingRequest = publishingRequest.persistNewTicket(ticketService);
+        var event = createEvent(null, pendingPublishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var updatedPublication =
+            resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        var ticket =
+            ticketService
+                .fetchTicketByResourceIdentifier(
+                    publication.getPublisher().getId(),
+                    publication.getIdentifier(),
+                    DoiRequest.class)
+                .orElseThrow();
+
+        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(
+            ticket.getOwnerAffiliation(),
+            is(equalTo(publication.getResourceOwner().getOwnerAffiliation())));
+    }
+
+    @Test
     void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
             throws ApiGatewayException, IOException {
         var publication = createDraftPublicationWithDoi();
