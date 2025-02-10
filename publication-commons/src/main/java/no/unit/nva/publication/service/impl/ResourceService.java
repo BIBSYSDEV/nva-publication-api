@@ -64,6 +64,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -165,7 +166,11 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(currentTime);
         newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
         setStatusOnNewPublication(userInstance, inputData, newResource);
-        return insertResource(newResource);
+        return insertResource(newResource).toPublication();
+    }
+
+    public Resource persistResource(Resource resource) {
+        return insertResource(resource);
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
@@ -179,7 +184,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setCreatedDate(now);
         newResource.setModifiedDate(now);
         newResource.setStatus(PUBLISHED);
-        return insertResource(newResource);
+        return insertResource(newResource).toPublication();
     }
 
     public Publication updatePublicationByImportEntry(Publication publication, ImportSource importSource) {
@@ -193,12 +198,12 @@ public class ResourceService extends ServiceWithTransactions {
     /**
      * Persists importCandidate with updated database metadata fields.
      *
-     * @param inputData importCandidate from external source
+     * @param importCandidate importCandidate from external source
      * @return updated importCandidate that has been sent to persistence
      */
-    public ImportCandidate persistImportCandidate(ImportCandidate inputData) {
+    public ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
         var now = clockForTimestamps.instant();
-        Resource newResource = Resource.fromImportCandidate(inputData);
+        var newResource = Resource.fromImportCandidate(importCandidate);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(now);
         newResource.setCreatedDate(now);
@@ -210,7 +215,7 @@ public class ResourceService extends ServiceWithTransactions {
     @Deprecated(forRemoval = true)
     public Publication insertPreexistingPublication(Publication publication) {
         Resource resource = Resource.fromPublication(publication);
-        return insertResource(resource);
+        return insertResource(resource).toPublication();
     }
 
     public Publication markPublicationForDeletion(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -226,10 +231,9 @@ public class ResourceService extends ServiceWithTransactions {
 
     public Publication autoImportPublicationFromScopus(ImportCandidate inputData) {
         var publication = inputData.toPublication();
-        Instant currentTime = clockForTimestamps.instant();
-        publication.addImportDetail(ImportDetail.fromSource(Source.SCOPUS, currentTime));
+        var currentTime = clockForTimestamps.instant();
         var userInstance = UserInstance.fromPublication(publication);
-        Resource newResource = Resource.fromPublication(publication);
+        var newResource = Resource.fromPublication(publication);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setResourceOwner(createResourceOwner(userInstance));
         newResource.setPublisher(createOrganization(userInstance));
@@ -237,7 +241,9 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(currentTime);
         newResource.setPublishedDate(currentTime);
         newResource.setStatus(PUBLISHED);
-        return insertResource(newResource);
+        var importSource = ImportSource.fromSource(Source.SCOPUS);
+        newResource.setResourceEvent(ImportedResourceEvent.fromImportSource(userInstance, importSource, currentTime));
+        return insertResource(newResource).toPublication();
     }
 
     // TODO: Should we delete all tickets for delete draft publication?
@@ -595,26 +601,26 @@ public class ResourceService extends ServiceWithTransactions {
                    .toList();
     }
 
-    private Publication insertResource(Resource newResource) {
-        if (newResource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(newResource);
+    private Resource insertResource(Resource resource) {
+        if (resource.getCuratingInstitutions().isEmpty()) {
+            setCuratingInstitutions(resource);
         }
 
-        var userInstance = UserInstance.fromPublication(newResource.toPublication());
-        var fileTransactionWriteItems = newResource.getFiles().stream()
-                                            .map(file -> FileEntry.create(file, newResource.getIdentifier(), userInstance))
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var fileTransactionWriteItems = resource.getFiles().stream()
+                                            .map(file -> FileEntry.create(file, resource.getIdentifier(), userInstance))
                                             .map(FileEntry::toDao)
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();
 
         var transactions = new ArrayList<>(fileTransactionWriteItems);
-        transactions.add(newPutTransactionItem(new ResourceDao(newResource), tableName));
-        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource));
+        transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
+        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
 
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);
 
-        return newResource.toPublication();
+        return resource;
     }
 
     private void setCuratingInstitutions(Resource newResource) {

@@ -50,7 +50,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
@@ -165,6 +164,7 @@ import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -317,13 +317,17 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetInstitutionShortNameForImportDetailWhenImportingPublicationFromBrage() throws IOException {
+    void shouldSetInstitutionShortNameForResourceEventWhenImportingPublicationFromBrage() throws IOException {
         var brageGenerator = buildGeneratorForRecord();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
 
-        assertEquals(NTNU_SHORT_NAME,
-                     publicationRepresentation.publication().getImportDetails().getFirst().importSource().getArchive());
+        var resource = Resource.fromPublication(publicationRepresentation.publication())
+                           .fetch(resourceService)
+                           .orElseThrow();
+        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
+
+        assertEquals(NTNU_SHORT_NAME, resourceEvent.importSource().getArchive());
     }
 
     @Test
@@ -980,7 +984,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAddBrageHandleAsAdditionalIdentifierAndUpdateImportDetailsWhenMergingDegreeWithPublicationThatHasHandleInAdditionalIdentifiers()
+    void shouldAddBrageHandleAsAdditionalIdentifierAndWhenMergingDegreeWithPublicationThatHasHandleInAdditionalIdentifiers()
         throws IOException {
         var publicationInstance = new DegreeBachelor(new MonographPages.Builder().build(), null);
         var handle = randomUri();
@@ -1015,7 +1019,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(publicationRepresentation.publication().getAdditionalIdentifiers(),
                    is(equalTo(expectedUpdatedPublication.getAdditionalIdentifiers())));
         assertThat(publicationRepresentation.publication(), is(equalTo(expectedUpdatedPublication)));
-        assertThat(publicationRepresentation.publication().getImportDetails().size(), is(equalTo(2)));
     }
 
     @Test
@@ -1917,20 +1920,17 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAddImportDetailWhenImportingBrageRecord() throws IOException {
+    void shouldSetResourceEventWhenImportingBrageRecord() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER).build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var publication = handler.handleRequest(s3Event, CONTEXT).publication();
 
-        var importDetail = publication.getImportDetails()
-                               .stream()
-                               .filter(f -> f.importSource().getSource().equals(Source.BRAGE))
-                               .findFirst()
-                               .orElse(null);
+        var resource = Resource.resourceQueryObject(publication.getIdentifier())
+                               .fetch(resourceService)
+                               .orElseThrow();
+        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 
-        assertNotNull(importDetail);
-        assertNotNull(importDetail.importDate());
-        assertThat(importDetail.importSource().getArchive(), is(equalTo("NTNU")));
+        assertEquals(Source.BRAGE, resourceEvent.importSource().getSource());
     }
 
     @Test
@@ -1943,11 +1943,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageRecord);
         var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
 
-        var brageImportDetail = publicationRepresentation.publication().getImportDetails().stream()
-                                    .filter(importDetail -> Source.BRAGE.equals(importDetail
-                                                                                    .importSource().getSource()))
-                                    .findFirst();
-        assertThat(brageImportDetail, is(not(Optional.empty())));
+        var resource = Resource.resourceQueryObject(publicationRepresentation.publication().getIdentifier())
+                           .fetch(resourceService)
+                           .orElseThrow();
+        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
+
+        assertEquals(Source.BRAGE, resourceEvent.importSource().getSource());
     }
 
     @DisplayName("Should not keep Cristin identifier from Brage when Cristin identifier is present in existing " +

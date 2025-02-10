@@ -29,6 +29,7 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
@@ -179,8 +180,7 @@ public class CristinEntryEventConsumer
                    .orElseThrow();
     }
 
-    private PublicationRepresentations persistUpdatedPublication(
-        PublicationRepresentations publicationRepresentations) {
+    private PublicationRepresentations persistUpdatedPublication(PublicationRepresentations publicationRepresentations) {
         resourceService.updatePublication(publicationRepresentations.getExistingPublication());
         return publicationRepresentations;
     }
@@ -368,7 +368,9 @@ public class CristinEntryEventConsumer
     }
 
     private Publication createPublication(Publication publication) {
-        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromSource(Source.CRISTIN));
+        return Resource.fromPublication(publication)
+                   .importResource(resourceService, ImportSource.fromSource(Source.CRISTIN))
+                   .toPublication();
     }
 
     private void avoidCongestionInDatabase() {
