@@ -82,7 +82,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                                             .withAssociatedArtifacts(List.of(openFile))
                                                             .withStatus(PublicationStatus.PUBLISHED)
                                                             .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublication(persistedPublication),
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
                                                                 publicationUpdateRemovingUnpublishedFiles);
 
         var publishingRequest = getPublishingRequest(persistedPublication);
@@ -112,7 +112,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var updatedPublication = persistedPublication.copy()
             .withAssociatedArtifacts(List.of(updatedFile))
             .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublication(persistedPublication),
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
                                                                updatedPublication);
 
         var filesForApproval = getPublishingRequest(persistedPublication).getFilesForApproval();
@@ -134,7 +134,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var updatedPublication = persistedPublication.copy()
                                      .withAssociatedArtifacts(List.of(randomPendingOpenFile1, randomPendingInternalFile2))
                                      .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublication(persistedPublication),
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
                                                                 updatedPublication);
 
         var filesForApproval = getPublishingRequest(persistedPublication).getFilesForApproval();
@@ -148,7 +148,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var persistedPublication = resourceService.createPublication(userInstance,
                                                                      publication);
         resourceService.publishPublication(userInstance, persistedPublication.getIdentifier());
-        return resourceService.getPublication(persistedPublication);
+        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 
     private static Customer customerNotAllowingPublishingFiles() {

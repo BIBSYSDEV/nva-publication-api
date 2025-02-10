@@ -61,6 +61,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -115,16 +116,18 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         value = PublicationStatus.class,
         mode = INCLUDE,
         names = {"PUBLISHED", "PUBLISHED_METADATA", "UNPUBLISHED", "DELETED"})
-    void shouldProduceAnExpandedDataEntryWhenInputHasNewImage(PublicationStatus status) throws IOException {
+    void shouldProduceAnExpandedDataEntryWhenInputHasNewImage(PublicationStatus status)
+        throws IOException, BadRequestException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever, resourceService);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        var publication = resourceService.insertPreexistingPublication(newImage);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
         var eventBlobStoredInS3 = s3Driver.readEvent(response.getUri());
         var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, ExpandedDataEntry.class);
-        assertThat(blobObject.identifyExpandedEntry(), is(equalTo(newImage.getIdentifier())));
+        assertThat(blobObject.identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
     }
 
     @ParameterizedTest
@@ -132,11 +135,13 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         value = PublicationStatus.class,
         mode = EXCLUDE,
         names = {"PUBLISHED", "PUBLISHED_METADATA", "UNPUBLISHED", "DELETED"})
-    void shouldNotProduceEntryWhenNotPublishedOrDeletedEntry(PublicationStatus status) throws IOException {
+    void shouldNotProduceEntryWhenNotPublishedOrDeletedEntry(PublicationStatus status)
+        throws IOException, BadRequestException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever, resourceService);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        var publication = resourceService.insertPreexistingPublication(newImage);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
         assertThat(response, is(equalTo(emptyEvent(response.getTimestamp()))));
@@ -155,8 +160,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenExpansionFailing() throws IOException {
         var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever, resourceService);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        var publication = resourceService.insertPreexistingPublication(newImage);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
 
@@ -170,8 +176,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldPersistRecoveryMessageWhenExpansionHasFailed() throws IOException {
         var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever, resourceService);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        var publication = resourceService.insertPreexistingPublication(newImage);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
 
 
         var sqsClient = new FakeSqsClient();
@@ -184,10 +191,12 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistRecoveryMessageWhenExpansionHasFailedAndOldImageIsNotPresent() throws IOException {
+    void shouldPersistRecoveryMessageWhenExpansionHasFailedAndOldImageIsNotPresent()
+        throws IOException, BadRequestException {
         var newImage = createPublicationWithStatus(PUBLISHED);
-        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever, resourceService);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
+        var publication = resourceService.insertPreexistingPublication(newImage);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
 
 
         var sqsClient = new FakeSqsClient();
@@ -196,14 +205,16 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
         var messageAttributes = persistedRecoveryMessage.messageAttributes();
-        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(newImage.getIdentifier().toString())));
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(publication.getIdentifier().toString())));
     }
 
     @Test
-    void shouldPersistRecoveryMessageForPublicationWhenBadResponseFromExternalApi() throws IOException {
+    void shouldPersistRecoveryMessageForPublicationWhenBadResponseFromExternalApi()
+        throws IOException, BadRequestException {
         var newImage = createPublicationWithStatus(PUBLISHED);
-        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever, resourceService);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
+        var publication = resourceService.insertPreexistingPublication(newImage);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
 
         var resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, getTicketService(),
@@ -215,15 +226,16 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
         var messageAttributes = persistedRecoveryMessage.messageAttributes();
 
-        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(newImage.getIdentifier().toString())));
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(publication.getIdentifier().toString())));
         assertThat(messageAttributes.get("type").stringValue(), is(equalTo("Resource")));
     }
 
     @Test
     void shouldPersistRecoveryMessageForTicketWhenBadResponseFromExternalApi() throws IOException {
         var publication = createPublicationWithStatus(PUBLISHED);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
-        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
+        var resource = resourceService.insertPreexistingPublication(publication);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        var ticket = TicketEntry.requestNewTicket(resource, DoiRequest.class);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
 
         var resourceExpansionService =
@@ -244,11 +256,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldPersistRecoveryMessageForMessageWhenBadResponseFromExternalApi() throws IOException,
                                                                                        ApiGatewayException {
         var publication = createPublicationWithStatus(PUBLISHED);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var persistedPublication =
             resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService);
         var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
-                         .withOwner(UserInstance.fromPublication(publication).getUsername())
+                         .withOwner(UserInstance.fromPublication(persistedPublication).getUsername())
                          .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
@@ -277,8 +289,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
         var oldImage = createPublicationWithStatus(DRAFT);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        FakeUriResponse.setupFakeForType(newImage, fakeUriRetriever, resourceService);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        var publication = resourceService.insertPreexistingPublication(newImage);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
 
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var eventReference = parseHandlerResponse();

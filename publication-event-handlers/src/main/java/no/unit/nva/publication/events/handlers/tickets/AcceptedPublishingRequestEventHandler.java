@@ -89,6 +89,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
             publishPublication(publication);
             refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
+        createDoiRequestIfNeeded(publication);
     }
 
     /**

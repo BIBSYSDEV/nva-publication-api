@@ -233,6 +233,8 @@ public class CreateUploadHandlerTest {
                    .withPathParameters(Map.of("publicationIdentifier", identifier.toString()))
                    .withBody(uploadRequestBody)
                    .withCurrentCustomer(randomUri())
+                   .withUserName(randomString())
+                   .withClientId(randomString())
                    .build();
     }
 

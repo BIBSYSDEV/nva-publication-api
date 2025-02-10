@@ -41,6 +41,7 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -50,7 +51,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
-import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
@@ -258,30 +258,23 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return updatedTicket;
     }
 
-    public void deletePublication(Publication publication, UserInstance userInstance) {
-
+    public void terminateResource(Resource resource, UserInstance userInstance) {
+        var softDeleteFilesTransactions = createSofDeleteFilesTransactions(resource, userInstance);
         var currentTime = clockForTimestamps.instant();
-        var deletePublication = toDeletedPublication(publication, currentTime);
-        var resource = Resource.fromPublication(deletePublication);
-        resource.setResourceEvent(DeletedResourceEvent.create(userInstance, currentTime));
-        var updateResourceTransactionItem = createPutTransaction(resource);
-
-        var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
+        var updateResourceTransactionItem = createPutTransaction(resource.delete(userInstance, currentTime));
+        var transactions = new ArrayList<TransactWriteItem>();
+        transactions.add(updateResourceTransactionItem);
+        transactions.addAll(softDeleteFilesTransactions);
+        var request = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(request);
     }
 
-    private Publication toDeletedPublication(Publication publication, Instant currentTime) {
-        return new Publication.Builder()
-                   .withIdentifier(publication.getIdentifier())
-                   .withStatus(DELETED)
-                   .withDoi(publication.getDoi())
-                   .withPublisher(publication.getPublisher())
-                   .withResourceOwner(publication.getResourceOwner())
-                   .withEntityDescription(publication.getEntityDescription())
-                   .withCreatedDate(publication.getCreatedDate())
-                   .withPublishedDate(publication.getPublishedDate())
-                   .withModifiedDate(currentTime)
-                   .build();
+    private List<TransactWriteItem> createSofDeleteFilesTransactions(Resource resource, UserInstance userInstance) {
+        return resource.getFileEntries().stream()
+                   .map(fileEntry -> fileEntry.softDelete(userInstance.getUser()))
+                   .map(FileEntry::toDao)
+                   .map(fileDao -> fileDao.toPutTransactionItem(tableName))
+                   .toList();
     }
 
     protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
@@ -378,7 +371,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private Publication fetchExistingPublication(Publication publication) {
-        return attempt(() -> readResourceService.getPublication(publication))
+        return attempt(() -> readResourceService.getResourceByIdentifier(publication.getIdentifier()))
+                   .map(Resource::toPublication)
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 
@@ -409,6 +403,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem createPutTransaction(Resource resourceUpdate) {
+
 
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 

@@ -16,6 +16,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.FileDto;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.RequestInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
@@ -26,7 +27,8 @@ class PublicationResponseFactoryTest {
     @Test
     void associatedLinkShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
         var publication =
-            randomPublication().copy().withAssociatedArtifacts(List.of(randomAssociatedLink())).build();
+            Resource.fromPublication(
+                randomPublication().copy().withAssociatedArtifacts(List.of(randomAssociatedLink())).build());
 
         var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
 
@@ -38,7 +40,8 @@ class PublicationResponseFactoryTest {
     @Test
     void nullAssociatedArtifactShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
         var publication =
-            randomPublication().copy().withAssociatedArtifacts(List.of(new NullAssociatedArtifact())).build();
+            Resource.fromPublication(
+                randomPublication().copy().withAssociatedArtifacts(List.of(new NullAssociatedArtifact())).build());
 
         var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
 
@@ -50,7 +53,8 @@ class PublicationResponseFactoryTest {
     @Test
     void fileShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
         var publication =
-            randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build();
+            Resource.fromPublication(
+                randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build());
 
         var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
 
@@ -108,7 +112,8 @@ class PublicationResponseFactoryTest {
     @Test
     void shouldRoundTripFileOperationsWhenSerializedThroughResponse() throws JsonProcessingException {
         var publication =
-            randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build();
+            Resource.fromPublication(
+                randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build());
 
         var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
 

@@ -623,7 +623,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
-        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+        return publicationService.getResourceAndFilesByIdentifier(publicationIdentifier).get().toPublication();
     }
 
     private Publication createPublicationWithNonPublicFilesOnly() throws ApiGatewayException {

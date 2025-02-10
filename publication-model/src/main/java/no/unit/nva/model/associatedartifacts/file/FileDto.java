@@ -5,13 +5,14 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 
 public record FileDto(
-    @JsonProperty(File.IDENTIFIER_FIELD) UUID identifier,
+    @JsonProperty(File.IDENTIFIER_FIELD) SortableIdentifier identifier,
     @JsonProperty(FileDto.TYPE_NAME_FIELD) String type,
     @JsonProperty(File.NAME_FIELD) String name,
     @JsonProperty(File.MIME_TYPE_FIELD) String mimeType,
@@ -36,7 +37,7 @@ public record FileDto(
 
     // Static Builder class
     public static class Builder {
-        private UUID identifier;
+        private SortableIdentifier identifier;
         private String type;
         private String name;
         private String mimeType;
@@ -51,7 +52,7 @@ public record FileDto(
         private Set<FileOperation> allowedOperations;
 
         // Builder methods to set each field
-        public Builder withIdentifier(UUID identifier) {
+        public Builder withIdentifier(SortableIdentifier identifier) {
             this.identifier = identifier;
             return this;
         }

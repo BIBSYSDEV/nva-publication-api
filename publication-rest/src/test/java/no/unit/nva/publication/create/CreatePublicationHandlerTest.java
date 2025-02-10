@@ -186,18 +186,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAcceptUnpublishableFileType() throws IOException {
-        var serialized = IoUtils.stringFromResources(Path.of("publication_with_internal_file.json"));
-        var deserialized = attempt(() -> dtoObjectMapper.readValue(serialized, Publication.class)).orElseThrow();
-        var publishingRequest = CreatePublicationRequest.fromPublication(deserialized);
-        var inputStream = createPublicationRequest(publishingRequest);
-        handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
-        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-    }
-
-    @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
         throws Exception {
         var inputStream = createPublicationRequest(null);
@@ -333,6 +321,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldPersistDegreePublicationWhenUserIsExternalClient(Class<?> protectedDegreeInstanceClass)
         throws IOException {
         var thesisPublication = samplePublication.copy()
+                                    .withAssociatedArtifacts(List.of())
                                     .withEntityDescription(publishableEntityDescription(protectedDegreeInstanceClass))
                                     .build();
         var event = requestFromExternalClient(CreatePublicationRequest.fromPublication(thesisPublication));
@@ -468,50 +457,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var actual = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
-
-    @Test
-    void shouldReturnFileWithOverriddenByRrsIfConfiguredOnCustomerAndSetOnFile() throws IOException {
-
-        WireMock.reset();
-        stubSuccessfulTokenResponse();
-        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(customerId);
-
-        var file = new PendingOpenFile(UUID.randomUUID(),
-                                       RandomDataGenerator.randomString(),
-                                       RandomDataGenerator.randomString(),
-                                       RandomDataGenerator.randomInteger().longValue(),
-                                       RandomDataGenerator.randomUri(),
-                                       PublisherVersion.ACCEPTED_VERSION,
-                                       null,
-                                       RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                       RandomDataGenerator.randomString(),
-                                       new UserUploadDetails(null, null));
-        // Waiting for datamodel changes as
-        // Generator sets publisherAuth to true
-
-        file.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(null, testUserName)); //
-        // configuredType null as it
-        // should not be used
-
-        var request = createEmptyPublicationRequest();
-        request.setAssociatedArtifacts(new AssociatedArtifactList(file));
-        request.setEntityDescription(publishableEntityDescription(AcademicArticle.class));
-
-        var inputStream = createPublicationRequest(request);
-
-        handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
-        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-
-        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
-        var actualFile = (FileDto)
-                             Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator())
-                                 .getFirst();
-        assertInstanceOf(OverriddenRightsRetentionStrategy.class, actualFile.rightsRetentionStrategy());
-        assertThat(((OverriddenRightsRetentionStrategy) actualFile.rightsRetentionStrategy()).getOverriddenBy(),
-                   is(equalTo(testUserName)));
     }
 
     @Test

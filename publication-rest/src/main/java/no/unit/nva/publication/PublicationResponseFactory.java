@@ -8,12 +8,12 @@ import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import no.unit.nva.model.associatedartifacts.file.FileDto;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
@@ -24,15 +24,15 @@ public final class PublicationResponseFactory {
     private PublicationResponseFactory() {
     }
 
-    public static PublicationResponse create(Publication publication, RequestInfo requestInfo,
+    public static PublicationResponse create(Resource resource, RequestInfo requestInfo,
                                              IdentityServiceClient identityServiceClient) {
         var userInstance = getUserInstance(requestInfo, identityServiceClient);
-        var publicationPermissions = PublicationPermissions.create(publication, userInstance);
+        var publicationPermissions = PublicationPermissions.create(resource.toPublication(), userInstance);
 
         if (hasAuthenticatedAccessOnPublication(publicationPermissions)) {
-            return createAuthenticatedResponse(publicationPermissions, publication, userInstance);
+            return createAuthenticatedResponse(publicationPermissions, resource, userInstance);
         } else {
-            return createPublicResponse(publicationPermissions, publication, userInstance);
+            return createPublicResponse(publicationPermissions, resource, userInstance);
         }
     }
 
@@ -41,42 +41,43 @@ public final class PublicationResponseFactory {
     }
 
     private static PublicationResponse createPublicResponse(PublicationPermissions publicationPermissions,
-                                                            Publication publication, UserInstance userInstance) {
-        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
+                                                            Resource resource, UserInstance userInstance) {
+        var publicationResponse = PublicationMapper.convertValue(resource.toPublication(), PublicationResponse.class);
         publicationResponse.setAllowedOperations(emptySet());
         publicationResponse.setAssociatedArtifacts(extractFilteredAssociatedArtifactsList(publicationPermissions,
-                                                                                          publication, userInstance));
+                                                                                          resource, userInstance));
         return publicationResponse;
     }
 
     private static PublicationResponseElevatedUser createAuthenticatedResponse(PublicationPermissions strategy,
-                                                                               Publication publication, UserInstance userInstance) {
-        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
+                                                                               Resource resource,
+                                                                               UserInstance userInstance) {
+        var publicationResponse = PublicationMapper.convertValue(resource.toPublication(), PublicationResponseElevatedUser.class);
         publicationResponse.setAllowedOperations(strategy.getAllAllowedActions());
 
-        publicationResponse.setAssociatedArtifacts(extractFilteredAssociatedArtifactsList(strategy, publication,
+        publicationResponse.setAssociatedArtifacts(extractFilteredAssociatedArtifactsList(strategy, resource,
                                                                                           userInstance));
         return publicationResponse;
     }
 
     private static List<AssociatedArtifactDto> extractFilteredAssociatedArtifactsList(
         PublicationPermissions publicationPermissions,
-        Publication publication, UserInstance userInstance) {
+        Resource resource, UserInstance userInstance) {
 
-        return publication.getAssociatedArtifacts()
+        return resource.getAssociatedArtifacts()
                    .stream()
                    .filter(
                        associatedArtifact -> isVisibleArtifact(publicationPermissions, associatedArtifact))
                    .map(AssociatedArtifact::toDto)
-                   .map(artifact -> getFileDtoWithArtifactOperations(artifact, userInstance, publication))
+                   .map(artifact -> getFileDtoWithArtifactOperations(artifact, userInstance, resource))
                    .toList();
     }
 
     private static AssociatedArtifactDto getFileDtoWithArtifactOperations(
-        AssociatedArtifactDto artifact, UserInstance userInstance, Publication publication) {
+        AssociatedArtifactDto artifact, UserInstance userInstance, Resource resource) {
         if (artifact instanceof FileDto fileDto) {
-            var file = publication.getFile(fileDto.identifier()).orElseThrow();
-            var filePermissions = FilePermissions.create(file, userInstance, publication);
+            var file = resource.getFileEntry(fileDto.identifier()).orElseThrow();
+            var filePermissions = FilePermissions.create(file, userInstance, resource);
             return fileDto.copy().withAllowedOperations(filePermissions.getAllAllowedActions()).build();
         }
 

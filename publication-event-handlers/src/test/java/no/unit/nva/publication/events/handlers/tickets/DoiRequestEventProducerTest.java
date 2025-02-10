@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Collections;
 import java.util.function.Function;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
@@ -255,7 +256,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublicationWithAllRequiredFieldsSetToFaulty() {
-        var publication = randomPublication();
+        var publication = randomPublication().copy().withAssociatedArtifacts(Collections.emptyList()).build();
         publication.setStatus(PublicationStatus.DRAFT);
         publication.getEntityDescription().setMainTitle(StringUtils.EMPTY_STRING);
         publication.getEntityDescription().getPublicationDate().setYear(null);

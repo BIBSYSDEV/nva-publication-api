@@ -50,7 +50,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
-import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -60,7 +59,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UnixPath;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -68,7 +66,6 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @SuppressWarnings("PMD.GodClass")
@@ -90,10 +87,8 @@ public class UpdatePublicationHandler
     public static final String LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS =
         "Lambda Function Invocation Result - Success";
     public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
-    public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private final EventBridgeClient eventBridgeClient;
     private final String nvaEventBusName;
-    private final S3Driver s3Driver;
     private final SecretsReader secretsReader;
     private final HttpClient httpClient;
     private final DefaultPublicationValidator publicationValidator;
@@ -109,7 +104,6 @@ public class UpdatePublicationHandler
              new Environment(),
              IdentityServiceClient.prepare(),
              defaultEventBridgeClient(),
-             S3Driver.defaultS3Client().build(),
              SecretsReader.defaultSecretsManagerClient(),
              HttpClient.newHttpClient());
     }
@@ -125,7 +119,6 @@ public class UpdatePublicationHandler
                                     Environment environment,
                                     IdentityServiceClient identityServiceClient,
                                     EventBridgeClient eventBridgeClient,
-                                    S3Client s3Client,
                                     SecretsManagerClient secretsManagerClient,
                                     HttpClient httpClient) {
         super(PublicationRequest.class, environment, httpClient);
@@ -135,7 +128,6 @@ public class UpdatePublicationHandler
         this.eventBridgeClient = eventBridgeClient;
         this.nvaEventBusName = environment.readEnv(NVA_EVENT_BUS_NAME_KEY);
         this.apiHost = environment.readEnv(API_HOST_ENV_KEY);
-        this.s3Driver = new S3Driver(s3Client, environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY));
         this.secretsReader = new SecretsReader(secretsManagerClient);
         this.publicationValidator = new DefaultPublicationValidator();
         this.httpClient = httpClient;
@@ -154,26 +146,26 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         var identifierInPath = RequestUtil.getIdentifier(requestInfo);
 
-        var existingPublication = fetchPublication(identifierInPath);
+        var existingResource = fetchResource(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var permissionStrategy = PublicationPermissions.create(existingPublication, userInstance);
+        var permissionStrategy = PublicationPermissions.create(existingResource.toPublication(), userInstance);
         var updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
-                                                                                existingPublication,
+                                                                                existingResource.toPublication(),
                                                                                 permissionStrategy,
                                                                                 userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
-                                     existingPublication,
+                                     existingResource.toPublication(),
                                      permissionStrategy,
                                      userInstance);
 
-            case RepublishPublicationRequest ignored -> republish(existingPublication, permissionStrategy, userInstance);
+            case RepublishPublicationRequest ignored -> republish(existingResource, permissionStrategy, userInstance);
 
-            case DeletePublicationRequest ignored -> terminatePublication(existingPublication, permissionStrategy, userInstance);
+            case DeletePublicationRequest ignored -> terminatePublication(existingResource, permissionStrategy, userInstance);
 
             default -> throw new BadRequestException("Unknown input body type");
         };
@@ -181,44 +173,31 @@ public class UpdatePublicationHandler
         return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
     }
 
-    private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
+    private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
         return Resource.resourceQueryObject(identifierInPath)
                    .fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE))
-                   .toPublication();
+                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
-    private Publication republish(Publication existingPublication, PublicationPermissions permissionStrategy,
+    private Resource republish(Resource resource, PublicationPermissions permissionStrategy,
                                   UserInstance userInstance)
         throws ApiGatewayException {
         return RepublishUtil.create(resourceService, ticketService, permissionStrategy)
-                   .republish(existingPublication, userInstance);
+                   .republish(resource, userInstance);
     }
 
-    private Publication terminatePublication(Publication existingPublication,
+    private Resource terminatePublication(Resource resource,
                                              PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
-        throws UnauthorizedException, BadRequestException, NotFoundException {
+        throws UnauthorizedException, BadRequestException {
         permissionStrategy.authorize(TERMINATE);
 
-        deleteFiles(existingPublication);
-        resourceService.deletePublication(existingPublication, userInstance);
+        resourceService.terminateResource(resource, userInstance);
 
-        return resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
+        return Resource.resourceQueryObject(resource.getIdentifier()).fetch(resourceService).orElseThrow();
     }
 
-    private void deleteFiles(Publication publication) {
-        publication.getAssociatedArtifacts()
-            .stream()
-            .filter(File.class::isInstance)
-            .map(File.class::cast)
-            .map(File::getIdentifier)
-            .map(UUID::toString)
-            .map(UnixPath::of)
-            .forEach(s3Driver::deleteFile);
-    }
-
-    private Publication unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,
+    private Resource unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,
                                              Publication existingPublication,
                                              PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
@@ -230,9 +209,10 @@ public class UpdatePublicationHandler
                                                             existingPublication,
                                                             userInstance);
         resourceService.unpublishPublication(updatedPublication, userInstance);
-        updatedPublication = resourceService.getPublicationByIdentifier(updatedPublication.getIdentifier());
-        updateNvaDoi(updatedPublication);
-        return updatedPublication;
+        var updatedResource = Resource.resourceQueryObject(updatedPublication.getIdentifier()).fetch(resourceService)
+                               .orElseThrow();
+        updateNvaDoi(updatedResource);
+        return updatedResource;
     }
 
     private void validateUnpublishRequest(UnpublishPublicationRequest unpublishPublicationRequest)
@@ -249,25 +229,26 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void updateNvaDoi(Publication publication) {
-        if (nonNull(publication.getDoi())) {
-            logger.info("Publication {} has NVA-DOI, sending event to EventBridge", publication.getIdentifier());
+    private void updateNvaDoi(Resource resource) {
+        if (nonNull(resource.getDoi())) {
+            logger.info("Publication {} has NVA-DOI, sending event to EventBridge", resource.getIdentifier());
             var putEventsRequest = PutEventsRequest.builder()
                                        .entries(PutEventsRequestEntry.builder()
                                                     .eventBusName(nvaEventBusName)
                                                     .source(NVA_PUBLICATION_DELETE_SOURCE)
                                                     .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
                                                     .detail(new LambdaDestinationInvocationDetail<>(
-                                                        DoiMetadataUpdateEvent.createUpdateDoiEvent(publication, apiHost))
+                                                        DoiMetadataUpdateEvent.createUpdateDoiEvent(resource.toPublication(),
+                                                                                                    apiHost))
                                                                 .toJsonString())
-                                                    .resources(publication.getIdentifier().toString()).build())
+                                                    .resources(resource.getIdentifier().toString()).build())
                                        .build();
             var ebResult =
                 eventBridgeClient.putEvents(putEventsRequest);
 
             logger.info("failedEntryCount={}", ebResult.failedEntryCount());
         } else {
-            logger.info("Publication {} has no NVA-DOI, no event sent to EventBridge", publication.getIdentifier());
+            logger.info("Publication {} has no NVA-DOI, no event sent to EventBridge", resource.getIdentifier());
         }
     }
 
@@ -287,7 +268,8 @@ public class UpdatePublicationHandler
                    .build();
     }
 
-    private Publication updateMetadata(UpdatePublicationRequest input,
+    // TODO: Move file update to resourceService and perform update in single transaction
+    private Resource updateMetadata(UpdatePublicationRequest input,
                                        SortableIdentifier identifierInPath,
                                        Publication existingPublication,
                                        PublicationPermissions permissionStrategy,
@@ -313,21 +295,23 @@ public class UpdatePublicationHandler
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
-        if (resourceService.shouldUseNewFiles()) {
-            Resource.fromPublication(publicationUpdate).getAssociatedArtifacts().stream()
-                .filter(File.class::isInstance)
-                .map(File.class::cast)
-                .forEach(file -> updateFile(existingPublication, file));
-            publicationUpdate.getAssociatedArtifacts().removeIf(File.class::isInstance);
-        }
+        Resource.fromPublication(publicationUpdate).getAssociatedArtifacts().stream()
+            .filter(File.class::isInstance)
+            .map(File.class::cast)
+            .forEach(file -> updateFile(existingPublication, file));
 
-        return resourceService.updatePublication(publicationUpdate);
+        resourceService.updatePublication(publicationUpdate);
+
+        return Resource.resourceQueryObject(identifierInPath).fetch(resourceService).orElseThrow();
     }
 
-    private void updateFile(Publication existingPublication, File file) {
+    private void updateFile(Publication existingPublication, File file)  {
         FileEntry.queryObject(file.getIdentifier(), existingPublication.getIdentifier())
             .fetch(resourceService)
-            .ifPresent(fileEntry -> fileEntry.update(file, resourceService));
+            .ifPresentOrElse(
+                fileEntry -> fileEntry.update(file, resourceService),
+                () -> { throw new FileNotFound(file.getIdentifier()); }
+            );
     }
 
     private static UserUploadDetails extractUploadDetails(UserInstance userInstance) {
@@ -448,6 +432,12 @@ public class UpdatePublicationHandler
         throws BadRequestException {
         if (identifiersDoNotMatch(identifierInPath, input)) {
             throw new BadRequestException(IDENTIFIER_MISMATCH_ERROR_MESSAGE);
+        }
+    }
+
+    public static class FileNotFound extends RuntimeException {
+        public FileNotFound(UUID id) {
+            super("File not found: "+id.toString());
         }
     }
 }
