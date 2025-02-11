@@ -59,7 +59,7 @@ public class Resource implements Entity {
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
     public static final List<PublicationStatus> PUBLISHABLE_STATUSES = List.of(DRAFT, PUBLISHED_METADATA,
-                                                                                        UNPUBLISHED);
+                                                                               UNPUBLISHED);
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -199,7 +199,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
-                   //.withFiles() TODO: Implement this
+                   .withFilesEntries(getFileEntriesFromPublication(publication))
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -217,33 +217,51 @@ public class Resource implements Entity {
                    .build();
     }
 
+    /**
+     * Extracts FileEntries from a Publication.
+     *
+     * <p><b style="color: red;">Warning:</b> This method does not include all the needed FileEntry meta data and
+     * should not be used when handling files.</p>
+     *
+     * @param publication the Publication extract FileEntries from.
+     * @return the list of FileEntries.
+     */
+    private static List<FileEntry> getFileEntriesFromPublication(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .map(file -> FileEntry.create(file, publication.getIdentifier(),
+                                                 UserInstance.fromPublication(publication)))
+                   .toList();
+    }
+
     private static Resource convertToResource(ImportCandidate importCandidate) {
         return Resource.builder()
-                    .withIdentifier(importCandidate.getIdentifier())
-                    .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
-                    .withCreatedDate(importCandidate.getCreatedDate())
-                    .withModifiedDate(importCandidate.getModifiedDate())
-                    .withIndexedDate(importCandidate.getIndexedDate())
-                    .withPublishedDate(importCandidate.getPublishedDate())
-                    .withStatus(importCandidate.getStatus())
-                    .withPublishedDate(importCandidate.getPublishedDate())
-                    .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
-                    .withPublisher(importCandidate.getPublisher())
-                    .withLink(importCandidate.getLink())
-                    .withProjects(importCandidate.getProjects())
-                    .withEntityDescription(importCandidate.getEntityDescription())
-                    .withDoi(importCandidate.getDoi())
-                    .withHandle(importCandidate.getHandle())
-                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
-                    .withSubjects(importCandidate.getSubjects())
-                    .withFundings(importCandidate.getFundings())
-                    .withRightsHolder(importCandidate.getRightsHolder())
-                    .withImportStatus(importCandidate.getImportStatus())
-                    .withPublicationNotes(importCandidate.getPublicationNotes())
-                    .withDuplicateOf(importCandidate.getDuplicateOf())
-                    .withCuratingInstitutions(importCandidate.getCuratingInstitutions())
+                   .withIdentifier(importCandidate.getIdentifier())
+                   .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
+                   .withCreatedDate(importCandidate.getCreatedDate())
+                   .withModifiedDate(importCandidate.getModifiedDate())
+                   .withIndexedDate(importCandidate.getIndexedDate())
+                   .withPublishedDate(importCandidate.getPublishedDate())
+                   .withStatus(importCandidate.getStatus())
+                   .withPublishedDate(importCandidate.getPublishedDate())
+                   .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
+                   .withPublisher(importCandidate.getPublisher())
+                   .withLink(importCandidate.getLink())
+                   .withProjects(importCandidate.getProjects())
+                   .withEntityDescription(importCandidate.getEntityDescription())
+                   .withDoi(importCandidate.getDoi())
+                   .withHandle(importCandidate.getHandle())
+                   .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+                   .withSubjects(importCandidate.getSubjects())
+                   .withFundings(importCandidate.getFundings())
+                   .withRightsHolder(importCandidate.getRightsHolder())
+                   .withImportStatus(importCandidate.getImportStatus())
+                   .withPublicationNotes(importCandidate.getPublicationNotes())
+                   .withDuplicateOf(importCandidate.getDuplicateOf())
+                   .withCuratingInstitutions(importCandidate.getCuratingInstitutions())
                    .withImportDetails(importCandidate.getImportDetails())
-                    .build();
+                   .build();
     }
 
     public static ResourceBuilder builder() {
@@ -252,7 +270,6 @@ public class Resource implements Entity {
 
     public static Resource fromImportCandidate(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate).map(Resource::convertToResource).orElse(null);
-
     }
 
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
@@ -381,6 +398,7 @@ public class Resource implements Entity {
 
     /**
      * This gets the import status for importCandidate and should be null in other context.
+     *
      * @return importStatus if Resource is an ImportCandidate
      */
     public Optional<ImportStatus> getImportStatus() {
@@ -441,30 +459,30 @@ public class Resource implements Entity {
 
     public ImportCandidate toImportCandidate() {
         return new ImportCandidate.Builder()
-                    .withIdentifier(getIdentifier())
-                    .withResourceOwner(extractResourceOwner())
-                    .withStatus(getStatus())
-                    .withCreatedDate(getCreatedDate())
-                    .withModifiedDate(getModifiedDate())
-                    .withIndexedDate(getIndexedDate())
-                    .withPublisher(getPublisher())
-                    .withPublishedDate(getPublishedDate())
-                    .withLink(getLink())
-                    .withProjects(getProjects())
-                    .withEntityDescription(getEntityDescription())
-                    .withDoi(getDoi())
-                    .withHandle(getHandle())
-                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                    .withAssociatedArtifacts(getAssociatedArtifacts())
-                    .withSubjects(getSubjects())
-                    .withFundings(getFundings())
-                    .withRightsHolder(getRightsHolder())
-                    .withImportStatus(getImportStatus().orElse(null))
-                    .withPublicationNotes(getPublicationNotes())
-                    .withDuplicateOf(getDuplicateOf())
-                    .withCuratingInstitutions(getCuratingInstitutions())
-                    .withImportDetails(getImportDetails())
-                    .build();
+                   .withIdentifier(getIdentifier())
+                   .withResourceOwner(extractResourceOwner())
+                   .withStatus(getStatus())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withPublisher(getPublisher())
+                   .withPublishedDate(getPublishedDate())
+                   .withLink(getLink())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withAssociatedArtifacts(getAssociatedArtifacts())
+                   .withSubjects(getSubjects())
+                   .withFundings(getFundings())
+                   .withRightsHolder(getRightsHolder())
+                   .withImportStatus(getImportStatus().orElse(null))
+                   .withPublicationNotes(getPublicationNotes())
+                   .withDuplicateOf(getDuplicateOf())
+                   .withCuratingInstitutions(getCuratingInstitutions())
+                   .withImportDetails(getImportDetails())
+                   .build();
     }
 
     private ResourceOwner extractResourceOwner() {

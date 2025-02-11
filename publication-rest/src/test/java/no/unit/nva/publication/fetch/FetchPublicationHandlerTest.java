@@ -68,7 +68,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.FileResponse;
+import no.unit.nva.model.associatedartifacts.file.FileDto;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
@@ -177,7 +177,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                        .stream()
                        .filter(
                            artifact -> artifact.getArtifactType().equals(OpenFile.TYPE))
-                       .map(FileResponse.class::cast)
+                       .map(FileDto.class::cast)
                        .findFirst()
                        .get();
 

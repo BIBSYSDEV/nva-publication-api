@@ -22,6 +22,7 @@ import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEv
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
+import org.javers.core.metamodel.clazz.EntityDefinitionBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -39,7 +40,13 @@ public class ResourceTest {
     public static final String FILE_ENTRIES_FIELD = "fileEntries";
     public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS, RESOURCE_EVENT,
                                                               FILES_FIELD, FILE_ENTRIES_FIELD);
-    private final Javers javers = JaversBuilder.javers().build();
+    private final Javers javers =
+        JaversBuilder.javers()
+            .registerEntity(EntityDefinitionBuilder.entityDefinition(Resource.class)
+                                .withIdPropertyName("identifier")
+                                .withIgnoredProperties(FILES_FIELD)
+                                .build())
+            .build();
     private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
 
     @ParameterizedTest(name = "builder contains all fields: {0}")
@@ -127,7 +134,8 @@ public class ResourceTest {
     @Test
     void shouldReturnTrueWhenResourceIsPresent() {
         var resource = Resource.resourceQueryObject(SortableIdentifier.next());
-        resource.setResourceEvent(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next()));
+        resource.setResourceEvent(
+            new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next()));
 
         assertTrue(resource.hasResourceEvent());
     }

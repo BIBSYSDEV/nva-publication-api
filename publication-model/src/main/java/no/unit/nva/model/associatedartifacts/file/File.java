@@ -16,7 +16,7 @@ import java.util.UUID;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
@@ -243,8 +243,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     }
 
     @Override
-    public AssociatedArtifactResponse toDto() {
-        return FileResponse.builder()
+    public AssociatedArtifactDto toDto() {
+        return FileDto.builder()
                    .withType(getArtifactType())
                    .withIdentifier(new SortableIdentifier(getIdentifier().toString()))
                    .withName(getName())
