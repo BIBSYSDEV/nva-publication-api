@@ -27,7 +27,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(FileEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public final class FileEntry implements Entity {
+public final class FileEntry implements Entity, QueryObject<FileEntry> {
 
     public static final String TYPE = "File";
     public static final String DO_NOT_USE_THIS_METHOD = "Do not use this method";
@@ -74,7 +74,7 @@ public final class FileEntry implements Entity {
     }
 
     //TODO: Should return interface ONLY that can perform fetch and hard delete only
-    public static FileEntry queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
+    public static QueryObject<FileEntry> queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
         return new FileEntry(resourceIdentifier, null, null, null, null, null, File.builder()
                                                                                    .withIdentifier(UUID.fromString(
                                                                                        fileIdentifier.toString()))
@@ -189,27 +189,32 @@ public final class FileEntry implements Entity {
         return this;
     }
 
-    public void hardDelete(ResourceService resourceIdentifier) {
+    public void delete(ResourceService resourceIdentifier) {
         resourceIdentifier.deleteFile(this);
     }
 
     public void update(File fileUpdate, ResourceService resourceService) {
-        if (!file.canBeConvertedTo(fileUpdate)) {
-            throw new IllegalStateException("%s can not be updated to %s"
-                                                .formatted(file.getClass().getSimpleName(),
-                                                           fileUpdate.getClass().getSimpleName()));
+        update(fileUpdate);
+        resourceService.updateFile(this);
+    }
+
+    public FileEntry update(File file) {
+        if (!this.file.canBeConvertedTo(file)) {
+            throw new IllegalStateException("%s cannot be updated to %s"
+                                                .formatted(this.file.getClass().getSimpleName(),
+                                                           file.getClass().getSimpleName()));
         }
-        if (!fileUpdate.equals(this.file)) {
-            this.file = file.copy()
-                .withPublisherVersion(fileUpdate.getPublisherVersion())
-                .withLicense(fileUpdate.getLicense())
-                .withEmbargoDate(fileUpdate.getEmbargoDate().orElse(null))
-                .withLegalNote(fileUpdate.getLegalNote())
-                .withRightsRetentionStrategy(fileUpdate.getRightsRetentionStrategy())
-                .build(fileUpdate.getClass());
+        if (!file.equals(this.file)) {
+            this.file = this.file.copy()
+                            .withPublisherVersion(file.getPublisherVersion())
+                            .withLicense(file.getLicense())
+                            .withEmbargoDate(file.getEmbargoDate().orElse(null))
+                            .withLegalNote(file.getLegalNote())
+                            .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
+                            .build(file.getClass());
             this.modifiedDate = Instant.now();
-            resourceService.updateFile(this);
         }
+        return this;
     }
 
     public void approve(ResourceService resourceService, User user) {

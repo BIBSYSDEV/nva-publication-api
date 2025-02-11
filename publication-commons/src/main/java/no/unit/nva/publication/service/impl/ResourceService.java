@@ -44,7 +44,6 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -304,64 +303,16 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        return getResourceAndFilesByIdentifier(identifier).orElseThrow(() -> new NotFoundException(
+        return readResourceService.getResourceByIdentifier(identifier)
+                   .orElseThrow(() -> new NotFoundException(
             RESOURCE_NOT_FOUND_MESSAGE + identifier));
-    }
-
-    public Optional<Resource> getResourceAndFilesByIdentifier(SortableIdentifier identifier) {
-        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
-        var queryRequest = new QueryRequest()
-                               .withTableName(tableName)
-                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-                               .withKeyConditionExpression("#PK3 = :value")
-                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
-                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
-
-        var entries = client.query(queryRequest).getItems().stream()
-                          .map(map -> parseAttributeValuesMap(map, Dao.class))
-                          .toList();
-
-        var resource = extractResource(entries);
-        var fileEntries = extractFileEntries(entries);
-
-        resource.ifPresent(res -> {
-            var associatedArtifacts = new ArrayList<AssociatedArtifact>();
-
-            var files = fileEntries.stream().map(FileEntry::getFile).toList();
-            var associatedLinks = res.getAssociatedArtifacts().stream()
-                                      .filter(associatedArtifact -> !(associatedArtifact instanceof File))
-                                      .toList();
-
-            associatedArtifacts.addAll(files);
-            associatedArtifacts.addAll(associatedLinks);
-
-            res.setFileEntries(fileEntries);
-            res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-        });
-        return resource;
-    }
-
-    private static Optional<Resource> extractResource(List<Dao> entries) {
-        return entries.stream()
-                   .filter(ResourceDao.class::isInstance)
-                   .map(ResourceDao.class::cast)
-                   .map(ResourceDao::getResource)
-                   .findFirst();
-    }
-
-    private static List<FileEntry> extractFileEntries(List<Dao> entries) {
-        return entries.stream()
-                   .filter(FileDao.class::isInstance)
-                   .map(FileDao.class::cast)
-                   .map(FileDao::getFileEntry)
-                   .toList();
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
         return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier).stream()
                        .map(Resource::fromPublication)
                        .map(Resource::getIdentifier)
-                       .map(this::getResourceAndFilesByIdentifier)
+                       .map(readResourceService::getResourceByIdentifier)
                        .filter(Optional::isPresent)
                        .map(Optional::get)
                        .map(Resource::toPublication)

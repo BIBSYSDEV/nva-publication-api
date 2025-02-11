@@ -47,7 +47,7 @@ public class DeleteFileEventHandler extends DestinationsEventBridgeEventHandler<
         var key = fileEntry.getIdentifier().toString();
         deleteFileFromS3(key);
         FileEntry.queryObject(fileEntry.getFile().getIdentifier(), fileEntry.getResourceIdentifier())
-            .hardDelete(resourceService);
+            .delete(resourceService);
         logger.info(FILE_DELETED_MESSAGE, key, fileEntry.getResourceIdentifier());
 
         return null;
