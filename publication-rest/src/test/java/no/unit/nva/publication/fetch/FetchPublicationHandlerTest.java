@@ -8,6 +8,7 @@ import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
@@ -433,18 +434,18 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnRepublishAllowedOperationWhenReturningTombstoneAndUserHasAccessRightToRepublish(
+    void shouldReturnOkAllowedOperationWhenReturningTombstoneAndUserHasAccessRightToRepublish(
         WireMockRuntimeInfo wireMockRuntimeInfo)
         throws ApiGatewayException, IOException {
         var publication = createUnpublishedPublication(wireMockRuntimeInfo);
         createCustomerMock(publication.getPublisher());
         fetchPublicationHandler.handleRequest(editorRequestsPublication(publication), output, context);
-        var gatewayResponse = parseFailureResponse();
-        var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
-        var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                                       PublicationResponseElevatedUser.class);
+        var response = parseHandlerResponse();
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(response.getBody(),
+                                                                      PublicationResponseElevatedUser.class);
 
-        assertThat(actualPublication.getAllowedOperations(), hasItem(PublicationOperation.REPUBLISH));
+        assertEquals(HTTP_OK, response.getStatusCode());
+        assertThat(publicationResponse.getAllowedOperations(), hasItem(PublicationOperation.REPUBLISH));
     }
 
     @Test
@@ -594,6 +595,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next().id())
                    .withUserName(randomString())
                    .withPersonCristinId(randomUri())
+                   .withHeaders( Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
                    .build();
     }
 
