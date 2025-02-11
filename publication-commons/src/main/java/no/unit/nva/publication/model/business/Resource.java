@@ -199,12 +199,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
-                   .withFilesEntries(publication.getAssociatedArtifacts().stream()
-                                         .filter(File.class::isInstance)
-                                         .map(File.class::cast)
-                                         .map(file -> FileEntry.create(file, publication.getIdentifier(),
-                                                                       UserInstance.fromPublication(publication)))
-                                         .toList())
+                   .withFilesEntries(getFileEntriesFromPublication(publication))
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -220,6 +215,15 @@ public class Resource implements Entity {
                    .withCuratingInstitutions(publication.getCuratingInstitutions())
                    .withImportDetails(publication.getImportDetails())
                    .build();
+    }
+
+    private static List<FileEntry> getFileEntriesFromPublication(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .map(file -> FileEntry.create(file, publication.getIdentifier(),
+                                                 UserInstance.fromPublication(publication)))
+                   .toList();
     }
 
     private static Resource convertToResource(ImportCandidate importCandidate) {
