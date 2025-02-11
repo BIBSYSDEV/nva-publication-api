@@ -28,7 +28,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -207,7 +206,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     s3Client,
                                                     piaClientConfig);
         handler = new CreatePublicationFromImportCandidateHandler(configs);
-        when(publicationService.autoImportPublicationFromScopus(any())).thenThrow(
+        when(publicationService.importResource(any(), any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);

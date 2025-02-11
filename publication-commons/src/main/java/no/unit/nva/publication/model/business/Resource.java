@@ -281,10 +281,11 @@ public class Resource implements Entity {
         var now = Instant.now();
         this.setCreatedDate(now);
         this.setModifiedDate(now);
+        this.setPublishedDate(now);
         this.setIdentifier(SortableIdentifier.next());
         this.setStatus(PUBLISHED);
         this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, now));
-        return resourceService.persistResource(this);
+        return resourceService.importResource(this, importSource);
     }
 
     public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {

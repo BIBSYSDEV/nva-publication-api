@@ -1027,15 +1027,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
-        var publication = randomImportCandidate();
-        var persistedPublication = resourceService.autoImportPublicationFromScopus(publication);
-        var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        assertThat(persistedPublication, is(equalTo(fetchedPublication)));
-        assertThat(fetchedPublication.getStatus(), is(equalTo(PUBLISHED)));
-    }
-
-    @Test
     void shouldUpdateImportStatus() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         var expectedStatus = ImportStatusFactory.createImported(randomPerson(), randomUri());
@@ -1240,7 +1231,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistResourceCreatedEventWhenCreatingNewPublication() throws ApiGatewayException {
+    void shouldImportResourceCreatedEventWhenCreatingNewPublication() throws ApiGatewayException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)

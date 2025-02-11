@@ -1227,7 +1227,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
         var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
-            .persistResource(any());
+            .importResource(any(), any());
         return resourceService;
     }
 }

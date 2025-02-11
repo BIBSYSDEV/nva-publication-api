@@ -40,7 +40,6 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -63,7 +62,6 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -168,8 +166,8 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource).toPublication();
     }
 
-    public Resource persistResource(Resource resource) {
-        return insertResource(resource);
+    public Resource importResource(Resource resource, ImportSource importSource) {
+        return insertImportedResource(resource, importSource);
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
@@ -228,21 +226,26 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
-    public Publication autoImportPublicationFromScopus(ImportCandidate inputData) {
-        var publication = inputData.toPublication();
-        var currentTime = clockForTimestamps.instant();
-        var userInstance = UserInstance.fromPublication(publication);
-        var newResource = Resource.fromPublication(publication);
-        newResource.setIdentifier(identifierSupplier.get());
-        newResource.setResourceOwner(createResourceOwner(userInstance));
-        newResource.setPublisher(createOrganization(userInstance));
-        newResource.setCreatedDate(currentTime);
-        newResource.setModifiedDate(currentTime);
-        newResource.setPublishedDate(currentTime);
-        newResource.setStatus(PUBLISHED);
-        var importSource = ImportSource.fromSource(Source.SCOPUS);
-        newResource.setResourceEvent(ImportedResourceEvent.fromImportSource(userInstance, importSource, currentTime));
-        return insertResource(newResource).toPublication();
+    private Resource insertImportedResource(Resource resource, ImportSource importSource) {
+        if (resource.getCuratingInstitutions().isEmpty()) {
+            setCuratingInstitutions(resource);
+        }
+
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var fileTransactionWriteItems = resource.getFiles().stream()
+                                            .map(file -> FileEntry.importFileEntry(file, resource.getIdentifier(), userInstance, importSource))
+                                            .map(FileEntry::toDao)
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
+                                            .toList();
+
+        var transactions = new ArrayList<>(fileTransactionWriteItems);
+        transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
+        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
+
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
+
+        return resource;
     }
 
     // TODO: Should we delete all tickets for delete draft publication?

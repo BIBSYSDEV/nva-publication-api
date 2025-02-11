@@ -13,12 +13,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -83,6 +85,13 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
 
     public static FileEntry fromDao(FileDao fileDao) {
         return (FileEntry) fileDao.getData();
+    }
+
+    public static FileEntry importFileEntry(File file, SortableIdentifier identifier, UserInstance userInstance,
+                                            ImportSource importSource) {
+        var fileEntry = create(file, identifier, userInstance);
+        fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(), Instant.now(), importSource));
+        return fileEntry;
     }
 
     public void persist(ResourceService resourceService) {
