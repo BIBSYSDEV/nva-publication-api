@@ -11,7 +11,7 @@ import nva.commons.core.JacocoGenerated;
  */
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(NullAssociatedArtifact.TYPE_NAME)
-public class NullAssociatedArtifact implements AssociatedArtifact, AssociatedArtifactResponse {
+public class NullAssociatedArtifact implements AssociatedArtifact {
 
     private static final int STATIC_VALUE_FOR_HASH_CODE = 88_961;
     public static final String TYPE_NAME = "NullAssociatedArtifact";
@@ -41,7 +41,7 @@ public class NullAssociatedArtifact implements AssociatedArtifact, AssociatedArt
     }
 
     @Override
-    public AssociatedArtifactResponse toDto() {
-        return this;
+    public AssociatedArtifactDto toDto() {
+        return new NullAssociatedArtifactDto();
     }
 }

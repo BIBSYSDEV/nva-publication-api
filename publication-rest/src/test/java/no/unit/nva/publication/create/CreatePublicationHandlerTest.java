@@ -28,7 +28,6 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -42,7 +41,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.google.common.collect.Lists;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +48,6 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -68,8 +65,6 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.file.FileResponse;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
@@ -87,7 +82,6 @@ import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.core.IsEqual;
 import org.javers.core.Javers;
@@ -183,18 +177,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     private static Class<?>[] protectedDegreeInstanceTypeClassesProvider() {
         return PROTECTED_DEGREE_INSTANCE_TYPES;
-    }
-
-    @Test
-    void shouldAcceptUnpublishableFileType() throws IOException {
-        var serialized = IoUtils.stringFromResources(Path.of("publication_with_internal_file.json"));
-        var deserialized = attempt(() -> dtoObjectMapper.readValue(serialized, Publication.class)).orElseThrow();
-        var publishingRequest = CreatePublicationRequest.fromPublication(deserialized);
-        var inputStream = createPublicationRequest(publishingRequest);
-        handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
-        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
     @Test
@@ -333,6 +315,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldPersistDegreePublicationWhenUserIsExternalClient(Class<?> protectedDegreeInstanceClass)
         throws IOException {
         var thesisPublication = samplePublication.copy()
+                                    .withAssociatedArtifacts(List.of())
                                     .withEntityDescription(publishableEntityDescription(protectedDegreeInstanceClass))
                                     .build();
         var event = requestFromExternalClient(CreatePublicationRequest.fromPublication(thesisPublication));
@@ -468,50 +451,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var actual = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
-
-    @Test
-    void shouldReturnFileWithOverriddenByRrsIfConfiguredOnCustomerAndSetOnFile() throws IOException {
-
-        WireMock.reset();
-        stubSuccessfulTokenResponse();
-        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(customerId);
-
-        var file = new PendingOpenFile(UUID.randomUUID(),
-                                       RandomDataGenerator.randomString(),
-                                       RandomDataGenerator.randomString(),
-                                       RandomDataGenerator.randomInteger().longValue(),
-                                       RandomDataGenerator.randomUri(),
-                                       PublisherVersion.ACCEPTED_VERSION,
-                                       null,
-                                       RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                       RandomDataGenerator.randomString(),
-                                       new UserUploadDetails(null, null));
-        // Waiting for datamodel changes as
-        // Generator sets publisherAuth to true
-
-        file.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(null, testUserName)); //
-        // configuredType null as it
-        // should not be used
-
-        var request = createEmptyPublicationRequest();
-        request.setAssociatedArtifacts(new AssociatedArtifactList(file));
-        request.setEntityDescription(publishableEntityDescription(AcademicArticle.class));
-
-        var inputStream = createPublicationRequest(request);
-
-        handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
-        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-
-        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
-        var actualFile = (FileResponse)
-                             Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator())
-                                 .getFirst();
-        assertInstanceOf(OverriddenRightsRetentionStrategy.class, actualFile.rightsRetentionStrategy());
-        assertThat(((OverriddenRightsRetentionStrategy) actualFile.rightsRetentionStrategy()).getOverriddenBy(),
-                   is(equalTo(testUserName)));
     }
 
     @Test

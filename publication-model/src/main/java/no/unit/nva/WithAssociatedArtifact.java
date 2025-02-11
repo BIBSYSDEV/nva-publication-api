@@ -1,12 +1,12 @@
 package no.unit.nva;
 
 import java.util.List;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 
 public interface WithAssociatedArtifact extends PublicationBase {
 
-    List<AssociatedArtifactResponse> getAssociatedArtifacts();
+    List<AssociatedArtifactDto> getAssociatedArtifacts();
 
-    void setAssociatedArtifacts(List<AssociatedArtifactResponse> associatedArtifact);
+    void setAssociatedArtifacts(List<AssociatedArtifactDto> associatedArtifact);
 
 }

@@ -14,7 +14,7 @@ import nva.commons.core.SingletonCollector;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(AssociatedLink.TYPE_NAME)
-public class AssociatedLink implements AssociatedArtifact, AssociatedArtifactResponse {
+public class AssociatedLink implements AssociatedArtifact {
 
     public static final String ID_FIELD = "id";
     public static final String NAME_FIELD = "name";
@@ -26,7 +26,6 @@ public class AssociatedLink implements AssociatedArtifact, AssociatedArtifactRes
     private final String name;
     @JsonProperty(DESCRIPTION_FIELD)
     private final String description;
-    
 
     @JsonCreator
     public AssociatedLink(@JsonProperty(ID_FIELD) URI id,
@@ -77,8 +76,8 @@ public class AssociatedLink implements AssociatedArtifact, AssociatedArtifactRes
     }
 
     @Override
-    public AssociatedArtifactResponse toDto() {
-        return this;
+    public AssociatedArtifactDto toDto() {
+        return new AssociatedLinkDto(id, name, description);
     }
 
     public enum RelationType {

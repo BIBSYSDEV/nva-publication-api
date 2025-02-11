@@ -127,12 +127,12 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.FileResponse;
+import no.unit.nva.model.associatedartifacts.file.FileDto;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
@@ -1673,7 +1673,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
-    private static boolean isFileResponse(AssociatedArtifactResponse artifact) {
+    private static boolean isFileResponse(AssociatedArtifactDto artifact) {
         return artifact.getArtifactType().contains("File");
     }
 
@@ -1697,7 +1697,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         var existingFiles = body.getAssociatedArtifacts().stream()
                                 .filter(UpdatePublicationHandlerTest::isFileResponse)
-                                .map(FileResponse.class::cast)
+                                .map(FileDto.class::cast)
                                 .filter(f -> !f.identifier().equals(fileToUpload.getIdentifier()))
                                 .toList();
 

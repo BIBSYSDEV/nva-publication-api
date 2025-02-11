@@ -10,8 +10,8 @@ import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
-import no.unit.nva.model.associatedartifacts.file.FileResponse;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
+import no.unit.nva.model.associatedartifacts.file.FileDto;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -60,7 +60,7 @@ public final class PublicationResponseFactory {
         return publicationResponse;
     }
 
-    private static List<AssociatedArtifactResponse> extractFilteredAssociatedArtifactsList(
+    private static List<AssociatedArtifactDto> extractFilteredAssociatedArtifactsList(
         PublicationPermissions publicationPermissions,
         Resource resource, UserInstance userInstance) {
 
@@ -69,16 +69,16 @@ public final class PublicationResponseFactory {
                    .filter(
                        associatedArtifact -> isVisibleArtifact(publicationPermissions, associatedArtifact))
                    .map(AssociatedArtifact::toDto)
-                   .map(artifact -> applyArtifactOperations(artifact, userInstance, resource))
+                   .map(artifact -> getFileDtoWithArtifactOperations(artifact, userInstance, resource))
                    .toList();
     }
 
-    private static AssociatedArtifactResponse applyArtifactOperations(
-        AssociatedArtifactResponse artifact, UserInstance userInstance, Resource resource) {
-        if (artifact instanceof FileResponse fileResponse) {
-            var file = resource.getFileEntry(fileResponse.identifier()).orElseThrow();
+    private static AssociatedArtifactDto getFileDtoWithArtifactOperations(
+        AssociatedArtifactDto artifact, UserInstance userInstance, Resource resource) {
+        if (artifact instanceof FileDto fileDto) {
+            var file = resource.getFileEntry(fileDto.identifier()).orElseThrow();
             var filePermissions = FilePermissions.create(file, userInstance, resource);
-            return fileResponse.copy().withAllowedOperations(filePermissions.getAllAllowedActions()).build();
+            return fileDto.copy().withAllowedOperations(filePermissions.getAllAllowedActions()).build();
         }
 
         return artifact;

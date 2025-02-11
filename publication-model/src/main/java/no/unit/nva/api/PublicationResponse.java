@@ -32,7 +32,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
@@ -59,7 +59,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     private List<ResearchProject> projects;
     private List<Funding> fundings;
     private List<URI> subjects;
-    private List<AssociatedArtifactResponse> associatedArtifacts;
+    private List<AssociatedArtifactDto> associatedArtifacts;
     private List<ImportDetail> importDetails;
 
     private Set<AdditionalIdentifierBase> additionalIdentifiers;
@@ -98,11 +98,11 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         return response;
     }
 
-    public void setAssociatedArtifacts(List<AssociatedArtifactResponse> associatedArtifactResponses) {
-        this.associatedArtifacts = associatedArtifactResponses;
+    public void setAssociatedArtifacts(List<AssociatedArtifactDto> associatedArtifactRespons) {
+        this.associatedArtifacts = associatedArtifactRespons;
     }
 
-    private static List<AssociatedArtifactResponse> getPublicAssociatedArtifacts(Publication publication) {
+    private static List<AssociatedArtifactDto> getPublicAssociatedArtifacts(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(PublicationResponse::isPublicArtifact)
                    .map(AssociatedArtifact::toDto)
@@ -301,14 +301,14 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     }
 
     @Override
-    public List<AssociatedArtifactResponse> getAssociatedArtifacts() {
+    public List<AssociatedArtifactDto> getAssociatedArtifacts() {
         return this.associatedArtifacts.stream()
                    .filter(artifactResponse -> AssociatedArtifact.getPublicArtifactTypeNames().contains(artifactResponse.getArtifactType()))
                    .toList();
     }
 
     @JsonIgnore
-    public List<AssociatedArtifactResponse> getAssociatedArtifactsForElevatedUser() {
+    public List<AssociatedArtifactDto> getAssociatedArtifactsForElevatedUser() {
         return associatedArtifacts;
     }
 
