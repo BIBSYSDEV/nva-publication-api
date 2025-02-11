@@ -118,11 +118,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String producePublicationResponseWhenUnpublished(RequestInfo requestInfo, Resource resource)
         throws GoneException {
-        if (userCanUpdateResource(requestInfo, resource)) {
-            return createPublicationResponse(requestInfo, resource);
-        } else {
-            return produceRemovedPublicationResponse(resource, requestInfo);
-        }
+        return userCanUpdateResource(requestInfo, resource)
+                   ? createPublicationResponse(requestInfo, resource)
+                   : produceRemovedPublicationResponse(resource, requestInfo);
     }
 
     private boolean userCanUpdateResource(RequestInfo requestInfo, Resource resource) {
