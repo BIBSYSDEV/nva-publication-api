@@ -10,9 +10,11 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.mapper.Customer;
@@ -35,6 +37,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -285,14 +288,18 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         var importSource = createImportSource(representation);
         var resource = Resource.fromPublication(publicationForUpdate);
         var updatedFiles = resource.getFiles();
-        var oldFiles = Resource.fromPublication(existinPublication).getFiles();
+        var oldFiles = Resource.fromPublication(existinPublication).getFiles().stream().map(File::getIdentifier).toList();
         updatedFiles.stream()
-            .filter(file -> oldFiles.stream().noneMatch(f -> f.getIdentifier().equals(file.getIdentifier())))
+            .filter(file -> containsNotFile(file, oldFiles))
             .forEach(file -> FileEntry.create(file, resource.getIdentifier(),
                                               UserInstance.fromPublication(representation.publication())).persist(resourceService));
         resource.updateResourceFromImport(resourceService, importSource);
         var newImage = resource.fetch(resourceService).orElseThrow().toPublication();
         return new BrageMergingReport(existinPublication, newImage);
+    }
+
+    private static boolean containsNotFile(File file, List<UUID> fileList) {
+        return !fileList.contains(file.getIdentifier());
     }
 
     private Publication updatedPublication(PublicationRepresentation publicationRepresentation,
