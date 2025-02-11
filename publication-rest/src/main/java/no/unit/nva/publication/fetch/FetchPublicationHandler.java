@@ -130,7 +130,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
-        return resourceService.getResourceAndFilesByIdentifier(identifierInPath).orElseThrow(
+        return Resource.resourceQueryObject(identifierInPath)
+                   .fetch(resourceService)
+                    .orElseThrow(
             () -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifierInPath));
     }
 

@@ -3,13 +3,14 @@ package no.unit.nva.publication.model.business.logentry;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fileIdentifier,
                            SortableIdentifier resourceIdentifier, LogTopic topic, String filename,
                            String fileType, Instant timestamp,
-                           LogUser performedBy) implements LogEntry {
+                           LogUser performedBy, ImportSource importSource) implements LogEntry {
 
     public static final String TYPE = "FileLogEntry";
 
@@ -31,6 +32,7 @@ public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fil
         private String fileType;
         private Instant timestamp;
         private LogUser performedBy;
+        private ImportSource importSource;
 
         private Builder() {
         }
@@ -75,10 +77,14 @@ public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fil
             return this;
         }
 
+        public Builder withImportSource(ImportSource importSource) {
+            this.importSource = importSource;
+            return this;
+        }
+
         public FileLogEntry build() {
             return new FileLogEntry(identifier, fileIdentifier, resourceIdentifier, topic, filename, fileType,
-                                    timestamp,
-                                    performedBy);
+                                    timestamp, performedBy, importSource);
         }
     }
 }

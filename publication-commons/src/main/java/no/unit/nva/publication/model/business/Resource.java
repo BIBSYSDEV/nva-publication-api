@@ -281,10 +281,11 @@ public class Resource implements Entity {
         var now = Instant.now();
         this.setCreatedDate(now);
         this.setModifiedDate(now);
+        this.setPublishedDate(now);
         this.setIdentifier(SortableIdentifier.next());
         this.setStatus(PUBLISHED);
         this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, now));
-        return resourceService.persistResource(this);
+        return resourceService.importResource(this, importSource);
     }
 
     public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
@@ -298,12 +299,6 @@ public class Resource implements Entity {
 
     public Optional<Resource> fetch(ResourceService resourceService) {
         return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).toOptional();
-    }
-
-    // TODO: Implementation in this method should be used every place we fetch resource and publication after we have
-    //  migrated files
-    public Optional<Resource> fetchResourceWithFiles(ResourceService resourceService) {
-        return resourceService.getResourceAndFilesByIdentifier(this.getIdentifier());
     }
 
     public void publish(ResourceService resourceService, UserInstance userInstance) {

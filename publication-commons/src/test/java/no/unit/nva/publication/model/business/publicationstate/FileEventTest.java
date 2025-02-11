@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -25,7 +27,9 @@ public class FileEventTest {
                          Arguments.of(
                              new FileApprovedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
                          Arguments.of(new FileRejectedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
-                         Arguments.of(new FileDeletedEvent(Instant.now(), randomUser(), SortableIdentifier.next())));
+                         Arguments.of(new FileDeletedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
+                         Arguments.of(new FileImportedEvent(Instant.now(), randomUser(), SortableIdentifier.next(),
+                                                            ImportSource.fromSource(Source.SCOPUS))));
     }
 
     @ParameterizedTest
