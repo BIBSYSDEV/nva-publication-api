@@ -117,13 +117,11 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String producePublicationResponseWhenUnpublished(RequestInfo requestInfo, Resource resource)
-        throws GoneException, UnsupportedAcceptHeaderException {
+        throws GoneException {
         if (userCanUpdateResource(requestInfo, resource)) {
-            var response = producePublicationResponse(requestInfo, resource);
-            return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
+            return createPublicationResponse(requestInfo, resource);
         } else {
-            var response = produceRemovedPublicationResponse(resource, requestInfo);
-            return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
+            return produceRemovedPublicationResponse(resource, requestInfo);
         }
     }
 

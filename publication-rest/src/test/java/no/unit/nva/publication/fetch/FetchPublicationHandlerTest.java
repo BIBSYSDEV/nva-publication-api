@@ -440,11 +440,11 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createUnpublishedPublication(wireMockRuntimeInfo);
         createCustomerMock(publication.getPublisher());
         fetchPublicationHandler.handleRequest(editorRequestsPublication(publication), output, context);
-        var response = parseHandlerResponse();
-        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(response.getBody(),
-                                                                      PublicationResponseElevatedUser.class);
+        var gatewayResponse = parseHandlerResponse();
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
+                                                                      PublicationResponse.class);
 
-        assertEquals(HTTP_OK, response.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(publicationResponse.getAllowedOperations(), hasItem(PublicationOperation.REPUBLISH));
     }
 
