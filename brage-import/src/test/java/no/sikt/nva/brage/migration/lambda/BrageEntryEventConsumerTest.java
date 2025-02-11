@@ -174,6 +174,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -1175,6 +1176,60 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         assertTrue(actualPublicationRepresentation.publication().getAssociatedArtifacts().stream()
                        .anyMatch(HiddenFile.class::isInstance));
+    }
+
+    @Test
+    void shouldPersistNewFileWithUserInstanceFromIncomingPublicationWhenMergingPublications()
+        throws IOException, InvalidUnconfirmedSeriesException {
+        var cristinIdentifier = randomString();
+        var publication = randomPublication(DegreeBachelor.class);
+        publication.setAdditionalIdentifiers(Set.of());
+        publication.setAdditionalIdentifiers(Set.of(cristinAdditionalIdentifier(cristinIdentifier)));
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().getReference().setPublicationContext(new Degree(null, null, null, null,
+                                                                                           List.of(), null));
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
+                                                                  .withYear("2022")
+                                                                  .build());
+        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
+        publication.setAssociatedArtifacts(AssociatedArtifactList.empty());
+        var existingPublication =
+            resourceService.createPublicationFromImportedEntry(publication,
+                                                               ImportSource.fromBrageArchive(randomString()));
+        var instanceType = existingPublication.getEntityDescription()
+                               .getReference().getPublicationInstance().getInstanceType();
+        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
+                                               "ARTIST", null, List.of());
+        var subjectCode = randomString();
+        var newFileIdentifier = java.util.UUID.randomUUID();
+        var brageGenerator =
+            new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MASTER)
+                .withCristinIdentifier(cristinIdentifier)
+                .withMainTitle("Dynamic - Response of Floating Wind Turbines! Report")
+                .withContributor(brageContributor)
+                .withType(new Type(List.of(), instanceType))
+                .withPublicationDate(new PublicationDate("2023",
+                                                         new PublicationDateNva.Builder().withYear("2023").build()))
+                .withResourceContent(new ResourceContent(List.of(new ContentFile(randomString(),
+                                                                                 BundleType.LICENSE,
+                                                                                 randomString(),
+                                                                                 newFileIdentifier,
+                                                                                 null,
+                                                                                 null))))
+                .withSubjectCode(subjectCode)
+                .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+
+        var updatedResource = Resource.fromPublication(existingPublication).fetch(resourceService).orElseThrow();
+
+        var fileEntry = updatedResource.getFileEntry(new SortableIdentifier(newFileIdentifier.toString()));
+        var user = brageGenerator.getNvaPublication().getResourceOwner().getOwner().getValue();
+
+        assertEquals(user,fileEntry.orElseThrow().getOwner().toString());
+        Assertions.assertNotEquals(existingPublication.getResourceOwner().getOwner().getValue(),
+                                   fileEntry.orElseThrow().getOwner().toString());
     }
 
     @Test

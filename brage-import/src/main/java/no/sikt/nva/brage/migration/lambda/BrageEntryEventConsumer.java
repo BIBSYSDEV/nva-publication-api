@@ -40,7 +40,9 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -279,8 +281,15 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
                                                                      Publication existinPublication,
                                                                      PublicationRepresentation representation) {
+
         var importSource = createImportSource(representation);
         var resource = Resource.fromPublication(publicationForUpdate);
+        var updatedFiles = resource.getFiles();
+        var oldFiles = Resource.fromPublication(existinPublication).getFiles();
+        updatedFiles.stream()
+            .filter(file -> oldFiles.stream().noneMatch(f -> f.getIdentifier().equals(file.getIdentifier())))
+            .forEach(file -> FileEntry.create(file, resource.getIdentifier(),
+                                              UserInstance.fromPublication(representation.publication())).persist(resourceService));
         resource.updateResourceFromImport(resourceService, importSource);
         var newImage = resource.fetch(resourceService).orElseThrow().toPublication();
         return new BrageMergingReport(existinPublication, newImage);
