@@ -10,6 +10,7 @@ import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
@@ -108,11 +109,24 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var resource = fetchResource(identifier);
 
         return switch (resource.getStatus()) {
-            case DRAFT -> produceDraftPublicationResponse(requestInfo, resource);
-            case PUBLISHED -> producePublishedPublicationResponse(requestInfo, resource);
-            case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
+            case DRAFT, PUBLISHED -> producePublicationResponse(requestInfo, resource);
+            case UNPUBLISHED -> producePublicationResponseWhenUnpublished(requestInfo, resource);
+            case DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
             default -> throwNotFoundException();
         };
+    }
+
+    private String producePublicationResponseWhenUnpublished(RequestInfo requestInfo, Resource resource)
+        throws GoneException {
+        return userCanUpdateResource(requestInfo, resource)
+                   ? createPublicationResponse(requestInfo, resource)
+                   : produceRemovedPublicationResponse(resource, requestInfo);
+    }
+
+    private boolean userCanUpdateResource(RequestInfo requestInfo, Resource resource) {
+        return getPublicationPermissionStrategy(requestInfo, resource)
+                   .map(value -> value.allowsAction(UPDATE))
+                   .orElse(false);
     }
 
     private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
@@ -158,17 +172,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return null;
     }
 
-    private String produceDraftPublicationResponse(RequestInfo requestInfo, Resource resource)
-        throws UnsupportedAcceptHeaderException {
-        return producePublishedPublicationResponse(requestInfo, resource);
-    }
-
     @JacocoGenerated
     private String throwNotFoundException() throws NotFoundException {
         throw new NotFoundException("Publication is not found");
     }
 
-    private String producePublishedPublicationResponse(RequestInfo requestInfo, Resource resource)
+    private String producePublicationResponse(RequestInfo requestInfo, Resource resource)
         throws UnsupportedAcceptHeaderException {
 
         String response = null;
