@@ -10,6 +10,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.deny.HiddenFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.grant.EveryoneGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.FileCuratorGrantStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +33,11 @@ public class FilePermissions {
         this.file = file;
         this.resource = resource;
         this.grantStrategies = Set.of(
-            new EveryoneGrantStrategy(file, userInstance)
+            new EveryoneGrantStrategy(file, userInstance, resource),
+            new FileCuratorGrantStrategy(file, userInstance, resource)
         );
         this.denyStrategies = Set.of(
-            new HiddenFileDenyStrategy(file, userInstance)
+            new HiddenFileDenyStrategy(file, userInstance, resource)
         );
     }
 

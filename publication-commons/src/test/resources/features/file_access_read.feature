@@ -14,14 +14,14 @@ Feature: File metadata read and file download permissions
       #| PendingOpenFile     | Uploader at X                        | Allowed     |
       #| PendingOpenFile     | Contributor at X                     | Allowed     |
       #| PendingOpenFile     | Other contributors                   | Allowed     |
-      #| PendingOpenFile     | File curator at X                    | Allowed     |
-      #| PendingOpenFile     | File curators for other contributors | Allowed     |
+      | PendingOpenFile     | File curator at X                    | Allowed     |
+      | PendingOpenFile     | File curators for other contributors | Allowed     |
       | PendingOpenFile     | Everyone else                        | Not Allowed |
       #| PendingInternalFile | Uploader at X                        | Allowed     |
       #| PendingInternalFile | Contributor at X                     | Allowed     |
       #| PendingInternalFile | Other contributors                   | Allowed     |
-      #| PendingInternalFile | File curator at X                    | Allowed     |
-      #| PendingInternalFile | File curators for other contributors | Allowed     |
+      | PendingInternalFile | File curator at X                    | Allowed     |
+      | PendingInternalFile | File curators for other contributors | Allowed     |
       | PendingInternalFile | Everyone else                        | Not Allowed |
       | OpenFile            | Uploader at X                        | Allowed     |
       | OpenFile            | Contributor at X                     | Allowed     |
@@ -30,12 +30,12 @@ Feature: File metadata read and file download permissions
       | OpenFile            | File curators for other contributors | Allowed     |
       | OpenFile            | Everyone else                        | Allowed     |
       #| InternalFile        | Uploader at X                        | Allowed     |
-      #| InternalFile        | File curator at X                    | Allowed     |
-      #| InternalFile        | File curators for other contributors | Allowed     |
+      | InternalFile        | File curator at X                    | Allowed     |
+      | InternalFile        | File curators for other contributors | Allowed     |
       | InternalFile        | Everyone else                        | Not Allowed |
       #| HiddenFile          | Uploader at X                        | Not Allowed |
       #| HiddenFile          | Contributor at X                     | Not Allowed |
       #| HiddenFile          | Other contributors                   | Not Allowed |
-      #| HiddenFile          | File curator at X                    | Allowed     |
-      #| HiddenFile          | File curators for other contributors | Not Allowed |
+      | HiddenFile          | File curator at X                    | Allowed     |
+      | HiddenFile          | File curators for other contributors | Not Allowed |
       | HiddenFile          | Everyone else                        | Not Allowed |
