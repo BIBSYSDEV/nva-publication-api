@@ -7,6 +7,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -19,48 +20,46 @@ import no.unit.nva.model.associatedartifacts.file.FileDto;
 import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.RequestInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class PublicationResponseFactoryTest {
 
     @Test
     void associatedLinkShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
-        var publication =
-            Resource.fromPublication(
-                randomPublication().copy().withAssociatedArtifacts(List.of(randomAssociatedLink())).build());
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(randomAssociatedLink())).build();
+        var resource = Resource.fromPublication(publication);
 
-        var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
+        var response = PublicationResponseFactory.create(resource, getRequestInfo(), getIdentityServiceClient());
+        var jsonString = dtoObjectMapper.writeValueAsString(response);
+        var typeCount = StringUtils.countMatches(jsonString, "AssociatedLink\"");
 
-        var actualString = dtoObjectMapper.writeValueAsString(response);
-
-        Assertions.assertEquals(1, StringUtils.countMatches(actualString, "AssociatedLink\""));
+        assertEquals(1, typeCount);
     }
 
     @Test
     void nullAssociatedArtifactShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
-        var publication =
-            Resource.fromPublication(
-                randomPublication().copy().withAssociatedArtifacts(List.of(new NullAssociatedArtifact())).build());
+        var publication = randomPublication().copy()
+                              .withAssociatedArtifacts(List.of(new NullAssociatedArtifact()))
+                              .build();
+        var resource = Resource.fromPublication(publication);
 
-        var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
+        var response = PublicationResponseFactory.create(resource, getRequestInfo(), getIdentityServiceClient());
+        var jsonString = dtoObjectMapper.writeValueAsString(response);
+        var typeCount = StringUtils.countMatches(jsonString, "NullAssociatedArtifact\"");
 
-        var actualString = dtoObjectMapper.writeValueAsString(response);
-
-        Assertions.assertEquals(1, StringUtils.countMatches(actualString, "NullAssociatedArtifact\""));
+        assertEquals(1, typeCount);
     }
 
     @Test
     void fileShouldHaveTypeWhenSerializedThroughResponse() throws JsonProcessingException {
-        var publication =
-            Resource.fromPublication(
-                randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build());
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build();
+        var resource = Resource.fromPublication(publication);
 
-        var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
+        var response = PublicationResponseFactory.create(resource, getRequestInfo(), getIdentityServiceClient());
+        var jsonString = dtoObjectMapper.writeValueAsString(response);
+        var typeCount = StringUtils.countMatches(jsonString, "OpenFile\"");
 
-        var actualString = dtoObjectMapper.writeValueAsString(response);
-
-        Assertions.assertEquals(1, StringUtils.countMatches(actualString, "OpenFile\""));
+        assertEquals(1, typeCount);
     }
 
     private static RequestInfo getRequestInfo() {
@@ -77,7 +76,7 @@ class PublicationResponseFactoryTest {
 
         var actualString = dtoObjectMapper.writeValueAsString(file);
 
-        Assertions.assertEquals(1, StringUtils.countMatches(actualString, "File\""));
+        assertEquals(1, StringUtils.countMatches(actualString, "File\""));
     }
 
     @Test
@@ -86,7 +85,7 @@ class PublicationResponseFactoryTest {
 
         var actualString = dtoObjectMapper.writeValueAsString(file);
 
-        Assertions.assertEquals(1, StringUtils.countMatches(actualString, "AssociatedLink\""));
+        assertEquals(1, StringUtils.countMatches(actualString, "AssociatedLink\""));
     }
 
     @Test
@@ -95,7 +94,7 @@ class PublicationResponseFactoryTest {
 
         var actualString = dtoObjectMapper.writeValueAsString(file);
 
-        Assertions.assertEquals(1, StringUtils.countMatches(actualString, "NullAssociatedArtifact\""));
+        assertEquals(1, StringUtils.countMatches(actualString, "NullAssociatedArtifact\""));
     }
 
     @Test
@@ -111,19 +110,22 @@ class PublicationResponseFactoryTest {
 
     @Test
     void shouldRoundTripFileOperationsWhenSerializedThroughResponse() throws JsonProcessingException {
-        var publication =
-            Resource.fromPublication(
-                randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build());
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build();
+        var resource =Resource.fromPublication(publication);
 
-        var response = PublicationResponseFactory.create(publication, getRequestInfo(), getIdentityServiceClient());
+        var response = PublicationResponseFactory.create(resource, getRequestInfo(), getIdentityServiceClient());
 
         var actualString = dtoObjectMapper.writeValueAsString(response);
 
         assertThat(actualString, containsString(FileOperation.READ_METADATA.getValue()));
 
         var object = dtoObjectMapper.readValue(actualString, PublicationResponse.class);
-        assertThat(
-            object.getAssociatedArtifacts().stream().findFirst().map(FileDto.class::cast).get().allowedOperations(),
-            equalTo(Set.of(FileOperation.READ_METADATA, FileOperation.DOWNLOAD)));
+        var actualAllowedOperations = object.getAssociatedArtifacts()
+                                        .stream()
+                                        .findFirst()
+                                        .map(FileDto.class::cast)
+                                        .get()
+                                        .allowedOperations();
+        assertThat( actualAllowedOperations, equalTo(Set.of(FileOperation.READ_METADATA, FileOperation.DOWNLOAD)));
     }
 }
