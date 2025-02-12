@@ -46,10 +46,6 @@ public class FileScenarioContext {
                                    otherUserContext.topLevelOrgCristinId);
     }
 
-    public UserScenarioContext getUserContext() {
-        return userContext;
-    }
-
     public void setFileOperation(FileOperation action) {
         this.fileOperation = action;
     }
@@ -64,6 +60,14 @@ public class FileScenarioContext {
 
     public void setResource(Resource resource) {
         this.resource = resource;
+    }
+
+    public void addUserRole(AccessRight accessRight) {
+        userContext.accessRights.add(accessRight);
+    }
+
+    public URI getTopLevelOrgCristinId() {
+        return userContext.topLevelOrgCristinId;
     }
 
     public static class UserScenarioContext {

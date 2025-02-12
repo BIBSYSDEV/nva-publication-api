@@ -15,14 +15,13 @@ public class FileCuratorGrantStrategy extends FileStrategyBase implements FileGr
 
     @Override
     public boolean allowsAction(FileOperation permission) {
-        if (!currentUserIsFileCurator()) {
-            return false;
+        if (currentUserIsFileCurator()) {
+            return switch (permission) {
+                case READ_METADATA, DOWNLOAD -> true;
+                case WRITE_METADATA, DELETE -> currentUserIsFileCuratorForGivenFile();
+            };
         }
 
-
-        return switch (permission) {
-            case READ_METADATA , DOWNLOAD -> true;
-            case WRITE_METADATA, DELETE -> currentUserIsFileCuratorForGivenFile();
-        };
+        return false;
     }
 }

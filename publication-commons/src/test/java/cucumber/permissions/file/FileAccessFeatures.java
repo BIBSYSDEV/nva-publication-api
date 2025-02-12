@@ -48,24 +48,22 @@ public class FileAccessFeatures {
     }
 
     @When("the user have the role {string}")
-    public void theUserHaveTheRole(String useraRole) {
-        if (useraRole.toLowerCase().contains("curator")) {
-            scenarioContext.getUserContext().accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
+    public void theUserHaveTheRole(String userRole) {
+        var role = new RoleParser(userRole);
+
+        if (role.isFileCurator()) {
+            scenarioContext.addUserRole(AccessRight.MANAGE_RESOURCES_STANDARD);
+            scenarioContext.addUserRole(AccessRight.MANAGE_RESOURCE_FILES);
+
+            var topLevelOrgCristinId = scenarioContext.getTopLevelOrgCristinId();
+            var curatingInstitutions = Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet()));
+
+            scenarioContext.getResource().setCuratingInstitutions(curatingInstitutions);
         }
-        if (useraRole.toLowerCase().contains("file curator")) {
-            scenarioContext.getUserContext().accessRights.add(AccessRight.MANAGE_RESOURCE_FILES);
-        }
-        if (useraRole.toLowerCase().contains("curator at x") ||
-            useraRole.toLowerCase().contains("curators for other contributors")) {
-            scenarioContext.getResource()
-                .setCuratingInstitutions(
-                    Set.of(new CuratingInstitution(scenarioContext.getUserContext().topLevelOrgCristinId
-                        , Collections.emptySet())));
-        }
-        if (useraRole.toLowerCase().contains("curator at x")) {
+
+        if (role.isCuratorForGivenFile()) {
             scenarioContext.setFileOwnership(FileOwnership.OWNER);
-        }
-        if (useraRole.toLowerCase().contains("curators for other contributors")) {
+        } else {
             scenarioContext.setFileOwnership(FileOwnership.NOT_OWNER);
         }
     }
@@ -77,7 +75,8 @@ public class FileAccessFeatures {
 
     @Then("the action outcome is {string}")
     public void theActionOutcomeIs(String outcome) {
-        var filePermissions = new FilePermissions(scenarioContext.getFileEntry(), scenarioContext.getCurrentUserInstance(),
+        var filePermissions = new FilePermissions(scenarioContext.getFileEntry(),
+                                                  scenarioContext.getCurrentUserInstance(),
                                                   scenarioContext.getResource());
         var expected = outcome.equals("Allowed");
 

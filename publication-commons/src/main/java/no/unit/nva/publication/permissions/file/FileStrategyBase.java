@@ -27,10 +27,10 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsFileCuratorForGivenFile() {
-        if (!currentUserIsFileCurator()) {
-            return false;
-        }
+        return currentUserIsFileCurator() && isFileCuratorForCurrentOrganization();
+    }
 
+    private boolean isFileCuratorForCurrentOrganization() {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("checking if file top level affiliation {} for user {} is equal to {}.",
