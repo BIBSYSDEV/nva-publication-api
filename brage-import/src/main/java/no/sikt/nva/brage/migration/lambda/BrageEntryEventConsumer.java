@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -290,7 +291,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         var updatedFiles = resource.getFiles();
         var oldFiles = Resource.fromPublication(existinPublication).getFiles().stream().map(File::getIdentifier).toList();
         updatedFiles.stream()
-            .filter(file -> containsNotFile(file, oldFiles))
+            .filter(not(file -> contains(file, oldFiles)))
             .forEach(file -> FileEntry.importFileEntry(file, resource.getIdentifier(),
                                               UserInstance.fromPublication(representation.publication()), importSource).persist(resourceService));
         resource.updateResourceFromImport(resourceService, importSource);
@@ -298,8 +299,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return new BrageMergingReport(existinPublication, newImage);
     }
 
-    private static boolean containsNotFile(File file, List<UUID> fileList) {
-        return !fileList.contains(file.getIdentifier());
+    private static boolean contains(File file, List<UUID> fileList) {
+        return fileList.contains(file.getIdentifier());
     }
 
     private Publication updatedPublication(PublicationRepresentation publicationRepresentation,
