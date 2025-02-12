@@ -275,7 +275,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .map(map -> parseAttributeValuesMap(map, Dao.class))
                    .filter(FileDao.class::isInstance)
                    .map(FileDao.class::cast)
-                   .map(FileDao::toDeleteTransactionItem)
+                   .map(dao -> dao.toDeleteTransactionItem(tableName))
                    .toList();
     }
 

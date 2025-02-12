@@ -250,6 +250,7 @@ public class Resource implements Entity {
                    .withLink(importCandidate.getLink())
                    .withProjects(importCandidate.getProjects())
                    .withEntityDescription(importCandidate.getEntityDescription())
+                   .withFilesEntries(getFileEntriesFromPublication(importCandidate))
                    .withDoi(importCandidate.getDoi())
                    .withHandle(importCandidate.getHandle())
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())

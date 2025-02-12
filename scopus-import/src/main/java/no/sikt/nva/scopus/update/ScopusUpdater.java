@@ -41,12 +41,19 @@ public class ScopusUpdater {
         throws NotFoundException {
         var existingImportCandidate = fetchImportCandidate(getScopusIdentifier(importCandidate));
         if (nonNull(existingImportCandidate)) {
-            var persistedImportcandidate = resourceService.getImportCandidateByIdentifier(
-                existingImportCandidate.getIdentifier());
-            persistedImportcandidate.setEntityDescription(importCandidate.getEntityDescription());
-            return persistedImportcandidate;
+            var persistedImportcandidate = resourceService.getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
+            return updateImportCandidate(importCandidate, persistedImportcandidate);
         }
         return importCandidate;
+    }
+
+    private static ImportCandidate updateImportCandidate(ImportCandidate importCandidate,
+                                                      ImportCandidate persistedImportcandidate) {
+        return persistedImportcandidate.copyImportCandidate()
+                   .withEntityDescription(importCandidate.getEntityDescription())
+                   .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
+                   .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+                   .build();
     }
 
     public ImportCandidateSearchApiResponse toSearchApiResponse(String response) {

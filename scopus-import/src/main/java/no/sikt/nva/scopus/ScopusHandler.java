@@ -47,13 +47,12 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
     public static final Random RANDOM = new Random(System.currentTimeMillis());
     public static final int MAX_EFFORTS = 10;
-    public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     public static final String PATH_SEPERATOR = "/";
     public static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
     public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
     private static final String ERROR_SAVING_SCOPUS_PUBLICATION = "Error saving imported scopus publication object "
-                                                                  + "key: {}";
+                                                                  + "key: {} {}";
     private static final int MAX_SLEEP_TIME = 100;
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String ERROR_BUCKET_PATH = "ERROR";
@@ -75,8 +74,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
                                                                          BACKEND_CLIENT_SECRET_NAME)),
              ResourceService.defaultService(),
              new ScopusUpdater(ResourceService.defaultService(),
-                               new no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                                                                                                           BACKEND_CLIENT_SECRET_NAME)),
+                               new no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever(
+                                   BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
              new ScopusFileConverter(defaultHttpClientWithRedirect(),
                                      S3Driver.defaultS3Client().build(),
                                      new TikaUtils()));
@@ -168,7 +167,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private void loggError(S3Event event, Failure<ImportCandidate> fail) {
-        logger.error(ERROR_SAVING_SCOPUS_PUBLICATION + extractObjectKey(event), fail.getException());
+        logger.error(ERROR_SAVING_SCOPUS_PUBLICATION, extractObjectKey(event), fail.getException());
     }
 
     private void saveReportToS3(Failure<ImportCandidate> fail, S3Event event) {
@@ -199,11 +198,11 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private String timePath(S3Event event) {
-        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        return event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
     }
 
     private String extractObjectKey(S3Event s3Event) {
-        return s3Event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey();
+        return s3Event.getRecords().getFirst().getS3().getObject().getKey();
     }
 
     private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate) throws BadRequestException {
@@ -277,11 +276,11 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private String extractBucketName(S3Event event) {
-        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getBucket().getName();
+        return event.getRecords().getFirst().getS3().getBucket().getName();
     }
 
     private String extractFilename(S3Event event) {
-        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey();
+        return event.getRecords().getFirst().getS3().getObject().getKey();
     }
 
     private URI createS3BucketUri(S3Event s3Event) {

@@ -937,6 +937,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
         resource.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
+        resource.setAssociatedArtifacts(AssociatedArtifactList.empty());
         resourceService.updateResource(Resource.fromPublication(resource));
         var publishedResource = publishResource(resource);
 
@@ -962,6 +963,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
         persistedImportCandidate.getEntityDescription()
             .setContributors(List.of(randomContributor(List.of(affiliation))));
+        persistedImportCandidate.setAssociatedArtifacts(AssociatedArtifactList.empty());
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
@@ -984,6 +986,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         importCandidate.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
 
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
+        persistedImportCandidate.setAssociatedArtifacts(AssociatedArtifactList.empty());
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 

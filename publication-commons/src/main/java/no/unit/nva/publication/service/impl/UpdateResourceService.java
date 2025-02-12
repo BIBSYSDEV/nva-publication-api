@@ -206,13 +206,30 @@ public class UpdateResourceService extends ServiceWithTransactions {
                     CuratingInstitutionsUtil.getCuratingInstitutionsOnline(importCandidate, uriRetriever));
             }
 
-            var resource = Resource.fromImportCandidate(importCandidate);
-            var updateResourceTransactionItem = createPutTransaction(resource);
-            var request = new TransactWriteItemsRequest().withTransactItems(List.of(updateResourceTransactionItem));
+            var transactions = new ArrayList<TransactWriteItem>();
+            transactions.add(createPutTransaction(Resource.fromImportCandidate(importCandidate)));
+            transactions.addAll(convertFileEntriesToDeleteTransactions(existingImportCandidate));
+            transactions.addAll(convertFileEntriesToPersistTransactions(importCandidate));
+
+            var request = new TransactWriteItemsRequest().withTransactItems(transactions);
             sendTransactionWriteRequest(request);
             return importCandidate;
         }
         throw new BadRequestException("Can not update already imported candidate");
+    }
+
+    private List<TransactWriteItem> convertFileEntriesToDeleteTransactions(ImportCandidate existingImportCandidate) {
+        return Resource.fromImportCandidate(existingImportCandidate).getFileEntries().stream()
+                   .map(FileEntry::toDao)
+                   .map(dao -> dao.toDeleteTransactionItem(tableName))
+                   .toList();
+    }
+
+    private List<TransactWriteItem> convertFileEntriesToPersistTransactions(ImportCandidate importCandidate) {
+        return Resource.fromImportCandidate(importCandidate).getFileEntries().stream()
+                   .map(FileEntry::toDao)
+                   .map(fileDao -> fileDao.toPutNewTransactionItem(tableName))
+                   .toList();
     }
 
     public void unpublishPublication(Publication publication,

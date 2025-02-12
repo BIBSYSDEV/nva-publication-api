@@ -176,14 +176,14 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
         return new TransactWriteItem().withPut(put);
     }
 
-    public TransactWriteItem toDeleteTransactionItem() {
+    public TransactWriteItem toDeleteTransactionItem(String tableName) {
         var map = new ConcurrentHashMap<String, AttributeValue>();
         var partKeyValue = new AttributeValue(getPrimaryKeyPartitionKey());
         var sortKeyValue = new AttributeValue(getPrimaryKeySortKey());
         map.put(PRIMARY_KEY_PARTITION_KEY_NAME, partKeyValue);
         map.put(PRIMARY_KEY_SORT_KEY_NAME, sortKeyValue);
         var delete = new Delete()
-                         .withTableName(RESOURCES_TABLE_NAME)
+                         .withTableName(tableName)
                          .withKey(map);
         return new TransactWriteItem().withDelete(delete);
     }
