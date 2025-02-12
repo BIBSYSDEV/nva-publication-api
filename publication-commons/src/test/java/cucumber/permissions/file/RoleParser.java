@@ -2,17 +2,17 @@ package cucumber.permissions.file;
 
 public class RoleParser {
 
-    private final String useraRole;
+    private final String userRole;
 
-    public RoleParser(String useraRole) {
-        this.useraRole = useraRole;
+    public RoleParser(String userRole) {
+        this.userRole = userRole;
     }
 
     public boolean isFileCurator() {
-        return useraRole.toLowerCase().contains("file curator");
+        return userRole.toLowerCase().contains("file curator");
     }
 
     public boolean isCuratorForGivenFile() {
-        return useraRole.toLowerCase().contains("curator at x");
+        return userRole.toLowerCase().contains("curator at x");
     }
 }

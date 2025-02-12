@@ -42,6 +42,6 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsFileCurator() {
-        return nonNull(userInstance) && hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES);
+        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES);
     }
 }
