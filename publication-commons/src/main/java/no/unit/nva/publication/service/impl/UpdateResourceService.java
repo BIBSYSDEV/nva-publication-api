@@ -206,27 +206,30 @@ public class UpdateResourceService extends ServiceWithTransactions {
                     CuratingInstitutionsUtil.getCuratingInstitutionsOnline(importCandidate, uriRetriever));
             }
 
-            var fileEntriesToDelete = Resource.fromImportCandidate(existingImportCandidate).getFileEntries().stream()
-                                          .map(FileEntry::toDao)
-                                          .map(dao -> dao.toDeleteTransactionItem(tableName))
-                                          .toList();
-
-            var fileEntriesToPersist = Resource.fromImportCandidate(importCandidate).getFileEntries().stream()
-                                           .map(FileEntry::toDao)
-                                           .map(fileDao -> fileDao.toPutNewTransactionItem(tableName))
-                                           .toList();
-
             var transactions = new ArrayList<TransactWriteItem>();
-            var resource = Resource.fromImportCandidate(importCandidate);
-            transactions.add(createPutTransaction(resource));
-            transactions.addAll(fileEntriesToDelete);
-            transactions.addAll(fileEntriesToPersist);
+            transactions.add(createPutTransaction(Resource.fromImportCandidate(importCandidate)));
+            transactions.addAll(convertFileEntriesToDeleteTransactions(existingImportCandidate));
+            transactions.addAll(convertFileEntriesToPersistTransactions(importCandidate));
 
             var request = new TransactWriteItemsRequest().withTransactItems(transactions);
             sendTransactionWriteRequest(request);
             return importCandidate;
         }
         throw new BadRequestException("Can not update already imported candidate");
+    }
+
+    private List<TransactWriteItem> convertFileEntriesToDeleteTransactions(ImportCandidate existingImportCandidate) {
+        return Resource.fromImportCandidate(existingImportCandidate).getFileEntries().stream()
+                   .map(FileEntry::toDao)
+                   .map(dao -> dao.toDeleteTransactionItem(tableName))
+                   .toList();
+    }
+
+    private List<TransactWriteItem> convertFileEntriesToPersistTransactions(ImportCandidate importCandidate) {
+        return Resource.fromImportCandidate(importCandidate).getFileEntries().stream()
+                   .map(FileEntry::toDao)
+                   .map(fileDao -> fileDao.toPutNewTransactionItem(tableName))
+                   .toList();
     }
 
     public void unpublishPublication(Publication publication,

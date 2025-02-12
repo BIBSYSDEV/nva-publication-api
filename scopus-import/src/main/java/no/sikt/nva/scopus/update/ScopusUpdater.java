@@ -42,13 +42,18 @@ public class ScopusUpdater {
         var existingImportCandidate = fetchImportCandidate(getScopusIdentifier(importCandidate));
         if (nonNull(existingImportCandidate)) {
             var persistedImportcandidate = resourceService.getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
-            return persistedImportcandidate.copyImportCandidate()
-                       .withEntityDescription(importCandidate.getEntityDescription())
-                       .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
-                       .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
-                       .build();
+            return updateImportCandidate(importCandidate, persistedImportcandidate);
         }
         return importCandidate;
+    }
+
+    private static ImportCandidate updateImportCandidate(ImportCandidate importCandidate,
+                                                      ImportCandidate persistedImportcandidate) {
+        return persistedImportcandidate.copyImportCandidate()
+                   .withEntityDescription(importCandidate.getEntityDescription())
+                   .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
+                   .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+                   .build();
     }
 
     public ImportCandidateSearchApiResponse toSearchApiResponse(String response) {
