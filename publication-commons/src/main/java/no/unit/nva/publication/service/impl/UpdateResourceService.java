@@ -23,6 +23,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +35,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
@@ -56,6 +58,7 @@ import no.unit.nva.publication.model.business.publicationstate.PublishedResource
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
+import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
@@ -206,9 +209,38 @@ public class UpdateResourceService extends ServiceWithTransactions {
                     CuratingInstitutionsUtil.getCuratingInstitutionsOnline(importCandidate, uriRetriever));
             }
 
-            var resource = Resource.fromImportCandidate(importCandidate);
-            var updateResourceTransactionItem = createPutTransaction(resource);
-            var request = new TransactWriteItemsRequest().withTransactItems(List.of(updateResourceTransactionItem));
+            var existingFileEntries = Resource.fromImportCandidate(existingImportCandidate).getFileEntries().stream()
+                                                           .map(FileEntry::toDao)
+                                                           .collect(Collectors.toMap(FileDao::getIdentifier, dao -> dao));
+
+            // Collect entries from importCandidate into a map
+            var newFileEntries = Resource.fromImportCandidate(importCandidate).getFileEntries().stream()
+                                                      .map(FileEntry::toDao)
+                                                      .collect(Collectors.toMap(FileDao::getIdentifier, dao -> dao));
+
+            // Merge the entries, giving priority to entries from importCandidate
+            var mergedEntries = new HashMap<>(existingFileEntries);
+            mergedEntries.putAll(newFileEntries); // This will overwrite any existing entries with those from importCandidate
+
+            // Create lists for TransactWriteItem
+            List<TransactWriteItem> transactions = new ArrayList<>();
+
+            // Add the resource put transaction
+            Resource resource = Resource.fromImportCandidate(importCandidate);
+            transactions.add(createPutTransaction(resource));
+
+            // Create TransactWriteItems from the merged entries
+            for (FileDao fileDao : mergedEntries.values()) {
+                if (newFileEntries.containsKey(fileDao.getIdentifier()) && ) {
+                    // Add put transaction for entries from importCandidate
+                    transactions.add(fileDao.toPutTransactionItem(tableName));
+                } else if (existingFileEntries.containsKey(fileDao.getIdentifier())) {
+                    // Add delete transaction for entries only in existingImportCandidate
+                    transactions.add(fileDao.toDeleteTransactionItem(tableName));
+                }
+            }
+
+            var request = new TransactWriteItemsRequest().withTransactItems(transactions);
             sendTransactionWriteRequest(request);
             return importCandidate;
         }

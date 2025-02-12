@@ -11,11 +11,9 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.mapper.Customer;
@@ -291,16 +289,12 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         var updatedFiles = resource.getFiles();
         var oldFiles = Resource.fromPublication(existinPublication).getFiles().stream().map(File::getIdentifier).toList();
         updatedFiles.stream()
-            .filter(not(file -> contains(file, oldFiles)))
+            .filter(not(file -> oldFiles.contains(file.getIdentifier())))
             .forEach(file -> FileEntry.importFileEntry(file, resource.getIdentifier(),
                                               UserInstance.fromPublication(representation.publication()), importSource).persist(resourceService));
         resource.updateResourceFromImport(resourceService, importSource);
         var newImage = resource.fetch(resourceService).orElseThrow().toPublication();
         return new BrageMergingReport(existinPublication, newImage);
-    }
-
-    private static boolean contains(File file, List<UUID> fileList) {
-        return fileList.contains(file.getIdentifier());
     }
 
     private Publication updatedPublication(PublicationRepresentation publicationRepresentation,
