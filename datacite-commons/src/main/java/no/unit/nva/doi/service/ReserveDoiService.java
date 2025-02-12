@@ -3,17 +3,22 @@ package no.unit.nva.doi.service;
 import static no.unit.nva.doi.handlers.ReserveDoiHandler.BAD_RESPONSE_ERROR_MESSAGE;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
+import java.time.Instant;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.ReserveDoiRequestValidator;
 import no.unit.nva.doi.model.DoiResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationstate.DoiReservedEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ReserveDoiService {
 
+    public static final String NOT_FOUND_MESSAGE = "Could not find resource ";
     private final ResourceService resourceService;
     private final DataCiteDoiClient reserveDoiClient;
 
@@ -22,23 +27,27 @@ public class ReserveDoiService {
         this.reserveDoiClient = reserveDoiClient;
     }
 
-    public DoiResponse reserve(String owner, SortableIdentifier publicationIdentifier) throws ApiGatewayException {
-        var publication = fetchPublication(publicationIdentifier);
-        ReserveDoiRequestValidator.validateRequest(owner, publication);
-        return attempt(() -> reserveDoiClient.generateDraftDoi(publication))
-                   .map(doi -> updatePublicationWithDoi(publication, doi))
+    public DoiResponse reserve(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        var resource = fetchResource(resourceIdentifier);
+        ReserveDoiRequestValidator.validateRequest(userInstance, resource);
+        return attempt(() -> reserveDoiClient.generateDraftDoi(resource))
+                   .map(doi -> updatePublicationWithDoi(resource, doi, userInstance))
                    .orElseThrow(failure -> new BadGatewayException(BAD_RESPONSE_ERROR_MESSAGE));
     }
 
-    private Publication fetchPublication(SortableIdentifier identifier) throws ApiGatewayException {
-        return resourceService.getPublicationByIdentifier(identifier);
+    private Resource fetchResource(SortableIdentifier resourceIdentifier) throws NotFoundException {
+        return Resource.resourceQueryObject(resourceIdentifier)
+                   .fetch(resourceService)
+                   .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE + resourceIdentifier));
     }
 
-    private DoiResponse updatePublicationWithDoi(Publication publication, URI doi) {
-        var updatedPublication = publication.copy()
-                                     .withDoi(doi)
-                                     .build();
-        resourceService.updatePublication(updatedPublication);
+    private DoiResponse updatePublicationWithDoi(Resource resource, URI doi, UserInstance userInstance) {
+        var updatedResource = resource.copy()
+                                  .withDoi(doi)
+                                  .withResourceEvent(DoiReservedEvent.create(userInstance, Instant.now()))
+                                  .build();
+        resourceService.updatePublication(updatedResource.toPublication());
         return new DoiResponse(doi);
     }
 }

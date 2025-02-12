@@ -13,7 +13,8 @@ import no.unit.nva.publication.model.business.logentry.LogUser;
 @JsonSubTypes({@JsonSubTypes.Type(CreatedResourceEvent.class), @JsonSubTypes.Type(PublishedResourceEvent.class),
     @JsonSubTypes.Type(UnpublishedResourceEvent.class), @JsonSubTypes.Type(DeletedResourceEvent.class),
     @JsonSubTypes.Type(RepublishedResourceEvent.class),
-    @JsonSubTypes.Type(ImportedResourceEvent.class)})
+    @JsonSubTypes.Type(ImportedResourceEvent.class),
+    @JsonSubTypes.Type(DoiReservedEvent.class)})
 public interface ResourceEvent {
 
     Instant date();
