@@ -19,30 +19,30 @@ Feature: File metadata write and file delete permissions
       #| PendingOpenFile     | Uploader at X                        | Allowed     |
       #| PendingOpenFile     | Contributor as X                     | Not Allowed |
       #| PendingOpenFile     | Other contributors                   | Not Allowed |
-      #| PendingOpenFile     | File curator at X                    | Allowed     |
-      #| PendingOpenFile     | File curators for other contributors | Not Allowed |
+      | PendingOpenFile     | File curator at X                    | Allowed     |
+      | PendingOpenFile     | File curators for other contributors | Not Allowed |
       | PendingOpenFile     | Everyone else                        | Not Allowed |
       #| PendingInternalFile | Uploader at X                        | Allowed     |
       #| PendingInternalFile | Contributor as X                     | Not Allowed |
       #| PendingInternalFile | Other contributors                   | Not Allowed |
-      #| PendingInternalFile | File curator at X                    | Allowed     |
-      #| PendingInternalFile | File curators for other contributors | Not Allowed |
+      | PendingInternalFile | File curator at X                    | Allowed     |
+      | PendingInternalFile | File curators for other contributors | Not Allowed |
       | PendingInternalFile | Everyone else                        | Not Allowed |
       | OpenFile            | Uploader at X                        | Not Allowed |
       | OpenFile            | Contributor as X                     | Not Allowed |
       | OpenFile            | Other contributors                   | Not Allowed |
-      #| OpenFile            | File curator at X                    | Allowed     |
+      | OpenFile            | File curator at X                    | Allowed     |
       | OpenFile            | File curators for other contributors | Not Allowed |
       | OpenFile            | Everyone else                        | Not Allowed |
       #| InternalFile        | Uploader at X                        | Not Allowed |
       #| InternalFile        | Contributor as X                     | Not Allowed |
       #| InternalFile        | Other contributors                   | Not Allowed |
-      #| InternalFile        | File curator at X                    | Allowed     |
-      #| InternalFile        | File curators for other contributors | Not Allowed |
+      | InternalFile        | File curator at X                    | Allowed     |
+      | InternalFile        | File curators for other contributors | Not Allowed |
       | InternalFile        | Everyone else                        | Not Allowed |
       #| HiddenFile          | Uploader at X                        | Not Allowed |
       #| HiddenFile          | Contributor as X                     | Not Allowed |
       #| HiddenFile          | Other contributors                   | Not Allowed |
-      #| HiddenFile          | File curator at X                    | Allowed     |
-      #| HiddenFile          | File curators for other contributors | Not Allowed |
+      | HiddenFile          | File curator at X                    | Allowed     |
+      | HiddenFile          | File curators for other contributors | Not Allowed |
       | HiddenFile          | Everyone else                        | Not Allowed |
