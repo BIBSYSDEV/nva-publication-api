@@ -17,27 +17,26 @@ public enum PermissionsRole {
 
     private final String[] values;
 
-    PermissionsRole(String... s) {
-        this.values = s;
+    PermissionsRole(String... values) {
+        this.values = values;
     }
 
     @JsonValue
     public String getValue() {
-
         return values[0];
     }
 
     /**
      * Lookup enum by value.
      *
-     * @param value value
+     * @param search string to look for
      * @return set of enums
      */
-    public static Set<PermissionsRole> lookup(String value) {
+    public static Set<PermissionsRole> lookup(String search) {
         return stream(values())
                    .filter(permissionsRole ->
                                stream(permissionsRole.values)
-                                   .anyMatch(v -> value.toLowerCase().contains(v.toLowerCase()))
+                                   .anyMatch(value -> search.toLowerCase().contains(value.toLowerCase()))
                    )
                    .collect(Collectors.toSet());
     }
