@@ -35,7 +35,7 @@ Feature: File metadata read and file download permissions
       | InternalFile        | Everyone else                        | Not Allowed |
       #| HiddenFile          | Uploader at X                        | Not Allowed |
       #| HiddenFile          | Contributor at X                     | Not Allowed |
-      #| HiddenFile          | Other contributors                   | Not Allowed |
+      #| HiddenFile          | Other contributors                   | Not Allowed
       | HiddenFile          | File curator at X                    | Allowed     |
       | HiddenFile          | File curators for other contributors | Not Allowed |
       | HiddenFile          | Everyone else                        | Not Allowed |

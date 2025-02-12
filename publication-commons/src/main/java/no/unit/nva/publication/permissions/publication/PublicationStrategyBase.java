@@ -94,7 +94,7 @@ public class PublicationStrategyBase {
                                              .contains(artifact.getClass()));
     }
 
-    protected Boolean isOwner() {
+    protected boolean isOwner() {
         return nonNull(userInstance) && attempt(userInstance::getUsername)
                    .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
                    .orElse(fail -> false);
