@@ -52,7 +52,8 @@ public class FileAccessFeatures {
 
     @When("the user have the role {string}")
     public void theUserHaveTheRole(String userRole) {
-        if (PermissionsRole.lookup(userRole).contains(FILE_CURATOR)) {
+        var roles = PermissionsRole.lookup(userRole);
+        if (roles.contains(FILE_CURATOR)) {
             scenarioContext.addUserRole(AccessRight.MANAGE_RESOURCES_STANDARD);
             scenarioContext.addUserRole(AccessRight.MANAGE_RESOURCE_FILES);
 
@@ -62,7 +63,7 @@ public class FileAccessFeatures {
             scenarioContext.getResource().setCuratingInstitutions(curatingInstitutions);
         }
 
-        if (PermissionsRole.lookup(userRole).contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
+        if (roles.contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
             scenarioContext.setFileOwnership(FileOwnership.OWNER);
         } else {
             scenarioContext.setFileOwnership(FileOwnership.NOT_OWNER);
