@@ -14,9 +14,9 @@ Feature: File upload permissions
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | FileType           | UserRole          | Outcome     |
-      | UploadedFile     | Publication owner | Allowed     |
-      | UploadedFile     | Contributor       | Allowed     |
-      | UploadedFile     | File curator      | Allowed     |
-      | UploadedFile     | Everyone else     | Not Allowed |
-      | UploadedFile     | External client     | Not Allowed |
+      | FileType     | UserRole          | Outcome     |
+      | UploadedFile | Publication owner | Allowed     |
+      | UploadedFile | Contributor       | Allowed     |
+      | UploadedFile | File curator      | Allowed     |
+      | UploadedFile | Everyone else     | Not Allowed |
+      | UploadedFile | External client   | Not Allowed |
