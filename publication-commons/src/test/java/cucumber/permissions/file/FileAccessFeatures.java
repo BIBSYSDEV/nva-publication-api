@@ -2,6 +2,7 @@ package cucumber.permissions.file;
 
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
+import static cucumber.permissions.PermissionsRole.FILE_OWNER;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
@@ -62,8 +63,7 @@ public class FileAccessFeatures {
 
             scenarioContext.getResource().setCuratingInstitutions(curatingInstitutions);
         }
-
-        if (roles.contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
+        if (roles.contains(FILE_OWNER) || roles.contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
             scenarioContext.setFileOwnership(FileOwnership.OWNER);
         } else {
             scenarioContext.setFileOwnership(FileOwnership.NOT_OWNER);

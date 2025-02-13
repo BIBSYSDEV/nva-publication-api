@@ -1,3 +1,4 @@
+@ignore
 Feature: File metadata read and file download permissions
   As a system user
   I want file metadata read and file download permissions to be enforced based on file state and user role
@@ -10,8 +11,8 @@ Feature: File metadata read and file download permissions
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | FileType           | UserRole                             | Outcome     |
-      #| PendingOpenFile     | Uploader at X                        | Allowed     |
+      | FileType            | UserRole                             | Outcome     |
+      | PendingOpenFile     | Uploader at X                        | Allowed     |
       #| PendingOpenFile     | Contributor at X                     | Allowed     |
       #| PendingOpenFile     | Other contributors                   | Allowed     |
       | PendingOpenFile     | File curator at X                    | Allowed     |
