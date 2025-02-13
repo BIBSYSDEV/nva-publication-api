@@ -103,14 +103,11 @@ public class TicketService extends ServiceWithTransactions {
     // and right now we are returning the input object.
     public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, Username finalizedBy)
         throws ApiGatewayException {
-        switch (ticketStatus) {
-            case COMPLETED:
-                return completeTicket(ticketEntry, finalizedBy);
-            case CLOSED:
-                return closeTicket(ticketEntry, finalizedBy);
-            default:
-                throw new BadRequestException("Cannot update to status " + ticketStatus);
-        }
+        return switch (ticketStatus) {
+            case COMPLETED -> completeTicket(ticketEntry, finalizedBy);
+            case CLOSED -> closeTicket(ticketEntry, finalizedBy);
+            default -> throw new BadRequestException("Cannot update to status " + ticketStatus);
+        };
     }
 
     public <T extends TicketEntry> Optional<T> fetchTicketByResourceIdentifier(URI customerId,
