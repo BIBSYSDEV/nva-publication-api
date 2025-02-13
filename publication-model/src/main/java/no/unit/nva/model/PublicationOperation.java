@@ -20,7 +20,8 @@ public enum PublicationOperation {
     PUBLISHING_REQUEST_CREATE("publishing-request-create"),
     PUBLISHING_REQUEST_APPROVE("publishing-request-approve"),
     SUPPORT_REQUEST_CREATE("support-request-create"),
-    SUPPORT_REQUEST_APPROVE("support-request-approve");
+    SUPPORT_REQUEST_APPROVE("support-request-approve"),
+    UPLOAD_FILE("upload-file");
 
     public static final String ERROR_MESSAGE_TEMPLATE = "%s not a valid AllowedOperation, expected one of: %s";
     public static final String DELIMITER = ", ";
