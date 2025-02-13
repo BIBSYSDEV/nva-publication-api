@@ -1,7 +1,6 @@
 package no.unit.nva.publication.permissions.file.grant;
 
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
