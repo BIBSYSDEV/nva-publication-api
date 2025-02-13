@@ -1,28 +1,29 @@
 package no.unit.nva.publication.permissions.file.grant;
 
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FileGrantStrategy;
 import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
-public class CuratorFileGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
+public class FileOwnerGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
 
-    public CuratorFileGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
+    public FileOwnerGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
         super(file, userInstance, resource);
     }
 
     @Override
     public boolean allowsAction(FileOperation permission) {
-        // Should every file curator not depending on institution be able to read pending files?
-        if (currentUserIsFileCurator()) {
+        if (currentUserIsFileOwner()) {
             return switch (permission) {
-                case READ_METADATA, DOWNLOAD -> true;
-                case WRITE_METADATA, DELETE -> currentUserIsFileCuratorForGivenFile();
+                case READ_METADATA, DOWNLOAD -> !(file.getFile() instanceof HiddenFile);
+                case WRITE_METADATA, DELETE -> !fileIsFinalized();
             };
         }
 
         return false;
     }
+
 }

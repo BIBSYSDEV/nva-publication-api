@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -64,5 +67,18 @@ public class FileStrategyBase {
 
     private boolean isVerifiedContributor(Contributor contributor) {
         return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
+    }
+
+    protected boolean currentUserIsFileOwner() {
+        return Optional.ofNullable(userInstance)
+                   .map(UserInstance::getUser)
+                   .map(user -> user.equals(file.getOwner()))
+                   .orElse(false);
+    }
+
+    protected boolean fileIsFinalized() {
+        return file.getFile() instanceof OpenFile
+            || file.getFile() instanceof InternalFile
+            || file.getFile() instanceof HiddenFile;
     }
 }

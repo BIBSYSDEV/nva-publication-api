@@ -23,7 +23,7 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() ) {
+        if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
             return false;
         }
 
