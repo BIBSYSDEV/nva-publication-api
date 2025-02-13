@@ -22,7 +22,7 @@ Feature: File metadata write and file delete permissions
       | PendingOpenFile     | File curator at X                    | Allowed     |
       | PendingOpenFile     | File curators for other contributors | Not Allowed |
       | PendingOpenFile     | Everyone else                        | Not Allowed |
-      #| PendingInternalFile | Uploader at X                        | Allowed     |
+      | PendingInternalFile | Uploader at X                        | Allowed     |
       #| PendingInternalFile | Contributor at X                     | Not Allowed |
       #| PendingInternalFile | Other contributors                   | Not Allowed |
       | PendingInternalFile | File curator at X                    | Allowed     |
