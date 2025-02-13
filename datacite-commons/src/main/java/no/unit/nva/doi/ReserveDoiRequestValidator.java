@@ -24,7 +24,7 @@ public final class ReserveDoiRequestValidator {
         validateReserveDoiRequest(userInstance, resource);
     }
 
-    private static boolean userHasRightsToCreateDoi(UserInstance userInstance, Resource resource) {
+    private static boolean userHasNoRightsToCreateDoi(UserInstance userInstance, Resource resource) {
         return !PublicationPermissions.create(resource.toPublication(), userInstance)
                     .allowsAction(PublicationOperation.DOI_REQUEST_CREATE);
     }
@@ -41,7 +41,7 @@ public final class ReserveDoiRequestValidator {
         if (isNotADraft(resource)) {
             throw new BadMethodException(NOT_DRAFT_STATUS_ERROR_MESSAGE);
         }
-        if (userHasRightsToCreateDoi(userInstance, resource)) {
+        if (userHasNoRightsToCreateDoi(userInstance, resource)) {
             throw new UnauthorizedException(UNSUPPORTED_ROLE_ERROR_MESSAGE);
         }
     }
