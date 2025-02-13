@@ -119,6 +119,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     public static final String APPROVED_FILES = "approvedFiles";
     public static final String FILES_FOR_APPROVAL = "filesForApproval";
     private static final String RESPONSIBILITY_AREA = "responsibilityArea";
+    private static final String TICKET_EVENT = "ticketEvent";
     private ResourceService resourceService;
     private TicketService ticketService;
     private UserInstance owner;
@@ -154,7 +155,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, DOI, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, RESPONSIBILITY_AREA)));
+                                                               FINALIZED_DATE, RESPONSIBILITY_AREA, TICKET_EVENT)));
     }
 
     @ParameterizedTest(name = "Publication status: {0}")

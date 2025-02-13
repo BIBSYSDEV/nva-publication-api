@@ -7,6 +7,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 public record DoiRequestedEvent(Instant date, User user, URI institution, SortableIdentifier identifier)
     implements TicketEvent {
@@ -28,4 +29,5 @@ public record DoiRequestedEvent(Instant date, User user, URI institution, Sortab
                    .withPerformedBy(user)
                    .build();
     }
+
 }

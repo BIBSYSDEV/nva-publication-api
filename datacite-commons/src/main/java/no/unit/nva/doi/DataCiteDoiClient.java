@@ -25,6 +25,7 @@ import no.unit.nva.doi.model.ReserveDoiRequest;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UriWrapper;
@@ -59,8 +60,8 @@ public class DataCiteDoiClient implements DoiClient {
     }
 
     @Override
-    public URI generateDraftDoi(Publication publication) {
-        return attempt(() -> sendDraftDoiRequest(publication))
+    public URI generateDraftDoi(Resource resource) {
+        return attempt(() -> sendDraftDoiRequest(resource))
                    .map(this::validateResponse)
                    .map(this::convertResponseToDoi)
                    .orElseThrow();
@@ -81,8 +82,8 @@ public class DataCiteDoiClient implements DoiClient {
             .orElseThrow();
     }
 
-    private static BodyPublisher withDraftDoiRequestBody(Publication publication) throws JsonProcessingException {
-        var doiRequest = new ReserveDoiRequest(publication.getPublisher().getId());
+    private static BodyPublisher withDraftDoiRequestBody(Resource resource) throws JsonProcessingException {
+        var doiRequest = new ReserveDoiRequest(resource.getPublisher().getId());
         var body = JsonUtils.dtoObjectMapper.writeValueAsString(doiRequest);
         return BodyPublishers.ofString(body);
     }
@@ -131,10 +132,10 @@ public class DataCiteDoiClient implements DoiClient {
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
-    private HttpResponse<String> sendDraftDoiRequest(Publication publication) throws IOException,
+    private HttpResponse<String> sendDraftDoiRequest(Resource resource) throws IOException,
                                                                                      InterruptedException {
         var request = HttpRequest.newBuilder()
-                          .POST(withDraftDoiRequestBody(publication))
+                          .POST(withDraftDoiRequestBody(resource))
                           .uri(constructDraftDoiUri());
         var authorizedBackendClient = getAuthorizedBackendClient(fetchCredentials());
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));

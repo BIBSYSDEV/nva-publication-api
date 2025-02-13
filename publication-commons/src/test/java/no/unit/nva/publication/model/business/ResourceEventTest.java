@@ -12,6 +12,7 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.DoiReservedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -31,7 +32,9 @@ public class ResourceEventTest {
                              , SortableIdentifier.next())),
                          Arguments.of(new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
                          Arguments.of(ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
-                                                                             Instant.now())));
+                                                                             Instant.now())),
+                         Arguments.of(DoiReservedEvent.create(UserInstance.create(randomString(), randomUri()),
+                                                                            Instant.now())));
     }
 
     @ParameterizedTest

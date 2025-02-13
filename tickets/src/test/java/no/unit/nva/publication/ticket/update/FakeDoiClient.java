@@ -4,12 +4,13 @@ import static java.util.Objects.nonNull;
 import java.net.URI;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.testutils.RandomDataGenerator;
 
 public class FakeDoiClient implements DoiClient {
 
     @Override
-    public URI generateDraftDoi(Publication publication) {
+    public URI generateDraftDoi(Resource resource) {
         throw new IllegalArgumentException("Method is not used yet");
     }
 

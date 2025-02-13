@@ -17,11 +17,15 @@ import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,12 +36,14 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 class LogEntryTest extends ResourcesLocalTest {
 
     private ResourceService resourceService;
+    private TicketService ticketService;
 
     @Override
     @BeforeEach
     public void init() {
         super.init();
         resourceService = getResourceServiceBuilder().build();
+        ticketService = getTicketService();
     }
 
     @ParameterizedTest
@@ -119,6 +125,23 @@ class LogEntryTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldPersistTicketLogEntry() throws ApiGatewayException {
+        var publication = randomPublication();
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(persistedPublication))
+                             .persistNewTicket(ticketService);
+        var logEntry = DoiRequestedEvent.create(UserInstance.fromPublication(publication), Instant.now())
+                                      .toLogEntry(persistedPublication.getIdentifier(), doiRequest.getIdentifier(),
+                                                  randomLogUser());
+        logEntry.persist(resourceService);
+
+        var logEntries = Resource.fromPublication(persistedPublication).fetchLogEntries(resourceService);
+
+        assertTrue(logEntries.contains(logEntry));
+    }
+
+    @Test
     void shouldSerializeLogUserWithUserName() throws JsonProcessingException {
         var json = """
             {
@@ -141,11 +164,15 @@ class LogEntryTest extends ResourcesLocalTest {
                    .withResourceIdentifier(persistedPublication.getIdentifier())
                    .withTopic(LogTopic.FILE_UPLOADED)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
-                                                new LogOrganization(randomUri(), randomUri(), randomString(),
-                                                                    randomString())))
+                   .withPerformedBy(randomLogUser())
                    .withFilename(randomString())
                    .build();
+    }
+
+    private static LogUser randomLogUser() {
+        return new LogUser(randomString(), randomString(), randomString(), randomUri(),
+                           new LogOrganization(randomUri(), randomUri(), randomString(),
+                                               randomString()));
     }
 
     private static PublicationLogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
@@ -154,8 +181,7 @@ class LogEntryTest extends ResourcesLocalTest {
                    .withResourceIdentifier(resourceIdentifier)
                    .withTopic(logTopic)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
-                                                new LogOrganization(randomUri(), randomUri(), randomString(), randomString())))
+                   .withPerformedBy(randomLogUser())
                    .build();
     }
 }

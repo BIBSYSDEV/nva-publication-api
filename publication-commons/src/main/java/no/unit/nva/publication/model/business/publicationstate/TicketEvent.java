@@ -6,16 +6,12 @@ import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(CreatedResourceEvent.class), @JsonSubTypes.Type(PublishedResourceEvent.class),
-    @JsonSubTypes.Type(UnpublishedResourceEvent.class), @JsonSubTypes.Type(DeletedResourceEvent.class),
-    @JsonSubTypes.Type(RepublishedResourceEvent.class),
-    @JsonSubTypes.Type(ImportedResourceEvent.class),
-    @JsonSubTypes.Type(DoiReservedEvent.class)})
-public interface ResourceEvent {
+@JsonSubTypes({@JsonSubTypes.Type(DoiRequestedEvent.class)})
+public interface TicketEvent {
 
     Instant date();
 
@@ -28,5 +24,6 @@ public interface ResourceEvent {
      */
     URI institution();
 
-    PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user);
+    TicketLogEntry toLogEntry(SortableIdentifier resourceIdentifier,
+                              SortableIdentifier ticketIdentifier, LogUser user);
 }

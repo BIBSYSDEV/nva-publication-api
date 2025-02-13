@@ -114,6 +114,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                 List.of(), ORGANIZATION);
     public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private static final String FINALIZED_DATE = "finalizedDate";
+    private static final String TICKET_EVENT = "ticketEvent";
     private static final String WORKFLOW = "workflow";
     private static final String ASSIGNEE = "assignee";
     private static final String OWNERAFFILIATION = "ownerAffiliation";
@@ -192,7 +193,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
                                                                FINALIZED_DATE, OWNERAFFILIATION, APPROVED_FILES,
                                                                FILES_FOR_APPROVAL,
-                                                               RESPONSIBILITY_AREA)));
+                                                               RESPONSIBILITY_AREA, TICKET_EVENT)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
