@@ -3,10 +3,12 @@ package no.unit.nva.publication.log.service;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
+import java.util.Optional;
 import no.unit.nva.clients.GetCustomerResponse;
 import no.unit.nva.clients.GetUserResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -37,6 +39,7 @@ public class LogEntryService {
         switch (entity) {
             case Resource resource -> persistLogEntry(resource.getIdentifier());
             case FileEntry fileEntry -> persistLogEntry(fileEntry);
+            case DoiRequest doiRequest -> persistLogEntry(doiRequest);
             case null, default -> {
                 // Ignore
             }
@@ -61,6 +64,19 @@ public class LogEntryService {
         createLogEntry(resource, resourceEvent).persist(resourceService);
 
         logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
+    }
+
+    private void persistLogEntry(DoiRequest doiRequest) {
+        Optional.ofNullable(doiRequest)
+            .filter(DoiRequest::hasTicketEvent)
+            .ifPresent(this::createLogEntry);
+    }
+
+    private void createLogEntry(DoiRequest doiRequest) {
+        var ticketEvent = doiRequest.getTicketEvent();
+        var user = createUser(ticketEvent.user());
+        ticketEvent.toLogEntry(doiRequest.getResourceIdentifier(), doiRequest.getIdentifier(), user)
+            .persist(resourceService);
     }
 
     private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {

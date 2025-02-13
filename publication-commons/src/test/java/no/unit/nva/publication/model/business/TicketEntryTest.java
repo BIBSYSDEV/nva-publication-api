@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -7,10 +8,12 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.time.Instant;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.api.DisplayName;
@@ -93,6 +96,14 @@ class TicketEntryTest {
             .publishApprovedFile();
 
         assertThat(ticket.getApprovedFiles().size(), is(equalTo(1)));
+    }
+
+    @Test
+    void shouldSetTicketEventOnDoiRequest() {
+        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(randomPublication()));
+        doiRequest.setTicketEvent(DoiRequestedEvent.create(UserInstance.fromPublication(randomPublication()), Instant.now()));
+
+        assertTrue(doiRequest.hasTicketEvent());
     }
 
     private static UserInstance getExpectedUserInstance(Publication publication) {

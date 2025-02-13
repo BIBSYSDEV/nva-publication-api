@@ -7,6 +7,7 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
@@ -16,10 +17,12 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -72,13 +75,25 @@ public class TicketResolver {
                          .withOwnerAffiliation(requestUtils.topLevelCristinOrgId())
                          .withOwnerResponsibilityArea(requestUtils.personAffiliation())
                          .withOwner(requestUtils.username());
-        if (ticket instanceof PublishingRequestCase publishingRequest) {
-            var customerId = requestUtils.customerId();
-            publishingRequest.withWorkflow(getWorkflow(customerId))
-                .withFilesForApproval(getFilesForApproval(publication));
-            return createPublishingRequest(publishingRequest, publication, requestUtils);
-        }
+
+        return switch (ticket) {
+            case PublishingRequestCase publishingRequest -> handlePublishingRequest(requestUtils, publishingRequest, publication);
+            case DoiRequest doiRequest -> handleDoiRequest(requestUtils, doiRequest, ticket);
+            default -> persistTicket(ticket);
+        };
+    }
+
+    private TicketEntry handleDoiRequest(RequestUtils requestUtils, DoiRequest doiRequest, TicketEntry ticket) {
+        doiRequest.setTicketEvent(DoiRequestedEvent.create(requestUtils.toUserInstance(), Instant.now()));
         return persistTicket(ticket);
+    }
+
+    private PublishingRequestCase handlePublishingRequest(RequestUtils requestUtils,
+                                                           PublishingRequestCase publishingRequest,
+                                                           Publication publication) throws ApiGatewayException {
+        publishingRequest.withWorkflow(getWorkflow(requestUtils.customerId()))
+            .withFilesForApproval(getFilesForApproval(publication));
+        return createPublishingRequest(publishingRequest, publication, requestUtils);
     }
 
     private PublishingWorkflow getWorkflow(URI customerId) throws BadGatewayException {
