@@ -8,9 +8,9 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FileGrantStrategy;
 import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
-public class FileCuratorGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
+public class CuratorFileGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
 
-    public FileCuratorGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
+    public CuratorFileGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
         super(file, userInstance, resource);
     }
 
@@ -18,15 +18,11 @@ public class FileCuratorGrantStrategy extends FileStrategyBase implements FileGr
     public boolean allowsAction(FileOperation permission) {
         if (currentUserIsFileCurator()) {
             return switch (permission) {
-                case READ_METADATA, DOWNLOAD -> isFileTypeDefined();
+                case READ_METADATA, DOWNLOAD -> true;
                 case WRITE_METADATA, DELETE -> currentUserIsFileCuratorForGivenFile();
             };
         }
 
         return false;
-    }
-
-    private boolean isFileTypeDefined() {
-        return !(file.getFile() instanceof UploadedFile);
     }
 }

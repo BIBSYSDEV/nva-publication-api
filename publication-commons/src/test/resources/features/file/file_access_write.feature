@@ -17,22 +17,22 @@ Feature: File metadata write and file delete permissions
     Examples:
       | FileType            | UserRole                             | Outcome     |
       | UploadedFile        | Uploader at X                        | Allowed     |
-      #| UploadedFile     | Contributor at X                     | Not Allowed   |
-      #| UploadedFile     | Other contributors                   | Not Allowed   |
+      | UploadedFile        | Contributor at X                     | Not Allowed |
+      | UploadedFile        | Other contributors                   | Not Allowed |
       | UploadedFile        | File curator at X                    | Allowed     |
       | UploadedFile        | File curators for other contributors | Not Allowed |
       | UploadedFile        | Everyone else                        | Not Allowed |
       | UploadedFile        | External client                      | Not Allowed |
       | PendingOpenFile     | Uploader at X                        | Allowed     |
-      #| PendingOpenFile     | Contributor at X                     | Not Allowed |
-      #| PendingOpenFile     | Other contributors                   | Not Allowed |
+      | PendingOpenFile     | Contributor at X                     | Not Allowed |
+      | PendingOpenFile     | Other contributors                   | Not Allowed |
       | PendingOpenFile     | File curator at X                    | Allowed     |
       | PendingOpenFile     | File curators for other contributors | Not Allowed |
       | PendingOpenFile     | Everyone else                        | Not Allowed |
       | PendingOpenFile     | External client                      | Not Allowed |
       | PendingInternalFile | Uploader at X                        | Allowed     |
-      #| PendingInternalFile | Contributor at X                     | Not Allowed |
-      #| PendingInternalFile | Other contributors                   | Not Allowed |
+      | PendingInternalFile | Contributor at X                     | Not Allowed |
+      | PendingInternalFile | Other contributors                   | Not Allowed |
       | PendingInternalFile | File curator at X                    | Allowed     |
       | PendingInternalFile | File curators for other contributors | Not Allowed |
       | PendingInternalFile | Everyone else                        | Not Allowed |
@@ -45,15 +45,15 @@ Feature: File metadata write and file delete permissions
       | OpenFile            | Everyone else                        | Not Allowed |
       | OpenFile            | External client                      | Allowed     |
       | InternalFile        | Uploader at X                        | Not Allowed |
-      #| InternalFile        | Contributor at X                     | Not Allowed |
-      #| InternalFile        | Other contributors                   | Not Allowed |
+      | InternalFile        | Contributor at X                     | Not Allowed |
+      | InternalFile        | Other contributors                   | Not Allowed |
       | InternalFile        | File curator at X                    | Allowed     |
       | InternalFile        | File curators for other contributors | Not Allowed |
       | InternalFile        | Everyone else                        | Not Allowed |
       | InternalFile        | External client                      | Allowed     |
       | HiddenFile          | Uploader at X                        | Not Allowed |
-      #| HiddenFile          | Contributor at X                     | Not Allowed |
-      #| HiddenFile          | Other contributors                   | Not Allowed |
+      | HiddenFile          | Contributor at X                     | Not Allowed |
+      | HiddenFile          | Other contributors                   | Not Allowed |
       | HiddenFile          | File curator at X                    | Allowed     |
       | HiddenFile          | File curators for other contributors | Not Allowed |
       | HiddenFile          | Everyone else                        | Not Allowed |
