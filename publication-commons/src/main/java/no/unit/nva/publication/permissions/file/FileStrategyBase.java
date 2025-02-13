@@ -51,7 +51,7 @@ public class FileStrategyBase {
         return file.getOwnerAffiliation().equals(userTopLevelOrg);
     }
 
-    private boolean haveTopLevelRelationForCurrentResource() {
+    private boolean hasTopLevelRelationForCurrentResource() {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("checking if resource top level affiliation {} for user {} is equal to {}.",
@@ -64,7 +64,7 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsFileCurator() {
-        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && haveTopLevelRelationForCurrentResource();
+        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && hasTopLevelRelationForCurrentResource();
     }
 
     protected boolean currentUserIsContributor() {
