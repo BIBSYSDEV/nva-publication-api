@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.Objects.nonNull;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.model.Contributor;
@@ -53,20 +54,24 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsContributor() {
-        return nonNull(userInstance)
-               && nonNull(this.userInstance.getPersonCristinId())
-               && Optional.ofNullable(resource.getEntityDescription())
-                      .map(EntityDescription::getContributors)
-                      .stream()
-                      .flatMap(List::stream)
-                      .filter(this::isVerifiedContributor)
-                      .anyMatch(
-                          contributor -> contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
+        return Optional.ofNullable(userInstance)
+                   .map(UserInstance::getPersonCristinId)
+                   .map(this::isVerifiedContributorAtResource)
+                   .orElse(false);
+    }
+
+    private boolean isVerifiedContributorAtResource(URI personCristinId) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .map(EntityDescription::getContributors)
+                   .stream()
+                   .flatMap(List::stream)
+                   .filter(this::isVerifiedContributor)
+                   .anyMatch(contributor -> contributor.getIdentity().getId().equals(personCristinId));
     }
 
 
     private boolean isVerifiedContributor(Contributor contributor) {
-        return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
+        return nonNull(contributor.getIdentity()) && contributor.getIdentity().getId() != null;
     }
 
     protected boolean currentUserIsFileOwner() {
