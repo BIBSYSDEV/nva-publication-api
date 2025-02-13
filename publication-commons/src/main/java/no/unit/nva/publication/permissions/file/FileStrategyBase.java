@@ -1,6 +1,10 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.Objects.nonNull;
+import java.util.List;
+import java.util.Optional;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -43,5 +47,22 @@ public class FileStrategyBase {
 
     protected boolean currentUserIsFileCurator() {
         return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES);
+    }
+
+    protected boolean currentUserIsContributor() {
+        return nonNull(userInstance)
+               && nonNull(this.userInstance.getPersonCristinId())
+               && Optional.ofNullable(resource.getEntityDescription())
+                      .map(EntityDescription::getContributors)
+                      .stream()
+                      .flatMap(List::stream)
+                      .filter(this::isVerifiedContributor)
+                      .anyMatch(
+                          contributor -> contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
+    }
+
+
+    private boolean isVerifiedContributor(Contributor contributor) {
+        return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
     }
 }
