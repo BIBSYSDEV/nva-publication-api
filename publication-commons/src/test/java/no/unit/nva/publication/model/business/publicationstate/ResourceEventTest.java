@@ -9,6 +9,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -30,7 +31,10 @@ class ResourceEventTest {
                                                                    randomUri(), SortableIdentifier.next()),
                                       LogTopic.PUBLICATION_REPUBLISHED),
                          Arguments.of(ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
-                                                                             Instant.now()), LogTopic.PUBLICATION_IMPORTED));
+                                                                             Instant.now()),
+                                      LogTopic.PUBLICATION_IMPORTED),
+                         Arguments.of(DoiReservedEvent.create(UserInstance.create(randomString(), randomUri()),
+                                                              Instant.now()), LogTopic.DOI_RESERVED));
     }
 
     @ParameterizedTest
