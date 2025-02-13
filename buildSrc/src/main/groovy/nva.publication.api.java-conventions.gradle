@@ -3,6 +3,7 @@ plugins {
     id 'checkstyle'
     id 'pmd'
     id 'jacoco-report-aggregation'
+    id 'com.diffplug.spotless'
 }
 
 
@@ -95,3 +96,27 @@ jacocoTestCoverageVerification {
         }
     }
 }
+
+spotless {
+    java {
+        toggleOffOn() // Ignores sections between `spotless:off` / `spotless:on`
+        googleJavaFormat().reflowLongStrings().formatJavadoc(true).reorderImports(true)
+    }
+
+    format 'misc', {
+        target '.gitignore', '.gitattributes', '.editorconfig', '**/*.gradle'
+        leadingTabsToSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    enforceCheck false // Temporarily disable checking during build until the project is reformatted
+}
+
+// Commented out for now, uncomment when the project is reformatted and ready to enforce the formatting rules
+//tasks.named('build').configure {
+//    dependsOn('spotlessApply')
+//}
+//
+//tasks.named('test').configure {
+//    dependsOn('spotlessApply')
+//}
