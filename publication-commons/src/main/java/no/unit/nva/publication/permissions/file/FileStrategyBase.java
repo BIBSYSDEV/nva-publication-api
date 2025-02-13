@@ -1,7 +1,11 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.Objects.nonNull;
+import java.net.URI;
+import java.util.List;
 import java.util.Optional;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
@@ -47,6 +51,27 @@ public class FileStrategyBase {
 
     protected boolean currentUserIsFileCurator() {
         return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES);
+    }
+
+    protected boolean currentUserIsContributor() {
+        return Optional.ofNullable(userInstance)
+                   .map(UserInstance::getPersonCristinId)
+                   .map(this::isVerifiedContributorAtResource)
+                   .orElse(false);
+    }
+
+    private boolean isVerifiedContributorAtResource(URI personCristinId) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .map(EntityDescription::getContributors)
+                   .stream()
+                   .flatMap(List::stream)
+                   .filter(this::isVerifiedContributor)
+                   .anyMatch(contributor -> contributor.getIdentity().getId().equals(personCristinId));
+    }
+
+
+    private boolean isVerifiedContributor(Contributor contributor) {
+        return nonNull(contributor.getIdentity()) && contributor.getIdentity().getId() != null;
     }
 
     protected boolean currentUserIsFileOwner() {
