@@ -61,7 +61,7 @@ public class FileAccessFeatures {
             scenarioContext.addCurrentUserAndTopLevelAsContributor();
         }
 
-        if(roles.contains(EXTERNAL_CLIENT)) {
+        if (roles.contains(EXTERNAL_CLIENT)) {
             scenarioContext.setUserClientType(UserClientType.EXTERNAL);
             scenarioContext.setPublisherId(scenarioContext.getCurrentUserInstance().getCustomerId());
         }

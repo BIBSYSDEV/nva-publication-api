@@ -44,15 +44,23 @@ public class FileScenarioContext {
     }
 
     public UserInstance getCurrentUserInstance() {
-        if (userContext.userClientType == UserClientType.INTERNAL) {
-            return UserInstance.create(userContext.userIdentifier, userContext.customerId, userContext.personCristinId,
-                                       userContext.accessRights.stream().toList(),
-                                       userContext.topLevelOrgCristinId);
-        } else {
-            return UserInstance.createExternalUser(
-                new ResourceOwner(new Username(userContext.userIdentifier), userContext.topLevelOrgCristinId),
-                userContext.customerId);
-        }
+        return isInternalUser() ? createInternalUser() : createExternalUser();
+    }
+
+    private UserInstance createExternalUser() {
+        return UserInstance.createExternalUser(
+            new ResourceOwner(new Username(userContext.userIdentifier), userContext.topLevelOrgCristinId),
+            userContext.customerId);
+    }
+
+    private UserInstance createInternalUser() {
+        return UserInstance.create(userContext.userIdentifier, userContext.customerId, userContext.personCristinId,
+                                   userContext.accessRights.stream().toList(),
+                                   userContext.topLevelOrgCristinId);
+    }
+
+    private boolean isInternalUser() {
+        return userContext.userClientType == UserClientType.INTERNAL;
     }
 
     public UserInstance getOtherUserInstance() {
