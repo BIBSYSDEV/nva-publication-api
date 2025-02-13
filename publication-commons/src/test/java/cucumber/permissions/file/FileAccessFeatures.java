@@ -1,5 +1,6 @@
 package cucumber.permissions.file;
 
+import static cucumber.permissions.PermissionsRole.EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
 import static cucumber.permissions.PermissionsRole.OTHER_CONTRIBUTORS;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 
 public class FileAccessFeatures {
@@ -58,6 +60,12 @@ public class FileAccessFeatures {
         if (roles.contains(OTHER_CONTRIBUTORS)) {
             scenarioContext.addCurrentUserAndTopLevelAsContributor();
         }
+
+        if (roles.contains(EXTERNAL_CLIENT)) {
+            scenarioContext.setUserClientType(UserClientType.EXTERNAL);
+            scenarioContext.setPublisherId(scenarioContext.getCurrentUserInstance().getCustomerId());
+        }
+
         if (roles.contains(FILE_OWNER) || roles.contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
             scenarioContext.setFileOwnership(FileOwnership.OWNER);
         } else {
