@@ -6,9 +6,13 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
 
@@ -33,9 +37,15 @@ public class FileScenarioContext {
     }
 
     public UserInstance getCurrentUserInstance() {
-        return UserInstance.create(userContext.userIdentifier, userContext.customerId, userContext.personCristinId,
-                                   userContext.accessRights.stream().toList(),
-                                   userContext.topLevelOrgCristinId);
+        if (userContext.userClientType == UserClientType.INTERNAL) {
+            return UserInstance.create(userContext.userIdentifier, userContext.customerId, userContext.personCristinId,
+                                       userContext.accessRights.stream().toList(),
+                                       userContext.topLevelOrgCristinId);
+        } else {
+            return UserInstance.createExternalUser(
+                new ResourceOwner(new Username(userContext.userIdentifier), userContext.topLevelOrgCristinId),
+                userContext.customerId);
+        }
     }
 
     public UserInstance getOtherUserInstance() {
@@ -70,6 +80,14 @@ public class FileScenarioContext {
         return userContext.topLevelOrgCristinId;
     }
 
+    public void setUserClientType(UserClientType userClientType) {
+        userContext.userClientType = userClientType;
+    }
+
+    public void setPublisherId(URI customerId) {
+        resource.setPublisher(new Organization.Builder().withId(customerId).build());
+    }
+
     public static class UserScenarioContext {
 
         public String userIdentifier = randomString();
@@ -77,6 +95,7 @@ public class FileScenarioContext {
         public URI personCristinId = randomUri();
         public Set<AccessRight> accessRights = new HashSet<>();
         public URI topLevelOrgCristinId = randomUri();
+        public UserClientType userClientType = UserClientType.INTERNAL;
     }
 
     public static class FileContext {

@@ -1,10 +1,14 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.Objects.nonNull;
+import java.net.URI;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -31,10 +35,10 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsFileCuratorForGivenFile() {
-        return currentUserIsFileCurator() && isFileCuratorForCurrentOrganization();
+        return currentUserIsFileCurator() && haveTopLevelRelationForCurrentFile();
     }
 
-    private boolean isFileCuratorForCurrentOrganization() {
+    private boolean haveTopLevelRelationForCurrentFile() {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("checking if file top level affiliation {} for user {} is equal to {}.",
@@ -45,8 +49,20 @@ public class FileStrategyBase {
         return file.getOwnerAffiliation().equals(userTopLevelOrg);
     }
 
+    private boolean haveTopLevelRelationForCurrentResource() {
+        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
+
+        logger.info("checking if resource top level affiliation {} for user {} is equal to {}.",
+                    resource.getCuratingInstitutions().stream().map(CuratingInstitution::id).map(
+                        URI::toString).collect(Collectors.joining(", ")),
+                    userInstance.getUser(),
+                    userTopLevelOrg);
+
+        return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
+    }
+
     protected boolean currentUserIsFileCurator() {
-        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES);
+        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && haveTopLevelRelationForCurrentResource();
     }
 
     protected boolean currentUserIsFileOwner() {
@@ -58,7 +74,15 @@ public class FileStrategyBase {
 
     protected boolean fileIsFinalized() {
         return file.getFile() instanceof OpenFile
-            || file.getFile() instanceof InternalFile
-            || file.getFile() instanceof HiddenFile;
+               || file.getFile() instanceof InternalFile
+               || file.getFile() instanceof HiddenFile;
+    }
+
+    protected boolean isExternalClientWithRelation() {
+        return nonNull(userInstance)
+               && userInstance.isExternalClient()
+               && attempt(
+            () -> userInstance.getCustomerId().equals(resource.getPublisher().getId()))
+                      .orElse(fail -> false);
     }
 }

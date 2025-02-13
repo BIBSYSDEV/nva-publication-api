@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.file.grant;
 
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -15,14 +16,17 @@ public class FileCuratorGrantStrategy extends FileStrategyBase implements FileGr
 
     @Override
     public boolean allowsAction(FileOperation permission) {
-        // Should every file curator not depending on institution be able to read pending files?
         if (currentUserIsFileCurator()) {
             return switch (permission) {
-                case READ_METADATA, DOWNLOAD -> true;
+                case READ_METADATA, DOWNLOAD -> isFileTypeDefined();
                 case WRITE_METADATA, DELETE -> currentUserIsFileCuratorForGivenFile();
             };
         }
 
         return false;
+    }
+
+    private boolean isFileTypeDefined() {
+        return !(file.getFile() instanceof UploadedFile);
     }
 }
