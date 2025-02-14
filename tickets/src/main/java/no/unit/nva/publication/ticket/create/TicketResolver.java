@@ -79,14 +79,14 @@ public class TicketResolver {
 
         return switch (ticket) {
             case PublishingRequestCase publishingRequest -> handlePublishingRequest(requestUtils, publishingRequest, publication);
-            case DoiRequest doiRequest -> handleDoiRequest(requestUtils, doiRequest, ticket);
+            case DoiRequest doiRequest -> handleDoiRequest(requestUtils, doiRequest);
             default -> persistTicket(ticket);
         };
     }
 
-    private TicketEntry handleDoiRequest(RequestUtils requestUtils, DoiRequest doiRequest, TicketEntry ticket) {
+    private TicketEntry handleDoiRequest(RequestUtils requestUtils, DoiRequest doiRequest) {
         doiRequest.setTicketEvent(DoiRequestedEvent.create(requestUtils.toUserInstance(), Instant.now()));
-        return persistTicket(ticket);
+        return persistTicket(doiRequest);
     }
 
     private PublishingRequestCase handlePublishingRequest(RequestUtils requestUtils,

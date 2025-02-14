@@ -67,9 +67,9 @@ class DoiRequestTest {
         var publication = randomPublication();
         publication.setStatus(PublicationStatus.PUBLISHED);
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
-        doiRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
+        var completedDoiRequest = doiRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
 
-        assertInstanceOf(DoiAssignedEvent.class, doiRequest.getTicketEvent());
+        assertInstanceOf(DoiAssignedEvent.class, completedDoiRequest.getTicketEvent());
     }
 
     @Test
@@ -78,9 +78,9 @@ class DoiRequestTest {
         var publication = randomPublication();
         publication.setStatus(PublicationStatus.PUBLISHED);
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
-        doiRequest.close(UserInstance.create(randomString(), randomUri()));
+        var rejectedDoiRequest = doiRequest.close(UserInstance.create(randomString(), randomUri()));
 
-        assertInstanceOf(DoiRejectedEvent.class, doiRequest.getTicketEvent());
+        assertInstanceOf(DoiRejectedEvent.class, rejectedDoiRequest.getTicketEvent());
     }
 
     private static Clock fixedClock() {
