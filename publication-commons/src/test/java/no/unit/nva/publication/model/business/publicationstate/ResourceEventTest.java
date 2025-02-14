@@ -31,7 +31,9 @@ class ResourceEventTest {
                                          SortableIdentifier.next()), LogTopic.PUBLICATION_REPUBLISHED), Arguments.of(
             ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
                                                    UserInstance.create(randomString(), randomUri()), Instant.now()),
-            LogTopic.PUBLICATION_IMPORTED));
+            LogTopic.PUBLICATION_IMPORTED), Arguments.of(
+            DoiReservedEvent.create(UserInstance.create(randomString(), randomUri()), Instant.now()),
+            LogTopic.DOI_RESERVED));
     }
 
     @ParameterizedTest
