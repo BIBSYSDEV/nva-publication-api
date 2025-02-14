@@ -45,8 +45,7 @@ public class RepublishUtil {
                                                                                     PublishingRequestCase.class,
                                                                                     SortableIdentifier::next)
                                                             .withOwner(userInstance.getUsername());
-        publishingRequest.persistAutoComplete(ticketService, resource.toPublication(),
-                                              new Username(userInstance.getUsername()));
+        publishingRequest.persistAutoComplete(ticketService, resource.toPublication(), userInstance);
     }
 
     private void validateRepublishing() throws ForbiddenException {

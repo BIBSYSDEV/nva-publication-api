@@ -23,11 +23,14 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.publicationstate.DoiAssignedEvent;
+import no.unit.nva.publication.model.business.publicationstate.DoiRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.TicketEvent;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
@@ -186,8 +189,15 @@ public class DoiRequest extends TicketEntry {
     }
 
     @Override
-    public DoiRequest complete(Publication publication, Username finalizedBy) {
-        return (DoiRequest) super.complete(publication, finalizedBy);
+    public DoiRequest complete(Publication publication, UserInstance userInstance) {
+        this.setTicketEvent(DoiAssignedEvent.create(userInstance, Instant.now()));
+        return (DoiRequest) super.complete(publication, userInstance);
+    }
+
+    @Override
+    public DoiRequest close(UserInstance userInstance) throws ApiGatewayException {
+        this.setTicketEvent(DoiRejectedEvent.create(userInstance, Instant.now()));
+        return (DoiRequest) super.close(userInstance);
     }
 
     @Override

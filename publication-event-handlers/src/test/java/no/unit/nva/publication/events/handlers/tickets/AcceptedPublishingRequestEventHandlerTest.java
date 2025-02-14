@@ -74,9 +74,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     private static final Context CONTEXT = new FakeContext();
-    public static final String RESOURCE_LACKS_REQUIRED_DATA =
-            "Resource does not have required data to be " + "published: ";
-    private static final Username USERNAME = new Username(randomString());
+    private static final UserInstance USER_INSTANCE = UserInstance.create(randomString(), randomUri());
     private ResourceService resourceService;
     private TicketService ticketService;
     private AcceptedPublishingRequestEventHandler handler;
@@ -101,7 +99,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                 TicketTestUtils.createPersistedPublication(
                         PublicationStatus.PUBLISHED, resourceService);
         var publishingRequest =
-                pendingPublishingRequest(publication).complete(publication, USERNAME);
+                pendingPublishingRequest(publication).complete(publication, USER_INSTANCE);
         var event = createEvent(publishingRequest, publishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
         var notUpdatedPublication =
@@ -121,7 +119,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -140,7 +138,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -194,7 +192,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var approvedPublishingRequest =
                 pendingPublishingRequest
                         .publishApprovedFile()
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -215,7 +213,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -236,7 +234,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -294,7 +292,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         handler.handleRequest(event, outputStream, CONTEXT);
@@ -335,7 +333,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
         var logger = LogUtils.getTestingAppenderForRootLogger();
@@ -354,7 +352,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             (PublishingRequestCase) persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest = pendingPublishingRequest.publishApprovedFile()
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var handlerThrowingException =
                 handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication();
@@ -373,7 +371,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .complete(publication, USERNAME)
+                        .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var handlerThrowingException =
                 handlerWithResourceServiceThrowingExceptionWhenFetchingTicket();
@@ -435,7 +433,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                                             .withOwner(randomString())
                                                             .withOwnerAffiliation(randomUri());
         var ticket = publishingRequest.persistNewTicket(ticketService);
-        ticket.close(new Username(randomString())).persistUpdate(ticketService);
+        ticket.close(UserInstance.create(randomString(), randomUri())).persistUpdate(ticketService);
 
         var closedPublishingRequest = ticketService.fetchTicket(ticket);
         var event = createEvent(null, closedPublishingRequest);

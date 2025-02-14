@@ -10,7 +10,7 @@ import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(DoiRequestedEvent.class)})
+@JsonSubTypes({@JsonSubTypes.Type(DoiRequestedEvent.class), @JsonSubTypes.Type(DoiAssignedEvent.class)})
 public interface TicketEvent {
 
     Instant date();
@@ -24,6 +24,5 @@ public interface TicketEvent {
      */
     URI institution();
 
-    TicketLogEntry toLogEntry(SortableIdentifier resourceIdentifier,
-                              SortableIdentifier ticketIdentifier, LogUser user);
+    TicketLogEntry toLogEntry(SortableIdentifier resourceIdentifier, SortableIdentifier ticketIdentifier, LogUser user);
 }

@@ -194,7 +194,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                     requestUtils.accessRights(),
                     ticketRequest.getStatus(),
                     ticket.getResourceIdentifier());
-        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), new Username(username));
+        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), requestUtils.toUserInstance());
     }
 
     private void publishingRequestSideEffects(PublishingRequestCase ticket,

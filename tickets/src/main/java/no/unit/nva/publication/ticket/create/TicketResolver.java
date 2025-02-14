@@ -22,6 +22,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -141,39 +142,36 @@ public class TicketResolver {
     private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase,
                                                           Publication publication, RequestUtils requestUtils)
         throws ApiGatewayException {
-
-        var username = new Username(requestUtils.username());
-
         return switch (publishingRequestCase.getWorkflow()) {
             case REGISTRATOR_PUBLISHES_METADATA_AND_FILES ->
-                persistCompletedPublishingRequest(publishingRequestCase, publication, username);
+                persistCompletedPublishingRequest(publishingRequestCase, publication, requestUtils.toUserInstance());
             case REGISTRATOR_PUBLISHES_METADATA_ONLY ->
-                persistPublishingRequest(publishingRequestCase, publication, username);
+                persistPublishingRequest(publishingRequestCase, publication, requestUtils.toUserInstance());
             default -> (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
         };
     }
 
     private PublishingRequestCase persistCompletedPublishingRequest(
-        PublishingRequestCase publishingRequestCase, Publication publication, Username curator)
+        PublishingRequestCase publishingRequestCase, Publication publication, UserInstance userInstance)
         throws ApiGatewayException {
-        publishingRequestCase.setAssignee(curator);
-        return publishingRequestCase.publishApprovedFile().persistAutoComplete(ticketService, publication, curator);
+        publishingRequestCase.setAssignee(new Username(userInstance.getUsername()));
+        return publishingRequestCase.publishApprovedFile().persistAutoComplete(ticketService, publication, userInstance);
     }
 
     private PublishingRequestCase persistPublishingRequest(PublishingRequestCase publishingRequestCase,
-                                                           Publication publication, Username username)
+                                                           Publication publication, UserInstance userInstance)
         throws ApiGatewayException {
         if (publishingRequestCase.getFilesForApproval().isEmpty()) {
-            return createAutoApprovedTicket(publishingRequestCase, publication, username);
+            return createAutoApprovedTicket(publishingRequestCase, publication, userInstance);
         } else {
             return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
         }
     }
 
     private PublishingRequestCase createAutoApprovedTicket(PublishingRequestCase ticket, Publication publication,
-                                                           Username finalizedBy) throws ApiGatewayException {
+                                                           UserInstance userInstance) throws ApiGatewayException {
         ticket.emptyFilesForApproval();
-        return ticket.persistAutoComplete(ticketService, publication, finalizedBy);
+        return ticket.persistAutoComplete(ticketService, publication, userInstance);
     }
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)

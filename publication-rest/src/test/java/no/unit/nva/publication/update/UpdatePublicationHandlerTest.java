@@ -126,8 +126,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
@@ -1093,7 +1093,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publication.getEntityDescription().getReference().setDoi(null);
         resourceService.updateResource(Resource.fromPublication(publication));
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
-            .complete(publication, new Username(randomString())).persistUpdate(ticketService);
+            .complete(publication, randomUserInstance()).persistUpdate(ticketService);
 
         var newPendingOpenFile = File.builder().withIdentifier(randomUUID())
                                      .withLicense(randomUri()).buildPendingOpenFile();
@@ -1106,6 +1106,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(input, output, context);
 
         assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(200)));
+    }
+
+    private UserInstance randomUserInstance() {
+        return UserInstance.create(randomString(), randomUri());
     }
 
     @Test
@@ -1238,7 +1242,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             PublishingRequestCase.fromPublication(publication)
                 .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .persistNewTicket(ticketService);
-        var completedPublishingRequest = publishingRequestTicket.complete(publication, new Username(userName));
+        var completedPublishingRequest = publishingRequestTicket.complete(publication, UserInstance.create(userName,
+                                                                                                           randomUri()));
         ticketService.updateTicket(completedPublishingRequest);
 
         var inputStream = createUnpublishHandlerRequest(publication, userName,
@@ -1277,7 +1282,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         PublishingRequestCase.fromPublication(publication)
             .withOwner(publication.getResourceOwner().getOwner().getValue())
             .persistNewTicket(ticketService)
-            .complete(publication, new Username(randomString()))
+            .complete(publication, randomUserInstance())
             .persistUpdate(ticketService);
         var input = createUnpublishHandlerRequest(publication, randomString(), customerId, accessRight);
         updatePublicationHandler.handleRequest(input, output, context);
@@ -1684,7 +1689,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(publication, contributor);
 
-        var fileToUpload = (File) randomPendingOpenFile();
+        var fileToUpload = randomPendingOpenFile();
         var publicationWithNewFile = addFileToPublication(publication, fileToUpload);
         var contributorName = contributor.getIdentity().getName();
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationWithNewFile, cristinId,
@@ -1882,7 +1887,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateFileMetadataOnUpdatePublicationRequest()
         throws IOException, BadRequestException {
-        var file = (File) randomPendingOpenFile();
+        var file = randomPendingOpenFile();
         var publication = randomPublication().copy()
                               .withPublisher(Organization.fromUri(customerId))
                               .withAssociatedArtifacts(List.of())
@@ -2193,7 +2198,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                          .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
                          .withOwner(publication.getResourceOwner().getOwner().getValue())
                          .persistNewTicket(ticketService);
-        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, new Username(randomString()));
+        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, UserInstance.create(randomString(), randomUri()));
     }
 
     private Publication createSamplePublication() throws BadRequestException {
