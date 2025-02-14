@@ -5,7 +5,7 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Instant;
-import java.util.List;
+import java.util.Collections;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -75,6 +75,29 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return null;
     }
 
+    private static UserInstance getUserInstance(PublishingRequestCase publishingRequest) {
+        return UserInstance.create(publishingRequest.getOwner().toString(), publishingRequest.getCustomerId(), null,
+                                   Collections.emptyList(), publishingRequest.getOwnerAffiliation());
+    }
+
+    private static boolean hasDoi(Publication publication) {
+        return nonNull(publication.getDoi());
+    }
+
+    private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
+        var newStatus = getNewStatus(updateEvent);
+        var oldStatus = getOldStatus(updateEvent);
+        return oldStatus.equals(newStatus);
+    }
+
+    private static Optional<String> getOldStatus(DataEntryUpdateEvent updateEvent) {
+        return Optional.of(updateEvent).map(DataEntryUpdateEvent::getOldData).map(Entity::getStatusString);
+    }
+
+    private static Optional<String> getNewStatus(DataEntryUpdateEvent updateEvent) {
+        return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
+    }
+
     private void handleChanges(PublishingRequestCase publishingRequest) {
         switch (publishingRequest.getStatus()) {
             case PENDING -> handlePendingPublishingRequest(publishingRequest);
@@ -95,14 +118,9 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         createDoiRequestIfNeeded(publication, getUserInstance(publishingRequest));
     }
 
-    private static UserInstance getUserInstance(PublishingRequestCase publishingRequest) {
-        return UserInstance.create(publishingRequest.getOwner().toString(),
-                                   publishingRequest.getCustomerId(), null, List.of(),
-                                   publishingRequest.getOwnerAffiliation());
-    }
-
     /**
      * Is needed in order to populate publication status changes in search-index when publication is being published.
+     *
      * @param publishingRequest to refresh
      */
     private void refreshPublishingRequestAfterPublishingMetadata(PublishingRequestCase publishingRequest) {
@@ -111,24 +129,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
         publishingRequestCase.rejectRejectedFiles(resourceService);
-    }
-
-    private static boolean hasDoi(Publication publication) {
-        return nonNull(publication.getDoi());
-    }
-
-    private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
-        var newStatus = getNewStatus(updateEvent);
-        var oldStatus = getOldStatus(updateEvent);
-        return oldStatus.equals(newStatus);
-    }
-
-    private static Optional<String> getOldStatus(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent).map(DataEntryUpdateEvent::getOldData).map(Entity::getStatusString);
-    }
-
-    private static Optional<String> getNewStatus(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
     }
 
     private boolean hasEffectiveChanges(String eventBlob) {
@@ -174,8 +174,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         try {
             Resource.fromPublication(publication).publish(resourceService, userInstance);
         } catch (Exception e) {
-            throwException(
-                String.format(PUBLISHING_ERROR_MESSAGE, publication.getIdentifier()), e);
+            throwException(String.format(PUBLISHING_ERROR_MESSAGE, publication.getIdentifier()), e);
         }
     }
 
@@ -193,8 +192,9 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private void createDoiRequestIfNeeded(Publication publication, UserInstance userInstance) {
         if (hasDoi(publication) && !doiRequestExists(publication)) {
             var doiRequest = (DoiRequest) DoiRequest.fromPublication(publication)
-                                 .withOwner(publication.getResourceOwner().getOwner().getValue())
-                                 .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+                                              .withOwner(publication.getResourceOwner().getOwner().getValue())
+                                              .withOwnerAffiliation(
+                                                  publication.getResourceOwner().getOwnerAffiliation());
             doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, Instant.now()));
             attempt(() -> doiRequest.persistNewTicket(ticketService)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
