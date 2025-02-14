@@ -2,9 +2,10 @@ package no.unit.nva.publication.file.upload.restmodel;
 
 import static java.util.Objects.requireNonNull;
 import com.amazonaws.services.s3.model.PartETag;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record CompleteUploadPart(@JsonProperty("PartNumber") Integer partNumber, @JsonProperty("ETag") String etag) {
+public record CompleteUploadPart(@JsonAlias("PartNumber") Integer partNumber, @JsonAlias("ETag") String etag) {
 
     public static PartETag toPartETag(CompleteUploadPart completeUploadPart) {
         return new PartETag(completeUploadPart.partNumber(), completeUploadPart.etag());
