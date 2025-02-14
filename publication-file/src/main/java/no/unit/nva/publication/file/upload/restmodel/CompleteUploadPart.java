@@ -5,7 +5,7 @@ import com.amazonaws.services.s3.model.PartETag;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record CompleteUploadPart(@JsonIgno@JsonAlias("PartNumber") Integer partNumber, @JsonAlias("ETag") String etag) {
+public record CompleteUploadPart(@JsonAlias("PartNumber") Integer partNumber, @JsonAlias("ETag") String etag) {
 
     public static PartETag toPartETag(CompleteUploadPart completeUploadPart) {
         return new PartETag(completeUploadPart.partNumber(), completeUploadPart.etag());
