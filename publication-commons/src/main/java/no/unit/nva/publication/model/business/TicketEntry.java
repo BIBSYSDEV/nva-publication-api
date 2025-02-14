@@ -187,23 +187,23 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void validateCompletionRequirements(Publication publication);
 
-    public TicketEntry complete(Publication publication, Username finalizedBy) {
+    public TicketEntry complete(Publication publication, UserInstance userInstance) {
         var updated = this.copy();
         var now = Instant.now();
         updated.setModifiedDate(now);
         updated.setFinalizedDate(now);
-        updated.setFinalizedBy(finalizedBy);
+        updated.setFinalizedBy(new Username(userInstance.getUser().toString()));
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
         return updated;
     }
 
-    public final TicketEntry close(Username finalizedBy) throws ApiGatewayException {
+    public TicketEntry close(UserInstance userInstance) throws ApiGatewayException {
         validateClosingRequirements();
         var updated = this.copy();
         updated.setStatus(TicketStatus.CLOSED);
         updated.setModifiedDate(Instant.now());
-        updated.setFinalizedBy(finalizedBy);
+        updated.setFinalizedBy(new Username(userInstance.getUsername()));
         updated.setFinalizedDate(Instant.now());
         return updated;
     }

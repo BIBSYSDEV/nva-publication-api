@@ -28,7 +28,6 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -255,9 +254,13 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         Arrays.stream(ticketTypes).forEach(ticketType -> {
             attempt(() -> TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService))
                 .map(ticket -> ticket.withOwnerAffiliation(randomUri()))
-                .map(ticket -> ticket.complete(publication, new Username(randomString())))
+                .map(ticket -> ticket.complete(publication, randomUserInstance()))
                 .forEach(ticketEntry -> ticketEntry.persistUpdate(ticketService));
         });
+    }
+
+    private UserInstance randomUserInstance() {
+        return UserInstance.create(randomString(), randomUri());
     }
 
     @Test
@@ -297,7 +300,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
             .withOwnerAffiliation(randomUri())
             .withOwner(UserInstance.fromPublication(publication).getUsername())
             .persistNewTicket(ticketService)
-            .complete(publication, new Username(randomString())).persistUpdate(ticketService);
+            .complete(publication, randomUserInstance()).persistUpdate(ticketService);
 
         var request = userRequestsTickets(publication, contributorId, randomUri());
         handler.handleRequest(request, output, CONTEXT);

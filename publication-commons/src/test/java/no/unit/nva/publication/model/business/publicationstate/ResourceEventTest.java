@@ -39,7 +39,11 @@ class ResourceEventTest {
     public static Stream<Arguments> ticketEventProvider() {
         return Stream.of(
             Arguments.of(DoiRequestedEvent.create(UserInstance.create(randomString(), randomUri()), Instant.now()),
-                         LogTopic.DOI_REQUESTED));
+                         LogTopic.DOI_REQUESTED),
+            Arguments.of(DoiAssignedEvent.create(UserInstance.create(randomString(), randomUri()), Instant.now()),
+                         LogTopic.DOI_ASSIGNED),
+            Arguments.of(DoiRejectedEvent.create(UserInstance.create(randomString(), randomUri()), Instant.now()),
+                         LogTopic.DOI_REJECTED));
     }
 
     @ParameterizedTest

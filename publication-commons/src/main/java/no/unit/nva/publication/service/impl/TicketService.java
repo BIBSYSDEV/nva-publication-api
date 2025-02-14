@@ -101,16 +101,13 @@ public class TicketService extends ServiceWithTransactions {
 
     //TODO: should not return anything because we cannot return the persisted entry after a PUT
     // and right now we are returning the input object.
-    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, Username finalizedBy)
+    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, UserInstance userInstance)
         throws ApiGatewayException {
-        switch (ticketStatus) {
-            case COMPLETED:
-                return completeTicket(ticketEntry, finalizedBy);
-            case CLOSED:
-                return closeTicket(ticketEntry, finalizedBy);
-            default:
-                throw new BadRequestException("Cannot update to status " + ticketStatus);
-        }
+        return switch (ticketStatus) {
+            case COMPLETED -> completeTicket(ticketEntry, userInstance);
+            case CLOSED -> closeTicket(ticketEntry, userInstance);
+            default -> throw new BadRequestException("Cannot update to status " + ticketStatus);
+        };
     }
 
     public <T extends TicketEntry> Optional<T> fetchTicketByResourceIdentifier(URI customerId,
@@ -184,14 +181,14 @@ public class TicketService extends ServiceWithTransactions {
         }
     }
 
-    protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {
+    protected TicketEntry completeTicket(TicketEntry ticketEntry, UserInstance userInstance) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
         var existingTicket =
             attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
                 .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
                 .orElseThrow(fail -> notFoundException());
-        injectAssigneeWhenUnassigned(existingTicket, username);
-        var completed = attempt(() -> existingTicket.complete(publication, username))
+        injectAssigneeWhenUnassigned(existingTicket, userInstance);
+        var completed = attempt(() -> existingTicket.complete(publication, userInstance))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
         var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
@@ -199,12 +196,12 @@ public class TicketService extends ServiceWithTransactions {
         return completed;
     }
 
-    protected TicketEntry closeTicket(TicketEntry pendingTicket, Username username) throws ApiGatewayException {
+    protected TicketEntry closeTicket(TicketEntry pendingTicket, UserInstance userInstance) throws ApiGatewayException {
         //TODO: can we get both entries at the same time using the single table design?
         resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
-        var closedTicket = persistedTicket.close(username);
-        injectAssigneeWhenUnassigned(closedTicket, username);
+        var closedTicket = persistedTicket.close(userInstance);
+        injectAssigneeWhenUnassigned(closedTicket, userInstance);
         var dao = (TicketDao) closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
@@ -219,9 +216,9 @@ public class TicketService extends ServiceWithTransactions {
         return new NotFoundException(TICKET_NOT_FOUND);
     }
 
-    private void injectAssigneeWhenUnassigned(TicketEntry ticketEntry, Username username) {
+    private void injectAssigneeWhenUnassigned(TicketEntry ticketEntry, UserInstance userInstance) {
         if (isUnassigned(ticketEntry)) {
-            ticketEntry.setAssignee(username);
+            ticketEntry.setAssignee(new Username(userInstance.getUsername()));
         }
     }
 

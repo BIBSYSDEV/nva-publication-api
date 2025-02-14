@@ -230,7 +230,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
-        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, null);
+        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, UserInstance.create(randomString(), randomUri()));
         var owner = UserInstance.fromPublication(publication);
         var request = createNewMessageRequestForResourceOwner(publication, ticket, owner, randomString());
         handler.handleRequest(request, output, context);

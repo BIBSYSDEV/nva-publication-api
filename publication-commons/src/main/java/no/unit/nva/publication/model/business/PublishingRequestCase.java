@@ -124,8 +124,8 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     @Override
-    public PublishingRequestCase complete(Publication publication, Username finalizedBy) {
-        var completed = (PublishingRequestCase) super.complete(publication, finalizedBy);
+    public PublishingRequestCase complete(Publication publication, UserInstance userInstance) {
+        var completed = (PublishingRequestCase) super.complete(publication, userInstance);
         completed.emptyFilesForApproval();
         return completed;
     }
@@ -328,8 +328,8 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     public PublishingRequestCase persistAutoComplete(TicketService ticketService, Publication publication,
-                                                     Username finalizedBy) throws ApiGatewayException {
-        return (PublishingRequestCase) this.complete(publication, finalizedBy).persistNewTicket(ticketService);
+                                                     UserInstance userInstance) throws ApiGatewayException {
+        return (PublishingRequestCase) this.complete(publication, userInstance).persistNewTicket(ticketService);
     }
 
     public boolean fileIsApproved(File file) {

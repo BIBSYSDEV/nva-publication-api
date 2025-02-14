@@ -293,7 +293,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourceByIdentifierReturnsResourceWhenResourceExists() throws ApiGatewayException {
         Publication sampleResource = createPersistedPublicationWithDoi();
-        UserInstance userInstance = UserInstance.fromPublication(sampleResource);
         Publication savedResource = resourceService.getPublicationByIdentifier(sampleResource.getIdentifier());
         assertThat(savedResource, is(equalTo(sampleResource)));
     }
@@ -425,7 +424,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Should return publication by owner when status is {0}")
     @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"DRAFT_FOR_DELETION"})
     void shouldReturnPublicationsForOwnerWithStatus(PublicationStatus status) {
-        var userInstance = UserInstance.create(randomString(), randomUri());
+        var userInstance = randomUserInstance();
         var publication = createPublicationWithStatus(userInstance, status);
         var actualResources = resourceService.getPublicationSummaryByOwner(userInstance);
         var resourceSet = new HashSet<>(actualResources);
@@ -434,7 +433,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
-        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
+        UserInstance userInstance = randomUserInstance();
         Set<PublicationSummary> userResources = createSamplePublicationsOfSingleOwner(userInstance)
                                              .stream().map(PublicationSummary::create).collect(Collectors.toSet());
 
@@ -662,7 +661,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void markPublicationForDeletionThrowsExceptionWhenDeletingSomeoneElsePublication() throws ApiGatewayException {
         Publication resource = createPublishedResource();
-        var userInstance = UserInstance.create(randomString(), randomUri());
+        var userInstance = randomUserInstance();
         Executable action = () -> resourceService.markPublicationForDeletion(userInstance,
                                                                              resource.getIdentifier());
         BadRequestException exception = assertThrows(BadRequestException.class, action);
@@ -1056,7 +1055,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var failingClient = new FailingDynamoClient(this.client);
         resourceService = getResourceServiceBuilder(failingClient).build();
 
-        var userInstance = UserInstance.create(randomString(), randomUri());
+        var userInstance = randomUserInstance();
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
         // correctness of this test rely on number of publications generated above does not exceed
         // ResourceService.MAX_SIZE_OF_BATCH_REQUEST
@@ -1127,7 +1126,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         DoiRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService);
         var closedGeneralSupportTicket =
             GeneralSupportRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService)
-                .close(new Username(randomString()));
+                .close(randomUserInstance());
         ticketService.updateTicket(closedGeneralSupportTicket);
         var publishingRequestTicket = PublishingRequestCase.fromPublication(publication).withOwner(username);
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
@@ -1148,6 +1147,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                           hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
         assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
                    is(equalTo(UNPUBLISHED)));
+    }
+
+    private static UserInstance randomUserInstance() {
+        return UserInstance.create(randomString(), randomUri());
     }
 
     @ParameterizedTest
@@ -1310,7 +1313,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldThrowIllegalStateExceptionWhenPublishingNotPublishableResource()
-        throws BadRequestException, NotFoundException {
+        throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var peristedPublication = Resource.fromPublication(publication)
@@ -1563,7 +1566,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withFilesForApproval(Set.of(file))
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
-        publishingRequest.publishApprovedFile().close(randomPerson()).persistUpdate(ticketService);
+        publishingRequest.publishApprovedFile().close(randomUserInstance()).persistUpdate(ticketService);
         publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
         publishingRequest.publishApprovedFiles(resourceService);
@@ -1611,7 +1614,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                             .withFilesForApproval(Set.of(file))
                                                             .withOwner(randomString())
                                                             .persistNewTicket(ticketService);
-        publishingRequest.close(randomPerson()).persistUpdate(ticketService);
+        publishingRequest.close(randomUserInstance()).persistUpdate(ticketService);
         publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
         publishingRequest.rejectRejectedFiles(resourceService);
 
@@ -1682,7 +1685,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
-        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
+        UserInstance userInstance = randomUserInstance();
         return Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
                    .map(publication -> injectOwner(userInstance, publication))
                    .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))

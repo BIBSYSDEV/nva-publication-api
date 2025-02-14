@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -65,10 +64,6 @@ public final class PublishingRequestResolver {
         return TicketStatus.PENDING.equals(publishingRequest.getStatus());
     }
 
-    private Username getUsername() {
-        return new Username(userInstance.getUsername());
-    }
-
     private void handlePublishingRequest(Publication oldImage, Publication newImage) {
         var pendingPublishingRequests = fetchPendingPublishingRequestsForUserInstitution(oldImage);
         if (pendingPublishingRequests.isEmpty()) {
@@ -93,7 +88,7 @@ public final class PublishingRequestResolver {
     private void autoCompletePendingPublishingRequestsIfNeeded(
         Publication publication, List<PublishingRequestCase> pendingPublishingRequests) {
         pendingPublishingRequests.forEach(
-            ticket -> ticket.complete(publication, getUsername()).persistUpdate(ticketService));
+            ticket -> ticket.complete(publication, userInstance).persistUpdate(ticketService));
     }
 
     private boolean thereAreNoPendingFiles(Publication publicationUpdate) {
@@ -124,7 +119,7 @@ public final class PublishingRequestResolver {
         return customerAllowsPublishingMetadataAndFiles()
                    ? publishingRequest
                          .publishApprovedFile()
-                         .persistAutoComplete(ticketService, newImage, getUsername())
+                         .persistAutoComplete(ticketService, newImage, userInstance)
                    : publishingRequest.persistNewTicket(ticketService);
     }
 
@@ -191,7 +186,7 @@ public final class PublishingRequestResolver {
             publishingRequest
                 .withFilesForApproval(files)
                 .publishApprovedFile()
-                .complete(newImage, getUsername())
+                .complete(newImage, userInstance)
                 .persistUpdate(ticketService);
         } else {
             publishingRequest

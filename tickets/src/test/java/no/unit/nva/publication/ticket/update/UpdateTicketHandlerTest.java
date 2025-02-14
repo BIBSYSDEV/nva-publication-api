@@ -50,7 +50,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -83,7 +82,7 @@ import org.zalando.problem.Problem;
 public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     public static final String SOME_ASSIGNEE = "some@user";
-    public static final Username USER_NAME = new Username(randomString());
+    public static final UserInstance USER_INSTANCE = UserInstance.create(randomString(), randomUri());
     public static final Username ASSIGNEE = new Username("Assignee");
     public static final String TICKET_IDENTIFIER_PATH_PARAMETER = "ticketIdentifier";
     private UpdateTicketHandler handler;
@@ -114,7 +113,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublication();
         assertThat(publication.getDoi(), is(nullValue()));
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -132,13 +131,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
         var actualTicket = ticketService.fetchTicket(ticket);
-        assertThat(actualTicket.getAssignee(), is(equalTo(USER_NAME)));
+        assertThat(actualTicket.getAssignee(), is(equalTo(new Username(USER_INSTANCE.getUsername()))));
     }
 
     @ParameterizedTest
@@ -148,13 +147,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var closedTicket = ticket.close(USER_NAME);
+        var closedTicket = ticket.close(USER_INSTANCE);
         var request = authorizedUserCompletesTicket(closedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
         var actualTicket = ticketService.fetchTicket(ticket);
-        assertThat(actualTicket.getAssignee(), is(equalTo(USER_NAME)));
+        assertThat(actualTicket.getAssignee(), is(equalTo(new Username(USER_INSTANCE.getUsername()))));
     }
 
     @ParameterizedTest
@@ -164,7 +163,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var completedTicket = ticketService.updateTicketAssignee(ticket, ASSIGNEE).complete(publication, USER_NAME);
+        var completedTicket = ticketService.updateTicketAssignee(ticket, ASSIGNEE).complete(publication, USER_INSTANCE);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -177,13 +176,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     void shouldSetFinalizedValuesWhenCuratorCompletesTheTicketEntry() throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
         var actualTicket = ticketService.fetchTicket(ticket);
-        assertThat(actualTicket.getFinalizedBy(), is(equalTo(USER_NAME)));
+        assertThat(actualTicket.getFinalizedBy().getValue(), is(equalTo(USER_INSTANCE.getUsername())));
         assertThat(actualTicket.getFinalizedDate(), is(notNullValue()));
     }
 
@@ -192,7 +191,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublicationWithDoi();
         assertThat(publication.getDoi(), is(notNullValue()));
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -226,7 +225,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                new FakeDoiClientThrowingException());
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -242,7 +241,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
                                                                             resourceService);
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.close(USER_NAME);
+        var completedTicket = ticket.close(USER_INSTANCE);
         mockBadResponseFromDoiRegistrar(publication.getDoi());
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
@@ -258,14 +257,14 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
-        assertThat(resourceService.getPublication(publication).getDoi(), is(nullValue()));
+        assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getDoi(), is(nullValue()));
     }
 
     @Test
     void shouldReturnHttpForbiddenWhenRequestingUserIsNotCurator() throws IOException, ApiGatewayException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var request = createCompleteTicketHttpRequest(completedTicket,
                                                       completedTicket.getCustomerId());
         handler.handleRequest(request, output, CONTEXT);
@@ -278,7 +277,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiRequestWithOwnerAffiliation(publication, randomUri());
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var customer = randomUri();
         var request = createCompleteTicketHttpRequest(completedTicket, customer, AccessRight.MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
@@ -291,7 +290,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        var completedTicket = ticketService.updateTicketStatus(ticket, COMPLETED, USER_NAME);
+        var completedTicket = ticketService.updateTicketStatus(ticket, COMPLETED, USER_INSTANCE);
         var request = authorizedUserCompletesTicket(completedTicket);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -306,7 +305,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticketService.updateTicketStatus(ticket, COMPLETED, USER_NAME);
+        ticketService.updateTicketStatus(ticket, COMPLETED, USER_INSTANCE);
         ticket.setStatus(TicketStatus.PENDING);
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
@@ -375,7 +374,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        ticket.setAssignee(USER_NAME);
+        ticket.setAssignee(new Username(USER_INSTANCE.getUsername()));
         ticketService.updateTicket(ticket);
         var newAssignee = UserInstance.create(randomString(), publication.getPublisher().getId());
         var updatedTicket = ticket.updateAssignee(publication, new Username(newAssignee.getUsername()));
@@ -389,7 +388,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     void shouldResetAssigneeWhenAssigneeFromRequestIsEmptyString() throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
-        ticket.setAssignee(USER_NAME);
+        ticket.setAssignee(new Username(USER_INSTANCE.getUsername()));
         ticketService.updateTicket(ticket);
         var newAssignee = UserInstance.create(randomString(), publication.getPublisher().getId());
         var ticketWithNoAssignee = ticket.updateAssignee(publication, new Username(""));
@@ -555,7 +554,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             PublicationStatus.DRAFT, resourceService);
         var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(publication);
-        var closedTicket = ticket.complete(publication, USER_NAME);
+        var closedTicket = ticket.complete(publication, USER_INSTANCE);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
                                                           ticket.getCustomerId(),
                                                           MANAGE_RESOURCES_STANDARD,
@@ -587,7 +586,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(((PublishingRequestCase) ticket).getFilesForApproval().stream().map(File::getIdentifier).toList(),
                    containsInAnyOrder(expectedFilesForApproval));
 
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var httpRequest = createCompleteTicketHttpRequest(completedTicket,
                                                           ticket.getCustomerId(),
                                                           MANAGE_RESOURCES_STANDARD,
@@ -613,7 +612,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         resourceService.updatePublication(publication);
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
 
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var httpRequest = userUpdatesTicket(completedTicket, contributorId);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -631,7 +630,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         resourceService.updatePublication(publication);
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
 
-        var completedTicket = ticket.complete(publication, USER_NAME);
+        var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var httpRequest = userUpdatesTicket(completedTicket, randomUri());
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -647,7 +646,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
             randomPublication().copy().withAssociatedArtifacts(List.of(fileWithoutLicense)).build();
         var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(persistedPublication);
-        var closedTicket = ticket.complete(persistedPublication, USER_NAME);
+        var closedTicket = ticket.complete(persistedPublication, USER_INSTANCE);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
                                                           ticket.getCustomerId(),
                                                           MANAGE_RESOURCES_STANDARD,
@@ -667,7 +666,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                 List.of(pendingFileWithoutLicense(), randomPendingOpenFile())).build();
         var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(persistedPublication);
-        var closedTicket = ticket.complete(persistedPublication, USER_NAME);
+        var closedTicket = ticket.complete(persistedPublication, USER_INSTANCE);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
                                                           ticket.getCustomerId(),
                                                           MANAGE_RESOURCES_STANDARD,
@@ -710,12 +709,12 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private static InputStream elevatedUserMarksTicket(Publication publication, TicketEntry ticket,
-                                                       ViewStatus viewStatus, URI customerId, User curator)
+                                                       URI customerId, User curator)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
                    .withUserName(curator.toString())
                    .withAccessRights(customerId, AccessRight.MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT)
-                   .withBody(new UpdateTicketRequest(ticket.getStatus(), null, viewStatus))
+                   .withBody(new UpdateTicketRequest(ticket.getStatus(), null, ViewStatus.READ))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                    .withPersonCristinId(randomUri())
                    .build();
@@ -780,7 +779,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
                    .withCurrentCustomer(customer)
-                   .withUserName(USER_NAME.getValue())
+                   .withUserName(USER_INSTANCE.getUsername())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               ticket.getResourceIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
@@ -821,7 +820,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
                    .withAccessRights(customer, accessRights)
                    .withCurrentCustomer(customer)
-                   .withUserName(USER_NAME.getValue())
+                   .withUserName(USER_INSTANCE.getUsername())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               ticket.getResourceIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
@@ -859,7 +858,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket,
                                            User curator) throws JsonProcessingException {
-        return elevatedUserMarksTicket(publication, ticket, ViewStatus.READ, ticket.getCustomerId(), curator);
+        return elevatedUserMarksTicket(publication, ticket, ticket.getCustomerId(), curator);
     }
 
     private void mockBadResponseFromDoiRegistrar(URI doi) {
