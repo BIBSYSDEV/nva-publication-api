@@ -131,7 +131,8 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     void shouldPersistLogEntryFromImportedResourceEvent() throws BadRequestException {
         var publication = createPublication();
         var resource = Resource.fromPublication(publication);
-        resource.setResourceEvent(ImportedResourceEvent.fromImportSource(ImportSource.fromBrageArchive("A"),
+        resource.setResourceEvent(ImportedResourceEvent.fromImportSource(
+            ImportSource.fromBrageArchive("A"), UserInstance.fromPublication(publication),
                                                                          Instant.now()));
         resourceService.updateResource(resource);
         logEntryService.persistLogEntry(Resource.fromPublication(publication));

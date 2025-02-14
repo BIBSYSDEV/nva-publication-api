@@ -318,6 +318,20 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldSetResourceEventInstitutionToPublicationResourceOwnerAffiliationWhenImportingPublication() throws IOException {
+        var brageGenerator = buildGeneratorForRecord();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT).publication();
+
+        var resourceEvent = Resource.fromPublication(actualPublication)
+                                .fetch(resourceService)
+                                .orElseThrow()
+                                .getResourceEvent();
+
+        assertEquals(actualPublication.getResourceOwner().getOwnerAffiliation(), resourceEvent.institution());
+    }
+
+    @Test
     void shouldSetInstitutionShortNameForResourceEventWhenImportingPublicationFromBrage() throws IOException {
         var brageGenerator = buildGeneratorForRecord();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
