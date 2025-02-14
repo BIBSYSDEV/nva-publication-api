@@ -23,6 +23,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.publicationstate.TicketEvent;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -63,6 +64,8 @@ public class DoiRequest extends TicketEntry {
     private Username assignee;
     @JsonProperty(OWNER_AFFILIATION_FIELD)
     private URI ownerAffiliation;
+    @JsonProperty("ticketEvent")
+    private TicketEvent ticketEvent;
 
     public DoiRequest() {
         super();
@@ -236,6 +239,14 @@ public class DoiRequest extends TicketEntry {
         this.ownerAffiliation = ownerAffiliation;
     }
 
+    public TicketEvent getTicketEvent() {
+        return ticketEvent;
+    }
+
+    public void setTicketEvent(TicketEvent ticketEvent) {
+        this.ticketEvent = ticketEvent;
+    }
+
     @Override
     public void validateAssigneeRequirements(Publication publication) {
     }
@@ -288,6 +299,10 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getAssignee(), that.getAssignee())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
+    }
+
+    public boolean hasTicketEvent() {
+        return nonNull(getTicketEvent());
     }
 
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {

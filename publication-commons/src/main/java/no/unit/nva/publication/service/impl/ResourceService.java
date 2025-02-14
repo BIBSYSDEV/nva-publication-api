@@ -92,7 +92,6 @@ public class ResourceService extends ServiceWithTransactions {
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String RESOURCE_REFRESHED_MESSAGE = "Resource has been refreshed successfully: {}";
-    public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;

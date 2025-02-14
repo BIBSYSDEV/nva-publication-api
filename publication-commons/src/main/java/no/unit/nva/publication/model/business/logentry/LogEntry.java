@@ -8,7 +8,8 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(names = {PublicationLogEntry.TYPE, "LogEntry"}, value = PublicationLogEntry.class),
-    @JsonSubTypes.Type(name = FileLogEntry.TYPE, value = FileLogEntry.class)})
+    @JsonSubTypes.Type(name = FileLogEntry.TYPE, value = FileLogEntry.class),
+    @JsonSubTypes.Type(name = TicketLogEntry.TYPE, value = TicketLogEntry.class)})
 public interface LogEntry {
 
     SortableIdentifier identifier();

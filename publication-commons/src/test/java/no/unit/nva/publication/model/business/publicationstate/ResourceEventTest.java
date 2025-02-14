@@ -36,10 +36,24 @@ class ResourceEventTest {
             LogTopic.DOI_RESERVED));
     }
 
+    public static Stream<Arguments> ticketEventProvider() {
+        return Stream.of(
+            Arguments.of(DoiRequestedEvent.create(UserInstance.create(randomString(), randomUri()), Instant.now()),
+                         LogTopic.DOI_REQUESTED));
+    }
+
     @ParameterizedTest
     @MethodSource("resourceEventProvider")
     void shouldConvertResourceEventToLogEntryWithExpectedTopic(ResourceEvent resourceEvent, LogTopic expectedLogTopic) {
         var logEntry = resourceEvent.toLogEntry(SortableIdentifier.next(), null);
+
+        assertEquals(expectedLogTopic, logEntry.topic());
+    }
+
+    @ParameterizedTest
+    @MethodSource("ticketEventProvider")
+    void shouldConvertTicketEventToLogEntryWithExpectedTopic(TicketEvent resourceEvent, LogTopic expectedLogTopic) {
+        var logEntry = resourceEvent.toLogEntry(SortableIdentifier.next(), SortableIdentifier.next(), null);
 
         assertEquals(expectedLogTopic, logEntry.topic());
     }
