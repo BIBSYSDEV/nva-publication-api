@@ -160,7 +160,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    @DisplayName("handler should return allowdOperations on files")
+    @DisplayName("handler should return allowedOperations on files")
     void handlerReturnsAllowedOperationsOnFiles() throws IOException, ApiGatewayException {
         var publication = createPublication();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
@@ -175,7 +175,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                        .filter(artifact -> artifact.getArtifactType().equals(OpenFile.TYPE))
                        .map(FileDto.class::cast)
                        .findFirst()
-                       .get();
+                       .orElseThrow();
 
         assertTrue(file.allowedOperations().contains(FileOperation.READ_METADATA));
     }

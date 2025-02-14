@@ -1,4 +1,4 @@
-package cucumber.permissions.file;
+package cucumber.permissions.publication;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -9,74 +9,25 @@ import java.util.List;
 import java.util.Set;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
 
-public class FileScenarioContext {
+public class PublicationScenarioContext {
 
-    private final FileContext fileContext = new FileContext();
     private final UserScenarioContext userContext = new UserScenarioContext();
-    private FileOperation fileOperation;
     private Resource resource;
-
-    public void setFile(File file) {
-        fileContext.file = file;
-    }
-
-    public void setFileOwnership(FileOwnership owner) {
-        fileContext.ownership = owner;
-    }
-
-    public FileEntry getFileEntry() {
-        var owner = fileContext.ownership == FileOwnership.OWNER ? getCurrentUserInstance() : getOtherUserInstance();
-        return FileEntry.create(fileContext.file, getResource().getIdentifier(), owner);
-    }
+    private PublicationOperation operation;
 
     public UserInstance getCurrentUserInstance() {
-        return isInternalUser() ? createInternalUser() : createExternalUser();
-    }
-
-    private UserInstance createExternalUser() {
-        return UserInstance.createExternalUser(
-            new ResourceOwner(new Username(userContext.userIdentifier), userContext.topLevelOrgCristinId),
-            userContext.customerId);
-    }
-
-    private UserInstance createInternalUser() {
         return UserInstance.create(userContext.userIdentifier, userContext.customerId, userContext.personCristinId,
                                    userContext.accessRights.stream().toList(),
                                    userContext.topLevelOrgCristinId);
-    }
-
-    private boolean isInternalUser() {
-        return userContext.userClientType == UserClientType.INTERNAL;
-    }
-
-    public UserInstance getOtherUserInstance() {
-        var otherUserContext = new UserScenarioContext();
-        return UserInstance.create(otherUserContext.userIdentifier, otherUserContext.customerId,
-                                   otherUserContext.personCristinId,
-                                   otherUserContext.accessRights.stream().toList(),
-                                   otherUserContext.topLevelOrgCristinId);
-    }
-
-    public void setFileOperation(FileOperation action) {
-        this.fileOperation = action;
-    }
-
-    public FileOperation getFileOperation() {
-        return fileOperation;
     }
 
     public Resource getResource() {
@@ -95,12 +46,12 @@ public class FileScenarioContext {
         return userContext.topLevelOrgCristinId;
     }
 
-    public void setUserClientType(UserClientType userClientType) {
-        userContext.userClientType = userClientType;
+    public void setOperation(PublicationOperation operation) {
+        this.operation = operation;
     }
 
-    public void setPublisherId(URI customerId) {
-        resource.setPublisher(new Organization.Builder().withId(customerId).build());
+    public PublicationOperation getOperation() {
+        return operation;
     }
 
     public void addCurrentUserAndTopLevelAsContributor() {
@@ -131,17 +82,5 @@ public class FileScenarioContext {
         public URI personCristinId = randomUri();
         public Set<AccessRight> accessRights = new HashSet<>();
         public URI topLevelOrgCristinId = randomUri();
-        public UserClientType userClientType = UserClientType.INTERNAL;
-    }
-
-    public static class FileContext {
-
-        public File file;
-        public FileOwnership ownership;
-    }
-
-    public enum FileOwnership {
-        OWNER,
-        NOT_OWNER
     }
 }

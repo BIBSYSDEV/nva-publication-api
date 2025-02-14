@@ -92,7 +92,10 @@ public class UserInstance implements JsonSerializable {
     }
 
     public static UserInstance fromPublication(Publication publication) {
-        return UserInstance.create(publication.getResourceOwner(), publication.getPublisher().getId());
+        return new UserInstance(publication.getResourceOwner().getOwner().getValue(),
+                                publication.getPublisher().getId(),
+                                publication.getResourceOwner().getOwnerAffiliation(),
+                                null, List.of(), UserClientType.INTERNAL);
     }
 
     public static UserInstance fromMessage(Message message) {

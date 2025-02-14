@@ -1,25 +1,28 @@
 package cucumber.permissions.file;
 
+import static cucumber.permissions.PermissionsRole.EXTERNAL_CLIENT;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
+import static cucumber.permissions.PermissionsRole.OTHER_CONTRIBUTORS;
+import static cucumber.permissions.PermissionsRole.FILE_OWNER;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import cucumber.permissions.PermissionsRole;
 import cucumber.permissions.file.FileScenarioContext.FileOwnership;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Set;
-import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.permissions.file.FilePermissions;
-import nva.commons.apigateway.AccessRight;
 
 public class FileAccessFeatures {
 
@@ -49,19 +52,21 @@ public class FileAccessFeatures {
 
     @When("the user have the role {string}")
     public void theUserHaveTheRole(String userRole) {
-        var role = new RoleParser(userRole);
-
-        if (role.isFileCurator()) {
-            scenarioContext.addUserRole(AccessRight.MANAGE_RESOURCES_STANDARD);
-            scenarioContext.addUserRole(AccessRight.MANAGE_RESOURCE_FILES);
-
-            var topLevelOrgCristinId = scenarioContext.getTopLevelOrgCristinId();
-            var curatingInstitutions = Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet()));
-
-            scenarioContext.getResource().setCuratingInstitutions(curatingInstitutions);
+        var roles = PermissionsRole.lookup(userRole);
+        if (roles.contains(FILE_CURATOR)) {
+            scenarioContext.setCurrentUserAsFileCurator();
         }
 
-        if (role.isCuratorForGivenFile()) {
+        if (roles.contains(OTHER_CONTRIBUTORS)) {
+            scenarioContext.addCurrentUserAndTopLevelAsContributor();
+        }
+
+        if (roles.contains(EXTERNAL_CLIENT)) {
+            scenarioContext.setUserClientType(UserClientType.EXTERNAL);
+            scenarioContext.setPublisherId(scenarioContext.getCurrentUserInstance().getCustomerId());
+        }
+
+        if (roles.contains(FILE_OWNER) || roles.contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
             scenarioContext.setFileOwnership(FileOwnership.OWNER);
         } else {
             scenarioContext.setFileOwnership(FileOwnership.NOT_OWNER);

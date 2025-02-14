@@ -1,4 +1,4 @@
-package cucumber.permissions.file;
+package cucumber.permissions.publication;
 
 import static io.cucumber.junit.CucumberOptions.SnippetType.CAMELCASE;
 import io.cucumber.junit.Cucumber;
@@ -9,8 +9,9 @@ import org.junit.runner.RunWith;
 @CucumberOptions(
     plugin = {"pretty", "summary"},
     snippets = CAMELCASE,
-    features = {"src/test/resources/features"},
-    tags = "not @ignore"
+    features = {"src/test/resources/features/publication"},
+    tags = "not @ignore",
+    glue = {"cucumber.permissions.publication"}
 )
-public class RunCucumberTest {
+public class RunPublicationPermissionsCucumberTest {
 }
