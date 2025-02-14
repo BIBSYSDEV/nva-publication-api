@@ -4,6 +4,8 @@ import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
@@ -35,10 +37,10 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsFileCuratorForGivenFile() {
-        return currentUserIsFileCurator() && isFileCuratorForCurrentOrganization();
+        return currentUserIsFileCurator() && haveTopLevelRelationForCurrentFile();
     }
 
-    private boolean isFileCuratorForCurrentOrganization() {
+    private boolean haveTopLevelRelationForCurrentFile() {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("checking if file top level affiliation {} for user {} is equal to {}.",
@@ -49,8 +51,20 @@ public class FileStrategyBase {
         return file.getOwnerAffiliation().equals(userTopLevelOrg);
     }
 
+    private boolean hasTopLevelRelationForCurrentResource() {
+        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
+
+        logger.info("checking if resource top level affiliation {} for user {} is equal to {}.",
+                    resource.getCuratingInstitutions().stream().map(CuratingInstitution::id).map(
+                        URI::toString).collect(Collectors.joining(", ")),
+                    userInstance.getUser(),
+                    userTopLevelOrg);
+
+        return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
+    }
+
     protected boolean currentUserIsFileCurator() {
-        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES);
+        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && hasTopLevelRelationForCurrentResource();
     }
 
     protected boolean currentUserIsContributor() {
@@ -83,7 +97,13 @@ public class FileStrategyBase {
 
     protected boolean fileIsFinalized() {
         return file.getFile() instanceof OpenFile
-            || file.getFile() instanceof InternalFile
-            || file.getFile() instanceof HiddenFile;
+               || file.getFile() instanceof InternalFile
+               || file.getFile() instanceof HiddenFile;
+    }
+
+    protected boolean isExternalClientWithRelation() {
+        return nonNull(userInstance) &&
+               userInstance.isExternalClient() &&
+               userInstance.getCustomerId().equals(resource.getPublisher().getId());
     }
 }

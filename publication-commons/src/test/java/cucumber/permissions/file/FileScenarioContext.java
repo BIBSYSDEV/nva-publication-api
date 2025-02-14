@@ -10,13 +10,16 @@ import java.util.Set;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
 
@@ -41,9 +44,23 @@ public class FileScenarioContext {
     }
 
     public UserInstance getCurrentUserInstance() {
+        return isInternalUser() ? createInternalUser() : createExternalUser();
+    }
+
+    private UserInstance createExternalUser() {
+        return UserInstance.createExternalUser(
+            new ResourceOwner(new Username(userContext.userIdentifier), userContext.topLevelOrgCristinId),
+            userContext.customerId);
+    }
+
+    private UserInstance createInternalUser() {
         return UserInstance.create(userContext.userIdentifier, userContext.customerId, userContext.personCristinId,
                                    userContext.accessRights.stream().toList(),
                                    userContext.topLevelOrgCristinId);
+    }
+
+    private boolean isInternalUser() {
+        return userContext.userClientType == UserClientType.INTERNAL;
     }
 
     public UserInstance getOtherUserInstance() {
@@ -78,6 +95,14 @@ public class FileScenarioContext {
         return userContext.topLevelOrgCristinId;
     }
 
+    public void setUserClientType(UserClientType userClientType) {
+        userContext.userClientType = userClientType;
+    }
+
+    public void setPublisherId(URI customerId) {
+        resource.setPublisher(new Organization.Builder().withId(customerId).build());
+    }
+
     public void addCurrentUserAndTopLevelAsContributor() {
         var contributor =
             new Contributor.Builder().withAffiliations(
@@ -106,6 +131,7 @@ public class FileScenarioContext {
         public URI personCristinId = randomUri();
         public Set<AccessRight> accessRights = new HashSet<>();
         public URI topLevelOrgCristinId = randomUri();
+        public UserClientType userClientType = UserClientType.INTERNAL;
     }
 
     public static class FileContext {

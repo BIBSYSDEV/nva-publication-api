@@ -9,9 +9,11 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.deny.HiddenFileDenyStrategy;
+import no.unit.nva.publication.permissions.file.deny.UploadedFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.grant.ContributorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EveryoneGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.CuratorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.ExternalClientGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.FileOwnerGrantStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
@@ -25,7 +27,6 @@ public class FilePermissions {
     private final Set<FileDenyStrategy> denyStrategies;
     private final UserInstance userInstance;
     private final FileEntry file;
-    private final Resource resource;
 
     public FilePermissions(
         FileEntry file,
@@ -33,15 +34,16 @@ public class FilePermissions {
         Resource resource) {
         this.userInstance = userInstance;
         this.file = file;
-        this.resource = resource;
         this.grantStrategies = Set.of(
             new EveryoneGrantStrategy(file, userInstance, resource),
             new CuratorFileGrantStrategy(file, userInstance, resource),
             new FileOwnerGrantStrategy(file, userInstance, resource),
-            new ContributorFileGrantStrategy(file, userInstance, resource)
+            new ContributorFileGrantStrategy(file, userInstance, resource),
+            new ExternalClientGrantStrategy(file, userInstance, resource)
         );
         this.denyStrategies = Set.of(
-            new HiddenFileDenyStrategy(file, userInstance, resource)
+            new HiddenFileDenyStrategy(file, userInstance, resource),
+            new UploadedFileDenyStrategy(file, userInstance, resource)
         );
     }
 

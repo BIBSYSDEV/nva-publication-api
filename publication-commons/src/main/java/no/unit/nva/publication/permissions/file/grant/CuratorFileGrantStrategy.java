@@ -15,7 +15,6 @@ public class CuratorFileGrantStrategy extends FileStrategyBase implements FileGr
 
     @Override
     public boolean allowsAction(FileOperation permission) {
-        // Should every file curator not depending on institution be able to read pending files?
         if (currentUserIsFileCurator()) {
             return switch (permission) {
                 case READ_METADATA, DOWNLOAD -> true;
