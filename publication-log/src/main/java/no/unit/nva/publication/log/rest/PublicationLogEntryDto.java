@@ -9,13 +9,11 @@ import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
-@JsonTypeName(PublicationLogEntryDto.TYPE)
+@JsonTypeName(PublicationLogEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record PublicationLogEntryDto(LogTopic topic, Instant timestamp, LogUser performedBy,
                                      SortableIdentifier publicationIdentifier, ImportSource importSource)
     implements LogEntryDto {
-
-    public static final String TYPE = "PublicationLogEntry";
 
     public static PublicationLogEntryDto fromLogEntry(PublicationLogEntry publicationLogEntry) {
         return new PublicationLogEntryDto(publicationLogEntry.topic(), publicationLogEntry.timestamp(),
