@@ -29,7 +29,8 @@ class ResourceEventTest {
             LogTopic.PUBLICATION_DELETED), Arguments.of(
             new RepublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
                                          SortableIdentifier.next()), LogTopic.PUBLICATION_REPUBLISHED), Arguments.of(
-            ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"), Instant.now()),
+            ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
+                                                   UserInstance.create(randomString(), randomUri()), Instant.now()),
             LogTopic.PUBLICATION_IMPORTED), Arguments.of(
             DoiReservedEvent.create(UserInstance.create(randomString(), randomUri()), Instant.now()),
             LogTopic.DOI_RESERVED));
