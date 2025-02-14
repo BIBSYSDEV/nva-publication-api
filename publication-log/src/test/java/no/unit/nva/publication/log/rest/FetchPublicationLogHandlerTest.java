@@ -21,21 +21,26 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,12 +53,14 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private FetchPublicationLogHandler handler;
     private ResourceService resourceService;
+    private TicketService ticketService;
 
     @BeforeEach
     public void setUp() {
         super.init();
         output = new ByteArrayOutputStream();
         resourceService = getResourceServiceBuilder().build();
+        ticketService = getTicketService();
         handler = new FetchPublicationLogHandler(resourceService);
     }
 
@@ -97,9 +104,11 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
 
         resourceService = mock(ResourceService.class);
         when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publication));
-        when(resourceService.getLogEntriesForResource(Resource.fromPublication(publication))).thenThrow(new RuntimeException());
+        when(resourceService.getLogEntriesForResource(Resource.fromPublication(publication))).thenThrow(
+            new RuntimeException());
 
-        new FetchPublicationLogHandler(resourceService).handleRequest(createAuthorizedRequest(publication), output, context);
+        new FetchPublicationLogHandler(resourceService).handleRequest(createAuthorizedRequest(publication), output,
+                                                                      context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
@@ -107,8 +116,8 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnEmptyPublicationLogWhenUserHasRightsToFetchLogAndNoLogEntries() throws IOException,
-                                                                                       BadRequestException {
+    void shouldReturnEmptyPublicationLogWhenUserHasRightsToFetchLogAndNoLogEntries()
+        throws IOException, BadRequestException {
         var publication = createPublication();
 
         handler.handleRequest(createAuthorizedRequest(publication), output, context);
@@ -120,8 +129,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLog() throws IOException, BadRequestException,
-                                                                                NotFoundException {
+    void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLog() throws IOException, ApiGatewayException {
         var publication = createPublication();
         persistLogEntries(publication);
         handler.handleRequest(createAuthorizedRequest(publication), output, context);
@@ -132,7 +140,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
         assertFalse(response.getBodyObject(PublicationLogResponse.class).logEntries().isEmpty());
     }
 
-    private void persistLogEntries(Publication publication) {
+    private void persistLogEntries(Publication publication) throws ApiGatewayException {
         var user = new LogUser(randomString(), randomString(), randomString(), randomUri(),
                                new LogOrganization(randomUri(), randomUri(), randomString(), randomString()));
         Resource.resourceQueryObject(publication.getIdentifier())
@@ -143,9 +151,14 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
             .persist(resourceService);
 
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
-                                               UserInstance.fromPublication(publication));
+                                         UserInstance.fromPublication(publication));
         fileEntry.persist(resourceService);
         fileEntry.getFileEvent().toLogEntry(fileEntry, user).persist(resourceService);
+
+        var doiRequest = (DoiRequest) DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        doiRequest.setTicketEvent(DoiRequestedEvent.create(UserInstance.fromPublication(publication), Instant.now()));
+        doiRequest.getTicketEvent().toLogEntry(publication.getIdentifier(), doiRequest.getIdentifier(), user)
+            .persist(resourceService);
     }
 
     private InputStream createRequest(Publication publication) throws JsonProcessingException {
@@ -160,8 +173,8 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createAuthorizedRequest(Publication publication) throws JsonProcessingException {
-        return new HandlerRequestBuilder<InputStream>(dtoObjectMapper)
-                   .withPathParameters(Map.of("publicationIdentifier", publication.getIdentifier().toString()))
+        return new HandlerRequestBuilder<InputStream>(dtoObjectMapper).withPathParameters(
+                Map.of("publicationIdentifier", publication.getIdentifier().toString()))
                    .withUserName(randomString())
                    .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .withPersonCristinId(randomUri())

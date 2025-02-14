@@ -1811,7 +1811,11 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.Resource.Update", "PublicationService.FileEntry.Update", "PublicationService.FileEntry.Delete" ]
+                  topic:
+                    - PublicationService.Resource.Update
+                    - PublicationService.FileEntry.Update
+                    - PublicationService.FileEntry.Delete
+                    - PublicationService.DoiRequest.Update
 
   EventBasedBatchScanHandlerTest:
     DependsOn: EventsLambdaManagedPolicy
