@@ -11,7 +11,9 @@ import nva.commons.core.JacocoGenerated;
 
 public class CompleteUploadPart implements JsonSerializable {
 
+    @JsonProperty
     private Integer partNumber;
+    @JsonProperty
     private String etag;
 
     @JsonCreator
@@ -40,15 +42,14 @@ public class CompleteUploadPart implements JsonSerializable {
         return Objects.equals(partNumber, that.partNumber) && Objects.equals(etag, that.etag);
     }
 
-    @Override
-    public String toString() {
-        return this.toJsonString();
-    }
-
+    @JacocoGenerated
+    @JsonProperty
     public void setEtag(String etag) {
         this.etag = etag;
     }
 
+    @JacocoGenerated
+    @JsonProperty
     public void setPartNumber(Integer partNumber) {
         this.partNumber = partNumber;
     }
@@ -63,10 +64,12 @@ public class CompleteUploadPart implements JsonSerializable {
         return true;
     }
 
+    @JacocoGenerated
     private String etag() {
         return etag;
     }
 
+    @JacocoGenerated
     private int partNumber() {
         return partNumber;
     }
