@@ -24,17 +24,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class ResourceEventTest {
 
     public static Stream<Arguments> stateProvider() {
-        return Stream.of(Arguments.of(new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
-                                                               SortableIdentifier.next())),
-                         Arguments.of(new UnpublishedResourceEvent(Instant.now(), new User(randomString()),
-                                                                   randomUri(), SortableIdentifier.next())),
-                         Arguments.of(new PublishedResourceEvent(Instant.now(), new User(randomString()), randomUri()
-                             , SortableIdentifier.next())),
-                         Arguments.of(new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
-                         Arguments.of(ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
-                                                                             Instant.now())),
-                         Arguments.of(DoiReservedEvent.create(UserInstance.create(randomString(), randomUri()),
-                                                                            Instant.now())));
+        return Stream.of(Arguments.of(
+                             new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
+                                                      SortableIdentifier.next())),
+                         Arguments.of(new UnpublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
+                                                                   SortableIdentifier.next())), Arguments.of(
+                new PublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
+                                           SortableIdentifier.next())), Arguments.of(
+                new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
+                                         SortableIdentifier.next())), Arguments.of(
+                ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
+                                                       UserInstance.create(randomString(), randomUri()),
+                                                       Instant.now())), Arguments.of(
+                DoiReservedEvent.create(UserInstance.create(randomString(), randomUri()), Instant.now())));
     }
 
     @ParameterizedTest

@@ -285,12 +285,14 @@ public class Resource implements Entity {
         this.setPublishedDate(now);
         this.setIdentifier(SortableIdentifier.next());
         this.setStatus(PUBLISHED);
-        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, now));
+        var userInstance = UserInstance.fromPublication(this.toPublication());
+        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, userInstance, now));
         return resourceService.importResource(this, importSource);
     }
 
     public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
-        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, Instant.now()));
+        var userInstance = UserInstance.fromPublication(this.toPublication());
+        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
         resourceService.updateResource(this);
     }
 
