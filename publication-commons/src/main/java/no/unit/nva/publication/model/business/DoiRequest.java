@@ -190,14 +190,16 @@ public class DoiRequest extends TicketEntry {
 
     @Override
     public DoiRequest complete(Publication publication, UserInstance userInstance) {
-        this.setTicketEvent(DoiAssignedEvent.create(userInstance, Instant.now()));
-        return (DoiRequest) super.complete(publication, userInstance);
+        var completed = (DoiRequest) super.complete(publication, userInstance);
+        completed.setTicketEvent(DoiAssignedEvent.create(userInstance, Instant.now()));
+        return completed;
     }
 
     @Override
     public DoiRequest close(UserInstance userInstance) throws ApiGatewayException {
-        this.setTicketEvent(DoiRejectedEvent.create(userInstance, Instant.now()));
-        return (DoiRequest) super.close(userInstance);
+        var closed = (DoiRequest) super.close(userInstance);
+        closed.setTicketEvent(DoiRejectedEvent.create(userInstance, Instant.now()));
+        return closed;
     }
 
     @Override
