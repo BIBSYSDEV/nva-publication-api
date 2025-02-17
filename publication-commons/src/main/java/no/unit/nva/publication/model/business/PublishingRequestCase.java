@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -108,6 +109,13 @@ public class PublishingRequestCase extends TicketEntry {
         } else {
             return publishingRequestCase;
         }
+    }
+
+    public static PublishingRequestCase createWithFilesForApproval(Resource resource, UserInstance userInstance,
+                                               PublishingWorkflow workflow, Set<File> filesForApproval) {
+        var publishingRequestCase = create(resource, userInstance, workflow);
+        publishingRequestCase.setFilesForApproval(filesForApproval);
+        return publishingRequestCase;
     }
 
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,

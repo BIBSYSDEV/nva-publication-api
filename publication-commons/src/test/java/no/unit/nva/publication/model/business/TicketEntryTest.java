@@ -146,6 +146,17 @@ class TicketEntryTest {
         assertEquals(userInstance.getUser(), publishingRequestCase.getOwner());
     }
 
+    @Test
+    void shouldCreatePublishingRequestWithFilesForApproval() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = randomUserInstance();
+        var files = Set.of(randomPendingOpenFile());
+        var publishingRequestCase = PublishingRequestCase.createWithFilesForApproval(resource, userInstance,
+                                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY, files);
+
+        assertTrue(publishingRequestCase.getFilesForApproval().containsAll(files));
+    }
+
     private static UserInstance randomUserInstance() {
         return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(),
                                 randomUri(), List.of(), UserClientType.INTERNAL);
