@@ -49,7 +49,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -930,7 +929,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotUpdatePublicationCuratingInstitutionsWhenContributorsAreUnchanged() throws ApiGatewayException {
-        var resource = createPersistedPublicationWithoutDoi();
+        var publication = randomPublication();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
@@ -938,14 +937,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .withId(orgId)
                               .build();
 
-        resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        resource.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
-        resource.setAssociatedArtifacts(AssociatedArtifactList.empty());
-        resourceService.updateResource(Resource.fromPublication(resource), UserInstance.fromPublication(resource));
-        var publishedResource = publishResource(resource);
-        reset(uriRetriever);
-
-        var updatedResource = resourceService.updatePublication(publishedResource);
+        publication.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
+        publication.setAssociatedArtifacts(AssociatedArtifactList.empty());
+        var resource = Resource.fromPublication(publication).persistNew(resourceService,
+                                                             UserInstance.fromPublication(publication));
+        var updatedResource = resourceService.updatePublication(resource);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
         assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
