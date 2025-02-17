@@ -9,6 +9,7 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.deny.HiddenFileDenyStrategy;
+import no.unit.nva.publication.permissions.file.deny.NotPublishedPublicationFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.UploadedFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.grant.ContributorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EveryoneGrantStrategy;
@@ -42,6 +43,7 @@ public class FilePermissions {
             new ExternalClientGrantStrategy(file, userInstance, resource)
         );
         this.denyStrategies = Set.of(
+            new NotPublishedPublicationFileDenyStrategy(file, userInstance, resource),
             new HiddenFileDenyStrategy(file, userInstance, resource),
             new UploadedFileDenyStrategy(file, userInstance, resource)
         );

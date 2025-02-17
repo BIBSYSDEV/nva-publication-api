@@ -6,6 +6,7 @@ import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
 import static cucumber.permissions.PermissionsRole.OTHER_CONTRIBUTORS;
 import static cucumber.permissions.PermissionsRole.FILE_OWNER;
 import static java.time.temporal.ChronoUnit.DAYS;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -19,6 +20,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.time.Instant;
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserClientType;
@@ -35,19 +37,32 @@ public class FileAccessFeatures {
 
     @Given("a file of type {string}")
     public void aFileOfTheType(String string) throws ClassNotFoundException {
-        scenarioContext.setResource(Resource.fromPublication(randomNonDegreePublication()));
+        scenarioContext.setResource(
+            Resource.fromPublication(randomNonDegreePublication().copy().withStatus(PUBLISHED).build()));
         scenarioContext.setFile(createFile(string, EMPTY_PROPERTY));
     }
 
     @Given("a file of type {string} with property {string}")
     public void aFileOfTheTypeAndWithProperty(String fileType, String fileProperty) throws ClassNotFoundException {
         if (fileProperty.toLowerCase().contains("degree")) {
-            scenarioContext.setResource(Resource.fromPublication(randomDegreePublication()));
+            scenarioContext.setResource(
+                Resource.fromPublication(randomDegreePublication().copy().withStatus(PUBLISHED).build()));
         } else {
-            scenarioContext.setResource(Resource.fromPublication(randomNonDegreePublication()));
+            scenarioContext.setResource(
+                Resource.fromPublication(randomNonDegreePublication().copy().withStatus(PUBLISHED).build()));
         }
 
         scenarioContext.setFile(createFile(fileType, fileProperty));
+    }
+
+    @Given("a file of type {string} and publication status {string}")
+    public void aFileOfTypeAndPublicationStatus(String fileType, String publicationStatus)
+        throws ClassNotFoundException {
+        scenarioContext.setResource(Resource.fromPublication(randomNonDegreePublication())
+                                        .copy()
+                                        .withStatus(PublicationStatus.valueOf(publicationStatus))
+                                        .build());
+        scenarioContext.setFile(createFile(fileType, EMPTY_PROPERTY));
     }
 
     @When("the user have the role {string}")
