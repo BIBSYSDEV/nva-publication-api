@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
@@ -35,6 +36,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -155,6 +157,13 @@ public class Resource implements Entity {
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .toList();
+    }
+
+    public Set<File> getPendingFiles() {
+        return getAssociatedArtifacts().stream()
+                   .filter(PendingFile.class::isInstance)
+                   .map(File.class::cast)
+                   .collect(Collectors.toSet());
     }
 
     @JsonIgnore

@@ -95,8 +95,10 @@ public final class RequestUtil {
         var customerId = requestInfo.getCurrentCustomer();
         var personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
         var topLevelOrg = attempt(requestInfo::getTopLevelOrgCristinId).map(Optional::get).toOptional().orElse(null);
+        var personAffiliation = attempt(requestInfo::getPersonAffiliation).orElse(failure -> null);
         var accessRights = requestInfo.getAccessRights();
-        return new UserInstance(owner, customerId, topLevelOrg, personCristinId, accessRights, UserClientType.INTERNAL);
+        return new UserInstance(owner, customerId, topLevelOrg, personAffiliation, personCristinId, accessRights,
+                                UserClientType.INTERNAL);
     }
 
     public static UserInstance createUserInstanceFromRequest(RequestInfo requestInfo,

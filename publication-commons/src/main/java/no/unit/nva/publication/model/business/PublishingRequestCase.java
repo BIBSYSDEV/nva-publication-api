@@ -1,6 +1,8 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
@@ -80,6 +82,32 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
         openingCaseObject.setResourceIdentifier(publication.getIdentifier());
         return openingCaseObject;
+    }
+
+    public static PublishingRequestCase create(Resource resource, UserInstance userInstance,
+                                               PublishingWorkflow workflow) {
+        var publishingRequestCase = new PublishingRequestCase();
+        publishingRequestCase.setIdentifier(SortableIdentifier.next());
+        publishingRequestCase.setCustomerId(resource.getCustomerId());
+        publishingRequestCase.setStatus(TicketStatus.PENDING);
+        publishingRequestCase.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
+        publishingRequestCase.setResourceIdentifier(resource.getIdentifier());
+        publishingRequestCase.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
+        publishingRequestCase.setResponsibilityArea(userInstance.getPersonAffiliation());
+        publishingRequestCase.setOwner(userInstance.getUser());
+        publishingRequestCase.setFilesForApproval(resource.getPendingFiles());
+        publishingRequestCase.setWorkflow(workflow);
+
+        if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)) {
+            publishingRequestCase.setAssignee(new Username(userInstance.getUsername()));
+            publishingRequestCase.publishApprovedFile();
+            return publishingRequestCase.complete(resource.toPublication(), userInstance);
+        }
+        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) && publishingRequestCase.getFilesForApproval().isEmpty()) {
+            return publishingRequestCase.complete(resource.toPublication(), userInstance);
+        } else {
+            return publishingRequestCase;
+        }
     }
 
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,

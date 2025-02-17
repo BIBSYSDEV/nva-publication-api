@@ -385,7 +385,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldUseResourceOwnerAffiliationWhenTicketHasNoOwnerAffiliation(Class<? extends TicketEntry> ticketType,
                                                                           PublicationStatus status) throws Exception {
-        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), null,
+        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), null, null,
                                             UserClientType.EXTERNAL);
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, userInstance, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);

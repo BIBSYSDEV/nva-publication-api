@@ -94,6 +94,6 @@ class DoiRequestTest {
 
     private DoiRequest sampleDoiRequestFromResource() {
         Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
-        return DoiRequest.newDoiRequestForResource(resource, CLOCK.instant());
+        return DoiRequest.create(resource, UserInstance.fromPublication(resource.toPublication()));
     }
 }

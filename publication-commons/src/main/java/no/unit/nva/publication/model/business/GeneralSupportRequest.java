@@ -68,6 +68,21 @@ public class GeneralSupportRequest extends TicketEntry {
         return ticket;
     }
 
+    public static GeneralSupportRequest create(Resource resource, UserInstance userInstance) {
+        var generalSupportRequest = new GeneralSupportRequest();
+        generalSupportRequest.setResourceIdentifier(resource.getIdentifier());
+        generalSupportRequest.setCustomerId(resource.getCustomerId());
+        generalSupportRequest.setCreatedDate(Instant.now());
+        generalSupportRequest.setModifiedDate(Instant.now());
+        generalSupportRequest.setStatus(TicketStatus.PENDING);
+        generalSupportRequest.setIdentifier(SortableIdentifier.next());
+        generalSupportRequest.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
+        generalSupportRequest.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
+        generalSupportRequest.setResponsibilityArea(userInstance.getPersonAffiliation());
+        generalSupportRequest.setOwner(userInstance.getUser());
+        return generalSupportRequest;
+    }
+
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;

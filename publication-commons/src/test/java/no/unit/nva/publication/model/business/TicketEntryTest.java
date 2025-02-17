@@ -1,14 +1,18 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -104,6 +108,47 @@ class TicketEntryTest {
         doiRequest.setTicketEvent(DoiRequestedEvent.create(UserInstance.fromPublication(randomPublication()), Instant.now()));
 
         assertTrue(doiRequest.hasTicketEvent());
+    }
+
+    @Test
+    void shouldCreateDoiRequestWithUserFromUserInstance() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = randomUserInstance();
+
+        var doiRequest = DoiRequest.create(resource, userInstance);
+
+        assertEquals(userInstance.getTopLevelOrgCristinId(), doiRequest.getOwnerAffiliation());
+        assertEquals(userInstance.getPersonAffiliation(), doiRequest.getResponsibilityArea());
+        assertEquals(userInstance.getUser(), doiRequest.getOwner());
+    }
+
+    @Test
+    void shouldCreateGeneralSupportRequestWithUserFromUserInstance() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = randomUserInstance();
+
+        var generalSupportRequest = GeneralSupportRequest.create(resource, userInstance);
+
+        assertEquals(userInstance.getTopLevelOrgCristinId(), generalSupportRequest.getOwnerAffiliation());
+        assertEquals(userInstance.getPersonAffiliation(), generalSupportRequest.getResponsibilityArea());
+        assertEquals(userInstance.getUser(), generalSupportRequest.getOwner());
+    }
+
+    @Test
+    void shouldCreatePublishingRequestWithUserFromUserInstance() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = randomUserInstance();
+
+        var publishingRequestCase = PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+
+        assertEquals(userInstance.getTopLevelOrgCristinId(), publishingRequestCase.getOwnerAffiliation());
+        assertEquals(userInstance.getPersonAffiliation(), publishingRequestCase.getResponsibilityArea());
+        assertEquals(userInstance.getUser(), publishingRequestCase.getOwner());
+    }
+
+    private static UserInstance randomUserInstance() {
+        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(),
+                                randomUri(), List.of(), UserClientType.INTERNAL);
     }
 
     private static UserInstance getExpectedUserInstance(Publication publication) {
