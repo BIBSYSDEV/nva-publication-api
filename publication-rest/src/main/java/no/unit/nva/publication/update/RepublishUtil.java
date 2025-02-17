@@ -1,11 +1,8 @@
 package no.unit.nva.publication.update;
 
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -41,10 +38,7 @@ public class RepublishUtil {
 
     private void persistCompletedPublishingRequest(Resource resource, UserInstance userInstance)
         throws ApiGatewayException {
-        var publishingRequest = (PublishingRequestCase) TicketEntry.createNewTicket(resource.toPublication(),
-                                                                                    PublishingRequestCase.class,
-                                                                                    SortableIdentifier::next)
-                                                            .withOwner(userInstance.getUsername());
+        var publishingRequest = PublishingRequestCase.create(resource, userInstance, null);
         publishingRequest.persistAutoComplete(ticketService, resource.toPublication(), userInstance);
     }
 
