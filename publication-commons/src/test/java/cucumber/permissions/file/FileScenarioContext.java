@@ -1,5 +1,6 @@
 package cucumber.permissions.file;
 
+import static cucumber.permissions.file.FileScenarioContext.FileRelationship.SAME_ORG;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
@@ -34,17 +35,42 @@ public class FileScenarioContext {
         fileContext.file = file;
     }
 
-    public void setFileOwnership(FileOwnership owner) {
-        fileContext.ownership = owner;
+    public void setFileRelationship(FileRelationship owner) {
+        fileContext.relationship = owner;
     }
 
     public FileEntry getFileEntry() {
-        var owner = fileContext.ownership == FileOwnership.OWNER ? getCurrentUserInstance() : getOtherUserInstance();
+        var owner = fileContext.relationship == FileRelationship.OWNER ? getCurrentUserInstance() : getOtherUserInstance();
         return FileEntry.create(fileContext.file, getResource().getIdentifier(), owner);
     }
 
     public UserInstance getCurrentUserInstance() {
         return isInternalUser() ? createInternalUser() : createExternalUser();
+    }
+
+    public void setCurrentUserAsDegreeEmbargoFileCuratorForGivenFile() {
+        addUserRole(AccessRight.MANAGE_DEGREE);
+        addUserRole(AccessRight.MANAGE_DEGREE_EMBARGO);
+
+        var topLevelOrgCristinId = getTopLevelOrgCristinId();
+        var curatingInstitutions = Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet()));
+
+        getResource().setCuratingInstitutions(curatingInstitutions);
+    }
+
+    public void setCurrentUserAsFileCuratorForGivenFile() {
+        setCurrentUserAsFileCurator();
+        setFileRelationship(SAME_ORG);
+    }
+
+    public void setCurrentUserAsDegreeFileCuratorForGivenFile() {
+        addUserRole(AccessRight.MANAGE_DEGREE);
+        setFileRelationship(SAME_ORG);
+
+        var topLevelOrgCristinId = getTopLevelOrgCristinId();
+        var curatingInstitutions = Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet()));
+
+        getResource().setCuratingInstitutions(curatingInstitutions);
     }
 
     private UserInstance createExternalUser() {
@@ -68,7 +94,8 @@ public class FileScenarioContext {
         return UserInstance.create(otherUserContext.userIdentifier, otherUserContext.customerId,
                                    otherUserContext.personCristinId,
                                    otherUserContext.accessRights.stream().toList(),
-                                   otherUserContext.topLevelOrgCristinId);
+                                   fileContext.relationship.equals(SAME_ORG) ?
+                                       userContext.topLevelOrgCristinId : randomUri());
     }
 
     public void setFileOperation(FileOperation action) {
@@ -137,11 +164,12 @@ public class FileScenarioContext {
     public static class FileContext {
 
         public File file;
-        public FileOwnership ownership;
+        public FileRelationship relationship;
     }
 
-    public enum FileOwnership {
+    public enum FileRelationship {
         OWNER,
-        NOT_OWNER
+        NO_RELATION,
+        SAME_ORG
     }
 }
