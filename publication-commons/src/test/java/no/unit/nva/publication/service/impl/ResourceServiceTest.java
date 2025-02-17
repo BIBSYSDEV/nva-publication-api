@@ -49,6 +49,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -940,8 +941,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
         resource.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
         resource.setAssociatedArtifacts(AssociatedArtifactList.empty());
-        resourceService.updateResource(Resource.fromPublication(resource));
+        resourceService.updateResource(Resource.fromPublication(resource), UserInstance.fromPublication(resource));
         var publishedResource = publishResource(resource);
+        reset(uriRetriever);
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
@@ -1308,7 +1310,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                                    UserInstance.fromPublication(
                                                                                        publishedPublication));
 
-        verify(resourceService, never()).updateResource(any());
+        verify(resourceService, never()).updateResource(any(), any());
     }
 
     @Test
@@ -1320,7 +1322,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                       .persistNew(resourceService, userInstance);
         var resource = Resource.fromPublication(peristedPublication).fetch(resourceService).orElseThrow();
         resource.setStatus(DRAFT_FOR_DELETION);
-        resourceService.updateResource(resource);
+        resourceService.updateResource(resource, userInstance);
 
         assertThrows(IllegalStateException.class,
                      () -> Resource.resourceQueryObject(
@@ -1410,7 +1412,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         fileEntry.persist(resourceService);
 
         var updatedFile = file.copy().withLicense(randomUri()).buildHiddenFile();
-        fileEntry.update(updatedFile, resourceService);
+        fileEntry.update(updatedFile, userInstance, resourceService);
 
         assertEquals(updatedFile, fileEntry.fetch(resourceService).orElseThrow().getFile());
     }

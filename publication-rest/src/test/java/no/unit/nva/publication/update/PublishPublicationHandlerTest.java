@@ -107,7 +107,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
 
         resourceService = mock(ResourceService.class);
         when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenReturn(Resource.fromPublication(publication));
-        doThrow(new RuntimeException()).when(resourceService).updateResource(any(Resource.class));
+        doThrow(new RuntimeException()).when(resourceService).updateResource(any(Resource.class), any());
         var publishPublicationHandler = new PublishPublicationHandler(resourceService);
         publishPublicationHandler.handleRequest(request, output, context);
 

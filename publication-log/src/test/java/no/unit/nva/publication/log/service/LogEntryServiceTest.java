@@ -70,16 +70,16 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     void shouldNotCreateTheSameLogEntryMultipleTimesForResource() throws BadRequestException {
         var publication = createPublication();
         var resource = Resource.fromPublication(publication);
-        var resourceEvent = CreatedResourceEvent.create(
-            UserInstance.fromPublication(publication), Instant.now());
+        var userInstance = UserInstance.fromPublication(publication);
+        var resourceEvent = CreatedResourceEvent.create(userInstance, Instant.now());
 
         resource.setResourceEvent(resourceEvent);
-        resourceService.updateResource(resource);
+        resourceService.updateResource(resource, userInstance);
 
         logEntryService.persistLogEntry(resource);
 
         resource.setResourceEvent(resourceEvent);
-        resourceService.updateResource(resource);
+        resourceService.updateResource(resource, userInstance);
 
         logEntryService.persistLogEntry(resource);
 
@@ -138,10 +138,11 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     void shouldPersistLogEntryFromImportedResourceEvent() throws BadRequestException {
         var publication = createPublication();
         var resource = Resource.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         resource.setResourceEvent(ImportedResourceEvent.fromImportSource(
-            ImportSource.fromBrageArchive("A"), UserInstance.fromPublication(publication),
-                                                                         Instant.now()));
-        resourceService.updateResource(resource);
+            ImportSource.fromBrageArchive("A"), userInstance,
+            Instant.now()));
+        resourceService.updateResource(resource, userInstance);
         logEntryService.persistLogEntry(Resource.fromPublication(publication));
 
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);

@@ -220,7 +220,7 @@ public class Resource implements Entity {
     /**
      * Extracts FileEntries from a Publication.
      *
-     * <p><b style="color: red;">Warning:</b> This method does not include all the needed FileEntry meta data and
+     * <p><b style="color: red;">Warning:</b> This method does not include all the needed FileEntry metadata and
      * should not be used when handling files.</p>
      *
      * @param publication the Publication extract FileEntries from.
@@ -293,7 +293,7 @@ public class Resource implements Entity {
     public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
         var userInstance = UserInstance.fromPublication(this.toPublication());
         this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
-        resourceService.updateResource(this);
+        resourceService.updateResource(this, userInstance);
     }
 
     public List<LogEntry> fetchLogEntries(ResourceService resourceService) {
@@ -312,7 +312,7 @@ public class Resource implements Entity {
 
     private void publish(UserInstance userInstance, ResourceService resourceService) {
         publish(userInstance);
-        resourceService.updateResource(this);
+        resourceService.updateResource(this, userInstance);
     }
 
     private void publish(UserInstance userInstance) {
@@ -347,7 +347,7 @@ public class Resource implements Entity {
 
     private void republish(UserInstance userInstance, ResourceService resourceService) {
         republish(userInstance);
-        resourceService.updateResource(this);
+        resourceService.updateResource(this, userInstance);
     }
 
     private void republish(UserInstance userInstance) {
@@ -703,10 +703,9 @@ public class Resource implements Entity {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Resource)) {
+        if (!(o instanceof Resource resource)) {
             return false;
         }
-        Resource resource = (Resource) o;
         return Objects.equals(getIdentifier(), resource.getIdentifier())
                && getStatus() == resource.getStatus()
                && Objects.equals(getResourceOwner(), resource.getResourceOwner())

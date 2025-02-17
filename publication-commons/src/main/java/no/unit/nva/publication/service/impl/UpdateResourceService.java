@@ -141,7 +141,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         }
 
         var updatedFileEntriesTransactionWriteItems = persistedResource.getFileEntries().stream()
-                                     .map(fileEntry -> updateFileEntry(fileEntry, publicationUpdate))
+                                     .map(fileEntry -> updateFileEntry(fileEntry, publicationUpdate,
+                                                                       UserInstance.fromPublication(publicationUpdate)))
                                      .map(FileEntry::toDao)
                                      .map(dao -> dao.toPutTransactionItem(tableName))
                                      .toList();
@@ -162,9 +163,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return publicationUpdate;
     }
 
-    private static FileEntry updateFileEntry(FileEntry fileEntry, Publication publication) {
+    private static FileEntry updateFileEntry(FileEntry fileEntry, Publication publication, UserInstance userInstance) {
         return publication.getFile(fileEntry.getFile().getIdentifier())
-                   .map(fileEntry::update)
+                   .map(file -> fileEntry.update(file, userInstance))
                    .orElse(fileEntry);
     }
 
@@ -189,9 +190,33 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
 
-    public void updateResource(Resource resource) {
-        TransactWriteItem insertionAction = createPutTransaction(resource);
-        TransactWriteItemsRequest request = newTransactWriteItemsRequest(insertionAction);
+    public void updateResource(Resource resource, UserInstance userInstance) {
+        var persistedResource = fetchExistingResource(resource.toPublication());
+        resource.setCreatedDate(persistedResource.getCreatedDate());
+        resource.setModifiedDate(clockForTimestamps.instant());
+
+        if (isContributorsChanged(resource.toPublication(), persistedResource.toPublication())) {
+            resource.setCuratingInstitutions(
+                CuratingInstitutionsUtil.getCuratingInstitutionsOnline(resource.toPublication(), uriRetriever));
+        }
+
+        var updatedFileEntriesTransactionWriteItems = persistedResource.getFileEntries().stream()
+                                                          .map(fileEntry -> updateFileEntry(fileEntry,
+                                                                                            resource.toPublication(),
+                                                                                            userInstance))
+                                                          .map(FileEntry::toDao)
+                                                          .map(dao -> dao.toPutTransactionItem(tableName))
+                                                          .toList();
+
+        var updateResourceTransactionItem = createPutTransaction(resource);
+        var updateTicketsTransactionItems = updateTickets(resource);
+
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(updateResourceTransactionItem);
+        transactionItems.addAll(updateTicketsTransactionItems);
+        transactionItems.addAll(updatedFileEntriesTransactionWriteItems);
+
+        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
     }
 
