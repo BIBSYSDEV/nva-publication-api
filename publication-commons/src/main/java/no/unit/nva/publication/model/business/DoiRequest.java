@@ -25,6 +25,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.publicationstate.DoiAssignedEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiRejectedEvent;
+import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.model.business.publicationstate.TicketEvent;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -79,7 +80,7 @@ public class DoiRequest extends TicketEntry {
     }
 
     public static DoiRequest newDoiRequestForResource(Resource resource) {
-        return newDoiRequestForResource(SortableIdentifier.next(), resource, Clock.systemDefaultZone().instant());
+        return newDoiRequestForResource(resource, Clock.systemDefaultZone().instant());
     }
 
     public static DoiRequest newDoiRequestForResource(Resource resource, Instant now) {
@@ -90,25 +91,28 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
-        return doiRequest;
-    }
-
-    public static DoiRequest newDoiRequestForResource(SortableIdentifier doiRequestIdentifier,
-                                                      Resource resource,
-                                                      Instant now) {
-
-        var doiRequest = extractDataFromResource(resource);
-        doiRequest.setIdentifier(doiRequestIdentifier);
-        doiRequest.setStatus(TicketStatus.PENDING);
-        doiRequest.setModifiedDate(now);
-        doiRequest.setCreatedDate(now);
         doiRequest.validate();
-        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
         return doiRequest;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static DoiRequest create(Resource resource, UserInstance userInstance) {
+        var doiRequest = extractDataFromResource(resource);
+        doiRequest.setIdentifier(SortableIdentifier.next());
+        doiRequest.setStatus(TicketStatus.PENDING);
+        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
+        var now = Clock.systemDefaultZone().instant();
+        doiRequest.setModifiedDate(now);
+        doiRequest.setCreatedDate(now);
+        doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, now));
+        doiRequest.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
+        doiRequest.setResponsibilityArea(userInstance.getPersonAffiliation());
+        doiRequest.setOwner(userInstance.getUser());
+        doiRequest.validate();
+        return doiRequest;
     }
 
     @Override

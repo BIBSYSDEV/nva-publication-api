@@ -149,6 +149,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var curatorAndOwner = new UserInstance(new User(randomString()).toString(), randomUri(), randomUri(), null,
+                                               null,
                                                null, UserClientType.INTERNAL);
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, curatorAndOwner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -176,7 +177,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
-                                      publication.getResourceOwner().getOwnerAffiliation(), null,
+                                      publication.getResourceOwner().getOwnerAffiliation(), null, null,
                                       null, UserClientType.INTERNAL);
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,

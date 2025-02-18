@@ -125,15 +125,12 @@ public final class PublishingRequestResolver {
 
     private void persistPendingPublishingRequest(Publication oldImage, Publication newImage) {
         var files = getNewPendingFiles(oldImage, newImage).collect(Collectors.toSet());
-        attempt(() -> TicketEntry.requestNewTicket(newImage, PublishingRequestCase.class))
-            .map(PublishingRequestCase.class::cast)
-            .map(publishingRequest ->
-                     publishingRequest.withOwnerAffiliation(userInstance.getTopLevelOrgCristinId()))
-            .map(publishingRequest -> publishingRequest.withWorkflow(lookUp(customer.getPublicationWorkflow())))
-            .map(publishingRequest -> publishingRequest.withFilesForApproval(files))
-            .map(publishingRequest -> publishingRequest.withOwner(userInstance.getUsername()))
-            .map(PublishingRequestCase.class::cast)
-            .map(publishingRequest -> persistPublishingRequest(newImage, publishingRequest));
+        var resource = Resource.fromPublication(newImage);
+        var workflow = lookUp(customer.getPublicationWorkflow());
+        var publishingRequest = PublishingRequestCase
+                                    .createWithFilesForApproval(resource, userInstance, workflow, files);
+
+        attempt(() -> persistPublishingRequest(newImage, publishingRequest));
     }
 
     private boolean containsNewPublishableFiles(Publication oldImage, Publication newImage) {

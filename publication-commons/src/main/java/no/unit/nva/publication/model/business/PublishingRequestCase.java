@@ -1,6 +1,8 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
@@ -80,6 +82,30 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
         openingCaseObject.setResourceIdentifier(publication.getIdentifier());
         return openingCaseObject;
+    }
+
+    public static PublishingRequestCase create(Resource resource, UserInstance userInstance,
+                                               PublishingWorkflow workflow) {
+        var publishingRequestCase = createPublishingRequest(resource, userInstance, workflow);
+        return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
+                   ? completePublishingRequestAndApproveFiles(resource, userInstance, publishingRequestCase)
+                   : handleMetadataOnlyWorkflow(resource, userInstance, workflow, publishingRequestCase);
+    }
+
+    private static PublishingRequestCase handleMetadataOnlyWorkflow(Resource resource, UserInstance userInstance,
+                                                                  PublishingWorkflow workflow,
+                                                                  PublishingRequestCase publishingRequestCase) {
+        return canPublishMetadataAndNoFilesToApprove(workflow, publishingRequestCase)
+                   ? publishingRequestCase.complete(resource.toPublication(), userInstance)
+                   : publishingRequestCase;
+    }
+
+    public static PublishingRequestCase createWithFilesForApproval(Resource resource, UserInstance userInstance,
+                                                                   PublishingWorkflow workflow,
+                                                                   Set<File> filesForApproval) {
+        var publishingRequestCase = create(resource, userInstance, workflow);
+        publishingRequestCase.setFilesForApproval(filesForApproval);
+        return publishingRequestCase;
     }
 
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,
@@ -334,6 +360,36 @@ public class PublishingRequestCase extends TicketEntry {
 
     public boolean fileIsApproved(File file) {
         return getApprovedFiles().stream().map(File::getIdentifier).toList().contains(file.getIdentifier());
+    }
+
+    private static boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow,
+                                                                 PublishingRequestCase publishingRequestCase) {
+        return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) &&
+               publishingRequestCase.getFilesForApproval().isEmpty();
+    }
+
+    private static PublishingRequestCase completePublishingRequestAndApproveFiles(Resource resource,
+                                                                                  UserInstance userInstance,
+                                                                                  PublishingRequestCase publishingRequestCase) {
+        publishingRequestCase.setAssignee(new Username(userInstance.getUsername()));
+        publishingRequestCase.publishApprovedFile();
+        return publishingRequestCase.complete(resource.toPublication(), userInstance);
+    }
+
+    private static PublishingRequestCase createPublishingRequest(Resource resource, UserInstance userInstance,
+                                                                 PublishingWorkflow workflow) {
+        var publishingRequestCase = new PublishingRequestCase();
+        publishingRequestCase.setIdentifier(SortableIdentifier.next());
+        publishingRequestCase.setCustomerId(resource.getCustomerId());
+        publishingRequestCase.setStatus(TicketStatus.PENDING);
+        publishingRequestCase.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
+        publishingRequestCase.setResourceIdentifier(resource.getIdentifier());
+        publishingRequestCase.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
+        publishingRequestCase.setResponsibilityArea(userInstance.getPersonAffiliation());
+        publishingRequestCase.setOwner(userInstance.getUser());
+        publishingRequestCase.setFilesForApproval(resource.getPendingFiles());
+        publishingRequestCase.setWorkflow(workflow);
+        return publishingRequestCase;
     }
 
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(UserInstance userInstance,

@@ -254,7 +254,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
         assertThat(
                 ticket.getOwnerAffiliation(),
-                is(equalTo(publication.getResourceOwner().getOwnerAffiliation())));
+                is(equalTo(pendingPublishingRequest.getOwnerAffiliation())));
     }
 
     @Test
@@ -280,7 +280,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
         assertThat(
             ticket.getOwnerAffiliation(),
-            is(equalTo(publication.getResourceOwner().getOwnerAffiliation())));
+            is(equalTo(pendingPublishingRequest.getOwnerAffiliation())));
     }
 
     @Test

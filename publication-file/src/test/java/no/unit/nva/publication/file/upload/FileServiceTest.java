@@ -440,7 +440,7 @@ class FileServiceTest extends ResourcesLocalTest {
     }
 
     private static UserInstance constructExternalClient() {
-        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), List.of(),
+        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(), List.of(),
                                 UserClientType.EXTERNAL);
     }
 
@@ -458,7 +458,7 @@ class FileServiceTest extends ResourcesLocalTest {
     }
 
     private UserInstance externalUserInstance() {
-        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), List.of(),
+        return new UserInstance(randomString(), randomUri(), randomUri(),randomUri(), randomUri(), List.of(),
                                 UserClientType.EXTERNAL);
     }
 
