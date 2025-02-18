@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -50,9 +51,11 @@ class FilePermissionTest {
     }
 
     private static FilePermissions getFilePermissions(File file) {
-        var fileEntry = FileEntry.create(file, SortableIdentifier.next(), UserInstance.create(randomString(), randomUri()));
+        var fileEntry = FileEntry.create(file, SortableIdentifier.next(),
+                                         UserInstance.create(randomString(), randomUri()));
+        var resource = Resource.fromPublication(randomNonDegreePublication()).copy().withStatus(PUBLISHED).build();
         return FilePermissions.create(fileEntry,
                                       UserInstance.create(randomString(), randomUri()),
-                                      Resource.fromPublication(randomNonDegreePublication()));
+                                      resource);
     }
 }

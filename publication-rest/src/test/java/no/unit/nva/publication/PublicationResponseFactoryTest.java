@@ -1,6 +1,7 @@
 package no.unit.nva.publication;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
@@ -110,7 +111,8 @@ class PublicationResponseFactoryTest {
 
     @Test
     void shouldRoundTripFileOperationsWhenSerializedThroughResponse() throws JsonProcessingException {
-        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(randomOpenFile())).build();
+        var publication =
+            randomPublication().copy().withStatus(PUBLISHED).withAssociatedArtifacts(List.of(randomOpenFile())).build();
         var resource =Resource.fromPublication(publication);
 
         var response = PublicationResponseFactory.create(resource, getRequestInfo(), getIdentityServiceClient());

@@ -45,7 +45,15 @@ public class FileScenarioContext {
     }
 
     public UserInstance getCurrentUserInstance() {
-        return isInternalUser() ? createInternalUser() : createExternalUser();
+        if (userContext.isAuthenticated) {
+            return isInternalUser() ? createInternalUser() : createExternalUser();
+        } else {
+            return null;
+        }
+    }
+
+    public void setCurrentUserAsNotAuthenticated() {
+        userContext.isAuthenticated = false;
     }
 
     public void setCurrentUserAsDegreeEmbargoFileCuratorForGivenFile() {
@@ -159,6 +167,7 @@ public class FileScenarioContext {
         public Set<AccessRight> accessRights = new HashSet<>();
         public URI topLevelOrgCristinId = randomUri();
         public UserClientType userClientType = UserClientType.INTERNAL;
+        public boolean isAuthenticated = true;
     }
 
     public static class FileContext {
