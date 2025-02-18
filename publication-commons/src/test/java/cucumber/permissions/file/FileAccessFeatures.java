@@ -1,8 +1,10 @@
 package cucumber.permissions.file;
 
 import static cucumber.permissions.PermissionsRole.EXTERNAL_CLIENT;
-import static cucumber.permissions.PermissionsRole.FILE_CURATOR;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE_EMBARGO;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_OTHERS;
 import static cucumber.permissions.PermissionsRole.OTHER_CONTRIBUTORS;
 import static cucumber.permissions.PermissionsRole.FILE_OWNER;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -12,7 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import cucumber.permissions.PermissionsRole;
-import cucumber.permissions.file.FileScenarioContext.FileOwnership;
+import cucumber.permissions.file.FileScenarioContext.FileRelationship;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -53,8 +55,27 @@ public class FileAccessFeatures {
     @When("the user have the role {string}")
     public void theUserHaveTheRole(String userRole) {
         var roles = PermissionsRole.lookup(userRole);
-        if (roles.contains(FILE_CURATOR)) {
+
+        if (roles.contains(FILE_OWNER)) {
+            scenarioContext.setFileRelationship(FileRelationship.OWNER);
+        } else {
+            scenarioContext.setFileRelationship(FileRelationship.NO_RELATION);
+        }
+
+        if (roles.contains(FILE_CURATOR_FOR_OTHERS)) {
             scenarioContext.setCurrentUserAsFileCurator();
+        }
+
+        if (roles.contains(FILE_CURATOR_DEGREE_EMBARGO)) {
+            scenarioContext.setCurrentUserAsDegreeEmbargoFileCuratorForGivenFile();
+        }
+
+        if (roles.contains(FILE_CURATOR_DEGREE)) {
+            scenarioContext.setCurrentUserAsDegreeFileCuratorForGivenFile();
+        }
+
+        if (roles.contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
+            scenarioContext.setCurrentUserAsFileCuratorForGivenFile();
         }
 
         if (roles.contains(OTHER_CONTRIBUTORS)) {
@@ -64,12 +85,6 @@ public class FileAccessFeatures {
         if (roles.contains(EXTERNAL_CLIENT)) {
             scenarioContext.setUserClientType(UserClientType.EXTERNAL);
             scenarioContext.setPublisherId(scenarioContext.getCurrentUserInstance().getCustomerId());
-        }
-
-        if (roles.contains(FILE_OWNER) || roles.contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
-            scenarioContext.setFileOwnership(FileOwnership.OWNER);
-        } else {
-            scenarioContext.setFileOwnership(FileOwnership.NOT_OWNER);
         }
     }
 

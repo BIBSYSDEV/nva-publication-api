@@ -8,9 +8,16 @@ import no.unit.nva.model.FileOperation;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.file.deny.EmbargoDownloadDenyStrategy;
+import no.unit.nva.publication.permissions.file.deny.DegreeEmbargoWriteDeleteDenyStrategy;
+import no.unit.nva.publication.permissions.file.deny.DegreeWriteDeleteDenyStrategy;
+import no.unit.nva.publication.permissions.file.deny.EmbargoWriteDeleteDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.HiddenFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.UploadedFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.grant.ContributorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.DegreeCuratorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.DegreeEmbargoCuratorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.EmbargoCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EveryoneGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.CuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.ExternalClientGrantStrategy;
@@ -39,11 +46,18 @@ public class FilePermissions {
             new CuratorFileGrantStrategy(file, userInstance, resource),
             new FileOwnerGrantStrategy(file, userInstance, resource),
             new ContributorFileGrantStrategy(file, userInstance, resource),
-            new ExternalClientGrantStrategy(file, userInstance, resource)
+            new ExternalClientGrantStrategy(file, userInstance, resource),
+            new DegreeEmbargoCuratorFileGrantStrategy(file, userInstance, resource),
+            new DegreeCuratorFileGrantStrategy(file, userInstance, resource),
+            new EmbargoCuratorFileGrantStrategy(file, userInstance, resource)
         );
         this.denyStrategies = Set.of(
             new HiddenFileDenyStrategy(file, userInstance, resource),
-            new UploadedFileDenyStrategy(file, userInstance, resource)
+            new UploadedFileDenyStrategy(file, userInstance, resource),
+            new EmbargoDownloadDenyStrategy(file, userInstance, resource),
+            new EmbargoWriteDeleteDenyStrategy(file, userInstance, resource),
+            new DegreeWriteDeleteDenyStrategy(file, userInstance, resource),
+            new DegreeEmbargoWriteDeleteDenyStrategy(file, userInstance, resource)
         );
     }
 

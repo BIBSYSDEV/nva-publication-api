@@ -490,7 +490,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     private Publication buildPublication(PublicationStatus status, File file) {
 
-        var publicationInstanceType = !file.fileDoesNotHaveActiveEmbargo() ? DegreeMaster.class :
+        var publicationInstanceType = file.hasActiveEmbargo() ? DegreeMaster.class :
                                                                                                     AcademicMonograph.class;
         var randomPublication = PublicationGenerator.randomPublication(publicationInstanceType);
         randomPublication.setAssociatedArtifacts(new AssociatedArtifactList(file));

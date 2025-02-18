@@ -1,6 +1,6 @@
 package cucumber.permissions.publication;
 
-import static cucumber.permissions.PermissionsRole.FILE_CURATOR;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_OTHERS;
 import static cucumber.permissions.PermissionsRole.PUBLICATION_OWNER;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +32,7 @@ public class PublicationAccessFeatures {
     @When("the user have the role {string}")
     public void theUserHaveTheRole(String userRole) {
         var roles = PermissionsRole.lookup(userRole);
-        if (roles.contains(FILE_CURATOR)) {
+        if (roles.contains(FILE_CURATOR_FOR_OTHERS)) {
             scenarioContext.setCurrentUserAsFileCurator();
         }
         if (roles.contains(PUBLICATION_OWNER)) {

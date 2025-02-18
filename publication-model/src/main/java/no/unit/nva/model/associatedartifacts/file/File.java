@@ -180,8 +180,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         this.rightsRetentionStrategy = rightsRetentionStrategy;
     }
 
-    public boolean fileDoesNotHaveActiveEmbargo() {
-        return getEmbargoDate().map(date -> Instant.now().isAfter(date)).orElse(true);
+    public boolean hasActiveEmbargo() {
+        return getEmbargoDate().map(date -> !Instant.now().isAfter(date)).orElse(false);
     }
 
     public PendingOpenFile toPendingOpenFile() {
