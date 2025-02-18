@@ -8,11 +8,11 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 
-public record FileTypeChangedEvent(Instant date, User user, SortableIdentifier identifier)
+public record FileChanged(Instant date, User user, SortableIdentifier identifier)
     implements FileEvent {
 
-    public static FileTypeChangedEvent create(User user, Instant timestamp) {
-        return new FileTypeChangedEvent(timestamp, user, SortableIdentifier.next());
+    public static FileChanged create(User user, Instant timestamp) {
+        return new FileChanged(timestamp, user, SortableIdentifier.next());
     }
 
     @Override
@@ -21,7 +21,7 @@ public record FileTypeChangedEvent(Instant date, User user, SortableIdentifier i
                    .withIdentifier(identifier)
                    .withFileIdentifier(fileEntry.getIdentifier())
                    .withResourceIdentifier(fileEntry.getResourceIdentifier())
-                   .withTopic(LogTopic.FINALIZED_FILE_TYPE_CHANGED)
+                   .withTopic(LogTopic.FILE_CHANGED)
                    .withTimestamp(date)
                    .withPerformedBy(user)
                    .withFilename(fileEntry.getFile().getName())

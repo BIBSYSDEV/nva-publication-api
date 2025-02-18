@@ -25,7 +25,7 @@ import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileTypeChangedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileChanged;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -218,7 +218,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
                                                            file.getClass().getSimpleName()));
         }
         if (finalizedFileTypeIsChanged(file)) {
-            this.setFileEvent(FileTypeChangedEvent.create(userInstance.getUser(), Instant.now()));
+            this.setFileEvent(FileChanged.create(userInstance.getUser(), Instant.now()));
         }
         if (!file.equals(this.file)) {
             this.file = this.file.copy()

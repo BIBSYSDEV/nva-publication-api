@@ -123,7 +123,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileTypeChangedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileChanged;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -1685,7 +1685,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             .update(pendingFile, userInstance, resourceService);
 
         var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-        assertInstanceOf(FileTypeChangedEvent.class, updatedFileEntry.getFileEvent());
+        assertInstanceOf(FileChanged.class, updatedFileEntry.getFileEvent());
     }
 
     @Test
