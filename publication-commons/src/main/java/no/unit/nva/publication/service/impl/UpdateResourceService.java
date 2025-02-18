@@ -195,30 +195,31 @@ public class UpdateResourceService extends ServiceWithTransactions {
         resource.setCreatedDate(persistedResource.getCreatedDate());
         resource.setModifiedDate(clockForTimestamps.instant());
 
+        updateCuratingInstitutions(resource, persistedResource);
+
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(createPutTransaction(resource));
+        transactionItems.addAll(updateTickets(resource));
+        transactionItems.addAll(updateFilesTransactions(resource, userInstance, persistedResource));
+        sendTransactionWriteRequest(new TransactWriteItemsRequest().withTransactItems(transactionItems));
+        return resource;
+    }
+
+    private void updateCuratingInstitutions(Resource resource, Resource persistedResource) {
         if (isContributorsChanged(resource.toPublication(), persistedResource.toPublication())) {
             resource.setCuratingInstitutions(
                 CuratingInstitutionsUtil.getCuratingInstitutionsOnline(resource.toPublication(), uriRetriever));
         }
+    }
 
-        var updatedFileEntriesTransactionWriteItems = persistedResource.getFileEntries().stream()
-                                                          .map(fileEntry -> updateFileEntry(fileEntry,
-                                                                                            resource.toPublication(),
-                                                                                            userInstance))
-                                                          .map(FileEntry::toDao)
-                                                          .map(dao -> dao.toPutTransactionItem(tableName))
-                                                          .toList();
-
-        var updateResourceTransactionItem = createPutTransaction(resource);
-        var updateTicketsTransactionItems = updateTickets(resource);
-
-        var transactionItems = new ArrayList<TransactWriteItem>();
-        transactionItems.add(updateResourceTransactionItem);
-        transactionItems.addAll(updateTicketsTransactionItems);
-        transactionItems.addAll(updatedFileEntriesTransactionWriteItems);
-
-        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
-        sendTransactionWriteRequest(request);
-        return resource;
+    private List<TransactWriteItem> updateFilesTransactions(Resource resource, UserInstance userInstance, Resource persistedResource) {
+        return persistedResource.getFileEntries().stream()
+                   .map(fileEntry -> updateFileEntry(fileEntry,
+                                                     resource.toPublication(),
+                                                     userInstance))
+                   .map(FileEntry::toDao)
+                   .map(dao -> dao.toPutTransactionItem(tableName))
+                   .toList();
     }
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
