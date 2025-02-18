@@ -164,7 +164,7 @@ public class FileScenarioContext {
     public static class FileContext {
 
         public File file;
-        public FileRelationship relationship;
+        public FileRelationship relationship = FileRelationship.NO_RELATION;
     }
 
     public enum FileRelationship {

@@ -1,23 +1,18 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -115,16 +110,7 @@ public class FileStrategyBase {
     }
 
     protected boolean isDegree() {
-        return Optional.ofNullable(resource.getEntityDescription())
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationInstance)
-                   .map(FileStrategyBase::publicationInstanceIsDegree)
-                   .orElse(false);
-    }
-
-    private static Boolean publicationInstanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
-        return Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES)
-                   .anyMatch(instanceTypeClass -> instanceTypeClass.equals(publicationInstance.getClass()));
+        return resource.isDegree();
     }
 
     public boolean isEmbargo() {

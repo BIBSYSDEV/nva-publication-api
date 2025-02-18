@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +32,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
@@ -37,6 +40,8 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
@@ -187,6 +192,19 @@ public class Resource implements Entity {
                    .withModifiedDate(currentTime)
                    .withResourceEvent(DeletedResourceEvent.create(userInstance, currentTime))
                    .build();
+    }
+
+    public boolean isDegree() {
+        return Optional.ofNullable(getEntityDescription())
+            .map(EntityDescription::getReference)
+            .map(Reference::getPublicationInstance)
+            .map(Resource::instanceIsDegree)
+            .orElse(false);
+    }
+
+   private static boolean instanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
+        return Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES)
+                   .anyMatch(instanceTypeClass -> instanceTypeClass.equals(publicationInstance.getClass()));
     }
 
     private static Resource convertToResource(Publication publication) {

@@ -10,6 +10,8 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
 public class EmbargoDownloadDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
 
+    public static final boolean PASS = false;
+
     public EmbargoDownloadDenyStrategy(FileEntry file,
                                        UserInstance userInstance,
                                        Resource resource) {
@@ -19,13 +21,17 @@ public class EmbargoDownloadDenyStrategy extends FileStrategyBase implements Fil
     @Override
     public boolean deniesAction(FileOperation permission) {
         if (permission.equals(DOWNLOAD) && isEmbargo()) {
-            if (isDegree()) {
-                return isDegreeEmbargoDeniedUser();
-            } else {
-                return isEmbargoDeniedUser();
-            }
+            return isDenied();
         }
-        return false;//allow
+        return PASS;
+    }
+
+    private boolean isDenied() {
+        if (isDegree()) {
+            return isDegreeEmbargoDeniedUser();
+        } else {
+            return isEmbargoDeniedUser();
+        }
     }
 
     private boolean isDegreeEmbargoDeniedUser() {
