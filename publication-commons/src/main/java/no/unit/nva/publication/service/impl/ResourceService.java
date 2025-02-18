@@ -352,8 +352,8 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updatePublicationButDoNotChangeStatus(resourceUpdate);
     }
 
-    public void updateResource(Resource resource, UserInstance userInstance) {
-        updateResourceService.updateResource(resource, userInstance);
+    public Resource updateResource(Resource resource, UserInstance userInstance) {
+        return updateResourceService.updateResource(resource, userInstance);
     }
 
     // update this method according to current needs.

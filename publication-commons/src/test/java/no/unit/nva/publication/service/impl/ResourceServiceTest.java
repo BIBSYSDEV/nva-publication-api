@@ -123,6 +123,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileTypeChangedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -1666,6 +1667,37 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceEvent = (ImportedResourceEvent) updatedResource.getResourceEvent();
 
         assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
+    }
+
+    @Test
+    void shouldSetFileTypeUpdatedEventWhenUpdatingFinalizedFile() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var openFile = randomOpenFile();
+        var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var pendingFile = openFile.copy().buildPendingInternalFile();
+
+        fileEntry.fetch(resourceService).orElseThrow()
+            .update(pendingFile, userInstance, resourceService);
+
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        assertInstanceOf(FileTypeChangedEvent.class, updatedFileEntry.getFileEvent());
+    }
+
+    @Test
+    void shouldUpdateResource() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var doi = randomUri();
+        persistedPublication.setDoi(doi);
+        var updatedResource = Resource.fromPublication(persistedPublication).update(resourceService, userInstance);
+
+        assertEquals(doi, updatedResource.getDoi());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

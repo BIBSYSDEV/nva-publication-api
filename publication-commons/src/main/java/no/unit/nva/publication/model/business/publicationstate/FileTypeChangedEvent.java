@@ -21,7 +21,7 @@ public record FileTypeChangedEvent(Instant date, User user, SortableIdentifier i
                    .withIdentifier(identifier)
                    .withFileIdentifier(fileEntry.getIdentifier())
                    .withResourceIdentifier(fileEntry.getResourceIdentifier())
-                   .withTopic(LogTopic.FILE_TYPE_CHANGED)
+                   .withTopic(LogTopic.FINALIZED_FILE_TYPE_CHANGED)
                    .withTimestamp(date)
                    .withPerformedBy(user)
                    .withFilename(fileEntry.getFile().getName())

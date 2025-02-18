@@ -190,7 +190,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
 
-    public void updateResource(Resource resource, UserInstance userInstance) {
+    public Resource updateResource(Resource resource, UserInstance userInstance) {
         var persistedResource = fetchExistingResource(resource.toPublication());
         resource.setCreatedDate(persistedResource.getCreatedDate());
         resource.setModifiedDate(clockForTimestamps.instant());
@@ -218,6 +218,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
         var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
+        return resource;
     }
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {

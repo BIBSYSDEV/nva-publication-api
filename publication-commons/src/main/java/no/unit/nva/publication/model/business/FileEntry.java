@@ -217,6 +217,9 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
                                                 .formatted(this.file.getClass().getSimpleName(),
                                                            file.getClass().getSimpleName()));
         }
+        if (finalizedFileTypeIsChanged(file)) {
+            this.setFileEvent(FileTypeChangedEvent.create(userInstance.getUser(), Instant.now()));
+        }
         if (!file.equals(this.file)) {
             this.file = this.file.copy()
                             .withPublisherVersion(file.getPublisherVersion())
@@ -226,9 +229,6 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
                             .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
                             .build(file.getClass());
             this.modifiedDate = Instant.now();
-        }
-        if (finalizedFileTypeIsChanged(file)) {
-            this.setFileEvent(FileTypeChangedEvent.create(userInstance.getUser(), Instant.now()));
         }
         return this;
     }

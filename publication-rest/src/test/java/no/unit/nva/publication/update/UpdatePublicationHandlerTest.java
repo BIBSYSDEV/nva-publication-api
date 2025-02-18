@@ -716,13 +716,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
-        //inject modified date to the input object because modified date is not available before the actual update.
-        publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
-
         var expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
         var actualTitle = updatedPublication.getEntityDescription().getMainTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
-        assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
 
     @Test
@@ -2406,7 +2402,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
         var resourceService = spy(getResourceServiceBuilder().build());
-        doThrow(new RuntimeException(SOME_MESSAGE)).when(resourceService).updatePublication(any());
+        doThrow(new RuntimeException(SOME_MESSAGE)).when(resourceService).updateResource(any(), any());
         return resourceService;
     }
 

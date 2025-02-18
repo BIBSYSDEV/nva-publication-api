@@ -31,7 +31,7 @@ class RepublishUtilTest extends ResourcesLocalTest {
         var republishUtil = RepublishUtil.create(resourceService, ticketService, permissionStrategy);
 
         when(permissionStrategy.allowsAction(REPUBLISH)).thenReturn(true);
-        doNothing().when(resourceService).updateResource(any(), any());
+        when(resourceService.updateResource(any(), any())).thenReturn(Resource.fromPublication(publication));
         when(resourceService.getResourceByIdentifier(publication.getIdentifier()))
             .thenReturn(Resource.fromPublication(publication))
             .thenThrow(NotFoundException.class);

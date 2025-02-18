@@ -189,6 +189,10 @@ public class Resource implements Entity {
                    .build();
     }
 
+    public Resource update(ResourceService resourceService, UserInstance userInstance) {
+        return resourceService.updateResource(this, userInstance);
+    }
+
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
