@@ -9,16 +9,33 @@ Feature: File metadata read and file download permissions with different publica
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | FileType            | UserRole      | PublicationStatus | Outcome     |
-      | UploadedFile        | Everyone else | PUBLISHED         | Not Allowed |
-      | UploadedFile        | Everyone else | DRAFT             | Not Allowed |
-      | PendingOpenFile     | Everyone else | PUBLISHED         | Not Allowed |
-      | PendingOpenFile     | Everyone else | DRAFT             | Not Allowed |
-      | PendingInternalFile | Everyone else | PUBLISHED         | Not Allowed |
-      | PendingInternalFile | Everyone else | DRAFT             | Not Allowed |
-      | OpenFile            | Everyone else | PUBLISHED         | Allowed     |
-      | OpenFile            | Everyone else | DRAFT             | Not Allowed |
-      | InternalFile        | Everyone else | PUBLISHED         | Not Allowed |
-      | InternalFile        | Everyone else | DRAFT             | Not Allowed |
-      | HiddenFile          | Everyone else | PUBLISHED         | Not Allowed |
-      | HiddenFile          | Everyone else | DRAFT             | Not Allowed |
+      | FileType            | UserRole        | PublicationStatus | Outcome     |
+      | UploadedFile        | Unauthenticated | PUBLISHED         | Not Allowed |
+      | UploadedFile        | Unauthenticated | DRAFT             | Not Allowed |
+      | UploadedFile        | Everyone else   | PUBLISHED         | Not Allowed |
+      | UploadedFile        | Everyone else   | DRAFT             | Not Allowed |
+
+      | PendingOpenFile     | Unauthenticated | PUBLISHED         | Not Allowed |
+      | PendingOpenFile     | Unauthenticated | DRAFT             | Not Allowed |
+      | PendingOpenFile     | Everyone else   | PUBLISHED         | Not Allowed |
+      | PendingOpenFile     | Everyone else   | DRAFT             | Not Allowed |
+
+      | PendingInternalFile | Unauthenticated | PUBLISHED         | Not Allowed |
+      | PendingInternalFile | Unauthenticated | DRAFT             | Not Allowed |
+      | PendingInternalFile | Everyone else   | PUBLISHED         | Not Allowed |
+      | PendingInternalFile | Everyone else   | DRAFT             | Not Allowed |
+
+      | OpenFile            | Unauthenticated | PUBLISHED         | Allowed     |
+      | OpenFile            | Unauthenticated | DRAFT             | Not Allowed |
+      | OpenFile            | Everyone else   | PUBLISHED         | Allowed     |
+      | OpenFile            | Everyone else   | DRAFT             | Not Allowed |
+
+      | InternalFile        | Unauthenticated | PUBLISHED         | Not Allowed |
+      | InternalFile        | Unauthenticated | DRAFT             | Not Allowed |
+      | InternalFile        | Everyone else   | PUBLISHED         | Not Allowed |
+      | InternalFile        | Everyone else   | DRAFT             | Not Allowed |
+
+      | HiddenFile          | Unauthenticated | PUBLISHED         | Not Allowed |
+      | HiddenFile          | Unauthenticated | DRAFT             | Not Allowed |
+      | HiddenFile          | Everyone else   | PUBLISHED         | Not Allowed |
+      | HiddenFile          | Everyone else   | DRAFT             | Not Allowed |

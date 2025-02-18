@@ -1,5 +1,6 @@
 package cucumber.permissions.file;
 
+import static cucumber.permissions.PermissionsRole.UNAUTHENTICATED;
 import static cucumber.permissions.PermissionsRole.EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE_EMBARGO;
@@ -79,6 +80,10 @@ public class FileAccessFeatures {
 
         if (roles.contains(FILE_CURATOR_FOR_OTHERS)) {
             scenarioContext.setCurrentUserAsFileCurator();
+        }
+
+        if (roles.contains(UNAUTHENTICATED)) {
+            scenarioContext.setCurrentUserAsNotAuthenticated();
         }
 
         if (roles.contains(FILE_CURATOR_DEGREE_EMBARGO)) {
