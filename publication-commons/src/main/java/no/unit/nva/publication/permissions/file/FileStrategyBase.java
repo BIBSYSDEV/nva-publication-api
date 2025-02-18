@@ -114,7 +114,7 @@ public class FileStrategyBase {
     }
 
     public boolean isEmbargo() {
-        return !file.getFile().fileDoesNotHaveActiveEmbargo();
+        return file.getFile().hasActiveEmbargo();
     }
 
     protected boolean currentUserIsDegreeEmbargoFileCuratorForGivenFile() {

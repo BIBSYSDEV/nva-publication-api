@@ -20,7 +20,7 @@ public final class EveryoneGrantStrategy extends FileStrategyBase implements Fil
             return switch (permission) {
                 case READ_METADATA -> true;
                 case WRITE_METADATA, DELETE -> false;
-                case DOWNLOAD -> openFile.fileDoesNotHaveActiveEmbargo();
+                case DOWNLOAD -> !openFile.hasActiveEmbargo();
             };
         }
 
