@@ -40,7 +40,7 @@ public class FileScenarioContext {
     }
 
     public FileEntry getFileEntry() {
-        var owner = fileContext.relationship == FileRelationship.OWNER ? getCurrentUserInstance() : getOtherUserInstance();
+        var owner = FileRelationship.OWNER.equals(fileContext.relationship) ? getCurrentUserInstance() : getOtherUserInstance();
         return FileEntry.create(fileContext.file, getResource().getIdentifier(), owner);
     }
 
