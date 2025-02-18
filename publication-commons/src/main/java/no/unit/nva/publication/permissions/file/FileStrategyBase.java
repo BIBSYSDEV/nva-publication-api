@@ -1,6 +1,8 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.Objects.nonNull;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -51,7 +53,7 @@ public class FileStrategyBase {
         return file.getOwnerAffiliation().equals(userTopLevelOrg);
     }
 
-    private boolean hasTopLevelRelationForCurrentResource() {
+    protected boolean hasTopLevelRelationForCurrentResource() {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("checking if resource top level affiliation {} for user {} is equal to {}.",
@@ -105,5 +107,21 @@ public class FileStrategyBase {
         return nonNull(userInstance) &&
                userInstance.isExternalClient() &&
                userInstance.getCustomerId().equals(resource.getPublisher().getId());
+    }
+
+    protected boolean resourceIsDegree() {
+        return resource.isDegree();
+    }
+
+    public boolean fileHasEmbargo() {
+        return file.getFile().hasActiveEmbargo();
+    }
+
+    protected boolean currentUserIsDegreeEmbargoFileCuratorForGivenFile() {
+        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && hasTopLevelRelationForCurrentResource();
+    }
+
+    protected boolean currentUserIsDegreeFileCuratorForGivenFile() {
+        return hasAccessRight(MANAGE_DEGREE) && haveTopLevelRelationForCurrentFile();
     }
 }

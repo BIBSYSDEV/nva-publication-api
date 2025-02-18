@@ -80,7 +80,7 @@ public class PublicationStrategyBase {
     }
 
     private boolean hasEmbargo(File file) {
-        return !file.fileDoesNotHaveActiveEmbargo();
+        return file.hasActiveEmbargo();
     }
 
     protected boolean isVerifiedContributor(Contributor contributor) {
