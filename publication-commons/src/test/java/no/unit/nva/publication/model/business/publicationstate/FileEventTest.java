@@ -30,7 +30,8 @@ public class FileEventTest {
                          Arguments.of(new FileDeletedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
                          Arguments.of(new FileImportedEvent(Instant.now(), randomUser(), SortableIdentifier.next(),
                                                             ImportSource.fromSource(Source.SCOPUS))),
-                         Arguments.of(new FileChanged(Instant.now(), randomUser(), SortableIdentifier.next())));
+                         Arguments.of(new FileRetractedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
+                         Arguments.of(new FileHiddenEvent(Instant.now(), randomUser(), SortableIdentifier.next())));
     }
 
     @ParameterizedTest

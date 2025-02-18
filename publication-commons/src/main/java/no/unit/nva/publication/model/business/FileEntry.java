@@ -23,9 +23,10 @@ import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileChanged;
+import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -217,8 +218,11 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
                                                 .formatted(this.file.getClass().getSimpleName(),
                                                            file.getClass().getSimpleName()));
         }
-        if (finalizedFileTypeIsChanged(file)) {
-            this.setFileEvent(FileChanged.create(userInstance.getUser(), Instant.now()));
+        if ((this.file instanceof OpenFile || this.file instanceof InternalFile || this.file instanceof HiddenFile) && file instanceof PendingFile<?,?>) {
+            this.setFileEvent(FileRetractedEvent.create(userInstance.getUser(), Instant.now()));
+        }
+        if (!(this.file instanceof HiddenFile) && file instanceof HiddenFile) {
+            this.setFileEvent(FileHiddenEvent.create(userInstance.getUser(), Instant.now()));
         }
         if (!file.equals(this.file)) {
             this.file = this.file.copy()
@@ -231,19 +235,6 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
             this.modifiedDate = Instant.now();
         }
         return this;
-    }
-
-    private boolean finalizedFileTypeIsChanged(File file) {
-        return finalizedFileChangedToNonFinalized(file) || hiddenFileTypeChanged(file);
-    }
-
-    private boolean hiddenFileTypeChanged(File file) {
-        return this.file instanceof HiddenFile && !(file instanceof HiddenFile);
-    }
-
-    private boolean finalizedFileChangedToNonFinalized(File file) {
-        return (this.file instanceof OpenFile || this.file instanceof InternalFile)
-               && (file instanceof PendingFile<?, ?> || file instanceof HiddenFile);
     }
 
     public void approve(ResourceService resourceService, User user) {

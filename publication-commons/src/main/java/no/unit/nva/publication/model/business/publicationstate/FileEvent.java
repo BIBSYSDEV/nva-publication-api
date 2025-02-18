@@ -12,7 +12,8 @@ import no.unit.nva.publication.model.business.logentry.LogUser;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(FileUploadedEvent.class), @JsonSubTypes.Type(FileApprovedEvent.class),
     @JsonSubTypes.Type(FileRejectedEvent.class), @JsonSubTypes.Type(FileDeletedEvent.class),
-    @JsonSubTypes.Type(FileImportedEvent.class), @JsonSubTypes.Type(FileChanged.class)})
+    @JsonSubTypes.Type(FileImportedEvent.class), @JsonSubTypes.Type(FileRetractedEvent.class),
+    @JsonSubTypes.Type(FileHiddenEvent.class)})
 public interface FileEvent {
 
     Instant date();

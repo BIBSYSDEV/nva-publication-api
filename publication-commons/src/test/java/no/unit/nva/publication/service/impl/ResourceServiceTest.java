@@ -123,7 +123,8 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileChanged;
+import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -1670,7 +1671,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetFileTypeUpdatedEventWhenUpdatingFinalizedFile() throws BadRequestException {
+    void shouldSetFileTypeRetractedEventWhenRetractingFinalizedFile() throws BadRequestException {
         var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -1685,7 +1686,26 @@ class ResourceServiceTest extends ResourcesLocalTest {
             .update(pendingFile, userInstance, resourceService);
 
         var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-        assertInstanceOf(FileChanged.class, updatedFileEntry.getFileEvent());
+        assertInstanceOf(FileRetractedEvent.class, updatedFileEntry.getFileEvent());
+    }
+
+    @Test
+    void shouldSetFileTypeHiddenEventWhenUpdatingFileToHidden() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var openFile = randomOpenFile();
+        var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var hiddenFile = openFile.copy().buildHiddenFile();
+
+        fileEntry.fetch(resourceService).orElseThrow()
+            .update(hiddenFile, userInstance, resourceService);
+
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        assertInstanceOf(FileHiddenEvent.class, updatedFileEntry.getFileEvent());
     }
 
     @Test

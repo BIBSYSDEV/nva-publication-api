@@ -8,11 +8,11 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 
-public record FileChanged(Instant date, User user, SortableIdentifier identifier)
+public record FileHiddenEvent(Instant date, User user, SortableIdentifier identifier)
     implements FileEvent {
 
-    public static FileChanged create(User user, Instant timestamp) {
-        return new FileChanged(timestamp, user, SortableIdentifier.next());
+    public static FileHiddenEvent create(User user, Instant timestamp) {
+        return new FileHiddenEvent(timestamp, user, SortableIdentifier.next());
     }
 
     @Override
@@ -21,11 +21,12 @@ public record FileChanged(Instant date, User user, SortableIdentifier identifier
                    .withIdentifier(identifier)
                    .withFileIdentifier(fileEntry.getIdentifier())
                    .withResourceIdentifier(fileEntry.getResourceIdentifier())
-                   .withTopic(LogTopic.FILE_CHANGED)
+                   .withTopic(LogTopic.FILE_HIDDEN)
                    .withTimestamp(date)
                    .withPerformedBy(user)
                    .withFilename(fileEntry.getFile().getName())
                    .withFileType(fileEntry.getFile().getClass().getSimpleName())
                    .build();
     }
+
 }
