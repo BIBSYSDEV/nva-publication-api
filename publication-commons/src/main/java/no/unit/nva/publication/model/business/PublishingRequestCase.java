@@ -18,7 +18,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -87,32 +86,23 @@ public class PublishingRequestCase extends TicketEntry {
 
     public static PublishingRequestCase create(Resource resource, UserInstance userInstance,
                                                PublishingWorkflow workflow) {
-        var publishingRequestCase = new PublishingRequestCase();
-        publishingRequestCase.setIdentifier(SortableIdentifier.next());
-        publishingRequestCase.setCustomerId(resource.getCustomerId());
-        publishingRequestCase.setStatus(TicketStatus.PENDING);
-        publishingRequestCase.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
-        publishingRequestCase.setResourceIdentifier(resource.getIdentifier());
-        publishingRequestCase.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
-        publishingRequestCase.setResponsibilityArea(userInstance.getPersonAffiliation());
-        publishingRequestCase.setOwner(userInstance.getUser());
-        publishingRequestCase.setFilesForApproval(resource.getPendingFiles());
-        publishingRequestCase.setWorkflow(workflow);
+        var publishingRequestCase = createPublishingRequest(resource, userInstance, workflow);
+        return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
+                   ? completePublishingRequestAndApproveFiles(resource, userInstance, publishingRequestCase)
+                   : handleMetadataOnlyWorkflow(resource, userInstance, workflow, publishingRequestCase);
+    }
 
-        if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)) {
-            publishingRequestCase.setAssignee(new Username(userInstance.getUsername()));
-            publishingRequestCase.publishApprovedFile();
-            return publishingRequestCase.complete(resource.toPublication(), userInstance);
-        }
-        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) && publishingRequestCase.getFilesForApproval().isEmpty()) {
-            return publishingRequestCase.complete(resource.toPublication(), userInstance);
-        } else {
-            return publishingRequestCase;
-        }
+    private static PublishingRequestCase handleMetadataOnlyWorkflow(Resource resource, UserInstance userInstance,
+                                                                  PublishingWorkflow workflow,
+                                                                  PublishingRequestCase publishingRequestCase) {
+        return canPublishMetadataAndNoFilesToApprove(workflow, publishingRequestCase)
+                   ? publishingRequestCase.complete(resource.toPublication(), userInstance)
+                   : publishingRequestCase;
     }
 
     public static PublishingRequestCase createWithFilesForApproval(Resource resource, UserInstance userInstance,
-                                               PublishingWorkflow workflow, Set<File> filesForApproval) {
+                                                                   PublishingWorkflow workflow,
+                                                                   Set<File> filesForApproval) {
         var publishingRequestCase = create(resource, userInstance, workflow);
         publishingRequestCase.setFilesForApproval(filesForApproval);
         return publishingRequestCase;
@@ -370,6 +360,36 @@ public class PublishingRequestCase extends TicketEntry {
 
     public boolean fileIsApproved(File file) {
         return getApprovedFiles().stream().map(File::getIdentifier).toList().contains(file.getIdentifier());
+    }
+
+    private static boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow,
+                                                                 PublishingRequestCase publishingRequestCase) {
+        return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) &&
+               publishingRequestCase.getFilesForApproval().isEmpty();
+    }
+
+    private static PublishingRequestCase completePublishingRequestAndApproveFiles(Resource resource,
+                                                                                  UserInstance userInstance,
+                                                                                  PublishingRequestCase publishingRequestCase) {
+        publishingRequestCase.setAssignee(new Username(userInstance.getUsername()));
+        publishingRequestCase.publishApprovedFile();
+        return publishingRequestCase.complete(resource.toPublication(), userInstance);
+    }
+
+    private static PublishingRequestCase createPublishingRequest(Resource resource, UserInstance userInstance,
+                                                                 PublishingWorkflow workflow) {
+        var publishingRequestCase = new PublishingRequestCase();
+        publishingRequestCase.setIdentifier(SortableIdentifier.next());
+        publishingRequestCase.setCustomerId(resource.getCustomerId());
+        publishingRequestCase.setStatus(TicketStatus.PENDING);
+        publishingRequestCase.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
+        publishingRequestCase.setResourceIdentifier(resource.getIdentifier());
+        publishingRequestCase.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
+        publishingRequestCase.setResponsibilityArea(userInstance.getPersonAffiliation());
+        publishingRequestCase.setOwner(userInstance.getUser());
+        publishingRequestCase.setFilesForApproval(resource.getPendingFiles());
+        publishingRequestCase.setWorkflow(workflow);
+        return publishingRequestCase;
     }
 
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(UserInstance userInstance,
