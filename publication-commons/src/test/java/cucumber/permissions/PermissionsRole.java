@@ -6,12 +6,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public enum PermissionsRole {
-    FILE_CURATOR("file curator"),
+    FILE_CURATOR_FOR_OTHERS("file curators for other contributors"),
     FILE_CURATOR_FOR_GIVEN_FILE("file curator at x"),
+    FILE_CURATOR_DEGREE_EMBARGO("degree embargo file curator"),
+    FILE_CURATOR_DEGREE("degree file curator"),
     EVERYONE("everyone"),
     CONTRIBUTOR_FOR_GIVEN_FILE("contributor at x"),
     OTHER_CONTRIBUTORS("other contributors", "contributor"),
-    FILE_OWNER("uploader"),
+    FILE_OWNER("file owner", "uploader"),
     EXTERNAL_CLIENT("external client"),
     PUBLICATION_OWNER("publication owner");
 
@@ -36,7 +38,7 @@ public enum PermissionsRole {
         return stream(values())
                    .filter(permissionsRole ->
                                stream(permissionsRole.values)
-                                   .anyMatch(value -> search.toLowerCase().contains(value.toLowerCase()))
+                                   .anyMatch(value -> search.toLowerCase().startsWith(value.toLowerCase()))
                    )
                    .collect(Collectors.toSet());
     }
