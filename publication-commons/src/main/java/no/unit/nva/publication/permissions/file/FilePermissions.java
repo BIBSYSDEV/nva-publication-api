@@ -13,7 +13,6 @@ import no.unit.nva.publication.permissions.file.deny.DegreeEmbargoWriteDeleteDen
 import no.unit.nva.publication.permissions.file.deny.DegreeWriteDeleteDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.EmbargoWriteDeleteDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.HiddenFileDenyStrategy;
-import no.unit.nva.publication.permissions.file.deny.NotPublishedPublicationFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.UploadedFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.grant.ContributorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.DegreeCuratorFileGrantStrategy;
@@ -53,7 +52,6 @@ public class FilePermissions {
             new EmbargoCuratorFileGrantStrategy(file, userInstance, resource)
         );
         this.denyStrategies = Set.of(
-            new NotPublishedPublicationFileDenyStrategy(file, userInstance, resource),
             new HiddenFileDenyStrategy(file, userInstance, resource),
             new UploadedFileDenyStrategy(file, userInstance, resource),
             new EmbargoDownloadDenyStrategy(file, userInstance, resource),
