@@ -19,7 +19,7 @@ public class EmbargoWriteDeleteDenyStrategy extends FileStrategyBase implements 
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        return isEmbargo() && !isDegree() && isWriteOrDelete(permission) && isDeniedUser();
+        return fileHasEmbargo() && !resourceIsDegree() && isWriteOrDelete(permission) && isDeniedUser();
     }
 
     private boolean isDeniedUser() {

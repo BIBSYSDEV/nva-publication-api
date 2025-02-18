@@ -109,11 +109,11 @@ public class FileStrategyBase {
                userInstance.getCustomerId().equals(resource.getPublisher().getId());
     }
 
-    protected boolean isDegree() {
+    protected boolean resourceIsDegree() {
         return resource.isDegree();
     }
 
-    public boolean isEmbargo() {
+    public boolean fileHasEmbargo() {
         return file.getFile().hasActiveEmbargo();
     }
 

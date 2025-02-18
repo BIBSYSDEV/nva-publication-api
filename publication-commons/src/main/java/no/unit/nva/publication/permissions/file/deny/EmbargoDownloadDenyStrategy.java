@@ -20,14 +20,14 @@ public class EmbargoDownloadDenyStrategy extends FileStrategyBase implements Fil
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        if (permission.equals(DOWNLOAD) && isEmbargo()) {
+        if (permission.equals(DOWNLOAD) && fileHasEmbargo()) {
             return isDenied();
         }
         return PASS;
     }
 
     private boolean isDenied() {
-        if (isDegree()) {
+        if (resourceIsDegree()) {
             return isDegreeEmbargoDeniedUser();
         } else {
             return isEmbargoDeniedUser();

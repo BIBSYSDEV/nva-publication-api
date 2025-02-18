@@ -19,7 +19,7 @@ public class DegreeEmbargoWriteDeleteDenyStrategy extends FileStrategyBase imple
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        return isDegree() && isEmbargo() && isWriteOrDelete(permission) && isDeniedUser();
+        return resourceIsDegree() && fileHasEmbargo() && isWriteOrDelete(permission) && isDeniedUser();
     }
 
     private boolean isDeniedUser() {
