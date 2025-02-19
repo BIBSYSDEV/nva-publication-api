@@ -28,6 +28,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
@@ -62,6 +63,7 @@ public class CristinImportPublicationMerger {
         = "dummy_handle_unis";
     public static final String PRIORITIZE_MAIN_TITLE = "mainTitle";
     public static final String PRIORITIZE_ALTERNATIVE_TITLES = "alternativeTitles";
+    public static final String PRIORITIZE_PUBLICATION_DATE = "publicationDate";
     public static final String PRIORITIZE_ABSTRACT = "abstract";
     public static final String PRIORITIZE_ALTERNATIVE_ABSTRACTS = "alternativeAbstracts";
     public static final String PRIORITIZE_REFERENCE = "reference";
@@ -143,13 +145,18 @@ public class CristinImportPublicationMerger {
                    .withAbstract(getCorrectAbstract())
                    .withAlternativeAbstracts(determineAlternativeAbstracts())
                    .withTags(determineTags())
+                   .withPublicationDate(determinePublicationDate())
                    .build();
     }
 
+    private PublicationDate determinePublicationDate() {
+        return shouldPrioritizeField(PRIORITIZE_PUBLICATION_DATE)
+                   ? bragePublicationRepresentation.publication().getEntityDescription().getPublicationDate()
+                   : existingPublication.getEntityDescription().getPublicationDate();
+    }
+
     private List<String> determineTags() {
-        return shouldPrioritizeField(PRIORITIZE_TAGS)
-                   ? mergeTags()
-                   : existingPublication.getEntityDescription().getTags();
+        return mergeTags();
     }
 
     private List<String> mergeTags() {

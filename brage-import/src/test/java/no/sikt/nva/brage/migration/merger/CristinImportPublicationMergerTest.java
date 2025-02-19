@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import java.net.URI;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -74,6 +76,7 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -673,14 +676,14 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldMergeTagsWhenMergingDegree()
+    void shouldMergeTags()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var handle = randomUri();
         var handleIdentifier = new HandleIdentifier(SourceName.fromBrage("ntnu"), handle);
-        var existingPublication = randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+        var existingPublication = randomPublicationWithHandleIdAdditionalIdentifiers(ReportResearch.class,
                                                                                      handleIdentifier);
         var bragePublication =
-            randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+            randomPublicationWithHandleIdAdditionalIdentifiers(ReportResearch.class,
                                                                new HandleIdentifier(SourceName.fromBrage("nmbu"), handle));
         bragePublication.getEntityDescription().getReference().setPublicationContext(null);
         bragePublication.getEntityDescription().getReference().setPublicationInstance(null);
@@ -690,6 +693,23 @@ class CristinImportPublicationMergerTest {
 
         assertThat(tags, hasItems(existingPublication.getEntityDescription().getTags().toArray(String[]::new)));
         assertThat(tags, hasItems(bragePublication.getEntityDescription().getTags().toArray(String[]::new)));
+    }
+
+    @Test
+    void shouldOverridePublicationDateWhenPublicationDateFromBrageIsPrioritized()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var handle = randomUri();
+        var handleIdentifier = new HandleIdentifier(SourceName.fromBrage("ntnu"), handle);
+        var existingPublication = randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+                                                                                     handleIdentifier);
+        var bragePublication =
+            randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+                                                               new HandleIdentifier(SourceName.fromBrage("nmbu"), handle));
+        bragePublication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        Assertions.assertEquals(bragePublication.getEntityDescription().getPublicationDate(),
+                                updatedPublication.getEntityDescription().getPublicationDate());
     }
 
     private static Publication randomPublicationWithHandleIdAdditionalIdentifiers(Class<?> publicationInstance,
