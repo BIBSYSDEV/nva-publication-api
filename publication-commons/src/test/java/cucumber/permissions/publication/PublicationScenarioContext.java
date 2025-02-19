@@ -1,9 +1,14 @@
 package cucumber.permissions.publication;
 
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_OTHERS;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
+import cucumber.permissions.PermissionsRole;
 import java.net.URI;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,75 +17,106 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.AccessRight;
 
 public class PublicationScenarioContext {
 
-    private final UserScenarioContext userContext = new UserScenarioContext();
-    private Resource resource;
     private PublicationOperation operation;
-
-    public UserInstance getCurrentUserInstance() {
-        return UserInstance.create(userContext.userIdentifier, userContext.customerId, userContext.personCristinId,
-                                   userContext.accessRights.stream().toList(),
-                                   userContext.topLevelOrgCristinId);
-    }
-
-    public Resource getResource() {
-        return resource;
-    }
-
-    public void setResource(Resource resource) {
-        this.resource = resource;
-    }
-
-    public void addUserRole(AccessRight accessRight) {
-        userContext.accessRights.add(accessRight);
-    }
-
-    public URI getTopLevelOrgCristinId() {
-        return userContext.topLevelOrgCristinId;
-    }
+    private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
+    private Set<PermissionsRole> roles = new HashSet<>();
 
     public void setOperation(PublicationOperation operation) {
         this.operation = operation;
     }
 
+    public void setRoles(Set<PermissionsRole> roles) {
+        this.roles = roles;
+    }
+
+    public void setPublicationStatus(PublicationStatus status) {
+        this.publicationStatus = status;
+    }
+
+    public PublicationPermissions getPublicationPermissions() {
+
+
+        var topLevelOrgCristinId = randomUri();
+
+        var access = getAccessRights(roles);
+
+        var user = UserInstance.create(randomString(), randomUri(), randomUri(),
+                                       access.stream().toList(),
+                                       topLevelOrgCristinId);
+
+        var currentUserIsContributor = roles.contains(PermissionsRole.OTHER_CONTRIBUTORS);
+        var contributors = getContributors(user, currentUserIsContributor);
+
+        var currentUserIsFileCurator = roles.contains(FILE_CURATOR_FOR_OTHERS);
+        var curatingInstitutions = getCuratingInstitutions(currentUserIsFileCurator, user);
+
+        var currentUserIsOwner = roles.contains(PermissionsRole.PUBLICATION_OWNER);
+        var owner = getOwner(user, topLevelOrgCristinId, currentUserIsOwner);
+
+        var randomResource = Resource.fromPublication(randomNonDegreePublication());
+
+        var resource =
+            randomResource.copy()
+                .withStatus(publicationStatus)
+                .withResourceOwner(owner)
+                .withCuratingInstitutions(curatingInstitutions)
+                .withEntityDescription(
+                    randomResource.getEntityDescription().copy().withContributors(contributors).build())
+                .build();
+
+        return new PublicationPermissions(resource.toPublication(), user);
+    }
+
+    private static HashSet<CuratingInstitution> getCuratingInstitutions(boolean currentUserIsFileCurator,
+                                                                        UserInstance user) {
+        var curatingInstitutions = new HashSet<CuratingInstitution>();
+        if (currentUserIsFileCurator) {
+            curatingInstitutions.add(new CuratingInstitution(user.getTopLevelOrgCristinId(), Set.of()));
+        }
+        return curatingInstitutions;
+    }
+
+    private static Owner getOwner(UserInstance user, URI topLevelOrgCristinId, boolean currentUserIsOwner) {
+        return currentUserIsOwner ? new Owner(user.getUser(), topLevelOrgCristinId)
+                   : new Owner(new User(randomString()), randomUri());
+    }
+
+    private static ArrayList<Contributor> getContributors(UserInstance user,
+                                                          boolean addCurrentUserAsContributor) {
+        var contributors = new ArrayList<Contributor>();
+        if (addCurrentUserAsContributor) {
+            contributors.add(new Contributor.Builder()
+                                 .withAffiliations(List.of(Organization.fromUri(user.getTopLevelOrgCristinId())))
+                                 .withIdentity(
+                                     new Identity.Builder().withId(user.getPersonCristinId())
+                                         .build())
+                                 .withRole(new RoleType(Role.CREATOR)).build());
+        }
+        return contributors;
+    }
+
+    private static HashSet<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
+        var access = new HashSet<AccessRight>();
+        if (roles.contains(FILE_CURATOR_FOR_OTHERS)) {
+            access.add(MANAGE_RESOURCES_STANDARD);
+            access.add(MANAGE_RESOURCE_FILES);
+        }
+        return access;
+    }
+
     public PublicationOperation getOperation() {
         return operation;
-    }
-
-    public void addCurrentUserAndTopLevelAsContributor() {
-        var contributor =
-            new Contributor.Builder().withAffiliations(
-                    List.of(Organization.fromUri(getTopLevelOrgCristinId())))
-                .withIdentity(
-                    new Identity.Builder().withId(getCurrentUserInstance().getPersonCristinId())
-                        .build())
-                .withRole(new RoleType(Role.CREATOR)).build();
-        getResource().getEntityDescription().setContributors(List.of(contributor));
-    }
-
-    public void setCurrentUserAsFileCurator() {
-        addUserRole(AccessRight.MANAGE_RESOURCES_STANDARD);
-        addUserRole(AccessRight.MANAGE_RESOURCE_FILES);
-
-        var topLevelOrgCristinId = getTopLevelOrgCristinId();
-        var curatingInstitutions = Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet()));
-
-        getResource().setCuratingInstitutions(curatingInstitutions);
-    }
-
-    public static class UserScenarioContext {
-
-        public String userIdentifier = randomString();
-        public URI customerId = randomUri();
-        public URI personCristinId = randomUri();
-        public Set<AccessRight> accessRights = new HashSet<>();
-        public URI topLevelOrgCristinId = randomUri();
     }
 }
