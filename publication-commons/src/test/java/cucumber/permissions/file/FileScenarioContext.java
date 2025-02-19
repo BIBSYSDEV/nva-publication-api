@@ -76,7 +76,7 @@ public final class FileScenarioContext {
     public FilePermissions getFilePermissions() {
         var access = getAccessRights(roles);
 
-        var isUnauthenticated = roles.contains(UNAUTHENTICATED)|| roles.isEmpty();
+        var isUnauthenticated = roles.contains(UNAUTHENTICATED) || roles.isEmpty();
         var isExternalClient = roles.contains(EXTERNAL_CLIENT);
         var user = getUserInstance(access, isUnauthenticated, isExternalClient);
 
@@ -118,13 +118,10 @@ public final class FileScenarioContext {
 
     private static UserInstance getUserInstance(HashSet<AccessRight> access, boolean isUnauthenticated,
                                                 boolean isExternalClient) {
-        UserInstance user;
         if (isUnauthenticated) {
-            user = null;
-        } else {
-            user = isExternalClient ? createExternalUser() : createInternalUser(access, randomUri());
+            return null;
         }
-        return user;
+        return isExternalClient ? createExternalUser() : createInternalUser(access, randomUri());
     }
 
     private static HashSet<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
