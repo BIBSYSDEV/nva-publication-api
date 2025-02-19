@@ -1,17 +1,34 @@
 package cucumber.permissions.file;
 
-import static cucumber.permissions.file.FileScenarioContext.FileRelationship.SAME_ORG;
+import static cucumber.permissions.PermissionsRole.EXTERNAL_CLIENT;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE_EMBARGO;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_OTHERS;
+import static cucumber.permissions.PermissionsRole.FILE_OWNER;
+import static cucumber.permissions.PermissionsRole.OTHER_CONTRIBUTORS;
+import static cucumber.permissions.PermissionsRole.UNAUTHENTICATED;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import cucumber.permissions.PermissionsRole;
 import java.net.URI;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.Identity;
@@ -20,90 +37,130 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.file.FilePermissions;
 import nva.commons.apigateway.AccessRight;
 
-public class FileScenarioContext {
+public final class FileScenarioContext {
 
-    private final FileContext fileContext = new FileContext();
-    private final UserScenarioContext userContext = new UserScenarioContext();
     private FileOperation fileOperation;
-    private Resource resource;
+    private Class<File> fileType;
+    private boolean fileBelongsToSameOrg = false;
+    private boolean isDegree = false;
+    private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
+    private Set<PermissionsRole> roles = new HashSet<>();
+    private boolean isEmbargo = false;
 
-    public void setFile(File file) {
-        fileContext.file = file;
+    private static final Map<PermissionsRole, Set<AccessRight>> roleToAccessRightsMap = Map.of(
+        FILE_CURATOR_FOR_OTHERS, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES),
+        FILE_CURATOR_DEGREE_EMBARGO, Set.of(AccessRight.MANAGE_DEGREE, AccessRight.MANAGE_DEGREE_EMBARGO),
+        FILE_CURATOR_DEGREE, Set.of(AccessRight.MANAGE_DEGREE),
+        FILE_CURATOR_FOR_GIVEN_FILE, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES)
+    );
+
+    public void setFileType(String fileType) throws ClassNotFoundException {
+        this.fileType = getFileType(fileType);
     }
 
-    public void setFileRelationship(FileRelationship owner) {
-        fileContext.relationship = owner;
+    public void setIsDegree(boolean degree) {
+        this.isDegree = degree;
     }
 
-    public FileEntry getFileEntry() {
-        var owner = FileRelationship.OWNER.equals(fileContext.relationship) ? getCurrentUserInstance() : getOtherUserInstance();
-        return FileEntry.create(fileContext.file, getResource().getIdentifier(), owner);
+    public void setPublicationStatus(PublicationStatus publicationStatus) {
+        this.publicationStatus = publicationStatus;
     }
 
-    public UserInstance getCurrentUserInstance() {
-        if (userContext.isAuthenticated) {
-            return isInternalUser() ? createInternalUser() : createExternalUser();
-        } else {
+    public void setRoles(Set<PermissionsRole> roles) {
+        this.roles = roles;
+    }
+
+    public void setIsEmbargo(boolean embargo) {
+        this.isEmbargo = embargo;
+    }
+
+    public void setFileBelongsToSameOrg(boolean fileBelongsToSameOrg) {
+        this.fileBelongsToSameOrg = fileBelongsToSameOrg;
+    }
+
+    public FilePermissions getFilePermissions() {
+        var access = getAccessRights(roles);
+
+        var isUnauthenticated = roles.contains(UNAUTHENTICATED) || roles.isEmpty();
+        var isExternalClient = roles.contains(EXTERNAL_CLIENT);
+        var user = getUserInstance(access, isUnauthenticated, isExternalClient);
+
+        var topLevelOrgCristinId = getTopLevelOrgCristinId(user, roles);
+
+        var currentUserIsContributor = roles.contains(OTHER_CONTRIBUTORS);
+        var contributors =  getContributors(user, currentUserIsContributor);
+
+        var randomResource = Resource.fromPublication(isDegree ? randomDegreePublication() : randomNonDegreePublication());
+
+        var currentUserIsFileOwner = roles.contains(FILE_OWNER);
+        var fileEntry = getFileEntry(topLevelOrgCristinId, user, randomResource, fileBelongsToSameOrg, isEmbargo,
+                                     fileType, currentUserIsFileOwner);
+
+        var customerId =  nonNull(user) ? user.getCustomerId() : randomUri();
+        var resource = randomResource.copy()
+                           .withStatus(publicationStatus)
+                           .withPublisher(new Organization.Builder().withId(customerId).build())
+                           .withEntityDescription(
+                               randomResource.getEntityDescription().copy().withContributors(contributors).build())
+                           .withCuratingInstitutions(
+                               Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet())))
+                           .build();
+
+        return new FilePermissions(fileEntry, user, resource);
+    }
+
+    private static URI getTopLevelOrgCristinId(UserInstance user, Set<PermissionsRole> roles) {
+        return nonNull(user) && isCurrentUserCuratorOnResource(roles) ? user.getTopLevelOrgCristinId() :  randomUri();
+    }
+
+    private static FileEntry getFileEntry(URI topLevelOrgCristinId, UserInstance user, Resource random,
+                                          boolean fileBelongsToSameOrg, boolean isEmbargo,
+                                          Class<File> fileType, boolean isOwner) {
+        var fileAffiliation = fileBelongsToSameOrg ? topLevelOrgCristinId : randomUri();
+        var fileOwner =  isOwner ? user : createInternalUser(Collections.emptySet(), fileAffiliation);
+        return FileEntry.create(createFile(isEmbargo, fileType), random.getIdentifier(), fileOwner);
+    }
+
+    private static UserInstance getUserInstance(Set<AccessRight> access, boolean isUnauthenticated,
+                                                boolean isExternalClient) {
+        if (isUnauthenticated) {
             return null;
         }
+        return isExternalClient ? createExternalUser() : createInternalUser(access, randomUri());
     }
 
-    public void setCurrentUserAsNotAuthenticated() {
-        userContext.isAuthenticated = false;
+    private static Set<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
+        return roles.stream()
+            .filter(roleToAccessRightsMap::containsKey)
+            .flatMap(role -> roleToAccessRightsMap.get(role).stream())
+            .collect(Collectors.toSet());
     }
 
-    public void setCurrentUserAsDegreeEmbargoFileCuratorForGivenFile() {
-        addUserRole(AccessRight.MANAGE_DEGREE);
-        addUserRole(AccessRight.MANAGE_DEGREE_EMBARGO);
-
-        var topLevelOrgCristinId = getTopLevelOrgCristinId();
-        var curatingInstitutions = Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet()));
-
-        getResource().setCuratingInstitutions(curatingInstitutions);
+    private static boolean isCurrentUserCuratorOnResource(Set<PermissionsRole> roles) {
+        return Set.of(FILE_CURATOR_DEGREE, FILE_CURATOR_DEGREE_EMBARGO, FILE_CURATOR_FOR_GIVEN_FILE,
+                      FILE_CURATOR_FOR_OTHERS)
+                   .stream()
+                   .anyMatch(roles::contains);
     }
 
-    public void setCurrentUserAsFileCuratorForGivenFile() {
-        setCurrentUserAsFileCurator();
-        setFileRelationship(SAME_ORG);
+    @SuppressWarnings("unchecked")
+    private static Class<File> getFileType(String fileType) throws ClassNotFoundException {
+        return (Class<File>) Class.forName(File.class.getPackageName() + "." + fileType);
     }
 
-    public void setCurrentUserAsDegreeFileCuratorForGivenFile() {
-        addUserRole(AccessRight.MANAGE_DEGREE);
-        setFileRelationship(SAME_ORG);
-
-        var topLevelOrgCristinId = getTopLevelOrgCristinId();
-        var curatingInstitutions = Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet()));
-
-        getResource().setCuratingInstitutions(curatingInstitutions);
-    }
-
-    private UserInstance createExternalUser() {
+    private static UserInstance createExternalUser() {
         return UserInstance.createExternalUser(
-            new ResourceOwner(new Username(userContext.userIdentifier), userContext.topLevelOrgCristinId),
-            userContext.customerId);
+            new ResourceOwner(new Username(randomString()), randomUri()), randomUri());
     }
 
-    private UserInstance createInternalUser() {
-        return UserInstance.create(userContext.userIdentifier, userContext.customerId, userContext.personCristinId,
-                                   userContext.accessRights.stream().toList(),
-                                   userContext.topLevelOrgCristinId);
-    }
-
-    private boolean isInternalUser() {
-        return userContext.userClientType == UserClientType.INTERNAL;
-    }
-
-    public UserInstance getOtherUserInstance() {
-        var otherUserContext = new UserScenarioContext();
-        return UserInstance.create(otherUserContext.userIdentifier, otherUserContext.customerId,
-                                   otherUserContext.personCristinId,
-                                   otherUserContext.accessRights.stream().toList(),
-                                   fileContext.relationship.equals(SAME_ORG) ?
-                                       userContext.topLevelOrgCristinId : randomUri());
+    private static UserInstance createInternalUser(Set<AccessRight> accessRights, URI topLevelOrgCristinId) {
+        return UserInstance.create(randomString(), randomUri(), randomUri(),
+                                   accessRights.stream().toList(),
+                                   topLevelOrgCristinId);
     }
 
     public void setFileOperation(FileOperation action) {
@@ -114,71 +171,26 @@ public class FileScenarioContext {
         return fileOperation;
     }
 
-    public Resource getResource() {
-        return resource;
+    private static List<Contributor> getContributors(UserInstance user, boolean isContributor) {
+        return nonNull(user) && isContributor ? List.of(createContributor(user)) : new ArrayList<>();
     }
 
-    public void setResource(Resource resource) {
-        this.resource = resource;
+    private static Contributor createContributor(UserInstance user) {
+        return new Contributor.Builder().withAffiliations(
+                List.of(Organization.fromUri(user.getTopLevelOrgCristinId())))
+                   .withIdentity(
+                       new Identity.Builder().withId(
+                               user.getPersonCristinId())
+                           .build())
+                   .withRole(new RoleType(Role.CREATOR))
+                   .build();
     }
 
-    public void addUserRole(AccessRight accessRight) {
-        userContext.accessRights.add(accessRight);
-    }
-
-    public URI getTopLevelOrgCristinId() {
-        return userContext.topLevelOrgCristinId;
-    }
-
-    public void setUserClientType(UserClientType userClientType) {
-        userContext.userClientType = userClientType;
-    }
-
-    public void setPublisherId(URI customerId) {
-        resource.setPublisher(new Organization.Builder().withId(customerId).build());
-    }
-
-    public void addCurrentUserAndTopLevelAsContributor() {
-        var contributor =
-            new Contributor.Builder().withAffiliations(
-                    List.of(Organization.fromUri(getTopLevelOrgCristinId())))
-                .withIdentity(
-                    new Identity.Builder().withId(getCurrentUserInstance().getPersonCristinId())
-                        .build())
-                .withRole(new RoleType(Role.CREATOR)).build();
-        getResource().getEntityDescription().setContributors(List.of(contributor));
-    }
-
-    public void setCurrentUserAsFileCurator() {
-        addUserRole(AccessRight.MANAGE_RESOURCES_STANDARD);
-        addUserRole(AccessRight.MANAGE_RESOURCE_FILES);
-
-        var topLevelOrgCristinId = getTopLevelOrgCristinId();
-        var curatingInstitutions = Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet()));
-
-        getResource().setCuratingInstitutions(curatingInstitutions);
-    }
-
-    public static class UserScenarioContext {
-
-        public String userIdentifier = randomString();
-        public URI customerId = randomUri();
-        public URI personCristinId = randomUri();
-        public Set<AccessRight> accessRights = new HashSet<>();
-        public URI topLevelOrgCristinId = randomUri();
-        public UserClientType userClientType = UserClientType.INTERNAL;
-        public boolean isAuthenticated = true;
-    }
-
-    public static class FileContext {
-
-        public File file;
-        public FileRelationship relationship = FileRelationship.NO_RELATION;
-    }
-
-    public enum FileRelationship {
-        OWNER,
-        NO_RELATION,
-        SAME_ORG
+    private static File createFile(boolean isEmbargo, Class<File> fileType) {
+        var file = File.builder();
+        if (isEmbargo) {
+            file.withEmbargoDate(Instant.now().plus(100, DAYS));
+        }
+        return file.build(fileType);
     }
 }

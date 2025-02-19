@@ -15,6 +15,6 @@ public class EmbargoCuratorFileGrantStrategy extends FileStrategyBase implements
 
     @Override
     public boolean allowsAction(FileOperation permission) {
-        return fileIsFinalized() && fileHasEmbargo() && !resourceIsDegree() && currentUserIsDegreeFileCuratorForGivenFile();
+        return fileIsFinalized() && fileHasEmbargo() && !resourceIsDegree() && currentUserIsFileCurator();
     }
 }
