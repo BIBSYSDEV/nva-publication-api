@@ -310,7 +310,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return publicationUpdate;
     }
 
-    private ArrayList<TransactWriteItem> createUpdateResourceTransactionItems(Resource resource,
+    private List<TransactWriteItem> createUpdateResourceTransactionItems(Resource resource,
                                                                               UserInstance userInstance,
                                                                               Resource persistedResource) {
         var transactionItems = new ArrayList<TransactWriteItem>();
