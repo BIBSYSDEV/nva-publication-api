@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.FileOperation;
@@ -48,6 +50,13 @@ public final class FileScenarioContext {
     private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
     private Set<PermissionsRole> roles = new HashSet<>();
     private boolean isEmbargo = false;
+
+    private static final Map<PermissionsRole, Set<AccessRight>> roleToAccessRightsMap = Map.of(
+        FILE_CURATOR_FOR_OTHERS, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES),
+        FILE_CURATOR_DEGREE_EMBARGO, Set.of(AccessRight.MANAGE_DEGREE, AccessRight.MANAGE_DEGREE_EMBARGO),
+        FILE_CURATOR_DEGREE, Set.of(AccessRight.MANAGE_DEGREE),
+        FILE_CURATOR_FOR_GIVEN_FILE, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES)
+    );
 
     public void setFileType(String fileType) throws ClassNotFoundException {
         this.fileType = getFileType(fileType);
@@ -116,7 +125,7 @@ public final class FileScenarioContext {
         return FileEntry.create(createFile(isEmbargo, fileType), random.getIdentifier(), fileOwner);
     }
 
-    private static UserInstance getUserInstance(HashSet<AccessRight> access, boolean isUnauthenticated,
+    private static UserInstance getUserInstance(Set<AccessRight> access, boolean isUnauthenticated,
                                                 boolean isExternalClient) {
         if (isUnauthenticated) {
             return null;
@@ -124,27 +133,11 @@ public final class FileScenarioContext {
         return isExternalClient ? createExternalUser() : createInternalUser(access, randomUri());
     }
 
-    private static HashSet<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
-        var access = new HashSet<AccessRight>();
-        if (roles.contains(FILE_CURATOR_FOR_OTHERS)) {
-            access.add(AccessRight.MANAGE_RESOURCES_STANDARD);
-            access.add(AccessRight.MANAGE_RESOURCE_FILES);
-        }
-
-        if (roles.contains(FILE_CURATOR_DEGREE_EMBARGO)) {
-            access.add(AccessRight.MANAGE_DEGREE);
-            access.add(AccessRight.MANAGE_DEGREE_EMBARGO);
-        }
-
-        if (roles.contains(FILE_CURATOR_DEGREE)) {
-            access.add(AccessRight.MANAGE_DEGREE);
-        }
-
-        if (roles.contains(FILE_CURATOR_FOR_GIVEN_FILE)) {
-            access.add(AccessRight.MANAGE_RESOURCES_STANDARD);
-            access.add(AccessRight.MANAGE_RESOURCE_FILES);
-        }
-        return access;
+    private static Set<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
+        return roles.stream()
+            .filter(roleToAccessRightsMap::containsKey)
+            .flatMap(role -> roleToAccessRightsMap.get(role).stream())
+            .collect(Collectors.toSet());
     }
 
     private static boolean isCurrentUserCuratorOnResource(Set<PermissionsRole> roles) {
