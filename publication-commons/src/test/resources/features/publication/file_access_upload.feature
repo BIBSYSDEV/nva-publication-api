@@ -8,15 +8,15 @@ Feature: File upload permissions
 
 
   Scenario Outline: Verify file upload permissions
-    Given a file of type "<FileType>"
+    Given a "published" publication
     When the user have the role "<UserRole>"
     And the user attempts to "upload-file"
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | FileType     | UserRole                             | Outcome     |
-      | UploadedFile | Publication owner                    | Allowed     |
-      | UploadedFile | Contributor                          | Allowed     |
-      | UploadedFile | File curators for other contributors | Allowed     |
-      | UploadedFile | Everyone else                        | Not Allowed |
-      | UploadedFile | External client                      | Not Allowed |
+      | UserRole                             | Outcome     |
+      | Publication owner                    | Allowed     |
+      | Contributor                          | Allowed     |
+      | File curators for other contributors | Allowed     |
+      | Everyone else                        | Not Allowed |
+      | External client                      | Not Allowed |
