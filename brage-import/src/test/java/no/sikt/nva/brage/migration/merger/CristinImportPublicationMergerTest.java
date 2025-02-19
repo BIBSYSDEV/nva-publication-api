@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.net.URI;
 import java.time.Year;
 import java.util.ArrayList;
@@ -708,7 +709,7 @@ class CristinImportPublicationMergerTest {
         bragePublication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
         var updatedPublication = mergePublications(existingPublication, bragePublication);
 
-        Assertions.assertEquals(bragePublication.getEntityDescription().getPublicationDate(),
+        assertEquals(bragePublication.getEntityDescription().getPublicationDate(),
                                 updatedPublication.getEntityDescription().getPublicationDate());
     }
 
