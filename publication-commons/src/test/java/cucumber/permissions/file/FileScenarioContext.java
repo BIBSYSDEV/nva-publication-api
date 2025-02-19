@@ -92,7 +92,7 @@ public final class FileScenarioContext {
         var topLevelOrgCristinId = getTopLevelOrgCristinId(user, roles);
 
         var currentUserIsContributor = roles.contains(OTHER_CONTRIBUTORS);
-        var contributors =  getContributors(topLevelOrgCristinId, user, currentUserIsContributor);
+        var contributors =  getContributors(user, currentUserIsContributor);
 
         var randomResource = Resource.fromPublication(isDegree ? randomDegreePublication() : randomNonDegreePublication());
 
@@ -171,17 +171,19 @@ public final class FileScenarioContext {
         return fileOperation;
     }
 
-    private static List<Contributor> getContributors(URI topLevelOrgCristinId, UserInstance user,
-                                                     boolean isContributor) {
-        return nonNull(user) && isContributor ? List.of(new Contributor.Builder().withAffiliations(
-                List.of(Organization.fromUri(topLevelOrgCristinId)))
-                                                            .withIdentity(
-                                                                new Identity.Builder().withId(
-                                                                        user.getPersonCristinId())
-                                                                    .build())
-                                                            .withRole(new RoleType(Role.CREATOR))
-                                                            .build()) :
-                                                                          new ArrayList<>();
+    private static List<Contributor> getContributors(UserInstance user, boolean isContributor) {
+        return nonNull(user) && isContributor ? List.of(createContributor(user)) : new ArrayList<>();
+    }
+
+    private static Contributor createContributor(UserInstance user) {
+        return new Contributor.Builder().withAffiliations(
+                List.of(Organization.fromUri(user.getTopLevelOrgCristinId())))
+                   .withIdentity(
+                       new Identity.Builder().withId(
+                               user.getPersonCristinId())
+                           .build())
+                   .withRole(new RoleType(Role.CREATOR))
+                   .build();
     }
 
     private static File createFile(boolean isEmbargo, Class<File> fileType) {
