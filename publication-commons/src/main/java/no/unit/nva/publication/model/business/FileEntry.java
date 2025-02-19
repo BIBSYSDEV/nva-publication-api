@@ -218,10 +218,10 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
                                                 .formatted(this.file.getClass().getSimpleName(),
                                                            file.getClass().getSimpleName()));
         }
-        if ((this.file instanceof OpenFile || this.file instanceof InternalFile || this.file instanceof HiddenFile) && file instanceof PendingFile<?,?>) {
+        if (shouldRetractFile(file)) {
             this.setFileEvent(FileRetractedEvent.create(userInstance.getUser(), Instant.now()));
         }
-        if (!(this.file instanceof HiddenFile) && file instanceof HiddenFile) {
+        if (shouldHideFile(file)) {
             this.setFileEvent(FileHiddenEvent.create(userInstance.getUser(), Instant.now()));
         }
         if (!file.equals(this.file)) {
@@ -235,6 +235,16 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
             this.modifiedDate = Instant.now();
         }
         return this;
+    }
+
+    private boolean shouldHideFile(File file) {
+        return !(this.file instanceof HiddenFile) && file instanceof HiddenFile;
+    }
+
+    private boolean shouldRetractFile(File file) {
+        return
+            (this.file instanceof OpenFile || this.file instanceof InternalFile || this.file instanceof HiddenFile) &&
+            file instanceof PendingFile<?, ?>;
     }
 
     public void approve(ResourceService resourceService, User user) {
