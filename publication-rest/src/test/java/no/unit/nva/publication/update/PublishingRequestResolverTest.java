@@ -75,8 +75,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var pendingOpenFile = randomPendingOpenFile();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile, openFile)));
         var persistedPublication = persistPublication(publication);
-        resourceService.publishPublication(UserInstance.fromPublication(publication),
-                                           persistedPublication.getIdentifier());
+        Resource.fromPublication(persistedPublication).publish(resourceService, UserInstance.fromPublication(publication));
         persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
         var publicationUpdateRemovingUnpublishedFiles = persistedPublication.copy()
                                                             .withAssociatedArtifacts(List.of(openFile))
@@ -147,7 +146,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = resourceService.createPublication(userInstance,
                                                                      publication);
-        resourceService.publishPublication(userInstance, persistedPublication.getIdentifier());
+        Resource.fromPublication(persistedPublication).publish(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 

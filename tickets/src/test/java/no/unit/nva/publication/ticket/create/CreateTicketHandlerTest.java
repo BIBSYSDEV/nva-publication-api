@@ -1003,7 +1003,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         publication.setDoi(null); // for creating DoiRequests
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
@@ -1012,7 +1012,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         publication.setDoi(null); // for creating DoiRequests
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
