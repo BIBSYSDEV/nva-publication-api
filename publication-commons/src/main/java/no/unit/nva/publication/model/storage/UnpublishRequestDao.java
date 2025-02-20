@@ -14,7 +14,7 @@ import nva.commons.core.JacocoGenerated;
 public class UnpublishRequestDao extends TicketDao implements JoinWithResource, JsonSerializable {
 
     public static final String TYPE = "UnpublishRequest";
-    public static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "e";
+    public static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = TicketDao.ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE;
 
     @JacocoGenerated
     public UnpublishRequestDao() {

@@ -144,7 +144,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
 
     @JacocoGenerated
     public CristinArtisticProduction() {
-
+        // NO-OP
     }
 
     @JsonIgnore
@@ -323,7 +323,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     private boolean isStreaming(String medium) {
         var pattern = Pattern.compile(
             ".*((strøm)|(Spotify)|(Stream)|(YouTube)|(vimeo))+.*",
-            Pattern.CASE_INSENSITIVE);
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
         var matcher = pattern.matcher(medium);
         return matcher.matches();
     }
@@ -340,7 +340,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     @JsonIgnore
     private boolean isVinyl(String medium) {
         var pattern = Pattern.compile(
-            ".*((Plateinnspilling)|(LP))+.*",
+            ".*(Plateinnspilling|LP)+.*",
             Pattern.CASE_INSENSITIVE);
         var matcher = pattern.matcher(medium);
         return matcher.matches();
@@ -349,7 +349,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     @JsonIgnore
     private boolean isCompactDisc(String medium) {
         var pattern = Pattern.compile(
-            ".*((CD)|(Album))+.*",
+            ".*(CD|Album)+.*",
             Pattern.CASE_INSENSITIVE);
         var matcher = pattern.matcher(medium);
         return matcher.matches();
@@ -384,7 +384,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     private String extractExtent() {
         return Optional.ofNullable(artisticProductionTimeUnit)
                    .map(ArtisticProductionTimeUnit::timeUnitIsInMinutes)
-                   .map(timeIsInMinutes -> timeIsInMinutes ? duration : null)
+                   .map(timeIsInMinutes -> Boolean.TRUE.equals(timeIsInMinutes) ? duration : null)
                    .orElse(null);
     }
 
