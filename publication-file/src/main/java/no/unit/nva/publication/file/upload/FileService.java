@@ -152,7 +152,7 @@ public class FileService {
                             .fetch(resourceService)
                             .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE));
 
-        fileEntry.update(file, resourceService);
+        fileEntry.update(file, userInstance, resourceService);
     }
 
     private static void validateDeletePermissions(UserInstance userInstance, Resource resource)

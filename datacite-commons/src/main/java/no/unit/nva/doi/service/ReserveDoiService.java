@@ -47,7 +47,7 @@ public class ReserveDoiService {
                                   .withDoi(doi)
                                   .withResourceEvent(DoiReservedEvent.create(userInstance, Instant.now()))
                                   .build();
-        resourceService.updateResource(updatedResource);
+        resourceService.updateResource(updatedResource, userInstance);
         return new DoiResponse(doi);
     }
 }

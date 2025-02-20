@@ -16,12 +16,17 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -202,16 +207,22 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         resourceIdentifier.deleteFile(this);
     }
 
-    public void update(File fileUpdate, ResourceService resourceService) {
-        update(fileUpdate);
+    public void update(File file, UserInstance userInstance, ResourceService resourceService) {
+        update(file, userInstance);
         resourceService.updateFile(this);
     }
 
-    public FileEntry update(File file) {
+    public FileEntry update(File file, UserInstance userInstance) {
         if (!this.file.canBeConvertedTo(file)) {
             throw new IllegalStateException("%s cannot be updated to %s"
                                                 .formatted(this.file.getClass().getSimpleName(),
                                                            file.getClass().getSimpleName()));
+        }
+        if (shouldRetractFile(file)) {
+            this.setFileEvent(FileRetractedEvent.create(userInstance.getUser(), Instant.now()));
+        }
+        if (shouldHideFile(file)) {
+            this.setFileEvent(FileHiddenEvent.create(userInstance.getUser(), Instant.now()));
         }
         if (!file.equals(this.file)) {
             this.file = this.file.copy()
@@ -224,6 +235,16 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
             this.modifiedDate = Instant.now();
         }
         return this;
+    }
+
+    private boolean shouldHideFile(File file) {
+        return !(this.file instanceof HiddenFile) && file instanceof HiddenFile;
+    }
+
+    private boolean shouldRetractFile(File file) {
+        return
+            (this.file instanceof OpenFile || this.file instanceof InternalFile || this.file instanceof HiddenFile) &&
+            file instanceof PendingFile<?, ?>;
     }
 
     public void approve(ResourceService resourceService, User user) {

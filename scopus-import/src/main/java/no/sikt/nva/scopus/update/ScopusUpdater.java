@@ -41,7 +41,8 @@ public class ScopusUpdater {
         throws NotFoundException {
         var existingImportCandidate = fetchImportCandidate(getScopusIdentifier(importCandidate));
         if (nonNull(existingImportCandidate)) {
-            var persistedImportcandidate = resourceService.getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
+            var persistedImportcandidate = resourceService
+                                               .getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
             return updateImportCandidate(importCandidate, persistedImportcandidate);
         }
         return importCandidate;

@@ -151,7 +151,7 @@ public class UpdatePublicationHandler
         var updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
-                                                                                existingResource.toPublication(),
+                                                                                existingResource,
                                                                                 permissionStrategy,
                                                                                 userInstance);
 
@@ -266,36 +266,33 @@ public class UpdatePublicationHandler
                    .build();
     }
 
-    // TODO: Move file update to resourceService and perform update in single transaction
     private Resource updateMetadata(UpdatePublicationRequest input,
-                                       SortableIdentifier identifierInPath,
-                                       Publication existingPublication,
-                                       PublicationPermissions permissionStrategy,
-                                       UserInstance userInstance)
+                                    SortableIdentifier identifierInPath,
+                                    Resource resource,
+                                    PublicationPermissions permissionStrategy,
+                                    UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
 
-        if (openFilesAreUnchanged(existingPublication, input)) {
+        if (openFilesAreUnchanged(resource, input)) {
             permissionStrategy.authorize(UPDATE);
         } else {
             permissionStrategy.authorize(UPDATE_FILES);
         }
 
-        var publicationUpdate = input.generatePublicationUpdate(existingPublication);
+        var publicationUpdate = input.generatePublicationUpdate(resource.toPublication());
 
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
-        validatePublication(publicationUpdate, existingPublication, customer);
-        updateAssociatedArtifactList(existingPublication.getAssociatedArtifacts(),
+        validatePublication(publicationUpdate, resource.toPublication(), customer);
+        updateAssociatedArtifactList(resource.getAssociatedArtifacts(),
                                      publicationUpdate.getAssociatedArtifacts(),
                                      extractUploadDetails(userInstance));
-        setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
+        setRrsOnFiles(publicationUpdate, resource.toPublication(), customer, userInstance.getUsername(), permissionStrategy);
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
-            .resolve(existingPublication, publicationUpdate);
+            .resolve(resource.toPublication(), publicationUpdate);
 
-        resourceService.updatePublication(publicationUpdate);
-
-        return Resource.resourceQueryObject(identifierInPath).fetch(resourceService).orElseThrow();
+        return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
     }
 
     private static UserUploadDetails extractUploadDetails(UserInstance userInstance) {
@@ -322,12 +319,12 @@ public class UpdatePublicationHandler
     }
 
     //TODO: Should this method also compare changes of internal files?
-    private static boolean openFilesAreUnchanged(Publication existingPublication,
+    private static boolean openFilesAreUnchanged(Resource resource,
                                                  UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
                              .filter(OpenFile.class::isInstance)
                              .map(OpenFile.class::cast).toList();
-        var existingFiles = existingPublication.getAssociatedArtifacts().stream()
+        var existingFiles = resource.getAssociatedArtifacts().stream()
                                 .filter(OpenFile.class::isInstance)
                                 .map(OpenFile.class::cast);
         return existingFiles.allMatch(inputFiles::contains);

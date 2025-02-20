@@ -278,8 +278,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .toList();
     }
 
-    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
+    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
     }
 
@@ -352,12 +351,8 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updatePublicationButDoNotChangeStatus(resourceUpdate);
     }
 
-    public void updateResource(Resource resource) {
-        resource.setModifiedDate(Instant.now());
-        var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
-        associatedArtifacts.removeIf(File.class::isInstance);
-        resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-        updateResourceService.updateResource(resource);
+    public Resource updateResource(Resource resource, UserInstance userInstance) {
+        return updateResourceService.updateResource(resource, userInstance);
     }
 
     // update this method according to current needs.

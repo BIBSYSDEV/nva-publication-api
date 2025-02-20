@@ -9,6 +9,8 @@ public enum LogTopic {
     FILE_REJECTED("FileRejected"),
     FILE_UPLOADED("FileUploaded"),
     FILE_IMPORTED("FileImported"),
+    FILE_RETRACTED("FileRetracted"),
+    FILE_HIDDEN("FileHidden"),
     FILE_DELETED("FileDeleted"),
     DOI_RESERVED("DoiReserved"),
     DOI_REQUESTED("DoiRequested"),
