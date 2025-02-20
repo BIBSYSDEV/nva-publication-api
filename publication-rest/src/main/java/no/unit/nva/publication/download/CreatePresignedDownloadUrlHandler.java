@@ -4,16 +4,16 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.FileOperation;
 import no.unit.nva.publication.download.exception.S3ServiceException;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permissions.publication.PublicationPermissions;
+import no.unit.nva.publication.permissions.file.FilePermissions;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -80,47 +80,38 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
     protected PresignedUriResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var publicationId = RequestUtil.getIdentifier(requestInfo);
-        var fileIdentifier = RequestUtil.getFileIdentifier(requestInfo);
+        var fileIdentifier = RequestUtil.getFileEntryIdentifier(requestInfo);
 
-        var publication = resourceService.getPublicationByIdentifier(publicationId);
-        var file =  publication.getFile(fileIdentifier);
+        var publication = resourceService.getResourceByIdentifier(publicationId);
+        var file = publication.getFileEntry(fileIdentifier);
 
         if (file.isEmpty() || !hasFileAccess(publication, file.get(), requestInfo)) {
             throw new NotFoundException(
                 String.format(REQUESTED_RESOURCE_NOT_FOUND, publication.getIdentifier(), fileIdentifier));
         }
 
-        return getPresignedUriResponse(file.get());
+        return getPresignedUriResponse(file.get().getFile());
     }
 
     private PresignedUriResponse getPresignedUriResponse(File file) throws S3ServiceException {
         var expiration = defaultExpiration();
         var preSignedUriLong = getPresignedDownloadUrl(file, expiration);
         var shortenedPresignUri = uriShortener.shorten(preSignedUriLong.id(), basePath, expiration);
-        return new PresignedUriResponse(file.getIdentifier().toString(), preSignedUriLong.id(), expiration, shortenedPresignUri);
+        return new PresignedUriResponse(file.getIdentifier().toString(), preSignedUriLong.id(), expiration,
+                                        shortenedPresignUri);
     }
 
-    private boolean hasFileAccess(Publication publication, File file, RequestInfo requestInfo) {
-        return userHasUpdatePermission(publication, requestInfo) || fileIsVisibleForNonOwner(publication, file);
+    private boolean hasFileAccess(Resource publication, FileEntry file, RequestInfo requestInfo) {
+        var userInstance = getUserInstance(requestInfo);
+        var permissions = FilePermissions.create(file, userInstance, publication);
+        return permissions.allowsAction(FileOperation.DOWNLOAD);
     }
 
-    private boolean fileIsVisibleForNonOwner(Publication publication, File file) {
-        return isPublicationPublished(publication) && file.isVisibleForNonOwner();
-    }
-
-    private boolean isPublicationPublished(Publication publication) {
-        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
-    }
-
-    private boolean userHasUpdatePermission(Publication publication, RequestInfo requestInfo) {
-        return attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(user -> hasUpdatePermission(publication, user))
-                   .orElse(false);
-    }
-
-    private boolean hasUpdatePermission(Publication publication, UserInstance user) {
-        return PublicationPermissions.create(publication, user)
-                   .allowsAction(PublicationOperation.UPDATE);
+    private UserInstance getUserInstance(RequestInfo requestInfo) {
+        return attempt(() ->
+                           RequestUtil.createUserInstanceFromRequest(requestInfo,
+                                                                     identityServiceClient))
+                   .toOptional().orElse(null);
     }
 
     @JacocoGenerated

@@ -24,6 +24,7 @@ public final class RequestUtil {
     public static final String FILE_IDENTIFIER = "fileIdentifier";
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
+    public static final String COULD_NOT_GET_FILE_IDENTIFIER = "Could not get file identifier!";
 
     private RequestUtil() {
     }
@@ -58,7 +59,14 @@ public final class RequestUtil {
         return Optional.ofNullable(requestInfo.getPathParameters())
                    .map(params -> params.get(FILE_IDENTIFIER))
                    .map(UUID::fromString)
-                   .orElseThrow(() -> new BadRequestException("Could not get file identifier!"));
+                   .orElseThrow(() -> new BadRequestException(COULD_NOT_GET_FILE_IDENTIFIER));
+    }
+
+    public static SortableIdentifier getFileEntryIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
+        return Optional.ofNullable(requestInfo.getPathParameters())
+                   .map(params -> params.get(FILE_IDENTIFIER))
+                   .map(SortableIdentifier::new)
+                   .orElseThrow(() -> new BadRequestException(COULD_NOT_GET_FILE_IDENTIFIER));
     }
 
     /**
