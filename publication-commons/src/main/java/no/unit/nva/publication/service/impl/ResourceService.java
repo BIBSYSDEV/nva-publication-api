@@ -278,8 +278,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .toList();
     }
 
-    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
+    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
     }
 

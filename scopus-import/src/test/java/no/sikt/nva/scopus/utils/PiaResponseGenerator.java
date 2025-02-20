@@ -42,20 +42,16 @@ public class PiaResponseGenerator {
         var authorName = randomString();
         return IntStream.range(0, randomInteger(maxNumberOfAuthors) + 1)
                    .boxed()
-                   .map(index ->
-                            generateAuthor(scopusAuthorId,
-                                           firstname,
-                                           surname,
-                                           authorName,
-                                           cristinId
-                            ))
+                   .map(index -> generateAuthor(scopusAuthorId, firstname, surname, authorName, cristinId))
                    .collect(Collectors.toList());
     }
 
     public static List<Affiliation> generateAffiliations(String cristinId) {
         var uniqueRandomIntegers = generateUniqueRandomIntegers();
-        var affiliationsWithoutNullValues = IntStream.range(0, randomInteger(20) + 1).boxed()
-                                                .map(i -> generateAffiliation(cristinId, uniqueRandomIntegers)).collect(Collectors.toList());
+        var affiliationsWithoutNullValues = IntStream.range(0, randomInteger(20) + 1)
+                                                .boxed()
+                                                .map(i -> generateAffiliation(cristinId, uniqueRandomIntegers))
+                                                .collect(Collectors.toList());
         var affiliationsWithoutUnit = IntStream.range(0, randomInteger(20) + 1)
                                           .boxed()
                                           .map(i -> generateAffiliationWithoutUnit(cristinId, uniqueRandomIntegers))
@@ -64,53 +60,44 @@ public class PiaResponseGenerator {
                                            .boxed()
                                            .map(i -> generateAffiliationWithoutCount(cristinId))
                                            .collect(Collectors.toList());
-        var affiliationsWithoutId = IntStream.range(0, randomInteger(20) + 1).boxed()
-                                        .map(i -> generateAffiliationWithoutId(cristinId, uniqueRandomIntegers)).collect(Collectors.toList());
+        var affiliationsWithoutId = IntStream.range(0, randomInteger(20) + 1)
+                                        .boxed()
+                                        .map(i -> generateAffiliationWithoutId(cristinId, uniqueRandomIntegers))
+                                        .collect(Collectors.toList());
         return Stream.of(affiliationsWithoutNullValues, affiliationsWithoutCount, affiliationsWithoutUnit,
-                         affiliationsWithoutId)
-                   .flatMap(Collection::stream)
-                   .collect(Collectors.toList());
-    }
-
-    private static Iterator<Integer> generateUniqueRandomIntegers() {
-        return new Random().ints(0, 1000)
-            .distinct()      // Ensure uniqueness
-            .limit(100)    // Limit to 'limit' integers
-            .boxed()         // Convert to Integer objects
-            .toList()
-            .iterator();
+                         affiliationsWithoutId).flatMap(Collection::stream).collect(Collectors.toList());
     }
 
     public static Affiliation generateAffiliation(String cristinId, Iterator<Integer> uniqueRandomIntegers) {
-        return new Builder()
-                   .withInstitution(cristinId)
+        return new Builder().withInstitution(cristinId)
                    .withUnit(createUnitId(cristinId))
                    .withCount(String.valueOf(uniqueRandomIntegers.next()))
                    .build();
     }
 
     public static Affiliation generateAffiliationWithoutCount(String cristinId) {
-        return new Builder()
-                   .withInstitution(cristinId)
-                   .withUnit(createUnitId(cristinId))
-                   .withCount(null)
-                   .build();
+        return new Builder().withInstitution(cristinId).withUnit(createUnitId(cristinId)).withCount(null).build();
     }
 
     public static Affiliation generateAffiliationWithoutId(String cristinId, Iterator<Integer> uniqueRandomIntegers) {
-        return new Builder()
-                   .withInstitution(null)
+        return new Builder().withInstitution(null)
                    .withUnit(createUnitId(cristinId))
                    .withCount(String.valueOf(uniqueRandomIntegers.next()))
                    .build();
     }
 
     public static Affiliation generateAffiliationWithoutUnit(String cristinId, Iterator<Integer> uniqueRandomIntegers) {
-        return new Builder()
-                   .withInstitution(cristinId)
+        return new Builder().withInstitution(cristinId)
                    .withUnit(null)
                    .withCount(String.valueOf(uniqueRandomIntegers.next()))
                    .build();
+    }
+
+    private static Iterator<Integer> generateUniqueRandomIntegers() {
+        return new Random().ints(0, 1000).distinct()      // Ensure uniqueness
+                   .limit(100)    // Limit to 'limit' integers
+                   .boxed()         // Convert to Integer objects
+                   .toList().iterator();
     }
 
     @NotNull
@@ -118,11 +105,8 @@ public class PiaResponseGenerator {
         return cristinId + "." + randomInteger() + "." + randomInteger();
     }
 
-    private static Author generateAuthor(String externalId,
-                                  String firstname,
-                                  String surname,
-                                  String authorName,
-                                  int cristinId) {
+    private static Author generateAuthor(String externalId, String firstname, String surname, String authorName,
+                                         int cristinId) {
         var author = new Author();
         author.setExternalId(externalId);
         author.setFirstname(firstname);

@@ -30,6 +30,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
@@ -181,7 +182,9 @@ public class CristinEntryEventConsumer
     }
 
     private PublicationRepresentations persistUpdatedPublication(PublicationRepresentations publicationRepresentations) {
-        resourceService.updatePublication(publicationRepresentations.getExistingPublication());
+        var userInstance = UserInstance.fromPublication(publicationRepresentations.getIncomingPublication());
+        var resource = Resource.fromPublication(publicationRepresentations.getExistingPublication());
+        resourceService.updateResource(resource, userInstance);
         return publicationRepresentations;
     }
 

@@ -1492,8 +1492,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistMergeReport()
-        throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
+    void shouldPersistMergeReport() throws IOException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DataSet.class);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
@@ -1530,8 +1529,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                     existingPublication,
                                                     nvaBrageMigrationDataGenerator.getBrageRecord().getId(), "CRISTIN");
         var storedMergeReport = JsonUtils.dtoObjectMapper.readValue(storedMergeReportString, BrageMergingReport.class);
-        var updatedPublication = resourceService.getPublication(existingPublication);
-        assertThat(storedMergeReport.oldImage(), is(equalTo(existingPublication)));
+        var updatedPublication = Resource.fromPublication(existingPublication).fetch(resourceService).orElseThrow().toPublication();
+        var expectedPublication = existingPublication.copy().withModifiedDate(storedMergeReport.oldImage()
+                                                                                           .getModifiedDate()).build();
+        assertEquals(expectedPublication, storedMergeReport.oldImage());
         assertThat(storedMergeReport.newImage(), is(equalTo(updatedPublication)));
     }
 

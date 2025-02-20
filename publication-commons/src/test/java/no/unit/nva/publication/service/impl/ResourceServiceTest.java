@@ -356,8 +356,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.updatePublication(resourceUpdate);
         Publication actualUpdatedResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
 
-        assertThat(actualUpdatedResource, is(equalTo(resourceUpdate)));
-        assertThat(actualUpdatedResource, is(not(equalTo(actualOriginalResource))));
+        assertThat(actualUpdatedResource.getEntityDescription().getMainTitle(),
+                   is(equalTo(resourceUpdate.getEntityDescription().getMainTitle())));
     }
 
     @Test

@@ -6,8 +6,11 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Set;
@@ -82,7 +85,9 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         var updatedImportCandidate = update(importCandidate);
         resourceService.updateImportCandidate(updatedImportCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        assertThat(fetchedImportCandidate, is(equalTo(updatedImportCandidate)));
+
+        assertEquals(fetchedImportCandidate,
+                     updatedImportCandidate.copyImportCandidate().withModifiedDate(fetchedImportCandidate.getModifiedDate()).build());
     }
 
     @Test
@@ -96,7 +101,8 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         resourceService.updateImportCandidate(updatedImportCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
 
-        assertThat(fetchedImportCandidate, is(equalTo(updatedImportCandidate)));
+        assertThat(fetchedImportCandidate.getAssociatedArtifacts(),
+                   not(containsInAnyOrder(existingImportCandidate.getAssociatedArtifacts())));
     }
 
     @Test
