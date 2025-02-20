@@ -154,7 +154,7 @@ Feature: Book conversion rules
     And the Series mentions a volume "Vol 1"
     And the Series mentions an issue "Issue 2"
     When the Cristin Result is converted to an NVA Resource
-    Then  the NVA Resource contains an Unconfirmed Series with title "SomeSeries", issn "2434-561X", online issn "2434-561X" and seriesNumber "Volume:Vol 1;Issue:Issue 2"
+    Then  the NVA Resource contains an Unconfirmed Series with title "SomeSeries", issn "2434-561X", online issn "2434-561X" and seriesNumber "Vol 1;Issue 2"
 
     Examples:
       | secondaryCategory |
