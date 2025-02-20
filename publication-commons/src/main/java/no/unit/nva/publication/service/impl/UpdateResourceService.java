@@ -3,16 +3,12 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -27,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
@@ -35,13 +30,9 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
@@ -53,32 +44,23 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
-import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class UpdateResourceService extends ServiceWithTransactions {
 
-    public static final String PUBLISH_COMPLETED = "Publication is published.";
-
-    public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";
     public static final String DELETION_IN_PROGRESS = "Deletion in progress. This may take a while";
     public static final String ILLEGAL_DELETE_WHEN_NOT_DRAFT =
         "Attempting to update publication to DRAFT_FOR_DELETION when current status " + "is not draft";
     //TODO: fix affiliation update when updating owner
     private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
-    private static final List<PublicationStatus> allowedPublicationStatusesForPublishing = List.of(DRAFT,
-                                                                                                   PUBLISHED_METADATA,
-                                                                                                   UNPUBLISHED);
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
@@ -209,21 +191,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return new DeletePublicationStatusResponse(DELETION_IN_PROGRESS, HttpURLConnection.HTTP_ACCEPTED);
     }
 
-    PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
-                                                        SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        var publication = readResourceService.getResourceByIdentifier(resourceIdentifier).orElseThrow().toPublication();
-        if (publicationIsPublished(publication)) {
-            return publishCompletedStatus();
-        } else if (publicationIsAllowedForPublishing(publication)) {
-            publishPublication(publication, userInstance);
-            return publishingInProgressStatus();
-        } else {
-            throw new UnsupportedPublicationStatusTransition(
-                String.format("Publication status %s is not al1lowed for publishing", publication.getStatus()));
-        }
-    }
-
     DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {
         var publication = readResourceService.getResourceByIdentifier(resourceIdentifier).orElseThrow().toPublication();
         return DELETED.equals(publication.getStatus()) ? deletionStatusIsCompleted() : delete(publication);
@@ -250,10 +217,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private static boolean isNotImported(Resource resource) {
         return !resource.toImportCandidate().getImportStatus().candidateStatus().equals(CandidateStatus.IMPORTED);
-    }
-
-    private static boolean publicationIsPublished(Publication publication) {
-        return PUBLISHED.equals(publication.getStatus());
     }
 
     private Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
@@ -346,32 +309,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .toList();
     }
 
-    /**
-     * Associated artifacts are NOT updated anymore. For now all files are just files, i.e. we do not use
-     * Published/Unpublished temporary.
-     **/
-
-    private void publishPublication(Publication publication, UserInstance userInstance)
-        throws InvalidPublicationException {
-        assertThatPublicationHasMinimumMandatoryFields(publication);
-        var persistedResource = fetchExistingResource(publication);
-        var resource = Resource.fromPublication(publication);
-        resource.setStatus(PUBLISHED);
-        var currentTime = clockForTimestamps.instant();
-        resource.setCreatedDate(persistedResource.getCreatedDate());
-        resource.setModifiedDate(currentTime);
-        resource.setPublishedDate(currentTime);
-        resource.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
-        var updateResourceTransactionItem = createPutTransaction(resource);
-        var updateTicketsTransactionItems = updateDoiRequestWhenPublicationIsPublished(resource);
-        var transactionItems = new ArrayList<TransactWriteItem>();
-        transactionItems.add(updateResourceTransactionItem);
-        transactionItems.addAll(updateTicketsTransactionItems);
-
-        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
-        sendTransactionWriteRequest(request);
-    }
-
     private DeletePublicationStatusResponse delete(Publication publication) {
         publication.setStatus(DELETED);
         publication.setPublishedDate(null);
@@ -403,23 +340,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .build();
     }
 
-    //TODO: This method is not needed
-    private List<TransactWriteItem> updateDoiRequestWhenPublicationIsPublished(Resource resource) {
-        var dao = new ResourceDao(resource);
-        var ticketDaos = dao.fetchAllTickets(getClient());
-        return ticketDaos.stream()
-                   .map(Dao::getData)
-                   .map(TicketEntry.class::cast)
-                   .filter(ticketEntry -> ticketEntry instanceof DoiRequest)
-                   .map(DoiRequest.class::cast)
-                   .map(ticket -> ticket.update(resource))
-                   .map(Entity::toDao)
-                   .map(DynamoEntry::toDynamoFormat)
-                   .map(dynamoEntry -> new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dynamoEntry))
-                   .map(put -> new TransactWriteItem().withPut(put))
-                   .collect(Collectors.toList());
-    }
-
     private TransactWriteItem createPutTransaction(Resource resourceUpdate) {
 
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
@@ -434,17 +354,5 @@ public class UpdateResourceService extends ServiceWithTransactions {
                       .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
 
         return new TransactWriteItem().withPut(put);
-    }
-
-    private PublishPublicationStatusResponse publishingInProgressStatus() {
-        return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpURLConnection.HTTP_ACCEPTED);
-    }
-
-    private PublishPublicationStatusResponse publishCompletedStatus() {
-        return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
-    }
-
-    private boolean publicationIsAllowedForPublishing(Publication publication) {
-        return allowedPublicationStatusesForPublishing.contains(publication.getStatus());
     }
 }

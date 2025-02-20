@@ -43,13 +43,10 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
@@ -217,12 +214,6 @@ public class ResourceService extends ServiceWithTransactions {
     public Publication markPublicationForDeletion(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier)).toPublication();
-    }
-
-    public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
-                                                               SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
     private Resource insertImportedResource(Resource resource, ImportSource importSource) {

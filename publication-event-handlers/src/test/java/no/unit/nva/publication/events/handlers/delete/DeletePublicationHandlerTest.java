@@ -7,7 +7,6 @@ import static org.hamcrest.Matchers.is;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.time.Clock;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Resource;
@@ -64,12 +63,12 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createPublishedResource() throws ApiGatewayException {
         Publication resource = createPersistedPublicationWithoutDoi();
         publishResource(resource);
-        return resourceService.getPublication(resource);
+        return resourceService.getPublicationByIdentifier(resource.getIdentifier());
     }
 
-    private Publication publishResource(Publication resource) throws ApiGatewayException {
-        resourceService.publishPublication(UserInstance.fromPublication(resource), resource.getIdentifier());
-        return resourceService.getPublication(resource);
+    private void publishResource(Publication publication) {
+        var resource = Resource.fromPublication(publication);
+        resource.publish(resourceService, UserInstance.fromPublication(publication));
     }
 
     private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {

@@ -310,8 +310,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var persistedPublication = persistPublication(publication);
 
         if (PublicationStatus.PUBLISHED.equals(publicationStatus)) {
-            resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                               persistedPublication.getIdentifier());
+            Resource.fromPublication(persistedPublication)
+                .publish(resourceService, UserInstance.fromPublication(persistedPublication));
         }
         return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }

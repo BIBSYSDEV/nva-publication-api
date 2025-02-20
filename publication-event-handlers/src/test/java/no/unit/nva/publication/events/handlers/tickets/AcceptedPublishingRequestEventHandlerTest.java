@@ -536,8 +536,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var persistedPublication =
                 Resource.fromPublication(publication)
                         .persistNew(resourceService, UserInstance.fromPublication(publication));
-        resourceService.publishPublication(
-                UserInstance.fromPublication(publication), persistedPublication.getIdentifier());
+        Resource.fromPublication(persistedPublication)
+            .publish(resourceService, UserInstance.fromPublication(publication));
         return persistedPublication;
     }
 
