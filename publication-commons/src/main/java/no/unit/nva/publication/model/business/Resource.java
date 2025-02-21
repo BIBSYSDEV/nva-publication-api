@@ -50,6 +50,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -323,7 +324,7 @@ public class Resource implements Entity {
 
     public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
         var userInstance = UserInstance.fromPublication(this.toPublication());
-        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
+        this.setResourceEvent(MergedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
         resourceService.updateResource(this, userInstance);
     }
 

@@ -259,10 +259,10 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
 
     public void reject(ResourceService resourceService, User user) {
         if (file instanceof PendingFile<?,?> pendingFile) {
-            this.file = pendingFile.reject();
             var now = Instant.now();
+            this.setFileEvent(FileRejectedEvent.create(user, now, file.getArtifactType()));
             this.modifiedDate = now;
-            this.setFileEvent(FileRejectedEvent.create(user, now));
+            this.file = pendingFile.reject();
             resourceService.updateFile(this);
         }
     }
