@@ -94,35 +94,25 @@ public class ScopusConverter {
     }
 
     public static String extractContentString(Object content) {
-        if (content instanceof String) {
-            return ((String) content).trim();
-        } else if (content instanceof JAXBElement) {
-            return extractContentString(((JAXBElement<?>) content).getValue());
-        } else if (content instanceof SupTp) {
-            return extractContentString(((SupTp) content).getContent());
-        } else if (content instanceof InfTp) {
-            return extractContentString(((InfTp) content).getContent());
-        } else {
-            return ((ArrayList<?>) content).stream()
-                       .map(ScopusConverter::extractContentString)
-                       .collect(Collectors.joining());
-        }
+        return switch (content) {
+            case String string -> string.trim();
+            case JAXBElement<?> jaxbElement -> extractContentString(jaxbElement.getValue());
+            case SupTp supTp -> extractContentString(supTp.getContent());
+            case InfTp infTp -> extractContentString(infTp.getContent());
+            default -> convertFromArray((ArrayList<?>) content);
+        };
     }
 
     public static String extractContentAndPreserveXmlSupAndInfTags(Object content) {
-        if (content instanceof String) {
-            return ((String) content).trim();
-        } else if (content instanceof JAXBElement) {
-            return extractContentAndPreserveXmlSupAndInfTags(((JAXBElement<?>) content).getValue());
-        } else if (content instanceof SupTp) {
-            return SUP_START + extractContentAndPreserveXmlSupAndInfTags(((SupTp) content).getContent()) + SUP_END;
-        } else if (content instanceof InfTp) {
-            return INF_START + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + INF_END;
-        } else {
-            return ((ArrayList<?>) content).stream()
-                       .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
-                       .collect(Collectors.joining());
-        }
+        return switch (content) {
+            case String string -> string.trim();
+            case JAXBElement<?> jaxbElement -> extractContentAndPreserveXmlSupAndInfTags(jaxbElement.getValue());
+            case SupTp supTp -> SUP_START + extractContentAndPreserveXmlSupAndInfTags((supTp.getContent())) + SUP_END;
+            case InfTp infTp -> INF_START + extractContentAndPreserveXmlSupAndInfTags((infTp.getContent())) + INF_END;
+            default -> ((ArrayList<?>) content).stream()
+                           .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+                           .collect(Collectors.joining());
+        };
     }
 
     public ImportCandidate generateImportCandidate() {
@@ -137,6 +127,12 @@ public class ScopusConverter {
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
                    .build();
+    }
+
+    private static String convertFromArray(ArrayList<?> content) {
+        return content.stream()
+                   .map(ScopusConverter::extractContentString)
+                   .collect(Collectors.joining());
     }
 
     private static URI constructOwnerAffiliation() {
@@ -240,8 +236,8 @@ public class ScopusConverter {
 
     private String trim(String string) {
         return Optional.ofNullable(string)
-                   .map(s -> s.replaceAll("\\n\\r", StringUtils.SPACE))
-                   .map(s -> s.replaceAll(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
+                   .map(s -> s.replace("\\n\\r", StringUtils.SPACE))
+                   .map(s -> s.replace(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
                    .orElse(null);
     }
 
@@ -261,12 +257,13 @@ public class ScopusConverter {
     }
 
     private Optional<AbstractTp> getMainAbstract() {
-        return nonNull(getAbstracts()) ? getAbstracts().stream().filter(this::isOriginalAbstract).findFirst()
-                   : Optional.empty();
+        return getAbstracts().isEmpty()
+                   ? Optional.empty()
+                   : getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
     }
 
     private List<AbstractTp> getAbstracts() {
-        return nonNull(extractHead().getAbstracts()) ? extractHead().getAbstracts().getAbstract() : null;
+        return nonNull(extractHead().getAbstracts()) ? extractHead().getAbstracts().getAbstract() : emptyList();
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
@@ -281,7 +278,7 @@ public class ScopusConverter {
         return authorKeywordsTp.getAuthorKeyword()
                    .stream()
                    .map(this::extractConcatenatedKeywordString)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {

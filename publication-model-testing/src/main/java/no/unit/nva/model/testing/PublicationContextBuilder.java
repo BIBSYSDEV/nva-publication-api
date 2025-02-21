@@ -53,6 +53,8 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class PublicationContextBuilder {
 
+    private static final Random RANDOM = new Random();
+
     public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
         String className = publicationInstance.getSimpleName();
         switch (className) {
@@ -240,7 +242,7 @@ public class PublicationContextBuilder {
                                      .withPublisher(randomPublishingHouse())
                                      .withSeries(randomBookSeries())
                                      .withSeriesNumber(randomSeriesNumber())
-                                     .withRevision(Revision.values()[new Random().nextInt(Revision.values().length)])
+                                     .withRevision(Revision.values()[RANDOM.nextInt(Revision.values().length)])
                                      .build();
     }
 

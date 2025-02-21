@@ -54,7 +54,8 @@ public class DataEntryUpdateEventTest {
 
     @Test
     public void shouldNotProduceEventTopicForFileEntryWhenNewImageIsMissing() {
-        var fileEntry = FileEntry.create(randomHiddenFile(), SortableIdentifier.next(), UserInstance.fromPublication(randomPublication()));
+        var fileEntry = FileEntry.create(randomHiddenFile(), SortableIdentifier.next(),
+                                         UserInstance.fromPublication(randomPublication()));
         var dataEntryUpdateEvent = new DataEntryUpdateEvent(randomString(), fileEntry, null);
 
         assertThrows(IllegalArgumentException.class, dataEntryUpdateEvent::getTopic);
@@ -79,6 +80,7 @@ public class DataEntryUpdateEventTest {
     }
 
     private FileEntry randomFileEntry() {
-        return FileEntry.create(randomHiddenFile(), SortableIdentifier.next(), UserInstance.fromPublication(randomPublication()));
+        return FileEntry.create(randomHiddenFile(), SortableIdentifier.next(),
+                                UserInstance.fromPublication(randomPublication()));
     }
 }

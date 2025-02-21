@@ -11,6 +11,8 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 public final class RightsRetentionStrategyGenerator {
 
+    private static final Random RANDOM = new Random();
+
     private RightsRetentionStrategyGenerator() {
 
     }
@@ -30,6 +32,6 @@ public final class RightsRetentionStrategyGenerator {
             NullRightsRetentionStrategy.create(UNKNOWN)
         };
 
-        return strategies[new Random().nextInt(strategies.length)];
+        return strategies[RANDOM.nextInt(strategies.length)];
     }
 }
