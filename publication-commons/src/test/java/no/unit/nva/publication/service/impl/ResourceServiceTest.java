@@ -122,6 +122,7 @@ import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -1607,7 +1608,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateResourceFromImportAndSetImportedResourceEventWhenUpdatingExistingPublication()
+    void shouldUpdateResourceFromImportAndSetMergedResourceEventWhenUpdatingExistingPublication()
         throws BadRequestException, NotFoundException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1617,7 +1618,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Resource.fromPublication(resource).updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
         var updatedResource = resourceService.getResourceByIdentifier(resource.getIdentifier());
 
-        var resourceEvent = (ImportedResourceEvent) updatedResource.getResourceEvent();
+        var resourceEvent = (MergedResourceEvent) updatedResource.getResourceEvent();
 
         assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
     }

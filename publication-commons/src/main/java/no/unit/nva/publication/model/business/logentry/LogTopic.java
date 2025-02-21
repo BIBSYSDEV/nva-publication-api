@@ -21,7 +21,8 @@ public enum LogTopic {
     PUBLICATION_PUBLISHED("PublicationPublished"),
     PUBLICATION_REPUBLISHED("PublicationRepublished"),
     PUBLICATION_UNPUBLISHED("PublicationUnpublished"),
-    PUBLICATION_IMPORTED("PublicationImported");
+    PUBLICATION_IMPORTED("PublicationImported"),
+    PUBLICATION_MERGED("PublicationMerged");
 
     private final String value;
 
