@@ -27,12 +27,12 @@ import org.slf4j.LoggerFactory;
 
 public class TitleAndTypePublicationFinder implements FindExistingPublicationService {
 
-    public static final String TITLE_SHOULD = "titleShould";
-    public static final String CONTEXT_TYPE = "contextType";
+    private static final String TITLE_SHOULD = "titleShould";
+    private static final String CONTEXT_TYPE = "contextType";
     private static final Logger logger = LoggerFactory.getLogger(TitleAndTypePublicationFinder.class);
     private static final String RESOURCES = "resources";
     private static final String SEARCH = "search";
-    public static final String EVENT = "Event";
+    private static final String EVENT = "Event";
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
@@ -120,10 +120,11 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     }
 
     private UriWrapper getStandardSearchUri(Publication publication) {
+        var mainTitle = getMainTitle(publication).orElseThrow();
         return UriWrapper.fromHost(apiHost)
                    .addChild(SEARCH)
                    .addChild(RESOURCES)
-                   .addQueryParameter(TITLE_SHOULD, getMainTitle(publication).get())
+                   .addQueryParameter(TITLE_SHOULD, mainTitle)
                    .addQueryParameter(CONTEXT_TYPE, getPublicationContextType(publication));
     }
 
