@@ -119,9 +119,12 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -1423,7 +1426,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldRejectPersistedFile() throws BadRequestException {
+    void shouldRejectPersistedFileAndSetFileEventWithFileTypeThatHasBeenRejected() throws BadRequestException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -1438,6 +1441,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var rejectedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
 
+        var fileEvent = (FileRejectedEvent) rejectedFileEntry.getFileEvent();
+        assertEquals(file.getArtifactType(), fileEvent.rejectedFileType());
         assertInstanceOf(RejectedFile.class, rejectedFileEntry.getFile());
     }
 
@@ -1607,7 +1612,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateResourceFromImportAndSetImportedResourceEventWhenUpdatingExistingPublication()
+    void shouldUpdateResourceFromImportAndSetMergedResourceEventWhenUpdatingExistingPublication()
         throws BadRequestException, NotFoundException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1617,7 +1622,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Resource.fromPublication(resource).updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
         var updatedResource = resourceService.getResourceByIdentifier(resource.getIdentifier());
 
-        var resourceEvent = (ImportedResourceEvent) updatedResource.getResourceEvent();
+        var resourceEvent = (MergedResourceEvent) updatedResource.getResourceEvent();
 
         assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
     }

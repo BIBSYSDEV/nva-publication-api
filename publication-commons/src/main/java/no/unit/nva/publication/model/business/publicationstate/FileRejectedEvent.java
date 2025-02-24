@@ -8,10 +8,11 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 
-public record FileRejectedEvent(Instant date, User user, SortableIdentifier identifier) implements FileEvent {
+public record FileRejectedEvent(Instant date, User user, SortableIdentifier identifier, String rejectedFileType)
+    implements FileEvent {
 
-    public static FileRejectedEvent create(User user, Instant timestamp) {
-        return new FileRejectedEvent(timestamp, user, SortableIdentifier.next());
+    public static FileRejectedEvent create(User user, Instant timestamp, String rejectedFileType) {
+        return new FileRejectedEvent(timestamp, user, SortableIdentifier.next(), rejectedFileType);
     }
 
     @Override
@@ -24,7 +25,7 @@ public record FileRejectedEvent(Instant date, User user, SortableIdentifier iden
                    .withTimestamp(date)
                    .withPerformedBy(user)
                    .withFilename(fileEntry.getFile().getName())
-                   .withFileType(fileEntry.getFile().getClass().getSimpleName())
+                   .withFileType(rejectedFileType)
                    .build();
     }
 }

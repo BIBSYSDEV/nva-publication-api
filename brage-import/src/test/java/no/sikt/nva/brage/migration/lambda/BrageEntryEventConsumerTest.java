@@ -165,6 +165,7 @@ import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -2016,7 +2017,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var resource = Resource.resourceQueryObject(publicationRepresentation.publication().getIdentifier())
                            .fetch(resourceService)
                            .orElseThrow();
-        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
+        var resourceEvent = (MergedResourceEvent) resource.getResourceEvent();
 
         assertEquals(Source.BRAGE, resourceEvent.importSource().getSource());
     }
@@ -2061,7 +2062,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var updatedPublication = resourceService.getPublication(existingPublication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
         var expectedCristinIdentifierFromBrage =
             new CristinIdentifier(SourceName.fromBrage(generator.getBrageRecord().getCustomer().getName()),
                                   brageCristinIdentifier);
