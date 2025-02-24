@@ -27,13 +27,9 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.validation.DefaultPublicationValidator;
-import no.unit.nva.publication.validation.PublicationValidationException;
-import no.unit.nva.publication.validation.PublicationValidator;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -54,7 +50,6 @@ public class CreatePublicationHandler
     private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd",
                                                                       "DegreeLicentiate");
     private final ResourceService publicationService;
-    private final PublicationValidator publicationValidator;
     private final String apiHost;
     private final IdentityServiceClient identityServiceClient;
     private final SecretsReader secretsReader;
@@ -90,7 +85,6 @@ public class CreatePublicationHandler
         this.identityServiceClient = identityServiceClient;
         this.secretsReader = new SecretsReader(secretsManagerClient);
         this.httpClient = httpClient;
-        this.publicationValidator = new DefaultPublicationValidator();
         this.customerApiClient = getJavaHttpClientCustomerApiClient();
     }
 
@@ -112,8 +106,6 @@ public class CreatePublicationHandler
                                  .orElseGet(Publication::new);
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
-
-        validatePublication(newPublication, customer);
 
         RightsRetentionsApplier.rrsApplierForNewPublication(newPublication, customer.getRightsRetentionStrategy(),
                                                             customerAwareUserContext.username()).handle();
@@ -142,14 +134,6 @@ public class CreatePublicationHandler
         } catch (CustomerNotAvailableException e) {
             logger.error("Problems fetching customer", e);
             throw new BadGatewayException("Customer API not responding or not responding as expected!");
-        }
-    }
-
-    private void validatePublication(Publication newPublication, Customer customer) throws BadRequestException {
-        try {
-            publicationValidator.validate(newPublication, customer);
-        } catch (PublicationValidationException e) {
-            throw new BadRequestException(e.getMessage());
         }
     }
 

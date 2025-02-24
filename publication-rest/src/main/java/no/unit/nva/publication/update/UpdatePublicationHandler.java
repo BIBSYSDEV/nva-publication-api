@@ -2,10 +2,10 @@ package no.unit.nva.publication.update;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
-import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -21,16 +22,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.File.Builder;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
-import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -40,14 +32,14 @@ import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.file.FilePermissions;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.validation.DefaultPublicationValidator;
-import no.unit.nva.publication.validation.PublicationValidationException;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -89,7 +81,6 @@ public class UpdatePublicationHandler
     private final String nvaEventBusName;
     private final SecretsReader secretsReader;
     private final HttpClient httpClient;
-    private final DefaultPublicationValidator publicationValidator;
     private final String apiHost;
 
     /**
@@ -127,7 +118,6 @@ public class UpdatePublicationHandler
         this.nvaEventBusName = environment.readEnv(NVA_EVENT_BUS_NAME_KEY);
         this.apiHost = environment.readEnv(API_HOST_ENV_KEY);
         this.secretsReader = new SecretsReader(secretsManagerClient);
-        this.publicationValidator = new DefaultPublicationValidator();
         this.httpClient = httpClient;
     }
 
@@ -151,7 +141,7 @@ public class UpdatePublicationHandler
         var updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
-                                                                                existingResource.toPublication(),
+                                                                                existingResource,
                                                                                 permissionStrategy,
                                                                                 userInstance);
 
@@ -269,26 +259,22 @@ public class UpdatePublicationHandler
     // TODO: Move file update to resourceService and perform update in single transaction
     private Resource updateMetadata(UpdatePublicationRequest input,
                                        SortableIdentifier identifierInPath,
-                                       Publication existingPublication,
+                                       Resource existingResource,
                                        PublicationPermissions permissionStrategy,
                                        UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
 
-        if (openFilesAreUnchanged(existingPublication, input)) {
-            permissionStrategy.authorize(UPDATE);
-        } else {
-            permissionStrategy.authorize(UPDATE_FILES);
-        }
+        var existingPublication = existingResource.toPublication();
+
+        permissionStrategy.authorize(UPDATE);
+        authorizeFileEntries(existingResource, userInstance, getModifiedFiles(existingResource, input));
 
         var publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
-        validatePublication(publicationUpdate, existingPublication, customer);
-        updateAssociatedArtifactList(existingPublication.getAssociatedArtifacts(),
-                                     publicationUpdate.getAssociatedArtifacts(),
-                                     extractUploadDetails(userInstance));
+
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
@@ -298,62 +284,23 @@ public class UpdatePublicationHandler
         return Resource.resourceQueryObject(identifierInPath).fetch(resourceService).orElseThrow();
     }
 
-    private static UserUploadDetails extractUploadDetails(UserInstance userInstance) {
-        return new UserUploadDetails(new Username(userInstance.getUsername()), Instant.now());
-    }
-
-    private static void updateAssociatedArtifactList(AssociatedArtifactList originalArtifacts,
-                                                     AssociatedArtifactList updatedArtifacts,
-                                                     UploadDetails uploadDetails) throws BadRequestException {
-        if (originalArtifacts.equals(updatedArtifacts)) {
-            return;
-        }
-
-        var originalFileIdentifiers = originalArtifacts.stream()
-                                              .filter(File.class::isInstance)
-                                              .map(f -> ((File) f).getIdentifier())
-                                              .toList();
-
-        for (var updatedArtifact : updatedArtifacts) {
-            if (updatedArtifact instanceof File file && !originalFileIdentifiers.contains(file.getIdentifier())) {
-                updateAssociatedArtifacts(updatedArtifacts, uploadDetails, file);
-            }
+    private static void authorizeFileEntries(Resource resource, UserInstance userInstance, List<FileEntry> modifiedFiles)
+        throws UnauthorizedException {
+        for (var file : modifiedFiles) {
+            new FilePermissions(file, userInstance, resource).authorize(WRITE_METADATA);
         }
     }
 
-    //TODO: Should this method also compare changes of internal files?
-    private static boolean openFilesAreUnchanged(Publication existingPublication,
-                                                 UpdatePublicationRequest input) {
+    private static List<FileEntry> getModifiedFiles(Resource existingPublication,
+                                                    UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
-                             .filter(OpenFile.class::isInstance)
-                             .map(OpenFile.class::cast).toList();
-        var existingFiles = existingPublication.getAssociatedArtifacts().stream()
-                                .filter(OpenFile.class::isInstance)
-                                .map(OpenFile.class::cast);
-        return existingFiles.allMatch(inputFiles::contains);
-    }
+                             .filter(File.class::isInstance)
+                             .map(File.class::cast).toList();
+        var existingFiles = existingPublication.getFileEntries();
 
-    private static void updateAssociatedArtifacts(AssociatedArtifactList updatedArtifacts,
-                                                  UploadDetails uploadDetails,
-                                                  File item) throws BadRequestException {
-        var index = updatedArtifacts.indexOf(item);
-        var updated = updateFileWithUploadDetails(item, uploadDetails);
-        updatedArtifacts.set(index, updated);
-    }
-
-    private static File updateFileWithUploadDetails(File file, UploadDetails uploadDetails) throws BadRequestException {
-        return switch (file) {
-            case PendingOpenFile pendingOpenFile -> addUploadDetails(pendingOpenFile, uploadDetails).buildPendingOpenFile();
-            case OpenFile openFile -> addUploadDetails(openFile, uploadDetails).buildOpenFile();
-            case PendingInternalFile pendingInternalFile -> addUploadDetails(pendingInternalFile, uploadDetails).buildPendingInternalFile();
-            case InternalFile internalFile -> addUploadDetails(internalFile, uploadDetails).buildInternalFile();
-            case HiddenFile hiddenFile -> addUploadDetails(hiddenFile, uploadDetails).buildHiddenFile();
-            default -> throw new BadRequestException("Unsupported file type: " + file);
-        };
-    }
-
-    private static Builder addUploadDetails(File file, UploadDetails uploadDetails) {
-        return file.copy().withUploadDetails(uploadDetails);
+        return existingFiles.stream()
+                                .filter(existingFile -> !inputFiles.contains(existingFile.getFile()))
+                                .toList();
     }
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
@@ -384,15 +331,6 @@ public class UpdatePublicationHandler
         } catch (CustomerNotAvailableException e) {
             logger.error("Problems fetching customer", e);
             throw new BadGatewayException("Customer API not responding or not responding as expected!");
-        }
-    }
-
-    private void validatePublication(Publication publicationUpdate, Publication existingPublication, Customer customer)
-        throws BadRequestException {
-        try {
-            publicationValidator.validateUpdate(publicationUpdate, existingPublication, customer);
-        } catch (PublicationValidationException e) {
-            throw new BadRequestException(e.getMessage());
         }
     }
 
