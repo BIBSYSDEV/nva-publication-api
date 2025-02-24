@@ -116,7 +116,7 @@ public class ScopusFileConverterTest {
         throws IOException, InterruptedException {
         mockResponsesWithoutHeaders("crossrefResponseMissingFields.json");
 
-        var files = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var files = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(files.getPublisherVersion(), is(nullValue()));
         assertThat(files.getEmbargoDate(), is(Optional.empty()));
@@ -146,18 +146,7 @@ public class ScopusFileConverterTest {
         assertThat(file.getLicense(), is(equalTo(expectedLicense)));
     }
 
-    @Test
-    void shouldReturnSingleAssociatedArtifactsWhenMultipleArtifactsWithTheSameFileName()
-        throws IOException, InterruptedException {
-        var firstUrl = randomUri();
-        var secondUrl = randomUri();
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl, secondUrl));
-        mockDownloadUrlResponse();
 
-        var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
-
-        assertThat(files, hasSize(1));
-    }
 
     @Test
     void shouldRemoveFileFromDoiWhenFileIsFromElseveierAndHasPlainTextContentType()
@@ -181,7 +170,7 @@ public class ScopusFileConverterTest {
         throws IOException, InterruptedException {
         var contentTypeHeader = Map.of(Header.CONTENT_TYPE, List.of("application/html"));
         mockResponsesWithHeader("crossrefResponseMissingFields.json", contentTypeHeader);
-        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getName(), containsString("html"));
     }
@@ -191,7 +180,7 @@ public class ScopusFileConverterTest {
         throws IOException, InterruptedException {
         var responseBody = "crossrefResponseMissingFields.json";
         mockResponsesWithoutHeaders(responseBody);
-        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getName(), is(equalTo(TEST_FILE_NAME)));
     }
@@ -201,43 +190,59 @@ public class ScopusFileConverterTest {
         throws IOException, InterruptedException {
         var responseBody = "crossrefResponseMissingFields.json";
         mockResponsesWithHeader(responseBody, Map.of());
-        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getName(), is(notNullValue()));
-    }
-
-    @Test
-    void shouldSetUploadDetailsWhenFetchingAssociatedArtifactsFromXml() throws IOException, InterruptedException {
-        var firstUrl = randomUri();
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
-        mockDownloadUrlResponse();
-        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
-
-        assertThat(((ImportUploadDetails) file.getUploadDetails()).source(), is(equalTo(Source.SCOPUS)));
-        assertThat(file.getUploadDetails().uploadedDate(), is(notNullValue()));
     }
 
     @Test
     void shouldSetUploadDetailsWhenFetchingFileFromDoi() throws IOException, InterruptedException {
         var responseBody = "crossrefResponseMissingFields.json";
         mockResponsesWithHeader(responseBody, Map.of());
-        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(((ImportUploadDetails) file.getUploadDetails()).source(), is(equalTo(Source.SCOPUS)));
         assertThat(file.getUploadDetails().uploadedDate(), is(notNullValue()));
     }
 
+    // These tests are temporarily disabled because the functionality to fetch files from XML is currently disabled.
+    // This is due to the lack of license information in the XML data. Once a decision is made regarding
+    // handling files without license information, these tests can be revisited and potentially re-enabled.
 
-    @Test
-    void shouldSetPublisherVersionAsPublishedWhenFetchingAssociatedArtifactsFromXml()
-        throws IOException, InterruptedException {
-        var firstUrl = randomUri();
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
-        mockDownloadUrlResponse();
-        var file = (OpenFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
-
-        assertThat(file.getPublisherVersion(), is(equalTo(PublisherVersion.PUBLISHED_VERSION)));
-    }
+//    @Test
+//    void shouldSetPublisherVersionAsPublishedWhenFetchingAssociatedArtifactsFromXml()
+//        throws IOException, InterruptedException {
+//        var firstUrl = randomUri();
+//        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
+//        mockDownloadUrlResponse();
+//        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+//
+//        assertThat(file.getPublisherVersion(), is(equalTo(PublisherVersion.PUBLISHED_VERSION)));
+//    }
+//
+//    @Test
+//    void shouldSetUploadDetailsWhenFetchingAssociatedArtifactsFromXml() throws IOException, InterruptedException {
+//        var firstUrl = randomUri();
+//        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
+//        mockDownloadUrlResponse();
+//        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+//
+//        assertThat(((ImportUploadDetails) file.getUploadDetails()).source(), is(equalTo(Source.SCOPUS)));
+//        assertThat(file.getUploadDetails().uploadedDate(), is(notNullValue()));
+//    }
+//
+//    @Test
+//    void shouldReturnSingleAssociatedArtifactsWhenMultipleArtifactsWithTheSameFileNameWhenFetchingFilesFromXml()
+//        throws IOException, InterruptedException {
+//        var firstUrl = randomUri();
+//        var secondUrl = randomUri();
+//        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl, secondUrl));
+//        mockDownloadUrlResponse();
+//
+//        var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
+//
+//        assertThat(files, hasSize(1));
+//    }
 
     private void mockDownloadUrlResponse() throws IOException, InterruptedException {
         var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);

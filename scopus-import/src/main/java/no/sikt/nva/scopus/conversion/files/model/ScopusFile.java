@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.conversion.files.model;
 
+import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.apache.tika.io.TikaInputStream;
 public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, TikaInputStream content, long size,
                          String mimeType, URI license, PublisherVersion publisherVersion, Instant embargo) {
 
+    private static final int ZERO_LENGTH_CONTENT = 0;
     private static final List<String> UNSUPPORTED_MIME_TYPES = List.of("text/html", "application/octet-stream");
 
     public static Builder builder() {
@@ -22,8 +24,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
     }
 
     public Builder copy() {
-        return new Builder()
-                   .withPublisherVersion(this.publisherVersion)
+        return new Builder().withPublisherVersion(this.publisherVersion)
                    .withEmbargo(this.embargo)
                    .withLicense(this.license)
                    .withName(this.name)
@@ -34,27 +35,32 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
                    .withMimeType(this.mimeType);
     }
 
-    public AssociatedArtifact toPublishedAssociatedArtifact() {
-        return File.builder()
-                   .withIdentifier(identifier)
-                   .withName(name)
-                   .withMimeType(mimeType)
-                   .withSize(size)
-                   .withUploadDetails(createUploadDetails())
-                   .withLicense(license)
-                   .withPublisherVersion(publisherVersion)
-                   .withEmbargoDate(embargo)
-                   .buildOpenFile();
+    public boolean isValid() {
+        return hasValidMimeType() && hasContent();
+    }
+
+    private boolean hasContent() {
+        return size() != ZERO_LENGTH_CONTENT;
+    }
+
+    public AssociatedArtifact toFile() {
+        var fileBuilder = File.builder()
+                              .withIdentifier(identifier)
+                              .withName(name)
+                              .withMimeType(mimeType)
+                              .withSize(size)
+                              .withUploadDetails(createUploadDetails())
+                              .withPublisherVersion(publisherVersion)
+                              .withEmbargoDate(embargo);
+        return nonNull(license) ? fileBuilder.withLicense(license).buildOpenFile() : fileBuilder.buildInternalFile();
+    }
+
+    public boolean hasValidMimeType() {
+        return Optional.ofNullable(mimeType).map(mimeType -> !UNSUPPORTED_MIME_TYPES.contains(mimeType)).orElse(false);
     }
 
     private ImportUploadDetails createUploadDetails() {
         return new ImportUploadDetails(Source.SCOPUS, null, Instant.now());
-    }
-
-    public boolean hasValidMimeType() {
-        return Optional.ofNullable(mimeType)
-                   .map(mimeType -> !UNSUPPORTED_MIME_TYPES.contains(mimeType))
-                   .orElse(false);
     }
 
     public static final class Builder {
@@ -106,7 +112,6 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
             this.license = license;
             return this;
         }
-
 
         public Builder withPublisherVersion(PublisherVersion publisherVersion) {
             this.publisherVersion = publisherVersion;
