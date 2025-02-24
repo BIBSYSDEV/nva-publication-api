@@ -7,10 +7,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -41,6 +41,7 @@ import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import nva.commons.core.ioutils.IoUtils;
@@ -203,6 +204,25 @@ public class ScopusFileConverterTest {
 
         assertThat(((ImportUploadDetails) file.getUploadDetails()).source(), is(equalTo(Source.SCOPUS)));
         assertThat(file.getUploadDetails().uploadedDate(), is(notNullValue()));
+    }
+
+    @Test
+    void shouldImportInternalFileWhenMissingLicenseWhenFetchingFileFromDoi() throws IOException, InterruptedException {
+        var responseBody = "crossrefResponseMissingFields.json";
+        mockResponsesWithHeader(responseBody, Map.of());
+        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+
+        assertInstanceOf(InternalFile.class, file);
+    }
+
+    @Test
+    void shouldImportOpenFileWhenCreativeCommonsLicenseIsPresentWhenFetchingFileFromDoi()
+        throws IOException, InterruptedException {
+        var responseBody = "crossrefResponse.json";
+        mockResponsesWithHeader(responseBody, Map.of());
+        var file = (File) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+
+        assertInstanceOf(OpenFile.class, file);
     }
 
     // These tests are temporarily disabled because the functionality to fetch files from XML is currently disabled.
