@@ -108,7 +108,8 @@ public class UserInstance implements JsonSerializable {
     }
 
     public static UserInstance fromTicket(TicketEntry ticket) {
-        return UserInstance.create(ticket.getOwner(), ticket.getCustomerId());
+        return new UserInstance(ticket.getOwner().toString(), ticket.getCustomerId(), ticket.getOwnerAffiliation(),
+                                ticket.getResponsibilityArea(), null, List.of(), UserClientType.INTERNAL);
     }
 
     public boolean isSender(Message message) {

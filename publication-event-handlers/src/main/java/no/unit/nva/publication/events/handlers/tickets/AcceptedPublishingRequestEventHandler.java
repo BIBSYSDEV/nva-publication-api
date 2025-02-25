@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.List;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -20,7 +19,6 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -73,12 +71,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return null;
     }
 
-    private static UserInstance getUserInstance(PublishingRequestCase publishingRequest) {
-        return new UserInstance(publishingRequest.getOwner().toString(), publishingRequest.getCustomerId(),
-                                publishingRequest.getOwnerAffiliation(), publishingRequest.getResponsibilityArea(),
-                                null, List.of(), UserClientType.INTERNAL);
-    }
-
     private static boolean hasDoi(Resource resource) {
         return nonNull(resource.getDoi());
     }
@@ -114,7 +106,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
             publishResource(resource);
             refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
-        createDoiRequestIfNeeded(resource.getIdentifier(), getUserInstance(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
     }
 
     /**
@@ -146,7 +138,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
         logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), publishingRequest.getIdentifier());
 
-        createDoiRequestIfNeeded(resource.getIdentifier(), getUserInstance(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
     }
 
     private void publishWhenPublicationStatusDraft(Resource resource) {
