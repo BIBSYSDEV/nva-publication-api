@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -17,7 +16,6 @@ import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 })
 public interface AssociatedArtifact {
     Set<Class<? extends AssociatedArtifact>> PUBLIC_ARTIFACT_TYPES = Set.of(OpenFile.class,
-                                                                            PendingOpenFile.class,
                                                                             AssociatedLink.class,
                                                                             NullAssociatedArtifact.class);
     static Set<String> getPublicArtifactTypeNames() {
