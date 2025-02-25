@@ -4,7 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -20,6 +20,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -73,8 +74,9 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     private static UserInstance getUserInstance(PublishingRequestCase publishingRequest) {
-        return UserInstance.create(publishingRequest.getOwner().toString(), publishingRequest.getCustomerId(), null,
-                                   Collections.emptyList(), publishingRequest.getOwnerAffiliation());
+        return new UserInstance(publishingRequest.getOwner().toString(), publishingRequest.getCustomerId(),
+                                publishingRequest.getOwnerAffiliation(), publishingRequest.getResponsibilityArea(),
+                                null, List.of(), UserClientType.INTERNAL);
     }
 
     private static boolean hasDoi(Resource resource) {
@@ -144,7 +146,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
         logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), publishingRequest.getIdentifier());
 
-        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), getUserInstance(publishingRequest));
     }
 
     private void publishWhenPublicationStatusDraft(Resource resource) {
@@ -180,10 +182,10 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     /**
-     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not the institution
-     * that requests the doi.
+     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not
+     * the institution that requests the doi.
      *
-     * @param resourceIdentifier  to create a DoiRequest for
+     * @param resourceIdentifier to create a DoiRequest for
      * @param userInstance
      */
     private void createDoiRequestIfNeeded(SortableIdentifier resourceIdentifier, UserInstance userInstance) {
@@ -200,7 +202,8 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     private Optional<DoiRequest> fetchDoiRequest(Resource resource) {
-        return ticketService.fetchTicketByResourceIdentifier(resource.getCustomerId(), resource.getIdentifier(), DoiRequest.class);
+        return ticketService.fetchTicketByResourceIdentifier(resource.getCustomerId(), resource.getIdentifier(),
+                                                             DoiRequest.class);
     }
 
     private PublishingRequestCase parseInput(String eventBlob) {
