@@ -413,11 +413,8 @@ public final class TicketTestUtils {
     }
 
     private static void publishPublication(
-            ResourceService resourceService, Publication persistedPublication)
-            throws ApiGatewayException {
-        resourceService.publishPublication(
-                UserInstance.fromPublication(persistedPublication),
-                persistedPublication.getIdentifier());
+            ResourceService resourceService, Publication publication) {
+        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
     }
 
     private static Publication randomPublicationWithStatusAndOwner(

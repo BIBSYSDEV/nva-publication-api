@@ -34,15 +34,13 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     }
 
     protected String constructSeriesNumber() {
-        String volume = extractBookOrReportMetadata()
+        var volume = extractBookOrReportMetadata()
                             .map(CristinBookOrReportMetadata::getVolume)
                             .filter(StringUtils::isNotBlank)
-                            .map(volumeNumber -> String.format("Volume:%s", volumeNumber))
                             .orElse(EMPTY_STRING);
-        String issue = extractBookOrReportMetadata()
+        var issue = extractBookOrReportMetadata()
                            .map(CristinBookOrReportMetadata::getIssue)
                            .filter(StringUtils::isNotBlank)
-                           .map(issueNumber -> String.format("Issue:%s", issueNumber))
                            .orElse(null);
 
         return Stream.of(volume, issue).filter(Objects::nonNull)

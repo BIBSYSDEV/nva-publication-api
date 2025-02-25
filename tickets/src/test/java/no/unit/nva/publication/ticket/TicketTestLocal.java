@@ -69,9 +69,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     }
     
     protected void publish(Publication publication) {
-        var userInstance = UserInstance.fromPublication(publication);
-        attempt(() -> resourceService.publishPublication(userInstance, publication.getIdentifier()))
-            .orElseThrow();
+        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
     }
     
     public static Publication randomPublicationWithoutDoi() {

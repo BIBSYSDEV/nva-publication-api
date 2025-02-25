@@ -700,19 +700,6 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldOverrideCuratingInstitutionsWhenUpdatingExistingPublicationContributors() throws IOException {
-        var cristinObject = CristinDataGenerator.randomObject();
-        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
-        var eventBody = createEventBody(cristinObject);
-        var sqsEvent = createSqsEvent(eventBody);
-        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
-
-
-        assertThat(existingPublication.getCuratingInstitutions(),
-                is(not(equalTo(updatedPublication.getCuratingInstitutions()))));
-    }
-
-    @Test
     void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);

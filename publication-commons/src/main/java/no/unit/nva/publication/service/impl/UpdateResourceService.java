@@ -3,15 +3,12 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -26,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
@@ -34,13 +30,9 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
@@ -52,45 +44,30 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
-import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class UpdateResourceService extends ServiceWithTransactions {
 
-    public static final String PUBLISH_COMPLETED = "Publication is published.";
-
-    public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";
     public static final String DELETION_IN_PROGRESS = "Deletion in progress. This may take a while";
+    public static final String ILLEGAL_DELETE_WHEN_NOT_DRAFT =
+        "Attempting to update publication to DRAFT_FOR_DELETION when current status " + "is not draft";
     //TODO: fix affiliation update when updating owner
     private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
-    public static final String ILLEGAL_DELETE_WHEN_NOT_DRAFT =
-        "Attempting to update publication to DRAFT_FOR_DELETION when current status "
-        + "is not draft";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
-    private static final List<PublicationStatus> allowedPublicationStatusesForPublishing = List.of(
-        DRAFT,
-        PUBLISHED_METADATA,
-        UNPUBLISHED
-    );
     private final RawContentRetriever uriRetriever;
 
-    public UpdateResourceService(AmazonDynamoDB client,
-                                 String tableName,
-                                 Clock clockForTimestamps,
-                                 ReadResourceService readResourceService,
-                                 RawContentRetriever uriRetriever) {
+    public UpdateResourceService(AmazonDynamoDB client, String tableName, Clock clockForTimestamps,
+                                 ReadResourceService readResourceService, RawContentRetriever uriRetriever) {
         super(client);
         this.tableName = tableName;
         this.clockForTimestamps = clockForTimestamps;
@@ -106,19 +83,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throw new IllegalStateException("Attempting to update publication status when it is not allowed");
     }
 
-    public Publication updatePublicationDraftToDraftForDeletion(Publication publication)
-        throws NotFoundException {
-        var persistedPublication = attempt(() -> fetchExistingResource(publication))
-                                       .map(Resource::toPublication)
+    public Publication updatePublicationDraftToDraftForDeletion(Publication publication) throws NotFoundException {
+        var persistedPublication = attempt(() -> fetchExistingResource(publication)).map(Resource::toPublication)
                                        .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
         if (persistedPublication.getStatus().equals(DRAFT)) {
             publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
             publication.setModifiedDate(clockForTimestamps.instant());
             var resource = Resource.fromPublication(publication);
 
-            var tickets = new ResourceDao(resource).fetchAllTickets(getClient()).stream()
-                       .map(Dao::getData)
-                       .map(TicketEntry.class::cast);
+            var tickets = new ResourceDao(resource).fetchAllTickets(getClient())
+                              .stream()
+                              .map(Dao::getData)
+                              .map(TicketEntry.class::cast);
 
             var transactionItems = new ArrayList<TransactWriteItem>();
             transactionItems.add(createPutTransaction(resource));
@@ -128,55 +104,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
             return updatePublicationIncludingStatus(publication);
         }
         throw new IllegalStateException(ILLEGAL_DELETE_WHEN_NOT_DRAFT);
-    }
-
-    private Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
-        var persistedResource = fetchExistingResource(publicationUpdate);
-        publicationUpdate.setCreatedDate(persistedResource.getCreatedDate());
-        publicationUpdate.setModifiedDate(clockForTimestamps.instant());
-
-        if (isContributorsChanged(publicationUpdate, persistedResource.toPublication())) {
-            publicationUpdate.setCuratingInstitutions(
-                CuratingInstitutionsUtil.getCuratingInstitutionsOnline(publicationUpdate, uriRetriever));
-        }
-
-        var updatedFileEntriesTransactionWriteItems = persistedResource.getFileEntries().stream()
-                                     .map(fileEntry -> updateFileEntry(fileEntry, publicationUpdate))
-                                     .map(FileEntry::toDao)
-                                     .map(dao -> dao.toPutTransactionItem(tableName))
-                                     .toList();
-
-        var resource = Resource.fromPublication(publicationUpdate);
-
-        var updateResourceTransactionItem = createPutTransaction(resource);
-        var updateTicketsTransactionItems = updateTickets(resource);
-
-        var transactionItems = new ArrayList<TransactWriteItem>();
-        transactionItems.add(updateResourceTransactionItem);
-        transactionItems.addAll(updateTicketsTransactionItems);
-        transactionItems.addAll(updatedFileEntriesTransactionWriteItems);
-
-        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
-        sendTransactionWriteRequest(request);
-
-        return publicationUpdate;
-    }
-
-    private static FileEntry updateFileEntry(FileEntry fileEntry, Publication publication) {
-        return publication.getFile(fileEntry.getFile().getIdentifier())
-                   .map(fileEntry::update)
-                   .orElse(fileEntry);
-    }
-
-    private static boolean isContributorsChanged(Publication publicationUpdate, Publication persistedPublication) {
-        return nonNull(publicationUpdate.getEntityDescription())
-               && !getContributors(publicationUpdate).equals(getContributors(persistedPublication));
-    }
-
-    private static List<Contributor> getContributors(Publication persistedPublication) {
-        return nonNull(persistedPublication.getEntityDescription())
-                   ? persistedPublication.getEntityDescription().getContributors()
-                   : List.of();
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -189,53 +116,41 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
 
-    public void updateResource(Resource resource) {
-        TransactWriteItem insertionAction = createPutTransaction(resource);
-        TransactWriteItemsRequest request = newTransactWriteItemsRequest(insertionAction);
-        sendTransactionWriteRequest(request);
+    public Resource updateResource(Resource resource, UserInstance userInstance) {
+        var persistedResource = fetchExistingResource(resource.toPublication());
+        resource.setCreatedDate(persistedResource.getCreatedDate());
+        resource.setModifiedDate(clockForTimestamps.instant());
+
+        updateCuratingInstitutions(resource, persistedResource);
+
+        sendTransactionWriteRequest(new TransactWriteItemsRequest().withTransactItems(
+            createUpdateResourceTransactionItems(resource, userInstance, persistedResource)));
+        return resource;
     }
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
-        var existingImportCandidate = fetchImportCandidate(importCandidate);
-        if (isNotImported(existingImportCandidate)) {
-            importCandidate.setCreatedDate(existingImportCandidate.getCreatedDate());
-            importCandidate.setModifiedDate(clockForTimestamps.instant());
+        var existingResource = fetchExistingResource(importCandidate);
+        if (isNotImported(existingResource)) {
+            var resource = Resource.fromImportCandidate(importCandidate);
+            resource.setCreatedDate(existingResource.getCreatedDate());
+            resource.setModifiedDate(clockForTimestamps.instant());
 
-            if (isContributorsChanged(importCandidate, existingImportCandidate)) {
-                importCandidate.setCuratingInstitutions(
-                    CuratingInstitutionsUtil.getCuratingInstitutionsOnline(importCandidate, uriRetriever));
-            }
+            updateCuratingInstitutions(resource, existingResource);
 
             var transactions = new ArrayList<TransactWriteItem>();
-            transactions.add(createPutTransaction(Resource.fromImportCandidate(importCandidate)));
-            transactions.addAll(convertFileEntriesToDeleteTransactions(existingImportCandidate));
-            transactions.addAll(convertFileEntriesToPersistTransactions(importCandidate));
+            transactions.add(createPutTransaction(resource));
+            transactions.addAll(convertFileEntriesToDeleteTransactions(existingResource));
+            transactions.addAll(convertFileEntriesToPersistTransactions(resource.toImportCandidate()));
 
             var request = new TransactWriteItemsRequest().withTransactItems(transactions);
             sendTransactionWriteRequest(request);
-            return importCandidate;
+            return resource.toImportCandidate();
         }
         throw new BadRequestException("Can not update already imported candidate");
     }
 
-    private List<TransactWriteItem> convertFileEntriesToDeleteTransactions(ImportCandidate existingImportCandidate) {
-        return Resource.fromImportCandidate(existingImportCandidate).getFileEntries().stream()
-                   .map(FileEntry::toDao)
-                   .map(dao -> dao.toDeleteTransactionItem(tableName))
-                   .toList();
-    }
-
-    private List<TransactWriteItem> convertFileEntriesToPersistTransactions(ImportCandidate importCandidate) {
-        return Resource.fromImportCandidate(importCandidate).getFileEntries().stream()
-                   .map(FileEntry::toDao)
-                   .map(fileDao -> fileDao.toPutNewTransactionItem(tableName))
-                   .toList();
-    }
-
-    public void unpublishPublication(Publication publication,
-                                     Stream<TicketEntry> existingTicketStream,
-                                     UnpublishRequest unpublishRequest,
-                                     UserInstance userInstance) {
+    public void unpublishPublication(Publication publication, Stream<TicketEntry> existingTicketStream,
+                                     UnpublishRequest unpublishRequest, UserInstance userInstance) {
         publication.setStatus(UNPUBLISHED);
         var currentTime = clockForTimestamps.instant();
         publication.setModifiedDate(currentTime);
@@ -251,14 +166,110 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
 
+    public void terminateResource(Resource resource, UserInstance userInstance) {
+        var currentTime = clockForTimestamps.instant();
+        var transactions = new ArrayList<TransactWriteItem>();
+        transactions.add(createPutTransaction(resource.delete(userInstance, currentTime)));
+        transactions.addAll(createSofDeleteFilesTransactions(resource, userInstance));
+        var request = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(request);
+    }
+
+    public ImportCandidate updateStatus(SortableIdentifier identifier, ImportStatus status) throws NotFoundException {
+        var resource = createUpdatedImportCandidate(identifier, status);
+        var updateResourceTransactionItem = createPutTransaction(resource);
+        var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
+        sendTransactionWriteRequest(request);
+        return resource.toImportCandidate();
+    }
+
+    protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
+        return new DeletePublicationStatusResponse(RESOURCE_ALREADY_DELETED, HttpURLConnection.HTTP_NO_CONTENT);
+    }
+
+    protected static DeletePublicationStatusResponse deletionStatusChangeInProgress() {
+        return new DeletePublicationStatusResponse(DELETION_IN_PROGRESS, HttpURLConnection.HTTP_ACCEPTED);
+    }
+
+    DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {
+        var publication = readResourceService.getResourceByIdentifier(resourceIdentifier).orElseThrow().toPublication();
+        return DELETED.equals(publication.getStatus()) ? deletionStatusIsCompleted() : delete(publication);
+    }
+
+    private static FileEntry updateFileEntry(FileEntry fileEntry, Publication publication, UserInstance userInstance) {
+        return publication.getFile(fileEntry.getFile().getIdentifier())
+                   .map(file -> fileEntry.update(file, userInstance))
+                   .orElse(fileEntry);
+    }
+
+    private static boolean isContributorsChanged(Resource resource, Resource existingResource) {
+        return nonNull(resource.getEntityDescription())
+               && !getContributors(resource).equals(getContributors(existingResource));
+    }
+
+    private static List<Contributor> getContributors(Resource resource) {
+        return nonNull(resource.getEntityDescription()) ? resource.getEntityDescription().getContributors() : List.of();
+    }
+
     private static List<TransactWriteItem> createPendingUnpublishingRequestTicket(UnpublishRequest unpublishRequest) {
         return new UnpublishRequestDao(unpublishRequest).createInsertionTransactionRequest().getTransactItems();
     }
 
+    private static boolean isNotImported(Resource resource) {
+        return !resource.toImportCandidate().getImportStatus().candidateStatus().equals(CandidateStatus.IMPORTED);
+    }
+
+    private Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
+        var resource = Resource.fromPublication(publicationUpdate);
+        var userInstance = UserInstance.fromPublication(publicationUpdate);
+        return updateResource(resource, userInstance).toPublication();
+    }
+
+    private List<TransactWriteItem> createUpdateResourceTransactionItems(Resource resource, UserInstance userInstance,
+                                                                         Resource persistedResource) {
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(createPutTransaction(resource));
+        transactionItems.addAll(updateFilesTransactions(resource, userInstance, persistedResource));
+        return transactionItems;
+    }
+
+    private void updateCuratingInstitutions(Resource resource, Resource persistedResource) {
+        if (isContributorsChanged(resource, persistedResource)) {
+            resource.setCuratingInstitutions(CuratingInstitutionsUtil
+                                                 .getCuratingInstitutionsOnline(resource.toPublication(), uriRetriever));
+        }
+    }
+
+    private List<TransactWriteItem> updateFilesTransactions(Resource resource, UserInstance userInstance,
+                                                            Resource persistedResource) {
+        return persistedResource.getFileEntries()
+                   .stream()
+                   .map(fileEntry -> updateFileEntry(fileEntry, resource.toPublication(), userInstance))
+                   .map(FileEntry::toDao)
+                   .map(dao -> dao.toPutTransactionItem(tableName))
+                   .toList();
+    }
+
+    private List<TransactWriteItem> convertFileEntriesToDeleteTransactions(Resource resource) {
+        return resource.getFileEntries()
+                   .stream()
+                   .map(FileEntry::toDao)
+                   .map(dao -> dao.toDeleteTransactionItem(tableName))
+                   .toList();
+    }
+
+    private List<TransactWriteItem> convertFileEntriesToPersistTransactions(ImportCandidate importCandidate) {
+        return Resource.fromImportCandidate(importCandidate)
+                   .getFileEntries()
+                   .stream()
+                   .map(FileEntry::toDao)
+                   .map(fileDao -> fileDao.toPutNewTransactionItem(tableName))
+                   .toList();
+    }
+
     private List<TransactWriteItem> updateExistingPendingTicketsToNotApplicable(
         Stream<TicketEntry> existingTicketStream) {
-        return existingTicketStream
-                   .filter(this::isPendingTicket)
+        return existingTicketStream.filter(this::isPendingTicket)
                    .map(this::updateToNotApplicable)
                    .map(Entity::toDao)
                    .map(TicketDao.class::cast)
@@ -272,10 +283,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private TransactWriteItem createPutTransactionItems(TicketDao ticketDao) {
 
-        var primaryKeyConditionAttributeValues =
-            primaryKeyEqualityConditionAttributeValues(ticketDao);
-        var put = new Put()
-                      .withItem(ticketDao.toDynamoFormat())
+        var primaryKeyConditionAttributeValues = primaryKeyEqualityConditionAttributeValues(ticketDao);
+        var put = new Put().withItem(ticketDao.toDynamoFormat())
                       .withTableName(tableName)
                       .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
@@ -291,130 +300,39 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return updatedTicket;
     }
 
-    public void terminateResource(Resource resource, UserInstance userInstance) {
-        var softDeleteFilesTransactions = createSofDeleteFilesTransactions(resource, userInstance);
-        var currentTime = clockForTimestamps.instant();
-        var updateResourceTransactionItem = createPutTransaction(resource.delete(userInstance, currentTime));
-        var transactions = new ArrayList<TransactWriteItem>();
-        transactions.add(updateResourceTransactionItem);
-        transactions.addAll(softDeleteFilesTransactions);
-        var request = new TransactWriteItemsRequest().withTransactItems(transactions);
-        sendTransactionWriteRequest(request);
-    }
-
     private List<TransactWriteItem> createSofDeleteFilesTransactions(Resource resource, UserInstance userInstance) {
-        return resource.getFileEntries().stream()
+        return resource.getFileEntries()
+                   .stream()
                    .map(fileEntry -> fileEntry.softDelete(userInstance.getUser()))
                    .map(FileEntry::toDao)
                    .map(fileDao -> fileDao.toPutTransactionItem(tableName))
                    .toList();
     }
 
-    protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
-        return new DeletePublicationStatusResponse(RESOURCE_ALREADY_DELETED,
-                                                   HttpURLConnection.HTTP_NO_CONTENT);
+    private DeletePublicationStatusResponse delete(Publication publication) {
+        publication.setStatus(DELETED);
+        publication.setPublishedDate(null);
+        updatePublicationIncludingStatus(publication);
+        return deletionStatusChangeInProgress();
     }
 
-    protected static DeletePublicationStatusResponse deletionStatusChangeInProgress() {
-        return new DeletePublicationStatusResponse(DELETION_IN_PROGRESS,
-                                                   HttpURLConnection.HTTP_ACCEPTED);
-    }
-
-    PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
-                                                        SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        var publication = readResourceService.getResourceByIdentifier(resourceIdentifier).orElseThrow().toPublication();
-        if (publicationIsPublished(publication)) {
-            return publishCompletedStatus();
-        } else if (publicationIsAllowedForPublishing(publication)) {
-            publishPublication(publication, userInstance);
-            return publishingInProgressStatus();
-        } else {
-            throw new UnsupportedPublicationStatusTransition(String.format(
-                "Publication status %s is not al1lowed for publishing",
-                publication.getStatus()
-            ));
-        }
-    }
-
-    /**
-     * Associated artifacts are NOT updated anymore. For now all files are just files, i.e. we do not use
-     * Published/Unpublished temporary.
-     **/
-
-    private void publishPublication(Publication publication, UserInstance userInstance) throws InvalidPublicationException {
-        assertThatPublicationHasMinimumMandatoryFields(publication);
-        var persistedResource = fetchExistingResource(publication);
-        var resource = Resource.fromPublication(publication);
-        resource.setStatus(PublicationStatus.PUBLISHED);
-        var currentTime = clockForTimestamps.instant();
-        resource.setCreatedDate(persistedResource.getCreatedDate());
-        resource.setModifiedDate(currentTime);
-        resource.setPublishedDate(currentTime);
-        resource.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
-        var updateResourceTransactionItem = createPutTransaction(resource);
-        var updateTicketsTransactionItems = updateTickets(resource);
-        var transactionItems = new ArrayList<TransactWriteItem>();
-        transactionItems.add(updateResourceTransactionItem);
-        transactionItems.addAll(updateTicketsTransactionItems);
-
-        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
-        sendTransactionWriteRequest(request);
-    }
-
-    DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
-        var publication =
-            readResourceService.getResourceByIdentifier(resourceIdentifier).orElseThrow().toPublication();
-        if (DELETED.equals(publication.getStatus())) {
-            return deletionStatusIsCompleted();
-        } else {
-            publication.setStatus(DELETED);
-            publication.setPublishedDate(null);
-            updatePublicationIncludingStatus(publication);
-            return deletionStatusChangeInProgress();
-        }
-    }
-
-    public ImportCandidate updateStatus(SortableIdentifier identifier, ImportStatus status)
+    private Resource createUpdatedImportCandidate(SortableIdentifier identifier, ImportStatus status)
         throws NotFoundException {
         var importCandidate = readResourceService.getResourceByIdentifier(identifier)
                                   .orElseThrow(() -> new NotFoundException("Import candidate not found!"))
                                   .toImportCandidate();
         importCandidate.setImportStatus(status);
         importCandidate.setModifiedDate(Instant.now());
-        var resource = Resource.fromImportCandidate(importCandidate);
-        var updateResourceTransactionItem = createPutTransaction(resource);
-        var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
-        sendTransactionWriteRequest(request);
-        return importCandidate;
-    }
-
-    private static boolean isNotImported(ImportCandidate importCandidate) {
-        return !importCandidate.getImportStatus().candidateStatus().equals(CandidateStatus.IMPORTED);
-    }
-
-    private static boolean publicationIsPublished(Publication publication) {
-        var status = publication.getStatus();
-        return PublicationStatus.PUBLISHED.equals(status);
-    }
-
-    private ImportCandidate fetchImportCandidate(ImportCandidate importCandidate) {
-        return attempt(() -> readResourceService.getResourceByIdentifier(importCandidate.getIdentifier()))
-                   .map(Optional::orElseThrow)
-                   .map(Resource::toImportCandidate)
-                   .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
+        return Resource.fromImportCandidate(importCandidate);
     }
 
     private Resource fetchExistingResource(Publication publication) {
-        return attempt(() -> readResourceService.getResourceByIdentifier(publication.getIdentifier()))
-                   .map(Optional::orElseThrow)
-                   .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
+        return attempt(() -> readResourceService.getResourceByIdentifier(publication.getIdentifier())).map(
+            Optional::orElseThrow).orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
-        return existingResource
-                   .copy()
+        return existingResource.copy()
                    .withPublisher(userOrganization(newOwner))
                    .withResourceOwner(Owner.fromResourceOwner(
                        new ResourceOwner(new Username(newOwner.getUsername()), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
@@ -422,49 +340,19 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .build();
     }
 
-    private List<TransactWriteItem> updateTickets(Resource resource) {
-        var dao = new ResourceDao(resource);
-        var ticketDaos = dao.fetchAllTickets(getClient());
-        return ticketDaos.stream()
-                   .map(Dao::getData)
-                   .map(TicketEntry.class::cast)
-                   .filter(ticketEntry -> ticketEntry instanceof DoiRequest)
-                   .map(DoiRequest.class::cast)
-                   .map(ticket -> ticket.update(resource))
-                   .map(Entity::toDao)
-                   .map(DynamoEntry::toDynamoFormat)
-                   .map(dynamoEntry -> new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dynamoEntry))
-                   .map(put -> new TransactWriteItem().withPut(put))
-                   .collect(Collectors.toList());
-    }
-
     private TransactWriteItem createPutTransaction(Resource resourceUpdate) {
-
 
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 
-        Map<String, AttributeValue> primaryKeyConditionAttributeValues =
-            primaryKeyEqualityConditionAttributeValues(resourceDao);
+        Map<String, AttributeValue> primaryKeyConditionAttributeValues = primaryKeyEqualityConditionAttributeValues(
+            resourceDao);
 
-        Put put = new Put()
-                      .withItem(resourceDao.toDynamoFormat())
+        Put put = new Put().withItem(resourceDao.toDynamoFormat())
                       .withTableName(tableName)
                       .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
                       .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
 
         return new TransactWriteItem().withPut(put);
-    }
-
-    private PublishPublicationStatusResponse publishingInProgressStatus() {
-        return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpURLConnection.HTTP_ACCEPTED);
-    }
-
-    private PublishPublicationStatusResponse publishCompletedStatus() {
-        return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
-    }
-
-    private boolean publicationIsAllowedForPublishing(Publication publication) {
-        return allowedPublicationStatusesForPublishing.contains(publication.getStatus());
     }
 }

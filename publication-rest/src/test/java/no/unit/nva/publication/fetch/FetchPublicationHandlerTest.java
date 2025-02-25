@@ -149,7 +149,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @DisplayName("handler Returns Ok Response On Valid Input")
     void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         var publication = createPublication();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
         var publicationIdentifier = publication.getIdentifier().toString();
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
@@ -163,7 +163,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @DisplayName("handler should return allowedOperations on files")
     void handlerReturnsAllowedOperationsOnFiles() throws IOException, ApiGatewayException {
         var publication = createPublication();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
         var publicationIdentifier = publication.getIdentifier().toString();
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
@@ -185,7 +185,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     void handlerShouldOnlyMentionTypeOnce() throws IOException, ApiGatewayException {
         // had an issue that "type" was serialized zero or multiple times in the response of a FileResponse
         var publication = createPublication();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
         var publicationIdentifier = publication.getIdentifier().toString();
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
@@ -202,7 +202,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         var publication = createPublicationWithPublisher(wireMockRuntimeInfo);
         var publicationIdentifier = publication.getIdentifier().toString();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
         var headers = Map.of(HttpHeaders.ACCEPT, MediaTypes.APPLICATION_DATACITE_XML.toString());
         createCustomerMock(publication.getPublisher());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS),
@@ -219,7 +219,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnSchemaOrgProfileWhenSchemaOrgMediaTypeIsRequested() throws IOException, ApiGatewayException {
         var publication = createPublication(JournalArticle.class);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
         var identifier = publication.getIdentifier().toString();
         var headers = Map.of(ACCEPT, MediaTypes.SCHEMA_ORG.toString());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers, NO_QUERY_PARAMS), output,
@@ -235,7 +235,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = createPublicationWithPublisher(wireMockRuntimeInfo);
         var publicationIdentifier = publication.getIdentifier().toString();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
         createCustomerMock(publication.getPublisher());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
         var gatewayResponse = parseHandlerResponse();
@@ -249,7 +249,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     void shouldRedirectToFrontendLandingPageIfPreferredContentTypeIsHtml(String acceptHeaderValue)
         throws ApiGatewayException, IOException {
         var publication = createPublication(JournalArticle.class);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
         var identifier = publication.getIdentifier().toString();
         var headers = Map.of(ACCEPT, acceptHeaderValue);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers, NO_QUERY_PARAMS), output,
@@ -478,8 +478,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publication.setDuplicateOf(null);
         var peristedPublication = publicationService.createPublication(UserInstance.fromPublication(publication),
                                                                        publication);
-        publicationService.publishPublication(UserInstance.fromPublication(publication),
-                                              peristedPublication.getIdentifier());
+        Resource.fromPublication(peristedPublication).publish(publicationService, UserInstance.fromPublication(publication));
         var userInstance = UserInstance.fromPublication(publication);
         publicationService.unpublishPublication(peristedPublication, userInstance);
         return peristedPublication;
@@ -503,7 +502,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
         publicationService.updatePublishedStatusToDeleted(publication.getIdentifier());
-        return publicationService.getPublication(publication);
+        return publicationService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
     private InputStream generateCuratorRequest(Publication publication) throws JsonProcessingException {
@@ -533,11 +532,11 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private Publication createUnpublishedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
         var publication = createPublication();
         publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        var publishedPublication = publicationService.getPublication(publication);
+        Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
+        var publishedPublication = publicationService.getPublicationByIdentifier(publication.getIdentifier());
         var userInstance = UserInstance.fromPublication(publication);
         publicationService.unpublishPublication(publishedPublication, userInstance);
-        return publicationService.getPublication(publication);
+        return publicationService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {

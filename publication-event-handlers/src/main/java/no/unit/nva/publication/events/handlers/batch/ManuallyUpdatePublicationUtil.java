@@ -7,6 +7,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 public final class ManuallyUpdatePublicationUtil {
@@ -70,16 +71,16 @@ public final class ManuallyUpdatePublicationUtil {
         resources.forEach(resource -> updateFiles(resource, request));
     }
 
-    private void updateLicense(FileEntry fileEntry, String license) {
+    private void updateLicense(FileEntry fileEntry, Resource resource, String license) {
         var file = fileEntry.getFile().copy().withLicense(URI.create(license)).build(fileEntry.getFile().getClass());
-        fileEntry.update(file, resourceService);
+        fileEntry.update(file, UserInstance.fromPublication(resource.toPublication()), resourceService);
     }
 
     private void updateFiles(Resource resource, ManuallyUpdatePublicationsRequest request) {
         resource.getFileEntries()
             .stream()
             .filter(fileEntry -> hasLicense(fileEntry, request.oldValue()))
-            .forEach(fileEntry -> updateLicense(fileEntry, request.newValue()));
+            .forEach(fileEntry -> updateLicense(fileEntry, resource, request.newValue()));
     }
 
     private boolean hasLicense(FileEntry fileEntry, String oldValue) {
@@ -90,6 +91,6 @@ public final class ManuallyUpdatePublicationUtil {
         resources.stream()
             .filter(resource -> hasPublisher(resource, request.oldValue()))
             .map(resource -> update(resource, request.oldValue(), request.newValue()))
-            .forEach(resourceService::updateResource);
+            .forEach(resource -> resourceService.updateResource(resource, UserInstance.fromPublication(resource.toPublication())));
     }
 }

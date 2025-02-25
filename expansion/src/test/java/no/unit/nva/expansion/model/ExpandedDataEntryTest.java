@@ -419,10 +419,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     private Publication createPublishedPublicationWithoutDoi(Class<?> instanceType) throws ApiGatewayException {
         var publication = randomPublicationWithoutDoi(instanceType);
-        var persistedPublication = Resource.fromPublication(publication)
-                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
-        resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                           persistedPublication.getIdentifier());
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
         return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 
@@ -472,8 +471,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
                 return createExpandedImportCandidate(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
-                resourceService.publishPublication(UserInstance.fromPublication(publication),
-                                                   publication.getIdentifier());
+                Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
                 var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
                 return new ExpandedDataEntryWithAssociatedPublication(
                     randomDoiRequest(publishedPublication, expansionService, resourceService, messageService,

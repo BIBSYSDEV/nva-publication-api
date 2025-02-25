@@ -80,7 +80,7 @@ public final class FakeUriResponse {
         if (publication instanceof ImportCandidate) {
             createFakeCustomerApiResponse(fakeUriRetriever);
         } else {
-            resourceService.updateResource(Resource.fromPublication(publication));
+            resourceService.updateResource(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         }
     }
 

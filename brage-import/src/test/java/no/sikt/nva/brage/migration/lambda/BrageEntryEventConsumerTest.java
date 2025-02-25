@@ -165,6 +165,7 @@ import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -1492,8 +1493,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistMergeReport()
-        throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
+    void shouldPersistMergeReport() throws IOException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DataSet.class);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
@@ -1530,8 +1530,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                     existingPublication,
                                                     nvaBrageMigrationDataGenerator.getBrageRecord().getId(), "CRISTIN");
         var storedMergeReport = JsonUtils.dtoObjectMapper.readValue(storedMergeReportString, BrageMergingReport.class);
-        var updatedPublication = resourceService.getPublication(existingPublication);
-        assertThat(storedMergeReport.oldImage(), is(equalTo(existingPublication)));
+        var updatedPublication = Resource.fromPublication(existingPublication).fetch(resourceService).orElseThrow().toPublication();
+        var expectedPublication = existingPublication.copy().withModifiedDate(storedMergeReport.oldImage()
+                                                                                           .getModifiedDate()).build();
+        assertEquals(expectedPublication, storedMergeReport.oldImage());
         assertThat(storedMergeReport.newImage(), is(equalTo(updatedPublication)));
     }
 
@@ -2015,7 +2017,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var resource = Resource.resourceQueryObject(publicationRepresentation.publication().getIdentifier())
                            .fetch(resourceService)
                            .orElseThrow();
-        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
+        var resourceEvent = (MergedResourceEvent) resource.getResourceEvent();
 
         assertEquals(Source.BRAGE, resourceEvent.importSource().getSource());
     }
@@ -2060,7 +2062,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var updatedPublication = resourceService.getPublication(existingPublication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
         var expectedCristinIdentifierFromBrage =
             new CristinIdentifier(SourceName.fromBrage(generator.getBrageRecord().getCustomer().getName()),
                                   brageCristinIdentifier);

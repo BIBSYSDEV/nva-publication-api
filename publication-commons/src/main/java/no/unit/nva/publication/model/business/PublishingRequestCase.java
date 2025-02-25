@@ -27,7 +27,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -42,8 +41,6 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings("PMD.GodClass")
 public class PublishingRequestCase extends TicketEntry {
 
-    public static final String RESOURCE_LACKS_REQUIRED_DATA =
-        "Resource does not have required data to be " + "published: ";
     public static final String TYPE = "PublishingRequestCase";
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be " + "published.";
@@ -120,14 +117,6 @@ public class PublishingRequestCase extends TicketEntry {
         queryObject.setResourceIdentifier(resourceIdentifier);
         queryObject.setCustomerId(customerId);
         return queryObject;
-    }
-
-    public static void assertThatPublicationHasMinimumMandatoryFields(Publication resource)
-        throws InvalidPublicationException {
-
-        if (!resource.isPublishable()) {
-            throwErrorWhenPublishingResourceThatDoesNotHaveRequiredData(resource);
-        }
     }
 
     public PublishingWorkflow getWorkflow() {
@@ -402,11 +391,6 @@ public class PublishingRequestCase extends TicketEntry {
         newPublishingRequest.setResourceIdentifier(publicationIdentifier);
         newPublishingRequest.setIdentifier(publishingRequestIdentifier);
         return newPublishingRequest;
-    }
-
-    private static void throwErrorWhenPublishingResourceThatDoesNotHaveRequiredData(Publication resource)
-        throws InvalidPublicationException {
-        throw new InvalidPublicationException(RESOURCE_LACKS_REQUIRED_DATA + resource.getIdentifier().toString());
     }
 
     private File toApprovedFile(File file) {

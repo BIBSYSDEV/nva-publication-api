@@ -50,6 +50,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -216,6 +217,10 @@ public class Resource implements Entity {
                    .anyMatch(instanceTypeClass -> instanceTypeClass.equals(publicationInstance.getClass()));
     }
 
+    public Resource update(ResourceService resourceService, UserInstance userInstance) {
+        return resourceService.updateResource(this, userInstance);
+    }
+
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
@@ -247,7 +252,7 @@ public class Resource implements Entity {
     /**
      * Extracts FileEntries from a Publication.
      *
-     * <p><b style="color: red;">Warning:</b> This method does not include all the needed FileEntry meta data and
+     * <p><b style="color: red;">Warning:</b> This method does not include all the needed FileEntry metadata and
      * should not be used when handling files.</p>
      *
      * @param publication the Publication extract FileEntries from.
@@ -319,8 +324,8 @@ public class Resource implements Entity {
 
     public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
         var userInstance = UserInstance.fromPublication(this.toPublication());
-        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
-        resourceService.updateResource(this);
+        this.setResourceEvent(MergedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
+        resourceService.updateResource(this, userInstance);
     }
 
     public List<LogEntry> fetchLogEntries(ResourceService resourceService) {
@@ -339,7 +344,7 @@ public class Resource implements Entity {
 
     private void publish(UserInstance userInstance, ResourceService resourceService) {
         publish(userInstance);
-        resourceService.updateResource(this);
+        resourceService.updateResource(this, userInstance);
     }
 
     private void publish(UserInstance userInstance) {
@@ -374,7 +379,7 @@ public class Resource implements Entity {
 
     private void republish(UserInstance userInstance, ResourceService resourceService) {
         republish(userInstance);
-        resourceService.updateResource(this);
+        resourceService.updateResource(this, userInstance);
     }
 
     private void republish(UserInstance userInstance) {
@@ -730,10 +735,9 @@ public class Resource implements Entity {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Resource)) {
+        if (!(o instanceof Resource resource)) {
             return false;
         }
-        Resource resource = (Resource) o;
         return Objects.equals(getIdentifier(), resource.getIdentifier())
                && getStatus() == resource.getStatus()
                && Objects.equals(getResourceOwner(), resource.getResourceOwner())

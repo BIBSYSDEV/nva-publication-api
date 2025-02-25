@@ -112,7 +112,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
             publishResource(resource);
             refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
-        createDoiRequestIfNeeded(resource, getUserInstance(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), getUserInstance(publishingRequest));
     }
 
     /**
@@ -144,7 +144,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
         logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), publishingRequest.getIdentifier());
 
-        createDoiRequestIfNeeded(resource, UserInstance.fromTicket(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
     }
 
     private void publishWhenPublicationStatusDraft(Resource resource) {
@@ -180,17 +180,17 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     /**
-     * Creating DoiRequest for a resource necessarily owned by resource owner institution and not the institution
+     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not the institution
      * that requests the doi.
      *
-     * @param resource  to create a DoiRequest for
+     * @param resourceIdentifier  to create a DoiRequest for
      * @param userInstance
      */
-    private void createDoiRequestIfNeeded(Resource resource, UserInstance userInstance) {
+    private void createDoiRequestIfNeeded(SortableIdentifier resourceIdentifier, UserInstance userInstance) {
+        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow();
         if (hasDoi(resource) && !doiRequestExists(resource)) {
-            attempt(() -> DoiRequest.create(resource, userInstance))
-                .map(doiRequest -> doiRequest.persistNewTicket(ticketService))
-                .orElseThrow();
+            var doiRequest = DoiRequest.create(resource, userInstance);
+            attempt(() -> doiRequest.persistNewTicket(ticketService)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, resource.getIdentifier());
         }
     }

@@ -160,7 +160,7 @@ public class FileService {
 
         validateUpdateFilePermissions(resource, fileEntry, userInstance);
 
-        fileEntry.update(file, resourceService);
+        fileEntry.update(file, userInstance, resourceService);
     }
 
     private static void validateDeletePermissions(UserInstance userInstance, FileEntry fileEntry, Resource resource)

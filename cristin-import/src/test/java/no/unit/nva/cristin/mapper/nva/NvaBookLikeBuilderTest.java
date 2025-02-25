@@ -15,8 +15,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookLikeBuilderTest {
 
-    public static final String ONLY_VOLUME_EXPECTED = "^Volume:[^;]*$";
-    public static final String ONLY_ISSUE_EXPECTED = "^Issue:[^;]*$";
+    public static final String ONLY_VOLUME_EXPECTED = "^[^;]*$";
+    public static final String ONLY_ISSUE_EXPECTED = "^[^;]*$";
 
     @ParameterizedTest(name = "nvaBookLikeBuilder returns Series that does contain blank String represetations"
                               + "when issue is blank")

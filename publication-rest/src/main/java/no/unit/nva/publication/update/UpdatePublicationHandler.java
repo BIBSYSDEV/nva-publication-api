@@ -256,7 +256,6 @@ public class UpdatePublicationHandler
                    .build();
     }
 
-    // TODO: Move file update to resourceService and perform update in single transaction
     private Resource updateMetadata(UpdatePublicationRequest input,
                                        SortableIdentifier identifierInPath,
                                        Resource existingResource,
@@ -279,9 +278,7 @@ public class UpdatePublicationHandler
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
-        resourceService.updatePublication(publicationUpdate);
-
-        return Resource.resourceQueryObject(identifierInPath).fetch(resourceService).orElseThrow();
+        return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
     }
 
     private static void authorizeFileEntries(Resource resource, UserInstance userInstance, List<FileEntry> modifiedFiles)

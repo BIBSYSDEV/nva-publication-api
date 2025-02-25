@@ -43,13 +43,10 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
@@ -219,12 +216,6 @@ public class ResourceService extends ServiceWithTransactions {
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier)).toPublication();
     }
 
-    public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
-                                                               SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        return updateResourceService.publishPublication(userInstance, resourceIdentifier);
-    }
-
     private Resource insertImportedResource(Resource resource, ImportSource importSource) {
         if (resource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(resource);
@@ -278,8 +269,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .toList();
     }
 
-    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
+    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
     }
 
@@ -352,12 +342,8 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updatePublicationButDoNotChangeStatus(resourceUpdate);
     }
 
-    public void updateResource(Resource resource) {
-        resource.setModifiedDate(Instant.now());
-        var associatedArtifacts = new ArrayList<>(resource.getAssociatedArtifacts());
-        associatedArtifacts.removeIf(File.class::isInstance);
-        resource.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-        updateResourceService.updateResource(resource);
+    public Resource updateResource(Resource resource, UserInstance userInstance) {
+        return updateResourceService.updateResource(resource, userInstance);
     }
 
     // update this method according to current needs.
