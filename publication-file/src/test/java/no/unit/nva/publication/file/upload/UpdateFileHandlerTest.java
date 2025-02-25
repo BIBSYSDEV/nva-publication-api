@@ -8,9 +8,14 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -22,22 +27,36 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -88,7 +107,9 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
         var publication = randomPublication(JournalArticle.class);
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        var request = createRandomUserAuthorizedRequest(UUID.randomUUID(), resource.getIdentifier());
+        var file = randomPendingInternalFile();
+        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
+        var request = createRandomUserAuthorizedRequest(file.getIdentifier(), resource.getIdentifier());
 
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -128,11 +149,12 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnInternalServerErrorWhenUnexpectedErrorOccurs() throws IOException, NotFoundException {
         var publication = randomPublication(JournalArticle.class);
-        var userInstance = UserInstance.fromPublication(publication);
-        var handlerThrowingException = handlerThrowingExceptionOnFileUpdate(publication, userInstance);
+        injectContributor(publication, createContributor());
+        var curator = getCuratorUserInstanceFromPublication(publication);
+        var handlerThrowingException = handlerThrowingExceptionOnFileUpdate(publication, curator);
         var fileIdentifier = UUID.randomUUID();
         var requestBody = randomUpdateFileRequest(fileIdentifier);
-        var request = createRequestForUserWithPermissions(fileIdentifier, publication.getIdentifier(), userInstance,
+        var request = createRequestForUserWithPermissions(fileIdentifier, publication.getIdentifier(), curator,
                                                           requestBody);
 
         handlerThrowingException.handleRequest(request, output, CONTEXT);
@@ -144,18 +166,57 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnAcceptedWhenFileHasBeenUpdatedSuccessfully() throws IOException, BadRequestException {
         var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        injectContributor(publication, createContributor());
+        var curator = getCuratorUserInstanceFromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
         var file = randomOpenFile();
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
         var requestBody = randomUpdateFileRequest(file.getIdentifier());
-        var request = createRequestForUserWithPermissions(file.getIdentifier(), resource.getIdentifier(), userInstance,
+        var request = createRequestForUserWithPermissions(file.getIdentifier(), resource.getIdentifier(), curator,
                                                           requestBody);
 
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertEquals(HTTP_ACCEPTED, response.getStatusCode());
+    }
+
+    private void injectContributor(Publication savedPublication, Contributor contributor) {
+        var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
+        contributors.add(contributor);
+        var curatingIntitutions =
+            contributors.stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(List::stream)
+                .map(Organization.class::cast)
+                .map(affiliation ->
+                         new CuratingInstitution(affiliation.getId(), Set.of(contributor.getIdentity().getId())))
+                .collect(Collectors.toSet());
+
+        savedPublication.getEntityDescription().setContributors(contributors);
+        savedPublication.setCuratingInstitutions(curatingIntitutions);
+    }
+
+    private List<Corporation> getListOfRandomOrganizations() {
+        return List.of(new Organization.Builder().withId(randomUri()).build());
+    }
+
+    private Contributor createContributor() {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(Role.CREATOR))
+                   .withIdentity(new Identity.Builder().withId(randomUri()).withName(randomInteger().toString()).build())
+                   .withAffiliations(getListOfRandomOrganizations())
+                   .build();
+    }
+
+    private static UserInstance getCuratorUserInstanceFromPublication(Publication publication) {
+        var contributor = publication.getEntityDescription().getContributors().getFirst();
+        URI topLevelOrgCristinId = contributor.getAffiliations().stream().map(Organization.class::cast).findFirst().orElseThrow().getId();
+        return new UserInstance(randomString(),
+                                publication.getPublisher().getId(),
+                                topLevelOrgCristinId,
+                                null, null, List.of(MANAGE_DEGREE, MANAGE_RESOURCE_FILES,
+                                                    MANAGE_RESOURCES_STANDARD), UserClientType.INTERNAL);
     }
 
     private static Map<String, String> toPathParameters(UUID fileIdentifier, SortableIdentifier publicationIdentifier) {
@@ -183,6 +244,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
                    .withPathParameters(toPathParameters(fileIdentifier, publicationIdentifier))
                    .withUserName(userInstance.getUsername())
                    .withCurrentCustomer(userInstance.getCustomerId())
+                   .withAccessRights(userInstance.getCustomerId(), userInstance.getAccessRights().toArray(AccessRight[]::new))
                    .withPersonCristinId(randomUri())
                    .withTopLevelCristinOrgId(userInstance.getTopLevelOrgCristinId())
                    .build();

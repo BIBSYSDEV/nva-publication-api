@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
@@ -36,6 +37,7 @@ import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadReque
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.file.FilePermissions;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -75,6 +77,8 @@ public class FileService {
             validateCustomerConfig(userInstance, resource);
         }
 
+        validateUploadPermissions(userInstance, resource);
+
         var request = createUploadRequestBody.toInitiateMultipartUploadRequest(BUCKET_NAME);
 
         return amazonS3.initiateMultipartUpload(request);
@@ -89,7 +93,7 @@ public class FileService {
 
     public File completeMultipartUpload(SortableIdentifier resourceIdentifier,
                                         CompleteUploadRequest request, UserInstance userInstance)
-        throws NotFoundException, BadRequestException {
+        throws NotFoundException, BadRequestException, ForbiddenException {
 
         var resource = fetchResource(resourceIdentifier);
 
@@ -101,6 +105,9 @@ public class FileService {
         var file = userInstance.isExternalClient() && request instanceof ExternalCompleteUploadRequest externalRequest
                        ? constructFileForExternalClient(UUID.fromString(s3ObjectKey), externalRequest, objectMetadata)
                        : constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
+
+        validateUploadPermissions(userInstance, resource);
+
         FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
         return file;
     }
@@ -110,11 +117,12 @@ public class FileService {
         var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
 
         if (resource.isPresent()) {
-            validateDeletePermissions(userInstance, resource.get());
-
-            FileEntry.queryObject(fileIdentifier, resourceIdentifier)
-                .fetch(resourceService)
-                .ifPresent(fileEntry -> fileEntry.softDelete(resourceService, userInstance.getUser()));
+            var fileEntry = FileEntry.queryObject(fileIdentifier, resourceIdentifier)
+                .fetch(resourceService);
+            if (fileEntry.isPresent()) {
+                validateDeletePermissions(userInstance, fileEntry.get(), resource.get());
+                fileEntry.get().softDelete(resourceService, userInstance.getUser());
+            }
         }
     }
 
@@ -146,19 +154,27 @@ public class FileService {
                            .fetch(resourceService)
                            .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
 
-        validateUpdateFilePermissions(resource, userInstance);
-
         var fileEntry = FileEntry.queryObject(fileIdentifier, resourceIdentifier)
                             .fetch(resourceService)
                             .orElseThrow(() -> new NotFoundException(FILE_NOT_FOUND_MESSAGE));
 
+        validateUpdateFilePermissions(resource, fileEntry, userInstance);
+
         fileEntry.update(file, resourceService);
     }
 
-    private static void validateDeletePermissions(UserInstance userInstance, Resource resource)
+    private static void validateDeletePermissions(UserInstance userInstance, FileEntry fileEntry, Resource resource)
         throws ForbiddenException {
-        if (!PublicationPermissions.create(resource.toPublication(), userInstance)
-                 .allowsAction(PublicationOperation.UPDATE)) {
+        if (!new FilePermissions(fileEntry, userInstance, resource)
+                 .allowsAction(FileOperation.DELETE)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    private static void validateUploadPermissions(UserInstance userInstance, Resource resource)
+        throws ForbiddenException {
+        if (!new PublicationPermissions(resource.toPublication(), userInstance)
+                 .allowsAction(PublicationOperation.UPLOAD_FILE)) {
             throw new ForbiddenException();
         }
     }
@@ -173,10 +189,10 @@ public class FileService {
         return new UserUploadDetails(new Username(userInstance.getUsername()), Instant.now());
     }
 
-    private static void validateUpdateFilePermissions(Resource resource, UserInstance userInstance)
+    private static void validateUpdateFilePermissions(Resource resource, FileEntry fileEntry, UserInstance userInstance)
         throws ForbiddenException {
-        if (!PublicationPermissions.create(resource.toPublication(), userInstance)
-                 .allowsAction(PublicationOperation.UPDATE)) {
+        if (!new FilePermissions(fileEntry, userInstance, resource)
+                 .allowsAction(FileOperation.WRITE_METADATA)) {
             throw new ForbiddenException();
         }
     }

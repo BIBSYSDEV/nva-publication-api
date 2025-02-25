@@ -3,13 +3,16 @@ package no.unit.nva.publication.file.upload;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -21,20 +24,34 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -115,10 +132,11 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnInternalServerErrorWhenUnexpectedException() throws IOException, NotFoundException {
         var publication = randomPublication(JournalArticle.class);
-        var userInstance = UserInstance.fromPublication(publication);
-        var request = createRequestForUserWithPermissions(UUID.randomUUID(), publication.getIdentifier(), userInstance);
+        injectContributor(publication, createContributor());
+        var curator = getCuratorUserInstanceFromPublication(publication);
+        var request = createRequestForUserWithPermissions(UUID.randomUUID(), publication.getIdentifier(), curator);
 
-        var handlerThrowingException = handlerThrowingExceptionOnFileUpdate(publication, userInstance);
+        var handlerThrowingException = handlerThrowingExceptionOnFileUpdate(publication, curator);
         handlerThrowingException.handleRequest(request, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -129,18 +147,64 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnAcceptedWhenDeletingFile() throws IOException, BadRequestException {
         var publication = randomPublication(JournalArticle.class);
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        injectContributor(publication, createContributor());
+        var curator = getCuratorUserInstanceFromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
         var file = randomOpenFile();
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
 
-        var request = createRequestForUserWithPermissions(file.getIdentifier(), resource.getIdentifier(), userInstance);
+        var request = createRequestForUserWithPermissions(file.getIdentifier(), resource.getIdentifier(), curator);
 
         handler.handleRequest(request, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertEquals(HTTP_ACCEPTED, response.getStatusCode());
+    }
+
+    private static UserInstance getCuratorUserInstanceFromPublication(Publication publication) {
+        var contributor = publication.getEntityDescription().getContributors().getFirst();
+        URI topLevelOrgCristinId = contributor.getAffiliations()
+                                       .stream()
+                                       .map(Organization.class::cast)
+                                       .findFirst()
+                                       .orElseThrow()
+                                       .getId();
+        return new UserInstance(randomString(),
+                                publication.getPublisher().getId(),
+                                topLevelOrgCristinId,
+                                null, null, List.of(MANAGE_DEGREE, MANAGE_RESOURCE_FILES,
+                                                    MANAGE_RESOURCES_STANDARD), UserClientType.INTERNAL);
+    }
+
+    private void injectContributor(Publication savedPublication, Contributor contributor) {
+        var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
+        contributors.add(contributor);
+        var curatingIntitutions =
+            contributors.stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(List::stream)
+                .map(Organization.class::cast)
+                .map(affiliation ->
+                         new CuratingInstitution(affiliation.getId(), Set.of(contributor.getIdentity().getId())))
+                .collect(Collectors.toSet());
+
+        savedPublication.getEntityDescription().setContributors(contributors);
+        savedPublication.setCuratingInstitutions(curatingIntitutions);
+    }
+
+    private List<Corporation> getListOfRandomOrganizations() {
+        return List.of(new Organization.Builder().withId(RandomDataGenerator.randomUri()).build());
+    }
+
+    private Contributor createContributor() {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(Role.CREATOR))
+                   .withIdentity(new Identity.Builder().withId(RandomDataGenerator.randomUri())
+                                     .withName(randomInteger().toString())
+                                     .build())
+                   .withAffiliations(getListOfRandomOrganizations())
+                   .build();
     }
 
     private static Map<String, String> getPathParameters(UUID fileIdentifier,
@@ -156,6 +220,8 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
                    .withUserName(userInstance.getUsername())
                    .withCurrentCustomer(userInstance.getCustomerId())
                    .withTopLevelCristinOrgId(userInstance.getTopLevelOrgCristinId())
+                   .withAccessRights(userInstance.getCustomerId(),
+                                     userInstance.getAccessRights().toArray(AccessRight[]::new))
                    .withPersonCristinId(randomUri())
                    .build();
     }

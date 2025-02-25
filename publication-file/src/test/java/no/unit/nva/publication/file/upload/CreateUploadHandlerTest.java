@@ -35,8 +35,10 @@ import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadResponseBody;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,22 +104,25 @@ public class CreateUploadHandlerTest {
     @Test
     void canCreateUpload() throws Exception {
         var resource = Resource.fromPublication(randomPublication());
+        var user = UserInstance.fromPublication(resource.toPublication());
 
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
-        when(customerApiClient.fetch(any())).thenReturn(new Customer(Set.of(resource.getEntityDescription().getReference().getPublicationInstance().getInstanceType()), null, null));
+        when(customerApiClient.fetch(any())).thenReturn(new Customer(
+            Set.of(resource.getEntityDescription().getReference().getPublicationInstance().getInstanceType()), null,
+            null));
 
         createUploadHandler.handleRequest(createUploadRequestWithBody(resource.getIdentifier(),
-                                                                      createUploadRequestBody()),
+                                                                      createUploadRequestBody(), user),
                                           outputStream,
                                           context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, CreateUploadResponseBody.class);
+        assertThat(actual.getStatusCode(), equalTo(HTTP_OK));
         var actualBody = actual.getBodyObject(CreateUploadResponseBody.class);
         var expectedBody = new CreateUploadResponseBody(SAMPLE_UPLOAD_ID, getGeneratedKey(actual));
 
         assertThat(actualBody, is(equalTo(expectedBody)));
-        assertThat(actual.getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
     @Test
@@ -133,7 +138,11 @@ public class CreateUploadHandlerTest {
             .thenThrow(SdkClientException.class);
         var resource = Resource.fromPublication(randomPublication());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
-        createUploadHandler.handleRequest(createUploadRequestWithBody(resource.getIdentifier(), createUploadRequestBody()), outputStream, context);
+        createUploadHandler.handleRequest(
+            createUploadRequestWithBody(resource.getIdentifier(), createUploadRequestBody(),
+                                        UserInstance.fromPublication(resource.toPublication())),
+            outputStream,
+            context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
         assertThat(response, is(notNullValue()));
@@ -147,8 +156,10 @@ public class CreateUploadHandlerTest {
             .thenThrow(RuntimeException.class);
         var resource = Resource.fromPublication(randomPublication());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
-        createUploadHandler.handleRequest(createUploadRequestWithBody(SortableIdentifier.next(), createUploadRequestBody()), outputStream,
-                                          context);
+        createUploadHandler.handleRequest(
+            createUploadRequestWithBody(SortableIdentifier.next(), createUploadRequestBody(),
+                                        UserInstance.fromPublication(resource.toPublication())), outputStream,
+            context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
         assertThat(response, is(notNullValue()));
@@ -159,10 +170,12 @@ public class CreateUploadHandlerTest {
     @Test
     void setCreateUploadHandlerWithMissingFileParametersReturnsBadRequest() throws IOException {
         createUploadHandler.handleRequest(createUploadRequestWithBody(SortableIdentifier.next(),
-                                                                      createUploadRequestBodyNoFilename()),
+                                                                      createUploadRequestBodyNoFilename(),
+                                                                      UserInstance.fromPublication(
+                                                                          randomPublication())),
                                           outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream,
-                                                                                              CreateUploadResponseBody.class);
+                                                        CreateUploadResponseBody.class);
 
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
@@ -172,8 +185,10 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestBodyReturnsValidContentDispositionWhenInputIsValid() {
         var requestBody = new CreateUploadRequestBody(SAMPLE_FILENAME, SAMPLE_SIZE_STRING,
-                                                                          SAMPLE_MIMETYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString()).getObjectMetadata().getContentDisposition();
+                                                      SAMPLE_MIMETYPE);
+        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
+                         .getObjectMetadata()
+                         .getContentDisposition();
         var expected = generateContentDisposition(SAMPLE_FILENAME);
 
         assertThat(actual, is(equalTo(expected)));
@@ -182,7 +197,9 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestBodyReturnsValidContentDispositionWhenFilenameIsNull() {
         var requestBody = new CreateUploadRequestBody(null, SAMPLE_SIZE_STRING, SAMPLE_MIMETYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString()).getObjectMetadata().getContentDisposition();
+        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
+                         .getObjectMetadata()
+                         .getContentDisposition();
         var expected = generateContentDisposition(NULL_STRING);
 
         assertThat(actual, is(equalTo(expected)));
@@ -191,7 +208,9 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestBodyReturnsValidContentDispositionWhenFilenameIsEmptyString() {
         var requestBody = new CreateUploadRequestBody(EMPTY_STRING, SAMPLE_SIZE_STRING, SAMPLE_MIMETYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString()).getObjectMetadata().getContentDisposition();
+        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
+                         .getObjectMetadata()
+                         .getContentDisposition();
         var expected = generateContentDisposition(EMPTY_STRING);
 
         assertThat(actual, is(equalTo(expected)));
@@ -224,7 +243,9 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestReturnsValidContentDispositionWithEscapedUnicodeWhenInputIsUnicode() {
         var requestBody = new CreateUploadRequestBody(SAMPLE_UNICODE_FILENAME, SAMPLE_SIZE_STRING, SAMPLE_MIMETYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString()).getObjectMetadata().getContentDisposition();
+        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
+                         .getObjectMetadata()
+                         .getContentDisposition();
         var expected = generateContentDisposition(EXPECTED_ESCAPED_FILENAME);
 
         assertThat(actual, is(equalTo(expected)));
@@ -234,14 +255,18 @@ public class CreateUploadHandlerTest {
         return String.format("filename=\"%s\"", filename);
     }
 
-    private InputStream createUploadRequestWithBody(SortableIdentifier identifier, CreateUploadRequestBody uploadRequestBody)
+    private InputStream createUploadRequestWithBody(SortableIdentifier identifier,
+                                                    CreateUploadRequestBody uploadRequestBody,
+                                                    UserInstance user)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateUploadRequestBody>(objectMapper)
                    .withPathParameters(Map.of("publicationIdentifier", identifier.toString()))
                    .withBody(uploadRequestBody)
-                   .withCurrentCustomer(randomUri())
-                   .withUserName(randomString())
+                   .withCurrentCustomer(user.getCustomerId())
+                   .withUserName(user.getUsername())
+                   .withTopLevelCristinOrgId(user.getTopLevelOrgCristinId())
                    .withClientId(randomString())
+                   .withAccessRights(user.getCustomerId(), user.getAccessRights().toArray(AccessRight[]::new))
                    .build();
     }
 
