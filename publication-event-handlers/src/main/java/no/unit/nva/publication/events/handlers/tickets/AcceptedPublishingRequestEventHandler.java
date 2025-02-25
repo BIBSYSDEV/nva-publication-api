@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -113,7 +112,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
             publishResource(resource);
             refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
-        createDoiRequestForPublishedPublicationIfNeeded(resource, getUserInstance(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), getUserInstance(publishingRequest));
     }
 
     /**
@@ -145,7 +144,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
         logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), publishingRequest.getIdentifier());
 
-        createDoiRequestForPublishedPublicationIfNeeded(resource, UserInstance.fromTicket(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
     }
 
     private void publishWhenPublicationStatusDraft(Resource resource) {
@@ -181,16 +180,16 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     /**
-     * Creating DoiRequest for a resource necessarily owned by resource owner institution and not the institution
+     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not the institution
      * that requests the doi.
      *
-     * @param resource  to create a DoiRequest for
+     * @param resourceIdentifier  to create a DoiRequest for
      * @param userInstance
      */
-    private void createDoiRequestForPublishedPublicationIfNeeded(Resource resource, UserInstance userInstance) {
+    private void createDoiRequestIfNeeded(SortableIdentifier resourceIdentifier, UserInstance userInstance) {
+        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow();
         if (hasDoi(resource) && !doiRequestExists(resource)) {
             var doiRequest = DoiRequest.create(resource, userInstance);
-            doiRequest.setResourceStatus(PUBLISHED);
             attempt(() -> doiRequest.persistNewTicket(ticketService)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, resource.getIdentifier());
         }
