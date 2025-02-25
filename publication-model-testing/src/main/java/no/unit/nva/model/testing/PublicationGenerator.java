@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Approval;
@@ -256,6 +257,10 @@ public final class PublicationGenerator {
     }
 
     private static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
+        var entityDescription = randomEntityDescription(publicationInstanceClass);
+
+        var curatingInstitutions = extractCuratingInstitutions(entityDescription);
+
         return new Builder()
                    .withIdentifier(SortableIdentifier.next())
                    .withRightsHolder(randomString())
@@ -273,12 +278,24 @@ public final class PublicationGenerator {
                    .withHandle(randomUri())
                    .withDoi(randomDoi())
                    .withCreatedDate(randomInstant())
-                   .withEntityDescription(randomEntityDescription(publicationInstanceClass))
+                   .withEntityDescription(entityDescription)
                    .withAssociatedArtifacts(randomAssociatedArtifacts())
                    .withPublicationNotes(List.of(randomPublicationNote(), randomUnpublishingNote()))
                    .withDuplicateOf(randomUri())
-                   .withCuratingInstitutions(Set.of(new CuratingInstitution(randomUri(), Set.of(randomUri()))))
+                   .withCuratingInstitutions(curatingInstitutions)
                    .build();
+    }
+
+    private static Set<CuratingInstitution> extractCuratingInstitutions(EntityDescription entityDescription) {
+        return entityDescription.getContributors().stream()
+                   .flatMap(contributor ->
+                                contributor.getAffiliations().stream()
+                                    .map(Organization.class::cast)
+                                    .map(affiliation ->
+                                             new CuratingInstitution(affiliation.getId(),
+                                                                     Set.of(contributor.getIdentity().getId())))
+                   )
+                   .collect(Collectors.toSet());
     }
 
     private static Set<AdditionalIdentifierBase> randomAdditionalIdentifiers() {

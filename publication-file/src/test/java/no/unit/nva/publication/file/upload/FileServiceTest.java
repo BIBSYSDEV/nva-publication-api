@@ -5,12 +5,9 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.publication.model.business.TestUserInstance.getDegreeAndFileCuratorFromPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -28,20 +25,12 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
-import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
-import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
@@ -56,8 +45,6 @@ import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
@@ -66,6 +53,7 @@ import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadReque
 import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TestUserInstance;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -267,8 +255,7 @@ class FileServiceTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateMutableFileFields() throws BadRequestException, ForbiddenException, NotFoundException {
         var publication = randomPublication();
-        injectContributor(publication, createContributor());
-        var curator = getCuratorUserInstanceFromPublication(publication);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var file = randomHiddenFile();
@@ -294,8 +281,7 @@ class FileServiceTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateFileTypeWhenAllowed() throws BadRequestException, ForbiddenException, NotFoundException {
         var publication = randomPublication();
-        injectContributor(publication, createContributor());
-        var curator = getCuratorUserInstanceFromPublication(publication);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var file = randomPendingInternalFile();
@@ -318,8 +304,7 @@ class FileServiceTest extends ResourcesLocalTest {
     void shouldNotAllowFileTypeConversions(Class<? extends File> clazz, Class<? extends File> updatedClazz)
         throws BadRequestException {
         var publication =randomPublication();
-        injectContributor(publication, createContributor());
-        var curator = getCuratorUserInstanceFromPublication(publication);
+        var curator = TestUserInstance.getDegreeAndFileCuratorFromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);
@@ -332,51 +317,12 @@ class FileServiceTest extends ResourcesLocalTest {
                                                   updatedFile));
     }
 
-    private static UserInstance getCuratorUserInstanceFromPublication(Publication publication) {
-        var contributor = publication.getEntityDescription().getContributors().getFirst();
-        URI topLevelOrgCristinId = contributor.getAffiliations().stream().map(Organization.class::cast).findFirst().orElseThrow().getId();
-        return new UserInstance(randomString(),
-                                publication.getPublisher().getId(),
-                                topLevelOrgCristinId,
-                                null, null, List.of(MANAGE_DEGREE, MANAGE_RESOURCE_FILES,
-                                                            MANAGE_RESOURCES_STANDARD), UserClientType.INTERNAL);
-    }
-
-    private void injectContributor(Publication savedPublication, Contributor contributor) {
-        var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
-        contributors.add(contributor);
-        var curatingIntitutions =
-            contributors.stream()
-                .map(Contributor::getAffiliations)
-                .flatMap(List::stream)
-                .map(Organization.class::cast)
-                .map(affiliation ->
-                    new CuratingInstitution(affiliation.getId(), Set.of(contributor.getIdentity().getId())))
-                .collect(Collectors.toSet());
-
-        savedPublication.getEntityDescription().setContributors(contributors);
-        savedPublication.setCuratingInstitutions(curatingIntitutions);
-    }
-
-    private List<Corporation> getListOfRandomOrganizations() {
-        return List.of(new Organization.Builder().withId(randomUri()).build());
-    }
-
-    private Contributor createContributor() {
-        return new Contributor.Builder()
-                   .withRole(new RoleType(Role.CREATOR))
-                   .withIdentity(new Identity.Builder().withId(randomUri()).withName(randomInteger().toString()).build())
-                   .withAffiliations(getListOfRandomOrganizations())
-                   .build();
-    }
-
     @ParameterizedTest
     @MethodSource("validFileConversionsProvider")
     void shouldAllowFileTypeConversions(Class<? extends File> clazz, Class<? extends File> updatedClazz)
         throws BadRequestException {
         var publication = randomPublication();
-        injectContributor(publication, createContributor());
-        var curator = getCuratorUserInstanceFromPublication(publication);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);
@@ -393,8 +339,7 @@ class FileServiceTest extends ResourcesLocalTest {
     void shouldIgnoreImmutableFileFieldsWhenUpdatingFile()
         throws BadRequestException, ForbiddenException, NotFoundException {
         var publication = randomPublication();
-        injectContributor(publication, createContributor());
-        var curator = getCuratorUserInstanceFromPublication(publication);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile();

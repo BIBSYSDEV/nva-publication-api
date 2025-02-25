@@ -10,12 +10,9 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.publication.model.business.TestUserInstance.getDegreeAndFileCuratorFromPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -27,30 +24,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
-import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -149,8 +133,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnInternalServerErrorWhenUnexpectedErrorOccurs() throws IOException, NotFoundException {
         var publication = randomPublication(JournalArticle.class);
-        injectContributor(publication, createContributor());
-        var curator = getCuratorUserInstanceFromPublication(publication);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
         var handlerThrowingException = handlerThrowingExceptionOnFileUpdate(publication, curator);
         var fileIdentifier = UUID.randomUUID();
         var requestBody = randomUpdateFileRequest(fileIdentifier);
@@ -166,8 +149,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnAcceptedWhenFileHasBeenUpdatedSuccessfully() throws IOException, BadRequestException {
         var publication = randomPublication();
-        injectContributor(publication, createContributor());
-        var curator = getCuratorUserInstanceFromPublication(publication);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
         var file = randomOpenFile();
         FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
@@ -179,44 +161,6 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertEquals(HTTP_ACCEPTED, response.getStatusCode());
-    }
-
-    private void injectContributor(Publication savedPublication, Contributor contributor) {
-        var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
-        contributors.add(contributor);
-        var curatingIntitutions =
-            contributors.stream()
-                .map(Contributor::getAffiliations)
-                .flatMap(List::stream)
-                .map(Organization.class::cast)
-                .map(affiliation ->
-                         new CuratingInstitution(affiliation.getId(), Set.of(contributor.getIdentity().getId())))
-                .collect(Collectors.toSet());
-
-        savedPublication.getEntityDescription().setContributors(contributors);
-        savedPublication.setCuratingInstitutions(curatingIntitutions);
-    }
-
-    private List<Corporation> getListOfRandomOrganizations() {
-        return List.of(new Organization.Builder().withId(randomUri()).build());
-    }
-
-    private Contributor createContributor() {
-        return new Contributor.Builder()
-                   .withRole(new RoleType(Role.CREATOR))
-                   .withIdentity(new Identity.Builder().withId(randomUri()).withName(randomInteger().toString()).build())
-                   .withAffiliations(getListOfRandomOrganizations())
-                   .build();
-    }
-
-    private static UserInstance getCuratorUserInstanceFromPublication(Publication publication) {
-        var contributor = publication.getEntityDescription().getContributors().getFirst();
-        URI topLevelOrgCristinId = contributor.getAffiliations().stream().map(Organization.class::cast).findFirst().orElseThrow().getId();
-        return new UserInstance(randomString(),
-                                publication.getPublisher().getId(),
-                                topLevelOrgCristinId,
-                                null, null, List.of(MANAGE_DEGREE, MANAGE_RESOURCE_FILES,
-                                                    MANAGE_RESOURCES_STANDARD), UserClientType.INTERNAL);
     }
 
     private static Map<String, String> toPathParameters(UUID fileIdentifier, SortableIdentifier publicationIdentifier) {
