@@ -1,17 +1,21 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.sikt.nva.scopus.conversion.PublicationChannel.PUBLISHER;
 import static no.sikt.nva.scopus.conversion.PublicationChannel.SERIAL_PUBLICATION;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
+import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PublicationChannelConnection {
 
@@ -20,6 +24,7 @@ public class PublicationChannelConnection {
     public static final String YEAR = "year";
     public static final String CONTENT_TYPE = "application/json";
     public static final int SINGLE_ITEM = 1;
+    public static final Logger logger = LoggerFactory.getLogger(PublicationChannelConnection.class);
     private static final String API_HOST = new Environment().readEnv("API_HOST");
     private final AuthorizedBackendUriRetriever uriRetriever;
 
@@ -53,14 +58,23 @@ public class PublicationChannelConnection {
     }
 
     private Optional<URI> fetchPublicationChannelId(Stream<URI> uriStream) {
-        return uriStream.map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
+        return uriStream.map(uri -> uriRetriever.fetchResponse(uri, CONTENT_TYPE))
                    .filter(Optional::isPresent)
                    .map(Optional::get)
+                   .map(this::handleResponse)
                    .map(PublicationChannelConnection::toPublicationChannelResponse)
                    .filter(Objects::nonNull)
                    .filter(PublicationChannelConnection::containsSingleResult)
                    .map(PublicationChannelConnection::getId)
                    .findFirst();
+    }
+
+    private String handleResponse(HttpResponse<String> response) {
+        if (HTTP_OK != response.statusCode()) {
+            logger.error("Publication channels API responded with {} when searching for {}", response.statusCode(),
+                         response.request().uri());
+        }
+        return response.body();
     }
 
     private URI constructSearchUri(PublicationChannel publicationChannel, String searchTerm, Integer year) {

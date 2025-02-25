@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
@@ -196,6 +197,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -532,8 +534,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setPublicationYear(expectedYear);
         var s3Event = createNewScopusPublicationEvent();
         var expectedPublisherId = randomUri();
-        when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(
-            new PublicationChannelResponse(1, List.of(new PublicationChannelHit(expectedPublisherId))).toString()));
+        when(authorizedBackendUriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(
+            FakeHttpResponse.create(new PublicationChannelResponse(1,
+                                                            List.of(new PublicationChannelHit(expectedPublisherId))).toJsonString(), HTTP_OK)));
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
@@ -570,8 +573,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setPublishername(expectedPublisherName);
         var s3Event = createNewScopusPublicationEvent();
         var expectedPublisherId = randomUri();
-        when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(
-            new PublicationChannelResponse(1, List.of(new PublicationChannelHit(expectedPublisherId))).toString()));
+        when(authorizedBackendUriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(
+            FakeHttpResponse.create(new PublicationChannelResponse(1,
+                                                            List.of(new PublicationChannelHit(expectedPublisherId))).toString(), HTTP_OK)));
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
@@ -649,8 +653,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var s3Event = createNewScopusPublicationEvent();
         var expectedSeriesId = randomUri();
-        when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(
-            new PublicationChannelResponse(1, List.of(new PublicationChannelHit(expectedSeriesId))).toString()));
+        when(authorizedBackendUriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(
+            FakeHttpResponse.create(new PublicationChannelResponse(1,
+                                                                   List.of(new PublicationChannelHit(expectedSeriesId))).toJsonString(), HTTP_OK)));
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
@@ -672,8 +677,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var s3Event = createNewScopusPublicationEvent();
         var expectedJournalId = randomUri();
-        when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(
-            new PublicationChannelResponse(1, List.of(new PublicationChannelHit(expectedJournalId))).toString()));
+        when(authorizedBackendUriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(
+            FakeHttpResponse.create(new PublicationChannelResponse(1,
+                                                                   List.of(new PublicationChannelHit(expectedJournalId))).toJsonString(), HTTP_OK)));
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Journal.class));
@@ -1294,14 +1300,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var downloadUrl = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
         stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
                     .willReturn(
-                        aResponse().withBody(toCrossrefResponse(downloadUrl)).withStatus(HttpURLConnection.HTTP_OK)));
+                        aResponse().withBody(toCrossrefResponse(downloadUrl)).withStatus(HTTP_OK)));
         var filename = randomString() + ".pdf";
         var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
         stubFor(WireMock.get(urlPathEqualTo(testUrl))
                     .willReturn(aResponse().withBody("abcde")
                                     .withHeader("Content-Type", "application/pdf;charset=UTF-8")
                                     .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-                                    .withStatus(HttpURLConnection.HTTP_OK)));
+                                    .withStatus(HTTP_OK)));
         return filename;
     }
 
@@ -1653,12 +1659,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private void mockCristinPerson(String cristinPersonId, String response) {
         stubFor(WireMock.get(urlPathEqualTo("/cristin/person/" + cristinPersonId))
-                    .willReturn(aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
+                    .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
     }
 
     private void mockCristinOrganization(String cristinId, String organization) {
         stubFor(WireMock.get(urlPathEqualTo("/cristin/organization/" + cristinId))
-                    .willReturn(aResponse().withBody(organization).withStatus(HttpURLConnection.HTTP_OK)));
+                    .willReturn(aResponse().withBody(organization).withStatus(HTTP_OK)));
     }
 
     private void mockCristinPersonBadRequest() {
@@ -1680,7 +1686,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private void createEmptyPiaMock() {
         stubFor(WireMock.get(urlMatching("/sentralimport/authors"))
-                    .willReturn(aResponse().withBody("[]").withStatus(HttpURLConnection.HTTP_OK)));
+                    .willReturn(aResponse().withBody("[]").withStatus(HTTP_OK)));
     }
 
     private void mockedPiaException() {
@@ -1696,14 +1702,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private void mockedPiaAuthorIdSearch(String scopusId, String response) {
         stubFor(WireMock.get(urlPathEqualTo("/sentralimport/authors"))
                     .withQueryParam("author_id", WireMock.equalTo("SCOPUS:" + scopusId))
-                    .willReturn(aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
+                    .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
     }
 
     private void mockedPiaAffiliationIdSearch(String affiliationId, String response) {
 
         stubFor(WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
                     .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + affiliationId))
-                    .willReturn(aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
+                    .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
     }
 
     private AffiliationTp createAffiliation(List<Serializable> organizationName) {
