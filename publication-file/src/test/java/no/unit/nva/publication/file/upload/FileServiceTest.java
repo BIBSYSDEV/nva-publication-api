@@ -5,7 +5,7 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
-import static no.unit.nva.publication.model.business.TestUserInstance.getDegreeAndFileCuratorFromPublication;
+import static no.unit.nva.publication.model.business.UserInstanceFixture.getDegreeAndFileCuratorFromPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -53,7 +53,7 @@ import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadReque
 import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TestUserInstance;
+import no.unit.nva.publication.model.business.UserInstanceFixture;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -304,7 +304,7 @@ class FileServiceTest extends ResourcesLocalTest {
     void shouldNotAllowFileTypeConversions(Class<? extends File> clazz, Class<? extends File> updatedClazz)
         throws BadRequestException {
         var publication =randomPublication();
-        var curator = TestUserInstance.getDegreeAndFileCuratorFromPublication(publication);
+        var curator = UserInstanceFixture.getDegreeAndFileCuratorFromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);

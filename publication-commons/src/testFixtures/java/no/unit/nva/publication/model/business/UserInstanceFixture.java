@@ -9,7 +9,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.testutils.RandomDataGenerator;
 
-public class TestUserInstance {
+public class UserInstanceFixture {
     public static UserInstance getDegreeAndFileCuratorFromPublication(Publication publication) {
         var contributor = publication.getEntityDescription().getContributors().getFirst();
         URI topLevelOrgCristinId = contributor.getAffiliations().stream().map(Organization.class::cast).findFirst().orElseThrow().getId();
