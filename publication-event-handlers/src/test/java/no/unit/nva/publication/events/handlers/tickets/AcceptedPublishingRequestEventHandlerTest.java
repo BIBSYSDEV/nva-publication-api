@@ -277,13 +277,14 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(ticket.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(
             ticket.getOwnerAffiliation(),
             is(equalTo(pendingPublishingRequest.getOwnerAffiliation())));
     }
 
     @Test
-    void shouldCreateDoiRequestTicketAndSetTicketEventWithTheUserFromPublishingRequest()
+    void shouldCreateDoiRequestTicketForPublishedResourceAndSetTicketEventWithTheUserFromPublishingRequest()
         throws IOException, ApiGatewayException {
         var publication = createDraftPublicationWithDoi();
         var publishingRequest = pendingPublishingRequest(publication);

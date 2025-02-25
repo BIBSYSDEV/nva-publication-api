@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -112,7 +113,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
             publishResource(resource);
             refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
-        createDoiRequestIfNeeded(resource, getUserInstance(publishingRequest));
+        createDoiRequestForPublishedPublicationIfNeeded(resource, getUserInstance(publishingRequest));
     }
 
     /**
@@ -144,7 +145,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
         logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), publishingRequest.getIdentifier());
 
-        createDoiRequestIfNeeded(resource, UserInstance.fromTicket(publishingRequest));
+        createDoiRequestForPublishedPublicationIfNeeded(resource, UserInstance.fromTicket(publishingRequest));
     }
 
     private void publishWhenPublicationStatusDraft(Resource resource) {
@@ -186,11 +187,11 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
      * @param resource  to create a DoiRequest for
      * @param userInstance
      */
-    private void createDoiRequestIfNeeded(Resource resource, UserInstance userInstance) {
+    private void createDoiRequestForPublishedPublicationIfNeeded(Resource resource, UserInstance userInstance) {
         if (hasDoi(resource) && !doiRequestExists(resource)) {
-            attempt(() -> DoiRequest.create(resource, userInstance))
-                .map(doiRequest -> doiRequest.persistNewTicket(ticketService))
-                .orElseThrow();
+            var doiRequest = DoiRequest.create(resource, userInstance);
+            doiRequest.setResourceStatus(PUBLISHED);
+            attempt(() -> doiRequest.persistNewTicket(ticketService)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, resource.getIdentifier());
         }
     }
