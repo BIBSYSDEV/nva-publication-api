@@ -23,7 +23,6 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.sanitizer.EntityDescriptionSanitizer;
-import no.unit.nva.publication.sanitizer.HtmlSanitizer;
 import nva.commons.core.JacocoGenerated;
 
 public class CreatePublicationRequest implements WithMetadata, WithContext {
