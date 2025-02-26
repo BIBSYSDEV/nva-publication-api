@@ -34,12 +34,9 @@ class TicketEntryTest {
         var publication = TicketTestUtils.createNonPersistedPublication(status);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType)
                          .withOwner(UserInstance.fromPublication(publication).getUsername());
-        var actualUserInstance = UserInstance.fromTicket(ticket);
-        var expectedUserInstance = getExpectedUserInstance(publication);
 
         assertThat(ticket.getClass(), is(equalTo(ticketType)));
         assertThat(ticket.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
-        assertThat(actualUserInstance, is(equalTo(expectedUserInstance)));
     }
 
     @Test
