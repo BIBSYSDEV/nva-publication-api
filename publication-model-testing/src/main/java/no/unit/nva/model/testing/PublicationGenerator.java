@@ -18,6 +18,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Approval;
@@ -288,14 +289,15 @@ public final class PublicationGenerator {
 
     private static Set<CuratingInstitution> extractCuratingInstitutions(EntityDescription entityDescription) {
         return entityDescription.getContributors().stream()
-                   .flatMap(contributor ->
-                                contributor.getAffiliations().stream()
-                                    .map(Organization.class::cast)
-                                    .map(affiliation ->
-                                             new CuratingInstitution(affiliation.getId(),
-                                                                     Set.of(contributor.getIdentity().getId())))
-                   )
+                   .flatMap(PublicationGenerator::createCuratingInstitutionsFromContributor)
                    .collect(Collectors.toSet());
+    }
+
+    private static Stream<CuratingInstitution> createCuratingInstitutionsFromContributor(Contributor contributor) {
+        return contributor.getAffiliations().stream()
+                   .map(Organization.class::cast)
+                   .map(affiliation ->
+                            new CuratingInstitution(affiliation.getId(), Set.of(contributor.getIdentity().getId())));
     }
 
     private static Set<AdditionalIdentifierBase> randomAdditionalIdentifiers() {

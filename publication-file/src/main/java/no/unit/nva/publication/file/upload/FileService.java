@@ -115,14 +115,11 @@ public class FileService {
     public void deleteFile(UUID fileIdentifier, SortableIdentifier resourceIdentifier, UserInstance userInstance)
         throws ForbiddenException {
         var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService);
-
-        if (resource.isPresent()) {
-            var fileEntry = FileEntry.queryObject(fileIdentifier, resourceIdentifier)
-                .fetch(resourceService);
-            if (fileEntry.isPresent()) {
-                validateDeletePermissions(userInstance, fileEntry.get(), resource.get());
-                fileEntry.get().softDelete(resourceService, userInstance.getUser());
-            }
+        var fileEntry = FileEntry.queryObject(fileIdentifier, resourceIdentifier)
+                            .fetch(resourceService);
+        if (resource.isPresent() && fileEntry.isPresent()) {
+            validateDeletePermissions(userInstance, fileEntry.get(), resource.get());
+            fileEntry.get().softDelete(resourceService, userInstance.getUser());
         }
     }
 

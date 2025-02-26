@@ -2093,7 +2093,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication savePublication(Publication publication) throws BadRequestException {
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
@@ -2151,20 +2151,20 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createSamplePublication() throws BadRequestException {
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
     private Publication createAndPersistNonDegreePublication() throws BadRequestException {
         var publication = randomNonDegreePublicationWithPublisher();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
     private Publication createAndPersistNonDegreePublicationWithoutFiles() throws BadRequestException {
         var publication = randomNonDegreePublicationWithPublisher();
         publication.setAssociatedArtifacts(AssociatedArtifactList.empty());
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 

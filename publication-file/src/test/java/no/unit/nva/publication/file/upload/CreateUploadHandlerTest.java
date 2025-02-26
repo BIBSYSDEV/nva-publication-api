@@ -4,6 +4,7 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -30,6 +31,7 @@ import java.util.Set;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
@@ -103,7 +105,8 @@ public class CreateUploadHandlerTest {
 
     @Test
     void canCreateUpload() throws Exception {
-        var resource = Resource.fromPublication(randomPublication());
+        var resource = Resource.fromPublication(
+            randomNonDegreePublication().copy().withStatus(PublicationStatus.PUBLISHED).build());
         var user = UserInstance.fromPublication(resource.toPublication());
 
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
