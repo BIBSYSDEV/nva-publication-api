@@ -30,8 +30,10 @@ import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -466,6 +468,34 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(HiddenFile.TYPE)));
     }
 
+    @Test
+    void shouldRedirectToDuplicateWhenPublicationIsUnpublishedAndHasRightsToUpdateUnpublishedResource()
+        throws IOException, ApiGatewayException {
+        var publication = createUnpublishedPublicationWithDuplicate(randomUri());
+        fetchPublicationHandler.handleRequest(generateCuratorRequest(publication), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_MOVED_PERM)));
+    }
+
+    @Test
+    void shouldReturnUnpublishedPublicationWithFilesWhenUserHasRightsToUpdatedPublicationAndRedirectIsNotProvided()
+        throws IOException, ApiGatewayException {
+        var publication = createUnpublishedPublicationWithDuplicate(null);
+
+        var request = generateCuratorRequestWithShouldNotRedirectPathParam(publication);
+
+        fetchPublicationHandler.handleRequest(request, output, context);
+
+        var gatewayResponse = parseHandlerResponse();
+
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
+                                                                      PublicationResponseElevatedUser.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+        assertThat(publicationResponse.getAssociatedArtifacts(), is(not(emptyIterable())));
+    }
+
     private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {
         return new Organization.Builder().withId(
             URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + "/customer/" + randomUUID())).build();
@@ -503,6 +533,22 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
         publicationService.updatePublishedStatusToDeleted(publication.getIdentifier());
         return publicationService.getPublicationByIdentifier(publication.getIdentifier());
+    }
+
+    private InputStream generateCuratorRequestWithShouldNotRedirectPathParam(Publication publication) throws JsonProcessingException {
+        return new HandlerRequestBuilder<InputStream>(restApiMapper).withHeaders(
+                Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString(),
+                                              "shouldNotRedirect", "true"))
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI,
+                                     AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                     AccessRight.MANAGE_RESOURCE_FILES, AccessRight.MANAGE_DEGREE,
+                                     AccessRight.MANAGE_DEGREE_EMBARGO)
+                   .withUserName(randomString())
+                   .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next().id())
+                   .withPersonCristinId(randomUri())
+                   .build();
     }
 
     private InputStream generateCuratorRequest(Publication publication) throws JsonProcessingException {

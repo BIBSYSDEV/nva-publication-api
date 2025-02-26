@@ -117,10 +117,14 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String producePublicationResponseWhenUnpublished(RequestInfo requestInfo, Resource resource)
-        throws GoneException {
-        return userCanUpdateResource(requestInfo, resource)
-                   ? createPublicationResponse(requestInfo, resource)
-                   : produceRemovedPublicationResponse(resource, requestInfo);
+        throws GoneException, UnsupportedAcceptHeaderException {
+        return shouldRedirectToDuplicate(requestInfo, resource) || !userCanUpdateResource(requestInfo, resource)
+                   ? produceRemovedPublicationResponse(resource, requestInfo)
+                   : producePublicationResponse(requestInfo, resource);
+    }
+
+    private boolean shouldRedirectToDuplicate(RequestInfo requestInfo, Resource resource) {
+        return nonNull(resource.getDuplicateOf()) && shouldRedirect(requestInfo);
     }
 
     private boolean userCanUpdateResource(RequestInfo requestInfo, Resource resource) {
@@ -132,8 +136,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
         return Resource.resourceQueryObject(identifierInPath)
                    .fetch(resourceService)
-                    .orElseThrow(
-            () -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifierInPath));
+                    .orElseThrow(() -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifierInPath));
     }
 
     @Override
@@ -143,13 +146,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String produceRemovedPublicationResponse(Resource resource, RequestInfo requestInfo)
         throws GoneException {
-        if (nonNull(resource.getDuplicateOf()) && shouldRedirect(requestInfo)) {
+        if (shouldRedirectToDuplicate(requestInfo, resource)) {
             return produceRedirect(resource.getDuplicateOf());
         } else {
-            var publicationStrategy = getPublicationPermissionStrategy(requestInfo, resource);
-
-            Set<PublicationOperation> allowedOperations =
-                publicationStrategy.map(PublicationPermissions::getAllAllowedActions).orElse(emptySet());
+            var allowedOperations = getPublicationPermissionStrategy(requestInfo, resource)
+                                        .map(PublicationPermissions::getAllAllowedActions)
+                                        .orElse(emptySet());
             var tombstone = DeletedPublicationResponse.fromPublication(resource.toPublication(), allowedOperations);
             throw new GoneException(GONE_MESSAGE, tombstone);
         }
