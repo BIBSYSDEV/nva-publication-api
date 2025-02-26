@@ -38,6 +38,8 @@ dependencies {
 
     implementation libs.apache.commons.text
 
+    implementation libs.owaspJavaHtmlSanitizer
+
     testImplementation project(":publication-testing")
     testImplementation project(":tickets-test")
     testImplementation libs.bundles.testing
