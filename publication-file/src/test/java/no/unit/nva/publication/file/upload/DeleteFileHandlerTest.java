@@ -3,12 +3,12 @@ package no.unit.nva.publication.file.upload;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.publication.model.business.UserInstanceFixture.getDegreeAndFileCuratorFromPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +35,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -115,10 +116,10 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnInternalServerErrorWhenUnexpectedException() throws IOException, NotFoundException {
         var publication = randomPublication(JournalArticle.class);
-        var userInstance = UserInstance.fromPublication(publication);
-        var request = createRequestForUserWithPermissions(UUID.randomUUID(), publication.getIdentifier(), userInstance);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
+        var request = createRequestForUserWithPermissions(UUID.randomUUID(), publication.getIdentifier(), curator);
 
-        var handlerThrowingException = handlerThrowingExceptionOnFileUpdate(publication, userInstance);
+        var handlerThrowingException = handlerThrowingExceptionOnFileUpdate(publication, curator);
         handlerThrowingException.handleRequest(request, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -129,12 +130,12 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnAcceptedWhenDeletingFile() throws IOException, BadRequestException {
         var publication = randomPublication(JournalArticle.class);
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
         var file = randomOpenFile();
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
 
-        var request = createRequestForUserWithPermissions(file.getIdentifier(), resource.getIdentifier(), userInstance);
+        var request = createRequestForUserWithPermissions(file.getIdentifier(), resource.getIdentifier(), curator);
 
         handler.handleRequest(request, output, CONTEXT);
 
@@ -156,6 +157,8 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
                    .withUserName(userInstance.getUsername())
                    .withCurrentCustomer(userInstance.getCustomerId())
                    .withTopLevelCristinOrgId(userInstance.getTopLevelOrgCristinId())
+                   .withAccessRights(userInstance.getCustomerId(),
+                                     userInstance.getAccessRights().toArray(AccessRight[]::new))
                    .withPersonCristinId(randomUri())
                    .build();
     }
