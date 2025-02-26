@@ -52,6 +52,7 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -257,7 +258,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateDoiRequestTicketWhenPublishingMetadataOnPendingPublishingRequest()
+    void shouldCreateDoiRequestForTheSameInstitutionAsConsumedPublishingRequestTicketWhenPublishingMetadataOnPendingPublishingRequest()
         throws IOException, ApiGatewayException {
         var publication = createDraftPublicationWithDoi();
         var publishingRequest = pendingPublishingRequest(publication);
@@ -281,6 +282,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertThat(
             ticket.getOwnerAffiliation(),
             is(equalTo(pendingPublishingRequest.getOwnerAffiliation())));
+        assertThat(ticket.getResponsibilityArea(), is(equalTo(publishingRequest.getResponsibilityArea())));
     }
 
     @Test
@@ -617,10 +619,11 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        return (PublishingRequestCase)
-                PublishingRequestCase.fromPublication(publication)
-                    .withWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY)
-                    .withOwner(UserInstance.fromPublication(publication).getUsername());
+        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
+                                            List.of(), UserClientType.INTERNAL);
+        return PublishingRequestCase.create(Resource.fromPublication(publication), userInstance,
+                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
+
     }
 
     private AcceptedPublishingRequestEventHandler

@@ -1,17 +1,19 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.http.HttpClient;
+import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.RequestInfo;
@@ -25,7 +27,7 @@ class UserInstanceTest {
     
     @Test
     void shouldReturnUserInstanceFromPublication() {
-        Publication publication = PublicationGenerator.randomPublication();
+        Publication publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
         assertThat(userInstance.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
@@ -33,7 +35,7 @@ class UserInstanceTest {
     
     @Test
     void shouldReturnUserInstanceFromDoiRequest() {
-        var publication = PublicationGenerator.randomPublication();
+        var publication = randomPublication();
         var doiRequest = DoiRequest.fromPublication(publication);
         var userInstance = UserInstance.fromDoiRequest(doiRequest);
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
@@ -65,5 +67,21 @@ class UserInstanceTest {
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
         assertThat(userInstance.getUsername(), is(equalTo(username)));
         assertThat(userInstance.getCustomerId(), is(equalTo(customerId)));
+    }
+
+    @Test
+    void userInstanceCreatedFromTicketShouldHaveAllFieldsPresentExceptPersonIdAndAccessRights() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
+                                            List.of(), UserClientType.INTERNAL);
+        var ticket = DoiRequest.create(resource, userInstance);
+
+        var userInstanceFromTicket = UserInstance.fromTicket(ticket);
+
+        assertEquals(userInstance.getPersonAffiliation(), userInstanceFromTicket.getPersonAffiliation());
+        assertEquals(userInstance.getTopLevelOrgCristinId(), userInstanceFromTicket.getTopLevelOrgCristinId());
+        assertEquals(userInstance.getUsername(), userInstanceFromTicket.getUsername());
+
+        assertEquals(resource.getCustomerId(), userInstanceFromTicket.getCustomerId());
     }
 }

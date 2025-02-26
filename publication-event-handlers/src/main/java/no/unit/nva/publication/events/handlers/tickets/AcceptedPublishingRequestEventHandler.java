@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.Collections;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -72,11 +71,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return null;
     }
 
-    private static UserInstance getUserInstance(PublishingRequestCase publishingRequest) {
-        return UserInstance.create(publishingRequest.getOwner().toString(), publishingRequest.getCustomerId(), null,
-                                   Collections.emptyList(), publishingRequest.getOwnerAffiliation());
-    }
-
     private static boolean hasDoi(Resource resource) {
         return nonNull(resource.getDoi());
     }
@@ -112,7 +106,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
             publishResource(resource);
             refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
-        createDoiRequestIfNeeded(resource.getIdentifier(), getUserInstance(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
     }
 
     /**
@@ -180,10 +174,10 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     /**
-     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not the institution
-     * that requests the doi.
+     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not
+     * the institution that requests the doi.
      *
-     * @param resourceIdentifier  to create a DoiRequest for
+     * @param resourceIdentifier to create a DoiRequest for
      * @param userInstance
      */
     private void createDoiRequestIfNeeded(SortableIdentifier resourceIdentifier, UserInstance userInstance) {
@@ -200,7 +194,8 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     }
 
     private Optional<DoiRequest> fetchDoiRequest(Resource resource) {
-        return ticketService.fetchTicketByResourceIdentifier(resource.getCustomerId(), resource.getIdentifier(), DoiRequest.class);
+        return ticketService.fetchTicketByResourceIdentifier(resource.getCustomerId(), resource.getIdentifier(),
+                                                             DoiRequest.class);
     }
 
     private PublishingRequestCase parseInput(String eventBlob) {
