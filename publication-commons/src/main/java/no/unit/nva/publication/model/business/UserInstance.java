@@ -92,10 +92,6 @@ public class UserInstance implements JsonSerializable {
                                 accessRights, UserClientType.INTERNAL);
     }
 
-    public static UserInstance fromDoiRequest(DoiRequest doiRequest) {
-        return UserInstance.create(doiRequest.getOwner(), doiRequest.getCustomerId());
-    }
-
     public static UserInstance fromPublication(Publication publication) {
         return new UserInstance(publication.getResourceOwner().getOwner().getValue(),
                                 publication.getPublisher().getId(),

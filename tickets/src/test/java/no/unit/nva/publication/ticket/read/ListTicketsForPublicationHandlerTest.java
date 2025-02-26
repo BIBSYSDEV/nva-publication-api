@@ -33,7 +33,10 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -164,10 +167,11 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        var username = UserInstance.fromPublication(publication).getUsername();
+        var userInstance = UserInstance.fromPublication(publication);
+        var username = userInstance.getUsername();
 
         var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
-        DoiRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
+        DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
         PublishingRequestCase.fromPublication(publication).withOwner(username).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
         GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
 
@@ -208,7 +212,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var username = UserInstance.fromPublication(publication).getUsername();
 
         var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
-        DoiRequest.fromPublication(publication).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
+        DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication))
+            .persistNewTicket(ticketService);
         PublishingRequestCase.fromPublication(publication).withOwnerAffiliation(
             ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
         GeneralSupportRequest.fromPublication(publication).withOwnerAffiliation(
@@ -271,13 +276,14 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var contributor = randomContributorWithId(contributorId);
         publication.getEntityDescription().setContributors(List.of(contributor));
         resourceService.updatePublication(publication);
-        var username = UserInstance.fromPublication(publication).getUsername();
-        DoiRequest.fromPublication(publication).withOwner(username)
-            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
-        PublishingRequestCase.fromPublication(publication).withOwner(username)
-            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
-        GeneralSupportRequest.fromPublication(publication).withOwner(username)
-            .withOwnerAffiliation(randomUri()).persistNewTicket(ticketService);
+        var userInstance = userInstanceWithTopLevelCristinOrg(randomUri());
+        var resource = Resource.fromPublication(publication);
+        DoiRequest.create(resource, UserInstance.fromPublication(publication))
+            .persistNewTicket(ticketService);;
+        PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+            .persistNewTicket(ticketService);
+        GeneralSupportRequest.create(resource, userInstance)
+            .persistNewTicket(ticketService);
 
         var request = userRequestsTickets(publication, contributorId, randomUri());
         handler.handleRequest(request, output, CONTEXT);

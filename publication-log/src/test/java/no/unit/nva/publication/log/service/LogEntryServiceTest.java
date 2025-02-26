@@ -163,7 +163,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     }
 
     private TicketEntry createDoiRequestWithEvent(Resource resource, Publication publication) throws ApiGatewayException {
-        var doiRequest = DoiRequest.newDoiRequestForResource(resource);
+        var doiRequest = DoiRequest.create(resource, UserInstance.fromPublication(publication));
         doiRequest.setTicketEvent(DoiRequestedEvent.create(UserInstance.fromPublication(publication), Instant.now()));
         return doiRequest.persistNewTicket(ticketService);
     }

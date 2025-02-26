@@ -360,7 +360,7 @@ public abstract class TicketEntry implements Entity {
 
     private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {
         if (isPublished(publication)) {
-            return DoiRequest.fromPublication(publication);
+            return DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         } else {
             throw new BadRequestException(DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED);
         }
@@ -386,7 +386,8 @@ public abstract class TicketEntry implements Entity {
 
     private static TicketEntry createNewDoiRequest(Publication publication,
                                                    Supplier<SortableIdentifier> identifierProvider) {
-        var doiRequest = DoiRequest.fromPublication(publication);
+        var doiRequest = DoiRequest.create(Resource.fromPublication(publication),
+                                           UserInstance.fromPublication(publication));
         setServiceControlledFields(doiRequest, identifierProvider);
         return doiRequest;
     }

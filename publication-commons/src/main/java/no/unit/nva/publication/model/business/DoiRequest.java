@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
@@ -75,26 +74,6 @@ public class DoiRequest extends TicketEntry {
         super();
     }
 
-    public static DoiRequest fromPublication(Publication publication) {
-        return newDoiRequestForResource(Resource.fromPublication(publication));
-    }
-
-    public static DoiRequest newDoiRequestForResource(Resource resource) {
-        return newDoiRequestForResource(resource, Clock.systemDefaultZone().instant());
-    }
-
-    public static DoiRequest newDoiRequestForResource(Resource resource, Instant now) {
-
-        var doiRequest = extractDataFromResource(resource);
-        doiRequest.setIdentifier(SortableIdentifier.next());
-        doiRequest.setStatus(TicketStatus.PENDING);
-        doiRequest.setModifiedDate(now);
-        doiRequest.setCreatedDate(now);
-        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
-        doiRequest.validate();
-        return doiRequest;
-    }
-
     public static Builder builder() {
         return new Builder();
     }
@@ -111,8 +90,20 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         doiRequest.setResponsibilityArea(userInstance.getPersonAffiliation());
         doiRequest.setOwner(userInstance.getUser());
-        doiRequest.validate();
         return doiRequest;
+    }
+
+    private static DoiRequest extractDataFromResource(DoiRequest doiRequest, Resource resource) {
+        var copy = doiRequest.copy();
+        copy.setResourceIdentifier(resource.getIdentifier());
+        copy.setOwner(resource.getResourceOwner().getUser());
+        copy.setCustomerId(resource.getCustomerId());
+        copy.setResourceStatus(resource.getStatus());
+        return copy;
+    }
+
+    private static DoiRequest extractDataFromResource(Resource resource) {
+        return extractDataFromResource(new DoiRequest(), resource);
     }
 
     @Override
@@ -278,14 +269,8 @@ public class DoiRequest extends TicketEntry {
         return resourceStatus;
     }
 
-    public void setResourceStatus(PublicationStatus resourceStatus) {
+    private void setResourceStatus(PublicationStatus resourceStatus) {
         this.resourceStatus = resourceStatus;
-    }
-
-    public void validate() {
-        attempt(this::getResourceIdentifier)
-            .toOptional()
-            .orElseThrow(() -> new IllegalStateException(TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR));
     }
 
     @Override

@@ -152,6 +152,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -1240,8 +1241,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         GeneralSupportRequest.fromPublication(publication)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
             .persistNewTicket(ticketService);
-        DoiRequest.fromPublication(publication)
-            .withOwner(UserInstance.fromPublication(publication).getUsername())
+        DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication))
             .persistNewTicket(ticketService);
         var publishingRequestTicket =
             PublishingRequestCase.fromPublication(publication)
@@ -1278,17 +1278,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
                                                                                   resourceService);
-        GeneralSupportRequest.fromPublication(publication)
-            .withOwner(publication.getResourceOwner().getOwner().getValue())
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
+        GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
+        DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
+        PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+            .complete(publication, userInstance)
             .persistNewTicket(ticketService);
-        DoiRequest.fromPublication(publication)
-            .withOwner(publication.getResourceOwner().getOwner().getValue())
-            .persistNewTicket(ticketService);
-        PublishingRequestCase.fromPublication(publication)
-            .withOwner(publication.getResourceOwner().getOwner().getValue())
-            .persistNewTicket(ticketService)
-            .complete(publication, randomUserInstance())
-            .persistUpdate(ticketService);
         var input = createUnpublishHandlerRequest(publication, randomString(), customerId, accessRight);
         updatePublicationHandler.handleRequest(input, output, context);
 

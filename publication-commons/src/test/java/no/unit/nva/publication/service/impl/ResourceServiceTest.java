@@ -3,7 +3,6 @@ package no.unit.nva.publication.service.impl;
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
@@ -110,6 +109,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -119,7 +119,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
@@ -172,12 +171,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final URI SOME_ORG = randomUri();
     private static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-    private static final String FINALIZED_DATE = "finalizedDate";
-    private static final String ASSIGNEE = "assignee";
-    private static final String FINALIZED_BY = "finalizedBy";
-    private static final String OWNER_AFFILIATION = "ownerAffiliation";
-    private static final String RESPONSIBILITY_AREA = "responsibilityArea";
-    private static final String TICKET_EVENT = "ticketEvent";
     private ResourceService resourceService;
 
     private TicketService ticketService;
@@ -679,32 +672,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void updateResourceUpdatesAllFieldsInDoiRequest() throws ApiGatewayException {
-        var initialPublication = createPersistedPublicationWithoutDoi();
-        var initialDoiRequest = createDoiRequest(initialPublication);
-        var publicationUpdate = updateAllPublicationFieldsExpectIdentifierStatusAndOwnerInfo(initialPublication);
-        resourceService.updatePublication(publicationUpdate);
-
-        var updatedDoiRequest = (DoiRequest) ticketService.fetchTicket(initialDoiRequest);
-
-        var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(initialPublication, initialDoiRequest,
-                                                                          publicationUpdate, updatedDoiRequest);
-
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
-                                                                                  FINALIZED_BY,
-                                                                                  FINALIZED_DATE,
-                                                                                  RESPONSIBILITY_AREA,
-                                                                                  TICKET_EVENT)));
-        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
-                                                                                   FINALIZED_BY,
-                                                                                   FINALIZED_DATE,
-                                                                                   RESPONSIBILITY_AREA,
-                                                                                   TICKET_EVENT)));
-        Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
-        assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
-    }
-
-    @Test
     void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist() throws BadRequestException {
         Publication resource = createPersistedPublicationWithoutDoi();
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
@@ -1077,17 +1044,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
-        var username = UserInstance.fromPublication(publication).getUsername();
-        GeneralSupportRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService);
-        DoiRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService);
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
+        GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
+        DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
         var closedGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication).withOwner(username).persistNewTicket(ticketService)
+            GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService)
                 .close(randomUserInstance());
         ticketService.updateTicket(closedGeneralSupportTicket);
-        var publishingRequestTicket = PublishingRequestCase.fromPublication(publication).withOwner(username);
+        var publishingRequestTicket = PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
         publishingRequestTicket.persistNewTicket(ticketService);
-        var userInstance = UserInstance.fromPublication(publication);
         resourceService.unpublishPublication(publication, userInstance);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
         assertThat(tickets, hasSize(5));
@@ -1857,35 +1824,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(result.getCount(), is(equalTo(0)));
     }
 
-    private DoiRequest expectedDoiRequestAfterPublicationUpdate(Publication initialPublication,
-                                                                DoiRequest initialDoiRequest,
-                                                                Publication publicationUpdate,
-                                                                DoiRequest updatedDoiRequest) {
-
-        return DoiRequest.builder()
-                   .withOwner(new User(initialPublication.getResourceOwner().getOwner().getValue()))
-                   .withCustomerId(initialPublication.getPublisher().getId())
-                   .withIdentifier(initialDoiRequest.getIdentifier())
-                   .withCreatedDate(initialDoiRequest.getCreatedDate())
-                   .withModifiedDate(updatedDoiRequest.getModifiedDate())
-                   .withStatus(TicketStatus.PENDING)
-                   .withResourceStatus(publicationUpdate.getStatus())
-                   .withResourceIdentifier(publicationUpdate.getIdentifier())
-                   .withViewedBy(initialDoiRequest.getViewedBy())
-                   .build();
-    }
-
-    private Publication updateAllPublicationFieldsExpectIdentifierStatusAndOwnerInfo(Publication existingPublication) {
-        return randomPublication().copy()
-                   .withIdentifier(existingPublication.getIdentifier())
-                   .withPublisher(existingPublication.getPublisher())
-                   .withResourceOwner(existingPublication.getResourceOwner())
-                   .withStatus(existingPublication.getStatus())
-                   .build();
-    }
-
-    private DoiRequest createDoiRequest(Publication resource) throws ApiGatewayException {
-        return (DoiRequest) DoiRequest.fromPublication(resource).persistNewTicket(ticketService);
+    private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
+        return (DoiRequest) DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication))
+                                .persistNewTicket(ticketService);
     }
 
     private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {

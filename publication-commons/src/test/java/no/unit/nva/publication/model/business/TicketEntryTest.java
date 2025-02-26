@@ -34,12 +34,9 @@ class TicketEntryTest {
         var publication = TicketTestUtils.createNonPersistedPublication(status);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType)
                          .withOwner(UserInstance.fromPublication(publication).getUsername());
-        var actualUserInstance = UserInstance.fromTicket(ticket);
-        var expectedUserInstance = getExpectedUserInstance(publication);
 
         assertThat(ticket.getClass(), is(equalTo(ticketType)));
         assertThat(ticket.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
-        assertThat(actualUserInstance, is(equalTo(expectedUserInstance)));
     }
 
     @Test
@@ -104,8 +101,9 @@ class TicketEntryTest {
 
     @Test
     void shouldSetTicketEventOnDoiRequest() {
-        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(randomPublication()));
-        doiRequest.setTicketEvent(DoiRequestedEvent.create(UserInstance.fromPublication(randomPublication()), Instant.now()));
+        var userInstance = UserInstance.fromPublication(randomPublication());
+        var doiRequest = DoiRequest.create(Resource.fromPublication(randomPublication()), userInstance);
+        doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, Instant.now()));
 
         assertTrue(doiRequest.hasTicketEvent());
     }

@@ -74,7 +74,9 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     private FakeS3Client s3Client;
 
     public static Stream<Function<Publication, Entity>> entityProvider() {
-        return Stream.of(Resource::fromPublication, DoiRequest::fromPublication);
+        return Stream.of(Resource::fromPublication,
+                         publication -> DoiRequest.create(Resource.fromPublication(publication),
+                                                          UserInstance.fromPublication(publication)));
     }
 
     /**
@@ -173,7 +175,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         throws IOException,
                ApiGatewayException {
         var publication = persistPublicationWithoutDoi(PublicationStatus.PUBLISHED);
-        var draftRequest = DoiRequest.fromPublication(publication);
+        var draftRequest = DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         var approvedRequest = draftRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
         var event = createEvent(draftRequest, approvedRequest);
 
@@ -220,10 +222,12 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     void shouldNotSendRequestForDraftingADoiWhenThereHasBeenVeryRecentPreviousDoiRequestButNoDoiHasBeenCreated()
         throws ApiGatewayException, IOException {
         var publication = persistPublicationWithoutDoi();
-        var oldDoiRequest = DoiRequest.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        var oldDoiRequest = DoiRequest.create(resource, userInstance);
         var tooShortIntervalForRerequesting = MIN_INTERVAL_FOR_REREQUESTING_A_DOI.minusSeconds(1);
         oldDoiRequest.setModifiedDate(oldDoiRequest.getModifiedDate().minus(tooShortIntervalForRerequesting));
-        var newDoiRequest = DoiRequest.fromPublication(publication);
+        var newDoiRequest = DoiRequest.create(resource, userInstance);
         var event = createEvent(oldDoiRequest, newDoiRequest);
         handler.handleRequest(event, outputStream, context);
         var actual = outputToPublicationHolder(outputStream);
@@ -330,7 +334,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     private DoiRequest sampleDoiRequestForExistingPublication() throws ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
-        return DoiRequest.fromPublication(publication);
+        return DoiRequest.create(Resource.fromPublication(publication),
+                                 UserInstance.fromPublication(publication));
     }
 
     private Publication persistPublication(Publication publication) throws BadRequestException {
