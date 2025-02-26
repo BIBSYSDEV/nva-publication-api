@@ -18,7 +18,7 @@ class EntityDescriptionSanitizerTest {
 
     @ParameterizedTest
     @MethodSource("validInputProvider")
-    void shouldAllowValidInputInMainTitle(String validInput) {
+    void shouldAllowValidInputInEntityDescription(String validInput) {
         var randomString = randomString();
         var entityDescription = new EntityDescription.Builder()
                         .withMainTitle(validInput)
@@ -37,7 +37,7 @@ class EntityDescriptionSanitizerTest {
 
     @ParameterizedTest
     @MethodSource("dangerousInputProvider")
-    void shouldSanitizeInputInMainTitle(String dangerousInput, String expectedSanitizedInput) {
+    void shouldSanitizeInputInEntityDescription(String dangerousInput, String expectedSanitizedInput) {
         var randomString = randomString();
         var entityDescription = new EntityDescription.Builder()
                 .withMainTitle(dangerousInput)
