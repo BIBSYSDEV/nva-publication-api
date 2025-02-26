@@ -14,11 +14,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.GeneralSupportRequestDao;
@@ -47,18 +44,6 @@ public class GeneralSupportRequest extends TicketEntry {
 
     public GeneralSupportRequest() {
         super();
-    }
-
-    public static TicketEntry fromPublication(Publication publication) {
-        var ticket = new GeneralSupportRequest();
-        ticket.setResourceIdentifier(publication.getIdentifier());
-        ticket.setCustomerId(extractCustomerId(publication));
-        ticket.setCreatedDate(Instant.now());
-        ticket.setModifiedDate(Instant.now());
-        ticket.setStatus(TicketStatus.PENDING);
-        ticket.setIdentifier(SortableIdentifier.next());
-        ticket.setViewedBy(ViewedBy.addAll(UserInstance.fromPublication(publication).getUser()));
-        return ticket;
     }
 
     public static GeneralSupportRequest createQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
@@ -232,9 +217,5 @@ public class GeneralSupportRequest extends TicketEntry {
                && getStatus() == that.getStatus()
                && Objects.equals(getAssignee(), that.getAssignee())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
-    }
-
-    private static URI extractCustomerId(Publication publication) {
-        return Optional.of(publication).map(Publication::getPublisher).map(Organization::getId).orElse(null);
     }
 }
