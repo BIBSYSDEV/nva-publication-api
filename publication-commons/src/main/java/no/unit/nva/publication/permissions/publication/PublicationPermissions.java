@@ -14,6 +14,7 @@ import no.unit.nva.publication.permissions.publication.grant.EditorGrantStrategy
 import no.unit.nva.publication.permissions.publication.grant.ResourceOwnerGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.TrustedThirdPartyGrantStrategy;
 import no.unit.nva.publication.permissions.publication.restrict.DegreeDenyStrategy;
+import no.unit.nva.publication.permissions.publication.restrict.DeletedUplaodDenyStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,8 @@ public class PublicationPermissions {
             new BackendClientGrantStrategy(publication, userInstance)
         );
         this.denyStrategies = Set.of(
-            new DegreeDenyStrategy(publication, userInstance)
+            new DegreeDenyStrategy(publication, userInstance),
+            new DeletedUplaodDenyStrategy(publication, userInstance)
         );
     }
 
