@@ -104,8 +104,9 @@ class TicketEntryTest {
 
     @Test
     void shouldSetTicketEventOnDoiRequest() {
-        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(randomPublication()));
-        doiRequest.setTicketEvent(DoiRequestedEvent.create(UserInstance.fromPublication(randomPublication()), Instant.now()));
+        var userInstance = UserInstance.fromPublication(randomPublication());
+        var doiRequest = DoiRequest.create(Resource.fromPublication(randomPublication()), userInstance);
+        doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, Instant.now()));
 
         assertTrue(doiRequest.hasTicketEvent());
     }

@@ -150,13 +150,15 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
             .toLogEntry(publication.getIdentifier(), user)
             .persist(resourceService);
 
+        var userInstance = UserInstance.fromPublication(publication);
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
-                                         UserInstance.fromPublication(publication));
+                                         userInstance);
         fileEntry.persist(resourceService);
         fileEntry.getFileEvent().toLogEntry(fileEntry, user).persist(resourceService);
 
-        var doiRequest = (DoiRequest) DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
-        doiRequest.setTicketEvent(DoiRequestedEvent.create(UserInstance.fromPublication(publication), Instant.now()));
+        var doiRequest =
+            (DoiRequest) DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
+        doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, Instant.now()));
         doiRequest.getTicketEvent().toLogEntry(publication.getIdentifier(), doiRequest.getIdentifier(), user)
             .persist(resourceService);
     }

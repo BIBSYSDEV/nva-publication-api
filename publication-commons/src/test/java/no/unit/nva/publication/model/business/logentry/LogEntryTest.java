@@ -127,11 +127,12 @@ class LogEntryTest extends ResourcesLocalTest {
     @Test
     void shouldPersistTicketLogEntry() throws ApiGatewayException {
         var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = Resource.fromPublication(publication)
-                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(persistedPublication))
+                                       .persistNew(resourceService, userInstance);
+        var doiRequest = DoiRequest.create(Resource.fromPublication(persistedPublication), userInstance)
                              .persistNewTicket(ticketService);
-        var logEntry = DoiRequestedEvent.create(UserInstance.fromPublication(publication), Instant.now())
+        var logEntry = DoiRequestedEvent.create(userInstance, Instant.now())
                                       .toLogEntry(persistedPublication.getIdentifier(), doiRequest.getIdentifier(),
                                                   randomLogUser());
         logEntry.persist(resourceService);

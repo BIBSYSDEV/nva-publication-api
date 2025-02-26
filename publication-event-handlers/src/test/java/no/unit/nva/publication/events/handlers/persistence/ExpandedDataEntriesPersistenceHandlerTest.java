@@ -341,8 +341,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
 
     private ExpandedDoiRequest randomDoiRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
-        var doiRequest = DoiRequest.fromPublication(publication)
-                             .withOwner(UserInstance.fromPublication(publication).getUsername())
+        var doiRequest = DoiRequest.create(Resource.fromPublication(publication),
+                                           UserInstance.fromPublication(publication))
                              .persistNewTicket(ticketService);
         return (ExpandedDoiRequest) resourceExpansionService.expandEntry(doiRequest, false);
     }

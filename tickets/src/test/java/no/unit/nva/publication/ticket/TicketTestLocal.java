@@ -1,15 +1,18 @@
 package no.unit.nva.publication.ticket;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static nva.commons.core.attempt.Try.attempt;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.function.Consumer;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -52,18 +55,23 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     
     protected TicketEntry createPersistedDoiTicket(Publication publication)
         throws ApiGatewayException {
-        return DoiRequest.fromPublication(publication)
-                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+        var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
+        var resource = Resource.fromPublication(publication);
+        return DoiRequest.create(resource, userInstanceWithTopLevelCristinOrg(ownerAffiliation))
                             .persistNewTicket(ticketService);
     }
 
     protected TicketEntry createPersistedDoiRequestWithOwnerAffiliation(Publication publication, URI ownerAffiliation)
         throws ApiGatewayException {
-        return DoiRequest.fromPublication(publication)
-                   .withOwnerAffiliation(ownerAffiliation)
-                   .persistNewTicket(ticketService);
+        var userInstance = userInstanceWithTopLevelCristinOrg(ownerAffiliation);
+        return DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
     }
-    
+
+    public static UserInstance userInstanceWithTopLevelCristinOrg(URI ownerAffiliation) {
+        return new UserInstance(randomString(), randomUri(), ownerAffiliation, randomUri(), randomUri(),
+                                List.of(), UserClientType.INTERNAL);
+    }
+
     protected Publication nonPersistedPublication() {
         return randomPublication();
     }

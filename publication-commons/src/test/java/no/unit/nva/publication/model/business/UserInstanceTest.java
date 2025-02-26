@@ -30,15 +30,6 @@ class UserInstanceTest {
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
         assertThat(userInstance.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
     }
-    
-    @Test
-    void shouldReturnUserInstanceFromDoiRequest() {
-        var publication = PublicationGenerator.randomPublication();
-        var doiRequest = DoiRequest.fromPublication(publication);
-        var userInstance = UserInstance.fromDoiRequest(doiRequest);
-        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
-        assertThat(userInstance.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
-    }
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")

@@ -46,15 +46,9 @@ class DoiRequestTest {
     }
 
     @Test
-    void doiRequestCannotBeCreatedWithoutReferenceToResource() {
-        var exception = assertThrows(IllegalStateException.class, this::doiRequestWithoutResourceReference);
-        assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
-    }
-
-    @Test
     void updateThrowsExceptionWhenResourceIdentifierIsDifferent() {
         Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
+        DoiRequest doiRequest = DoiRequest.create(resource, UserInstance.fromPublication(resource.toPublication()));
 
         Resource updatedResource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
 
@@ -85,11 +79,6 @@ class DoiRequestTest {
 
     private static Clock fixedClock() {
         return Clock.fixed(NOW, ZoneId.systemDefault());
-    }
-
-    private DoiRequest doiRequestWithoutResourceReference() {
-        Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithoutIdentifier());
-        return DoiRequest.newDoiRequestForResource(resource);
     }
 
     private DoiRequest sampleDoiRequestFromResource() {

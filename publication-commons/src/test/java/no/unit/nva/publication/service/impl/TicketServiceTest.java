@@ -147,7 +147,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     void shouldCreateDoiRequestWhenPublicationIsEligible(PublicationStatus status) throws ApiGatewayException {
         var publication = persistPublication(owner, status);
         publication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        var ticket = DoiRequest.fromPublication(publication);
+        var ticket = DoiRequest.create(Resource.fromPublication(publication),
+                                       UserInstance.fromPublication(publication));
         var persistedTicket = ticket.persistNewTicket(ticketService);
         copyServiceControlledFields(ticket, persistedTicket);
 
@@ -167,7 +168,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, status);
 
         publication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        var ticket = DoiRequest.fromPublication(publication);
+        var ticket = DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         Executable action = () -> ticket.persistNewTicket(ticketService);
         assertThrows(ConflictException.class, action);
     }
@@ -252,7 +253,9 @@ public class TicketServiceTest extends ResourcesLocalTest {
     @Test
     void shouldCreateNewDoiRequestForPublicationWithoutMetadata() throws ApiGatewayException {
         var emptyPublication = persistEmptyPublication(owner);
-        var doiRequest = DoiRequest.fromPublication(emptyPublication).persistNewTicket(ticketService);
+        var doiRequest =
+            DoiRequest.create(Resource.fromPublication(emptyPublication), UserInstance.fromPublication(emptyPublication))
+                .persistNewTicket(ticketService);
         var actualDoiRequest = ticketService.fetchTicket(doiRequest);
         var expectedDoiRequest = expectedDoiRequestForEmptyPublication(emptyPublication, actualDoiRequest);
 
@@ -870,7 +873,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private TicketEntry createUnpersistedTicket(Publication publication, Class<?> ticketType) {
         var owner = UserInstance.fromPublication(publication).getUsername();
         if (DoiRequest.class.equals(ticketType)) {
-            return DoiRequest.fromPublication(publication).withOwner(owner);
+            return DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication))
+                       .withOwner(owner);
         }
         if (PublishingRequestCase.class.equals(ticketType)) {
             return createRandomPublishingRequest(publication).withOwner(owner);

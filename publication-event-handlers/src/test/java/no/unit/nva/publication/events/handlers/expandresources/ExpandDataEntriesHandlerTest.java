@@ -367,11 +367,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     private DoiRequest doiRequestForDraftResource() {
-        Publication publication = randomPublication().copy()
+        var publication = randomPublication().copy()
                                       .withStatus(DRAFT)
                                       .build();
-        Resource resource = Resource.fromPublication(publication);
-        return DoiRequest.newDoiRequestForResource(resource);
+        var resource = Resource.fromPublication(publication);
+        return DoiRequest.create(resource, UserInstance.fromPublication(publication));
     }
 
     private ResourceExpansionService createFailingService() {
