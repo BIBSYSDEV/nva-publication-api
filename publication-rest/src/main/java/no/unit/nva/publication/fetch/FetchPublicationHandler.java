@@ -11,6 +11,7 @@ import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
@@ -26,11 +27,9 @@ import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
@@ -110,17 +109,13 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
         return switch (resource.getStatus()) {
             case DRAFT, PUBLISHED -> producePublicationResponse(requestInfo, resource);
-            case UNPUBLISHED -> producePublicationResponseWhenUnpublished(requestInfo, resource);
-            case DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
+            case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
             default -> throwNotFoundException();
         };
     }
 
-    private String producePublicationResponseWhenUnpublished(RequestInfo requestInfo, Resource resource)
-        throws GoneException {
-        return userCanUpdateResource(requestInfo, resource)
-                   ? createPublicationResponse(requestInfo, resource)
-                   : produceRemovedPublicationResponse(resource, requestInfo);
+    private boolean shouldRedirectToDuplicate(RequestInfo requestInfo, Resource resource) {
+        return nonNull(resource.getDuplicateOf()) && shouldRedirect(requestInfo);
     }
 
     private boolean userCanUpdateResource(RequestInfo requestInfo, Resource resource) {
@@ -132,8 +127,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
         return Resource.resourceQueryObject(identifierInPath)
                    .fetch(resourceService)
-                    .orElseThrow(
-            () -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifierInPath));
+                    .orElseThrow(() -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifierInPath));
     }
 
     @Override
@@ -143,16 +137,25 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String produceRemovedPublicationResponse(Resource resource, RequestInfo requestInfo)
         throws GoneException {
-        if (nonNull(resource.getDuplicateOf()) && shouldRedirect(requestInfo)) {
+        if (shouldRedirectToDuplicate(requestInfo, resource)) {
             return produceRedirect(resource.getDuplicateOf());
+        } else if (userWithAccessRequestsUnpublishedResource(resource, requestInfo)) {
+            return createPublicationResponse(requestInfo, resource);
         } else {
-            var publicationStrategy = getPublicationPermissionStrategy(requestInfo, resource);
-
-            Set<PublicationOperation> allowedOperations =
-                publicationStrategy.map(PublicationPermissions::getAllAllowedActions).orElse(emptySet());
-            var tombstone = DeletedPublicationResponse.fromPublication(resource.toPublication(), allowedOperations);
-            throw new GoneException(GONE_MESSAGE, tombstone);
+            return produceTombstone(resource, requestInfo);
         }
+    }
+
+    private String produceTombstone(Resource resource, RequestInfo requestInfo) throws GoneException {
+        var allowedOperations = getPublicationPermissionStrategy(requestInfo, resource)
+                                    .map(PublicationPermissions::getAllAllowedActions)
+                                    .orElse(emptySet());
+        var tombstone = DeletedPublicationResponse.fromPublication(resource.toPublication(), allowedOperations);
+        throw new GoneException(GONE_MESSAGE, tombstone);
+    }
+
+    private boolean userWithAccessRequestsUnpublishedResource(Resource resource, RequestInfo requestInfo) {
+        return userCanUpdateResource(requestInfo, resource) && UNPUBLISHED.equals(resource.getStatus());
     }
 
     private boolean shouldRedirect(RequestInfo requestInfo) {

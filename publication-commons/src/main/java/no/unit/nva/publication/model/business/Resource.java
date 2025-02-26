@@ -200,6 +200,8 @@ public class Resource implements Entity {
                    .withCreatedDate(getCreatedDate())
                    .withPublishedDate(getPublishedDate())
                    .withModifiedDate(currentTime)
+                   .withDuplicateOf(getDuplicateOf())
+                   .withPublicationNotes(getPublicationNotes())
                    .withResourceEvent(DeletedResourceEvent.create(userInstance, currentTime))
                    .build();
     }
