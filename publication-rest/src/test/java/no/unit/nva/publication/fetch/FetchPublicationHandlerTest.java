@@ -309,21 +309,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerReturnsGoneWithPublicationDetailWhenPublicationIsUnpublishedAndDuplicateOfValueIsNotPresent()
-        throws ApiGatewayException, IOException {
-        var publication = createUnpublishedPublicationWithDuplicate(null);
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
-                                              context);
-        var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = PublicationResponseElevatedUser.fromPublication(
-            publication.copy().withAssociatedArtifacts(List.of()).build());
-        var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
-        var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                                       PublicationResponseElevatedUser.class);
-        assertThat(actualPublication, is(equalTo(expectedTombstone)));
-    }
-
-    @Test
     void handlerReturnsGoneWithPublicationDetailWhenPublicationIsDeletedAndDuplicateOfValueIsNotPresent()
         throws IOException, ApiGatewayException {
         var publication = createDeletedPublicationWithDuplicate(null);
@@ -466,6 +451,21 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(InternalFile.TYPE)));
         assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(HiddenFile.TYPE)));
+    }
+
+    @Test
+    void handlerReturnsGoneWithPublicationDetailWhenPublicationIsUnpublishedAndDuplicateOfValueIsNotPresent()
+        throws ApiGatewayException, IOException {
+        var publication = createUnpublishedPublicationWithDuplicate(null);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
+                                              context);
+        var gatewayResponse = parseFailureResponse();
+        var expectedTombstone = PublicationResponseElevatedUser.fromPublication(
+            publication.copy().withAssociatedArtifacts(List.of()).build());
+        var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
+        var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
+                                                                       PublicationResponseElevatedUser.class);
+        assertThat(actualPublication, is(equalTo(expectedTombstone)));
     }
 
     @Test
