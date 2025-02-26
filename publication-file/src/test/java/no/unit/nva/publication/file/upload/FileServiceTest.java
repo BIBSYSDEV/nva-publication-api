@@ -5,6 +5,7 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.publication.model.business.UserInstanceFixture.getDegreeAndFileCuratorFromPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -30,6 +31,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
@@ -51,6 +53,7 @@ import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadReque
 import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstanceFixture;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -191,16 +194,15 @@ class FileServiceTest extends ResourcesLocalTest {
     @Test
     void shouldInitiateMultipartUpload() throws ForbiddenException, NotFoundException, BadRequestException {
         var publication = randomPublication();
+        UserInstance owner = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var customerId = randomUri();
+                           .persistNew(resourceService, owner);
         var uploadRequest = randomUploadRequest();
         var instanceType = publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
-        var userInstance = UserInstance.create(new User(randomString()), customerId);
-        when(customerApiClient.fetch(customerId)).thenReturn(new Customer(Set.of(instanceType), null, null));
+        when(customerApiClient.fetch(owner.getCustomerId())).thenReturn(new Customer(Set.of(instanceType), null, null));
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
 
-        var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), userInstance, uploadRequest);
+        var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), owner, uploadRequest);
 
         assertNotNull(uploadResponse.getKey());
     }
@@ -212,7 +214,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         var uploadRequest = randomUploadRequest();
-        var userInstance = externalUserInstance();
+        var userInstance = externalUserInstance(resource);
 
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
         var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), userInstance, uploadRequest);
@@ -233,9 +235,11 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         var userInstance = UserInstance.create(new User(randomString()), randomUri());
+        var file = randomHiddenFile();
+        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
 
         assertThrows(ForbiddenException.class,
-                     () -> fileService.updateFile(UUID.randomUUID(), resource.getIdentifier(), userInstance, null));
+                     () -> fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), userInstance, file));
     }
 
     @Test
@@ -251,11 +255,11 @@ class FileServiceTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateMutableFileFields() throws BadRequestException, ForbiddenException, NotFoundException {
         var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var file = randomHiddenFile();
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
 
         var updatedFile = file.copy()
                               .withLicense(randomUri())
@@ -264,7 +268,7 @@ class FileServiceTest extends ResourcesLocalTest {
                               .withPublisherVersion(PublisherVersion.ACCEPTED_VERSION)
                               .buildHiddenFile();
 
-        fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), userInstance, updatedFile);
+        fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), curator, updatedFile);
 
         var fetchedFile = FileEntry.queryObject(file.getIdentifier(), resource.getIdentifier())
                               .fetch(resourceService)
@@ -277,15 +281,15 @@ class FileServiceTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateFileTypeWhenAllowed() throws BadRequestException, ForbiddenException, NotFoundException {
         var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var file = randomPendingInternalFile();
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
 
         var updatedFile = file.toPendingOpenFile();
 
-        fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), userInstance, updatedFile);
+        fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), curator, updatedFile);
 
         var fetchedFile = FileEntry.queryObject(file.getIdentifier(), resource.getIdentifier())
                               .fetch(resourceService)
@@ -299,17 +303,17 @@ class FileServiceTest extends ResourcesLocalTest {
     @MethodSource("invalidFileConversionsProvider")
     void shouldNotAllowFileTypeConversions(Class<? extends File> clazz, Class<? extends File> updatedClazz)
         throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var publication =randomPublication();
+        var curator = UserInstanceFixture.getDegreeAndFileCuratorFromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);
-        FileEntry.create(originalFile, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
 
         var updatedFile = originalFile.copy().build(updatedClazz);
 
         assertThrows(IllegalStateException.class,
-                     () -> fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance,
+                     () -> fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), curator,
                                                   updatedFile));
     }
 
@@ -318,16 +322,16 @@ class FileServiceTest extends ResourcesLocalTest {
     void shouldAllowFileTypeConversions(Class<? extends File> clazz, Class<? extends File> updatedClazz)
         throws BadRequestException {
         var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);
-        FileEntry.create(originalFile, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
 
         var updatedFile = originalFile.copy().build(updatedClazz);
 
         assertDoesNotThrow(
-            () -> fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance,
+            () -> fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), curator,
                                          updatedFile));
     }
 
@@ -335,15 +339,15 @@ class FileServiceTest extends ResourcesLocalTest {
     void shouldIgnoreImmutableFileFieldsWhenUpdatingFile()
         throws BadRequestException, ForbiddenException, NotFoundException {
         var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var curator = getDegreeAndFileCuratorFromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile();
-        FileEntry.create(originalFile, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
 
         var updatedFile = originalFile.copy().withIdentifier(UUID.randomUUID()).buildHiddenFile();
 
-        fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), userInstance, updatedFile);
+        fileService.updateFile(originalFile.getIdentifier(), resource.getIdentifier(), curator, updatedFile);
 
         var fetchedFile = FileEntry.queryObject(originalFile.getIdentifier(), resource.getIdentifier())
                               .fetch(resourceService)
@@ -367,7 +371,7 @@ class FileServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistUploadedFileEntryInDatabaseWhenCompletingMultipartUpload()
-        throws BadRequestException, NotFoundException {
+        throws BadRequestException, NotFoundException, ForbiddenException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -388,14 +392,15 @@ class FileServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("fileTypeProvider")
     void shouldPersistRequestedFinalizedFileEntryInDatabaseWhenCompletingMultipartUploadAsExternalClient(
-        Class<? extends File> expectedFileClass, String fileType) throws BadRequestException, NotFoundException {
+        Class<? extends File> expectedFileClass, String fileType)
+        throws BadRequestException, NotFoundException, ForbiddenException {
         var publication = randomPublication();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         var completeMultipartUploadResult = mockCompleteMultipartUpload();
         var request = new ExternalCompleteUploadRequest(randomString(), randomString(), List.of(), fileType, null, null,
                                                         null);
-        var userInstance = constructExternalClient();
+        var userInstance = constructExternalClient(publication);
         fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
 
         var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
@@ -415,7 +420,7 @@ class FileServiceTest extends ResourcesLocalTest {
         mockCompleteMultipartUpload();
         var request = new ExternalCompleteUploadRequest(randomString(), randomString(), List.of(), "PendingOpenFile",
                                                         null, null, null);
-        var userInstance = constructExternalClient();
+        var userInstance = constructExternalClient(publication);
 
         assertThrows(BadRequestException.class,
                      () -> fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance));
@@ -423,7 +428,7 @@ class FileServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldSetNullRrsWhenNullRrsAtCustomer()
-        throws BadRequestException, NotFoundException {
+        throws BadRequestException, NotFoundException, ForbiddenException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -436,11 +441,13 @@ class FileServiceTest extends ResourcesLocalTest {
         var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
                                               resource.getIdentifier()).fetch(resourceService).orElseThrow();
 
-        assertEquals(fileEntry.getFile().getRightsRetentionStrategy(), NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
+        assertEquals(fileEntry.getFile().getRightsRetentionStrategy(),
+                     NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
     }
 
-    private static UserInstance constructExternalClient() {
-        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(), List.of(),
+    private static UserInstance constructExternalClient(Publication publication) {
+        return new UserInstance(randomString(), publication.getPublisher().getId(), randomUri(), randomUri(), randomUri(),
+                                List.of(),
                                 UserClientType.EXTERNAL);
     }
 
@@ -457,8 +464,9 @@ class FileServiceTest extends ResourcesLocalTest {
         return new CreateUploadRequestBody(randomString(), randomString(), randomString());
     }
 
-    private UserInstance externalUserInstance() {
-        return new UserInstance(randomString(), randomUri(), randomUri(),randomUri(), randomUri(), List.of(),
+    private UserInstance externalUserInstance(Publication resource) {
+        return new UserInstance(randomString(), resource.getPublisher().getId(), randomUri(), randomUri(), randomUri(),
+                                List.of(),
                                 UserClientType.EXTERNAL);
     }
 

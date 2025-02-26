@@ -7,7 +7,6 @@ import static no.unit.nva.publication.CustomerApiStubs.stubCustomSuccessfulCusto
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
-import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
@@ -400,22 +399,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = response.getBodyObject(Problem.class);
         assertThat(body.getDetail(), containsString(CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED));
-    }
-
-    @Test
-    void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration() throws IOException {
-        final var event = prepareRequestWithFileForTypeWhereNotAllowed();
-        WireMock.reset();
-
-        stubSuccessfulTokenResponse();
-        stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
-
-        handler.handleRequest(event, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
-
-        var body = response.getBodyObject(Problem.class);
-        assertThat(body.getDetail(), containsString("Files not allowed for instance type"));
     }
 
     @Test

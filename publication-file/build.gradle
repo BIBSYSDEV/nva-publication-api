@@ -24,6 +24,7 @@ dependencies {
 
     testImplementation project(":publication-testing")
     testImplementation project(":publication-model-testing")
+    testImplementation(testFixtures(project(":publication-commons")))
 }
 
 test {

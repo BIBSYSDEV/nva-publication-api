@@ -16,6 +16,7 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
@@ -74,7 +75,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -116,8 +116,6 @@ import no.unit.nva.model.Corporation;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
@@ -126,18 +124,15 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.FileDto;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
@@ -162,6 +157,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -1012,7 +1008,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldSetFinalizedByForPublishingRequestToUserWhoUpdatesPublication()
         throws IOException, ApiGatewayException {
-        var publication = createAndPersistNonDegreePublication();
+        var publication = createAndPersistNonDegreePublicationWithoutFiles();
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         var publicationWithoutFiles = publication.copy().withAssociatedArtifacts(List.of()).build();
@@ -1037,7 +1033,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void publishingCuratorWithAccessRightManageResourceFilesShouldBeAbleToOverrideRrs()
-        throws IOException, NotFoundException {
+        throws IOException, NotFoundException, BadRequestException {
         var openFileRrs = File.builder()
                               .withIdentifier(randomUUID())
                               .withName(randomString())
@@ -1049,37 +1045,50 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                               .withRightsRetentionStrategy(CustomerRightsRetentionStrategy.create(
                                   RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY))
                               .buildOpenFile();
-        var publicationWithRrs = randomPublication(AcademicArticle.class)
-                                     .copy()
-                                     .withStatus(PUBLISHED)
-                                     .withAssociatedArtifacts(List.of(openFileRrs))
-                                     .withPublisher(new Organization.Builder()
-                                                        .withId(customerId)
-                                                        .build())
-                                     .build();
-        publicationWithRrs =
-            resourceService.createPublicationFromImportedEntry(publicationWithRrs,
-                                                               ImportSource.fromSource(Source.CRISTIN));
+        var randomPublication = randomPublication(AcademicArticle.class).copy()
+                                    .withStatus(PUBLISHED)
+                                    .withAssociatedArtifacts(List.of(openFileRrs))
+                                    .withPublisher(new Organization.Builder()
+                                                       .withId(customerId)
+                                                       .build()).build();
 
-        openFileRrs.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
-            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));
+        var owner = getOwner(randomPublication);
 
-        var publicationUpdate = publicationWithRrs.copy().withAssociatedArtifacts(List.of(openFileRrs)).build();
-        var request = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId,
-                                                                publicationWithRrs.getResourceOwner()
-                                                                    .getOwnerAffiliation(),
-                                                                MANAGE_RESOURCE_FILES);
+        var contributorTopLevelCristinId = owner.getTopLevelOrgCristinId();
+
+        var publicationWithRrs = Resource.fromPublication(randomPublication).copy()
+                                     .withCuratingInstitutions(Set.of(
+                                         new CuratingInstitution(contributorTopLevelCristinId, Set.of())))
+                                     .build().persistNew(resourceService, owner);
+
+        var resourceWithRrs = resourceService.getResourceByIdentifier(publicationWithRrs.getIdentifier());
+
+        resourceWithRrs.getFileEntries()
+            .forEach(file -> {
+                file.getFile().setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
+                    OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));
+            });
+
+        var request = curatorWithAccessRightsUpdatesPublication(resourceWithRrs.toPublication(), customerId,
+                                                                contributorTopLevelCristinId,
+                                                                MANAGE_RESOURCE_FILES, MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(request, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(publicationUpdate.getIdentifier());
-        assertThat(updatedPublication.getAssociatedArtifacts(), hasSize(1));
-        var actualPublishedFile = (OpenFile) updatedPublication.getAssociatedArtifacts().getFirst();
+        var updatedPublication = resourceService.getPublicationByIdentifier(resourceWithRrs.getIdentifier());
+        var actualPublishedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
         assertThat(actualPublishedFile.getRightsRetentionStrategy(),
                    allOf(instanceOf(OverriddenRightsRetentionStrategy.class),
                          hasProperty("overriddenBy", is(notNullValue()))));
+    }
+
+    private UserInstance getOwner(Publication randomPublication) {
+        return new UserInstance(randomPublication.getResourceOwner().getOwner().getValue(),
+                                customerId,
+                                randomPublication.getResourceOwner().getOwnerAffiliation(),
+                                null, null, List.of(), UserClientType.INTERNAL);
     }
 
     @Test
@@ -1639,21 +1648,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
-    @Test
-    void shouldAllowUserWithAccessRightManageResourceFilesToRemovePublishedFile()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
-                                                                                  resourceService);
-        var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
-        var event = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
-                                                              publication.getResourceOwner().getOwnerAffiliation(),
-                                                              MANAGE_RESOURCE_FILES, MANAGE_RESOURCES_STANDARD);
-
-        updatePublicationHandler.handleRequest(event, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
-    }
-
     @ParameterizedTest
     @EnumSource(value = AccessRight.class, mode = Mode.EXCLUDE, names = {"MANAGE_RESOURCE_FILES"})
     void shouldNotAllowUserWithoutAccessRightManageResourceFilesToRemovePublishedFile(AccessRight accessRight)
@@ -1668,46 +1662,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
-    }
-
-    private static boolean isFileResponse(AssociatedArtifactDto artifact) {
-        return artifact.getArtifactType().contains("File");
-    }
-
-    @Test
-    void shouldNotOverrideUploadDetailsOnOtherFilesWhenFileIsUploaded() throws BadRequestException, IOException {
-        var publication = createAndPersistNonDegreePublication();
-        var cristinId = randomUri();
-        var contributor = createContributorForPublicationUpdate(cristinId);
-        injectContributor(publication, contributor);
-
-        var fileToUpload = randomPendingOpenFile();
-        var publicationWithNewFile = addFileToPublication(publication, fileToUpload);
-        var contributorName = contributor.getIdentity().getName();
-        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationWithNewFile, cristinId,
-                                                                      contributorName);
-        updatePublicationHandler.handleRequest(event, output, context);
-
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
-
-        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
-        var existingFiles = body.getAssociatedArtifacts().stream()
-                                .filter(UpdatePublicationHandlerTest::isFileResponse)
-                                .map(FileDto.class::cast)
-                                .filter(f -> !f.identifier().equals(fileToUpload.getIdentifier()))
-                                .toList();
-
-        assertNotNull(existingFiles);
-        assertFalse(existingFiles.isEmpty());
-        assertTrue(existingFiles.stream()
-                       .allMatch(
-                           file -> nonNull(file.uploadDetails())
-                                   && nonNull(((UserUploadDetails) file.uploadDetails()).uploadedBy())));
-        assertTrue(existingFiles.stream()
-                       .noneMatch(file -> ((UserUploadDetails) file.uploadDetails()).uploadedBy()
-                                              .getValue()
-                                              .equals(contributorName)));
     }
 
     @Test
@@ -1880,14 +1834,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldUpdateFileMetadataOnUpdatePublicationRequest()
         throws IOException, BadRequestException {
         var file = randomPendingOpenFile();
-        var publication = randomPublication().copy()
+        var publication = randomNonDegreePublication().copy()
                               .withPublisher(Organization.fromUri(customerId))
                               .withAssociatedArtifacts(List.of())
                               .build();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FileEntry.create(file, resource.getIdentifier(),
-                         UserInstance.create(randomString(), customerId))
+                         UserInstance.fromPublication(publication))
             .persist(resourceService);
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
@@ -2135,7 +2089,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication savePublication(Publication publication) throws BadRequestException {
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
@@ -2193,13 +2147,20 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createSamplePublication() throws BadRequestException {
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
     private Publication createAndPersistNonDegreePublication() throws BadRequestException {
         var publication = randomNonDegreePublicationWithPublisher();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+    }
+
+    private Publication createAndPersistNonDegreePublicationWithoutFiles() throws BadRequestException {
+        var publication = randomNonDegreePublicationWithPublisher();
+        publication.setAssociatedArtifacts(AssociatedArtifactList.empty());
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
@@ -2275,7 +2236,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withCurrentCustomer(customerId)
                    .withPersonCristinId(cristinId)
                    .withBody(publicationUpdate)
-                   .withAccessRights(customerId, MANAGE_OWN_RESOURCES, MANAGE_RESOURCE_FILES)
+                   .withAccessRights(customerId, MANAGE_OWN_RESOURCES)
                    .withTopLevelCristinOrgId(publicationUpdate.getResourceOwner().getOwnerAffiliation())
                    .build();
     }

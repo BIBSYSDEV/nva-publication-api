@@ -10,6 +10,7 @@ import static no.unit.nva.testutils.TestHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
@@ -74,6 +75,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -191,7 +193,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Published publication is downloadable by user {0}")
     @MethodSource("userSupplier")
     void handlerReturnsOkResponseOnValidInputPublishedPublication(String user) throws IOException {
-        
+
         var publication = buildPublication(PUBLISHED, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler(httpClient);
         var request = createRequest(user, publication.getIdentifier(), FILE_IDENTIFIER, httpClient);
@@ -219,7 +221,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnOkWhenPublicationUnpublishedAndUserHasAccessRightManageResourcesStandard()
+    void shouldReturnOkWhenPublicationUnpublishedAndUserHasAccessRightManageResourceFiles()
         throws IOException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler(httpClient);
@@ -231,7 +233,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                                   FILE_IDENTIFIER,
                                   customer,
                                   httpClient,
-                                  MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD),
+                                  MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD, MANAGE_RESOURCE_FILES),
                               output,
                               context);
 
@@ -286,7 +288,8 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                                          file.getIdentifier(),
                                          CUSTOMER,
                                          httpClient,
-                                         MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE),
+                                         MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE,
+                                         MANAGE_RESOURCE_FILES),
             output, context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), PresignedUriResponse.class);
@@ -367,7 +370,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                                   FILE_IDENTIFIER,
                                   customer,
                                   httpClient,
-                                  MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD),
+                                  MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD, MANAGE_RESOURCE_FILES),
                               output,
                               context);
 
@@ -386,16 +389,23 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     private static Stream<Arguments> userFileTypeSupplier() {
         return Stream.of(
-            Arguments.of(OWNER_USER_ID, fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
-            Arguments.of(OWNER_USER_ID, fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
-            Arguments.of(OWNER_USER_ID, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
-            Arguments.of(OWNER_USER_ID, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
-            Arguments.of(OWNER_USER_ID, fileWithTypeUnpublished()),
-            Arguments.of(CURATOR, fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
-            Arguments.of(CURATOR, fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
-            Arguments.of(CURATOR, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
-            Arguments.of(CURATOR, fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
-            Arguments.of(CURATOR, fileWithTypeUnpublished())
+            Arguments.of(Named.of("Owner with embargoed file", OWNER_USER_ID),
+                         fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
+            Arguments.of(Named.of("Owner with unembargoed file", OWNER_USER_ID),
+                         fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
+            Arguments.of(Named.of("Owner with unpublishable file", OWNER_USER_ID),
+                         fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
+            Arguments.of(Named.of("Owner with unpublishable file", OWNER_USER_ID),
+                         fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
+            Arguments.of(Named.of("Owner with unpublished file", OWNER_USER_ID), fileWithTypeUnpublished()),
+            Arguments.of(Named.of("Curator with embargoed file", CURATOR), fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
+            Arguments.of(Named.of("Curator with unembargoed file", CURATOR),
+                         fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
+            Arguments.of(Named.of("Curator with unpublishable file", CURATOR),
+                         fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
+            Arguments.of(Named.of("Curator with unpublishable file", CURATOR),
+                         fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
+            Arguments.of(Named.of("Curator with unpublished file", CURATOR), fileWithTypeUnpublished())
         );
     }
 

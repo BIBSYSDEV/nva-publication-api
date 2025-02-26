@@ -21,7 +21,8 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
             case UPDATE,
                  UNPUBLISH,
                  TERMINATE,
-                 READ_HIDDEN_FILES -> canModify();
+                 READ_HIDDEN_FILES,
+                 UPLOAD_FILE -> canModify();
             case DELETE -> canModify() && isDraft();
             case UPDATE_FILES,
                  REPUBLISH,
@@ -30,8 +31,7 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
                  PUBLISHING_REQUEST_CREATE,
                  PUBLISHING_REQUEST_APPROVE,
                  SUPPORT_REQUEST_CREATE,
-                 SUPPORT_REQUEST_APPROVE,
-                 UPLOAD_FILE -> false;
+                 SUPPORT_REQUEST_APPROVE -> false;
         };
     }
 
