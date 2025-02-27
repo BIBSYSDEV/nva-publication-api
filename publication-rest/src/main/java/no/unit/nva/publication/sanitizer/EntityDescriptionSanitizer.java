@@ -3,7 +3,9 @@ import no.unit.nva.model.EntityDescription;
 import java.util.HashMap;
 import static java.util.Objects.nonNull;
 
-public class EntityDescriptionSanitizer {
+public final class EntityDescriptionSanitizer {
+
+    private EntityDescriptionSanitizer() {}
 
     public static EntityDescription sanitize(EntityDescription entityDescription) {
         sanitizeMainTitle(entityDescription);
@@ -15,7 +17,7 @@ public class EntityDescriptionSanitizer {
     }
 
     private static void sanitizeAlternativeAbstracts(EntityDescription entityDescription) {
-        if (nonNull(entityDescription.getAlternativeAbstracts()) && !entityDescription.getAlternativeAbstracts().isEmpty()) {
+        if (nonNull(entityDescription.getAlternativeAbstracts())) {
             var myMap = new HashMap<String, String>();
             entityDescription.getAlternativeAbstracts().forEach((key, value) -> {
                 myMap.put(key, HtmlSanitizer.sanitize(value));
@@ -31,7 +33,7 @@ public class EntityDescriptionSanitizer {
     }
 
     private static void sanitizeAlternativeTitles(EntityDescription entityDescription) {
-        if (nonNull(entityDescription.getAlternativeTitles()) && !entityDescription.getAlternativeTitles().isEmpty()) {
+        if (nonNull(entityDescription.getAlternativeTitles())) {
             var myMap = new HashMap<String, String>();
             entityDescription.getAlternativeTitles().forEach((key, value) -> {
                 myMap.put(key, HtmlSanitizer.sanitize(value));

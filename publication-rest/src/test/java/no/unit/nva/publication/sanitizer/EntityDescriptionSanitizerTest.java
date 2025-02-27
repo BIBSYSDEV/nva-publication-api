@@ -4,17 +4,19 @@ import no.unit.nva.model.EntityDescription;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static no.unit.nva.publication.service.impl.ServiceWithTransactions.EMPTY_STRING;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 class EntityDescriptionSanitizerTest {
+
+    private static final String EMPTY_STRING = "";
 
     @ParameterizedTest
     @MethodSource("validInputProvider")
@@ -53,6 +55,26 @@ class EntityDescriptionSanitizerTest {
         assertThat(sanitized.getAbstract(), equalTo(expectedSanitizedInput));
         assertThat(sanitized.getAlternativeAbstracts().get(randomString), equalTo(expectedSanitizedInput));
     }
+
+//    @Test
+//    void shouldLetEmptyStringsThrough() {
+//        var randomString = randomString();
+//        var entityDescription = new EntityDescription.Builder()
+//                .withMainTitle(EMPTY_STRING)
+////                .withAlternativeTitles(Map.of(randomString, EMPTY_STRING))
+//                .withAlternativeTitles(Map.of(randomString, null))
+//                .withAbstract(EMPTY_STRING)
+////                .withAlternativeAbstracts(Map.of(randomString, EMPTY_STRING))
+//                .withAlternativeAbstracts(Map.of())
+//                .build();
+//
+//        var sanitized = EntityDescriptionSanitizer.sanitize(entityDescription);
+//
+//        assertThat(sanitized.getMainTitle(), equalTo(EMPTY_STRING));
+//        assertThat(sanitized.getAlternativeTitles().get(randomString), equalTo(EMPTY_STRING));
+//        assertThat(sanitized.getAbstract(), equalTo(EMPTY_STRING));
+//        assertThat(sanitized.getAlternativeAbstracts().get(randomString), equalTo(EMPTY_STRING));
+//    }
 
     private static Stream<Arguments> validInputProvider() {
         return Stream.of(
