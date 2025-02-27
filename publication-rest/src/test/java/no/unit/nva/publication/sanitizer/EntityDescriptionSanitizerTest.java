@@ -90,6 +90,7 @@ class EntityDescriptionSanitizerTest {
                 argumentSet("Link tag without href", "<a>Sikt</a>", "Sikt"),
                 argumentSet("Link tag without rel=nofollow", "<a href=\"https://www.nva.sikt.com\">Sikt</a>", "<a href=\"https://www.nva.sikt.com\" rel=\"nofollow\">Sikt</a>"),
                 argumentSet("Link tag with rel=noopener noreferrer but without target", "<a href=\"https://www.nva.sikt.com\" rel=\"noopener noreferrer\">Sikt</a>", "<a href=\"https://www.nva.sikt.com\" rel=\"nofollow\">Sikt</a>"),
+                argumentSet("Link tag with target and rel=noopener noreferrer nofollow will change order of rel", "<a href=\"https://www.nva.sikt.com\" target=\"_blank\" rel=\"noopener noreferrer nofollow\">Sikt</a>", "<a href=\"https://www.nva.sikt.com\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">Sikt</a>"),
                 argumentSet("Link tag with target and without rel=", "<a href=\"https://www.nva.sikt.com\" target=\"_blank\">Sikt</a>", "<a href=\"https://www.nva.sikt.com\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">Sikt</a>"),
                 argumentSet("Link tag with mailto protocol", "<a href=\"mailto:someone@sikt.no\">Mailto</a>", "Mailto"),
                 argumentSet("Equals", "=", "&#61;"),
