@@ -4,7 +4,6 @@ import no.unit.nva.model.EntityDescription;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -56,26 +55,6 @@ class EntityDescriptionSanitizerTest {
         assertThat(sanitized.getAlternativeAbstracts().get(randomString), equalTo(expectedSanitizedInput));
     }
 
-//    @Test
-//    void shouldLetEmptyStringsThrough() {
-//        var randomString = randomString();
-//        var entityDescription = new EntityDescription.Builder()
-//                .withMainTitle(EMPTY_STRING)
-////                .withAlternativeTitles(Map.of(randomString, EMPTY_STRING))
-//                .withAlternativeTitles(Map.of(randomString, null))
-//                .withAbstract(EMPTY_STRING)
-////                .withAlternativeAbstracts(Map.of(randomString, EMPTY_STRING))
-//                .withAlternativeAbstracts(Map.of())
-//                .build();
-//
-//        var sanitized = EntityDescriptionSanitizer.sanitize(entityDescription);
-//
-//        assertThat(sanitized.getMainTitle(), equalTo(EMPTY_STRING));
-//        assertThat(sanitized.getAlternativeTitles().get(randomString), equalTo(EMPTY_STRING));
-//        assertThat(sanitized.getAbstract(), equalTo(EMPTY_STRING));
-//        assertThat(sanitized.getAlternativeAbstracts().get(randomString), equalTo(EMPTY_STRING));
-//    }
-
     private static Stream<Arguments> validInputProvider() {
         return Stream.of(
                 argumentSet("Plain text", "Plain text"),
@@ -85,7 +64,8 @@ class EntityDescriptionSanitizerTest {
                 argumentSet("Bold tag", "<b>Bold</b>"),
                 argumentSet("Strong tag", "<strong>Strong</strong>"),
                 argumentSet("Link tag with rel=nofollow", "<a href=\"https://www.nva.sikt.no\" rel=\"nofollow\">Sikt</a>"),
-                argumentSet("Link tag with target and rel=nofollow noopener noreferrer", "<a href=\"https://www.nva.sikt.no\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">Sikt</a>"),
+                argumentSet("Link tag with target blank and rel=nofollow noopener noreferrer", "<a href=\"https://www.nva.sikt.no\" target=\"blank\" rel=\"nofollow noopener noreferrer\">Sikt</a>"),
+                argumentSet("Link tag with target _blank and rel=nofollow noopener noreferrer", "<a href=\"https://www.nva.sikt.no\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">Sikt</a>"),
                 argumentSet("Special characters", "Special characters $€§!#%/|(){}[]-*?^¨_.:,;"),
                 argumentSet("Backslash", "\\"),
                 argumentSet("Newlines", "\r \n \r\n"),
