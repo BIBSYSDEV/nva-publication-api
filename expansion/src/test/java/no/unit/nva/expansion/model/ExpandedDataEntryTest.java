@@ -75,6 +75,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate.Builder;
@@ -498,7 +499,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                                              ResourceExpansionService expansionService,
                                                                              TicketService ticketService)
             throws NotFoundException, JsonProcessingException {
-            var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
+            var userInstance = UserInstance.fromPublication(publication);
+            var request = GeneralSupportRequest.create(Resource.fromPublication(publication), userInstance);
             return ExpandedGeneralSupportRequest.create(request, resourceService, expansionService,
                                                         ticketService);
         }
@@ -566,5 +568,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
             return requestCase;
         }
+    }
+
+    private static UserInstance randomUserInstance() {
+        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
+                                List.of(), UserClientType.INTERNAL);
     }
 }

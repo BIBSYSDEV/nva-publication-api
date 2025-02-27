@@ -81,7 +81,7 @@ public abstract class TicketEntry implements Entity {
         } else if (PublishingRequestCase.class.equals(ticketType)) {
             return fromPublication(publication);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return GeneralSupportRequest.fromPublication(publication);
+            return GeneralSupportRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return UnpublishRequest.fromPublication(publication);
         }
@@ -111,13 +111,6 @@ public abstract class TicketEntry implements Entity {
 
     public static UntypedTicketQueryObject createQueryObject(SortableIdentifier ticketIdentifier) {
         return UntypedTicketQueryObject.create(ticketIdentifier);
-    }
-
-    public static TicketEntry createNewGeneralSupportRequest(Publication publication,
-                                                             Supplier<SortableIdentifier> identifierProvider) {
-        var ticket = GeneralSupportRequest.fromPublication(publication);
-        setServiceControlledFields(ticket, identifierProvider);
-        return ticket;
     }
 
     public static TicketEntry createNewUnpublishRequest(Publication publication,
@@ -371,25 +364,19 @@ public abstract class TicketEntry implements Entity {
         Class<T> ticketType,
         Supplier<SortableIdentifier> identifierProvider) {
 
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
         if (DoiRequest.class.equals(ticketType)) {
-            return createNewDoiRequest(publication, identifierProvider);
+            return DoiRequest.create(resource, userInstance);
         } else if (PublishingRequestCase.class.equals(ticketType)) {
             return createNewPublishingRequestEntry(publication, identifierProvider);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return createNewGeneralSupportRequest(publication, identifierProvider);
+            return GeneralSupportRequest.create(resource, userInstance);
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return createNewUnpublishRequest(publication, identifierProvider);
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    private static TicketEntry createNewDoiRequest(Publication publication,
-                                                   Supplier<SortableIdentifier> identifierProvider) {
-        var doiRequest = DoiRequest.create(Resource.fromPublication(publication),
-                                           UserInstance.fromPublication(publication));
-        setServiceControlledFields(doiRequest, identifierProvider);
-        return doiRequest;
     }
 
     private static TicketEntry createNewPublishingRequestEntry(Publication publication,

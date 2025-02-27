@@ -1238,14 +1238,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(
             userCristinId,
             resourceService);
-        GeneralSupportRequest.fromPublication(publication)
-            .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService);
-        DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication))
-            .persistNewTicket(ticketService);
+        var resource = Resource.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
+        DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
         var publishingRequestTicket =
             PublishingRequestCase.fromPublication(publication)
-                .withOwner(UserInstance.fromPublication(publication).getUsername())
+                .withOwner(userInstance.getUsername())
                 .persistNewTicket(ticketService);
         var completedPublishingRequest = publishingRequestTicket.complete(publication, UserInstance.create(userName,
                                                                                                            randomUri()));
@@ -1255,7 +1254,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var ticketsAfterUnpublishing =
-            resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+            resourceService.fetchAllTicketsForResource(resource).toList();
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(updatedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
         assertThat(ticketsAfterUnpublishing,
