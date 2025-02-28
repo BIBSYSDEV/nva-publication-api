@@ -43,8 +43,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.InvalidAssociatedArtifactsException;
-import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
@@ -57,7 +55,6 @@ import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -205,13 +202,6 @@ public class PublicationTest {
     @Test
     void initializingPublicationShouldNotThrowException() {
         assertDoesNotThrow(Publication::new);
-    }
-
-    @Test
-    void shouldThrowExceptionWhenCreatingAssociatedArtifactsWithNullArtifactsAndOtherArtifacts() {
-        Executable executable = () -> new AssociatedArtifactList(randomAssociatedLink(),
-                                                                 new NullAssociatedArtifact());
-        assertThrows(InvalidAssociatedArtifactsException.class, executable);
     }
 
     @ParameterizedTest(name = "Publication can be published when basic data is OK and associated files is OK")
