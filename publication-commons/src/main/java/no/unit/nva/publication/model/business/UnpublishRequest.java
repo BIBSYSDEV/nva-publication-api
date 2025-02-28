@@ -180,6 +180,7 @@ public class UnpublishRequest extends TicketEntry {
                    .withViewedBy(this.getViewedBy())
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
+                   .withResponsibilityArea(getResponsibilityArea())
                    .withFinalizedBy(getFinalizedBy())
                    .withFinalizedDate(getFinalizedDate())
                    .build();
@@ -315,6 +316,11 @@ public class UnpublishRequest extends TicketEntry {
 
         public UnpublishRequest.Builder withOwnerAffiliation(URI ownerAffiliation) {
             unpublishRequest.setOwnerAffiliation(ownerAffiliation);
+            return this;
+        }
+
+        public UnpublishRequest.Builder withResponsibilityArea(URI responsibilityArea) {
+            unpublishRequest.setResponsibilityArea(responsibilityArea);
             return this;
         }
 

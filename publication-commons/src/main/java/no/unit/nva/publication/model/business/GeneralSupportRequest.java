@@ -155,6 +155,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
         copy.setFinalizedBy(this.getFinalizedBy());
         copy.setFinalizedDate(this.getFinalizedDate());
+        copy.setResponsibilityArea(this.getResponsibilityArea());
         return copy;
     }
 
