@@ -435,7 +435,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldProceedTicketOwnedByOtherInstitutionThanPublication() throws ApiGatewayException, IOException {
         var publication = createPublication();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         var publishingRequest = PublishingRequestCase.create(Resource.fromPublication(publication),
                                                              userInstance,
                                                                  REGISTRATOR_PUBLISHES_METADATA_ONLY)

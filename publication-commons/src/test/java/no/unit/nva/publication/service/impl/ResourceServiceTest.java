@@ -706,7 +706,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Executable fetchResourceAction = () -> resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertDoesNotThrow(fetchResourceAction);
 
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
                                                                                publication.getIdentifier());
         assertThrows(TransactionFailedException.class, deleteAction);
@@ -716,8 +716,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished() throws ApiGatewayException {
-        Publication publication = createPersistedPublicationWithoutDoi();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var publication = createPersistedPublicationWithoutDoi();
+        var userInstance = UserInstance.fromPublication(publication);
         Resource.fromPublication(publication).publish(resourceService, userInstance);
         assertThatIdentifierEntryHasBeenCreated();
 
@@ -733,10 +733,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest() throws ApiGatewayException {
-        Publication publication = createPersistedPublicationWithoutDoi();
+        var publication = createPersistedPublicationWithoutDoi();
         createDoiRequest(publication);
 
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
 
         assertThatAllEntriesHaveBeenDeleted();
