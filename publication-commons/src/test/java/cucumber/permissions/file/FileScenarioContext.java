@@ -1,12 +1,13 @@
 package cucumber.permissions.file;
 
 import static cucumber.permissions.PermissionsRole.EXTERNAL_CLIENT;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_PUBLICATION_OWNER;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE_EMBARGO;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
-import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_OTHERS;
-import static cucumber.permissions.PermissionsRole.FILE_OWNER;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS;
 import static cucumber.permissions.PermissionsRole.OTHER_CONTRIBUTORS;
+import static cucumber.permissions.PermissionsRole.PUBLICATION_OWNER;
 import static cucumber.permissions.PermissionsRole.UNAUTHENTICATED;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Objects.nonNull;
@@ -14,10 +15,10 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublica
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import cucumber.permissions.FileOwner;
 import cucumber.permissions.PermissionsRole;
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
@@ -50,9 +52,11 @@ public final class FileScenarioContext {
     private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
     private Set<PermissionsRole> roles = new HashSet<>();
     private boolean isEmbargo = false;
+    private FileOwner fileOwnerType = FileOwner.OTHER_CONTRIBUTOR;
 
     private static final Map<PermissionsRole, Set<AccessRight>> roleToAccessRightsMap = Map.of(
-        FILE_CURATOR_FOR_OTHERS, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES),
+        FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES),
+        FILE_CURATOR_BY_PUBLICATION_OWNER, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES),
         FILE_CURATOR_DEGREE_EMBARGO, Set.of(AccessRight.MANAGE_DEGREE, AccessRight.MANAGE_DEGREE_EMBARGO),
         FILE_CURATOR_DEGREE, Set.of(AccessRight.MANAGE_DEGREE),
         FILE_CURATOR_FOR_GIVEN_FILE, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES)
@@ -88,40 +92,58 @@ public final class FileScenarioContext {
         var isUnauthenticated = roles.contains(UNAUTHENTICATED) || roles.isEmpty();
         var isExternalClient = roles.contains(EXTERNAL_CLIENT);
         var user = getUserInstance(access, isUnauthenticated, isExternalClient);
+        var curatorTopLevelOrgCristinId = getCuratorTopLevelOrgCristinId(user, roles);
+        var publicationTopLevel = fileBelongsToSameOrg && nonNull(user)? user.getTopLevelOrgCristinId() :
+                                                                                               randomUri();
 
-        var topLevelOrgCristinId = getTopLevelOrgCristinId(user, roles);
-
-        var currentUserIsContributor = roles.contains(OTHER_CONTRIBUTORS);
-        var contributors =  getContributors(user, currentUserIsContributor);
+        var publicationOwner = roles.contains(PUBLICATION_OWNER) ? user : createInternalUser(Collections.emptySet(),
+                                                                                             publicationTopLevel);
+        var contributor = roles.contains(OTHER_CONTRIBUTORS) ? user : createInternalUser(Collections.emptySet(), curatorTopLevelOrgCristinId);
+        var contributors =  getContributors(contributor);
 
         var randomResource = Resource.fromPublication(isDegree ? randomDegreePublication() : randomNonDegreePublication());
 
-        var currentUserIsFileOwner = roles.contains(FILE_OWNER);
-        var fileEntry = getFileEntry(topLevelOrgCristinId, user, randomResource, fileBelongsToSameOrg, isEmbargo,
-                                     fileType, currentUserIsFileOwner);
+        var fileOwner = getFileOwner(fileOwnerType, publicationOwner, contributor);
 
-        var customerId =  nonNull(user) ? user.getCustomerId() : randomUri();
+        var fileEntry = getFileEntry(fileOwner, randomResource, isEmbargo, fileType);
+
+        var customerId =  nonNull(user) ? user.getCustomerId() : publicationOwner.getCustomerId();
         var resource = randomResource.copy()
+                           .withResourceOwner(new Owner(publicationOwner.getUser(), publicationOwner.getTopLevelOrgCristinId()))
                            .withStatus(publicationStatus)
                            .withPublisher(new Organization.Builder().withId(customerId).build())
                            .withEntityDescription(
                                randomResource.getEntityDescription().copy().withContributors(contributors).build())
                            .withCuratingInstitutions(
-                               Set.of(new CuratingInstitution(topLevelOrgCristinId, Collections.emptySet())))
+                               Set.of(new CuratingInstitution(curatorTopLevelOrgCristinId, Collections.emptySet())))
                            .build();
 
         return new FilePermissions(fileEntry, user, resource);
     }
 
-    private static URI getTopLevelOrgCristinId(UserInstance user, Set<PermissionsRole> roles) {
+    private static UserInstance getFileOwner(FileOwner fileOwnerType, UserInstance publicationOwner,
+                                             UserInstance contributor) {
+
+        return switch (fileOwnerType) {
+            case FileOwner.PUBLICATION_OWNER:
+                yield publicationOwner;
+            case FileOwner.CONTRIBUTOR_AT_X:
+                yield contributor;
+            case FileOwner.OTHER_CONTRIBUTOR:
+                yield createInternalUser(Collections.emptySet(), randomUri());
+        };
+    }
+
+    public void setFileOwner(FileOwner fileOwner) {
+        this.fileOwnerType = fileOwner;
+    }
+
+    private static URI getCuratorTopLevelOrgCristinId(UserInstance user, Set<PermissionsRole> roles) {
         return nonNull(user) && isCurrentUserCuratorOnResource(roles) ? user.getTopLevelOrgCristinId() :  randomUri();
     }
 
-    private static FileEntry getFileEntry(URI topLevelOrgCristinId, UserInstance user, Resource random,
-                                          boolean fileBelongsToSameOrg, boolean isEmbargo,
-                                          Class<File> fileType, boolean isOwner) {
-        var fileAffiliation = fileBelongsToSameOrg ? topLevelOrgCristinId : randomUri();
-        var fileOwner =  isOwner ? user : createInternalUser(Collections.emptySet(), fileAffiliation);
+    private static FileEntry getFileEntry(UserInstance fileOwner, Resource random, boolean isEmbargo,
+                                          Class<File> fileType) {
         return FileEntry.create(createFile(isEmbargo, fileType), random.getIdentifier(), fileOwner);
     }
 
@@ -141,8 +163,7 @@ public final class FileScenarioContext {
     }
 
     private static boolean isCurrentUserCuratorOnResource(Set<PermissionsRole> roles) {
-        return Set.of(FILE_CURATOR_DEGREE, FILE_CURATOR_DEGREE_EMBARGO, FILE_CURATOR_FOR_GIVEN_FILE,
-                      FILE_CURATOR_FOR_OTHERS)
+        return Set.of(FILE_CURATOR_DEGREE, FILE_CURATOR_DEGREE_EMBARGO, FILE_CURATOR_FOR_GIVEN_FILE, FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS)
                    .stream()
                    .anyMatch(roles::contains);
     }
@@ -171,8 +192,8 @@ public final class FileScenarioContext {
         return fileOperation;
     }
 
-    private static List<Contributor> getContributors(UserInstance user, boolean isContributor) {
-        return nonNull(user) && isContributor ? List.of(createContributor(user)) : new ArrayList<>();
+    private static List<Contributor> getContributors(UserInstance user) {
+        return List.of(createContributor(user));
     }
 
     private static Contributor createContributor(UserInstance user) {

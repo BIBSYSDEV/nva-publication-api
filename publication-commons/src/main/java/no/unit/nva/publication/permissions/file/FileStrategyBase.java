@@ -53,7 +53,7 @@ public class FileStrategyBase {
         return file.getOwnerAffiliation().equals(userTopLevelOrg);
     }
 
-    protected boolean hasTopLevelRelationForCurrentResource() {
+    private boolean userBelongsToCuratingInstitution() {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("checking if resource top level affiliation {} for user {} is equal to {}.",
@@ -65,8 +65,16 @@ public class FileStrategyBase {
         return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
     }
 
+    private boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() {
+        return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
+    }
+
+    private boolean userIsFromSameInstitutionAsPublicationOwner() {
+        return resource.getResourceOwner().getOwnerAffiliation().equals(userInstance.getTopLevelOrgCristinId());
+    }
+
     protected boolean currentUserIsFileCurator() {
-        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && hasTopLevelRelationForCurrentResource();
+        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
     }
 
     protected boolean currentUserIsContributor() {
@@ -118,7 +126,7 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsDegreeEmbargoFileCuratorForGivenFile() {
-        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && hasTopLevelRelationForCurrentResource();
+        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
     }
 
     protected boolean currentUserIsDegreeFileCuratorForGivenFile() {

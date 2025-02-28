@@ -1,6 +1,6 @@
 package cucumber.permissions.publication;
 
-import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_OTHERS;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -59,11 +59,11 @@ public class PublicationScenarioContext {
         var currentUserIsContributor = roles.contains(PermissionsRole.OTHER_CONTRIBUTORS);
         var contributors = getContributors(user, currentUserIsContributor);
 
-        var currentUserIsFileCurator = roles.contains(FILE_CURATOR_FOR_OTHERS);
+        var currentUserIsFileCurator = roles.contains(FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS);
         var curatingInstitutions = getCuratingInstitutions(currentUserIsFileCurator, user);
 
-        var currentUserIsOwner = roles.contains(PermissionsRole.PUBLICATION_OWNER);
-        var owner = getOwner(user, topLevelOrgCristinId, currentUserIsOwner);
+        var currentUserIsPublicationOwner = roles.contains(PermissionsRole.PUBLICATION_OWNER);
+        var owner = getOwner(user, topLevelOrgCristinId, currentUserIsPublicationOwner);
 
         var randomResource = Resource.fromPublication(randomNonDegreePublication());
 
@@ -109,7 +109,7 @@ public class PublicationScenarioContext {
 
     private static HashSet<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
         var access = new HashSet<AccessRight>();
-        if (roles.contains(FILE_CURATOR_FOR_OTHERS)) {
+        if (roles.contains(FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS)) {
             access.add(MANAGE_RESOURCES_STANDARD);
             access.add(MANAGE_RESOURCE_FILES);
         }
