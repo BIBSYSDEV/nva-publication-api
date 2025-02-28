@@ -6,7 +6,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public enum PermissionsRole {
-    FILE_CURATOR_FOR_OTHERS("file curators for other contributors"),
+    FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS("file curators for other contributors"),
+    FILE_CURATOR_BY_PUBLICATION_OWNER("file curator by publication owner at x"),
     FILE_CURATOR_FOR_GIVEN_FILE("file curator at x"),
     FILE_CURATOR_DEGREE_EMBARGO("degree embargo file curator"),
     FILE_CURATOR_DEGREE("degree file curator"),
@@ -14,7 +15,6 @@ public enum PermissionsRole {
     AUTHENTICATED_BUT_NO_ACCESS("everyone"),
     CONTRIBUTOR_FOR_GIVEN_FILE("contributor at x"),
     OTHER_CONTRIBUTORS("other contributors", "contributor"),
-    FILE_OWNER("file owner", "uploader"),
     EXTERNAL_CLIENT("external client"),
     PUBLICATION_OWNER("publication owner");
 

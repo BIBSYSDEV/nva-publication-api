@@ -6,24 +6,24 @@ Feature: File permissions for embargo and degree files
   Scenario Outline: Verify embargo and degree file operation permissions
     Given a file of type "OpenFile" with property "<FileProperty>"
     When the user have the role "<UserRole>"
+    And the file is owned by "Publication owner"
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 
     Examples:
       | FileProperty   | UserRole                             | Operation      | Outcome     |
-
-      | Degree         | File owner at X                      | read-metadata  | Allowed     |
-      | Degree         | File owner at X                      | download       | Allowed     |
-      | Degree         | File owner at X                      | write-metadata | Not Allowed |
-      | Degree         | File owner at X                      | delete         | Not Allowed |
-      | Embargo        | File owner at X                      | read-metadata  | Allowed     |
-      | Embargo        | File owner at X                      | download       | Allowed     |
-      | Embargo        | File owner at X                      | write-metadata | Not Allowed |
-      | Embargo        | File owner at X                      | delete         | Not Allowed |
-      | Degree+Embargo | File owner at X                      | read-metadata  | Allowed     |
-      | Degree+Embargo | File owner at X                      | download       | Allowed     |
-      | Degree+Embargo | File owner at X                      | write-metadata | Not Allowed |
-      | Degree+Embargo | File owner at X                      | delete         | Not Allowed |
+      | Degree         | Publication owner at X               | read-metadata  | Allowed     |
+      | Degree         | Publication owner at X               | download       | Allowed     |
+      | Degree         | Publication owner at X               | write-metadata | Not Allowed |
+      | Degree         | Publication owner at X               | delete         | Not Allowed |
+      | Embargo        | Publication owner at X               | read-metadata  | Allowed     |
+      | Embargo        | Publication owner at X               | download       | Allowed     |
+      | Embargo        | Publication owner at X               | write-metadata | Not Allowed |
+      | Embargo        | Publication owner at X               | delete         | Not Allowed |
+      | Degree+Embargo | Publication owner at X               | read-metadata  | Allowed     |
+      | Degree+Embargo | Publication owner at X               | download       | Allowed     |
+      | Degree+Embargo | Publication owner at X               | write-metadata | Not Allowed |
+      | Degree+Embargo | Publication owner at X               | delete         | Not Allowed |
 
       | Degree         | Contributor at X                     | read-metadata  | Allowed     |
       | Degree         | Contributor at X                     | download       | Allowed     |

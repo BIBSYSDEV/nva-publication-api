@@ -3,6 +3,7 @@ package cucumber.permissions.file;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import cucumber.permissions.FileOwner;
 import cucumber.permissions.PermissionsRole;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -42,6 +43,11 @@ public class FileAccessFeatures {
     public void theUserHaveTheRole(String userRole) {
         scenarioContext.setRoles(PermissionsRole.lookup(userRole));
         scenarioContext.setFileBelongsToSameOrg(userRole.toLowerCase().contains("at x"));
+    }
+
+    @When("the file is owned by {string}")
+    public void theFileIsOwnedBy(String fileOwner) {
+        scenarioContext.setFileOwner(FileOwner.lookup(fileOwner));
     }
 
     @And("the user attempts to {string}")
