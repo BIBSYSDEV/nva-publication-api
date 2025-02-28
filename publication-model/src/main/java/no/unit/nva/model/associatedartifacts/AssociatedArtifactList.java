@@ -1,9 +1,9 @@
 package no.unit.nva.model.associatedartifacts;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,40 +15,33 @@ import nva.commons.core.JacocoGenerated;
 
 public class AssociatedArtifactList implements List<AssociatedArtifact> {
 
-    private final List<AssociatedArtifact> associatedArtifacts;
-    
+    private final List<AssociatedArtifact> associatedArtifacts = new ArrayList<>();
+
     @JsonCreator
     public AssociatedArtifactList(List<AssociatedArtifact> artifacts) {
-        if (isNull(artifacts)) {
-            this.associatedArtifacts = Collections.emptyList();
-        } else if (containsNotOnlyNullAssociatedArtifacts(artifacts)) {
-            this.associatedArtifacts = artifacts.stream()
-                                           .filter(not(NullAssociatedArtifact.class::isInstance))
-                                           .toList();
-        } else {
-            this.associatedArtifacts = artifacts;
+        if (containsNotOnlyNullAssociatedArtifacts(artifacts)) {
+            var notNullAssociatedArtifacts = artifacts.stream()
+                                                 .filter(not(NullAssociatedArtifact.class::isInstance))
+                                                 .toList();
+            this.associatedArtifacts.addAll(notNullAssociatedArtifacts);
+        } else if (nonNull(artifacts)) {
+            this.associatedArtifacts.addAll(artifacts);
         }
-    }
-
-    private boolean containsNotOnlyNullAssociatedArtifacts(List<AssociatedArtifact> artifacts) {
-        return nonNull(artifacts)
-               && artifacts.stream().anyMatch(NullAssociatedArtifact.class::isInstance)
-               && !artifacts.stream().allMatch(NullAssociatedArtifact.class::isInstance);
     }
 
     public AssociatedArtifactList(AssociatedArtifact... artifacts) {
         this(Arrays.asList(artifacts));
     }
-    
+
     public static AssociatedArtifactList empty() {
         return new AssociatedArtifactList(Collections.emptyList());
     }
-    
+
     @Override
     public int size() {
         return associatedArtifacts.size();
     }
-    
+
     @Override
     public boolean isEmpty() {
         return associatedArtifacts.isEmpty();
@@ -80,18 +73,8 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
     }
 
     @Override
-    public void add(int index, AssociatedArtifact element) {
-        associatedArtifacts.add(index, element);
-    }
-
-    @Override
     public boolean remove(Object o) {
         return associatedArtifacts.remove(o);
-    }
-
-    @Override
-    public AssociatedArtifact remove(int index) {
-        return associatedArtifacts.remove(index);
     }
 
     @Override
@@ -124,18 +107,6 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
         associatedArtifacts.clear();
     }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        return associatedArtifacts.equals(o);
-    }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(associatedArtifacts);
-    }
-
     @Override
     public AssociatedArtifact get(int index) {
         return associatedArtifacts.get(index);
@@ -147,6 +118,16 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
     }
 
     @Override
+    public void add(int index, AssociatedArtifact element) {
+        associatedArtifacts.add(index, element);
+    }
+
+    @Override
+    public AssociatedArtifact remove(int index) {
+        return associatedArtifacts.remove(index);
+    }
+
+    @Override
     public int indexOf(Object o) {
         return associatedArtifacts.indexOf(o);
     }
@@ -155,7 +136,7 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
     public int lastIndexOf(Object o) {
         return associatedArtifacts.lastIndexOf(o);
     }
-    
+
     @Override
     public ListIterator<AssociatedArtifact> listIterator() {
         return associatedArtifacts.listIterator();
@@ -169,5 +150,22 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
     @Override
     public List<AssociatedArtifact> subList(int fromIndex, int toIndex) {
         return associatedArtifacts.subList(fromIndex, toIndex);
+    }
+
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(associatedArtifacts);
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        return associatedArtifacts.equals(o);
+    }
+
+    private boolean containsNotOnlyNullAssociatedArtifacts(List<AssociatedArtifact> artifacts) {
+        return nonNull(artifacts) && artifacts.stream().anyMatch(NullAssociatedArtifact.class::isInstance) &&
+               !artifacts.stream().allMatch(NullAssociatedArtifact.class::isInstance);
     }
 }

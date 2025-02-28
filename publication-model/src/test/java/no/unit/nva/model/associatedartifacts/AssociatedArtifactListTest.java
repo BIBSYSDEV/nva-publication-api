@@ -18,4 +18,20 @@ class AssociatedArtifactListTest {
         assertFalse(associatedArtifactList.contains(nullAssociatedArtifact));
         assertTrue(associatedArtifactList.contains(file));
     }
+
+    @Test
+    void shouldKeepNullAssociatedArtifactWhenOnlyElementInList() {
+        var nullAssociatedArtifact = new NullAssociatedArtifact();
+
+        var associatedArtifactList = new AssociatedArtifactList(List.of(nullAssociatedArtifact));
+
+        assertTrue(associatedArtifactList.contains(nullAssociatedArtifact));
+    }
+
+    @Test
+    void shouldNotFailWhenAssociatedArtifactsAreNull() {
+        var associatedArtifactList = new AssociatedArtifactList((List<AssociatedArtifact>) null);
+
+        assertTrue(associatedArtifactList.isEmpty());
+    }
 }
