@@ -1,6 +1,8 @@
 package no.unit.nva.model.associatedartifacts;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.Arrays;
 import java.util.Collection;
@@ -13,14 +15,25 @@ import nva.commons.core.JacocoGenerated;
 
 public class AssociatedArtifactList implements List<AssociatedArtifact> {
 
-    public static final String NULL_OBJECT_MUST_BE_SINGLETON_IN_LIST = "AssociatedArtifactLists containing "
-            + "NullAssociatedArtifact must contain only this element as a singleton";
     private final List<AssociatedArtifact> associatedArtifacts;
     
     @JsonCreator
     public AssociatedArtifactList(List<AssociatedArtifact> artifacts) {
-        throwExceptionIfNullObjectIsNotOnlyElementInList(artifacts);
-        this.associatedArtifacts = nonNull(artifacts) ? artifacts : Collections.emptyList();
+        if (isNull(artifacts)) {
+            this.associatedArtifacts = Collections.emptyList();
+        } else if (containsNotOnlyNullAssociatedArtifacts(artifacts)) {
+            this.associatedArtifacts = artifacts.stream()
+                                           .filter(not(NullAssociatedArtifact.class::isInstance))
+                                           .toList();
+        } else {
+            this.associatedArtifacts = artifacts;
+        }
+    }
+
+    private boolean containsNotOnlyNullAssociatedArtifacts(List<AssociatedArtifact> artifacts) {
+        return nonNull(artifacts)
+               && artifacts.stream().anyMatch(NullAssociatedArtifact.class::isInstance)
+               && !artifacts.stream().allMatch(NullAssociatedArtifact.class::isInstance);
     }
 
     public AssociatedArtifactList(AssociatedArtifact... artifacts) {
@@ -157,16 +170,4 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
     public List<AssociatedArtifact> subList(int fromIndex, int toIndex) {
         return associatedArtifacts.subList(fromIndex, toIndex);
     }
-
-
-    private void throwExceptionIfNullObjectIsNotOnlyElementInList(List<AssociatedArtifact> artifacts) {
-        if (nonNull(artifacts) && containsNullObject(artifacts) && artifacts.size() > 1) {
-            throw new InvalidAssociatedArtifactsException(NULL_OBJECT_MUST_BE_SINGLETON_IN_LIST);
-        }
-    }
-
-    private boolean containsNullObject(List<AssociatedArtifact> artifacts) {
-        return artifacts.stream().anyMatch(NullAssociatedArtifact.class::isInstance);
-    }
-
 }

@@ -331,16 +331,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
-    @Test
-    void shouldThrowBadRequestExceptionWhenAssociatedArtifactsIsBad() throws IOException {
-        var event = createPublicationRequestEventWithInvalidAssociatedArtifacts();
-        handler.handleRequest(event, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
-        var body = response.getBodyObject(Problem.class);
-        assertThat(body.getDetail(), containsString("AssociatedArtifact"));
-    }
-
     @ParameterizedTest
     @MethodSource("httpClientExceptionsProvider")
     void shouldReturnBadGatewayIfCustomerApiHttpClientThrowsException(Exception exceptionToThrow)
