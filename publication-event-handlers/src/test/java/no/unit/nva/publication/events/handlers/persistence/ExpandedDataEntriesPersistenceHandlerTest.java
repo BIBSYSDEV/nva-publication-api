@@ -6,6 +6,7 @@ import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEn
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.IMPORT_CANDIDATES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -119,17 +120,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         output = new ByteArrayOutputStream();
     }
 
-    @Test
-    void shouldEmitEventContainingS3UriToPersistedExpandedResourceWhenItCannotRetrieveCustomerPublishingWorkflow()
-        throws ApiGatewayException, IOException {
-        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
-        var entryUpdate = generateExpandedPublishingRequestWithWorkflowSetToNull();
-        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
-        EventReference outputEvent = sendEvent();
-        String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
-        assertThat(indexingEventPayload, is(not(emptyString())));
-    }
-
     @ParameterizedTest(name = "should emit event containing S3 URI to persisted expanded resource:{0}")
     @MethodSource("expandedEntriesTypeProvider")
     void shouldEmitEventContainingS3UriToPersistedExpandedResource(Class<?> entryType)
@@ -189,7 +179,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistRecoveryMessageForTicketWhenSomethingGoesWrong() throws IOException, ApiGatewayException {
-        final var expectedPersistedEntry = generateExpandedPublishingRequestWithWorkflowSetToNull();
+        final var expectedPersistedEntry = generateExpandedEntry(ExpandedPublishingRequest.class);
         s3Writer = mock(S3Driver.class);
         when(s3Writer.insertFile(any(), (String) any())).thenThrow(new RuntimeException());
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
@@ -282,11 +272,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate(), uriRetriever);
     }
 
-    private PersistedEntryWithExpectedType generateExpandedPublishingRequestWithWorkflowSetToNull()
-        throws ApiGatewayException, JsonProcessingException {
-        return new PersistedEntryWithExpectedType(publishingRequestWithoutWorkflow(), TICKETS_INDEX);
-    }
-
     private ExpandedDataEntry randomGeneralSupportRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var openingCaseObject =
@@ -305,23 +290,11 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
 
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
-                                                            .fromPublication(publication)
-                                                            .withOwner(UserInstance.fromPublication(publication)
-                                                                           .getUsername());
-        publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        publishingRequest.persistNewTicket(ticketService);
-        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest, false);
-    }
-
-    private ExpandedPublishingRequest publishingRequestWithoutWorkflow()
-        throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWithoutDoi();
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
-                                                            .withOwner(UserInstance.fromPublication(publication)
-                                                                           .getUsername());
-        publishingRequest.setWorkflow(null);
-        publishingRequest.persistNewTicket(ticketService);
+        var publishingRequest = PublishingRequestCase
+                                                            .create(Resource.fromPublication(publication),
+                                                                    UserInstance.fromPublication(publication),
+                                                                    REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES)
+                                    .persistNewTicket(ticketService);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest, false);
     }
 

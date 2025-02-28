@@ -168,11 +168,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication);
-        var username = userInstance.getUsername();
-
-        var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
         DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
-        PublishingRequestCase.fromPublication(publication).withOwner(username).withOwnerAffiliation(ownerAffiliation).persistNewTicket(ticketService);
+        PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY).persistNewTicket(ticketService);
         GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
 
         var request = curatorWithAccessRightRequestTicketsForPublication(publication, accessRight);
@@ -210,13 +207,11 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var userInstance = UserInstance.fromPublication(publication);
-        var username = userInstance.getUsername();
 
         var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
         var resource = Resource.fromPublication(publication);
         DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
-        PublishingRequestCase.fromPublication(publication).withOwnerAffiliation(
-            ownerAffiliation).withOwner(username).persistNewTicket(ticketService);
+        PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY).persistNewTicket(ticketService);
         GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
 
         var request = userRequestsTickets(publication, randomUri(), ownerAffiliation, accessRight);

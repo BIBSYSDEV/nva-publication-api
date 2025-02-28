@@ -1013,15 +1013,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributor = createContributorForPublicationUpdate(cristinId);
         var publicationWithoutFiles = publication.copy().withAssociatedArtifacts(List.of()).build();
         injectContributor(publicationWithoutFiles, contributor);
-        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
+        var resource = Resource.fromPublication(publication);
+        resource.publish(resourceService, UserInstance.fromPublication(publication));
         var publicationUpdate = publicationWithoutFiles.copy().withDoi(randomUri()).build();
 
         var username = contributor.getIdentity().getName();
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId,
                                                                       username);
-        var pendingTicket = PublishingRequestCase.fromPublication(publication)
-                                .withOwner(publication.getResourceOwner().getOwner().getValue())
-                                .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+        var pendingTicket = PublishingRequestCase.create(resource, UserInstance.create(username, randomUri()), PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
                                 .persistNewTicket(ticketService);
         updatePublicationHandler.handleRequest(event, output, context);
 
@@ -1243,8 +1242,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
         DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
         var publishingRequestTicket =
-            PublishingRequestCase.fromPublication(publication)
-                .withOwner(userInstance.getUsername())
+            PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
                 .persistNewTicket(ticketService);
         var completedPublishingRequest = publishingRequestTicket.complete(publication, UserInstance.create(userName,
                                                                                                            randomUri()));

@@ -14,8 +14,8 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static software.amazon.awssdk.http.HttpStatusCode.FORBIDDEN;
 import static software.amazon.awssdk.http.HttpStatusCode.NOT_FOUND;
-import static software.amazon.awssdk.http.HttpStatusCode.UNAUTHORIZED;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -68,14 +68,14 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnUnauthorizedWhenAttemptingToDeleteTicketUserDoesNotOwn() throws IOException, ApiGatewayException {
+    void shouldReturnForbiddenWhenAttemptingToDeleteTicketUserDoesNotOwn() throws IOException, ApiGatewayException {
         var publication = createPublication();
         var ticket = createTicket(publication);
         var request = deleteRequest(publication.getIdentifier(), ticket.getIdentifier());
 
         handler.handleRequest(request, output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(UNAUTHORIZED)));
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(FORBIDDEN)));
     }
 
     @Test

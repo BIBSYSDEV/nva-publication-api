@@ -11,8 +11,8 @@ import no.unit.nva.publication.ticket.TicketHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 
@@ -55,7 +55,7 @@ public class DeleteTicketHandler extends TicketHandler<Void, Void> {
         if (failure.getException() instanceof NotFoundException) {
             return new NotFoundException(TICKET_NOT_FOUND_MESSAGE);
         }
-        if (failure.getException() instanceof UnauthorizedException) {
+        if (failure.getException() instanceof ForbiddenException) {
             return (ApiGatewayException) failure.getException();
         }
         return new BadGatewayException(UNEXPECTED_ERROR_MESSAGE);

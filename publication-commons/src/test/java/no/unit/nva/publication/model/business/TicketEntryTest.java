@@ -42,7 +42,7 @@ class TicketEntryTest {
     @Test
     void shouldThrowExceptionForUnrecognizedTicketType() {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
-        assertThrows(RuntimeException.class, () -> TicketEntry.requestNewTicket(publication, DoiRequest.class));
+        assertThrows(RuntimeException.class, () -> TicketEntry.requestNewTicket(publication, TicketEntry.class));
     }
 
     @Test
@@ -94,7 +94,7 @@ class TicketEntryTest {
             publication, PublishingRequestCase.class, SortableIdentifier::next);
         ticket.withFilesForApproval(Set.of(randomPendingOpenFile()))
             .withWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .publishApprovedFile();
+            .approveFiles();
 
         assertThat(ticket.getApprovedFiles().size(), is(equalTo(1)));
     }
