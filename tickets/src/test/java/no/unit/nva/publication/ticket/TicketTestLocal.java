@@ -91,7 +91,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
         action.accept(storedResult);
-        return resourceService.getPublication(storedResult);
+        return resourceService.getPublicationByIdentifier(storedResult.getIdentifier());
     }
 
     private Publication createAndPersistPublicationWithDoiAndThenActOnIt(Consumer<Publication> action)
@@ -102,6 +102,6 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
         action.accept(storedResult);
-        return resourceService.getPublication(storedResult);
+        return resourceService.getPublicationByIdentifier(storedResult.getIdentifier());
     }
 }

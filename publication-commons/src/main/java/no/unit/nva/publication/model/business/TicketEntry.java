@@ -3,9 +3,7 @@ package no.unit.nva.publication.model.business;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.fromPublication;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -24,8 +22,8 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -35,9 +33,6 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
     @JsonSubTypes.Type(name = UnpublishRequest.TYPE, value = UnpublishRequest.class)})
 public abstract class TicketEntry implements Entity {
 
-    public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED = "Can not create DoiRequest ticket "
-                                                                                  + "for unpublished publication, use"
-                                                                                  + " draft doi flow instead.";
     public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR = "Ticket without reference to "
                                                                                + "publication";
     private static final String VIEWED_BY_FIELD = "viewedBy";
@@ -47,8 +42,6 @@ public abstract class TicketEntry implements Entity {
     private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
     public static final String REMOVE_NON_PENDING_TICKET_MESSAGE =
         "Cannot remove a ticket that has any other status than %s";
-    public static final String UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE =
-        "Ticket owner only can remove ticket!";
 
     @JsonProperty(OWNER_FIELD)
     private User owner;
@@ -76,10 +69,12 @@ public abstract class TicketEntry implements Entity {
     }
 
     public static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
+        var resource = Resource.fromPublication(publication);
+        var userInstance  = UserInstance.fromPublication(publication);
         if (DoiRequest.class.equals(ticketType)) {
-            return attempt(() -> requestDoiRequestTicket(publication)).orElseThrow();
+            return DoiRequest.create(resource, userInstance);
         } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return fromPublication(publication);
+            return PublishingRequestCase.create(resource, userInstance, null);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         } else if (UnpublishRequest.class.equals(ticketType)) {
@@ -246,9 +241,9 @@ public abstract class TicketEntry implements Entity {
         this.responsibilityArea = responsibilityArea;
     }
 
-    private void validateTicketOwner(UserInstance userInstance) throws UnauthorizedException {
+    private void validateTicketOwner(UserInstance userInstance) throws ForbiddenException {
         if (isNotTicketOwner(userInstance)) {
-            throw new UnauthorizedException(UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE);
+            throw new ForbiddenException();
         }
     }
 
@@ -351,14 +346,6 @@ public abstract class TicketEntry implements Entity {
                    .orElse(false);
     }
 
-    private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {
-        if (isPublished(publication)) {
-            return DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
-        } else {
-            throw new BadRequestException(DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED);
-        }
-    }
-
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
         Class<T> ticketType,
@@ -369,7 +356,7 @@ public abstract class TicketEntry implements Entity {
         if (DoiRequest.class.equals(ticketType)) {
             return DoiRequest.create(resource, userInstance);
         } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return createNewPublishingRequestEntry(publication, identifierProvider);
+            return PublishingRequestCase.create(resource, userInstance, null);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequest.create(resource, userInstance);
         } else if (UnpublishRequest.class.equals(ticketType)) {
@@ -377,17 +364,6 @@ public abstract class TicketEntry implements Entity {
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    private static TicketEntry createNewPublishingRequestEntry(Publication publication,
-                                                               Supplier<SortableIdentifier> identifierProvider) {
-        var entry = fromPublication(publication);
-        setServiceControlledFields(entry, identifierProvider);
-        return entry;
-    }
-
-    private static boolean isPublished(Publication publication) {
-        return PUBLISHED_STATUSES.contains(publication.getStatus());
     }
 
     public boolean hasAssignee() {

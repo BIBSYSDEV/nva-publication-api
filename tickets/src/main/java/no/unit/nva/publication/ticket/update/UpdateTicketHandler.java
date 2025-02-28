@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -202,7 +201,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
 
         if (COMPLETED.equals(ticketRequest.getStatus())) {
             validateFilesForApproval(ticket);
-            ticket.publishApprovedFile().persistUpdate(ticketService);
+            ticket.approveFiles().persistUpdate(ticketService);
         }
     }
 

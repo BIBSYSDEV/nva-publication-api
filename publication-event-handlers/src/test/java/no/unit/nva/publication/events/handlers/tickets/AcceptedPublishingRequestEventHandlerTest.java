@@ -38,7 +38,6 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -193,7 +192,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(publishingWorkflow);
         var approvedPublishingRequest =
                 pendingPublishingRequest
-                        .publishApprovedFile()
+                        .approveFiles()
                         .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
@@ -378,7 +377,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var pendingPublishingRequest =
             (PublishingRequestCase) persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest = pendingPublishingRequest.publishApprovedFile()
+        var approvedPublishingRequest = pendingPublishingRequest.approveFiles()
                         .complete(publication, USER_INSTANCE)
                         .persistNewTicket(ticketService);
         var handlerThrowingException =
@@ -436,13 +435,13 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldProceedTicketOwnedByOtherInstitutionThanPublication() throws ApiGatewayException, IOException {
         var publication = createPublication();
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
-                    .withOwner(randomString())
-                    .withOwnerAffiliation(randomUri());
-        publishingRequest.setStatus(TicketStatus.COMPLETED);
-        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        var ticket = publishingRequest.persistNewTicket(ticketService);
-        var event = createEvent(null, ticket);
+        var userInstance = UserInstance.fromPublication(publication);
+        var publishingRequest = PublishingRequestCase.create(Resource.fromPublication(publication),
+                                                             userInstance,
+                                                                 REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                                    .complete(publication, userInstance)
+                                    .persistNewTicket(ticketService);
+        var event = createEvent(null, publishingRequest);
 
         assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
     }
@@ -453,12 +452,13 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var internalFileToReject = randomPendingInternalFile();
         var openFileToReject = randomPendingOpenFile();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(internalFileToReject, openFileToReject));
-        var persistedPublication = Resource.fromPublication(publication)
+        publication = Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
-                                                            .withFilesForApproval(Set.of(internalFileToReject, openFileToReject))
-                                                            .withOwner(randomString())
-                                                            .withOwnerAffiliation(randomUri());
+        var publishingRequest = PublishingRequestCase
+                                    .createWithFilesForApproval(Resource.fromPublication(publication),
+                                                                UserInstance.fromPublication(publication),
+                                                                REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                                                                Set.of(internalFileToReject, openFileToReject));
         var ticket = publishingRequest.persistNewTicket(ticketService);
         ticket.close(UserInstance.create(randomString(), randomUri())).persistUpdate(ticketService);
 
@@ -467,7 +467,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(event, outputStream, CONTEXT);
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
         assertTrue(updatedPublication.getAssociatedArtifacts().stream().allMatch(RejectedFile.class::isInstance));
     }
@@ -477,10 +477,9 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(), randomPendingOpenFile()));
         resourceService.updatePublication(publication);
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
-                                                            .withOwner(randomString())
-                                                            .withOwnerAffiliation(randomUri());
-        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var publishingRequest = PublishingRequestCase.create(Resource.fromPublication(publication),
+                                                             UserInstance.fromPublication(publication),
+                                                             REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var ticket = publishingRequest.persistNewTicket(ticketService);
         var event = createEvent(null, ticket);
 
@@ -497,10 +496,10 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         publication.setAssociatedArtifacts(new AssociatedArtifactList(randomPendingInternalFile(), randomPendingOpenFile()));
         resourceService.updatePublication(publication);
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(publication)
-                                                            .withOwner(randomString())
-                                                            .withOwnerAffiliation(randomUri());
-        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var publishingRequest = PublishingRequestCase
+                                    .create(Resource.fromPublication(publication),
+                                            UserInstance.fromPublication(publication),
+                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var ticket = publishingRequest.persistNewTicket(ticketService);
         var event = createEvent(null, ticket);
 
@@ -518,17 +517,13 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
             Publication publication, File file) throws ApiGatewayException {
-        var publishingRequest =
-                (PublishingRequestCase)
-                        PublishingRequestCase.fromPublication(publication)
-                                .withOwner(UserInstance.fromPublication(publication).getUsername())
-                                .withOwnerAffiliation(
-                                        publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.setStatus(TicketStatus.COMPLETED);
-        publishingRequest.setApprovedFiles(Set.of(file));
-        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        publishingRequest.setFinalizedBy(new Username(randomString()));
-        return (PublishingRequestCase) publishingRequest.persistNewTicket(ticketService);
+        var userInstance = UserInstance.fromPublication(publication);
+        return (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(Resource.fromPublication(publication),
+                                                             userInstance,
+                                                             REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                                                             Set.of(file))
+                .approveFiles().complete(publication, userInstance)
+                                           .persistNewTicket(ticketService);
     }
 
     private Publication createPublicationWithFiles(File file, File fileInPublishingRequest)

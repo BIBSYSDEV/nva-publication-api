@@ -279,7 +279,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication(Publication publication) throws ApiGatewayException {
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 

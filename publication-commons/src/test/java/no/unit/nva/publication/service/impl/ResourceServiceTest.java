@@ -706,7 +706,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Executable fetchResourceAction = () -> resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertDoesNotThrow(fetchResourceAction);
 
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
                                                                                publication.getIdentifier());
         assertThrows(TransactionFailedException.class, deleteAction);
@@ -716,8 +716,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished() throws ApiGatewayException {
-        Publication publication = createPersistedPublicationWithoutDoi();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var publication = createPersistedPublicationWithoutDoi();
+        var userInstance = UserInstance.fromPublication(publication);
         Resource.fromPublication(publication).publish(resourceService, userInstance);
         assertThatIdentifierEntryHasBeenCreated();
 
@@ -733,10 +733,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest() throws ApiGatewayException {
-        Publication publication = createPersistedPublicationWithoutDoi();
+        var publication = createPersistedPublicationWithoutDoi();
         createDoiRequest(publication);
 
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
 
         assertThatAllEntriesHaveBeenDeleted();
@@ -1459,22 +1459,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var file = randomPendingInternalFile();
-        FileEntry.create(file, persistedPublication.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
 
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
-                                                            .withFilesForApproval(Set.of(file))
-                                                            .withOwner(randomString())
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createWithFilesForApproval(Resource.fromPublication(publication),
+                                                                                        userInstance,
+                                                                                        PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                                                                                        Set.of(file))
                                                             .persistNewTicket(ticketService);
 
-        publishingRequest.publishApprovedFile().persistUpdate(ticketService);
+        publishingRequest.approveFiles().persistUpdate(ticketService);
         publishingRequest.setFinalizedBy(new Username(randomString()));
         publishingRequest.publishApprovedFiles(resourceService);
 
         assertInstanceOf(InternalFile.class,
-                         FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                         FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier())
                              .fetch(resourceService)
                              .orElseThrow()
                              .getFile());
@@ -1485,18 +1487,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var file = randomPendingInternalFile();
         var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
         var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
-                                                            .withFilesForApproval(Set.of(file))
-                                                            .withOwner(randomString())
-                                                            .persistNewTicket(ticketService);
-        publishingRequest.publishApprovedFile().close(randomUserInstance()).persistUpdate(ticketService);
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
+            Resource.fromPublication(publication), userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY, Set.of(file))
+                                    .persistNewTicket(ticketService);
+        publishingRequest.approveFiles().close(randomUserInstance()).persistUpdate(ticketService);
         publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
         publishingRequest.publishApprovedFiles(resourceService);
 
-        var associatedArtifact = Resource.fromPublication(persistedPublication)
+        var associatedArtifact = Resource.fromPublication(publication)
                                      .fetch(resourceService).orElseThrow().getAssociatedArtifacts().getFirst();
         assertInstanceOf(InternalFile.class, associatedArtifact);
     }
@@ -1508,21 +1509,23 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var file = randomPendingInternalFile();
-        FileEntry.create(file, persistedPublication.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
 
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
-                                                            .withFilesForApproval(Set.of(file))
-                                                            .withOwner(randomString())
+        var publishingRequest =
+            (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(Resource.fromPublication(publication),
+                                                                 UserInstance.create(randomString(), randomUri()),
+                                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                                                                 Set.of(file))
                                                             .persistNewTicket(ticketService);
 
         publishingRequest.setFinalizedBy(new Username(randomString()));
         publishingRequest.rejectRejectedFiles(resourceService);
 
         assertInstanceOf(RejectedFile.class,
-                         FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                         FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier())
                              .fetch(resourceService)
                              .orElseThrow()
                              .getFile());
@@ -1533,17 +1536,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var file = randomPendingInternalFile();
         var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
         var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.fromPublication(persistedPublication)
-                                                            .withFilesForApproval(Set.of(file))
-                                                            .withOwner(randomString())
-                                                            .persistNewTicket(ticketService);
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                    .createWithFilesForApproval(Resource.fromPublication(publication),
+                                                                userInstance,
+                                                                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                                                                Set.of(file)).persistNewTicket(ticketService);
         publishingRequest.close(randomUserInstance()).persistUpdate(ticketService);
         publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
         publishingRequest.rejectRejectedFiles(resourceService);
 
-        var associatedArtifact = Resource.fromPublication(persistedPublication)
+        var associatedArtifact = Resource.fromPublication(publication)
                                      .fetch(resourceService).orElseThrow().getAssociatedArtifacts().getFirst();
 
         assertInstanceOf(RejectedFile.class, associatedArtifact);

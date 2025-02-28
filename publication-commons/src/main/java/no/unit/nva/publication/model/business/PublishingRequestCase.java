@@ -71,30 +71,12 @@ public class PublishingRequestCase extends TicketEntry {
         super();
     }
 
-    public static PublishingRequestCase fromPublication(Publication publication) {
-        var userInstance = UserInstance.fromPublication(publication);
-        var openingCaseObject = new PublishingRequestCase();
-        openingCaseObject.setCustomerId(userInstance.getCustomerId());
-        openingCaseObject.setStatus(TicketStatus.PENDING);
-        openingCaseObject.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
-        openingCaseObject.setResourceIdentifier(publication.getIdentifier());
-        return openingCaseObject;
-    }
-
     public static PublishingRequestCase create(Resource resource, UserInstance userInstance,
                                                PublishingWorkflow workflow) {
         var publishingRequestCase = createPublishingRequest(resource, userInstance, workflow);
-        return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
-                   ? completePublishingRequestAndApproveFiles(resource, userInstance, publishingRequestCase)
+        return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow) ? completePublishingRequestAndApproveFiles(
+            resource, userInstance, publishingRequestCase)
                    : handleMetadataOnlyWorkflow(resource, userInstance, workflow, publishingRequestCase);
-    }
-
-    private static PublishingRequestCase handleMetadataOnlyWorkflow(Resource resource, UserInstance userInstance,
-                                                                  PublishingWorkflow workflow,
-                                                                  PublishingRequestCase publishingRequestCase) {
-        return canPublishMetadataAndNoFilesToApprove(workflow, publishingRequestCase)
-                   ? publishingRequestCase.complete(resource.toPublication(), userInstance)
-                   : publishingRequestCase;
     }
 
     public static PublishingRequestCase createWithFilesForApproval(Resource resource, UserInstance userInstance,
@@ -290,7 +272,7 @@ public class PublishingRequestCase extends TicketEntry {
         return this;
     }
 
-    public PublishingRequestCase publishApprovedFile() {
+    public PublishingRequestCase approveFiles() {
         this.approvedFiles = getFilesForApproval().stream().map(this::toApprovedFile).collect(Collectors.toSet());
         this.filesForApproval = Set.of();
         return this;
@@ -351,6 +333,13 @@ public class PublishingRequestCase extends TicketEntry {
         return getApprovedFiles().stream().map(File::getIdentifier).toList().contains(file.getIdentifier());
     }
 
+    private static PublishingRequestCase handleMetadataOnlyWorkflow(Resource resource, UserInstance userInstance,
+                                                                    PublishingWorkflow workflow,
+                                                                    PublishingRequestCase publishingRequestCase) {
+        return canPublishMetadataAndNoFilesToApprove(workflow, publishingRequestCase) ? publishingRequestCase.complete(
+            resource.toPublication(), userInstance) : publishingRequestCase;
+    }
+
     private static boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow,
                                                                  PublishingRequestCase publishingRequestCase) {
         return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) &&
@@ -361,7 +350,7 @@ public class PublishingRequestCase extends TicketEntry {
                                                                                   UserInstance userInstance,
                                                                                   PublishingRequestCase publishingRequestCase) {
         publishingRequestCase.setAssignee(new Username(userInstance.getUsername()));
-        publishingRequestCase.publishApprovedFile();
+        publishingRequestCase.approveFiles();
         return publishingRequestCase.complete(resource.toPublication(), userInstance);
     }
 

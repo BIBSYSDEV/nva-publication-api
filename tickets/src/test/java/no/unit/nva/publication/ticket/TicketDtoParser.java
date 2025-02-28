@@ -52,6 +52,7 @@ public final class TicketDtoParser {
         ticket.setAssignee(publishingRequestDto.getAssignee());
         ticket.setOwner(publishingRequestDto.getOwner());
         ticket.setOwnerAffiliation(publishingRequestDto.getOwnerAffiliation());
+        ticket.setFilesForApproval(publishingRequestDto.getFilesForApproval());
         return ticket;
     }
 

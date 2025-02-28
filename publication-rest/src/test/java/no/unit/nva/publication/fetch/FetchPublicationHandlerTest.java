@@ -633,9 +633,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication() throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier =
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getResourceByIdentifier(publicationIdentifier).toPublication();
     }
@@ -652,9 +652,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication(Class<? extends PublicationInstance<?>> instance) throws ApiGatewayException {
-        Publication publication = PublicationGenerator.randomPublication(instance);
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        SortableIdentifier publicationIdentifier = Resource.fromPublication(publication)
+        var publication = PublicationGenerator.randomPublication(instance);
+        var userInstance = UserInstance.fromPublication(publication);
+        var publicationIdentifier = Resource.fromPublication(publication)
                                                        .persistNew(publicationService, userInstance)
                                                        .getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);

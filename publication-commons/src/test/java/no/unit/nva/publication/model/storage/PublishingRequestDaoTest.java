@@ -91,7 +91,9 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         var query = PublishingRequestDao.queryPublishingRequestByResource(publication.getPublisher().getId(),
                                                                           publication.getIdentifier());
 
-        var publishingRequest = PublishingRequestCase.fromPublication(publication)
+        var publishingRequest = PublishingRequestCase.create(Resource.fromPublication(publication),
+                                                             UserInstance.fromPublication(publication),
+                                                             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
                                     .withOwner(randomString());
         var persistedRequest = publishingRequest.persistNewTicket(ticketService);
         var queryResult = client.query(query);
