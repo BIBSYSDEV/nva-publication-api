@@ -22,10 +22,11 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
         if (containsNotOnlyNullAssociatedArtifacts(artifacts)) {
             var notNullAssociatedArtifacts = artifacts.stream()
                                                  .filter(not(NullAssociatedArtifact.class::isInstance))
+                                                 .distinct()
                                                  .toList();
             this.associatedArtifacts.addAll(notNullAssociatedArtifacts);
         } else if (nonNull(artifacts)) {
-            this.associatedArtifacts.addAll(artifacts);
+            this.associatedArtifacts.addAll(artifacts.stream().distinct().toList());
         }
     }
 
