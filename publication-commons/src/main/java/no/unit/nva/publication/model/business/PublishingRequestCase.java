@@ -145,6 +145,7 @@ public class PublishingRequestCase extends TicketEntry {
         copy.filesForApproval = this.getFilesForApproval().isEmpty() ? Set.of() : this.getFilesForApproval();
         copy.setFinalizedBy(this.getFinalizedBy());
         copy.setFinalizedDate(this.getFinalizedDate());
+        copy.setResponsibilityArea(this.getResponsibilityArea());
         return copy;
     }
 

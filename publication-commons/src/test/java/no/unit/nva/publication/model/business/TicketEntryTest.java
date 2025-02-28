@@ -15,7 +15,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -166,13 +165,42 @@ class TicketEntryTest {
         assertFalse(publishingRequestCase.getApprovedFiles().isEmpty());
     }
 
+    @Test
+    void shouldCopyPublishingRequestWithoutLossOfInformation() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = randomUserInstance();
+        var publishingRequestCase = PublishingRequestCase.create(resource, userInstance,
+                                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+
+        var copy = publishingRequestCase.copy();
+
+        assertEquals(publishingRequestCase, copy);
+    }
+
+    @Test
+    void shouldCopyDoiRequestWithoutLossOfInformation() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = randomUserInstance();
+        var doiRequest = DoiRequest.create(resource, userInstance);
+
+        var copy = doiRequest.copy();
+
+        assertEquals(doiRequest, copy);
+    }
+
+    @Test
+    void shouldCopyGeneralSupportWithoutLossOfInformation() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = randomUserInstance();
+        var generalSupportRequest = GeneralSupportRequest.create(resource, userInstance);
+
+        var copy = generalSupportRequest.copy();
+
+        assertEquals(generalSupportRequest, copy);
+    }
+
     private static UserInstance randomUserInstance() {
         return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(),
                                 randomUri(), List.of(), UserClientType.INTERNAL);
-    }
-
-    private static UserInstance getExpectedUserInstance(Publication publication) {
-        return UserInstance.create(
-            publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
     }
 }

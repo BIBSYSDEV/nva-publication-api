@@ -211,6 +211,7 @@ public class DoiRequest extends TicketEntry {
                    .withViewedBy(this.getViewedBy())
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
+                   .withResponsibilityArea(getResponsibilityArea())
                    .withFinalizedBy(getFinalizedBy())
                    .withFinalizedDate(getFinalizedDate())
                    .build();
@@ -339,6 +340,11 @@ public class DoiRequest extends TicketEntry {
 
         public Builder withOwnerAffiliation(URI ownerAffiliation) {
             doiRequest.setOwnerAffiliation(ownerAffiliation);
+            return this;
+        }
+
+        public Builder withResponsibilityArea(URI responsibilityArea) {
+            doiRequest.setResponsibilityArea(responsibilityArea);
             return this;
         }
 
