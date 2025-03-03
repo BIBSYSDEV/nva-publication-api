@@ -223,7 +223,7 @@ public class ResourceService extends ServiceWithTransactions {
 
         var userInstance = UserInstance.fromPublication(resource.toPublication());
         var fileTransactionWriteItems = resource.getFiles().stream()
-                                            .map(file -> FileEntry.importFileEntry(file, resource.getIdentifier(), userInstance, importSource))
+                                            .map(file -> FileEntry.createFromImportSource(file, resource.getIdentifier(), userInstance, importSource))
                                             .map(FileEntry::toDao)
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();

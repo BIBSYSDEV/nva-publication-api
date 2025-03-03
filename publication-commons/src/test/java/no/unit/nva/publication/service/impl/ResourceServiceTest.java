@@ -120,6 +120,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
@@ -1646,6 +1647,21 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedResource = Resource.fromPublication(persistedPublication).update(resourceService, userInstance);
 
         assertEquals(doi, updatedResource.getDoi());
+    }
+
+    @Test
+    void shouldSetFileImportedEventWhenFileIsBeingImported() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var openFile = randomOpenFile();
+        var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
+        fileEntry.importNew(resourceService, userInstance, ImportSource.fromBrageArchive("ntnu"));
+
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        assertInstanceOf(FileImportedEvent.class, updatedFileEntry.getFileEvent());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

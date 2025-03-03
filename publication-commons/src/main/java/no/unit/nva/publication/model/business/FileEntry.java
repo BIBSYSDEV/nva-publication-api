@@ -92,8 +92,8 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         return (FileEntry) fileDao.getData();
     }
 
-    public static FileEntry importFileEntry(File file, SortableIdentifier identifier, UserInstance userInstance,
-                                            ImportSource importSource) {
+    public static FileEntry createFromImportSource(File file, SortableIdentifier identifier,
+                                                   UserInstance userInstance, ImportSource importSource) {
         var fileEntry = create(file, identifier, userInstance);
         fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(), Instant.now(), importSource));
         return fileEntry;
@@ -235,6 +235,13 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
             this.modifiedDate = Instant.now();
         }
         return this;
+    }
+
+    public void importNew(ResourceService resourceService,UserInstance userInstance, ImportSource importSource) {
+        var now = Instant.now();
+        this.modifiedDate = now;
+        this.setFileEvent(FileImportedEvent.create(userInstance.getUser(), Instant.now(), importSource));
+        resourceService.persistFile(this);
     }
 
     private boolean shouldHideFile(File file) {
