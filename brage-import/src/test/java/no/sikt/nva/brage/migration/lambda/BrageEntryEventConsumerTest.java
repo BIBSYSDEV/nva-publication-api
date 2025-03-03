@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.lambda;
 
+import static java.util.UUID.randomUUID;
 import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
 import static no.sikt.nva.brage.migration.NvaType.CRISTIN_RECORD;
 import static no.sikt.nva.brage.migration.NvaType.EDITORIAL;
@@ -27,6 +28,7 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.testing.PublicationGenerator.randomAdditionalIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -50,6 +52,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
@@ -164,6 +167,7 @@ import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -187,7 +191,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
-    public static final UUID UUID = java.util.UUID.randomUUID();
+    public static final UUID UUID = randomUUID();
     public static final Context CONTEXT = mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
@@ -1181,7 +1185,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                 .withResourceContent(new ResourceContent(List.of(new ContentFile(randomString(),
                                                                                  BundleType.LICENSE,
                                                                                  randomString(),
-                                                                                 java.util.UUID.randomUUID(),
+                                                                                 randomUUID(),
                                                                                  null,
                                                                                  null))))
                 .withSubjectCode(subjectCode)
@@ -1217,7 +1221,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         var subjectCode = randomString();
-        var newFileIdentifier = java.util.UUID.randomUUID();
+        var newFileIdentifier = randomUUID();
         var brageGenerator =
             new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MASTER)
                 .withCristinIdentifier(cristinIdentifier)
@@ -2317,6 +2321,45 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(s3Driver.getFile(uri.toS3bucketPath()), is(notNullValue()));
     }
 
+    @Test
+    void importedFileShouldHaveFileImportedEvent() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK)
+                                 .withResourceContent(createResourceContent())
+                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
+
+        var resource = Resource.fromPublication(publicationRepresentation.publication()).fetch(resourceService).orElseThrow();
+
+        var fileEvent = resource.getFileEntries().getFirst().getFileEvent();
+
+        assertInstanceOf(FileImportedEvent.class, fileEvent);
+    }
+
+    @Test
+    void importedFileOnPublicationUpdateShouldHaveFileImportedEvent() throws IOException {
+        var generator = generateBrageRecordAndPersistDuplicate(new Lecture(), TYPE_CONFERENCE_REPORT);
+        var existingPublication = generator.getExistingPublication();;
+        var contentFile = new ContentFile("dublin_core.xml", BundleType.IGNORED, null,
+                                         randomUUID(), new License(randomString(), new NvaLicense(randomUri())), null);
+        var brageRecord = generator.getGeneratorBuilder()
+                              .withResourceContent(new ResourceContent(List.of(contentFile)))
+                              .build().getBrageRecord();
+
+        mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
+        var s3Event = createNewBrageRecordEvent(brageRecord);
+        var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
+
+        var resource = Resource.resourceQueryObject(publicationRepresentation.publication().getIdentifier())
+                           .fetch(resourceService)
+                           .orElseThrow();
+        var fileEntry =
+            resource.getFileEntry(new SortableIdentifier(contentFile.getIdentifier().toString())).orElseThrow();
+
+        assertInstanceOf(FileImportedEvent.class, fileEntry.getFileEvent());
+    }
+
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {
         return new AdditionalIdentifier("Cristin", cristinIdentifier);
     }
@@ -2421,7 +2464,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private AssociatedArtifact randomOpenFile() {
 
-        return new OpenFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null,
+        return new OpenFile(randomUUID(), randomString(), "application/pdf", 10L, null,
                             PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
             RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(), new ImportUploadDetails(null, null, null));
     }
@@ -2444,7 +2487,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contentFile = new ContentFile();
         contentFile.setFilename("MyAwsomeUnisFile.pdf");
         contentFile.setBundleType(BundleType.ORIGINAL);
-        contentFile.setIdentifier(java.util.UUID.randomUUID());
+        contentFile.setIdentifier(randomUUID());
         contentFile.setLicense(new License("", new NvaLicense(randomUri())));
         return contentFile;
     }
