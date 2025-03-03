@@ -103,7 +103,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private void handlePendingPublishingRequest(PublishingRequestCase publishingRequest) {
         var resource = fetchResource(publishingRequest.getResourceIdentifier());
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
-            publishResource(resource);
+            publishResource(resource, publishingRequest);
             refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
         }
         createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
@@ -130,7 +130,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         var resource = fetchResource(publishingRequestCase.getResourceIdentifier());
         var publishingRequest = fetchPublishingRequest(publishingRequestCase);
 
-        publishWhenPublicationStatusDraft(resource);
+        publishWhenPublicationStatusDraft(resource, publishingRequest);
 
         if (!publishingRequest.getApprovedFiles().isEmpty()) {
             publishingRequest.publishApprovedFiles(resourceService);
@@ -141,9 +141,9 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
     }
 
-    private void publishWhenPublicationStatusDraft(Resource resource) {
+    private void publishWhenPublicationStatusDraft(Resource resource, PublishingRequestCase publishingRequest) {
         if (PublicationStatus.DRAFT.equals(resource.getStatus())) {
-            publishResource(resource);
+            publishResource(resource, publishingRequest);
         }
     }
 
@@ -159,8 +159,8 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         throw new RuntimeException();
     }
 
-    private void publishResource(Resource resource) {
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
+    private void publishResource(Resource resource, PublishingRequestCase publishingRequestCase) {
+        var userInstance = UserInstance.fromTicket(publishingRequestCase);
         logger.info("Publishing resource: {}", resource.getIdentifier());
         try {
             resource.publish(resourceService, userInstance);

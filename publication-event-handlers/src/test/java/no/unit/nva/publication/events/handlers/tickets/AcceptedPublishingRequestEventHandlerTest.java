@@ -515,6 +515,26 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertEquals(publishingRequest, refreshedPublishingRequest);
     }
 
+    @Test
+    void shouldSetPublishingRequestOwnerAsThePersonWhoPublishedPublicationInResourceEventWhenPublishingPublicationByConsumingTicket()
+        throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        var publishingRequest = PublishingRequestCase
+                                    .create(Resource.fromPublication(publication),
+                                            UserInstance.fromPublication(publication),
+                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var ticket = publishingRequest.persistNewTicket(ticketService);
+        var event = createEvent(null, ticket);
+
+        handler.handleRequest(event, outputStream, CONTEXT);
+
+        var resource = Resource.resourceQueryObject(publication.getIdentifier())
+                           .fetch(resourceService)
+                           .orElseThrow();
+
+        assertEquals(publishingRequest.getOwner().toString(), resource.getResourceEvent().user().toString());
+    }
+
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
             Publication publication, File file) throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
