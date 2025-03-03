@@ -70,8 +70,6 @@ public class ScopusFileConverter {
     public static final String XML_CONTENT_TYPE = "text/xml";
     public static final String FILENAME_CONTENT_TYPE_HEADER_VALUE = "filename=";
     public static final String QUOTE = "\"";
-    public static final String WHITESPACE = " ";
-    public static final String ENCODED_WHITESPACE = "%20";
     public static final int ZERO_LENGTH_CONTENT = 0;
     public static final String ELSEVIER_HOST = "api.elsevier.com";
     public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file: ";
@@ -110,6 +108,8 @@ public class ScopusFileConverter {
         return response.headers()
                    .firstValue(Headers.CONTENT_DISPOSITION)
                    .map(ScopusFileConverter::extractFileNameFromContentDisposition)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
                    .or(() -> extractFileNameFromUrl(response))
                    .or(() -> randomFileNameWithMimeTypeFromContentTypeHeader(response.headers()))
                    .orElseGet(ScopusFileConverter::randomStringPdfFileName);
@@ -142,9 +142,10 @@ public class ScopusFileConverter {
                    .map(Path::toString);
     }
 
-    private static String extractFileNameFromContentDisposition(String contentType) {
-        return contentType.split(FILENAME_CONTENT_TYPE_HEADER_VALUE)[1].split(CONTENT_TYPE_DELIMITER)[0].replace(QUOTE,
-                                                                                                                 StringUtils.EMPTY_STRING);
+    private static Optional<String> extractFileNameFromContentDisposition(String contentType) {
+        return attempt(() -> contentType.split(FILENAME_CONTENT_TYPE_HEADER_VALUE)[1]
+                                 .split(CONTENT_TYPE_DELIMITER)[0]
+                                 .replace(QUOTE, StringUtils.EMPTY_STRING)).toOptional();
     }
 
     private static HttpRequest constructRequest(URI uri) {
@@ -359,95 +360,4 @@ public class ScopusFileConverter {
             return scopusFile;
         }
     }
-
-    // The functionality to fetch files from XML is currently disabled because the XML data lacks
-    // license information for the files. This code will remain commented out until a decision
-    // is made regarding how to handle files without license information.
-    // Once a solution is implemented, this code can be revisited and potentially re-enabled.
-
-    //    private Optional<List<AssociatedArtifact>> fetchFilesFromXml(DocTp docTp) {
-    //        var associatedArtifacts = extractAssociatedArtifactsFromFileReference(docTp).stream()
-    //                                      .filter(File.class::isInstance)
-    //                                      .filter(this::isValid)
-    //                                      .toList();
-    //        return associatedArtifacts.isEmpty() ? Optional.empty() : Optional.of(associatedArtifacts);
-    //    }
-    //
-    //    private List<AssociatedArtifact> extractAssociatedArtifactsFromFileReference(DocTp docTp) {
-    //        try {
-    //            return getLocations(docTp).stream()
-    //                       .map(UpwOaLocationType::getUpwUrlForPdf)
-    //                       .distinct()
-    //                       .filter(Objects::nonNull)
-    //                       .map(ScopusFileConverter::toUri)
-    //                       .map(this::convertToAssociatedArtifact)
-    //                       .filter(Optional::isPresent)
-    //                       .map(Optional::get)
-    //                       .filter(ScopusFileConverter::fileWithContent)
-    //                       .map(File.class::cast)
-    //                       .collect(collectRemovingDuplicatedFiles());
-    //        } catch (Exception e) {
-    //            logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
-    //            return List.of();
-    //        }
-    //    }
-    //
-    //    private boolean isValid(AssociatedArtifact associatedArtifact) {
-    //        return nonNull(((File) associatedArtifact).getMimeType());
-    //    }
-    //    private List<UpwOaLocationType> getLocations(DocTp docTp) {
-    //        return Optional.ofNullable(docTp.getMeta().getOpenAccess())
-    //                   .map(OpenAccessType::getUpwOpenAccess)
-    //                   .map(UpwOpenAccessType::getUpwOaLocations)
-    //                   .map(UpwOaLocationsType::getUpwOaLocation)
-    //                   .orElse(List.of());
-    //    }
-    //    private Optional<AssociatedArtifact> convertToAssociatedArtifact(URI downloadUrl) {
-    //        try {
-    //            var response = fetchResponseAsInputStream(downloadUrl);
-    //            return convertToAssociatedArtifact(response);
-    //        } catch (Exception e) {
-    //            logger.error(FETCH_FILE_FROM_URL_MESSAGE_ERROR_MESSAGE,
-    //                         downloadUrl.toString() + StringUtils.SPACE + e.getMessage());
-    //            return Optional.empty();
-    //        }
-    //    }
-    //    private Optional<AssociatedArtifact> convertToAssociatedArtifact(HttpResponse<InputStream> response)
-    //        throws IOException {
-    //        var fileIdentifier = randomUUID();
-    //        var filename = getFilename(response);
-    //        var inputStreamToSave = tikaUtils.fetch(response.request().uri());
-    //        var mimeType = saveFile(filename, fileIdentifier, inputStreamToSave);
-    //        return Optional.of(File.builder()
-    //                               .withIdentifier(fileIdentifier)
-    //                               .withName(filename)
-    //                               .withMimeType(mimeType)
-    //                               .withSize(inputStreamToSave.getLength())
-    //                               .withLicense(DEFAULT_LICENSE)
-    //                               .withUploadDetails(createUploadDetails())
-    //                               .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
-    //                               .buildOpenFile());
-    //    }
-    //    private ImportUploadDetails createUploadDetails() {
-    //        return new ImportUploadDetails(Source.SCOPUS, null, Instant.now());
-    //    }
-    //
-    //    private String saveFile(String fileName, UUID fileIdentifier, TikaInputStream inputStream) throws
-    //    IOException {
-    //        var path = inputStream.getPath();
-    //        var mimeType = tikaUtils.getMimeType(inputStream);
-    //        s3Client.putObject(PutObjectRequest.builder()
-    //                               .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
-    //                               .contentType(mimeType)
-    //                               .contentDisposition(String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, fileName))
-    //                               .key(fileIdentifier.toString())
-    //                               .build(), RequestBody.fromFile(path));
-    //        return mimeType;
-    //    }
-    //    private static URI toUri(String string) {
-    //        return attempt(() -> new URI(string.replace(WHITESPACE, ENCODED_WHITESPACE))).orElseThrow();
-    //    }
-    //    private static Collector<File, Object, ArrayList<AssociatedArtifact>> collectRemovingDuplicatedFiles() {
-    //        return collectingAndThen(toCollection(() -> new TreeSet<>(comparing(File::getName))), ArrayList::new);
-    //    }
 }
