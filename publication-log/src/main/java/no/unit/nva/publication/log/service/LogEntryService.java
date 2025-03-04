@@ -4,8 +4,8 @@ import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
-import no.unit.nva.clients.GetCustomerResponse;
-import no.unit.nva.clients.GetUserResponse;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -109,11 +109,11 @@ public class LogEntryService {
                    .orElse(failure -> LogUser.fromResourceEvent(resourceEvent.user(), resourceEvent.institution()));
     }
 
-    private GetCustomerResponse getCustomer(URI institutionCristinId) {
+    private CustomerDto getCustomer(URI institutionCristinId) {
         return attempt(() -> identityServiceClient.getCustomerByCristinId(institutionCristinId)).orElseThrow();
     }
 
-    private GetUserResponse getUser(User user) {
+    private UserDto getUser(User user) {
         return attempt(() -> identityServiceClient.getUser(user.toString())).orElseThrow();
     }
 }

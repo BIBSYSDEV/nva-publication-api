@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business.logentry;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -10,10 +11,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import no.unit.nva.clients.GetCustomerResponse;
-import no.unit.nva.clients.GetUserResponse;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.UserDto;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -80,16 +82,30 @@ class LogEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateLogUserFromGetUserResponse() {
-        var getUserResponse = GetUserResponse.builder()
+    void shouldCreateLogUserFromUserDto() {
+        var getUserResponse = UserDto.builder()
                                  .withUsername(randomString())
                                  .withGivenName(randomString())
                                  .withFamilyName(randomString())
                                  .withInstitution(randomUri())
                                  .build();
-        var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
-                                                      randomString(), randomUri());
+        var getCustomerResponse = createRandomCustomer();
         assertNotNull(LogUser.create(getUserResponse, getCustomerResponse));
+    }
+
+    private static CustomerDto createRandomCustomer() {
+        return new CustomerDto(randomUri(),
+                               UUID.randomUUID(),
+                               randomString(),
+                               randomString(),
+                               randomString(),
+                               randomUri(),
+                               randomString(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               Collections.emptyList(),
+                               new CustomerDto.RightsRetentionStrategy(randomString(), randomUri()));
     }
 
     @Test
@@ -98,11 +114,10 @@ class LogEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateLogInstitutionFromGetCustomerResponse() {
-        var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
-                                                      randomString(), randomUri());
+    void shouldCreateLogInstitutionFromCustomerDto() {
+        var getCustomerResponse = createRandomCustomer();
 
-        assertNotNull(LogOrganization.fromGetCustomerResponse(getCustomerResponse));
+        assertNotNull(LogOrganization.fromCustomerDto(getCustomerResponse));
     }
 
     @Test

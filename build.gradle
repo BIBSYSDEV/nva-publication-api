@@ -13,6 +13,6 @@ tasks.withType(JavaCompile) {
 }
 
 wrapper {
-    gradleVersion = '8.5'
+    gradleVersion = '8.12.1'
     distributionType = Wrapper.DistributionType.ALL
 }

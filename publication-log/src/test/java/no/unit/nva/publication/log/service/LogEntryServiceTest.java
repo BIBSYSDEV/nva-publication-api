@@ -5,6 +5,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.FILE_UPLOADED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,9 +14,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.UUID;
-import no.unit.nva.clients.GetCustomerResponse;
-import no.unit.nva.clients.GetUserResponse;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
@@ -32,6 +34,7 @@ import no.unit.nva.publication.model.business.publicationstate.ImportedResourceE
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -173,8 +176,8 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
 
-    private GetUserResponse randomUser() {
-        return GetUserResponse.builder()
+    private UserDto randomUser() {
+        return UserDto.builder()
                    .withInstitutionCristinId(randomUri())
                    .withFamilyName(randomString())
                    .withGivenName(randomString())
@@ -182,8 +185,19 @@ class LogEntryServiceTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private GetCustomerResponse randomCustomer() {
-        return new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(), randomString(),
-                                       randomUri());
+
+    private CustomerDto randomCustomer() {
+        return new CustomerDto(RandomDataGenerator.randomUri(),
+                               UUID.randomUUID(),
+                               randomString(),
+                               randomString(),
+                               randomString(),
+                               RandomDataGenerator.randomUri(),
+                               randomString(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               Collections.emptyList(),
+                               new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()));
     }
 }
