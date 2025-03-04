@@ -106,6 +106,11 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                    .withExpressionAttributeNames(condition.getExpressionAttributeNames())
                    .withExpressionAttributeValues(condition.getExpressionAttributeValues());
     }
+
+    public TransactWriteItem toPutTransactionItem(String tableName) {
+        var put = new Put().withItem(this.toDynamoFormat()).withTableName(tableName);
+        return new TransactWriteItem().withPut(put);
+    }
     
     public Optional<TicketDao> fetchByResourceIdentifier(AmazonDynamoDB client) {
         QueryRequest queryRequest = new QueryRequest()

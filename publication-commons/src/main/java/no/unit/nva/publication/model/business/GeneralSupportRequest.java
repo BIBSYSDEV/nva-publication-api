@@ -19,6 +19,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.GeneralSupportRequestDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
@@ -120,7 +121,7 @@ public class GeneralSupportRequest extends TicketEntry {
     }
 
     @Override
-    public Dao toDao() {
+    public TicketDao toDao() {
         return new GeneralSupportRequestDao(this);
     }
 

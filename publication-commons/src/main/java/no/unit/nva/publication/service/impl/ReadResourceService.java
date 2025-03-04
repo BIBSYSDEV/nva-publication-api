@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -33,11 +34,14 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ReadResourceService {
@@ -96,6 +100,19 @@ public class ReadResourceService {
             res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
         });
         return resource;
+    }
+
+    public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
+        var dao = (ResourceDao) resource.toDao();
+        return dao.fetchAllTickets(client)
+                   .stream()
+                   .map(TicketDao::getData)
+                   .map(TicketEntry.class::cast)
+                   .filter(ReadResourceService::isNotRemoved);
+    }
+
+    private static boolean isNotRemoved(TicketEntry ticket) {
+        return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
 
     private static Optional<Resource> extractResource(List<Dao> entries) {

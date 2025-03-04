@@ -41,6 +41,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1662,6 +1663,22 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
 
         assertInstanceOf(FileImportedEvent.class, updatedFileEntry.getFileEvent());
+    }
+
+    @Test
+    void updateResourceMethodShouldRefreshTickets() throws ApiGatewayException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var ticket = createDoiRequest(publication);
+
+        Resource.fromPublication(publication).update(resourceService, userInstance);
+
+        var refreshedTicket = ticket.fetch(ticketService);
+
+        assertNotEquals(ticket.getModifiedDate(), refreshedTicket.getModifiedDate());
+
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

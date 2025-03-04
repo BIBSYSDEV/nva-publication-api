@@ -18,6 +18,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -275,6 +276,8 @@ public abstract class TicketEntry implements Entity {
     public abstract URI getOwnerAffiliation();
 
     public abstract void setOwnerAffiliation(URI ownerAffiliation);
+
+    public abstract TicketDao toDao();
 
     public final List<Message> fetchMessages(TicketService ticketService) {
         return ticketService.fetchTicketMessages(this);

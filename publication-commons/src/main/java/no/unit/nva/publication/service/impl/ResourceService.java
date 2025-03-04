@@ -52,7 +52,6 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -66,7 +65,6 @@ import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
@@ -346,19 +344,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
-        var dao = (ResourceDao) resource.toDao();
-        return dao.fetchAllTickets(getClient())
-                   .stream()
-                   .map(TicketDao::getData)
-                   .map(TicketEntry.class::cast)
-                   .filter(ResourceService::isNotRemoved);
-    }
-
-    public Stream<TicketEntry> fetchAllTicketsForPublication(UserInstance userInstance,
-                                                             SortableIdentifier publicationIdentifier)
-        throws ApiGatewayException {
-        var resource = readResourceService.getResource(userInstance, publicationIdentifier);
-        return resource.fetchAllTickets(this).filter(ResourceService::isNotRemoved);
+        return readResourceService.fetchAllTicketsForResource(resource);
     }
 
     public void refresh(SortableIdentifier identifier) {
@@ -450,10 +436,6 @@ public class ResourceService extends ServiceWithTransactions {
         }
 
         toResource.setStatus(status);
-    }
-
-    private static boolean isNotRemoved(TicketEntry ticket) {
-        return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
 
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
