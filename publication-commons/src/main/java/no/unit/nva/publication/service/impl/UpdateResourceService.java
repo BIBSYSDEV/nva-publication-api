@@ -228,9 +228,20 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private List<TransactWriteItem> createUpdateResourceTransactionItems(Resource resource, UserInstance userInstance,
                                                                          Resource persistedResource) {
         var transactionItems = new ArrayList<TransactWriteItem>();
+
+        var ticketsTransactions = refreshTicketsTransactions(resource);
         transactionItems.add(createPutTransaction(resource));
         transactionItems.addAll(updateFilesTransactions(resource, userInstance, persistedResource));
+        transactionItems.addAll(ticketsTransactions);
         return transactionItems;
+    }
+
+    private List<TransactWriteItem> refreshTicketsTransactions(Resource resource) {
+        return readResourceService.fetchAllTicketsForResource(resource)
+                   .map(TicketEntry::refresh)
+                   .map(TicketEntry::toDao)
+                   .map(ticketDao -> ticketDao.toPutTransactionItem(tableName))
+                   .toList();
     }
 
     private void updateCuratingInstitutions(Resource resource, Resource persistedResource) {
