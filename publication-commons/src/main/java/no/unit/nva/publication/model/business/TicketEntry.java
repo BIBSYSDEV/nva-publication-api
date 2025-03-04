@@ -184,6 +184,7 @@ public abstract class TicketEntry implements Entity {
         updated.setFinalizedBy(new Username(userInstance.getUser().toString()));
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
+        updated.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
         return updated;
     }
 
@@ -194,6 +195,7 @@ public abstract class TicketEntry implements Entity {
         updated.setModifiedDate(Instant.now());
         updated.setFinalizedBy(new Username(userInstance.getUsername()));
         updated.setFinalizedDate(Instant.now());
+        updated.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
         return updated;
     }
 

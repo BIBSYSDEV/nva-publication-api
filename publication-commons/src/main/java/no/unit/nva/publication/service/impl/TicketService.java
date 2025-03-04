@@ -94,8 +94,7 @@ public class TicketService extends ServiceWithTransactions {
                    .orElseThrow(TicketService::notFoundException);
     }
 
-    public TicketEntry fetchTicket(TicketEntry dataEntry)
-        throws NotFoundException {
+    public TicketEntry fetchTicket(TicketEntry dataEntry) throws NotFoundException {
         return fetchTicket(UserInstance.fromTicket(dataEntry), dataEntry.getIdentifier());
     }
 
@@ -183,10 +182,7 @@ public class TicketService extends ServiceWithTransactions {
 
     protected TicketEntry completeTicket(TicketEntry ticketEntry, UserInstance userInstance) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-        var existingTicket =
-            attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
-                .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
-                .orElseThrow(fail -> notFoundException());
+        var existingTicket = fetchTicket(ticketEntry);
         injectAssigneeWhenUnassigned(existingTicket, userInstance);
         var completed = attempt(() -> existingTicket.complete(publication, userInstance))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
@@ -224,13 +220,6 @@ public class TicketService extends ServiceWithTransactions {
 
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
         return new BadRequestException(exception.getMessage(), exception);
-    }
-
-    //TODO: should try to fetch ticket only by ticket identifier
-    private TicketEntry fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(TicketEntry ticketEntry) {
-        return fetchTicketByResourceIdentifier(ticketEntry.getCustomerId(),
-                                               ticketEntry.getResourceIdentifier(),
-                                               ticketEntry.getClass()).orElseThrow();
     }
 
     private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) {
