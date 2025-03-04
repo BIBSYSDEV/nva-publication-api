@@ -37,7 +37,9 @@ import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -440,20 +442,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(completedTicket.getAssignee(), is(not(equalTo(USER_INSTANCE))));
     }
 
-    //TODO: remove this test when ticket service is in place
-    @Test
-    void shouldCompleteTicketByResourceIdentifierWhenTicketIsUniqueForAPublication() throws ApiGatewayException {
-        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(DoiRequest.class));
-        var ticket = createPersistedTicket(publication, DoiRequest.class);
-        var ticketFetchedByResourceIdentifier = legacyQueryObject(publication);
-        var completedTicket = ticketService.completeTicket(ticketFetchedByResourceIdentifier, USER_INSTANCE);
-        var expectedTicket = ticket.copy();
-        expectedTicket.setStatus(COMPLETED);
-        expectedTicket.setModifiedDate(completedTicket.getModifiedDate());
-        expectedTicket.setAssignee(new Username(USER_INSTANCE.getUsername()));
-        assertThat(completedTicket, is(equalTo(expectedTicket)));
-    }
-
     @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should update modified date and version when refreshing a ticket")
     @MethodSource("ticketTypeProvider")
@@ -801,6 +789,40 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
 
         assertThrows(ForbiddenException.class, () -> ticket.remove(UserInstance.create(randomString(), randomUri())));
+    }
+
+    @ParameterizedTest()
+    @MethodSource("ticketTypeProvider")
+    void shouldResetViewedByListAndKeepUserCompletingTicketOnlyWhenCompletingTicket(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var pendingTicket = createPersistedTicket(publication, ticketType);
+
+        var user = new User(randomString());
+        pendingTicket.markReadByUser(user);
+
+        var userInstance = UserInstance.fromPublication(publication);
+        var completedTicket = pendingTicket.complete(publication, userInstance);
+
+        assertFalse(completedTicket.getViewedBy().contains(user));
+        assertTrue(completedTicket.getViewedBy().contains(userInstance.getUser()));
+    }
+
+    @ParameterizedTest()
+    @MethodSource("ticketTypeProvider")
+    void shouldResetViewedByListAndKeepUserClosingTicketOnlyWhenClosingTicket(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var pendingTicket = createPersistedTicket(publication, ticketType);
+
+        var user = new User(randomString());
+        pendingTicket.markReadByUser(user);
+
+        var userInstance = UserInstance.fromPublication(publication);
+        var completedTicket = pendingTicket.close(userInstance);
+
+        assertFalse(completedTicket.getViewedBy().contains(user));
+        assertTrue(completedTicket.getViewedBy().contains(userInstance.getUser()));
     }
 
     private static Username getUsername(Publication publication) {
