@@ -2290,7 +2290,7 @@ Resources:
   ScopusUnzipperFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ScopusUnzipperFunction
+      CodeUri: scopus-import
       Handler: no.sikt.nva.scopus.ScopusUnzipperHandler::handleRequest
       Timeout: 900
       Environment:
