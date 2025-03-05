@@ -2286,33 +2286,72 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-
   ScopusUnzipperFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: scopus-import
-      Handler: no.sikt.nva.scopus.ScopusUnzipperHandler::handleRequest
+      Handler: index.lambda_handler
+      Runtime: python3.12
       Timeout: 900
       Environment:
         Variables:
-          SCOPUS_XML_BUCKET: !Ref ScopusXmlBucket
-          SCOPUS_IMPORT_QUEUE: !Ref ScopusImportQueue
-      Role:
-        Fn::GetAtt:
-          - LambdaRole
-          - Arn
+          XML_BUCKET_NAME: !Ref ScopusXmlBucket
+          SCOPUS_QUEUE: !Ref ScopusImportQueue
+      PackageType: Zip
+      InlineCode: |
+        import boto3, zipfile, os
+        from io import BytesIO
+  
+        def lambda_handler(event, context):
+            xml_bucket = os.environ['XML_BUCKET_NAME']
+            scopus_queue = os.environ['SCOPUS_QUEUE']
+            zip_bucket = event['Records'][0]['s3']['bucket']['name']
+            zip_file = event['Records'][0]['s3']['object']['key']
+  
+            s3_client = boto3.client('s3')
+            resource = boto3.resource('s3')
+            sqs_client = boto3.client('sqs')
+  
+            zip_object = resource.Object(bucket_name=zip_bucket, key=zip_file)
+            buffer = BytesIO(zip_object.get()['Body'].read())
+            z = zipfile.ZipFile(buffer)
+  
+            for fname in z.namelist():
+                file_content = z.open(fname).read()
+                if fname.endswith('.zip'):
+                    s3_client.put_object(
+                        Body=file_content,
+                        Bucket=zip_bucket,
+                        Key=f'unzipped/{fname}'
+                    )
+                else:
+                    s3_client.put_object(
+                        Body=file_content,
+                        Bucket=xml_bucket,
+                        Key=fname
+                    )
+                    s3_uri = f's3://{xml_bucket}/{fname}'
+                    sqs_client.send_message(
+                        QueueUrl=scopus_queue,
+                        MessageBody=fname,
+                        MessageAttributes={
+                            'uri': {
+                                'DataType': 'String',
+                                'StringValue': s3_uri
+                            }
+                        }
+                    )
+      Role: !GetAtt LambdaRole.Arn
       Events:
         UnzipEvent:
           Type: S3
           Properties:
-            Bucket:
-              Ref: ScopusZipBucket
+            Bucket: !Ref ScopusZipBucket
             Events: s3:ObjectCreated:*
             Filter:
               S3Key:
                 Rules:
                   - Name: suffix
-                    Value: .zip
+                    Value: '.zip'
 
   #============================ SQS QUEUE LAMBDAS =====================================================================#
   # Lambdas triggered by push messages to SQS queues
