@@ -2295,7 +2295,7 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
-          XML_BUCKET_NAME: !Ref ScopusXmlBucket
+          SCOPUS_XML_BUCKET: !Ref ScopusXmlBucket
           SCOPUS_IMPORT_QUEUE: !Ref ScopusImportQueue
       Role:
         Fn::GetAtt:

@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import no.unit.nva.s3.S3Driver;
@@ -22,7 +23,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 public class ScopusUnzipper {
 
     private static final Logger logger = LoggerFactory.getLogger(ScopusUnzipperHandler.class);
-    private static final String SCOPUS_XML_BUCKET_NAME = new Environment().readEnv("SCOPUS_XML_BUCKET_NAME");
+    private static final String SCOPUS_XML_BUCKET_NAME = new Environment().readEnv("SCOPUS_XML_BUCKET");
     private static final String SCOPUS_IMPORT_QUEUE_URL = new Environment().readEnv("SCOPUS_IMPORT_QUEUE");
     private final S3Client s3Client;
     private final SqsClient sqsClient;
@@ -55,7 +56,8 @@ public class ScopusUnzipper {
     private void sendMessage(String value) {
         var message = SendMessageRequest.builder()
                           .queueUrl(SCOPUS_IMPORT_QUEUE_URL)
-                          .messageAttributes(Map.of("uri", MessageAttributeValue.builder().stringValue(value).build()))
+                          .messageBody(null)
+                          .messageAttributes(Map.of("key", MessageAttributeValue.builder().stringValue(value).build()))
                           .build();
         sqsClient.sendMessage(message);
     }

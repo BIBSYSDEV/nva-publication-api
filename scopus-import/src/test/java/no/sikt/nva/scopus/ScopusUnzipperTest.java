@@ -55,7 +55,7 @@ class ScopusUnzipperTest {
     }
 
     private String getPersistedFileFromXmlBucket(String name) {
-        return new S3Driver(s3Client, new Environment().readEnv("SCOPUS_XML_BUCKET_NAME")).getFile(UnixPath.of(name));
+        return new S3Driver(s3Client, new Environment().readEnv("SCOPUS_XML_BUCKET")).getFile(UnixPath.of(name));
     }
 
     private byte[] createSampleZipFile(List<String> filenames) throws IOException {
