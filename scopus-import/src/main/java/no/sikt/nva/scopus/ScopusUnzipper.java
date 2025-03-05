@@ -56,7 +56,7 @@ public class ScopusUnzipper {
     private void sendMessage(String value) {
         var message = SendMessageRequest.builder()
                           .queueUrl(SCOPUS_IMPORT_QUEUE_URL)
-                          .messageBody(null)
+                          .messageBody(value)
                           .messageAttributes(Map.of("key", MessageAttributeValue.builder().stringValue(value).build()))
                           .build();
         sqsClient.sendMessage(message);
