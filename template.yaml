@@ -2779,9 +2779,9 @@ Resources:
       BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
-          - Id: DeleteContentAfter3Days
+          - Id: DeleteContentAfter3Months
             Status: Enabled
-            ExpirationInDays: 3
+            ExpirationInDays: 90
 
   ImportCandidateStorageBucket:
     Type: AWS::S3::Bucket
