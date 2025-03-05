@@ -88,6 +88,13 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
                                                                                    .buildHiddenFile(), null);
     }
 
+    public static QueryObject<FileEntry> queryObject(SortableIdentifier identifier) {
+        return new FileEntry(null, null, null, null, null, null, File.builder()
+                                                                                   .withIdentifier(UUID.fromString(
+                                                                                       identifier.toString()))
+                                                                                   .buildHiddenFile(), null);
+    }
+
     public static FileEntry fromDao(FileDao fileDao) {
         return (FileEntry) fileDao.getData();
     }

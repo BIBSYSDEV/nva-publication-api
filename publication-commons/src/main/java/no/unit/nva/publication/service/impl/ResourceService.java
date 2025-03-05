@@ -214,6 +214,14 @@ public class ResourceService extends ServiceWithTransactions {
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier)).toPublication();
     }
 
+    public void refreshFile(SortableIdentifier identifier) {
+        FileEntry.queryObject(identifier)
+            .fetch(this)
+            .orElseThrow()
+            .toDao()
+            .updateExistingEntry(client);
+    }
+
     private Resource insertImportedResource(Resource resource, ImportSource importSource) {
         if (resource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(resource);
