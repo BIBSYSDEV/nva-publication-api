@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.storage;
 
-import static java.util.UUID.randomUUID;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.LogEntryDao.KEY_PATTERN;
 import static no.unit.nva.publication.model.storage.TicketDao.newPutTransactionItem;
@@ -31,7 +30,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -49,7 +47,6 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
     private final SortableIdentifier identifier;
     private final SortableIdentifier resourceIdentifier;
     private final Instant modifiedDate;
-    private final UUID version;
 
     @JsonCreator
     public FileDao(@JsonProperty("identifier") SortableIdentifier identifier,
@@ -60,7 +57,6 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
         this.identifier = identifier;
         this.resourceIdentifier = resourceIdentifier;
         this.modifiedDate = modifiedDate;
-        this.version = randomUUID();
     }
 
     private FileDao(FileEntry fileEntry) {
@@ -68,7 +64,6 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
         this.identifier = fileEntry.getIdentifier();
         this.resourceIdentifier = fileEntry.getResourceIdentifier();
         this.modifiedDate = fileEntry.getModifiedDate();
-        this.version = randomUUID();
     }
 
     public static FileDao fromFileEntry(FileEntry fileEntry) {
