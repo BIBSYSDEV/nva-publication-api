@@ -2372,6 +2372,7 @@ Resources:
         deadLetterTargetArn: !GetAtt ScopusImportDLQ.Arn
         maxReceiveCount: 5
       VisibilityTimeout: 900 #Equal to or more than NvaScopusFunction Timeout
+      MessageRetentionPeriod: 1209600 #14 days
   ScopusImportDLQ:
     Type: AWS::SQS::Queue
 
