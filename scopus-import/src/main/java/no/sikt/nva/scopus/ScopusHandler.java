@@ -98,7 +98,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     @Override
     public ImportCandidate handleRequest(SQSEvent event, Context context) {
         var message = event.getRecords().getFirst();
-        var s3Uri = UriWrapper.fromUri(message.getAttributes().get(URI_ATTRIBUTE)).getUri();
+        var s3Uri = UriWrapper.fromUri(message.getMessageAttributes().get(URI_ATTRIBUTE).getStringValue()).getUri();
         return attempt(() -> createImportCandidate(s3Uri))
                    .map(this::updateExistingIfNeeded)
                    .flatMap(this::persistOrUpdateInDatabase)
