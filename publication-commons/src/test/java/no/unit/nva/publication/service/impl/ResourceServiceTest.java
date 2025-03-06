@@ -1698,11 +1698,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.refreshFile(fileEntry.getIdentifier());
 
-        var refreshedEntry = fileEntry.fetch(resourceService).orElseThrow();
+        var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
         var refreshedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME).withKey(fileEntry.toDao().primaryKey()));
         var refreshedDao = Optional.ofNullable(refreshedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
 
-        assertEquals(persistedFileEntry, refreshedEntry);
+        assertEquals(persistedFileEntry, refreshedFileEntry);
         assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
     }
 

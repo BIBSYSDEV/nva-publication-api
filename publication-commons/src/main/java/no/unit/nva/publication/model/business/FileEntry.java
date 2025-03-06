@@ -80,7 +80,6 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
                              userInstance.getTopLevelOrgCristinId(), userInstance.getCustomerId(), file, null);
     }
 
-    //TODO: Should return interface ONLY that can perform fetch and hard delete only
     public static QueryObject<FileEntry> queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
         return new FileEntry(resourceIdentifier, null, null, null, null, null, File.builder()
                                                                                    .withIdentifier(UUID.fromString(
@@ -89,10 +88,9 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
     }
 
     public static QueryObject<FileEntry> queryObject(SortableIdentifier identifier) {
-        return new FileEntry(null, null, null, null, null, null, File.builder()
-                                                                                   .withIdentifier(UUID.fromString(
-                                                                                       identifier.toString()))
-                                                                                   .buildHiddenFile(), null);
+        var uuid = UUID.fromString(identifier.toString());
+        var fileWithIdentifier = File.builder().withIdentifier(uuid).buildHiddenFile();
+        return new FileEntry(null, null, null, null, null, null, fileWithIdentifier, null);
     }
 
     public static FileEntry fromDao(FileDao fileDao) {
