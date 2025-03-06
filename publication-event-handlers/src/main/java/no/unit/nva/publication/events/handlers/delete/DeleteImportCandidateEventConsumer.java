@@ -30,7 +30,7 @@ public class DeleteImportCandidateEventConsumer
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String SEARCH = "search";
-    public static final String IMPORT_CANDIDATES_2 = "import-candidates2";
+    public static final String IMPORT_CANDIDATES = "import-candidates";
     public static final String CONTENT_TYPE = "application/json";
     public static final String COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE = "Could not fetch unique import "
                                                                                  + "candidate";
@@ -109,7 +109,7 @@ public class DeleteImportCandidateEventConsumer
     private URI constructUri(String scopusIdentifier) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(SEARCH)
-                   .addChild(IMPORT_CANDIDATES_2)
+                   .addChild(IMPORT_CANDIDATES)
                    .addQueryParameter(SCOPUS_IDENTIFIER, scopusIdentifier)
                    .getUri();
     }

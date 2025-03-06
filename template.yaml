@@ -1360,20 +1360,18 @@ Resources:
           PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
           PIA_REST_API: !Ref PiaRestHost
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
+          XML_BUCKET_NAME: !Ref ScopusXmlBucket
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           CROSSREF_FETCH_DOI_URI: 'https://api.crossref.org/v1/works/'
       Events:
-        Scopus:
-          Type: S3
+        SqsEvent:
+          Type: SQS
           Properties:
-            Bucket: !Ref ScopusXmlBucket
-            Events: 's3:ObjectCreated:*'
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: '.xml'
+            Queue: !GetAtt ScopusImportQueue.Arn
+            BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 5  # Limit the number of concurrent invocations from this SQS queue
 
   ScopusDeletionEventEmitter:
     Type: AWS::Serverless::Function
@@ -2373,6 +2371,8 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ScopusImportDLQ.Arn
         maxReceiveCount: 5
+      VisibilityTimeout: 900 #Equal to or more than NvaScopusFunction Timeout
+      MessageRetentionPeriod: 1209600 #14 days
   ScopusImportDLQ:
     Type: AWS::SQS::Queue
 
