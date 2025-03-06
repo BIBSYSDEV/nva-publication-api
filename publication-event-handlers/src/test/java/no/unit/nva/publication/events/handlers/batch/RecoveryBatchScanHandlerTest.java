@@ -1,6 +1,8 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry.FILE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -21,6 +23,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.handlers.recovery.RecoveryBatchScanHandler;
 import no.unit.nva.publication.events.handlers.recovery.RecoveryEventRequest;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -110,6 +113,22 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var resourceVersionAfterRefresh = refreshedMessage.toDao().getVersion();
 
         assertThat(resourceVersionAfterRefresh, is(not(equalTo(messageVersion))));
+    }
+
+    @Test
+    void shouldUpdateResourceVersionByReadingQueueMessageContainingFileEntryIdentifier()
+        throws JsonProcessingException {
+        var publication = persistedPublication();
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
+                                         UserInstance.fromPublication(publication));
+        fileEntry.persist(resourceService);
+        putMessageOnRecoveryQueue(fileEntry.getIdentifier(), FILE);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
+
+        var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        assertThat(refreshedFileEntry.toDao().getVersion(),
+                   is(not(equalTo(fileEntry.toDao().getVersion()))));
     }
 
     @Test
