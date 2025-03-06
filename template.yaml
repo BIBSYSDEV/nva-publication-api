@@ -2369,6 +2369,7 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ScopusImportDLQ.Arn
         maxReceiveCount: 5
+      VisibilityTimeout: 900 #Equal to or more than NvaScopusFunction Timeout
   ScopusImportDLQ:
     Type: AWS::SQS::Queue
 
