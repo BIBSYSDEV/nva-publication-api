@@ -1370,6 +1370,8 @@ Resources:
           Properties:
             Queue: !GetAtt ScopusImportQueue.Arn
             BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 5  # Limit the number of concurrent invocations from this SQS queue
 
   ScopusDeletionEventEmitter:
     Type: AWS::Serverless::Function
