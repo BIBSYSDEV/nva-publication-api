@@ -54,6 +54,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -127,6 +128,7 @@ import no.unit.nva.publication.model.business.publicationstate.FileRetractedEven
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
+import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -1678,7 +1680,30 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var refreshedTicket = ticket.fetch(ticketService);
 
         assertNotEquals(ticket.getModifiedDate(), refreshedTicket.getModifiedDate());
+    }
 
+    @Test
+    void shouldUpdateFileVersionOnlyWhenRefreshing() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var openFile = randomOpenFile();
+        var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        var persistedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME).withKey(fileEntry.toDao().primaryKey()));
+        var persistedDao = Optional.ofNullable(persistedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
+
+        resourceService.refreshFile(fileEntry.getIdentifier());
+
+        var refreshedEntry = fileEntry.fetch(resourceService).orElseThrow();
+        var refreshedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME).withKey(fileEntry.toDao().primaryKey()));
+        var refreshedDao = Optional.ofNullable(refreshedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
+
+        assertEquals(persistedFileEntry, refreshedEntry);
+        assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
