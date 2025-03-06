@@ -6,14 +6,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IMPORT_BUCKET;
-import static no.sikt.nva.scopus.ScopusHandler.SUCCESS_BUCKET_PATH;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_PASSWORD_KEY;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_REST_API_ENV_KEY;
@@ -66,14 +62,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.ResponseElementsEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3BucketEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3Entity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -235,10 +225,6 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 class ScopusHandlerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = null;
-    public static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
-    public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
-    public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
-    public static final long SOME_FILE_SIZE = 100L;
     public static final String EXPECTED_CONTENT_STRING_TXT = "expectedContentString.txt";
     public static final String INF_CLASS_NAME = "inf";
     public static final String SUP_CLASS_NAME = "sup";
@@ -329,7 +315,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldLogExceptionMessageWhenExceptionOccurs() {
         createEmptyPiaMock();
-        var s3Event = createS3Event(randomString());
+        var s3Event = createSqsEvent(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
@@ -615,7 +601,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         final var expectedIssn = randomIssn();
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var s3Event = createS3Event(uri);
+        var s3Event = createSqsEvent(uri);
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
@@ -633,7 +619,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         final var expectedIsbn = randomIsbn13();
         scopusData.addIsbn(expectedIsbn, "13");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var s3Event = createS3Event(uri);
+        var s3Event = createSqsEvent(uri);
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Anthology.class));
@@ -719,8 +705,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
         var s3Event = createNewScopusPublicationEvent();
         Executable action = () -> scopusHandler.handleRequest(s3Event, CONTEXT);
-        var exception = assertThrows(UnsupportedSrcTypeException.class, action);
-        var actualReport = extractActualReportFromS3Client(s3Event, exception);
+        assertThrows(UnsupportedSrcTypeException.class, action);
+        var actualReport = extractActualReportFromS3Client();
         var input = actualReport.get("input").asText();
         assertThat(input, is(equalTo(scopusData.toXml())));
     }
@@ -731,7 +717,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         var s3Event = createNewScopusPublicationEvent();
         var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var report = extractSuccessReport(s3Event, importCandidate);
+        var report = extractSuccessReport();
         assertThat(getScopusIdentifier(importCandidate), is(equalTo(report)));
     }
 
@@ -781,7 +767,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         createEmptyPiaMock();
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
-        var s3Event = createS3Event(uri);
+        var s3Event = createSqsEvent(uri);
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainAbstract = publication.getEntityDescription().getAbstract();
         var expectedAbstract = IoUtils.stringFromResources(
@@ -1480,13 +1466,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup().getFirst();
     }
 
-    private String extractSuccessReport(S3Event s3Event, ImportCandidate importCandidate) {
-        UriWrapper handleReport = UriWrapper.fromUri(SUCCESS_BUCKET_PATH)
-                                      .addChild(
-                                          s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT))
-                                      .addChild(importCandidate.getIdentifier().toString());
-        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
-        return s3Driver.getFile(handleReport.toS3bucketPath());
+    private String extractSuccessReport() {
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
+        var uri = s3Driver.listAllFiles(UnixPath.of("SUCCESS")).getFirst();
+        return s3Driver.getFile(uri);
     }
 
     private Environment createPiaConnectionEnvironment(WireMockRuntimeInfo wireMockRuntimeInfo) {
@@ -1764,9 +1747,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                                                                     .getSurname();
     }
 
-    private S3Event createNewScopusPublicationEvent() throws IOException {
+    private SQSEvent createNewScopusPublicationEvent() throws IOException {
         var uri = s3Driver.insertFile(randomS3Path(), scopusData.toXml());
-        return createS3Event(uri);
+        return createSqsEvent(uri);
     }
 
     private UnixPath randomS3Path() {
@@ -1848,45 +1831,23 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .collect(Collectors.toList());
     }
 
-    private S3Event createS3Event(String expectedObjectKey) {
-        var eventNotification = new S3EventNotificationRecord(randomString(), randomString(), randomString(),
-                                                              randomDate(), randomString(), EMPTY_REQUEST_PARAMETERS,
-                                                              EMPTY_RESPONSE_ELEMENTS,
-                                                              createS3Entity(expectedObjectKey), EMPTY_USER_IDENTITY);
-        return new S3Event(List.of(eventNotification));
+    private SQSEvent createSqsEvent(String expectedObjectKey) {
+        var sqsEvent = new SQSEvent();
+        var message = new SQSMessage();
+        message.setAttributes(Map.of("uri", expectedObjectKey));
+        sqsEvent.setRecords(List.of(message));
+        return sqsEvent;
     }
 
-    private S3Event createS3Event(URI uri) {
-        return createS3Event(UriWrapper.fromUri(uri).toS3bucketPath().toString());
+    private SQSEvent createSqsEvent(URI uri) {
+        return createSqsEvent(UriWrapper.fromUri(uri).toS3bucketPath().toString());
     }
 
-    private String randomDate() {
-        return Instant.now().toString();
-    }
-
-    private S3Entity createS3Entity(String expectedObjectKey) {
-        var bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
-        var object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
-                                        randomString());
-        var schemaVersion = randomString();
-        return new S3Entity(randomString(), bucket, object, schemaVersion);
-    }
-
-    private JsonNode extractActualReportFromS3Client(S3Event s3Event, Exception exception)
+    private JsonNode extractActualReportFromS3Client()
         throws JsonProcessingException {
-        UriWrapper errorFileUri = UriWrapper.fromUri(ERROR_BUCKET_PATH
-                                                     + PATH_SEPERATOR
-                                                     + s3Event.getRecords()
-                                                           .getFirst()
-                                                           .getEventTime()
-                                                           .toString(YYYY_MM_DD_HH_FORMAT)
-                                                     + PATH_SEPERATOR
-                                                     + exception.getClass().getSimpleName()
-                                                     + PATH_SEPERATOR
-                                                     + UriWrapper.fromUri(
-            s3Event.getRecords().getFirst().getS3().getObject().getKey()).getLastPathElement());
-        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
-        String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
+        var uri = s3Driver.listAllFiles(UnixPath.of("ERROR")).getFirst();
+        var content = s3Driver.getFile(uri);
         return JsonUtils.dtoObjectMapper.readTree(content);
     }
 

@@ -59,4 +59,5 @@ test {
     environment "CROSSREF_FETCH_DOI_URI", "https://api.crossref.org/v1/works/"
     environment "CUSTOMER_ID", "someValue"
     environment "AWS_REGION", "eu-west-1"
+    environment "XML_BUCKET_NAME", "xmlBucket"
 }
