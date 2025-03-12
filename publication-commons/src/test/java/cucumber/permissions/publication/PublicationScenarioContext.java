@@ -1,5 +1,6 @@
 package cucumber.permissions.publication;
 
+import static cucumber.permissions.PermissionsRole.ANY_CURATOR_TYPE;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -46,8 +47,6 @@ public class PublicationScenarioContext {
     }
 
     public PublicationPermissions getPublicationPermissions() {
-
-
         var topLevelOrgCristinId = randomUri();
 
         var access = getAccessRights(roles);
@@ -90,7 +89,7 @@ public class PublicationScenarioContext {
 
     private static Owner getOwner(UserInstance user, URI topLevelOrgCristinId, boolean currentUserIsOwner) {
         return currentUserIsOwner ? new Owner(user.getUser(), topLevelOrgCristinId)
-                   : new Owner(new User(randomString()), randomUri());
+                   : new Owner(new User(randomString()), topLevelOrgCristinId);
     }
 
     private static ArrayList<Contributor> getContributors(UserInstance user,
@@ -112,6 +111,9 @@ public class PublicationScenarioContext {
         if (roles.contains(FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS)) {
             access.add(MANAGE_RESOURCES_STANDARD);
             access.add(MANAGE_RESOURCE_FILES);
+        }
+        if (roles.contains(ANY_CURATOR_TYPE)) {
+            access.add(MANAGE_RESOURCES_STANDARD);
         }
         return access;
     }

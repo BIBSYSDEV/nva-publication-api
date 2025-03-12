@@ -14,24 +14,24 @@ Feature: File upload permissions
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                             | PublicationStatus | Outcome     |
-      | Publication owner                    | draft             | Allowed     |
-      | Contributor                          | draft             | Allowed     |
-      | File curators for other contributors | draft             | Allowed     |
-      | Everyone else                        | draft             | Not Allowed |
-      | External client                      | draft             | Not Allowed |
-      | Publication owner                    | published         | Allowed     |
-      | Contributor                          | published         | Allowed     |
-      | File curators for other contributors | published         | Allowed     |
-      | Everyone else                        | published         | Not Allowed |
-      | External client                      | published         | Not Allowed |
-      | Publication owner                    | unpublished       | Allowed     |
-      | Contributor                          | unpublished       | Allowed     |
-      | File curators for other contributors | unpublished       | Allowed     |
-      | Everyone else                        | unpublished       | Not Allowed |
-      | External client                      | unpublished       | Not Allowed |
-      | Publication owner                    | deleted           | Not Allowed |
-      | Contributor                          | deleted           | Not Allowed |
-      | File curators for other contributors | deleted           | Not Allowed |
-      | Everyone else                        | deleted           | Not Allowed |
-      | External client                      | deleted           | Not Allowed |
+      | UserRole                          | PublicationStatus | Outcome     |
+      | Publication owner                 | draft             | Allowed     |
+      | Contributor                       | draft             | Allowed     |
+      | File, support, doi or nvi curator | draft             | Allowed     |
+      | Everyone else                     | draft             | Not Allowed |
+      | External client                   | draft             | Not Allowed |
+      | Publication owner                 | published         | Allowed     |
+      | Contributor                       | published         | Allowed     |
+      | File, support, doi or nvi curator | published         | Allowed     |
+      | Everyone else                     | published         | Not Allowed |
+      | External client                   | published         | Not Allowed |
+      | Publication owner                 | unpublished       | Allowed     |
+      | Contributor                       | unpublished       | Allowed     |
+      | File, support, doi or nvi curator | unpublished       | Allowed     |
+      | Everyone else                     | unpublished       | Not Allowed |
+      | External client                   | unpublished       | Not Allowed |
+      | Publication owner                 | deleted           | Not Allowed |
+      | Contributor                       | deleted           | Not Allowed |
+      | File, support, doi or nvi curator | deleted           | Not Allowed |
+      | Everyone else                     | deleted           | Not Allowed |
+      | External client                   | deleted           | Not Allowed |
