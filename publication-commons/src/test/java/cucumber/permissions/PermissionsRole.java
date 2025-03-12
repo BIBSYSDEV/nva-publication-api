@@ -11,6 +11,7 @@ public enum PermissionsRole {
     FILE_CURATOR_FOR_GIVEN_FILE("file curator at x"),
     FILE_CURATOR_DEGREE_EMBARGO("degree embargo file curator"),
     FILE_CURATOR_DEGREE("degree file curator"),
+    ANY_CURATOR_TYPE("file, support, doi or nvi curator"),
     UNAUTHENTICATED("unauthenticated"),
     AUTHENTICATED_BUT_NO_ACCESS("everyone"),
     CONTRIBUTOR_FOR_GIVEN_FILE("contributor at x"),
