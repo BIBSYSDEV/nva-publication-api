@@ -164,6 +164,7 @@ public final class PublishingRequestResolver {
                    .map(fileForApproval -> newImage.getFile(fileForApproval.getIdentifier()).orElse(null))
                    .filter(
                        Objects::nonNull)
+                   .filter(PendingFile.class::isInstance)
                    .collect(Collectors.toSet());
     }
 

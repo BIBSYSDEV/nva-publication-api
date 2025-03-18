@@ -4,7 +4,10 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithFile;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Set;
@@ -62,7 +65,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
 
         var publishingRequest = getPublishingRequest(publication);
 
-        Assertions.assertEquals(TicketStatus.COMPLETED, publishingRequest.getStatus());
+        Assertions.assertEquals(COMPLETED, publishingRequest.getStatus());
         assertTrue(publishingRequest.getFilesForApproval().isEmpty());
         assertTrue(publishingRequest.getApprovedFiles().isEmpty());
     }
@@ -86,7 +89,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
 
         var publishingRequest = getPublishingRequest(persistedPublication);
 
-        Assertions.assertEquals(TicketStatus.COMPLETED, publishingRequest.getStatus());
+        Assertions.assertEquals(COMPLETED, publishingRequest.getStatus());
         assertTrue(publishingRequest.getFilesForApproval().isEmpty());
         assertTrue(publishingRequest.getApprovedFiles().isEmpty());
     }
@@ -140,6 +143,52 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
 
         assertTrue(filesForApproval.contains(randomPendingInternalFile2));
         assertTrue(filesForApproval.contains(randomPendingOpenFile1));
+    }
+
+    @Test
+    void shouldRemoveFileFromPendingPublishingRequestWhenFileIsBeingUpdatedFromPendingToHiddenFile()
+        throws ApiGatewayException {
+        var publication = randomPublication();
+        var randomPendingOpenFile1 = randomPendingOpenFile();
+        var randomPendingOpenFile2 = randomPendingOpenFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPendingOpenFile1, randomPendingOpenFile2)));
+        var persistedPublication = persistPublication(publication);
+        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
+
+        var hiddenFile = randomPendingOpenFile2.copy().buildHiddenFile();
+        var updatedPublication = persistedPublication.copy()
+                                     .withAssociatedArtifacts(List.of(randomPendingOpenFile1, hiddenFile))
+                                     .build();
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
+                                                                updatedPublication);
+
+        var filesForApproval = getPublishingRequest(persistedPublication).getFilesForApproval();
+
+        assertFalse(filesForApproval.contains(hiddenFile));
+        assertTrue(filesForApproval.contains(randomPendingOpenFile1));
+    }
+
+    @Test
+    void shouldCompletePendingPublishingRequestWhenFileIsBeingUpdatedFromPendingToHiddenFileAndIsTheOnlyFileToApprove()
+        throws ApiGatewayException {
+        var publication = randomPublication();
+        var pendingFile = randomPendingOpenFile();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingFile)));
+        var persistedPublication = persistPublication(publication);
+        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
+
+        var hiddenFile = pendingFile.copy().buildHiddenFile();
+        var updatedPublication = persistedPublication.copy()
+                                     .withAssociatedArtifacts(List.of(hiddenFile))
+                                     .build();
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
+                                                                updatedPublication);
+
+        var publishingRequest = getPublishingRequest(persistedPublication);
+
+        assertEquals(COMPLETED, publishingRequest.getStatus());
+        assertTrue(publishingRequest.getFilesForApproval().isEmpty());
+        assertTrue(publishingRequest.getApprovedFiles().isEmpty());
     }
 
     private Publication persistPublication(Publication publication) throws ApiGatewayException {
