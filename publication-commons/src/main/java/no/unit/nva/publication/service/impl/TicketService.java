@@ -113,12 +113,12 @@ public class TicketService extends ServiceWithTransactions {
                                                                                SortableIdentifier resourceIdentifier,
                                                                                Class<T> ticketType) {
 
-        TicketDao dao = (TicketDao) TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
+        TicketDao dao = TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
         return dao.fetchByResourceIdentifier(getClient()).map(Dao::getData).map(ticketType::cast);
     }
 
     public List<Message> fetchTicketMessages(TicketEntry ticketEntry) {
-        var dao = (TicketDao) ticketEntry.toDao();
+        var dao = ticketEntry.toDao();
         return dao.fetchTicketMessages(getClient())
                    .map(MessageDao::getData)
                    .map(Message.class::cast)
@@ -127,7 +127,7 @@ public class TicketService extends ServiceWithTransactions {
 
     public TicketEntry refreshTicket(TicketEntry ticket) {
         var refreshedTicket = ticket.refresh();
-        var dao = (TicketDao) refreshedTicket.toDao();
+        var dao = refreshedTicket.toDao();
         getClient().putItem(dao.createPutItemRequest());
         return refreshedTicket;
     }
@@ -164,7 +164,7 @@ public class TicketService extends ServiceWithTransactions {
         var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
         var updatedAssignee = existingTicket.updateAssignee(publication, assignee);
 
-        var dao = (TicketDao) updatedAssignee.toDao();
+        var dao = updatedAssignee.toDao();
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return updatedAssignee;
@@ -187,7 +187,7 @@ public class TicketService extends ServiceWithTransactions {
         var completed = attempt(() -> existingTicket.complete(publication, userInstance))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
-        var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
+        var putItemRequest = completed.toDao().createPutItemRequest();
         getClient().putItem(putItemRequest);
         return completed;
     }
@@ -198,7 +198,7 @@ public class TicketService extends ServiceWithTransactions {
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
         var closedTicket = persistedTicket.close(userInstance);
         injectAssigneeWhenUnassigned(closedTicket, userInstance);
-        var dao = (TicketDao) closedTicket.toDao();
+        var dao = closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return closedTicket;
