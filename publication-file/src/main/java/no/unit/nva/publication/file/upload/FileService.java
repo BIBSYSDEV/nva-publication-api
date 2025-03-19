@@ -2,7 +2,6 @@ package no.unit.nva.publication.file.upload;
 
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.publication.file.upload.config.MultipartUploadConfig.BUCKET_NAME;
-import static no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody.LAST_ASCII_CODEPOINT;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
