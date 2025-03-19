@@ -6,7 +6,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.google.common.net.MediaType;
 import java.util.UUID;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import org.apache.commons.text.translate.UnicodeEscaper;
 
 public record CreateUploadRequestBody(String filename, String size, String mimetype) {
 
@@ -28,11 +27,6 @@ public record CreateUploadRequestBody(String filename, String size, String mimet
         }
     }
 
-    private String escapeFilename() {
-        var unicodeEscaper = UnicodeEscaper.above(LAST_ASCII_CODEPOINT);
-        return unicodeEscaper.translate(filename());
-    }
-
     private ObjectMetadata constructObjectMetadata() {
         var objectMetadata = new ObjectMetadata();
         objectMetadata.setContentMD5(null);
@@ -42,6 +36,6 @@ public record CreateUploadRequestBody(String filename, String size, String mimet
     }
 
     private String extractFormattedContentDispositionForFilename() {
-        return String.format(CONTENT_DISPOSITION_TEMPLATE, escapeFilename());
+        return String.format(CONTENT_DISPOSITION_TEMPLATE, filename());
     }
 }
