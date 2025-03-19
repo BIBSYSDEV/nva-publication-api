@@ -2,6 +2,7 @@ package no.unit.nva.publication.file.upload;
 
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.publication.file.upload.config.MultipartUploadConfig.BUCKET_NAME;
+import static no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody.LAST_ASCII_CODEPOINT;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
@@ -44,6 +45,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import org.apache.commons.text.translate.UnicodeUnescaper;
 
 public class FileService {
 
@@ -179,7 +181,10 @@ public class FileService {
     private static String toFileName(String contentDisposition) {
         var pattern = Pattern.compile(FILE_NAME_REGEX);
         var matcher = pattern.matcher(contentDisposition);
-        return matcher.matches() ? matcher.group(1) : contentDisposition;
+        var unicodeUnescaper = new UnicodeUnescaper();
+        return matcher.matches()
+                   ? unicodeUnescaper.translate(matcher.group(1))
+                   : unicodeUnescaper.translate(contentDisposition);
     }
 
     private static UserUploadDetails createUploadDetails(UserInstance userInstance) {

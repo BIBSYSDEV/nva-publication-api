@@ -54,6 +54,10 @@ public class CreateUploadHandlerTest {
     public static final String SAMPLE_SIZE_STRING = "222";
     public static final String SAMPLE_UPLOAD_KEY = "uploadKey";
     public static final String SAMPLE_UPLOAD_ID = "uploadId";
+    public static final String SAMPLE_UNICODE_FILENAME = "normal_üñīḉøđḝ_ƒıļæ_ňåɱë";
+    public static final String EXPECTED_ESCAPED_FILENAME = "normal_\\u00FC\\u00F1\\u012B\\u1E09\\u00F8\\u0111\\u1E1D_" +
+                                                           "\\u0192\\u0131\\u013C\\u00E6_\\u0148\\u00E5\\u0271" +
+                                                           "\\u00EB";
     public static final String EMPTY_STRING = "";
     public static final String INVALID_MIME_TYPE = "meme/type";
     public static final String NULL_STRING = "null";
@@ -237,6 +241,17 @@ public class CreateUploadHandlerTest {
         var actual = requestBody.toInitiateMultipartUploadRequest(randomString()).getObjectMetadata().getContentType();
 
         assertThat(actual, is(equalTo(INVALID_MIME_TYPE)));
+    }
+
+    @Test
+    void createUploadRequestReturnsValidContentDispositionWithEscapedUnicodeWhenInputIsUnicode() {
+        var requestBody = new CreateUploadRequestBody(SAMPLE_UNICODE_FILENAME, SAMPLE_SIZE_STRING, SAMPLE_MIMETYPE);
+        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
+                         .getObjectMetadata()
+                         .getContentDisposition();
+        var expected = generateContentDisposition(EXPECTED_ESCAPED_FILENAME);
+
+        assertThat(actual, is(equalTo(expected)));
     }
 
     private String generateContentDisposition(String filename) {
