@@ -6,8 +6,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
 public record MergedResourceEvent(Instant date, User user, URI institution, ImportSource importSource,
@@ -20,7 +20,7 @@ public record MergedResourceEvent(Instant date, User user, URI institution, Impo
     }
 
     @Override
-    public PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user) {
+    public PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user) {
         return PublicationLogEntry.builder()
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(identifier)

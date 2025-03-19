@@ -10,7 +10,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fileIdentifier,
                            SortableIdentifier resourceIdentifier, LogTopic topic, String filename,
                            String fileType, Instant timestamp,
-                           LogUser performedBy, ImportSource importSource) implements LogEntry {
+                           LogAgent performedBy, ImportSource importSource) implements LogEntry {
 
     public static final String TYPE = "FileLogEntry";
 
@@ -31,7 +31,7 @@ public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fil
         private String filename;
         private String fileType;
         private Instant timestamp;
-        private LogUser performedBy;
+        private LogAgent performedBy;
         private ImportSource importSource;
 
         private Builder() {
@@ -67,7 +67,7 @@ public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fil
             return this;
         }
 
-        public Builder withPerformedBy(LogUser performedBy) {
+        public Builder withPerformedBy(LogAgent performedBy) {
             this.performedBy = performedBy;
             return this;
         }

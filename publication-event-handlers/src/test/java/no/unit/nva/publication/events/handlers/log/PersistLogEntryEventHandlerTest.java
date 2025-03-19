@@ -20,13 +20,15 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.UUID;
 import no.unit.nva.clients.CustomerDto;
-import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.UserDto;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -47,6 +49,7 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private Context context;
     private IdentityServiceClient identityServiceClient;
+    private CristinClient cristinClient;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
@@ -56,9 +59,10 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         resourceService = getResourceServiceBuilder().build();
         identityServiceClient = mock(IdentityServiceClient.class);
+        cristinClient = mock(CristinClient.class);
         when(identityServiceClient.getUser(any())).thenReturn(randomUser());
         when(identityServiceClient.getCustomerByCristinId(any())).thenReturn(randomCustomer());
-        handler = new PersistLogEntryEventHandler(s3Client, resourceService, identityServiceClient);
+        handler = new PersistLogEntryEventHandler(s3Client, resourceService, identityServiceClient, cristinClient);
     }
 
     @Test
@@ -85,9 +89,9 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
 
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
-        var logUser = logEntries.getFirst().performedBy();
+        var logUser = (LogUser) logEntries.getFirst().performedBy();
         assertNotNull(logUser.username());
-        assertNull(logUser.cristinId());
+        assertNull(logUser.id());
     }
 
     @Test
