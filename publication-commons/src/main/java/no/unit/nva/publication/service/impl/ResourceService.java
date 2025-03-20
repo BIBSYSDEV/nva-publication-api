@@ -410,7 +410,7 @@ public class ResourceService extends ServiceWithTransactions {
     @Deprecated
     private void persistLogEntriesIfNeeded(FileEntry fileEntry) {
         var userInstance = UserInstance.create(fileEntry.getOwner(), fileEntry.getCustomerId());
-        var logEntries = getLogEntriesForResource(Resource.resourceQueryObject(fileEntry.getResourceIdentifier()))
+        var logEntries = getLogEntriesForResource(resourceQueryObject(fileEntry.getResourceIdentifier()))
                              .stream().filter(FileLogEntry.class::isInstance).toList();
 
         if (logEntries.isEmpty()) {
