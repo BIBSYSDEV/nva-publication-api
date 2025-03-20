@@ -10,7 +10,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileOperation;
@@ -44,11 +43,9 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import org.apache.commons.text.translate.UnicodeUnescaper;
 
 public class FileService {
 
-    private static final String FILE_NAME_REGEX = "filename=\"(.*)\"";
     private static final String RESOURCE_NOT_FOUND_MESSAGE = "Resource not found!";
     private static final String FILE_NOT_FOUND_MESSAGE = "File not found!";
     private final AmazonS3 amazonS3;
@@ -129,7 +126,7 @@ public class FileService {
                                                ObjectMetadata metadata) throws BadRequestException {
         var builder = File.builder()
                           .withIdentifier(identifier)
-                          .withName(toFileName(metadata.getContentDisposition()))
+                          .withName(Filename.fromContentDispositionValue(metadata.getContentDisposition()))
                           .withSize(metadata.getContentLength())
                           .withMimeType(metadata.getContentType())
                           .withLicense(uploadRequest.license())
@@ -177,15 +174,6 @@ public class FileService {
         }
     }
 
-    private static String toFileName(String contentDisposition) {
-        var pattern = Pattern.compile(FILE_NAME_REGEX);
-        var matcher = pattern.matcher(contentDisposition);
-        var unicodeUnescaper = new UnicodeUnescaper();
-        return matcher.matches()
-                   ? unicodeUnescaper.translate(matcher.group(1))
-                   : unicodeUnescaper.translate(contentDisposition);
-    }
-
     private static UserUploadDetails createUploadDetails(UserInstance userInstance) {
         return new UserUploadDetails(new Username(userInstance.getUsername()), Instant.now());
     }
@@ -209,7 +197,8 @@ public class FileService {
     }
 
     private UploadedFile constructUploadedFile(UUID identifier, ObjectMetadata metadata, UserInstance userInstance) {
-        return new UploadedFile(identifier, toFileName(metadata.getContentDisposition()), metadata.getContentType(),
+        return new UploadedFile(identifier, Filename.fromContentDispositionValue(metadata.getContentDisposition()),
+                                metadata.getContentType(),
                                 metadata.getContentLength(), getRrs(userInstance),
                                 createUploadDetails(userInstance));
     }

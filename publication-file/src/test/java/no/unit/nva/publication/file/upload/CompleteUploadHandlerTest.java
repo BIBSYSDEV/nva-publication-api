@@ -166,12 +166,13 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
 
     @Test
     void completedUploadPersistsFileWithDecodedFileName() throws IOException, BadRequestException {
-        var filename = "å";
+        var originalFilename = "å";
+        var filenameInContentDisposition = "filename=\"\\u00E5\"";
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        mockS3(filename);
+        mockS3(filenameInContentDisposition);
         handler.handleRequest(request(resource.getIdentifier(), userInstance), outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, UploadedFile.class);
 
@@ -179,7 +180,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(response.getBody(), is(notNullValue()));
 
-        assertEquals(filename, response.getBodyObject(UploadedFile.class).getName());
+        assertEquals(originalFilename, response.getBodyObject(UploadedFile.class).getName());
     }
 
     private void mockS3(String filename) {
