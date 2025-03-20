@@ -5,13 +5,10 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.google.common.net.MediaType;
 import java.util.UUID;
+import no.unit.nva.publication.file.upload.Filename;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import org.apache.commons.text.translate.UnicodeEscaper;
 
 public record CreateUploadRequestBody(String filename, String size, String mimetype) {
-
-    public static final String CONTENT_DISPOSITION_TEMPLATE = "filename=\"%s\"";
-    public static final int LAST_ASCII_CODEPOINT = 127;
 
     public InitiateMultipartUploadRequest toInitiateMultipartUploadRequest(String bucketName) {
         var key = UUID.randomUUID().toString();
@@ -28,20 +25,11 @@ public record CreateUploadRequestBody(String filename, String size, String mimet
         }
     }
 
-    private String escapeFilename() {
-        var unicodeEscaper = UnicodeEscaper.above(LAST_ASCII_CODEPOINT);
-        return unicodeEscaper.translate(filename());
-    }
-
     private ObjectMetadata constructObjectMetadata() {
         var objectMetadata = new ObjectMetadata();
         objectMetadata.setContentMD5(null);
-        objectMetadata.setContentDisposition(extractFormattedContentDispositionForFilename());
+        objectMetadata.setContentDisposition(Filename.toContentDispositionValue(filename()));
         objectMetadata.setContentType(mimetype());
         return objectMetadata;
-    }
-
-    private String extractFormattedContentDispositionForFilename() {
-        return String.format(CONTENT_DISPOSITION_TEMPLATE, escapeFilename());
     }
 }

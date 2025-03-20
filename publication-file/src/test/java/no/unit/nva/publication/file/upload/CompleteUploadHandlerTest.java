@@ -14,6 +14,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -161,6 +162,25 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
 
         assertThat(completeMultipartUploadRequest, is(notNullValue()));
         assertThat(completeUploadRequestBody.parts(), hasSize(completeMultipartUploadRequest.getPartETags().size()));
+    }
+
+    @Test
+    void completedUploadPersistsFileWithDecodedFileName() throws IOException, BadRequestException {
+        var originalFilename = "å";
+        var filenameInContentDisposition = "filename=\"\\u00E5\"";
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        mockS3(filenameInContentDisposition);
+        handler.handleRequest(request(resource.getIdentifier(), userInstance), outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, UploadedFile.class);
+
+        assertThat(response, is(notNullValue()));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        assertThat(response.getBody(), is(notNullValue()));
+
+        assertEquals(originalFilename, response.getBodyObject(UploadedFile.class).getName());
     }
 
     private void mockS3(String filename) {
