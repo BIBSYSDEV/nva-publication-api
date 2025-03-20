@@ -6,8 +6,8 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
+import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 
 public record FileImportedEvent(Instant date, User user, SortableIdentifier identifier, ImportSource importSource)
     implements FileEvent {
@@ -17,7 +17,7 @@ public record FileImportedEvent(Instant date, User user, SortableIdentifier iden
     }
 
     @Override
-    public FileLogEntry toLogEntry(FileEntry fileEntry, LogUser user) {
+    public FileLogEntry toLogEntry(FileEntry fileEntry, LogAgent user) {
         return FileLogEntry.builder()
                    .withIdentifier(identifier)
                    .withFileIdentifier(fileEntry.getIdentifier())

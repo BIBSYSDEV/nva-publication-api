@@ -20,7 +20,7 @@ public interface LogEntry {
 
     Instant timestamp();
 
-    LogUser performedBy();
+    LogAgent performedBy();
 
     void persist(ResourceService resourceService);
 }

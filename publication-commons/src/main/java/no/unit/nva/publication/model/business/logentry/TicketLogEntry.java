@@ -6,7 +6,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public record TicketLogEntry(SortableIdentifier identifier, SortableIdentifier ticketIdentifier,
                              SortableIdentifier resourceIdentifier, LogTopic topic, Instant timestamp,
-                             LogUser performedBy) implements LogEntry {
+                             LogAgent performedBy) implements LogEntry {
 
     public static final String TYPE = "TicketLogEntry";
 
@@ -25,7 +25,7 @@ public record TicketLogEntry(SortableIdentifier identifier, SortableIdentifier t
         private SortableIdentifier resourceIdentifier;
         private LogTopic topic;
         private Instant timestamp;
-        private LogUser performedBy;
+        private LogAgent performedBy;
 
         private Builder() {
         }
@@ -55,7 +55,7 @@ public record TicketLogEntry(SortableIdentifier identifier, SortableIdentifier t
             return this;
         }
 
-        public Builder withPerformedBy(LogUser performedBy) {
+        public Builder withPerformedBy(LogAgent performedBy) {
             this.performedBy = performedBy;
             return this;
         }

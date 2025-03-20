@@ -141,8 +141,8 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     }
 
     private void persistLogEntries(Publication publication) throws ApiGatewayException {
-        var user = new LogUser(randomString(), randomString(), randomString(), randomUri(),
-                               new LogOrganization(randomUri(), randomUri(), randomString(), randomString()));
+        var user = new LogUser(randomString(), randomUri(), randomString(), randomString(), randomString(),
+                               randomString(), new LogOrganization(randomUri(), randomString(), Map.of()));
         Resource.resourceQueryObject(publication.getIdentifier())
             .fetch(resourceService)
             .orElseThrow()
@@ -151,15 +151,15 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
             .persist(resourceService);
 
         var userInstance = UserInstance.fromPublication(publication);
-        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
-                                         userInstance);
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance);
         fileEntry.persist(resourceService);
         fileEntry.getFileEvent().toLogEntry(fileEntry, user).persist(resourceService);
 
-        var doiRequest =
-            (DoiRequest) DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
+        var doiRequest = (DoiRequest) DoiRequest.create(Resource.fromPublication(publication), userInstance)
+                                          .persistNewTicket(ticketService);
         doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, Instant.now()));
-        doiRequest.getTicketEvent().toLogEntry(publication.getIdentifier(), doiRequest.getIdentifier(), user)
+        doiRequest.getTicketEvent()
+            .toLogEntry(publication.getIdentifier(), doiRequest.getIdentifier(), user)
             .persist(resourceService);
     }
 

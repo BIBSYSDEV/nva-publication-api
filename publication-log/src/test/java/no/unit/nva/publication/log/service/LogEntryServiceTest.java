@@ -17,8 +17,9 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
 import no.unit.nva.clients.CustomerDto;
-import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.UserDto;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -28,6 +29,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
+import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
@@ -47,6 +49,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private IdentityServiceClient identityServiceClient;
     private LogEntryService logEntryService;
+    private CristinClient cristinClient;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
@@ -54,9 +57,10 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         ticketService = getTicketService();
         resourceService = getResourceServiceBuilder().build();
         identityServiceClient = mock(IdentityServiceClient.class);
+        cristinClient = mock(CristinClient.class);
         when(identityServiceClient.getUser(any())).thenReturn(randomUser());
         when(identityServiceClient.getCustomerByCristinId(any())).thenReturn(randomCustomer());
-        logEntryService = new LogEntryService(resourceService, identityServiceClient);
+        logEntryService = new LogEntryService(resourceService, identityServiceClient, cristinClient);
     }
 
     @Test
@@ -101,9 +105,9 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
-        var logUser = logEntries.getFirst().performedBy();
+        var logUser = (LogUser) logEntries.getFirst().performedBy();
         assertNotNull(logUser.username());
-        assertNull(logUser.cristinId());
+        assertNull(logUser.id());
     }
 
     @Test
@@ -133,7 +137,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         logEntryService.persistLogEntry(fileEntry);
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
-        var logUser = logEntries.getFirst().performedBy();
+        var logUser = (LogUser) logEntries.getFirst().performedBy();
         assertNotNull(logUser.username());
     }
 

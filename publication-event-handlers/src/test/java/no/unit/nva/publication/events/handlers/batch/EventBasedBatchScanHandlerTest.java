@@ -262,8 +262,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     private static LogUser randomLogUser() {
         return new LogUser(randomString(),
-                           randomString(), randomString(), randomUri(),
-                           new LogOrganization(randomUri(), randomUri(), randomString(), randomString()));
+                           randomUri(), randomString(), randomString(), randomString(), randomString(),
+                           new LogOrganization(randomUri(), randomString(), Map.of()));
     }
 
     private TicketDao fetchTicketDao(SortableIdentifier identifier) throws NotFoundException {

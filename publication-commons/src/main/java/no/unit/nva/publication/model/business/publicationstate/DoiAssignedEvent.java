@@ -5,8 +5,8 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 public record DoiAssignedEvent(Instant date, User user, URI institution, SortableIdentifier identifier)
@@ -19,7 +19,7 @@ public record DoiAssignedEvent(Instant date, User user, URI institution, Sortabl
 
     @Override
     public TicketLogEntry toLogEntry(SortableIdentifier resourceIdentifier,
-                                     SortableIdentifier ticketIdentifier, LogUser user) {
+                                     SortableIdentifier ticketIdentifier, LogAgent user) {
         return TicketLogEntry.builder()
                    .withTicketIdentifier(ticketIdentifier)
                    .withResourceIdentifier(resourceIdentifier)

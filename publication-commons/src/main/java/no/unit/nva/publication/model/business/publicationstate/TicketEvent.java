@@ -6,6 +6,7 @@ import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
@@ -25,5 +26,5 @@ public interface TicketEvent {
      */
     URI institution();
 
-    TicketLogEntry toLogEntry(SortableIdentifier resourceIdentifier, SortableIdentifier ticketIdentifier, LogUser user);
+    TicketLogEntry toLogEntry(SortableIdentifier resourceIdentifier, SortableIdentifier ticketIdentifier, LogAgent user);
 }

@@ -5,6 +5,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Optional;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -27,14 +28,15 @@ public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHan
 
     @JacocoGenerated
     public PersistLogEntryEventHandler() {
-        this(S3Driver.defaultS3Client().build(), ResourceService.defaultService(), IdentityServiceClient.prepare());
+        this(S3Driver.defaultS3Client().build(), ResourceService.defaultService(), IdentityServiceClient.prepare(),
+             CristinClient.defaultClient());
     }
 
     protected PersistLogEntryEventHandler(S3Client s3Client, ResourceService resourceService,
-                                          IdentityServiceClient identityServiceClient) {
+                                          IdentityServiceClient identityServiceClient, CristinClient cristinClient) {
         super(EventReference.class);
         this.s3Client = s3Client;
-        this.logEntryService = new LogEntryService(resourceService, identityServiceClient);
+        this.logEntryService = new LogEntryService(resourceService, identityServiceClient, cristinClient);
     }
 
     @Override

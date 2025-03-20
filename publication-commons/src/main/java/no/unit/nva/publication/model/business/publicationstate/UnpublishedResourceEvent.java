@@ -5,8 +5,8 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
 public record UnpublishedResourceEvent(Instant date, User user, URI institution, SortableIdentifier identifier)
@@ -18,7 +18,7 @@ public record UnpublishedResourceEvent(Instant date, User user, URI institution,
     }
 
     @Override
-    public PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user) {
+    public PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user) {
         return PublicationLogEntry.builder()
                    .withResourceIdentifier(resourceIdentifier)
                    .withIdentifier(identifier)

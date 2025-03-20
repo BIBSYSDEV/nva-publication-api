@@ -6,7 +6,7 @@ import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -27,5 +27,5 @@ public interface ResourceEvent {
      */
     URI institution();
 
-    PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogUser user);
+    PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user);
 }

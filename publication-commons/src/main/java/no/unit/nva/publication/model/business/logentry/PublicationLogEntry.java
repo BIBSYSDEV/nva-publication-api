@@ -8,7 +8,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record PublicationLogEntry(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, LogTopic topic,
-                                  Instant timestamp, LogUser performedBy, ImportSource importSource)
+                                  Instant timestamp, LogAgent performedBy, ImportSource importSource)
     implements LogEntry {
 
     public static final String TYPE = "PublicationLogEntry";
@@ -27,7 +27,7 @@ public record PublicationLogEntry(SortableIdentifier identifier, SortableIdentif
         private SortableIdentifier resourceIdentifier;
         private LogTopic topic;
         private Instant timestamp;
-        private LogUser performedBy;
+        private LogAgent performedBy;
         private ImportSource importSource;
 
         private Builder() {
@@ -53,7 +53,7 @@ public record PublicationLogEntry(SortableIdentifier identifier, SortableIdentif
             return this;
         }
 
-        public Builder withPerformedBy(LogUser performedBy) {
+        public Builder withPerformedBy(LogAgent performedBy) {
             this.performedBy = performedBy;
             return this;
         }

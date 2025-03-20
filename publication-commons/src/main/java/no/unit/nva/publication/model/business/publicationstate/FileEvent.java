@@ -7,7 +7,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
-import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.logentry.LogAgent;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(FileUploadedEvent.class), @JsonSubTypes.Type(FileApprovedEvent.class),
@@ -22,5 +22,5 @@ public interface FileEvent {
 
     SortableIdentifier identifier();
 
-    FileLogEntry toLogEntry(FileEntry fileEntry, LogUser user);
+    FileLogEntry toLogEntry(FileEntry fileEntry, LogAgent user);
 }
