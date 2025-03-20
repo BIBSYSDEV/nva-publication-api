@@ -112,7 +112,7 @@ public class ResourceService extends ServiceWithTransactions {
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
-    public static final String NVE_IMPORTED_RESOURCE_OWNER = "nve@5948.0.0.0";
+    private static final String NVE_IMPORTED_RESOURCE_OWNER = "nve@5948.0.0.0";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
