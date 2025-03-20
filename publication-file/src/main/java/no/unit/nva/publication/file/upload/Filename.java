@@ -8,7 +8,7 @@ public final class Filename {
     private static final String CONTENT_DISPOSITION_TEMPLATE = "filename=\"%s\"";
     private static final String PREFIX = "filename=\"";
     private static final String SUFFIX = "\"";
-    public static final int LAST_ASCII_CODEPOINT = 127;
+    private static final int LAST_ASCII_CODEPOINT = 127;
     private static final UnicodeUnescaper UNESCAPER = new UnicodeUnescaper();
     private static final UnicodeEscaper ESCAPER = UnicodeEscaper.above(LAST_ASCII_CODEPOINT);
 
