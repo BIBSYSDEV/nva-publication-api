@@ -13,25 +13,28 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(FileEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public final class FileEntry implements Entity {
+public final class FileEntry implements Entity, QueryObject<FileEntry> {
 
     public static final String TYPE = "File";
     public static final String DO_NOT_USE_THIS_METHOD = "Do not use this method";
@@ -44,6 +47,17 @@ public final class FileEntry implements Entity {
     private File file;
     private FileEvent fileEvent;
 
+    /**
+     * Constructor for FileEntry.
+     * @param resourceIdentifier
+     * @param createdDate
+     * @param modifiedDate
+     * @param owner
+     * @param ownerAffiliation Top level cristin unit id
+     * @param customerId
+     * @param file
+     * @param fileEvent
+     */
     @JsonCreator
     private FileEntry(@JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
                       @JsonProperty("createdDate") Instant createdDate,
@@ -66,15 +80,28 @@ public final class FileEntry implements Entity {
                              userInstance.getTopLevelOrgCristinId(), userInstance.getCustomerId(), file, null);
     }
 
-    public static FileEntry queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
+    public static QueryObject<FileEntry> queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
         return new FileEntry(resourceIdentifier, null, null, null, null, null, File.builder()
                                                                                    .withIdentifier(UUID.fromString(
                                                                                        fileIdentifier.toString()))
                                                                                    .buildHiddenFile(), null);
     }
 
+    public static QueryObject<FileEntry> queryObject(SortableIdentifier identifier) {
+        var uuid = UUID.fromString(identifier.toString());
+        var fileWithIdentifier = File.builder().withIdentifier(uuid).buildHiddenFile();
+        return new FileEntry(null, null, null, null, null, null, fileWithIdentifier, null);
+    }
+
     public static FileEntry fromDao(FileDao fileDao) {
         return (FileEntry) fileDao.getData();
+    }
+
+    public static FileEntry createFromImportSource(File file, SortableIdentifier identifier,
+                                                   UserInstance userInstance, ImportSource importSource) {
+        var fileEntry = create(file, identifier, userInstance);
+        fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(), Instant.now(), importSource));
+        return fileEntry;
     }
 
     public void persist(ResourceService resourceService) {
@@ -151,7 +178,7 @@ public final class FileEntry implements Entity {
     }
 
     @Override
-    public Dao toDao() {
+    public FileDao toDao() {
         return FileDao.fromFileEntry(this);
     }
 
@@ -169,33 +196,67 @@ public final class FileEntry implements Entity {
         return ownerAffiliation;
     }
 
-    public void softDelete(ResourceService resourceIdentifier, User user) {
+    public void softDelete(ResourceService resourceService, User user) {
+        var fileEntry = this.softDelete(user);
+        resourceService.updateFile(fileEntry);
+    }
+
+    public FileEntry softDelete(User user) {
         var now = Instant.now();
         this.setFileEvent(FileDeletedEvent.create(user, now));
         this.modifiedDate = now;
-        resourceIdentifier.updateFile(this);
+        return this;
     }
 
-    public void hardDelete(ResourceService resourceIdentifier) {
+    public void delete(ResourceService resourceIdentifier) {
         resourceIdentifier.deleteFile(this);
     }
 
-    public void update(File fileUpdate, ResourceService resourceService) {
-        if (!file.canBeConvertedTo(fileUpdate)) {
-            throw new IllegalStateException("%s can not be updated to %s"
-                                                .formatted(file.getClass().getSimpleName(),
-                                                           fileUpdate.getClass().getSimpleName()));
+    public void update(File file, UserInstance userInstance, ResourceService resourceService) {
+        update(file, userInstance);
+        resourceService.updateFile(this);
+    }
+
+    public FileEntry update(File file, UserInstance userInstance) {
+        if (!this.file.canBeConvertedTo(file)) {
+            throw new IllegalStateException("%s cannot be updated to %s"
+                                                .formatted(this.file.getClass().getSimpleName(),
+                                                           file.getClass().getSimpleName()));
         }
-        if (!fileUpdate.equals(this.file)) {
-            this.file = file.copy()
-                .withPublisherVersion(fileUpdate.getPublisherVersion())
-                .withLicense(fileUpdate.getLicense())
-                .withEmbargoDate(fileUpdate.getEmbargoDate().orElse(null))
-                .withLegalNote(fileUpdate.getLegalNote())
-                .build(fileUpdate.getClass());
+        if (shouldRetractFile(file)) {
+            this.setFileEvent(FileRetractedEvent.create(userInstance.getUser(), Instant.now()));
+        }
+        if (shouldHideFile(file)) {
+            this.setFileEvent(FileHiddenEvent.create(userInstance.getUser(), Instant.now()));
+        }
+        if (!file.equals(this.file)) {
+            this.file = this.file.copy()
+                            .withPublisherVersion(file.getPublisherVersion())
+                            .withLicense(file.getLicense())
+                            .withEmbargoDate(file.getEmbargoDate().orElse(null))
+                            .withLegalNote(file.getLegalNote())
+                            .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
+                            .build(file.getClass());
             this.modifiedDate = Instant.now();
-            resourceService.updateFile(this);
         }
+        return this;
+    }
+
+    public void importNew(ResourceService resourceService,UserInstance userInstance, ImportSource importSource) {
+        var now = Instant.now();
+        this.modifiedDate = now;
+        this.setFileEvent(FileImportedEvent.create(userInstance.getUser(), Instant.now(), importSource));
+        resourceService.persistFile(this);
+    }
+
+    private boolean shouldHideFile(File file) {
+        return !(this.file instanceof HiddenFile) && file instanceof HiddenFile;
+    }
+
+    private boolean shouldRetractFile(File file) {
+        return
+            (this.file instanceof OpenFile || this.file instanceof InternalFile || this.file instanceof HiddenFile) &&
+            file instanceof PendingFile<?, ?>;
     }
 
     public void approve(ResourceService resourceService, User user) {
@@ -210,10 +271,10 @@ public final class FileEntry implements Entity {
 
     public void reject(ResourceService resourceService, User user) {
         if (file instanceof PendingFile<?,?> pendingFile) {
-            this.file = pendingFile.reject();
             var now = Instant.now();
+            this.setFileEvent(FileRejectedEvent.create(user, now, file.getArtifactType()));
             this.modifiedDate = now;
-            this.setFileEvent(FileRejectedEvent.create(user, now));
+            this.file = pendingFile.reject();
             resourceService.updateFile(this);
         }
     }
@@ -249,36 +310,8 @@ public final class FileEntry implements Entity {
         return fileEvent;
     }
 
-    public void clearResourceEvent(ResourceService resourceService) {
-        this.setFileEvent(null);
-        resourceService.updateFile(this);
-    }
-
-    public void migrate(ResourceService resourceService, Resource resource) {
-        var now = Instant.now();
-        this.modifiedDate = now;
-        this.setFileEvent(createFileEventWhenMigratingFile(resource));
-        resourceService.persistFile(this);
-    }
-
-    private FileEvent createFileEventWhenMigratingFile(Resource resource) {
-        if (file instanceof OpenFile || file instanceof InternalFile) {
-            var timeStamp = file.getPublishedDate()
-                           .or(() -> Optional.ofNullable(resource.getPublishedDate()))
-                           .or(() -> Optional.ofNullable(resource.getCreatedDate()))
-                           .orElseGet(Instant::now);
-            return FileApprovedEvent.create(getOwner(), timeStamp);
-        } else {
-            var timeStamp = Optional.ofNullable(file)
-                                .map(File::getUploadDetails)
-                                .map(UploadDetails::uploadedDate)
-                                .or(() -> Optional.ofNullable(resource.getCreatedDate()))
-                                .orElseGet(Instant::now);
-            return FileUploadedEvent.create(getOwner(), timeStamp);
-        }
-    }
-
-    private void setFileEvent(FileEvent fileEvent) {
+    // TODO: Make method private after we have crafted log entries for files
+    public void setFileEvent(FileEvent fileEvent) {
         this.fileEvent = fileEvent;
     }
 }

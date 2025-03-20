@@ -149,6 +149,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var curatorAndOwner = new UserInstance(new User(randomString()).toString(), randomUri(), randomUri(), null,
+                                               null,
                                                null, UserClientType.INTERNAL);
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, curatorAndOwner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -176,7 +177,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
-                                      publication.getResourceOwner().getOwnerAffiliation(), null,
+                                      publication.getResourceOwner().getOwnerAffiliation(), null, null,
                                       null, UserClientType.INTERNAL);
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
@@ -230,7 +231,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
-        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, null);
+        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, UserInstance.create(randomString(), randomUri()));
         var owner = UserInstance.fromPublication(publication);
         var request = createNewMessageRequestForResourceOwner(publication, ticket, owner, randomString());
         handler.handleRequest(request, output, context);

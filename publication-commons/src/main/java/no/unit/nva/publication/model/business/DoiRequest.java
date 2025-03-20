@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
@@ -23,10 +22,15 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.publicationstate.DoiAssignedEvent;
+import no.unit.nva.publication.model.business.publicationstate.DoiRejectedEvent;
+import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
+import no.unit.nva.publication.model.business.publicationstate.TicketEvent;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
@@ -63,46 +67,43 @@ public class DoiRequest extends TicketEntry {
     private Username assignee;
     @JsonProperty(OWNER_AFFILIATION_FIELD)
     private URI ownerAffiliation;
+    @JsonProperty("ticketEvent")
+    private TicketEvent ticketEvent;
 
     public DoiRequest() {
         super();
     }
 
-    public static DoiRequest fromPublication(Publication publication) {
-        return newDoiRequestForResource(Resource.fromPublication(publication));
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public static DoiRequest newDoiRequestForResource(Resource resource) {
-        return newDoiRequestForResource(SortableIdentifier.next(), resource, Clock.systemDefaultZone().instant());
-    }
-
-    public static DoiRequest newDoiRequestForResource(Resource resource, Instant now) {
-
+    public static DoiRequest create(Resource resource, UserInstance userInstance) {
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(SortableIdentifier.next());
         doiRequest.setStatus(TicketStatus.PENDING);
+        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
+        var now = Clock.systemDefaultZone().instant();
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
-        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
+        doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, now));
+        doiRequest.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
+        doiRequest.setResponsibilityArea(userInstance.getPersonAffiliation());
+        doiRequest.setOwner(userInstance.getUser());
         return doiRequest;
     }
 
-    public static DoiRequest newDoiRequestForResource(SortableIdentifier doiRequestIdentifier,
-                                                      Resource resource,
-                                                      Instant now) {
-
-        var doiRequest = extractDataFromResource(resource);
-        doiRequest.setIdentifier(doiRequestIdentifier);
-        doiRequest.setStatus(TicketStatus.PENDING);
-        doiRequest.setModifiedDate(now);
-        doiRequest.setCreatedDate(now);
-        doiRequest.validate();
-        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
-        return doiRequest;
+    private static DoiRequest extractDataFromResource(DoiRequest doiRequest, Resource resource) {
+        var copy = doiRequest.copy();
+        copy.setResourceIdentifier(resource.getIdentifier());
+        copy.setOwner(resource.getResourceOwner().getUser());
+        copy.setCustomerId(resource.getCustomerId());
+        copy.setResourceStatus(resource.getStatus());
+        return copy;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    private static DoiRequest extractDataFromResource(Resource resource) {
+        return extractDataFromResource(new DoiRequest(), resource);
     }
 
     @Override
@@ -183,8 +184,17 @@ public class DoiRequest extends TicketEntry {
     }
 
     @Override
-    public DoiRequest complete(Publication publication, Username finalizedBy) {
-        return (DoiRequest) super.complete(publication, finalizedBy);
+    public DoiRequest complete(Publication publication, UserInstance userInstance) {
+        var completed = (DoiRequest) super.complete(publication, userInstance);
+        completed.setTicketEvent(DoiAssignedEvent.create(userInstance, Instant.now()));
+        return completed;
+    }
+
+    @Override
+    public DoiRequest close(UserInstance userInstance) throws ApiGatewayException {
+        var closed = (DoiRequest) super.close(userInstance);
+        closed.setTicketEvent(DoiRejectedEvent.create(userInstance, Instant.now()));
+        return closed;
     }
 
     @Override
@@ -201,6 +211,7 @@ public class DoiRequest extends TicketEntry {
                    .withViewedBy(this.getViewedBy())
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
+                   .withResponsibilityArea(getResponsibilityArea())
                    .withFinalizedBy(getFinalizedBy())
                    .withFinalizedDate(getFinalizedDate())
                    .build();
@@ -236,6 +247,14 @@ public class DoiRequest extends TicketEntry {
         this.ownerAffiliation = ownerAffiliation;
     }
 
+    public TicketEvent getTicketEvent() {
+        return ticketEvent;
+    }
+
+    public void setTicketEvent(TicketEvent ticketEvent) {
+        this.ticketEvent = ticketEvent;
+    }
+
     @Override
     public void validateAssigneeRequirements(Publication publication) {
     }
@@ -251,14 +270,8 @@ public class DoiRequest extends TicketEntry {
         return resourceStatus;
     }
 
-    public void setResourceStatus(PublicationStatus resourceStatus) {
+    private void setResourceStatus(PublicationStatus resourceStatus) {
         this.resourceStatus = resourceStatus;
-    }
-
-    public void validate() {
-        attempt(this::getResourceIdentifier)
-            .toOptional()
-            .orElseThrow(() -> new IllegalStateException(TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR));
     }
 
     @Override
@@ -288,6 +301,10 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getAssignee(), that.getAssignee())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
+    }
+
+    public boolean hasTicketEvent() {
+        return nonNull(getTicketEvent());
     }
 
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
@@ -323,6 +340,11 @@ public class DoiRequest extends TicketEntry {
 
         public Builder withOwnerAffiliation(URI ownerAffiliation) {
             doiRequest.setOwnerAffiliation(ownerAffiliation);
+            return this;
+        }
+
+        public Builder withResponsibilityArea(URI responsibilityArea) {
+            doiRequest.setResponsibilityArea(responsibilityArea);
             return this;
         }
 

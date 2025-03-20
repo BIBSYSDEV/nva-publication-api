@@ -8,16 +8,16 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 
-public record FileDeletedEvent(Instant date, User user) implements FileEvent {
+public record FileDeletedEvent(Instant date, User user, SortableIdentifier identifier) implements FileEvent {
 
     public static FileDeletedEvent create(User user, Instant timestamp) {
-        return new FileDeletedEvent(timestamp, user);
+        return new FileDeletedEvent(timestamp, user, SortableIdentifier.next());
     }
 
     @Override
     public FileLogEntry toLogEntry(FileEntry fileEntry, LogUser user) {
         return FileLogEntry.builder()
-                   .withIdentifier(SortableIdentifier.next())
+                   .withIdentifier(identifier)
                    .withFileIdentifier(fileEntry.getIdentifier())
                    .withResourceIdentifier(fileEntry.getResourceIdentifier())
                    .withTopic(LogTopic.FILE_DELETED)

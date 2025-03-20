@@ -1,8 +1,19 @@
 package no.unit.nva.publication.model.storage;
 
+import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -18,19 +29,6 @@ import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.net.URI;
-
-import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-
 class PublishingRequestDaoTest extends ResourcesLocalTest {
 
     private static final String SAMPLE_USER = "some@onwer";
@@ -38,7 +36,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     private static final URI SAMPLE_CUSTOMER = URI.create("https://some.example.org/" + SAMPLE_CUSTOMER_IDENTIFIER);
     private static final UserInstance SAMPLE_USER_INSTANCE = UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER);
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
-    private static final Username USERNAME = new Username(randomString());
+    private static final UserInstance USER_INSTANCE = UserInstance.create(randomString(), randomUri());
     private ResourceService resourceService;
     private TicketService ticketService;
 
@@ -93,7 +91,9 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         var query = PublishingRequestDao.queryPublishingRequestByResource(publication.getPublisher().getId(),
                                                                           publication.getIdentifier());
 
-        var publishingRequest = PublishingRequestCase.fromPublication(publication)
+        var publishingRequest = PublishingRequestCase.create(Resource.fromPublication(publication),
+                                                             UserInstance.fromPublication(publication),
+                                                             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
                                     .withOwner(randomString());
         var persistedRequest = publishingRequest.persistNewTicket(ticketService);
         var queryResult = client.query(query);
@@ -107,7 +107,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
 
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publication = PublicationGenerator.randomPublication();
-        var publishingRequestCase = randomPublishingRequest(publication).complete(publication, USERNAME);
+        var publishingRequestCase = randomPublishingRequest(publication).complete(publication, USER_INSTANCE);
         publishingRequestCase.setStatus(randomElement(TicketStatus.values()));
         publishingRequestCase.setWorkflow(randomElement(PublishingWorkflow.values()));
         return (PublishingRequestDao) publishingRequestCase.toDao();

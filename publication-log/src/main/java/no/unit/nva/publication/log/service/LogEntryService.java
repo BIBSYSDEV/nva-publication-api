@@ -3,14 +3,17 @@ package no.unit.nva.publication.log.service;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import no.unit.nva.clients.GetCustomerResponse;
-import no.unit.nva.clients.GetUserResponse;
+import java.util.Optional;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -36,6 +39,7 @@ public class LogEntryService {
         switch (entity) {
             case Resource resource -> persistLogEntry(resource.getIdentifier());
             case FileEntry fileEntry -> persistLogEntry(fileEntry);
+            case DoiRequest doiRequest -> persistLogEntry(doiRequest);
             case null, default -> {
                 // Ignore
             }
@@ -57,15 +61,31 @@ public class LogEntryService {
 
     private void persistLogEntry(Resource resource) {
         var resourceEvent = resource.getResourceEvent();
-        if (resourceEvent instanceof ImportedResourceEvent importedResourceEvent && isNull(resourceEvent.user())) {
-            importedResourceEvent.toLogEntry(resource.getIdentifier(), null).persist(resourceService);
-        } else {
-            var user = createUser(resourceEvent);
-            resourceEvent.toLogEntry(resource.getIdentifier(), user).persist(resourceService);
-        }
+        createLogEntry(resource, resourceEvent).persist(resourceService);
 
         logger.info(PERSISTING_LOG_ENTRY_MESSAGE, resource.getResourceEvent().getClass().getSimpleName(), resource);
-        resource.clearResourceEvent(resourceService);
+    }
+
+    private void persistLogEntry(DoiRequest doiRequest) {
+        Optional.ofNullable(doiRequest)
+            .filter(DoiRequest::hasTicketEvent)
+            .ifPresent(this::createLogEntry);
+    }
+
+    private void createLogEntry(DoiRequest doiRequest) {
+        var ticketEvent = doiRequest.getTicketEvent();
+        var user = createUser(ticketEvent.user());
+        ticketEvent.toLogEntry(doiRequest.getResourceIdentifier(), doiRequest.getIdentifier(), user)
+            .persist(resourceService);
+    }
+
+    private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {
+        if (resourceEvent instanceof ImportedResourceEvent importedResourceEvent && isNull(resourceEvent.user())) {
+            return importedResourceEvent.toLogEntry(resource.getIdentifier(), null);
+        } else {
+            var user = createUser(resourceEvent);
+            return resourceEvent.toLogEntry(resource.getIdentifier(), user);
+        }
     }
 
     private void persistFileLogEntry(FileEntry fileEntry) {
@@ -76,7 +96,6 @@ public class LogEntryService {
         fileEvent.toLogEntry(fileEntry, user).persist(resourceService);
 
         logger.info(PERSISTING_FILE_LOG_ENTRY_MESSAGE, fileEntry.getFile().getClass().getSimpleName(), fileIdentifier, resourceIdentifier);
-        fileEntry.clearResourceEvent(resourceService);
     }
 
     private LogUser createUser(User user) {
@@ -90,11 +109,11 @@ public class LogEntryService {
                    .orElse(failure -> LogUser.fromResourceEvent(resourceEvent.user(), resourceEvent.institution()));
     }
 
-    private GetCustomerResponse getCustomer(URI institutionCristinId) {
+    private CustomerDto getCustomer(URI institutionCristinId) {
         return attempt(() -> identityServiceClient.getCustomerByCristinId(institutionCristinId)).orElseThrow();
     }
 
-    private GetUserResponse getUser(User user) {
+    private UserDto getUser(User user) {
         return attempt(() -> identityServiceClient.getUser(user.toString())).orElseThrow();
     }
 }

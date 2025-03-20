@@ -83,6 +83,9 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
             case RecoveryEntry.MESSAGE:
                 messageService.refresh(identifier);
                 break;
+            case RecoveryEntry.FILE:
+                resourceService.refreshFile(identifier);
+                break;
             default:
                 break;
         }

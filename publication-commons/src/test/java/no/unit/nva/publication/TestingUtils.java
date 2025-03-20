@@ -11,6 +11,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -51,8 +52,7 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static GeneralSupportRequest createGeneralSupportRequest(Publication publication) {
-        return (GeneralSupportRequest) TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
-                                           .withOwner(UserInstance.fromPublication(publication).getUsername());
+        return GeneralSupportRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
     }
 
     public static UnpublishRequest createUnpublishRequest(Publication publication) {

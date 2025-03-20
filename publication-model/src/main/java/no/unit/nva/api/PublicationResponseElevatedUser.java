@@ -9,7 +9,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
@@ -68,7 +68,7 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
     }
 
     @Override
-    public List<AssociatedArtifactResponse> getAssociatedArtifacts() {
+    public List<AssociatedArtifactDto> getAssociatedArtifacts() {
         return super.getAssociatedArtifactsForElevatedUser();
     }
 

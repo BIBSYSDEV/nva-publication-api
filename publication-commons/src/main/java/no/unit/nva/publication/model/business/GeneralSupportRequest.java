@@ -14,14 +14,12 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.GeneralSupportRequestDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
@@ -49,23 +47,26 @@ public class GeneralSupportRequest extends TicketEntry {
         super();
     }
 
-    public static TicketEntry fromPublication(Publication publication) {
-        var ticket = new GeneralSupportRequest();
-        ticket.setResourceIdentifier(publication.getIdentifier());
-        ticket.setCustomerId(extractCustomerId(publication));
-        ticket.setCreatedDate(Instant.now());
-        ticket.setModifiedDate(Instant.now());
-        ticket.setStatus(TicketStatus.PENDING);
-        ticket.setIdentifier(SortableIdentifier.next());
-        ticket.setViewedBy(ViewedBy.addAll(UserInstance.fromPublication(publication).getUser()));
-        return ticket;
-    }
-
     public static GeneralSupportRequest createQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
         var ticket = new GeneralSupportRequest();
         ticket.setResourceIdentifier(resourceIdentifier);
         ticket.setCustomerId(customerId);
         return ticket;
+    }
+
+    public static GeneralSupportRequest create(Resource resource, UserInstance userInstance) {
+        var generalSupportRequest = new GeneralSupportRequest();
+        generalSupportRequest.setResourceIdentifier(resource.getIdentifier());
+        generalSupportRequest.setCustomerId(resource.getCustomerId());
+        generalSupportRequest.setCreatedDate(Instant.now());
+        generalSupportRequest.setModifiedDate(Instant.now());
+        generalSupportRequest.setStatus(TicketStatus.PENDING);
+        generalSupportRequest.setIdentifier(SortableIdentifier.next());
+        generalSupportRequest.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
+        generalSupportRequest.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
+        generalSupportRequest.setResponsibilityArea(userInstance.getPersonAffiliation());
+        generalSupportRequest.setOwner(userInstance.getUser());
+        return generalSupportRequest;
     }
 
     @Override
@@ -120,7 +121,7 @@ public class GeneralSupportRequest extends TicketEntry {
     }
 
     @Override
-    public Dao toDao() {
+    public TicketDao toDao() {
         return new GeneralSupportRequestDao(this);
     }
 
@@ -155,6 +156,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
         copy.setFinalizedBy(this.getFinalizedBy());
         copy.setFinalizedDate(this.getFinalizedDate());
+        copy.setResponsibilityArea(this.getResponsibilityArea());
         return copy;
     }
 
@@ -217,9 +219,5 @@ public class GeneralSupportRequest extends TicketEntry {
                && getStatus() == that.getStatus()
                && Objects.equals(getAssignee(), that.getAssignee())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
-    }
-
-    private static URI extractCustomerId(Publication publication) {
-        return Optional.of(publication).map(Publication::getPublisher).map(Organization::getId).orElse(null);
     }
 }

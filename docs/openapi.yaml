@@ -1846,6 +1846,12 @@ components:
       description: LogEntry
       type: object
       properties:
+        type:
+            type: string
+            enum:
+                - PublicationLogEntry
+                - FileLogEntry
+                - TicketLogEntry
         logTopic:
           $ref: '#/components/schemas/LogTopic'
         timestamp:
@@ -1859,13 +1865,21 @@ components:
     LogTopic:
       type: string
       enum:
-        - FilePublished
+        - FileApproved
         - FileRejected
         - FileUploaded
+        - FileImported
+        - FileDeleted
+        - DoiReserved
+        - DoiRequested
+        - DoiRejected
+        - DoiAssigned
         - PublicationCreated
         - PublicationDeleted
         - PublicationPublished
+        - PublicationRepublished
         - PublicationUnpublished
+        - PublicationImported
     #region content from "documentation/schema.yaml"
     AbortUploadRequestBody:
       description: Request body containing which file to abort uploading

@@ -131,7 +131,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private EventReference generateEventForExpandedPublication(Class<?> type) throws IOException {
         var publication = randomPublication(type);
-        var inputFileUri = expandPublicationAndSaveToS3(publication);
+        var resource = resourceService.insertPreexistingPublication(publication);
+        var inputFileUri = expandPublicationAndSaveToS3(resource);
         return new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, inputFileUri);
     }
 
@@ -148,7 +149,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         Publication samplePublication = insertSamplePublication();
         var fakeUriRetriever = FakeUriRetriever.newInstance();
         FakeUriResponse.setupFakeForType(samplePublication, fakeUriRetriever, resourceService);
-        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
+        var userInstance = UserInstance.fromPublication(samplePublication);
+        var doiRequest = DoiRequest.create(Resource.fromPublication(samplePublication), userInstance);
         doiRequest.fetchMessages(ticketService);
         ResourceExpansionService resourceExpansionService = new ResourceExpansionServiceImpl(resourceService,
                                                                                              ticketService,

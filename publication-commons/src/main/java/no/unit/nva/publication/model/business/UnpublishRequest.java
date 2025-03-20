@@ -24,6 +24,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
@@ -147,7 +148,7 @@ public class UnpublishRequest extends TicketEntry {
     }
 
     @Override
-    public Dao toDao() {
+    public TicketDao toDao() {
         return new UnpublishRequestDao(this);
     }
 
@@ -180,6 +181,7 @@ public class UnpublishRequest extends TicketEntry {
                    .withViewedBy(this.getViewedBy())
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
+                   .withResponsibilityArea(getResponsibilityArea())
                    .withFinalizedBy(getFinalizedBy())
                    .withFinalizedDate(getFinalizedDate())
                    .build();
@@ -315,6 +317,11 @@ public class UnpublishRequest extends TicketEntry {
 
         public UnpublishRequest.Builder withOwnerAffiliation(URI ownerAffiliation) {
             unpublishRequest.setOwnerAffiliation(ownerAffiliation);
+            return this;
+        }
+
+        public UnpublishRequest.Builder withResponsibilityArea(URI responsibilityArea) {
+            unpublishRequest.setResponsibilityArea(responsibilityArea);
             return this;
         }
 

@@ -1,13 +1,42 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.CUSTOMER_ID;
+import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.PUBLICATION_ID;
+import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDATE_DOI_EVENT_TOPIC;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.DOI_REQUEST_HAS_NO_IDENTIFIER;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.EMPTY_EVENT;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HANDLER_DOES_NOT_DEAL_WITH_DELETIONS;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HTTP_FOUND;
+import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.MIN_INTERVAL_FOR_REREQUESTING_A_DOI;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.core.AllOf.allOf;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.util.Collections;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.exception.InvalidInputException;
@@ -35,39 +64,8 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.util.stream.Stream;
-
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.CUSTOMER_ID;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.PUBLICATION_ID;
-import static no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent.UPDATE_DOI_EVENT_TOPIC;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.DOI_REQUEST_HAS_NO_IDENTIFIER;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.EMPTY_EVENT;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HANDLER_DOES_NOT_DEAL_WITH_DELETIONS;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HTTP_FOUND;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.MIN_INTERVAL_FOR_REREQUESTING_A_DOI;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.core.AllOf.allOf;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
-    public static final Username USERNAME = new Username(randomString());
     private DoiRequestEventProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
@@ -76,7 +74,9 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     private FakeS3Client s3Client;
 
     public static Stream<Function<Publication, Entity>> entityProvider() {
-        return Stream.of(Resource::fromPublication, DoiRequest::fromPublication);
+        return Stream.of(Resource::fromPublication,
+                         publication -> DoiRequest.create(Resource.fromPublication(publication),
+                                                          UserInstance.fromPublication(publication)));
     }
 
     /**
@@ -175,8 +175,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         throws IOException,
                ApiGatewayException {
         var publication = persistPublicationWithoutDoi(PublicationStatus.PUBLISHED);
-        var draftRequest = DoiRequest.fromPublication(publication);
-        var approvedRequest = draftRequest.complete(publication, USERNAME);
+        var draftRequest = DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
+        var approvedRequest = draftRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
         var event = createEvent(draftRequest, approvedRequest);
 
         handler.handleRequest(event, outputStream, context);
@@ -222,10 +222,12 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     void shouldNotSendRequestForDraftingADoiWhenThereHasBeenVeryRecentPreviousDoiRequestButNoDoiHasBeenCreated()
         throws ApiGatewayException, IOException {
         var publication = persistPublicationWithoutDoi();
-        var oldDoiRequest = DoiRequest.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        var oldDoiRequest = DoiRequest.create(resource, userInstance);
         var tooShortIntervalForRerequesting = MIN_INTERVAL_FOR_REREQUESTING_A_DOI.minusSeconds(1);
         oldDoiRequest.setModifiedDate(oldDoiRequest.getModifiedDate().minus(tooShortIntervalForRerequesting));
-        var newDoiRequest = DoiRequest.fromPublication(publication);
+        var newDoiRequest = DoiRequest.create(resource, userInstance);
         var event = createEvent(oldDoiRequest, newDoiRequest);
         handler.handleRequest(event, outputStream, context);
         var actual = outputToPublicationHolder(outputStream);
@@ -255,7 +257,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublicationWithAllRequiredFieldsSetToFaulty() {
-        var publication = randomPublication();
+        var publication = randomPublication().copy().withAssociatedArtifacts(Collections.emptyList()).build();
         publication.setStatus(PublicationStatus.DRAFT);
         publication.getEntityDescription().setMainTitle(StringUtils.EMPTY_STRING);
         publication.getEntityDescription().getPublicationDate().setYear(null);
@@ -312,10 +314,10 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         var persistedPublication = persistPublication(publication);
 
         if (PublicationStatus.PUBLISHED.equals(publicationStatus)) {
-            resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                               persistedPublication.getIdentifier());
+            Resource.fromPublication(persistedPublication)
+                .publish(resourceService, UserInstance.fromPublication(persistedPublication));
         }
-        return resourceService.getPublication(persistedPublication);
+        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 
     private Publication updateTitle(Publication publication) {
@@ -332,7 +334,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     private DoiRequest sampleDoiRequestForExistingPublication() throws ApiGatewayException {
         var publication = persistPublicationWithoutDoi();
-        return DoiRequest.fromPublication(publication);
+        return DoiRequest.create(Resource.fromPublication(publication),
+                                 UserInstance.fromPublication(publication));
     }
 
     private Publication persistPublication(Publication publication) throws BadRequestException {

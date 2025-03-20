@@ -7,19 +7,16 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import java.util.Set;
-import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -31,6 +28,7 @@ import no.unit.nva.publication.ticket.model.identityservice.CustomerPublishingWo
 import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -62,34 +60,22 @@ public class TicketResolver {
 
     public TicketEntry resolveAndPersistTicket(TicketDto ticketDto, RequestUtils requestUtils)
         throws ApiGatewayException {
-        var publication = fetchPublication(requestUtils);
-        var permissionStrategy = PublicationPermissions
-                                     .create(publication, requestUtils.toUserInstance());
+        var resource = fetchResource(requestUtils);
+        var userInstance = requestUtils.toUserInstance();
 
-        validateUserPermissions(permissionStrategy, ticketDto, requestUtils);
+        validateUserPermissions(resource, ticketDto, userInstance);
 
-        var ticket = TicketEntry.requestNewTicket(publication, ticketDto.ticketType())
-                         .withOwnerAffiliation(requestUtils.topLevelCristinOrgId())
-                         .withOwnerResponsibilityArea(requestUtils.personAffiliation())
-                         .withOwner(requestUtils.username());
-        if (ticket instanceof PublishingRequestCase publishingRequest) {
-            var customerId = requestUtils.customerId();
-            publishingRequest.withWorkflow(getWorkflow(customerId))
-                .withFilesForApproval(getFilesForApproval(publication));
-            return createPublishingRequest(publishingRequest, publication, requestUtils);
-        }
-        return persistTicket(ticket);
+        var ticket = switch (ticketDto) {
+            case PublishingRequestDto ignore -> PublishingRequestCase.create(resource, userInstance, getWorkflow(userInstance.getCustomerId()));
+            case DoiRequestDto ignore -> DoiRequest.create(resource, userInstance);
+            case GeneralSupportRequestDto ignore -> GeneralSupportRequest.create(resource, userInstance);
+            default -> throw new BadRequestException("Not supported ticket type");
+        };
+        return ticket.persistNewTicket(ticketService);
     }
 
     private PublishingWorkflow getWorkflow(URI customerId) throws BadGatewayException {
         return getCustomerPublishingWorkflowResponse(customerId).convertToPublishingWorkflow();
-    }
-
-    private Set<File> getFilesForApproval(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(PendingFile.class::isInstance)
-                   .map(File.class::cast)
-                   .collect(Collectors.toSet());
     }
 
     private static boolean userHasPermissionToCreateTicket(PublicationPermissions permissionStrategy,
@@ -103,62 +89,23 @@ public class TicketResolver {
         };
     }
 
-    private void validateUserPermissions(PublicationPermissions permissionStrategy, TicketDto ticketDto,
-                                         RequestUtils requestUtils)
-        throws ForbiddenException, NotFoundException {
+    private void validateUserPermissions(Resource resource, TicketDto ticketDto, UserInstance userInstance)
+        throws ForbiddenException {
+        var permissionStrategy = PublicationPermissions.create(resource.toPublication(), userInstance);
         if (!userHasPermissionToCreateTicket(permissionStrategy, ticketDto)) {
             logger.error(CREATING_TICKET_ERROR_MESSAGE,
                          ticketDto.ticketType().getSimpleName(),
-                         requestUtils.publicationIdentifier(),
-                         requestUtils.username());
+                         resource.getIdentifier(),
+                         userInstance.getUser().toString());
             throw new ForbiddenException();
         }
     }
 
-    private Publication fetchPublication(RequestUtils requestUtils) throws ApiGatewayException {
+    private Resource fetchResource(RequestUtils requestUtils) throws ApiGatewayException {
         var resourceIdentifier = requestUtils.publicationIdentifier();
         return Resource.resourceQueryObject(resourceIdentifier)
                    .fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException("Publication not found"))
-                   .toPublication();
-    }
-
-    private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase,
-                                                          Publication publication, RequestUtils requestUtils)
-        throws ApiGatewayException {
-
-        var username = new Username(requestUtils.username());
-
-        return switch (publishingRequestCase.getWorkflow()) {
-            case REGISTRATOR_PUBLISHES_METADATA_AND_FILES ->
-                persistCompletedPublishingRequest(publishingRequestCase, publication, username);
-            case REGISTRATOR_PUBLISHES_METADATA_ONLY ->
-                persistPublishingRequest(publishingRequestCase, publication, username);
-            default -> (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
-        };
-    }
-
-    private PublishingRequestCase persistCompletedPublishingRequest(
-        PublishingRequestCase publishingRequestCase, Publication publication, Username curator)
-        throws ApiGatewayException {
-        publishingRequestCase.setAssignee(curator);
-        return publishingRequestCase.publishApprovedFile().persistAutoComplete(ticketService, publication, curator);
-    }
-
-    private PublishingRequestCase persistPublishingRequest(PublishingRequestCase publishingRequestCase,
-                                                           Publication publication, Username username)
-        throws ApiGatewayException {
-        if (publishingRequestCase.getFilesForApproval().isEmpty()) {
-            return createAutoApprovedTicket(publishingRequestCase, publication, username);
-        } else {
-            return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
-        }
-    }
-
-    private PublishingRequestCase createAutoApprovedTicket(PublishingRequestCase ticket, Publication publication,
-                                                           Username finalizedBy) throws ApiGatewayException {
-        ticket.emptyFilesForApproval();
-        return ticket.persistAutoComplete(ticketService, publication, finalizedBy);
+                   .orElseThrow(() -> new NotFoundException("Publication not found"));
     }
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
@@ -167,10 +114,6 @@ public class TicketResolver {
                            .orElseThrow(this::createBadGatewayException);
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CustomerPublishingWorkflowResponse.class))
                    .orElseThrow();
-    }
-
-    private TicketEntry persistTicket(TicketEntry newTicket) {
-        return attempt(() -> newTicket.persistNewTicket(ticketService)).orElseThrow();
     }
 
     private BadGatewayException createBadGatewayException() {

@@ -8,13 +8,21 @@ public enum LogTopic {
     FILE_APPROVED("FileApproved"),
     FILE_REJECTED("FileRejected"),
     FILE_UPLOADED("FileUploaded"),
+    FILE_IMPORTED("FileImported"),
+    FILE_RETRACTED("FileRetracted"),
+    FILE_HIDDEN("FileHidden"),
     FILE_DELETED("FileDeleted"),
+    DOI_RESERVED("DoiReserved"),
+    DOI_REQUESTED("DoiRequested"),
+    DOI_REJECTED("DoiRejected"),
+    DOI_ASSIGNED("DoiAssigned"),
     PUBLICATION_CREATED("PublicationCreated"),
     PUBLICATION_DELETED("PublicationDeleted"),
     PUBLICATION_PUBLISHED("PublicationPublished"),
     PUBLICATION_REPUBLISHED("PublicationRepublished"),
     PUBLICATION_UNPUBLISHED("PublicationUnpublished"),
-    PUBLICATION_IMPORTED("PublicationImported");
+    PUBLICATION_IMPORTED("PublicationImported"),
+    PUBLICATION_MERGED("PublicationMerged");
 
     private final String value;
 

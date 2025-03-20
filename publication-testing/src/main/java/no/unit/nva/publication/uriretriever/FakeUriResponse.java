@@ -35,6 +35,7 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -78,6 +79,8 @@ public final class FakeUriResponse {
         fakeContextResponses(publication, fakeUriRetriever, resourceService);
         if (publication instanceof ImportCandidate) {
             createFakeCustomerApiResponse(fakeUriRetriever);
+        } else {
+            resourceService.updateResource(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         }
     }
 

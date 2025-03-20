@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -21,11 +23,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class FileEventTest {
 
     public static Stream<Arguments> stateProvider() {
-        return Stream.of(Arguments.of(new FileUploadedEvent(Instant.now(), randomUser())),
+        return Stream.of(Arguments.of(new FileUploadedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
                          Arguments.of(
-                             new FileApprovedEvent(Instant.now(), randomUser())),
-                         Arguments.of(new FileRejectedEvent(Instant.now(), randomUser())),
-                         Arguments.of(new FileDeletedEvent(Instant.now(), randomUser())));
+                             new FileApprovedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
+                         Arguments.of(new FileRejectedEvent(Instant.now(), randomUser(), SortableIdentifier.next(),
+                                                            randomString())),
+                         Arguments.of(new FileDeletedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
+                         Arguments.of(new FileImportedEvent(Instant.now(), randomUser(), SortableIdentifier.next(),
+                                                            ImportSource.fromSource(Source.SCOPUS))),
+                         Arguments.of(new FileRetractedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
+                         Arguments.of(new FileHiddenEvent(Instant.now(), randomUser(), SortableIdentifier.next())));
     }
 
     @ParameterizedTest

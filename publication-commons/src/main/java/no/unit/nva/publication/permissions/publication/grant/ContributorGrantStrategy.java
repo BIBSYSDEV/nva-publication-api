@@ -23,7 +23,7 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase impl
         }
 
         return switch (permission) {
-            case UPDATE -> true;
+            case UPDATE, UPLOAD_FILE -> true;
             case UNPUBLISH -> isPublished() && !hasApprovedFiles();
             case PUBLISHING_REQUEST_CREATE,
                  SUPPORT_REQUEST_CREATE,

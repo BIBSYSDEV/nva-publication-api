@@ -1,7 +1,9 @@
 package no.unit.nva.model.associatedartifacts;
 
 import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,29 +15,34 @@ import nva.commons.core.JacocoGenerated;
 
 public class AssociatedArtifactList implements List<AssociatedArtifact> {
 
-    public static final String NULL_OBJECT_MUST_BE_SINGLETON_IN_LIST = "AssociatedArtifactLists containing "
-            + "NullAssociatedArtifact must contain only this element as a singleton";
-    private final List<AssociatedArtifact> associatedArtifacts;
-    
+    private final List<AssociatedArtifact> associatedArtifacts = new ArrayList<>();
+
     @JsonCreator
     public AssociatedArtifactList(List<AssociatedArtifact> artifacts) {
-        throwExceptionIfNullObjectIsNotOnlyElementInList(artifacts);
-        this.associatedArtifacts = nonNull(artifacts) ? artifacts : Collections.emptyList();
+        if (containsNotOnlyNullAssociatedArtifacts(artifacts)) {
+            var notNullAssociatedArtifacts = artifacts.stream()
+                                                 .filter(not(NullAssociatedArtifact.class::isInstance))
+                                                 .distinct()
+                                                 .toList();
+            this.associatedArtifacts.addAll(notNullAssociatedArtifacts);
+        } else if (nonNull(artifacts)) {
+            this.associatedArtifacts.addAll(artifacts.stream().distinct().toList());
+        }
     }
 
     public AssociatedArtifactList(AssociatedArtifact... artifacts) {
         this(Arrays.asList(artifacts));
     }
-    
+
     public static AssociatedArtifactList empty() {
         return new AssociatedArtifactList(Collections.emptyList());
     }
-    
+
     @Override
     public int size() {
         return associatedArtifacts.size();
     }
-    
+
     @Override
     public boolean isEmpty() {
         return associatedArtifacts.isEmpty();
@@ -67,18 +74,8 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
     }
 
     @Override
-    public void add(int index, AssociatedArtifact element) {
-        associatedArtifacts.add(index, element);
-    }
-
-    @Override
     public boolean remove(Object o) {
         return associatedArtifacts.remove(o);
-    }
-
-    @Override
-    public AssociatedArtifact remove(int index) {
-        return associatedArtifacts.remove(index);
     }
 
     @Override
@@ -111,18 +108,6 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
         associatedArtifacts.clear();
     }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        return associatedArtifacts.equals(o);
-    }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(associatedArtifacts);
-    }
-
     @Override
     public AssociatedArtifact get(int index) {
         return associatedArtifacts.get(index);
@@ -134,6 +119,16 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
     }
 
     @Override
+    public void add(int index, AssociatedArtifact element) {
+        associatedArtifacts.add(index, element);
+    }
+
+    @Override
+    public AssociatedArtifact remove(int index) {
+        return associatedArtifacts.remove(index);
+    }
+
+    @Override
     public int indexOf(Object o) {
         return associatedArtifacts.indexOf(o);
     }
@@ -142,7 +137,7 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
     public int lastIndexOf(Object o) {
         return associatedArtifacts.lastIndexOf(o);
     }
-    
+
     @Override
     public ListIterator<AssociatedArtifact> listIterator() {
         return associatedArtifacts.listIterator();
@@ -158,15 +153,20 @@ public class AssociatedArtifactList implements List<AssociatedArtifact> {
         return associatedArtifacts.subList(fromIndex, toIndex);
     }
 
-
-    private void throwExceptionIfNullObjectIsNotOnlyElementInList(List<AssociatedArtifact> artifacts) {
-        if (nonNull(artifacts) && containsNullObject(artifacts) && artifacts.size() > 1) {
-            throw new InvalidAssociatedArtifactsException(NULL_OBJECT_MUST_BE_SINGLETON_IN_LIST);
-        }
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(associatedArtifacts);
     }
 
-    private boolean containsNullObject(List<AssociatedArtifact> artifacts) {
-        return artifacts.stream().anyMatch(NullAssociatedArtifact.class::isInstance);
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        return associatedArtifacts.equals(o);
     }
 
+    private boolean containsNotOnlyNullAssociatedArtifacts(List<AssociatedArtifact> artifacts) {
+        return nonNull(artifacts) && artifacts.stream().anyMatch(NullAssociatedArtifact.class::isInstance) &&
+               !artifacts.stream().allMatch(NullAssociatedArtifact.class::isInstance);
+    }
 }

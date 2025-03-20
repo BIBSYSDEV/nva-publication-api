@@ -27,8 +27,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -74,10 +73,12 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.create.pia.PiaClientConfig;
 import no.unit.nva.publication.create.pia.PiaUpdateRequest;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -178,7 +179,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldCopyAssociatedResourceFiles() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
-        var artifactId = ((File) importCandidate.getAssociatedArtifacts().stream().findFirst().get()).getIdentifier()
+        var artifactId = ((File) importCandidate.getAssociatedArtifacts().stream().findFirst().orElseThrow()).getIdentifier()
                              .toString();
 
         handler.handleRequest(request, output, context);
@@ -205,7 +206,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     s3Client,
                                                     piaClientConfig);
         handler = new CreatePublicationFromImportCandidateHandler(configs);
-        when(publicationService.autoImportPublicationFromScopus(any())).thenThrow(
+        when(publicationService.importResource(any(), any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
@@ -380,7 +381,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void publishedDateShoulBeSetToTimeWhenPublicationEntersDatabase() throws NotFoundException,
+    void publishedDateShouldBeSetToTimeWhenPublicationEntersDatabase() throws NotFoundException,
                                                                              IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
@@ -454,22 +455,18 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldAddImportDetailWhenCreatingPublicationFromImportingCandidate() throws IOException, NotFoundException {
+    void shouldSetResourceEventWhenCreatingPublicationFromImportingCandidate() throws IOException, NotFoundException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+                              .fetch(publicationService)
+                              .orElseThrow();
 
-        var importDetail = publication.getImportDetails()
-                               .stream()
-                               .filter(f -> f.importSource().getSource().equals(Source.SCOPUS))
-                               .findFirst()
-                               .orElse(null);
+        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 
-        assertNotNull(importDetail);
-        assertNotNull(importDetail.importDate());
-        assertNull(importDetail.importSource().getArchive());
+        assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
@@ -626,6 +623,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withBody(importCandidate)
                    .withCurrentCustomer(user.getCustomerId())
                    .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_IMPORT)
+                   .withTopLevelCristinOrgId(randomUri())
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 

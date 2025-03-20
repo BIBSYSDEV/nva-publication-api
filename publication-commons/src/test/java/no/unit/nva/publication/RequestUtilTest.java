@@ -7,6 +7,7 @@ import static no.unit.nva.publication.RequestUtil.FILE_IDENTIFIER;
 import static no.unit.nva.publication.RequestUtil.IMPORT_CANDIDATE_IDENTIFIER;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
+import static no.unit.nva.publication.RequestUtil.getFileEntryIdentifier;
 import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
 import static no.unit.nva.publication.RequestUtil.getIdentifier;
 import static no.unit.nva.publication.RequestUtil.getImportCandidateIdentifier;
@@ -92,6 +93,17 @@ class RequestUtilTest {
 
         assertEquals(uuid, identifier);
     }
+
+    @Test
+    void canGetFileEntryIdentifierFromRequest() throws ApiGatewayException {
+        var sortableIdentifier = SortableIdentifier.next();
+        var requestInfo = getRequestInfo();
+        requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, sortableIdentifier.toString()));
+
+        var identifier = getFileEntryIdentifier(requestInfo);
+
+        assertEquals(sortableIdentifier, identifier);
+    }
     
     @Test
     void getIdentifierOnInvalidRequestThrowsException() {
@@ -99,6 +111,7 @@ class RequestUtilTest {
         assertThrows(BadRequestException.class, () -> getIdentifier(requestInfo));
         assertThrows(BadRequestException.class, () -> getImportCandidateIdentifier(requestInfo));
         assertThrows(BadRequestException.class, () -> getFileIdentifier(requestInfo));
+        assertThrows(BadRequestException.class, () -> getFileEntryIdentifier(requestInfo));
     }
     
     @Test

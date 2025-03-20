@@ -4,19 +4,20 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
-@JsonTypeName(PublicationLogEntryDto.TYPE)
+@JsonTypeName(PublicationLogEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record PublicationLogEntryDto(LogTopic topic, Instant timestamp, LogUser performedBy,
-                                     SortableIdentifier publicationIdentifier) implements LogEntryDto {
-
-    public static final String TYPE = "PublicationLogEntry";
+                                     SortableIdentifier publicationIdentifier, ImportSource importSource)
+    implements LogEntryDto {
 
     public static PublicationLogEntryDto fromLogEntry(PublicationLogEntry publicationLogEntry) {
         return new PublicationLogEntryDto(publicationLogEntry.topic(), publicationLogEntry.timestamp(),
-                                          publicationLogEntry.performedBy(), publicationLogEntry.resourceIdentifier());
+                                          publicationLogEntry.performedBy(), publicationLogEntry.resourceIdentifier(),
+                                          publicationLogEntry.importSource());
     }
 }

@@ -21,7 +21,8 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
             case UPDATE,
                  UNPUBLISH,
                  TERMINATE,
-                 READ_HIDDEN_FILES -> canModify();
+                 READ_HIDDEN_FILES,
+                 UPLOAD_FILE -> canModify();
             case DELETE -> canModify() && isDraft();
             case UPDATE_FILES,
                  REPUBLISH,

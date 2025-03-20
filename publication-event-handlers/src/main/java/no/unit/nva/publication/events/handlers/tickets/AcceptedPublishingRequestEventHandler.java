@@ -10,7 +10,6 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -72,39 +71,8 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return null;
     }
 
-    private void handleChanges(PublishingRequestCase publishingRequest) {
-        switch (publishingRequest.getStatus()) {
-            case PENDING -> handlePendingPublishingRequest(publishingRequest);
-            case COMPLETED -> handleCompletedPublishingRequest(publishingRequest);
-            case CLOSED -> handleClosedPublishingRequest(publishingRequest);
-            default -> {
-                // Ignore other non-final statuses
-            }
-        }
-    }
-
-    private void handlePendingPublishingRequest(PublishingRequestCase publishingRequest) {
-        var publication = fetchPublication(publishingRequest.getResourceIdentifier());
-        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
-            publishPublication(publication);
-            refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
-        }
-    }
-
-    /**
-     * Is needed in order to populate publication status changes in search-index when publication is being published.
-     * @param publishingRequest to refresh
-     */
-    private void refreshPublishingRequestAfterPublishingMetadata(PublishingRequestCase publishingRequest) {
-        publishingRequest.persistUpdate(ticketService);
-    }
-
-    private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
-        publishingRequestCase.rejectRejectedFiles(resourceService);
-    }
-
-    private static boolean hasDoi(Publication publication) {
-        return nonNull(publication.getDoi());
+    private static boolean hasDoi(Resource resource) {
+        return nonNull(resource.getDoi());
     }
 
     private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
@@ -121,28 +89,61 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
     }
 
+    private void handleChanges(PublishingRequestCase publishingRequest) {
+        switch (publishingRequest.getStatus()) {
+            case PENDING -> handlePendingPublishingRequest(publishingRequest);
+            case COMPLETED -> handleCompletedPublishingRequest(publishingRequest);
+            case CLOSED -> handleClosedPublishingRequest(publishingRequest);
+            default -> {
+                // Ignore other non-final statuses
+            }
+        }
+    }
+
+    private void handlePendingPublishingRequest(PublishingRequestCase publishingRequest) {
+        var resource = fetchResource(publishingRequest.getResourceIdentifier());
+        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
+            publishResource(resource, publishingRequest);
+            refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
+        }
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
+    }
+
+    /**
+     * Is needed in order to populate publication status changes in search-index when publication is being published.
+     *
+     * @param publishingRequest to refresh
+     */
+    private void refreshPublishingRequestAfterPublishingMetadata(PublishingRequestCase publishingRequest) {
+        publishingRequest.persistUpdate(ticketService);
+    }
+
+    private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
+        publishingRequestCase.rejectRejectedFiles(resourceService);
+    }
+
     private boolean hasEffectiveChanges(String eventBlob) {
         return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
     }
 
     private void handleCompletedPublishingRequest(PublishingRequestCase publishingRequestCase) {
-        var publication = fetchPublication(publishingRequestCase.getResourceIdentifier());
+        var resource = fetchResource(publishingRequestCase.getResourceIdentifier());
         var publishingRequest = fetchPublishingRequest(publishingRequestCase);
 
-        publishWhenPublicationStatusDraft(publication);
+        publishWhenPublicationStatusDraft(resource, publishingRequest);
 
         if (!publishingRequest.getApprovedFiles().isEmpty()) {
             publishingRequest.publishApprovedFiles(resourceService);
         }
 
-        logger.info(PUBLISHING_FILES_MESSAGE, publication.getIdentifier(), publishingRequest.getIdentifier());
+        logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), publishingRequest.getIdentifier());
 
-        createDoiRequestIfNeeded(publication);
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
     }
 
-    private void publishWhenPublicationStatusDraft(Publication publication) {
-        if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
-            publishPublication(publication);
+    private void publishWhenPublicationStatusDraft(Resource resource, PublishingRequestCase publishingRequest) {
+        if (PublicationStatus.DRAFT.equals(resource.getStatus())) {
+            publishResource(resource, publishingRequest);
         }
     }
 
@@ -158,44 +159,43 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         throw new RuntimeException();
     }
 
-    private void publishPublication(Publication publication) {
-        var userInstance = UserInstance.fromPublication(publication);
-        logger.info("Publishing publication: {}", publication.getIdentifier());
+    private void publishResource(Resource resource, PublishingRequestCase publishingRequestCase) {
+        var userInstance = UserInstance.fromTicket(publishingRequestCase);
+        logger.info("Publishing resource: {}", resource.getIdentifier());
         try {
-            Resource.fromPublication(publication).publish(resourceService, userInstance);
+            resource.publish(resourceService, userInstance);
         } catch (Exception e) {
-            throwException(
-                String.format(PUBLISHING_ERROR_MESSAGE, publication.getIdentifier()), e);
+            throwException(String.format(PUBLISHING_ERROR_MESSAGE, resource.getIdentifier()), e);
         }
     }
 
-    private Publication fetchPublication(SortableIdentifier resourceIdentifier) {
-        return Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow().toPublication();
+    private Resource fetchResource(SortableIdentifier resourceIdentifier) {
+        return Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow();
     }
 
     /**
-     * Creating DoiRequest for a publication necessarily owned by publication owner institution and not the institution
-     * that requests the doi.
+     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not
+     * the institution that requests the doi.
      *
-     * @param publication to create a DoiRequest for
+     * @param resourceIdentifier to create a DoiRequest for
+     * @param userInstance
      */
-    private void createDoiRequestIfNeeded(Publication publication) {
-        if (hasDoi(publication) && !doiRequestExists(publication)) {
-            attempt(() -> DoiRequest.fromPublication(publication)
-                              .withOwner(publication.getResourceOwner().getOwner().getValue())
-                              .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
-                              .persistNewTicket(ticketService)).orElseThrow();
-            logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
+    private void createDoiRequestIfNeeded(SortableIdentifier resourceIdentifier, UserInstance userInstance) {
+        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow();
+        if (hasDoi(resource) && !doiRequestExists(resource)) {
+            var doiRequest = DoiRequest.create(resource, userInstance);
+            attempt(() -> doiRequest.persistNewTicket(ticketService)).orElseThrow();
+            logger.info(DOI_REQUEST_CREATION_MESSAGE, resource.getIdentifier());
         }
     }
 
-    private boolean doiRequestExists(Publication publication) {
-        return fetchTicket(publication).isPresent();
+    private boolean doiRequestExists(Resource resource) {
+        return fetchDoiRequest(resource).isPresent();
     }
 
-    private Optional<DoiRequest> fetchTicket(Publication publication) {
-        return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
-                                                             publication.getIdentifier(), DoiRequest.class);
+    private Optional<DoiRequest> fetchDoiRequest(Resource resource) {
+        return ticketService.fetchTicketByResourceIdentifier(resource.getCustomerId(), resource.getIdentifier(),
+                                                             DoiRequest.class);
     }
 
     private PublishingRequestCase parseInput(String eventBlob) {

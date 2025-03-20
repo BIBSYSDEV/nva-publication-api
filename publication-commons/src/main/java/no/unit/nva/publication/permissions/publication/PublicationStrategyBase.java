@@ -80,7 +80,7 @@ public class PublicationStrategyBase {
     }
 
     private boolean hasEmbargo(File file) {
-        return !file.fileDoesNotHaveActiveEmbargo();
+        return file.hasActiveEmbargo();
     }
 
     protected boolean isVerifiedContributor(Contributor contributor) {
@@ -94,7 +94,7 @@ public class PublicationStrategyBase {
                                              .contains(artifact.getClass()));
     }
 
-    protected Boolean isOwner() {
+    protected boolean isOwner() {
         return nonNull(userInstance) && attempt(userInstance::getUsername)
                    .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
                    .orElse(fail -> false);

@@ -3,9 +3,7 @@ package no.unit.nva.publication.fetch;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.http.HttpClient;
-import java.util.stream.Collectors;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -52,10 +50,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
 
         var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        return resourceService.getPublicationsByOwner(userInstance)
-                   .stream()
-                   .map(PublicationSummary::create)
-                   .collect(Collectors.collectingAndThen(Collectors.toList(), PublicationsByOwnerResponse::new));
+        return new PublicationsByOwnerResponse(resourceService.getPublicationSummaryByOwner(userInstance));
     }
     
     @Override

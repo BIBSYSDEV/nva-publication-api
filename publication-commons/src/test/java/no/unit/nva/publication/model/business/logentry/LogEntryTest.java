@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business.logentry;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -10,18 +11,23 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import no.unit.nva.clients.GetCustomerResponse;
-import no.unit.nva.clients.GetUserResponse;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.UserDto;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,12 +38,14 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 class LogEntryTest extends ResourcesLocalTest {
 
     private ResourceService resourceService;
+    private TicketService ticketService;
 
     @Override
     @BeforeEach
     public void init() {
         super.init();
         resourceService = getResourceServiceBuilder().build();
+        ticketService = getTicketService();
     }
 
     @ParameterizedTest
@@ -74,16 +82,30 @@ class LogEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateLogUserFromGetUserResponse() {
-        var getUserResponse = GetUserResponse.builder()
+    void shouldCreateLogUserFromUserDto() {
+        var getUserResponse = UserDto.builder()
                                  .withUsername(randomString())
                                  .withGivenName(randomString())
                                  .withFamilyName(randomString())
                                  .withInstitution(randomUri())
                                  .build();
-        var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
-                                                      randomString(), randomUri());
+        var getCustomerResponse = createRandomCustomer();
         assertNotNull(LogUser.create(getUserResponse, getCustomerResponse));
+    }
+
+    private static CustomerDto createRandomCustomer() {
+        return new CustomerDto(randomUri(),
+                               UUID.randomUUID(),
+                               randomString(),
+                               randomString(),
+                               randomString(),
+                               randomUri(),
+                               randomString(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               Collections.emptyList(),
+                               new CustomerDto.RightsRetentionStrategy(randomString(), randomUri()));
     }
 
     @Test
@@ -92,11 +114,10 @@ class LogEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateLogInstitutionFromGetCustomerResponse() {
-        var getCustomerResponse = new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(),
-                                                      randomString(), randomUri());
+    void shouldCreateLogInstitutionFromCustomerDto() {
+        var getCustomerResponse = createRandomCustomer();
 
-        assertNotNull(LogOrganization.fromGetCustomerResponse(getCustomerResponse));
+        assertNotNull(LogOrganization.fromCustomerDto(getCustomerResponse));
     }
 
     @Test
@@ -116,7 +137,40 @@ class LogEntryTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(persistedPublication).fetchLogEntries(resourceService);
 
         assertTrue(logEntries.contains(fileLogEntry));
+    }
 
+    @Test
+    void shouldPersistTicketLogEntry() throws ApiGatewayException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, userInstance);
+        var doiRequest = DoiRequest.create(Resource.fromPublication(persistedPublication), userInstance)
+                             .persistNewTicket(ticketService);
+        var logEntry = DoiRequestedEvent.create(userInstance, Instant.now())
+                                      .toLogEntry(persistedPublication.getIdentifier(), doiRequest.getIdentifier(),
+                                                  randomLogUser());
+        logEntry.persist(resourceService);
+
+        var logEntries = Resource.fromPublication(persistedPublication).fetchLogEntries(resourceService);
+
+        assertTrue(logEntries.contains(logEntry));
+    }
+
+    @Test
+    void shouldSerializeLogUserWithUserName() throws JsonProcessingException {
+        var json = """
+            {
+              "type": "FileLogEntry",
+              "performedBy": {
+                "type": "LogUser",
+                "userName": "som user"
+              }
+            }
+            """;
+        var entry = JsonUtils.dtoObjectMapper.readValue(json, FileLogEntry.class);
+
+        assertNotNull(entry.performedBy().username());
     }
 
     private static FileLogEntry randomFileLogEntry(Publication persistedPublication) {
@@ -126,11 +180,15 @@ class LogEntryTest extends ResourcesLocalTest {
                    .withResourceIdentifier(persistedPublication.getIdentifier())
                    .withTopic(LogTopic.FILE_UPLOADED)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
-                                                new LogOrganization(randomUri(), randomUri(), randomString(),
-                                                                    randomString())))
+                   .withPerformedBy(randomLogUser())
                    .withFilename(randomString())
                    .build();
+    }
+
+    private static LogUser randomLogUser() {
+        return new LogUser(randomString(), randomString(), randomString(), randomUri(),
+                           new LogOrganization(randomUri(), randomUri(), randomString(),
+                                               randomString()));
     }
 
     private static PublicationLogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
@@ -139,8 +197,7 @@ class LogEntryTest extends ResourcesLocalTest {
                    .withResourceIdentifier(resourceIdentifier)
                    .withTopic(logTopic)
                    .withTimestamp(Instant.now())
-                   .withPerformedBy(new LogUser(randomString(), randomString(), randomString(), randomUri(),
-                                                new LogOrganization(randomUri(), randomUri(), randomString(), randomString())))
+                   .withPerformedBy(randomLogUser())
                    .build();
     }
 }

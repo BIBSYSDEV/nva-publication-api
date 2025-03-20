@@ -75,6 +75,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate.Builder;
@@ -336,14 +337,15 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
     @MethodSource("publicationInstanceProvider")
     void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized(
-        Class<?> instanceType) throws JsonProcessingException {
+        Class<?> instanceType) throws JsonProcessingException, BadRequestException {
 
         var publication = randomPublication(instanceType);
         var fakeUriRetriever = FakeUriRetriever.newInstance();
+        var resource = Resource.fromPublication(publication).persistNew(resourceService,
+                                                             UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
 
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
-
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, publication);
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, resource);
         var json = objectMapper.readTree(expandedResource.toJsonString());
         assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
@@ -418,10 +420,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     private Publication createPublishedPublicationWithoutDoi(Class<?> instanceType) throws ApiGatewayException {
         var publication = randomPublicationWithoutDoi(instanceType);
-        var persistedPublication = Resource.fromPublication(publication)
-                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
-        resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                           persistedPublication.getIdentifier());
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
         return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 
@@ -471,9 +472,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
                 return createExpandedImportCandidate(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
-                resourceService.publishPublication(UserInstance.fromPublication(publication),
-                                                   publication.getIdentifier());
-                var publishedPublication = resourceService.getPublication(publication);
+                Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
+                var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
                 return new ExpandedDataEntryWithAssociatedPublication(
                     randomDoiRequest(publishedPublication, expansionService, resourceService, messageService,
                                      ticketService));
@@ -499,7 +499,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                                              ResourceExpansionService expansionService,
                                                                              TicketService ticketService)
             throws NotFoundException, JsonProcessingException {
-            var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
+            var userInstance = UserInstance.fromPublication(publication);
+            var request = GeneralSupportRequest.create(Resource.fromPublication(publication), userInstance);
             return ExpandedGeneralSupportRequest.create(request, resourceService, expansionService,
                                                         ticketService);
         }
@@ -567,5 +568,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
             return requestCase;
         }
+    }
+
+    private static UserInstance randomUserInstance() {
+        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
+                                List.of(), UserClientType.INTERNAL);
     }
 }

@@ -14,8 +14,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactResponse;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
@@ -50,7 +51,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     public static final Set<Class<? extends File>> INITIAL_FILE_TYPES = Set.of(PendingOpenFile.class,
                                                                                PendingInternalFile.class,
-                                                                               HiddenFile.class);
+                                                                               HiddenFile.class,
+                                                                               UploadedFile.class);
     @JsonProperty(IDENTIFIER_FIELD)
     private final UUID identifier;
     @JsonProperty(NAME_FIELD)
@@ -178,8 +180,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         this.rightsRetentionStrategy = rightsRetentionStrategy;
     }
 
-    public boolean fileDoesNotHaveActiveEmbargo() {
-        return getEmbargoDate().map(date -> Instant.now().isAfter(date)).orElse(true);
+    public boolean hasActiveEmbargo() {
+        return getEmbargoDate().map(date -> !Instant.now().isAfter(date)).orElse(false);
     }
 
     public PendingOpenFile toPendingOpenFile() {
@@ -241,10 +243,10 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     }
 
     @Override
-    public AssociatedArtifactResponse toDto() {
-        return FileResponse.builder()
+    public AssociatedArtifactDto toDto() {
+        return FileDto.builder()
                    .withType(getArtifactType())
-                   .withIdentifier(getIdentifier())
+                   .withIdentifier(new SortableIdentifier(getIdentifier().toString()))
                    .withName(getName())
                    .withMimeType(getMimeType())
                    .withSize(getSize())

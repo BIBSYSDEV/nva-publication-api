@@ -94,35 +94,31 @@ public class TicketService extends ServiceWithTransactions {
                    .orElseThrow(TicketService::notFoundException);
     }
 
-    public TicketEntry fetchTicket(TicketEntry dataEntry)
-        throws NotFoundException {
+    public TicketEntry fetchTicket(TicketEntry dataEntry) throws NotFoundException {
         return fetchTicket(UserInstance.fromTicket(dataEntry), dataEntry.getIdentifier());
     }
 
     //TODO: should not return anything because we cannot return the persisted entry after a PUT
     // and right now we are returning the input object.
-    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, Username finalizedBy)
+    public TicketEntry updateTicketStatus(TicketEntry ticketEntry, TicketStatus ticketStatus, UserInstance userInstance)
         throws ApiGatewayException {
-        switch (ticketStatus) {
-            case COMPLETED:
-                return completeTicket(ticketEntry, finalizedBy);
-            case CLOSED:
-                return closeTicket(ticketEntry, finalizedBy);
-            default:
-                throw new BadRequestException("Cannot update to status " + ticketStatus);
-        }
+        return switch (ticketStatus) {
+            case COMPLETED -> completeTicket(ticketEntry, userInstance);
+            case CLOSED -> closeTicket(ticketEntry, userInstance);
+            default -> throw new BadRequestException("Cannot update to status " + ticketStatus);
+        };
     }
 
     public <T extends TicketEntry> Optional<T> fetchTicketByResourceIdentifier(URI customerId,
                                                                                SortableIdentifier resourceIdentifier,
                                                                                Class<T> ticketType) {
 
-        TicketDao dao = (TicketDao) TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
+        TicketDao dao = TicketEntry.createQueryObject(customerId, resourceIdentifier, ticketType).toDao();
         return dao.fetchByResourceIdentifier(getClient()).map(Dao::getData).map(ticketType::cast);
     }
 
     public List<Message> fetchTicketMessages(TicketEntry ticketEntry) {
-        var dao = (TicketDao) ticketEntry.toDao();
+        var dao = ticketEntry.toDao();
         return dao.fetchTicketMessages(getClient())
                    .map(MessageDao::getData)
                    .map(Message.class::cast)
@@ -131,7 +127,7 @@ public class TicketService extends ServiceWithTransactions {
 
     public TicketEntry refreshTicket(TicketEntry ticket) {
         var refreshedTicket = ticket.refresh();
-        var dao = (TicketDao) refreshedTicket.toDao();
+        var dao = refreshedTicket.toDao();
         getClient().putItem(dao.createPutItemRequest());
         return refreshedTicket;
     }
@@ -168,7 +164,7 @@ public class TicketService extends ServiceWithTransactions {
         var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
         var updatedAssignee = existingTicket.updateAssignee(publication, assignee);
 
-        var dao = (TicketDao) updatedAssignee.toDao();
+        var dao = updatedAssignee.toDao();
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return updatedAssignee;
@@ -184,28 +180,25 @@ public class TicketService extends ServiceWithTransactions {
         }
     }
 
-    protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {
+    protected TicketEntry completeTicket(TicketEntry ticketEntry, UserInstance userInstance) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-        var existingTicket =
-            attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
-                .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
-                .orElseThrow(fail -> notFoundException());
-        injectAssigneeWhenUnassigned(existingTicket, username);
-        var completed = attempt(() -> existingTicket.complete(publication, username))
+        var existingTicket = fetchTicket(ticketEntry);
+        injectAssigneeWhenUnassigned(existingTicket, userInstance);
+        var completed = attempt(() -> existingTicket.complete(publication, userInstance))
                             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
-        var putItemRequest = ((TicketDao) completed.toDao()).createPutItemRequest();
+        var putItemRequest = completed.toDao().createPutItemRequest();
         getClient().putItem(putItemRequest);
         return completed;
     }
 
-    protected TicketEntry closeTicket(TicketEntry pendingTicket, Username username) throws ApiGatewayException {
+    protected TicketEntry closeTicket(TicketEntry pendingTicket, UserInstance userInstance) throws ApiGatewayException {
         //TODO: can we get both entries at the same time using the single table design?
         resourceService.getPublicationByIdentifier(pendingTicket.getResourceIdentifier());
         var persistedTicket = fetchTicketByIdentifier(pendingTicket.getIdentifier());
-        var closedTicket = persistedTicket.close(username);
-        injectAssigneeWhenUnassigned(closedTicket, username);
-        var dao = (TicketDao) closedTicket.toDao();
+        var closedTicket = persistedTicket.close(userInstance);
+        injectAssigneeWhenUnassigned(closedTicket, userInstance);
+        var dao = closedTicket.toDao();
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return closedTicket;
@@ -219,21 +212,14 @@ public class TicketService extends ServiceWithTransactions {
         return new NotFoundException(TICKET_NOT_FOUND);
     }
 
-    private void injectAssigneeWhenUnassigned(TicketEntry ticketEntry, Username username) {
+    private void injectAssigneeWhenUnassigned(TicketEntry ticketEntry, UserInstance userInstance) {
         if (isUnassigned(ticketEntry)) {
-            ticketEntry.setAssignee(username);
+            ticketEntry.setAssignee(new Username(userInstance.getUsername()));
         }
     }
 
     private ApiGatewayException handlerTicketUpdateFailure(Exception exception) {
         return new BadRequestException(exception.getMessage(), exception);
-    }
-
-    //TODO: should try to fetch ticket only by ticket identifier
-    private TicketEntry fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(TicketEntry ticketEntry) {
-        return fetchTicketByResourceIdentifier(ticketEntry.getCustomerId(),
-                                               ticketEntry.getResourceIdentifier(),
-                                               ticketEntry.getClass()).orElseThrow();
     }
 
     private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) {

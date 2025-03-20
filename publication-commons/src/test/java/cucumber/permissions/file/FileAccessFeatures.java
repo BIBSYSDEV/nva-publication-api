@@ -1,26 +1,19 @@
 package cucumber.permissions.file;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import cucumber.permissions.FileOwner;
+import cucumber.permissions.PermissionsRole;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.time.Instant;
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permissions.file.FilePermissions;
+import no.unit.nva.model.PublicationStatus;
 
 public class FileAccessFeatures {
 
-    public static final String EMPTY_PROPERTY = "";
     private final FileScenarioContext scenarioContext;
 
     public FileAccessFeatures(FileScenarioContext scenarioContext) {
@@ -28,37 +21,33 @@ public class FileAccessFeatures {
     }
 
     @Given("a file of type {string}")
-    public void aFileOfTheType(String string) throws ClassNotFoundException {
-        var file = createFile(string, EMPTY_PROPERTY);
-        scenarioContext.setPublication(randomNonDegreePublication());
-        scenarioContext.setFile(file);
+    public void aFileOfTheType(String fileType) throws ClassNotFoundException {
+        scenarioContext.setFileType(fileType);
     }
 
     @Given("a file of type {string} with property {string}")
     public void aFileOfTheTypeAndWithProperty(String fileType, String fileProperty) throws ClassNotFoundException {
-        var file = createFile(fileType, fileProperty);
-        if (fileProperty.toLowerCase().contains("degree")) {
-            scenarioContext.setPublication(randomDegreePublication());
-        } else {
-            scenarioContext.setPublication(randomNonDegreePublication());
-        }
-        scenarioContext.setFile(file);
+        scenarioContext.setFileType(fileType);
+        scenarioContext.setIsDegree(fileProperty.toLowerCase().contains("degree"));
+        scenarioContext.setIsEmbargo(fileProperty.toLowerCase().contains("embargo"));
     }
 
-    @SuppressWarnings("unchecked")
-    private static File createFile(String fileType, String fileProperty) throws ClassNotFoundException {
-        var clazz = (Class<File>) Class.forName(File.class.getPackageName() + "." + fileType);
-        var file = File.builder();
-        if (fileProperty.toLowerCase().contains("embargo")) {
-            file.withEmbargoDate(Instant.now().plus(100, DAYS));
-        }
-        return file.build(clazz);
+    @Given("a file of type {string} and publication status {string}")
+    public void aFileOfTypeAndPublicationStatus(String fileType, String publicationStatus)
+        throws ClassNotFoundException {
+        scenarioContext.setFileType(fileType);
+        scenarioContext.setPublicationStatus(PublicationStatus.valueOf(publicationStatus));
     }
 
     @When("the user have the role {string}")
-    public void theUserHaveTheRole(String useraRole) {
-        var user = UserInstance.create(randomString(), randomUri());
-        scenarioContext.setUser(user);
+    public void theUserHaveTheRole(String userRole) {
+        scenarioContext.setRoles(PermissionsRole.lookup(userRole));
+        scenarioContext.setFileBelongsToSameOrg(userRole.toLowerCase().contains("at x"));
+    }
+
+    @When("the file is owned by {string}")
+    public void theFileIsOwnedBy(String fileOwner) {
+        scenarioContext.setFileOwner(FileOwner.lookup(fileOwner));
     }
 
     @And("the user attempts to {string}")
@@ -68,11 +57,10 @@ public class FileAccessFeatures {
 
     @Then("the action outcome is {string}")
     public void theActionOutcomeIs(String outcome) {
-        var permissionStrategy = new FilePermissions(scenarioContext.getFile(), scenarioContext.getUser(),
-                                                     scenarioContext.getPublication());
+        var filePermissions = scenarioContext.getFilePermissions();
         var expected = outcome.equals("Allowed");
 
-        var actual = permissionStrategy.allowsAction(scenarioContext.getFileOperation());
+        var actual = filePermissions.allowsAction(scenarioContext.getFileOperation());
 
         assertThat(actual, is(equalTo(expected)));
     }

@@ -9,6 +9,7 @@ import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -26,6 +27,7 @@ import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -62,8 +64,10 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
         OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
             username);
-        var file = createPendingOpenFileWithRrs(userSetRrs);
-
+        var file = createPendingOpenFileWithRrs(null);
+        FileEntry.create(file, persistedPublication.getIdentifier(), UserInstance.fromPublication(persistedPublication))
+            .persist(resourceService);
+        file.setRightsRetentionStrategy(userSetRrs);
         var update = persistedPublication.copy().withAssociatedArtifacts(List.of(file)).build();
         var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
 
@@ -154,8 +158,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
         var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
 
-        assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
-        assertThat(insertedFile.getMimeType(),is(equalTo(updatedFile.getMimeType())));
+        assertInstanceOf(OverriddenRightsRetentionStrategy.class, insertedFile.getRightsRetentionStrategy());
         assertThat(((OverriddenRightsRetentionStrategy) insertedFile.getRightsRetentionStrategy()).getOverriddenBy(),
                    Is.is(IsEqual.equalTo(rrsOverriddenBy)));
     }

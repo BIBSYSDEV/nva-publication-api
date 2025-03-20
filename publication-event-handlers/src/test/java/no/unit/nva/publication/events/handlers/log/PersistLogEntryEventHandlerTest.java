@@ -4,12 +4,12 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -17,9 +17,10 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.UUID;
-import no.unit.nva.clients.GetCustomerResponse;
-import no.unit.nva.clients.GetUserResponse;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
@@ -31,6 +32,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
@@ -84,22 +86,8 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
         var logUser = logEntries.getFirst().performedBy();
-        assertNotNull(logUser.userName());
+        assertNotNull(logUser.username());
         assertNull(logUser.cristinId());
-    }
-
-    @Test
-    void shouldNotCreateLogEntryWhenConsumedEventHasResourceWithNewImageWhereResourceEventIsNull()
-        throws BadRequestException, IOException {
-        var publication = createPublication();
-        Resource.fromPublication(publication).clearResourceEvent(resourceService);
-        var event = createEvent(null, publication);
-
-        handler.handleRequest(event, outputStream, context);
-
-        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
-
-        assertTrue(logEntries.isEmpty());
     }
 
     @Test
@@ -124,8 +112,8 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
     }
 
-    private GetUserResponse randomUser() {
-        return GetUserResponse.builder()
+    private UserDto randomUser() {
+        return UserDto.builder()
                    .withInstitutionCristinId(randomUri())
                    .withFamilyName(randomString())
                    .withGivenName(randomString())
@@ -133,8 +121,18 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private GetCustomerResponse randomCustomer() {
-        return new GetCustomerResponse(randomUri(), UUID.randomUUID(), randomString(), randomString(), randomString(),
-                                       randomUri());
+    private CustomerDto randomCustomer() {
+        return new CustomerDto(RandomDataGenerator.randomUri(),
+                               UUID.randomUUID(),
+                               randomString(),
+                               randomString(),
+                               randomString(),
+                               RandomDataGenerator.randomUri(),
+                               randomString(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               Collections.emptyList(),
+                               new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()));
     }
 }

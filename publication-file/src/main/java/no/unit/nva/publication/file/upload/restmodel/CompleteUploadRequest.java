@@ -7,7 +7,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(name = InternalCompleteUploadRequest.TYPE, value = InternalCompleteUploadRequest.class),
+@JsonSubTypes({
+    @JsonSubTypes.Type(name = InternalCompleteUploadRequest.TYPE, value = InternalCompleteUploadRequest.class),
     @JsonSubTypes.Type(name = ExternalCompleteUploadRequest.TYPE, value = ExternalCompleteUploadRequest.class)})
 public interface CompleteUploadRequest {
 

@@ -13,6 +13,7 @@ import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -124,7 +125,7 @@ public class RequestUtilsTest {
         var expectedUserInstance = new UserInstance(requestInfo.getUserName(),
                                                     requestInfo.getCurrentCustomer(),
                                                     requestInfo.getTopLevelOrgCristinId().orElseThrow(),
-                                                    requestInfo.getPersonCristinId(),
+                                                    requestInfo.getPersonAffiliation(), requestInfo.getPersonCristinId(),
                                                     requestInfo.getAccessRights(),
                                                     UserClientType.INTERNAL);
         var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo).toUserInstance();
@@ -137,6 +138,20 @@ public class RequestUtilsTest {
 
         Assertions.assertTrue(RequestUtils.fromRequestInfo(requestInfo)
                                   .hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS));
+    }
+
+    @Test
+    void shouldReturnNullWhenPersonAffiliationIsMissing() throws UnauthorizedException {
+        var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
+
+        Assertions.assertNull(RequestUtils.fromRequestInfo(requestInfo).personAffiliation());
+    }
+
+    @Test
+    void shouldReturnPersonAffiliationWhenPersonAffiliationIsPresent() throws UnauthorizedException {
+        var requestInfo = mockedRequestInfo();
+
+        assertNotNull(RequestUtils.fromRequestInfo(requestInfo).personAffiliation());
     }
 
     private static Publication publicationWithOwner(String owner) {
@@ -162,6 +177,7 @@ public class RequestUtilsTest {
         when(requestInfo.getAccessRights()).thenReturn(List.of());
         when(requestInfo.getPersonCristinId()).thenReturn(randomUri());
         when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(randomUri()));
+        when(requestInfo.getPersonAffiliation()).thenReturn(randomUri());
         return requestInfo;
     }
 

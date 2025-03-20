@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -8,8 +9,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
@@ -47,8 +51,11 @@ class FilePermissionTest {
     }
 
     private static FilePermissions getFilePermissions(File file) {
-        return FilePermissions.create(file,
+        var fileEntry = FileEntry.create(file, SortableIdentifier.next(),
+                                         UserInstance.create(randomString(), randomUri()));
+        var resource = Resource.fromPublication(randomNonDegreePublication()).copy().withStatus(PUBLISHED).build();
+        return FilePermissions.create(fileEntry,
                                       UserInstance.create(randomString(), randomUri()),
-                                      randomNonDegreePublication());
+                                      resource);
     }
 }

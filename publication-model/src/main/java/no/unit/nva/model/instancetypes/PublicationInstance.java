@@ -44,6 +44,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.CaseReport;
 import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
+import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
@@ -120,6 +121,7 @@ import no.unit.nva.model.pages.Pages;
     @JsonSubTypes.Type(name = "JournalIssue", value = JournalIssue.class),
     @JsonSubTypes.Type(name = "ConferenceAbstract", value = ConferenceAbstract.class),
     @JsonSubTypes.Type(name = "MediaFeatureArticle", value = MediaFeatureArticle.class),
+    @JsonSubTypes.Type(name = "FeatureArticle", value = FeatureArticle.class),
     @JsonSubTypes.Type(name = "MediaBlogPost", value = MediaBlogPost.class),
     @JsonSubTypes.Type(name = "MediaInterview", value = MediaInterview.class),
     @JsonSubTypes.Type(name = "MediaParticipationInRadioOrTv", value = MediaParticipationInRadioOrTv.class),

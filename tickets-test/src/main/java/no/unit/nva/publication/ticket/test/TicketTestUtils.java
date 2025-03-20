@@ -367,7 +367,7 @@ public final class TicketTestUtils {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                 .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
                 .persistNewTicket(ticketService)
-                .close(new Username("Username"));
+                .close(UserInstance.create("Username", randomUri()));
     }
 
     public static TicketEntry createCompletedTicket(
@@ -379,7 +379,7 @@ public final class TicketTestUtils {
                 TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                         .withOwner(UserInstance.fromPublication(publication).getUsername())
                         .persistNewTicket(ticketService)
-                        .complete(publication, new Username("Username"));
+                        .complete(publication, UserInstance.create("Username", randomUri()));
         completedTicket.persistUpdate(ticketService);
         return completedTicket;
     }
@@ -413,11 +413,8 @@ public final class TicketTestUtils {
     }
 
     private static void publishPublication(
-            ResourceService resourceService, Publication persistedPublication)
-            throws ApiGatewayException {
-        resourceService.publishPublication(
-                UserInstance.fromPublication(persistedPublication),
-                persistedPublication.getIdentifier());
+            ResourceService resourceService, Publication publication) {
+        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
     }
 
     private static Publication randomPublicationWithStatusAndOwner(

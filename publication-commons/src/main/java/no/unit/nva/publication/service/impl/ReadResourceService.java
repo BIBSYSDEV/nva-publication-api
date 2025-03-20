@@ -6,6 +6,7 @@ import static no.unit.nva.publication.model.business.Resource.resourceQueryObjec
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -17,25 +18,37 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ReadResourceService {
 
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
 
-    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
+    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource ";
     public static final int DEFAULT_LIMIT = 100;
     private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
     private final AmazonDynamoDB client;
@@ -46,24 +59,76 @@ public class ReadResourceService {
         this.tableName = tableName;
     }
 
-    public Publication getPublication(Publication publication) throws NotFoundException {
-        return getResource(Resource.fromPublication(publication)).toPublication();
-    }
-
-    public List<Publication> getResourcesByOwner(UserInstance userInstance) {
+    public List<PublicationSummary> getResourcesByOwner(UserInstance userInstance) {
         var partitionKey = constructPrimaryPartitionKey(userInstance);
         var querySpec = partitionKeyToQuerySpec(partitionKey);
         var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
         var namesMap = querySpec.getNameMap();
         var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap, DEFAULT_LIMIT);
 
-        return queryResultToListOfPublications(result);
+        return queryResultToListOfPublicationSummaries(result);
     }
 
-    public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        var queryObject = new ResourceDao(resourceQueryObject(identifier));
-        var queryResult = queryObject.fetchByIdentifier(client, tableName);
-        return (Resource) queryResult.getData();
+    public Optional<Resource> getResourceByIdentifier(SortableIdentifier identifier) {
+        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
+        var queryRequest = new QueryRequest()
+                               .withTableName(tableName)
+                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                               .withKeyConditionExpression("#PK3 = :value")
+                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
+                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+
+        var entries = client.query(queryRequest).getItems().stream()
+                          .map(map -> parseAttributeValuesMap(map, Dao.class))
+                          .toList();
+
+        var resource = extractResource(entries);
+        var fileEntries = extractFileEntries(entries);
+
+        resource.ifPresent(res -> {
+            var associatedArtifacts = new ArrayList<AssociatedArtifact>();
+
+            var files = fileEntries.stream().map(FileEntry::getFile).toList();
+            var associatedLinks = res.getAssociatedArtifacts().stream()
+                                      .filter(associatedArtifact -> !(associatedArtifact instanceof File))
+                                      .toList();
+
+            associatedArtifacts.addAll(files);
+            associatedArtifacts.addAll(associatedLinks);
+
+            res.setFileEntries(fileEntries);
+            res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+        });
+        return resource;
+    }
+
+    public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
+        var dao = (ResourceDao) resource.toDao();
+        return dao.fetchAllTickets(client)
+                   .stream()
+                   .map(TicketDao::getData)
+                   .map(TicketEntry.class::cast)
+                   .filter(ReadResourceService::isNotRemoved);
+    }
+
+    private static boolean isNotRemoved(TicketEntry ticket) {
+        return !TicketStatus.REMOVED.equals(ticket.getStatus());
+    }
+
+    private static Optional<Resource> extractResource(List<Dao> entries) {
+        return entries.stream()
+                   .filter(ResourceDao.class::isInstance)
+                   .map(ResourceDao.class::cast)
+                   .map(ResourceDao::getResource)
+                   .findFirst();
+    }
+
+    private static List<FileEntry> extractFileEntries(List<Dao> entries) {
+        return entries.stream()
+                   .filter(FileDao.class::isInstance)
+                   .map(FileDao.class::cast)
+                   .map(FileDao::getFileEntry)
+                   .toList();
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
@@ -117,7 +182,14 @@ public class ReadResourceService {
         return queryResultToResourceList(result)
                    .stream()
                    .map(Resource::toPublication)
-                   .collect(Collectors.toList());
+                   .toList();
+    }
+
+    private List<PublicationSummary> queryResultToListOfPublicationSummaries(QueryResult result) {
+        return queryResultToResourceList(result)
+                   .stream()
+                   .map(Resource::toSummary)
+                   .toList();
     }
 
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,

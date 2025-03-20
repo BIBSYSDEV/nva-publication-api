@@ -1,3 +1,7 @@
+plugins {
+    id 'java-test-fixtures'
+}
+
 dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-model")
@@ -39,6 +43,11 @@ dependencies {
     testImplementation libs.bundles.testing
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
+
+
+    testFixturesImplementation project(":publication-model")
+    testFixturesImplementation libs.nva.testutils
+    testFixturesImplementation libs.nva.apigateway
 }
 
 test {

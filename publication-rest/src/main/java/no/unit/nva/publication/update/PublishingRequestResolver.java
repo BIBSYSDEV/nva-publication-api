@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -65,10 +64,6 @@ public final class PublishingRequestResolver {
         return TicketStatus.PENDING.equals(publishingRequest.getStatus());
     }
 
-    private Username getUsername() {
-        return new Username(userInstance.getUsername());
-    }
-
     private void handlePublishingRequest(Publication oldImage, Publication newImage) {
         var pendingPublishingRequests = fetchPendingPublishingRequestsForUserInstitution(oldImage);
         if (pendingPublishingRequests.isEmpty()) {
@@ -93,7 +88,7 @@ public final class PublishingRequestResolver {
     private void autoCompletePendingPublishingRequestsIfNeeded(
         Publication publication, List<PublishingRequestCase> pendingPublishingRequests) {
         pendingPublishingRequests.forEach(
-            ticket -> ticket.complete(publication, getUsername()).persistUpdate(ticketService));
+            ticket -> ticket.complete(publication, userInstance).persistUpdate(ticketService));
     }
 
     private boolean thereAreNoPendingFiles(Publication publicationUpdate) {
@@ -123,22 +118,19 @@ public final class PublishingRequestResolver {
         throws ApiGatewayException {
         return customerAllowsPublishingMetadataAndFiles()
                    ? publishingRequest
-                         .publishApprovedFile()
-                         .persistAutoComplete(ticketService, newImage, getUsername())
+                         .approveFiles()
+                         .persistAutoComplete(ticketService, newImage, userInstance)
                    : publishingRequest.persistNewTicket(ticketService);
     }
 
     private void persistPendingPublishingRequest(Publication oldImage, Publication newImage) {
         var files = getNewPendingFiles(oldImage, newImage).collect(Collectors.toSet());
-        attempt(() -> TicketEntry.requestNewTicket(newImage, PublishingRequestCase.class))
-            .map(PublishingRequestCase.class::cast)
-            .map(publishingRequest ->
-                     publishingRequest.withOwnerAffiliation(userInstance.getTopLevelOrgCristinId()))
-            .map(publishingRequest -> publishingRequest.withWorkflow(lookUp(customer.getPublicationWorkflow())))
-            .map(publishingRequest -> publishingRequest.withFilesForApproval(files))
-            .map(publishingRequest -> publishingRequest.withOwner(userInstance.getUsername()))
-            .map(PublishingRequestCase.class::cast)
-            .map(publishingRequest -> persistPublishingRequest(newImage, publishingRequest));
+        var resource = Resource.fromPublication(newImage);
+        var workflow = lookUp(customer.getPublicationWorkflow());
+        var publishingRequest = PublishingRequestCase
+                                    .createWithFilesForApproval(resource, userInstance, workflow, files);
+
+        attempt(() -> persistPublishingRequest(newImage, publishingRequest));
     }
 
     private boolean containsNewPublishableFiles(Publication oldImage, Publication newImage) {
@@ -157,13 +149,11 @@ public final class PublishingRequestResolver {
     private Stream<File> prepareFilesForApproval(Publication oldImage, Publication newImage,
                                                  PublishingRequestCase publishingRequest) {
         // get updated files on the ticket
-        Set<File> updatedTicketFiles = getUpdatedTicketFiles(publishingRequest, newImage);
+        var updatedTicketFiles = getUpdatedTicketFiles(publishingRequest, newImage);
         // start with a list of updated files on the ticket
         var files = new ArrayList<>(updatedTicketFiles);
         // add new files that should be on the ticket (we assume all new files belongs to the current ticket)
         files.addAll(getNewPendingFiles(oldImage, newImage).toList());
-        // remove files from ticket that has been removed
-        files.removeAll(getRemovedFiles(updatedTicketFiles, newImage));
 
         return files.stream();
     }
@@ -174,6 +164,7 @@ public final class PublishingRequestResolver {
                    .map(fileForApproval -> newImage.getFile(fileForApproval.getIdentifier()).orElse(null))
                    .filter(
                        Objects::nonNull)
+                   .filter(PendingFile.class::isInstance)
                    .collect(Collectors.toSet());
     }
 
@@ -181,8 +172,8 @@ public final class PublishingRequestResolver {
         var existingPendingFiles = getPendingFiles(oldImage).toList();
         var newPendingFiles = new ArrayList<>(getPendingFiles(newImage).toList());
         newPendingFiles.removeIf(
-            newFile -> existingPendingFiles.stream().map(File::getIdentifier).anyMatch(oldFile -> oldFile.equals(newFile
-                                                                                                                     .getIdentifier())));
+            newFile -> existingPendingFiles.stream().map(File::getIdentifier)
+                           .anyMatch(oldFile -> oldFile.equals(newFile.getIdentifier())));
         return newPendingFiles.stream();
     }
 
@@ -192,22 +183,14 @@ public final class PublishingRequestResolver {
         if (customerAllowsPublishingMetadataAndFiles()) {
             publishingRequest
                 .withFilesForApproval(files)
-                .publishApprovedFile()
-                .complete(newImage, getUsername())
+                .approveFiles()
+                .complete(newImage, userInstance)
                 .persistUpdate(ticketService);
         } else {
             publishingRequest
                 .withFilesForApproval(files)
                 .persistUpdate(ticketService);
         }
-    }
-
-    private List<File> getRemovedFiles(Set<File> oldPendingFiles, Publication updatedPublication) {
-        var newPendingFiles = getPendingFiles(updatedPublication).toList();
-        oldPendingFiles.removeIf(
-            oldFile -> newPendingFiles.stream().map(File::getIdentifier).anyMatch(newFile -> newFile.equals(oldFile
-                                                                                                                .getIdentifier())));
-        return oldPendingFiles.stream().toList();
     }
 
     private boolean isAlreadyPublished(Publication existingPublication) {

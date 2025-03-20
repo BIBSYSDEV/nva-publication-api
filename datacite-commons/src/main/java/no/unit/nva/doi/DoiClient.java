@@ -2,10 +2,11 @@ package no.unit.nva.doi;
 
 import java.net.URI;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.Resource;
 
 public interface DoiClient {
 
-    URI generateDraftDoi(Publication publication);
+    URI generateDraftDoi(Resource publication);
 
     URI createFindableDoi(Publication publication);
 

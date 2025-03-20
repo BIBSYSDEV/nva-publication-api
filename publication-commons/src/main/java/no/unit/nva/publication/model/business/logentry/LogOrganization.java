@@ -3,7 +3,7 @@ package no.unit.nva.publication.model.business.logentry;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
-import no.unit.nva.clients.GetCustomerResponse;
+import no.unit.nva.clients.CustomerDto;
 
 @JsonTypeName(LogOrganization.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -11,7 +11,7 @@ public record LogOrganization(URI id, URI topLevelOrgCristinId, String shortName
 
     public static final String TYPE = "LogOrganization";
 
-    public static LogOrganization fromGetCustomerResponse(GetCustomerResponse getCustomerResponse) {
+    public static LogOrganization fromCustomerDto(CustomerDto getCustomerResponse) {
         return new LogOrganization(getCustomerResponse.id(), getCustomerResponse.cristinId(),
                                    getCustomerResponse.shortName(), getCustomerResponse.displayName());
     }

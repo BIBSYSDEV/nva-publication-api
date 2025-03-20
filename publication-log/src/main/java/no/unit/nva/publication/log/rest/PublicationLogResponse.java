@@ -8,6 +8,7 @@ import java.util.List;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
+import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PublicationLogResponse.TYPE)
@@ -24,6 +25,7 @@ public record PublicationLogResponse(List<LogEntryDto> logEntries) {
         return switch (logEntry) {
             case PublicationLogEntry publicationLogEntry -> PublicationLogEntryDto.fromLogEntry(publicationLogEntry);
             case FileLogEntry fileLogEntry -> FileLogEntryDto.fromLogEntry(fileLogEntry);
+            case TicketLogEntry ticketLogEntry -> TicketLogEntryDto.fromLogEntry(ticketLogEntry);
             default -> throw new IllegalStateException("Unknown logentry: " + logEntry.getClass().getSimpleName());
         };
     }

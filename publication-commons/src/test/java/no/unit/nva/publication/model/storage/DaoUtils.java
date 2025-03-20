@@ -58,13 +58,14 @@ public final class DaoUtils extends TestDataSource {
 
     public static DoiRequestDao doiRequestDao() {
         var publication = randomPublicationEligibleForDoiRequest();
-        var doiRequest = (DoiRequest) DoiRequest.fromPublication(publication).withOwner(randomString());
+        var doiRequest = DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         return new DoiRequestDao(doiRequest);
     }
 
     public static DoiRequestDao doiRequestDao(ResourceDao resourceDao) {
         var resource = (Resource) resourceDao.getData();
-        var doiRequest = DoiRequest.newDoiRequestForResource(resource);
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var doiRequest = DoiRequest.create(resource, userInstance);
         return new DoiRequestDao(doiRequest);
     }
 
