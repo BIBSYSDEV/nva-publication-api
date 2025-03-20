@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 public class LogEntryService {
 
     public static final String PERSISTING_LOG_ENTRY_MESSAGE = "Persisting log entry for event {} for resource {}";
-    public static final String PERSISTING_FILE_LOG_ENTRY_MESSAGE =
-        "Persisting log entry for event {} for file {} for resource {}";
+    public static final String PERSISTING_FILE_LOG_ENTRY_MESSAGE = "Persisting log entry for event {} for file {} for" +
+                                                                   " resource {}";
     public static final Logger logger = LoggerFactory.getLogger(LogEntryService.class);
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -72,9 +72,7 @@ public class LogEntryService {
     }
 
     private void persistLogEntry(DoiRequest doiRequest) {
-        Optional.ofNullable(doiRequest)
-            .filter(DoiRequest::hasTicketEvent)
-            .ifPresent(this::createLogEntry);
+        Optional.ofNullable(doiRequest).filter(DoiRequest::hasTicketEvent).ifPresent(this::createLogEntry);
     }
 
     private void createLogEntry(DoiRequest doiRequest) {
@@ -86,7 +84,7 @@ public class LogEntryService {
 
     private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {
         if (resourceEvent instanceof ImportedResourceEvent || resourceEvent instanceof MergedResourceEvent) {
-            var organization = logOrganizationFromCristinId(resourceEvent.institution());
+            var organization = fetchOrganization(resourceEvent.institution());
             return resourceEvent.toLogEntry(resource.getIdentifier(), organization);
         } else {
             var user = createUser(resourceEvent.user(), resourceEvent.institution());
@@ -94,7 +92,7 @@ public class LogEntryService {
         }
     }
 
-    private LogOrganization logOrganizationFromCristinId(URI organizationId) {
+    private LogOrganization fetchOrganization(URI organizationId) {
         return cristinClient.getOrganization(organizationId)
                    .map(LogOrganization::fromCristinOrganization)
                    .orElse(LogOrganization.fromCristinId(organizationId));
@@ -104,7 +102,7 @@ public class LogEntryService {
         var fileEvent = fileEntry.getFileEvent();
         if (fileEvent instanceof FileImportedEvent) {
             var userDto = getUser(fileEvent.user());
-            var organization = logOrganizationFromCristinId(userDto.institutionCristinId());
+            var organization = fetchOrganization(userDto.institutionCristinId());
             fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
         } else {
             var user = createUser(fileEvent.user(), null);
@@ -113,7 +111,8 @@ public class LogEntryService {
         var fileIdentifier = fileEntry.getIdentifier();
         var resourceIdentifier = fileEntry.getResourceIdentifier();
 
-        logger.info(PERSISTING_FILE_LOG_ENTRY_MESSAGE, fileEntry.getFile().getClass().getSimpleName(), fileIdentifier, resourceIdentifier);
+        logger.info(PERSISTING_FILE_LOG_ENTRY_MESSAGE, fileEntry.getFile().getClass().getSimpleName(), fileIdentifier,
+                    resourceIdentifier);
     }
 
     private LogUser createUser(User user, URI institution) {
