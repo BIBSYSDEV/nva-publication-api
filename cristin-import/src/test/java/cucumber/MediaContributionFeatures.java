@@ -14,9 +14,7 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
-import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
-import no.unit.nva.cristin.mapper.MediaContributionBuilder;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -104,7 +102,7 @@ public class MediaContributionFeatures {
                                  .findFirst()
                                  .orElseThrow();
 
-        assertThat(associatedLink.getId(), is(equalTo(URI.create(string))));
+        assertThat(associatedLink.id(), is(equalTo(URI.create(string))));
     }
 
     @Given("the Cristin Result has main category MEDIEBIDRAG")

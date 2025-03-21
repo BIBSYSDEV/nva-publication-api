@@ -55,6 +55,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
@@ -847,7 +848,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         return PublicationGenerator.randomPublication(BookAnthology.class)
                    .copy()
                    .withDoi(doi)
-                   .withAssociatedArtifacts(List.of(new AssociatedLink(doi, null, null)))
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(doi, null, null, RelationType.SAME_AS)))
                    .build();
     }
 
@@ -856,7 +857,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         return PublicationGenerator.randomPublication(BookAnthology.class)
                    .copy()
                    .withHandle(handle)
-                   .withAssociatedArtifacts(List.of(new AssociatedLink(handle, null, null)))
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(handle, null, null, RelationType.SAME_AS)))
                    .build();
     }
 
@@ -865,7 +866,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         return PublicationGenerator.randomPublication(BookAnthology.class)
                    .copy()
                    .withLink(link)
-                   .withAssociatedArtifacts(List.of(new AssociatedLink(link, null, null)))
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(link, null, null, RelationType.SAME_AS)))
                    .build();
     }
 

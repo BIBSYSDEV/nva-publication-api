@@ -3,10 +3,14 @@ package no.unit.nva.cristin.mapper;
 import java.util.List;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.RelationType;
 
 public final class AssociatedLinkExtractor {
 
-    private static final List<String> ASSOCIATED_URI_TYPES = List.of("DATA", "FULLTEKST", "OMTALE");
+    public static final String DATA = "DATA";
+    public static final String FULLTEKST = "FULLTEKST";
+    public static final String OMTALE = "OMTALE";
+    private static final List<String> ASSOCIATED_URI_TYPES = List.of(DATA, FULLTEKST, OMTALE);
     private static final String HANDLE_DOMAIN = "handle";
 
     private AssociatedLinkExtractor() {
@@ -27,7 +31,16 @@ public final class AssociatedLinkExtractor {
     }
 
     private static AssociatedArtifact toAssociatedLink(CristinAssociatedUri cristinAssociatedUri) {
-        return new AssociatedLink(cristinAssociatedUri.toURI(), null, null);
+        return new AssociatedLink(cristinAssociatedUri.toURI(), null, null, getRelationType(cristinAssociatedUri));
+    }
+
+    private static RelationType getRelationType(CristinAssociatedUri cristinAssociatedUri) {
+        return switch (cristinAssociatedUri.getUrlType()) {
+            case DATA -> RelationType.DATASET;
+            case FULLTEKST -> RelationType.SAME_AS;
+            case OMTALE -> RelationType.MENTION;
+            default -> null;
+        };
     }
 
     private static boolean isAssociatedLink(CristinAssociatedUri cristinAssociatedUri) {

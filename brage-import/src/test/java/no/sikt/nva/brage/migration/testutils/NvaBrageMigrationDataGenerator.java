@@ -53,6 +53,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.pages.MonographPages;
@@ -412,14 +413,14 @@ public class NvaBrageMigrationDataGenerator {
         public List<AssociatedArtifact> getAssociatedArtifacts() {
             var artifacts = new ArrayList<AssociatedArtifact>();
             if (nonNull(link)) {
-                artifacts.add(new AssociatedLink(link, null, null));
+                artifacts.add(new AssociatedLink(link, null, null, RelationType.SAME_AS));
             }
             if (nonNull(associatedArtifacts)) {
                 artifacts.addAll(this.associatedArtifacts);
             }
             if (!subjects.isEmpty()) {
                 subjects.stream()
-                    .map(uri -> new AssociatedLink(uri, null, null))
+                    .map(uri -> new AssociatedLink(uri, null, null, RelationType.SAME_AS))
                     .forEach(artifacts::add);
             }
             return new AssociatedArtifactList(artifacts);

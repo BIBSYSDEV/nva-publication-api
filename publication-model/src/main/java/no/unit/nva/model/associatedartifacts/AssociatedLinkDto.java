@@ -1,14 +1,11 @@
 package no.unit.nva.model.associatedartifacts;
 
-import static no.unit.nva.model.associatedartifacts.AssociatedLink.DESCRIPTION_FIELD;
-import static no.unit.nva.model.associatedartifacts.AssociatedLink.ID_FIELD;
-import static no.unit.nva.model.associatedartifacts.AssociatedLink.NAME_FIELD;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 
-public record AssociatedLinkDto(@JsonProperty(ID_FIELD) URI id,
-                                @JsonProperty(NAME_FIELD) String name,
-                                @JsonProperty(DESCRIPTION_FIELD) String description) implements AssociatedArtifactDto {
+public record AssociatedLinkDto(URI id,
+                                String name,
+                                String description, RelationType relation) implements AssociatedArtifactDto {
 
     private static final String TYPE_NAME_FIELD = "type";
 

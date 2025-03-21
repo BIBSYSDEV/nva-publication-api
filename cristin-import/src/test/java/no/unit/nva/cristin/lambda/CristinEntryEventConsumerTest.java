@@ -1073,7 +1073,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var actualAssociatedLink = (AssociatedLink) publication.getAssociatedArtifacts().getFirst();
         var expectedAssociatedLinkValue = URI.create(value.trim());
 
-        assertThat(actualAssociatedLink.getId(), is(equalTo(expectedAssociatedLinkValue)));
+        assertThat(actualAssociatedLink.id(), is(equalTo(expectedAssociatedLinkValue)));
     }
 
     @Test
