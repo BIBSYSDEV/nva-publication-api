@@ -40,6 +40,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -461,7 +462,7 @@ public final class TicketTestUtils {
         return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
                 .copy()
                 .withStatus(status)
-                .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
+                .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null, RelationType.SAME_AS)))
                 .build();
     }
 

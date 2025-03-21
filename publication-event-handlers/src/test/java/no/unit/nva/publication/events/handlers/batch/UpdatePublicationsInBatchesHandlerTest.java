@@ -23,6 +23,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
@@ -202,7 +203,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         return List.of(File.builder().withLicense(license).withIdentifier(randomUUID()).buildOpenFile(),
                        File.builder().withLicense(license).withIdentifier(randomUUID()).buildInternalFile(),
                        File.builder().withLicense(license).withIdentifier(randomUUID()).buildPendingInternalFile(),
-                       new AssociatedLink(randomUri(), randomString(), randomString()));
+                       new AssociatedLink(randomUri(), randomString(), randomString(), RelationType.SAME_AS));
     }
 
     private List<Publication> createMultiplePublicationsWithPublisher(URI publisherId) {

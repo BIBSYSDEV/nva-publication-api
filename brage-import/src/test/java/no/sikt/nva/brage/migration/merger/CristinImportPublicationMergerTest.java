@@ -46,6 +46,7 @@ import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -77,7 +78,6 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -382,7 +382,7 @@ class CristinImportPublicationMergerTest {
     }
 
     private static AssociatedLink randomAssociatedLink() {
-        return new AssociatedLink(randomUri(), null, null);
+        return new AssociatedLink(randomUri(), null, null, RelationType.SAME_AS);
     }
 
     @Test
