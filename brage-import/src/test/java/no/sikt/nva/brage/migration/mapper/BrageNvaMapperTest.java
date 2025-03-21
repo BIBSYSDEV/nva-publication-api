@@ -156,6 +156,21 @@ class BrageNvaMapperTest {
         assertEquals(insperaIdentifier, insperaAdditionalIdentifier.value());
     }
 
+    @Test
+    void shouldMapRightsHolderToFileLegalNotWhenAccessCodeIsNotPresent()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var rightsHolder = randomString();
+        var licenseContentFile = createRandomContentFileWithBundleType(BundleType.ORIGINAL);
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withRightsHolder(rightsHolder)
+                             .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
+                             .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
+                             .build();
+        var file = (File) BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
+
+        assertEquals(rightsHolder, file.getLegalNote());
+    }
+
     private static no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase getAdditionalIdentifier(
         Publication publication, String source) {
         return publication.getAdditionalIdentifiers().stream()
