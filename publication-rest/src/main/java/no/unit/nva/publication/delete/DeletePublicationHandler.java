@@ -3,7 +3,6 @@ package no.unit.nva.publication.delete;
 import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -33,8 +32,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare(),
-             HttpClient.newHttpClient());
+        this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare());
     }
 
     /**
@@ -42,12 +40,11 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      *
      * @param resourceService resourceService
      * @param environment     environment
-     * @param httpClient
      */
     public DeletePublicationHandler(ResourceService resourceService,
                                     Environment environment,
-                                    IdentityServiceClient identityServiceClient, HttpClient httpClient) {
-        super(Void.class, environment, httpClient);
+                                    IdentityServiceClient identityServiceClient) {
+        super(Void.class, environment);
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
     }

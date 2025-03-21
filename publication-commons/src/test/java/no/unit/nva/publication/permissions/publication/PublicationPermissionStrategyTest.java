@@ -2,6 +2,7 @@ package no.unit.nva.publication.permissions.publication;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
+import static no.unit.nva.auth.CognitoUserInfo.ACCESS_RIGHTS_CLAIM;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
@@ -28,7 +29,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,9 +58,10 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.testutils.RandomDataGenerator;
+import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiIoException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.logutils.LogUtils;
@@ -78,6 +79,7 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
     public static final String INJECT_TOP_ORG_CRISTIN_ID_CLAIM = "custom:topOrgCristinId";
+
     public static final String AUTHORIZATION = "Authorization";
     public static final String BEARER_TOKEN = "Bearer token";
     public static final String BACKEND_SCOPE = "https://api.nva.unit.no/scopes/backend";
@@ -87,6 +89,8 @@ class PublicationPermissionStrategyTest {
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
 
     protected static final URI EXTERNAL_CLIENT_CUSTOMER_URI = URI.create("https://example.com/external-client-org");
+    private static final String THIRD_PARTY_PUBLICATION_UPSERT_SCOPE = "https://api.nva.unit"
+                                                                       + ".no/scopes/third-party/publication-upsert";
 
     @BeforeEach
     void setUp() throws NotFoundException {
@@ -161,7 +165,8 @@ class PublicationPermissionStrategyTest {
         var topLevelCristinOrgId = randomUri();
 
         var allAccessRights = List.of(AccessRight.values());
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, personCristinId, topLevelCristinOrgId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, personCristinId,
+                                                topLevelCristinOrgId);
         var publication = createPublication(resourceOwner, editorInstitution, topLevelCristinOrgId);
 
         assertThat(
@@ -202,7 +207,8 @@ class PublicationPermissionStrategyTest {
         var topLevelCristinOrgId = randomUri();
 
         var allAccessRights = List.of(AccessRight.values());
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, personCristinId, topLevelCristinOrgId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, personCristinId,
+                                                topLevelCristinOrgId);
         var publication = createPublication(resourceOwner, editorInstitution, topLevelCristinOrgId);
 
         assertTrue(
@@ -291,7 +297,8 @@ class PublicationPermissionStrategyTest {
                            .build();
         var contributor = new Contributor.Builder()
                               .withIdentity(identity)
-                              .withAffiliations(List.of(new Organization.Builder().withId(topLevelCristinOrgId).build()))
+                              .withAffiliations(
+                                  List.of(new Organization.Builder().withId(topLevelCristinOrgId).build()))
                               .withRole(new RoleType(contributorRole))
                               .build();
         var entityDescription = publication.getEntityDescription().copy()
@@ -305,10 +312,10 @@ class PublicationPermissionStrategyTest {
     }
 
     public Publication createDegreePublicationWithContributor(String contributorName, URI contributorId,
-                                                       Role contributorRole, URI customerId,
-                                                       URI topLevelCristinOrgId) {
+                                                              Role contributorRole, URI customerId,
+                                                              URI topLevelCristinOrgId) {
         var publication = createPublicationWithContributor(contributorName, contributorId, contributorRole,
-                                         customerId, topLevelCristinOrgId);
+                                                           customerId, topLevelCristinOrgId);
         publication.getEntityDescription()
             .getReference()
             .setPublicationInstance(new DegreePhd(new MonographPages(), new PublicationDate(),
@@ -366,6 +373,8 @@ class PublicationPermissionStrategyTest {
         claims.put(INJECT_CUSTOMER_ID_CLAIM, customerId.toString());
 
         claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
+        claims.put(ACCESS_RIGHTS_CLAIM,
+                   accessRights.stream().map(AccessRight::toPersistedString).collect(Collectors.joining(",")));
 
         if (nonNull(username)) {
             claims.put(INJECT_NVA_USERNAME_CLAIM, username);
@@ -386,8 +395,14 @@ class PublicationPermissionStrategyTest {
     }
 
     private static RequestInfo getRequestInfo() {
-        return new RequestInfo(mock(HttpClient.class), RandomDataGenerator::randomUri,
-                               RandomDataGenerator::randomUri);
+        try {
+            return RequestInfo.fromRequest(new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                                               .withCurrentCustomer(randomUri())
+                                               .withUserName(randomString())
+                                               .build());
+        } catch (ApiIoException | JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private RequestInfo createThirdPartyRequestInfo(List<AccessRight> accessRights)
@@ -395,11 +410,16 @@ class PublicationPermissionStrategyTest {
 
         var cognitoGroups = accessRights.stream().map(getCognitoGroup(
             PublicationPermissionStrategyTest.EXTERNAL_CLIENT_CUSTOMER_URI)).toList();
+        var accessRightsString = accessRights.stream()
+                                     .map(AccessRight::toPersistedString)
+                                     .collect(Collectors.joining(","));
 
         var claims = new HashMap<String, String>();
         claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
+        claims.put(ACCESS_RIGHTS_CLAIM, accessRightsString);
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
+        claims.put(SCOPE_CLAIM, THIRD_PARTY_PUBLICATION_UPSERT_SCOPE);
 
         var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
@@ -413,6 +433,7 @@ class PublicationPermissionStrategyTest {
         var claims = new HashMap<String, String>();
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
+        claims.put(SCOPE_CLAIM, THIRD_PARTY_PUBLICATION_UPSERT_SCOPE);
 
         var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));

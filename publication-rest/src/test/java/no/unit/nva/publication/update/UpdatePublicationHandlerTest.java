@@ -213,6 +213,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String MUST_BE_A_VALID_PUBLICATION_API_URI = "must be a valid publication API URI";
     public static final String COMMENT_ON_UNPUBLISHING_REQUEST = "comment";
     public static final String BACKEND_SCOPE = "https://api.nva.unit.no/scopes/backend";
+    private static final String THIRD_PARTY_PUBLICATION_UPSERT_SCOPE = "https://api.nva.unit.no/scopes/third-party/publication-upsert";
 
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     final Context context = new FakeContext();
@@ -2323,6 +2324,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withUserName(randomString())
                    .withCurrentCustomer(randomUri())
                    .withPathParameters(pathParameters)
+                   .withScope(THIRD_PARTY_PUBLICATION_UPSERT_SCOPE)
                    .build();
     }
 

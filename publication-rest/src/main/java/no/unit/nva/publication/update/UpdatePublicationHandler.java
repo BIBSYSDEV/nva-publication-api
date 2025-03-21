@@ -110,7 +110,7 @@ public class UpdatePublicationHandler
                                     EventBridgeClient eventBridgeClient,
                                     SecretsManagerClient secretsManagerClient,
                                     HttpClient httpClient) {
-        super(PublicationRequest.class, environment, httpClient);
+        super(PublicationRequest.class, environment);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;

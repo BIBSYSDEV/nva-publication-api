@@ -18,7 +18,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.http.HttpClient;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
@@ -56,6 +55,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Environment environment;
     private ByteArrayOutputStream outputStream;
     private GetExternalClientResponse getExternalClientResponse;
+    private static final String THIRD_PARTY_PUBLICATION_UPSERT_SCOPE = "https://api.nva.unit.no/scopes/third-party/publication-upsert";
 
     @BeforeEach
     public void setUp() throws NotFoundException {
@@ -63,8 +63,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         prepareEnvironment();
         prepareIdentityServiceClient();
         publicationService = getResourceServiceBuilder().build();
-        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient,
-                                               mock(HttpClient.class));
+        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
     }
 
@@ -98,6 +97,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                                                        createdPublication.getIdentifier().toString()))
                                       .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                                       .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                                      .withScope(THIRD_PARTY_PUBLICATION_UPSERT_SCOPE)
                                       .build();
 
         handler.handleRequest(inputStream, outputStream, context);
