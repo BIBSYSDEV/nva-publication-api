@@ -9,6 +9,7 @@ dependencies {
     implementation ( libs.commons.validator )
     implementation( libs.jackson.databind )
     implementation libs.bundles.logging
+    implementation libs.bundles.validation
 
     testImplementation( libs.reflections )
     testImplementation( libs.jena.core )

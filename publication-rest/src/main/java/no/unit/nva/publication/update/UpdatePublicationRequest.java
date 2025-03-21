@@ -3,9 +3,9 @@ package no.unit.nva.publication.update;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+
+import java.util.*;
+
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
@@ -16,12 +16,11 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.publication.sanitizer.EntityDescriptionSanitizer;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Objects;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -87,7 +86,7 @@ public class UpdatePublicationRequest
     @JacocoGenerated
     @Override
     public void setEntityDescription(EntityDescription entityDescription) {
-        this.entityDescription = entityDescription;
+        this.entityDescription = EntityDescriptionSanitizer.sanitize(entityDescription);
     }
 
     @Override
