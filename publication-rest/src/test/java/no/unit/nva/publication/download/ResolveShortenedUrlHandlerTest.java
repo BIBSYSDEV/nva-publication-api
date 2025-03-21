@@ -19,7 +19,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.http.HttpClient;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.services.UriResolver;
@@ -50,7 +49,7 @@ class ResolveShortenedUrlHandlerTest {
 
     @Test
     void shouldReturnNotFoundWhenUriResolverReturnsNotFound() throws IOException, ApiGatewayException {
-        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver, mock(HttpClient.class));
+        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver);
         when(resolver.resolve(any())).thenThrow(new NotFoundException("Not found"));
         handler.handleRequest(
             createRequest(),
@@ -63,7 +62,7 @@ class ResolveShortenedUrlHandlerTest {
     @Test
     void shouldReturnRedirectWhenUriResolverReturnsLongUri() throws IOException, ApiGatewayException {
         var expectedUri = randomUri();
-        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver, mock(HttpClient.class));
+        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver);
         when(resolver.resolve(any())).thenReturn(expectedUri);
         handler.handleRequest(
             createRequest(),

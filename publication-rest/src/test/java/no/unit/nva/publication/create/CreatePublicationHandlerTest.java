@@ -34,8 +34,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -62,7 +60,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
@@ -101,7 +98,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
-    public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     private static final String CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED
         = "Customer API not responding or not responding as expected!";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
@@ -119,6 +115,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private IdentityServiceClient identityServiceClient;
     private FakeSecretsManagerClient secretsManagerClient;
     private URI customerId;
+    private static final String THIRD_PARTY_PUBLICATION_UPSERT_SCOPE = "https://api.nva.unit.no/scopes/third-party/publication-upsert";
 
     public static Stream<Exception> httpClientExceptionsProvider() {
         return Stream.of(new ConnectException(), new InterruptedException());
@@ -559,25 +556,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             """;
     }
 
-    private static void updateCreatePublicationRequestWithInvalidAssociatedArtifact(
-        ObjectNode publicationRequestJsonObject) throws JsonProcessingException {
-        var associatedArtifacts = (ArrayNode) publicationRequestJsonObject.get(ASSOCIATED_ARTIFACTS_FIELD);
-        associatedArtifacts.add(createNullAssociatedArtifact());
-    }
-
-    private static JsonNode createNullAssociatedArtifact() throws JsonProcessingException {
-        var nullObject = dtoObjectMapper.writeValueAsString(new NullAssociatedArtifact());
-        return dtoObjectMapper.readTree(nullObject);
-    }
-
     private InputStream prepareRequestWithFileForTypeWhereNotAllowed() throws JsonProcessingException {
         var publicationRequestJsonObject = createCreatePublicationRequestAsJsonObject();
-        return createPublicationRequestFromString(dtoObjectMapper.writeValueAsString(publicationRequestJsonObject));
-    }
-
-    private InputStream createPublicationRequestEventWithInvalidAssociatedArtifacts() throws JsonProcessingException {
-        var publicationRequestJsonObject = createCreatePublicationRequestAsJsonObject();
-        updateCreatePublicationRequestWithInvalidAssociatedArtifact(publicationRequestJsonObject);
         return createPublicationRequestFromString(dtoObjectMapper.writeValueAsString(publicationRequestJsonObject));
     }
 
@@ -677,6 +657,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withScope(THIRD_PARTY_PUBLICATION_UPSERT_SCOPE)
                    .build();
     }
 
@@ -685,6 +666,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .withScope(THIRD_PARTY_PUBLICATION_UPSERT_SCOPE)
                    .build();
     }
 

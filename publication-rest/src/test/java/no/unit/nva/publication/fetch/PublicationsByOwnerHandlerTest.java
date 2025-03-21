@@ -15,14 +15,12 @@ import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.http.HttpClient;
 import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.clients.GetExternalClientResponse;
@@ -54,6 +52,8 @@ class PublicationsByOwnerHandlerTest {
     private GetExternalClientResponse getExternalClientResponse;
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String THIRD_PARTY_PUBLICATION_UPSERT_SCOPE = "https://api.nva.unit.no/scopes/third-party/publication-upsert";
+
 
     @BeforeEach
     public void setUp(@Mock Environment environment,
@@ -70,7 +70,7 @@ class PublicationsByOwnerHandlerTest {
 
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
-            new PublicationsByOwnerHandler(resourceService, environment, identityServiceClient, mock(HttpClient.class));
+            new PublicationsByOwnerHandler(resourceService, environment, identityServiceClient);
     }
 
     @Test
@@ -107,6 +107,7 @@ class PublicationsByOwnerHandlerTest {
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
                                 .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                                 .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                                .withScope(THIRD_PARTY_PUBLICATION_UPSERT_SCOPE)
                                 .build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
 

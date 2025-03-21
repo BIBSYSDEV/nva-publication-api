@@ -7,9 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.http.HttpClient;
 import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
@@ -54,7 +52,7 @@ class UserInstanceTest {
                               .withCurrentCustomer(customerId)
                               .withNvaUsername(username)
                               .build();
-        var requestInfo = RequestInfo.fromRequest(httpRequest, mock(HttpClient.class));
+        var requestInfo = RequestInfo.fromRequest(httpRequest);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
         assertThat(userInstance.getUsername(), is(equalTo(username)));
         assertThat(userInstance.getCustomerId(), is(equalTo(customerId)));

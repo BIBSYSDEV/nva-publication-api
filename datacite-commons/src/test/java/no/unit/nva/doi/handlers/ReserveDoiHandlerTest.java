@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.DataCiteDoiClient;
@@ -86,7 +85,6 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
         super.init();
-        var httpClient = mock(HttpClient.class);
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
@@ -97,7 +95,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         resourceService = getResourceServiceBuilder().build();
         var reserveDoiClient = new DataCiteDoiClient(WiremockHttpClient.create(), secretsManagerClient,
                                                      wireMockRuntimeInfo.getHttpsBaseUrl());
-        handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment, httpClient);
+        handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
     }
 
     @Test
@@ -163,7 +161,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var reserveDoiClient = new DataCiteDoiClient(httpClient,
                                                      secretsManagerClient,
                                                      wireMockRuntimeInfo.getHttpsBaseUrl());
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment, httpClient);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -180,7 +178,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var reserveDoiClient = new DataCiteDoiClient(httpClient,
                                                      secretsManagerClient,
                                                      wireMockRuntimeInfo.getHttpsBaseUrl());
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment, httpClient);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -197,7 +195,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var reserveDoiClient = new DataCiteDoiClient(httpClient,
                                                      secretsManagerClient,
                                                      wireMockRuntimeInfo.getHttpsBaseUrl());
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment, httpClient);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
 
@@ -214,7 +212,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var reserveDoiClient = new DataCiteDoiClient(httpClient,
                                                      secretsManagerClient,
                                                      wireMockRuntimeInfo.getHttpsBaseUrl());
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment, httpClient);
+        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
 

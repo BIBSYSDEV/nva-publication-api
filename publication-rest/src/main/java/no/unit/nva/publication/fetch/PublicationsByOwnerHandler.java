@@ -2,7 +2,6 @@ package no.unit.nva.publication.fetch;
 
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -21,8 +20,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
     public PublicationsByOwnerHandler() {
         this(ResourceService.defaultService(),
              new Environment(),
-             IdentityServiceClient.prepare(),
-             HttpClient.newHttpClient());
+             IdentityServiceClient.prepare());
     }
     
     /**
@@ -32,9 +30,8 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
      */
     public PublicationsByOwnerHandler(ResourceService resourceService,
                                       Environment environment,
-                                      IdentityServiceClient identityServiceClient,
-                                      HttpClient httpClient) {
-        super(Void.class, environment, httpClient);
+                                      IdentityServiceClient identityServiceClient) {
+        super(Void.class, environment);
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
     }

@@ -4,7 +4,6 @@ import static org.apache.http.HttpHeaders.LOCATION;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.Map;
 import no.unit.nva.publication.services.UriResolver;
 import no.unit.nva.publication.services.UriResolverImpl;
@@ -23,11 +22,11 @@ public class ResolveShortenedUrlHandler extends ApiGatewayHandler<Void, Void> {
 
     @JacocoGenerated
     public ResolveShortenedUrlHandler() {
-        this(new Environment(), UriResolverImpl.createDefault(), HttpClient.newHttpClient());
+        this(new Environment(), UriResolverImpl.createDefault());
     }
 
-    public ResolveShortenedUrlHandler(Environment environment, UriResolver uriResolver, HttpClient httpClient) {
-        super(Void.class, environment, httpClient);
+    public ResolveShortenedUrlHandler(Environment environment, UriResolver uriResolver) {
+        super(Void.class, environment);
         this.uriResolver = uriResolver;
     }
 

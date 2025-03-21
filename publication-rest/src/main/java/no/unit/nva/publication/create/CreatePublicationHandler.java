@@ -79,7 +79,7 @@ public class CreatePublicationHandler
                                     IdentityServiceClient identityServiceClient,
                                     SecretsManagerClient secretsManagerClient,
                                     HttpClient httpClient) {
-        super(CreatePublicationRequest.class, environment, httpClient);
+        super(CreatePublicationRequest.class, environment);
         this.publicationService = publicationService;
         this.apiHost = environment.readEnv(API_HOST);
         this.identityServiceClient = identityServiceClient;
