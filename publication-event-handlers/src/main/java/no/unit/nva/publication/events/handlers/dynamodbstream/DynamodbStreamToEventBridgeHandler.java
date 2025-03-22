@@ -10,6 +10,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -17,6 +18,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -82,12 +85,9 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
                    .orElseGet(() -> blobObject.getNewData().getIdentifier());
     }
 
-    private static String toResponsePayload(EventReference eventReference) {
-        return """
-            {
-              "responsePayload": %s
-            }
-            """.formatted(eventReference.toJsonString());
+    private static String toEvenBridgeDetail(EventReference eventReference) throws JsonProcessingException {
+        var detail = AwsEventBridgeDetail.newBuilder().withResponsePayload(eventReference).build();
+        return JsonUtils.dtoObjectMapper.writeValueAsString(detail);
     }
 
     private EventReference processRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent event) {
@@ -107,21 +107,22 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
                    .orElse(failure -> processRecoveryMessage(failure, blob));
     }
 
-    private EventReference sendEvent(EventReference eventReference, Context context) {
+    private EventReference sendEvent(EventReference eventReference, Context context) throws JsonProcessingException {
         var eventRequest = createPutEventRequest(context, eventReference);
         eventBridgeClient.putEvents(eventRequest);
         logger.info(EMITTED_EVENT_MESSAGE, eventReference.toJsonString());
         return eventReference;
     }
 
-    private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference) {
+    private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference)
+        throws JsonProcessingException {
         var entry = PutEventsRequestEntry.builder()
                         .eventBusName(EVENT_BUS_NAME)
                         .time(Instant.now())
                         .source(DYNAMO_DB_STREAM_SOURCE)
                         .detailType(DETAIL_TYPE_NOT_IMPORTANT)
                         .resources(context.getInvokedFunctionArn())
-                        .detail(toResponsePayload(eventReference))
+                        .detail(toEvenBridgeDetail(eventReference))
                         .build();
         return PutEventsRequest.builder().entries(entry).build();
     }
