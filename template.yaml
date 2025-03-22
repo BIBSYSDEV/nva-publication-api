@@ -2022,6 +2022,7 @@ Resources:
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           OUTPUT_EVENT_TOPIC: 'PublicationService.Database.Update'
+          RECOVERY_QUEUE: !Ref RecoveryQueue
       Events:
         FanoutSource:
           Type: DynamoDB
@@ -2030,6 +2031,14 @@ Resources:
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
             Enabled: true
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
