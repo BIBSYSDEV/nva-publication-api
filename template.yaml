@@ -2030,14 +2030,6 @@ Resources:
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
             Enabled: true
-      EventInvokeConfig:
-        DestinationConfig:
-          OnSuccess:
-            Type: EventBridge
-            Destination: !GetAtt InternalBus.Arn
-          OnFailure:
-            Type: SQS
-            Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
