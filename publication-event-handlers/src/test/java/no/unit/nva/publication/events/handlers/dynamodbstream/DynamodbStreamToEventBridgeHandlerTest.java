@@ -31,6 +31,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
@@ -53,14 +54,21 @@ class DynamodbStreamToEventBridgeHandlerTest {
     private DynamodbStreamToEventBridgeHandler handler;
     private FakeSqsClient fakeSqsClient;
     private FakeS3Client failingS3Client;
+    private FakeEventBridgeClient eventBridgeClient;
 
     @BeforeEach
     public void init() {
         this.s3Client = new FakeS3Client();
         failingS3Client = createFailingS3Client();
-        this.context = new FakeContext();
+        this.context = new FakeContext() {
+            @Override
+            public String getInvokedFunctionArn() {
+                return randomString();
+            }
+        };
         fakeSqsClient = new FakeSqsClient();
-        this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, fakeSqsClient);
+        this.eventBridgeClient = new FakeEventBridgeClient();
+        this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient, fakeSqsClient);
     }
 
     @AfterEach
@@ -89,7 +97,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
     @Test
     void shouldPlaceFailedEntryOnRecoveryQueueWhenStoringAnyEventRecordInS3Fails() {
         var event = randomEventWithSingleDynamoRecord(randomPublication(), randomPublication());
-        handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), fakeSqsClient);
+        handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), eventBridgeClient, fakeSqsClient);
         handler.handleRequest(event, context);
         var recoveryMessage = fakeSqsClient.getDeliveredMessages().getFirst();
         assertThat(recoveryMessage.messageAttributes().get("id"), Matchers.is(notNullValue()));
