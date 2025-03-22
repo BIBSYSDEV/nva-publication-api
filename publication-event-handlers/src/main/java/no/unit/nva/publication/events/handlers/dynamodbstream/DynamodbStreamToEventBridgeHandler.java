@@ -82,6 +82,14 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
                    .orElseGet(() -> blobObject.getNewData().getIdentifier());
     }
 
+    private static String toResponsePayload(EventReference eventReference) {
+        return """
+            {
+              "responsePayload": %s
+            }
+            """.formatted(eventReference.toJsonString());
+    }
+
     private EventReference processRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent event) {
         var identifier = getIdentifier(event);
         RecoveryEntry.fromDataEntryUpdateEvent(event)
@@ -113,7 +121,7 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
                         .source(DYNAMO_DB_STREAM_SOURCE)
                         .detailType(DETAIL_TYPE_NOT_IMPORTANT)
                         .resources(context.getInvokedFunctionArn())
-                        .detail(eventReference.toJsonString())
+                        .detail(toResponsePayload(eventReference))
                         .build();
         return PutEventsRequest.builder().entries(entry).build();
     }
