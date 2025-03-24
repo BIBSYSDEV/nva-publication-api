@@ -63,6 +63,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
@@ -239,7 +240,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnIndexDocumentContainingLicense(String licenseUri, LicenseType expectedLicense)
         throws JsonProcessingException, NotFoundException, BadRequestException {
         var fileWithLicense = randomOpenFileWithLicense(URI.create(licenseUri));
-        var associatedLink = new AssociatedLink(randomUri(), null, null);
+        var associatedLink = new AssociatedLink(randomUri(), null, null, RelationType.SAME_AS);
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class)
                                       .copy()
                                       .withAssociatedArtifacts(List.of(fileWithLicense, associatedLink))
@@ -260,7 +261,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnIndexDocumentWithoutLicenseWhenNoLicense()
         throws JsonProcessingException, NotFoundException, BadRequestException {
         var fileWithoutLicense = File.builder().withIdentifier(randomUUID()).buildOpenFile();
-        var link = new AssociatedLink(randomUri(), null, null);
+        var link = new AssociatedLink(randomUri(), null, null, RelationType.SAME_AS);
         var publication = PublicationGenerator.randomPublication()
                               .copy()
                               .withAssociatedArtifacts(List.of(fileWithoutLicense, link))
@@ -712,7 +713,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PUBLISHED, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var doi = publication.getEntityDescription().getReference().getDoi();
-        publication.getAssociatedArtifacts().add(new AssociatedLink(doi, randomString(), randomString()));
+        publication.getAssociatedArtifacts().add(new AssociatedLink(doi, randomString(), randomString(), RelationType.SAME_AS));
         var publicationWithIdenticalDoiValues = resourceService.updatePublication(publication);
         var resourceUpdate = Resource.fromPublication(publicationWithIdenticalDoiValues);
         var expansionService = expansionServiceReturningNviCandidate(publication, nviCandidateResponse(), 404);

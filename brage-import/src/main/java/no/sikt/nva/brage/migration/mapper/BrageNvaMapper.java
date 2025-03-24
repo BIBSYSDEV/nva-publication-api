@@ -48,6 +48,7 @@ import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
@@ -140,7 +141,7 @@ public final class BrageNvaMapper {
                    .map(Record::getSubjects)
                    .stream()
                    .flatMap(Collection::stream)
-                   .map(uri -> new AssociatedLink(uri, null, null))
+                   .map(uri -> new AssociatedLink(uri, null, null, RelationType.SAME_AS))
                    .toList();
     }
 
@@ -160,7 +161,7 @@ public final class BrageNvaMapper {
     }
 
     private static AssociatedLink extractAssociatedLink(Record brageRecord) {
-        return nonNull(brageRecord.getLink()) ? new AssociatedLink(brageRecord.getLink(), null, null) : null;
+        return nonNull(brageRecord.getLink()) ? new AssociatedLink(brageRecord.getLink(), null, null, RelationType.SAME_AS) : null;
     }
 
     private static Set<AdditionalIdentifierBase> extractAdditionalIdentifiers(Record brageRecord) {
