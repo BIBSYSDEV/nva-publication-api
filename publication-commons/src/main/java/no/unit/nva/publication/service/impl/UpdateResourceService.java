@@ -15,6 +15,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import java.lang.System.Logger;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
@@ -52,6 +54,7 @@ import no.unit.nva.publication.model.storage.UnpublishRequestDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import org.slf4j.LoggerFactory;
 
 public class UpdateResourceService extends ServiceWithTransactions {
 
@@ -237,7 +240,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private List<TransactWriteItem> refreshTicketsTransactions(Resource resource) {
-        return readResourceService.fetchAllTicketsForResource(resource)
+        var tickets = readResourceService.fetchAllTicketsForResource(resource).toList();
+        LoggerFactory.getLogger(UpdateResourceService.class).info("FetchedTickets: {}",
+                                                                  attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(tickets)).orElseThrow());
+        return tickets.stream()
                    .map(TicketEntry::refresh)
                    .map(TicketEntry::toDao)
                    .map(ticketDao -> ticketDao.toPutTransactionItem(tableName))
