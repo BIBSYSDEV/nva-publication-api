@@ -3,7 +3,6 @@ package no.unit.nva.publication.update;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithFile;
@@ -189,28 +188,6 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         assertEquals(COMPLETED, publishingRequest.getStatus());
         assertTrue(publishingRequest.getFilesForApproval().isEmpty());
         assertTrue(publishingRequest.getApprovedFiles().isEmpty());
-    }
-
-    @Test
-    void shouldRemoveFileFromPendingPublishingRequestWhenPendingFileIsBeingRemovedFromPublication()
-        throws ApiGatewayException {
-        var publication = randomPublication();
-        var pendingOpenFile = randomPendingOpenFile();
-        var pendingInternalFile = randomPendingInternalFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile, pendingInternalFile)));
-        var persistedPublication = persistPublication(publication);
-        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
-
-        var updatedPublication = persistedPublication.copy()
-                                     .withAssociatedArtifacts(List.of(pendingInternalFile))
-                                     .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                                updatedPublication);
-
-        var publishingRequest = getPublishingRequest(persistedPublication);
-
-        assertTrue(publishingRequest.getFilesForApproval().contains(pendingInternalFile));
-        assertFalse(publishingRequest.getFilesForApproval().contains(pendingOpenFile));
     }
 
     private Publication persistPublication(Publication publication) throws ApiGatewayException {

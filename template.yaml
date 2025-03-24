@@ -1530,6 +1530,7 @@ Resources:
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           RECOVERY_QUEUE: !Ref RecoveryQueue
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1549,7 +1550,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !GetAtt InternalBus.Arn
+            Destination: !Ref NewNvaEventBusArn
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn

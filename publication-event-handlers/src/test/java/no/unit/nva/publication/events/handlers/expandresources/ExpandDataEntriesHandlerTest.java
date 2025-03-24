@@ -6,6 +6,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
+import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -126,7 +127,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
-        var persistedResource = s3Driver.getFile(UnixPath.of("resources", publication.getIdentifier().toString() + ".gz"));
+        var persistedResource = s3Driver.getFile(UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
         var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
         assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
     }
