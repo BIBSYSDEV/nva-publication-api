@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.time.Instant;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
+import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
@@ -21,6 +21,6 @@ public interface LogEntryDto {
 
     Instant timestamp();
 
-    LogUser performedBy();
+    LogAgent performedBy();
 
 }

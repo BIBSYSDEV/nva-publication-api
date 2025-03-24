@@ -2,7 +2,6 @@ package no.unit.nva.publication.model.business.logentry;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -11,11 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
-import no.unit.nva.clients.CustomerDto;
-import no.unit.nva.clients.UserDto;
+import java.util.Map;
+import java.util.Set;
+import no.unit.nva.clients.cristin.CristinOrganizationDto;
+import no.unit.nva.clients.cristin.CristinPersonDto;
+import no.unit.nva.clients.cristin.TypedValue;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -83,41 +83,17 @@ class LogEntryTest extends ResourcesLocalTest {
 
     @Test
     void shouldCreateLogUserFromUserDto() {
-        var getUserResponse = UserDto.builder()
-                                 .withUsername(randomString())
-                                 .withGivenName(randomString())
-                                 .withFamilyName(randomString())
-                                 .withInstitution(randomUri())
-                                 .build();
-        var getCustomerResponse = createRandomCustomer();
-        assertNotNull(LogUser.create(getUserResponse, getCustomerResponse));
-    }
-
-    private static CustomerDto createRandomCustomer() {
-        return new CustomerDto(randomUri(),
-                               UUID.randomUUID(),
-                               randomString(),
-                               randomString(),
-                               randomString(),
-                               randomUri(),
-                               randomString(),
-                               randomBoolean(),
-                               randomBoolean(),
-                               randomBoolean(),
-                               Collections.emptyList(),
-                               new CustomerDto.RightsRetentionStrategy(randomString(), randomUri()));
+        var cristinPersonDto = new CristinPersonDto(randomUri(), Set.of(),
+                                                    Set.of(new TypedValue(randomString(), randomString())),
+                                                    Set.of(), false);
+        var cristinOrganizationDto = new CristinOrganizationDto(randomUri(), randomUri(), randomString(), List.of(),
+                                                                List.of(), randomString(), Map.of(), randomString());
+        assertNotNull(LogUser.create(cristinPersonDto, cristinOrganizationDto));
     }
 
     @Test
     void shouldCreateLogUserFromUsername() {
         assertNotNull(LogUser.fromResourceEvent(new User(randomString()), randomUri()));
-    }
-
-    @Test
-    void shouldCreateLogInstitutionFromCustomerDto() {
-        var getCustomerResponse = createRandomCustomer();
-
-        assertNotNull(LogOrganization.fromCustomerDto(getCustomerResponse));
     }
 
     @Test
@@ -163,14 +139,14 @@ class LogEntryTest extends ResourcesLocalTest {
             {
               "type": "FileLogEntry",
               "performedBy": {
-                "type": "LogUser",
+                "type": "Person",
                 "userName": "som user"
               }
             }
             """;
         var entry = JsonUtils.dtoObjectMapper.readValue(json, FileLogEntry.class);
-
-        assertNotNull(entry.performedBy().username());
+        var performedBy = (LogUser) entry.performedBy();
+        assertNotNull(performedBy.username());
     }
 
     private static FileLogEntry randomFileLogEntry(Publication persistedPublication) {
@@ -186,9 +162,8 @@ class LogEntryTest extends ResourcesLocalTest {
     }
 
     private static LogUser randomLogUser() {
-        return new LogUser(randomString(), randomString(), randomString(), randomUri(),
-                           new LogOrganization(randomUri(), randomUri(), randomString(),
-                                               randomString()));
+        return new LogUser(randomString(), randomUri(), randomString(), randomString(), randomString(), randomString(),
+                           new LogOrganization(randomUri(), randomString(), null));
     }
 
     private static PublicationLogEntry randomLogEntry(SortableIdentifier resourceIdentifier, LogTopic logTopic) {
