@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
@@ -203,8 +205,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private static boolean isContributorsChanged(Resource resource, Resource existingResource) {
-        return nonNull(resource.getEntityDescription())
-               && !getContributors(resource).equals(getContributors(existingResource));
+        return nonNull(resource.getEntityDescription()) &&
+               !getContributors(resource).equals(getContributors(existingResource));
     }
 
     private static List<Contributor> getContributors(Resource resource) {
@@ -237,7 +239,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private List<TransactWriteItem> refreshTicketsTransactions(Resource resource) {
-        return readResourceService.fetchAllTicketsForResource(resource)
+        var tickets = readResourceService.fetchAllTicketsForResource(resource).toList();
+        Logger.getAnonymousLogger().info("Updating tickets: " + attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(tickets)).orElseThrow());
+        return tickets.stream()
                    .map(TicketEntry::refresh)
                    .map(TicketEntry::toDao)
                    .map(ticketDao -> ticketDao.toPutTransactionItem(tableName))
@@ -246,8 +250,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private void updateCuratingInstitutions(Resource resource, Resource persistedResource) {
         if (isContributorsChanged(resource, persistedResource)) {
-            resource.setCuratingInstitutions(CuratingInstitutionsUtil
-                                                 .getCuratingInstitutionsOnline(resource.toPublication(), uriRetriever));
+            resource.setCuratingInstitutions(
+                CuratingInstitutionsUtil.getCuratingInstitutionsOnline(resource.toPublication(), uriRetriever));
         }
     }
 

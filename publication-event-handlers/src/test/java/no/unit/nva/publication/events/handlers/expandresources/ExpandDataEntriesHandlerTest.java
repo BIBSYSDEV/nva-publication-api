@@ -41,6 +41,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -125,9 +126,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
-        var eventBlobStoredInS3 = s3Driver.readEvent(response.getUri());
-        var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, ExpandedDataEntry.class);
-        assertThat(blobObject.identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
+        var persistedResource = s3Driver.getFile(UnixPath.of("resources", publication.getIdentifier().toString() + ".gz"));
+        var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
+        assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
     }
 
     @ParameterizedTest

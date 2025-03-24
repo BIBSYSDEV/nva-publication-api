@@ -2,7 +2,7 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
+import static no.unit.nva.publication.events.handlers.persistence.AnalyticsIntegrationHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
 import static no.unit.nva.testutils.EventBridgeEventBuilder.sampleLambdaDestinationsEvent;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;

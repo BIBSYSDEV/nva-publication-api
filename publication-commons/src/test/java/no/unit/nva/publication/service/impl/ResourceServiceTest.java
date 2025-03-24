@@ -40,6 +40,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -1704,6 +1705,26 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertEquals(persistedFileEntry, refreshedFileEntry);
         assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
+    }
+
+    @Test
+    void shouldNotReturnSoftDeletedFileWhenFetchingPublication() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = randomUserInstance();
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var fetchedResource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
+
+        assertTrue(fetchedResource.getFileEntries().contains(fileEntry));
+
+        fileEntry.softDelete(new User(randomString()));
+
+        var fetchedResourceWithSoftDeletedFile =
+            Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
+
+        assertFalse(fetchedResourceWithSoftDeletedFile.getFileEntries().contains(fileEntry));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
