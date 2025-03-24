@@ -157,7 +157,7 @@ class BrageNvaMapperTest {
     }
 
     @Test
-    void shouldMapRightsHolderToFileLegalNotWhenAccessCodeIsNotPresent()
+    void shouldMapRightsHolderToFileLegalNoteWhenAccessCodeIsNotPresent()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var rightsHolder = randomString();
         var licenseContentFile = createRandomContentFileWithBundleType(BundleType.ORIGINAL);
