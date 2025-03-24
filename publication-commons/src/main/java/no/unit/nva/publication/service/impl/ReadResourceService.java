@@ -37,6 +37,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -83,7 +84,9 @@ public class ReadResourceService {
                           .toList();
 
         var resource = extractResource(entries);
-        var fileEntries = extractFileEntries(entries);
+        var fileEntries = extractFileEntries(entries).stream()
+                              .filter(fileEntry -> !(fileEntry.getFileEvent() instanceof FileDeletedEvent))
+                              .toList();
 
         resource.ifPresent(res -> {
             var associatedArtifacts = new ArrayList<AssociatedArtifact>();
