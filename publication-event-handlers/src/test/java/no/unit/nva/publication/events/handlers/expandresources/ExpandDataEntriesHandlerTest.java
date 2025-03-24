@@ -5,7 +5,6 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -76,6 +75,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = null;
     public static final String EXPECTED_ERROR_MESSAGE = "expected error message";
+    private static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     public static final String IDENTIFIER_IN_RESOURCE_FILE = "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0";
     public static final Publication DELETED_RESOURCE = null;
     public static final Object EMPTY_IMAGE = null;

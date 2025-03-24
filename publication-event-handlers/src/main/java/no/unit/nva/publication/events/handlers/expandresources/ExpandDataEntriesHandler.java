@@ -44,19 +44,19 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
-    public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource: {}";
-    public static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
-    public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
-    public static final Environment ENVIRONMENT = new Environment();
-    public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
-    public static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
+    private static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource: {}";
+    private static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
+    private static final String EMPTY_EVENT_TOPIC = "Event.Empty";
+    private static final Environment ENVIRONMENT = new Environment();
+    private static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
+    private static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
                                                                                             PUBLISHED_METADATA,
                                                                                             UNPUBLISHED, DELETED);
-    public static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
-    public static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
+    private static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    private static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
-    public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
-    public static final String EXPANSION_FAILED_MESSAGE = "Error expanding entity %s with identifier %s";
+    private static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
+    private static final String EXPANSION_FAILED_MESSAGE = "Error expanding entity %s with identifier %s";
     private final QueueClient sqsClient;
     private final S3Driver s3DriverEventsBucket;
     private final S3Driver s3DriverPersistedResourcesBucket;
