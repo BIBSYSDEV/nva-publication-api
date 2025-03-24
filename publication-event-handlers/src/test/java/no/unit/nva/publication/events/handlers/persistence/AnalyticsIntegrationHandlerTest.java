@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
 import static no.unit.nva.testutils.EventBridgeEventBuilder.sampleLambdaDestinationsEvent;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -51,6 +50,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
+    private static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
     public static final int FILENAME_WIHOUT_FILE_ENDING = 0;
     public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
     public static final String JSONLD_CONTEXT = "@context";
