@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
     
-    public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
+    private static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
     public static final String EXPECTED_EVENT_TOPIC_ERROR_MESSAGE =
         "The event topic is not the expected. Expected topic is "
         + EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
