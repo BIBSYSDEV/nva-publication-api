@@ -102,7 +102,6 @@ public final class BrageNvaMapper {
                               .withResourceOwner(customer.toResourceOwner(host))
                               .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord, customer))
                               .withAdditionalIdentifiers(extractAdditionalIdentifiers(brageRecord))
-                              .withRightsHolder(brageRecord.getRightsholder())
                               .withFundings(extractFundings(brageRecord))
                               .build();
         if (!isCristinRecord(brageRecord)) {
@@ -279,7 +278,9 @@ public final class BrageNvaMapper {
     }
 
     private static String extractLegalNote(Record brageRecord) {
-        return Optional.ofNullable(brageRecord).map(Record::getAccessCode).orElse(null);
+        return Optional.ofNullable(brageRecord)
+                   .map(Record::getAccessCode)
+                   .orElse(brageRecord.getRightsholder());
     }
 
     private static Instant extractEmbargoDate(ContentFile file) {
