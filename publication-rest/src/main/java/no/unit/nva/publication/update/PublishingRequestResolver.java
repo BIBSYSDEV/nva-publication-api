@@ -73,16 +73,9 @@ public final class PublishingRequestResolver {
         if (thereAreNoPendingFiles(newImage)) {
             autoCompletePendingPublishingRequestsIfNeeded(newImage, pendingPublishingRequests);
             return;
-        }
-        if (updateHasPendingFileChanges(oldImage, newImage)) {
+        } else {
             updateFilesForApproval(oldImage, newImage, pendingPublishingRequests);
         }
-    }
-
-    private boolean updateHasPendingFileChanges(Publication oldImage, Publication newImage) {
-        var existingFiles = getPendingFiles(oldImage).collect(Collectors.toSet());
-        var updatedFiles = getPendingFiles(newImage).collect(Collectors.toSet());
-        return !existingFiles.equals(updatedFiles);
     }
 
     private void autoCompletePendingPublishingRequestsIfNeeded(
