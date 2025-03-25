@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
@@ -62,7 +63,7 @@ public class GeneralSupportRequest extends TicketEntry {
         generalSupportRequest.setModifiedDate(Instant.now());
         generalSupportRequest.setStatus(TicketStatus.PENDING);
         generalSupportRequest.setIdentifier(SortableIdentifier.next());
-        generalSupportRequest.setViewedBy(ViewedBy.addAll(userInstance.getUser()));
+        generalSupportRequest.setViewedBy(Set.of());
         generalSupportRequest.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         generalSupportRequest.setResponsibilityArea(userInstance.getPersonAffiliation());
         generalSupportRequest.setOwner(userInstance.getUser());

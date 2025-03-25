@@ -14,6 +14,7 @@ import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
@@ -188,7 +189,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     @ParameterizedTest
     @DisplayName("should return viewed by owner when ticket is new ")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnViewedByOwnerWhenTicketIsNew(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    void shouldNotReturnViewedByOwnerWhenTicketIsNew(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -197,7 +198,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         var responseBody = response.getBodyObject(TicketDto.class);
-        assertThat(responseBody.getViewedBy(), hasItem(ticket.getOwner()));
+        assertTrue(responseBody.getViewedBy().isEmpty());
     }
 
     @ParameterizedTest

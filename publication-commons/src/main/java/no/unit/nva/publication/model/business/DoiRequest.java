@@ -82,7 +82,7 @@ public class DoiRequest extends TicketEntry {
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(SortableIdentifier.next());
         doiRequest.setStatus(TicketStatus.PENDING);
-        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
+        doiRequest.setViewedBy(Set.of());
         var now = Clock.systemDefaultZone().instant();
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);

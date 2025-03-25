@@ -29,13 +29,13 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -131,7 +131,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
-        var uriRetriever = getUriRetriever(getHttpClientWithPublisherAllowingPublishing(), secretsManagerClient);
+        var uriRetriever = getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(), secretsManagerClient);
         ticketResolver = new TicketResolver(resourceService, ticketService, uriRetriever);
         messageService = new MessageService(client, new UriRetriever());
         this.handler = new CreateTicketHandler(ticketResolver, messageService);
@@ -242,7 +242,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @DisplayName("should mark ticket as read for only the publication owner when publication owner creates new "
                  + "ticket")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
+    void shouldNotMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), status, resourceService);
         var owner = UserInstance.fromPublication(publication);
@@ -251,8 +251,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(input, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         TicketEntry ticket = fetchTicket(response);
-        assertThat(ticket.getViewedBy().size(), is(equalTo(1)));
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
+        assertTrue(ticket.getViewedBy().isEmpty());
     }
 
     @DisplayName("should update existing DoiRequest when new DOI is requested but a DoiRequest that has not been "
@@ -532,7 +531,10 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(), curatingInstitution,
                                                       randomUri(), curatorName, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD);
-        handler.handleRequest(request, output, CONTEXT);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                            secretsManagerClient));
+        new CreateTicketHandler(ticketResolver, messageService).handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
 

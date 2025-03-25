@@ -427,8 +427,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-
+        ticket.markReadByOwner().persistUpdate(ticketService);
         var httpRequest = createOwnerMarksTicket(publication, ticket, ViewStatus.UNREAD);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
@@ -446,8 +445,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = setupPersistedTicketWithAssignee(ticketType, publication);
-        assertThat(ticket.getViewedBy().size(), is(equalTo(1)));
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
 
         var httpRequest = assigneeMarksTicket(publication, ticket, ViewStatus.READ);
         handler.handleRequest(httpRequest, output, CONTEXT);
@@ -456,7 +453,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
 
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(updatedTicket.getViewedBy(), hasItem(new User(ticket.getAssignee().toString())));
     }
 
@@ -477,7 +473,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var viewedByList = updatedTicket.getViewedBy().stream().toList();
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
-        assertThat(viewedByList.size(), is(equalTo(2)));
+        assertThat(viewedByList.size(), is(equalTo(1)));
         assertThat(viewedByList, hasItem(curator));
     }
 
@@ -491,7 +487,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = setupPersistedTicketWithAssignee(ticketType, publication);
         ticket.markReadForAssignee().persistUpdate(ticketService);
         var expectedAssigneeUsername = new User(ticket.getAssignee().toString());
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
+
         assertThat(ticket.getViewedBy(), hasItem(expectedAssigneeUsername));
 
         var httpRequest = assigneeMarksTicket(publication, ticket, ViewStatus.UNREAD);
@@ -501,7 +497,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
 
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(updatedTicket.getViewedBy(), not(hasItem(expectedAssigneeUsername)));
     }
 

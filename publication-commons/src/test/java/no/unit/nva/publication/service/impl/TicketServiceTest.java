@@ -123,6 +123,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     public static final String FILES_FOR_APPROVAL = "filesForApproval";
     private static final String RESPONSIBILITY_AREA = "responsibilityArea";
     private static final String TICKET_EVENT = "ticketEvent";
+    private static final String VIEWED_BY = "viewedBy";
     private ResourceService resourceService;
     private TicketService ticketService;
     private UserInstance owner;
@@ -159,7 +160,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, DOI, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, RESPONSIBILITY_AREA, TICKET_EVENT)));
+                                                               FINALIZED_DATE, RESPONSIBILITY_AREA, TICKET_EVENT,
+                                                               VIEWED_BY)));
     }
 
     @ParameterizedTest(name = "Publication status: {0}")
@@ -190,7 +192,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(ticket, is(equalTo(ticket)));
         assertThat(ticket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, APPROVED_FILES, FILES_FOR_APPROVAL, RESPONSIBILITY_AREA)));
+                                                               FINALIZED_DATE, APPROVED_FILES, FILES_FOR_APPROVAL,
+                                                               RESPONSIBILITY_AREA, VIEWED_BY)));
     }
 
     @Test
@@ -203,7 +206,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, RESPONSIBILITY_AREA)));
+                                                               FINALIZED_DATE, RESPONSIBILITY_AREA, VIEWED_BY)));
     }
 
     @Test
@@ -485,6 +488,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var ticket = createPersistedTicket(publication, ticketType);
+        ticket.markReadByOwner().persistNewTicket(ticketService);
         var owner = ticket.getOwner();
         assertThat(ticket.getViewedBy(), hasItem(owner));
         ticket.copy().markUnreadByOwner().persistUpdate(ticketService);
@@ -517,6 +521,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.markReadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
         ticket.markUnreadByOwner().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(ticket.getOwner())));
