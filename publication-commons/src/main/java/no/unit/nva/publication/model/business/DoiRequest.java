@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -82,7 +83,7 @@ public class DoiRequest extends TicketEntry {
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(SortableIdentifier.next());
         doiRequest.setStatus(TicketStatus.PENDING);
-        doiRequest.setViewedBy(Set.of());
+        doiRequest.setViewedBy(Collections.emptySet());
         var now = Clock.systemDefaultZone().instant();
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);

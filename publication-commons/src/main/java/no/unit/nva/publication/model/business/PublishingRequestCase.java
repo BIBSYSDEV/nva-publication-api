@@ -361,7 +361,7 @@ public class PublishingRequestCase extends TicketEntry {
         publishingRequestCase.setIdentifier(SortableIdentifier.next());
         publishingRequestCase.setCustomerId(resource.getCustomerId());
         publishingRequestCase.setStatus(TicketStatus.PENDING);
-        publishingRequestCase.setViewedBy(Set.of());
+        publishingRequestCase.setViewedBy(Collections.emptySet());
         publishingRequestCase.setResourceIdentifier(resource.getIdentifier());
         publishingRequestCase.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         publishingRequestCase.setResponsibilityArea(userInstance.getPersonAffiliation());
