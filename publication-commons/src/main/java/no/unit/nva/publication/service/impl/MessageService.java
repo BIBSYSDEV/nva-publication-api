@@ -61,7 +61,7 @@ public class MessageService extends ServiceWithTransactions {
         var transactionRequest = dao.createInsertionTransactionRequest();
         getClient().transactWriteItems(transactionRequest);
         
-        markTicketUnreadForEveryoneExceptSender(ticketEntry, sender);
+        markTicketUnreadForEveryone(ticketEntry);
         return fetchEventualConsistentDataEntry(newMessage, this::extractMessageByIdentifier).orElseThrow();
     }
     
@@ -134,8 +134,8 @@ public class MessageService extends ServiceWithTransactions {
         return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
     }
     
-    private void markTicketUnreadForEveryoneExceptSender(TicketEntry ticketEntry, UserInstance sender) {
-        ticketEntry.markUnreadForEveryone().markReadByUser(sender.getUser()).persistUpdate(ticketService);
+    private void markTicketUnreadForEveryone(TicketEntry ticketEntry) {
+        ticketEntry.markUnreadForEveryone().persistUpdate(ticketService);
     }
     
     private Map<String, AttributeValue> fetchMessage(MessageDao queryObject) throws NotFoundException {
