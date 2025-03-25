@@ -37,6 +37,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -128,7 +129,12 @@ public class ReadResourceService {
                    .filter(FileDao.class::isInstance)
                    .map(FileDao.class::cast)
                    .map(FileDao::getFileEntry)
+                   .filter(ReadResourceService::isNotSoftDeleted)
                    .toList();
+    }
+
+    private static boolean isNotSoftDeleted(FileEntry fileEntry) {
+        return !(fileEntry.getFileEvent() instanceof FileDeletedEvent);
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
