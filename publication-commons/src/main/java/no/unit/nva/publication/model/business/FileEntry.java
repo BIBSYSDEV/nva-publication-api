@@ -27,6 +27,7 @@ import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileTypeUpdatedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -229,6 +230,9 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         if (shouldHideFile(file)) {
             this.setFileEvent(FileHiddenEvent.create(userInstance.getUser(), Instant.now()));
         }
+        if (pendingFileTypeIsUpdated(file)) {
+            this.setFileEvent(FileTypeUpdatedEvent.create(userInstance.getUser(), Instant.now()));
+        }
         if (!file.equals(this.file)) {
             this.file = this.file.copy()
                             .withPublisherVersion(file.getPublisherVersion())
@@ -242,9 +246,14 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         return this;
     }
 
+    private boolean pendingFileTypeIsUpdated(File file) {
+        return this.file instanceof PendingFile<?,?>
+               && file instanceof PendingFile<?,?>
+               && !this.file.getArtifactType().equals(file.getArtifactType());
+    }
+
     public void importNew(ResourceService resourceService,UserInstance userInstance, ImportSource importSource) {
-        var now = Instant.now();
-        this.modifiedDate = now;
+        this.modifiedDate = Instant.now();
         this.setFileEvent(FileImportedEvent.create(userInstance.getUser(), Instant.now(), importSource));
         resourceService.persistFile(this);
     }
