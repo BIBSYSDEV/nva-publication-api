@@ -14,11 +14,10 @@ import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -194,7 +193,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest
     @DisplayName("should mark ticket as unread for everyone except curator when curator sends a message")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForEveryoneExceptCuratorWhenCuratorSendsAMessage(
+    void shouldMarkTicketAsUnreadForEveryoneWhenCuratorSendsAMessage(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -205,14 +204,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                              MANAGE_PUBLISHING_REQUESTS, SUPPORT);
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getViewedBy(), hasSize(1));
-        assertThat(updatedTicket.getViewedBy(), hasItem(curator.getUser()));
+        assertTrue(updatedTicket.getViewedBy().isEmpty());
     }
 
     @ParameterizedTest
     @DisplayName("should mark ticket as unread for everyone except owner when owner sends a message")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForEveryoneExceptOwnerWhenOwnerSendsAMessage(Class<? extends TicketEntry> ticketType,
+    void shouldMarkTicketAsUnreadForEveryoneWhenOwnerSendsAMessage(Class<? extends TicketEntry> ticketType,
                                                                               PublicationStatus status)
         throws ApiGatewayException, IOException {
 
@@ -222,8 +220,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var request = createNewMessageRequestForResourceOwner(publication, ticket, owner, randomString());
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
-        assertThat(updatedTicket.getViewedBy(), hasSize(1));
-        assertThat(updatedTicket.getViewedBy(), hasItem(owner.getUser()));
+        assertTrue(updatedTicket.getViewedBy().isEmpty());
     }
 
     @Test

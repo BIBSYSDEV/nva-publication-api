@@ -116,6 +116,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String TICKET_EVENT = "ticketEvent";
+    private static final String VIEWED_BY = "viewedBy";
     private static final String WORKFLOW = "workflow";
     private static final String ASSIGNEE = "assignee";
     private static final String OWNERAFFILIATION = "ownerAffiliation";
@@ -194,7 +195,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
                                                                FINALIZED_DATE, OWNERAFFILIATION, APPROVED_FILES,
                                                                FILES_FOR_APPROVAL,
-                                                               RESPONSIBILITY_AREA, TICKET_EVENT)));
+                                                               RESPONSIBILITY_AREA, TICKET_EVENT, VIEWED_BY)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
@@ -330,9 +331,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var owner = UserInstance.fromPublication(publication);
 
-        var ticketToBeExpanded = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
-                                     .withOwner(randomString())
-                                     .persistNewTicket(ticketService);
+        var generalSupportRequest = GeneralSupportRequest.create(Resource.fromPublication(publication),
+                                                              UserInstance.fromPublication(publication));
+        generalSupportRequest.setViewedBy(Set.of(owner.getUser()));
+        var ticketToBeExpanded = generalSupportRequest.persistNewTicket(ticketService);
+
         FakeUriResponse.setupFakeForType(ticketToBeExpanded, fakeUriRetriever);
 
         var messageThatWillLeadToTicketExpansion = messageService.createMessage(ticketToBeExpanded, owner,
