@@ -8,10 +8,10 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 
-public record FileTypeUpdatedEvent(Instant date, User user, SortableIdentifier identifier) implements FileEvent {
+public record FileTypeUpdatedEvent(User user, Instant date, SortableIdentifier identifier) implements FileEvent {
 
     public static FileTypeUpdatedEvent create(User user, Instant timestamp) {
-        return new FileTypeUpdatedEvent(timestamp, user, SortableIdentifier.next());
+        return new FileTypeUpdatedEvent(user, timestamp, SortableIdentifier.next());
     }
 
     @Override
