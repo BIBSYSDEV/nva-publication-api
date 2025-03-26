@@ -319,7 +319,8 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         return fileEvent;
     }
 
-    private void setFileEvent(FileEvent fileEvent) {
+    // TODO: Make method private after we have crafted log entries for files
+    public void setFileEvent(FileEvent fileEvent) {
         this.fileEvent = fileEvent;
     }
 }
