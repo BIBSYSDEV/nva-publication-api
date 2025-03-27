@@ -594,9 +594,14 @@ public class ResourceService extends ServiceWithTransactions {
     private List<Entity> extractDatabaseEntries(ScanResult response) {
         return response.getItems()
                    .stream()
+                   .filter(ResourceService::isNotLogEntry)
                    .map(value -> parseAttributeValuesMap(value, Dao.class))
                    .map(Dao::getData)
                    .toList();
+    }
+
+    private static boolean isNotLogEntry(Map<String, AttributeValue> map) {
+        return !map.get("SK0").getS().contains("LogEntry");
     }
 
     private Resource insertResource(Resource resource) {
