@@ -71,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -123,6 +124,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiAssignedEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
@@ -138,6 +140,7 @@ import no.unit.nva.publication.model.business.publicationstate.MergedResourceEve
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.FileDao;
+import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -1908,6 +1911,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var entries =  resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(), Collections.emptyList());
 
         assertTrue(entries.getDatabaseEntries().stream().anyMatch(FileEntry.class::isInstance));
+    }
+
+    @Test
+    void scanResourcesShouldNotFailScanningLogEntries() {
+        var userInstance = UserInstance.create(randomString(), randomUri());
+        resourceService.persistLogEntry(CreatedResourceEvent.create(userInstance, Instant.now())
+                                            .toLogEntry(SortableIdentifier.next(), new LogOrganization(randomUri(),
+                                                                                                       randomString(), Map.of())));
+        assertDoesNotThrow(() -> resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(),
+                                              Collections.emptyList()));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.publicationstate;
 
+import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
@@ -9,11 +10,12 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 
-public record FileImportedEvent(Instant date, User user, SortableIdentifier identifier, ImportSource importSource)
+public record FileImportedEvent(Instant date, User user, URI institution, SortableIdentifier identifier,
+                                ImportSource importSource)
     implements FileEvent {
 
-    public static FileImportedEvent create(User user, Instant timestamp, ImportSource importSource) {
-        return new FileImportedEvent(timestamp, user, SortableIdentifier.next(), importSource);
+    public static FileImportedEvent create(User user, URI institution, Instant timestamp, ImportSource importSource) {
+        return new FileImportedEvent(timestamp, user, institution, SortableIdentifier.next(), importSource);
     }
 
     @Override

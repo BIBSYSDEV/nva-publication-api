@@ -101,7 +101,9 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
     public static FileEntry createFromImportSource(File file, SortableIdentifier identifier,
                                                    UserInstance userInstance, ImportSource importSource) {
         var fileEntry = create(file, identifier, userInstance);
-        fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(), Instant.now(), importSource));
+        fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(),
+                                                        userInstance.getTopLevelOrgCristinId(), Instant.now(),
+                                                        importSource));
         return fileEntry;
     }
 
@@ -252,9 +254,10 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
                && !this.file.getArtifactType().equals(file.getArtifactType());
     }
 
-    public void importNew(ResourceService resourceService,UserInstance userInstance, ImportSource importSource) {
+    public void importNew(ResourceService resourceService, UserInstance userInstance, ImportSource importSource) {
         this.modifiedDate = Instant.now();
-        this.setFileEvent(FileImportedEvent.create(userInstance.getUser(), Instant.now(), importSource));
+        this.setFileEvent(FileImportedEvent.create(userInstance.getUser(), userInstance.getTopLevelOrgCristinId(),
+                                                   Instant.now(), importSource));
         resourceService.persistFile(this);
     }
 
