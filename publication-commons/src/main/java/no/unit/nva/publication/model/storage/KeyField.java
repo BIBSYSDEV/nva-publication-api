@@ -10,7 +10,8 @@ public enum KeyField {
     RESOURCE(ResourceDao.TYPE),
     MESSAGE(MessageDao.TYPE),
     TICKET(TicketDao.TICKETS_INDEXING_TYPE),
-    DOI_REQUEST("DoiRequest");
+    DOI_REQUEST(DoiRequestDao.TYPE),
+    FILE_ENTRY(FileDao.TYPE);
 
     public static final String KEY_FIELDS_DELIMITER = ":";
     private static final String SEPARATOR = ",";
