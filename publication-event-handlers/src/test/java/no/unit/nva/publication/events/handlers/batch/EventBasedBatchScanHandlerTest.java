@@ -59,7 +59,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
-    public static final int LARGE_PAGE = 10;
+    public static final int LARGE_PAGE = 100;
     public static final int ONE_ENTRY_PER_EVENT = 1;
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
     public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";

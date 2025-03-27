@@ -103,12 +103,11 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
-    private static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: {}";
-    public static final String ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE = "Only published "
-                                                                                              + "publications can be "
-                                                                                              + "unpublished";
+    public static final String ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE =
+        "Only published " + "publications can be " + "unpublished";
     public static final String DELETE_PUBLICATION_ERROR_MESSAGE = "Only unpublished publication can be deleted";
     public static final String RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE = "Resource to refresh is not found: {}";
+    private static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: {}";
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
@@ -122,11 +121,9 @@ public class ResourceService extends ServiceWithTransactions {
     private final RawContentRetriever uriRetriever;
     private final Environment environment;
 
-    protected ResourceService(AmazonDynamoDB dynamoDBClient,
-                              String tableName,
-                              Clock clock,
-                              Supplier<SortableIdentifier> identifierSupplier,
-                              RawContentRetriever uriRetriever, Environment environment) {
+    protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
+                              Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
+                              Environment environment) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
@@ -228,33 +225,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void refreshFile(SortableIdentifier identifier) {
-        FileEntry.queryObject(identifier)
-            .fetch(this)
-            .orElseThrow()
-            .toDao()
-            .updateExistingEntry(client);
-    }
-
-    private Resource insertImportedResource(Resource resource, ImportSource importSource) {
-        if (resource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(resource);
-        }
-
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
-        var fileTransactionWriteItems = resource.getFiles().stream()
-                                            .map(file -> FileEntry.createFromImportSource(file, resource.getIdentifier(), userInstance, importSource))
-                                            .map(FileEntry::toDao)
-                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
-                                            .toList();
-
-        var transactions = new ArrayList<>(fileTransactionWriteItems);
-        transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
-        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
-
-        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
-        sendTransactionWriteRequest(transactWriteItemsRequest);
-
-        return resource;
+        FileEntry.queryObject(identifier).fetch(this).orElseThrow().toDao().updateExistingEntry(client);
     }
 
     // TODO: Should we delete all tickets for delete draft publication?
@@ -268,24 +239,6 @@ public class ResourceService extends ServiceWithTransactions {
         transactionItems.addAll(deleteFilesTransactions);
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(transactWriteItemsRequest);
-    }
-
-    // TODO: Should we fetch files here?
-    private List<TransactWriteItem> deleteResourceFilesTransaction(SortableIdentifier identifier) {
-        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
-        var queryRequest = new QueryRequest()
-                               .withTableName(tableName)
-                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-                               .withKeyConditionExpression("#PK3 = :value")
-                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
-                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
-
-        return client.query(queryRequest).getItems().stream()
-                   .map(map -> parseAttributeValuesMap(map, Dao.class))
-                   .filter(FileDao.class::isInstance)
-                   .map(FileDao.class::cast)
-                   .map(dao -> dao.toDeleteTransactionItem(tableName))
-                   .toList();
     }
 
     public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {
@@ -309,19 +262,19 @@ public class ResourceService extends ServiceWithTransactions {
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return readResourceService.getResourceByIdentifier(identifier)
-                   .orElseThrow(() -> new NotFoundException(
-            RESOURCE_NOT_FOUND_MESSAGE + identifier));
+                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE + identifier));
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
-        return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier).stream()
-                       .map(Resource::fromPublication)
-                       .map(Resource::getIdentifier)
-                       .map(readResourceService::getResourceByIdentifier)
-                       .filter(Optional::isPresent)
-                       .map(Optional::get)
-                       .map(Resource::toPublication)
-                       .toList();
+        return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier)
+                   .stream()
+                   .map(Resource::fromPublication)
+                   .map(Resource::getIdentifier)
+                   .map(readResourceService::getResourceByIdentifier)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(Resource::toPublication)
+                   .toList();
     }
 
     public List<PublicationSummary> getPublicationSummaryByOwner(UserInstance sampleUser) {
@@ -373,60 +326,6 @@ public class ResourceService extends ServiceWithTransactions {
         return dataEntry;
     }
 
-    @Deprecated
-    private void persisLogEntryIfNeeded(DoiRequest doiRequest) {
-        doiRequest.setTicketEvent(
-            DoiRequestedEvent.create(UserInstance.fromTicket(doiRequest), doiRequest.getCreatedDate()));
-        client.putItem(new PutItemRequest(tableName, doiRequest.toDao().toDynamoFormat()));
-
-        if (TicketStatus.COMPLETED.equals(doiRequest.getStatus())) {
-            doiRequest.setTicketEvent(
-                DoiAssignedEvent.create(UserInstance.fromTicket(doiRequest), doiRequest.getCreatedDate()));
-            client.putItem(new PutItemRequest(tableName, doiRequest.toDao().toDynamoFormat()));
-        }
-    }
-
-    @Deprecated
-    private void persistLogEntriesIfNeeded(Resource resource) {
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
-        var logEntries = getLogEntriesForResource(resource);
-        if (logEntries.isEmpty()) {
-            resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
-            updateResource(resource, userInstance);
-            if (NVE_IMPORTED_RESOURCE_OWNER.equals(resource.getResourceOwner().getUser().toString())) {
-                resource.setResourceEvent(ImportedResourceEvent.fromImportSource(
-                    ImportSource.fromBrageArchive("NVE"), userInstance, resource.getCreatedDate()));
-            } else if (PUBLISHED.equals(resource.getStatus())) {
-                var publishedDate = Optional.of(resource)
-                                        .map(Resource::getPublishedDate)
-                                        .orElse(resource.getCreatedDate());
-                resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
-                updateResource(resource, userInstance);
-                resource.setResourceEvent(PublishedResourceEvent.create(userInstance, publishedDate));
-            }
-        }
-    }
-
-    @Deprecated
-    private void persistLogEntriesIfNeeded(FileEntry fileEntry) {
-        var userInstance = UserInstance.create(fileEntry.getOwner(), fileEntry.getCustomerId());
-        var logEntries = getLogEntriesForResource(resourceQueryObject(fileEntry.getResourceIdentifier()))
-                             .stream().filter(FileLogEntry.class::isInstance).toList();
-
-        if (logEntries.isEmpty()) {
-            fileEntry.setFileEvent(FileUploadedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate()));
-            fileEntry.update(fileEntry.getFile(), userInstance, this);
-
-            if (!(fileEntry.getFile() instanceof PendingFile<?, ?>)) {
-                fileEntry.setFileEvent(FileApprovedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate()));
-            }
-            if (NVE_IMPORTED_RESOURCE_OWNER.equals(fileEntry.getOwner().toString())) {
-                fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate(),
-                                                                ImportSource.fromBrageArchive("NVE")));
-            }
-        }
-    }
-
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
         return readResourceService.fetchAllTicketsForResource(resource);
     }
@@ -444,15 +343,16 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updateImportCandidate(importCandidate);
     }
 
-    public void unpublishPublication(Publication publication, UserInstance userInstance) throws BadRequestException,
-                                                                                    NotFoundException {
+    public void unpublishPublication(Publication publication, UserInstance userInstance)
+        throws BadRequestException, NotFoundException {
         var existingPublication = getResourceByIdentifier(publication.getIdentifier()).toPublication();
         if (!PUBLISHED.equals(existingPublication.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
         var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
         var unpublishRequestTicket = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
-        updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket, userInstance);
+        updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket,
+                                                   userInstance);
     }
 
     public void terminateResource(Resource resource, UserInstance userInstance) throws BadRequestException {
@@ -464,8 +364,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void persistLogEntry(LogEntry logEntry) {
         var dao = LogEntryDao.fromLogEntry(logEntry);
-        var put = new Put()
-                      .withItem(dao.toDynamoFormat())
+        var put = new Put().withItem(dao.toDynamoFormat())
                       .withTableName(tableName)
                       .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
@@ -476,15 +375,17 @@ public class ResourceService extends ServiceWithTransactions {
     public List<LogEntry> getLogEntriesForResource(Resource resource) {
         var partitionKeyValue = LogEntryDao.getLogEntriesByResourceIdentifierPartitionKey(resource);
 
-        var queryRequest = new QueryRequest()
-                               .withTableName(tableName)
+        var queryRequest = new QueryRequest().withTableName(tableName)
                                .withKeyConditionExpression("PK0 = :value")
-                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(partitionKeyValue)));
+                               .withExpressionAttributeValues(
+                                   Map.of(":value", new AttributeValue().withS(partitionKeyValue)));
 
-        return client.query(queryRequest).getItems().stream()
-                    .map(LogEntryDao::fromDynamoFormat)
-                    .map(LogEntryDao::data)
-                    .toList();
+        return client.query(queryRequest)
+                   .getItems()
+                   .stream()
+                   .map(LogEntryDao::fromDynamoFormat)
+                   .map(LogEntryDao::data)
+                   .toList();
     }
 
     public void persistFile(FileEntry fileEntry) {
@@ -495,9 +396,7 @@ public class ResourceService extends ServiceWithTransactions {
     public Optional<FileEntry> fetchFile(FileEntry fileEntry) {
         var primaryKey = fileEntry.toDao().primaryKey();
         var result = client.getItem(new GetItemRequest().withTableName(tableName).withKey(primaryKey));
-        return Optional.ofNullable(result.getItem())
-                   .map(FileDao::fromDynamoFormat)
-                   .map(FileEntry::fromDao);
+        return Optional.ofNullable(result.getItem()).map(FileDao::fromDynamoFormat).map(FileEntry::fromDao);
     }
 
     public void deleteFile(FileEntry fileEntry) {
@@ -507,6 +406,103 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void updateFile(FileEntry fileEntry) {
         fileEntry.toDao().updateExistingEntry(client);
+    }
+
+    private Resource insertImportedResource(Resource resource, ImportSource importSource) {
+        if (resource.getCuratingInstitutions().isEmpty()) {
+            setCuratingInstitutions(resource);
+        }
+
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var fileTransactionWriteItems = resource.getFiles()
+                                            .stream()
+                                            .map(
+                                                file -> FileEntry.createFromImportSource(file, resource.getIdentifier(),
+                                                                                         userInstance, importSource))
+                                            .map(FileEntry::toDao)
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
+                                            .toList();
+
+        var transactions = new ArrayList<>(fileTransactionWriteItems);
+        transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
+        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
+
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
+
+        return resource;
+    }
+
+    // TODO: Should we fetch files here?
+    private List<TransactWriteItem> deleteResourceFilesTransaction(SortableIdentifier identifier) {
+        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
+        var queryRequest = new QueryRequest().withTableName(tableName)
+                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                               .withKeyConditionExpression("#PK3 = :value")
+                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
+                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+
+        return client.query(queryRequest)
+                   .getItems()
+                   .stream()
+                   .map(map -> parseAttributeValuesMap(map, Dao.class))
+                   .filter(FileDao.class::isInstance)
+                   .map(FileDao.class::cast)
+                   .map(dao -> dao.toDeleteTransactionItem(tableName))
+                   .toList();
+    }
+
+    @Deprecated
+    private void persisLogEntryIfNeeded(DoiRequest doiRequest) {
+        doiRequest.setTicketEvent(
+            DoiRequestedEvent.create(UserInstance.fromTicket(doiRequest), doiRequest.getCreatedDate()));
+        client.putItem(new PutItemRequest(tableName, doiRequest.toDao().toDynamoFormat()));
+
+        if (TicketStatus.COMPLETED.equals(doiRequest.getStatus())) {
+            doiRequest.setTicketEvent(
+                DoiAssignedEvent.create(UserInstance.fromTicket(doiRequest), doiRequest.getCreatedDate()));
+            client.putItem(new PutItemRequest(tableName, doiRequest.toDao().toDynamoFormat()));
+        }
+    }
+
+    @Deprecated
+    private void persistLogEntriesIfNeeded(Resource resource) {
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var logEntries = getLogEntriesForResource(resource);
+        if (NVE_IMPORTED_RESOURCE_OWNER.equals(resource.getResourceOwner().getUser().toString())) {
+            resource.setResourceEvent(
+                ImportedResourceEvent.fromImportSource(ImportSource.fromBrageArchive("NVE"), userInstance,
+                                                       resource.getCreatedDate()));
+        } else if (logEntries.isEmpty()) {
+            resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
+            updateResource(resource, userInstance);
+            if (PUBLISHED.equals(resource.getStatus())) {
+                var publishedDate = Optional.of(resource)
+                                        .map(Resource::getPublishedDate)
+                                        .orElse(resource.getCreatedDate());
+                resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
+                updateResource(resource, userInstance);
+                resource.setResourceEvent(PublishedResourceEvent.create(userInstance, publishedDate));
+            }
+        }
+    }
+
+    @Deprecated
+    private void persistLogEntriesIfNeeded(FileEntry fileEntry) {
+        var userInstance = UserInstance.create(fileEntry.getOwner(), fileEntry.getCustomerId());
+        var logEntries = getLogEntriesForResource(resourceQueryObject(fileEntry.getResourceIdentifier())).stream()
+                             .filter(FileLogEntry.class::isInstance)
+                             .toList();
+        if (NVE_IMPORTED_RESOURCE_OWNER.equals(fileEntry.getOwner().toString())) {
+            fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate(),
+                                                            ImportSource.fromBrageArchive("NVE")));
+        } else if (logEntries.isEmpty()) {
+            fileEntry.setFileEvent(FileUploadedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate()));
+            fileEntry.update(fileEntry.getFile(), userInstance, this);
+            if (!(fileEntry.getFile() instanceof PendingFile<?, ?>)) {
+                fileEntry.setFileEvent(FileApprovedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate()));
+            }
+        }
     }
 
     @JacocoGenerated
@@ -606,7 +602,8 @@ public class ResourceService extends ServiceWithTransactions {
         }
 
         var userInstance = UserInstance.fromPublication(resource.toPublication());
-        var fileTransactionWriteItems = resource.getFiles().stream()
+        var fileTransactionWriteItems = resource.getFiles()
+                                            .stream()
                                             .map(file -> FileEntry.create(file, resource.getIdentifier(), userInstance))
                                             .map(FileEntry::toDao)
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
@@ -630,9 +627,11 @@ public class ResourceService extends ServiceWithTransactions {
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
 
-        var fileTransactionWriteItems = newResource.getFiles().stream()
+        var fileTransactionWriteItems = newResource.getFiles()
+                                            .stream()
                                             .map(file -> FileEntry.create(file, newResource.getIdentifier(),
-                                                                          UserInstance.fromPublication(newResource.toPublication())))
+                                                                          UserInstance.fromPublication(
+                                                                              newResource.toPublication())))
                                             .map(FileEntry::toDao)
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();

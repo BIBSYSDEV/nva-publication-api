@@ -9,6 +9,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AN
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -23,6 +24,7 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -40,9 +42,10 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(FileDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public final class FileDao extends Dao implements DynamoEntryByIdentifier {
+public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinWithResource {
 
     public static final String TYPE = "File";
+    private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
     @JsonProperty("identifier")
     private final SortableIdentifier identifier;
     private final SortableIdentifier resourceIdentifier;
@@ -122,6 +125,12 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier {
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
+    }
+
+    @Override
+    @JsonIgnore
+    public String joinByResourceOrderedType() {
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + getData().getType();
     }
 
     @Override

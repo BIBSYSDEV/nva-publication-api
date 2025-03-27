@@ -776,7 +776,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithAssociatedLink(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
         var userInstance = UserInstance.fromPublication(publication);
@@ -1900,6 +1900,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var migratedDoiRequest = (DoiRequest) doiRequest.fetch(ticketService);
 
         assertInstanceOf(DoiAssignedEvent.class, migratedDoiRequest.getTicketEvent());
+    }
+
+    @Test
+    void scanResourcesShouldScanFileEntries() throws BadRequestException {
+        createPersistedPublicationWithDoi();
+        var entries =  resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(), Collections.emptyList());
+
+        assertTrue(entries.getDatabaseEntries().stream().anyMatch(FileEntry.class::isInstance));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

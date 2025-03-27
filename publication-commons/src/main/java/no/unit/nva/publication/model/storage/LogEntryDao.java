@@ -1,6 +1,8 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
@@ -60,6 +62,16 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
 
     @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
     private String getPrimaryKeySortKey() {
+        return KEY_PATTERN.formatted(TYPE, identifier());
+    }
+
+    @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME)
+    private String getCustomerResourcePartitionKey() {
+        return KEY_PATTERN.formatted(Resource.TYPE, resourceIdentifier());
+    }
+
+    @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME)
+    private String getCustomerResourceSortKey() {
         return KEY_PATTERN.formatted(TYPE, identifier());
     }
 }
