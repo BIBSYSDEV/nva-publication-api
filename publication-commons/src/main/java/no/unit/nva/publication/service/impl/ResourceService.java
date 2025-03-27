@@ -489,12 +489,15 @@ public class ResourceService extends ServiceWithTransactions {
 
     @Deprecated
     private void persistLogEntriesIfNeeded(FileEntry fileEntry) {
-        var userInstance = UserInstance.create(fileEntry.getOwner(), fileEntry.getCustomerId());
+        var userInstance = UserInstance.create(fileEntry.getOwner().toString(), fileEntry.getCustomerId(), null, List.of(),
+                                               fileEntry.getOwnerAffiliation());
         var logEntries = getLogEntriesForResource(resourceQueryObject(fileEntry.getResourceIdentifier())).stream()
                              .filter(FileLogEntry.class::isInstance)
                              .toList();
         if (NVE_IMPORTED_RESOURCE_OWNER.equals(fileEntry.getOwner().toString())) {
-            fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate(),
+            fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(),
+                                                            userInstance.getTopLevelOrgCristinId(),
+                                                            fileEntry.getCreatedDate(),
                                                             ImportSource.fromBrageArchive("NVE")));
         } else if (logEntries.isEmpty()) {
             fileEntry.setFileEvent(FileUploadedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate()));

@@ -100,9 +100,8 @@ public class LogEntryService {
 
     private void persistFileLogEntry(FileEntry fileEntry) {
         var fileEvent = fileEntry.getFileEvent();
-        if (fileEvent instanceof FileImportedEvent) {
-            var userDto = getUser(fileEvent.user());
-            var organization = fetchOrganization(userDto.institutionCristinId());
+        if (fileEvent instanceof FileImportedEvent fileImportedEvent) {
+            var organization = fetchOrganization(fileImportedEvent.institution());
             fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
         } else {
             var user = createUser(fileEvent.user(), null);
