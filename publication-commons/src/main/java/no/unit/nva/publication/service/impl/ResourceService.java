@@ -18,7 +18,6 @@ import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -44,32 +43,21 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
-import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.DoiAssignedEvent;
-import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
-import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -111,7 +99,6 @@ public class ResourceService extends ServiceWithTransactions {
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
-    private static final String NVE_IMPORTED_RESOURCE_OWNER = "nve@5948.0.0.0";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -314,15 +301,6 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
-        if (dataEntry instanceof Resource resource) {
-            persistLogEntriesIfNeeded(resource);
-        }
-        if (dataEntry instanceof FileEntry fileEntry) {
-            persistLogEntriesIfNeeded(fileEntry);
-        }
-        if (dataEntry instanceof DoiRequest doiRequest) {
-            persisLogEntryIfNeeded(doiRequest);
-        }
         return dataEntry;
     }
 
@@ -450,62 +428,6 @@ public class ResourceService extends ServiceWithTransactions {
                    .map(FileDao.class::cast)
                    .map(dao -> dao.toDeleteTransactionItem(tableName))
                    .toList();
-    }
-
-    @Deprecated
-    private void persisLogEntryIfNeeded(DoiRequest doiRequest) {
-        doiRequest.setTicketEvent(
-            DoiRequestedEvent.create(UserInstance.fromTicket(doiRequest), doiRequest.getCreatedDate()));
-        client.putItem(new PutItemRequest(tableName, doiRequest.toDao().toDynamoFormat()));
-
-        if (TicketStatus.COMPLETED.equals(doiRequest.getStatus())) {
-            doiRequest.setTicketEvent(
-                DoiAssignedEvent.create(UserInstance.fromTicket(doiRequest), doiRequest.getCreatedDate()));
-            client.putItem(new PutItemRequest(tableName, doiRequest.toDao().toDynamoFormat()));
-        }
-    }
-
-    @Deprecated
-    private void persistLogEntriesIfNeeded(Resource resource) {
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
-        var logEntries = getLogEntriesForResource(resource);
-        if (NVE_IMPORTED_RESOURCE_OWNER.equals(resource.getResourceOwner().getUser().toString())) {
-            resource.setResourceEvent(
-                ImportedResourceEvent.fromImportSource(ImportSource.fromBrageArchive("NVE"), userInstance,
-                                                       resource.getCreatedDate()));
-        } else if (logEntries.isEmpty()) {
-            resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
-            updateResource(resource, userInstance);
-            if (PUBLISHED.equals(resource.getStatus())) {
-                var publishedDate = Optional.of(resource)
-                                        .map(Resource::getPublishedDate)
-                                        .orElse(resource.getCreatedDate());
-                resource.setResourceEvent(CreatedResourceEvent.create(userInstance, resource.getCreatedDate()));
-                updateResource(resource, userInstance);
-                resource.setResourceEvent(PublishedResourceEvent.create(userInstance, publishedDate));
-            }
-        }
-    }
-
-    @Deprecated
-    private void persistLogEntriesIfNeeded(FileEntry fileEntry) {
-        var userInstance = UserInstance.create(fileEntry.getOwner().toString(), fileEntry.getCustomerId(), null, List.of(),
-                                               fileEntry.getOwnerAffiliation());
-        var logEntries = getLogEntriesForResource(resourceQueryObject(fileEntry.getResourceIdentifier())).stream()
-                             .filter(FileLogEntry.class::isInstance)
-                             .toList();
-        if (NVE_IMPORTED_RESOURCE_OWNER.equals(fileEntry.getOwner().toString())) {
-            fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(),
-                                                            userInstance.getTopLevelOrgCristinId(),
-                                                            fileEntry.getCreatedDate(),
-                                                            ImportSource.fromBrageArchive("NVE")));
-        } else if (logEntries.isEmpty()) {
-            fileEntry.setFileEvent(FileUploadedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate()));
-            fileEntry.update(fileEntry.getFile(), userInstance, this);
-            if (!(fileEntry.getFile() instanceof PendingFile<?, ?>)) {
-                fileEntry.setFileEvent(FileApprovedEvent.create(userInstance.getUser(), fileEntry.getCreatedDate()));
-            }
-        }
     }
 
     @JacocoGenerated

@@ -43,7 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,7 +65,6 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -87,7 +85,6 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
@@ -126,21 +123,15 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.DoiAssignedEvent;
-import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.FileDao;
-import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -1716,193 +1707,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertEquals(persistedFileEntry, refreshedFileEntry);
         assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
-    }
-
-    @Deprecated
-    @Test
-    void shouldPersistPublicationCreatedLogEntryWhenMigratingResource() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-
-        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
-
-        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
-        var resourceEvent = migratedResource.getResourceEvent();
-
-        assertEquals(persistedPublication.getCreatedDate(), resourceEvent.date());
-        assertInstanceOf(CreatedResourceEvent.class, resourceEvent);
-    }
-
-    @Deprecated
-    @Test
-    void shouldNotPersistPublicationCreatedLogEntryWhenLogEntryExists() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        var logEntry = CreatedResourceEvent.create(userInstance, Instant.now())
-                           .toLogEntry(persistedPublication.getIdentifier(), null);
-        logEntry.persist(resourceService);
-        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
-
-        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
-
-        assertNull(migratedResource.getResourceEvent());
-    }
-
-    @Deprecated
-    @Test
-    void shouldNotPersistPublicationCreatedLogEntryWhenConsumingEventTwice() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        var logEntry = CreatedResourceEvent.create(userInstance, Instant.now())
-                           .toLogEntry(persistedPublication.getIdentifier(), null);
-        logEntry.persist(resourceService);
-        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
-        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
-        resourceService.refreshResources(List.of(Resource.fromPublication(persistedPublication)));
-
-        var resourceMigratedTwice = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
-
-        assertEquals(migratedResource, resourceMigratedTwice);
-    }
-
-    @Deprecated
-    @Test
-    void shouldPersistPublicationPublishedLogEntryWhenMigratingPublishedResource() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
-        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow().toPublication();
-        resourceService.refreshResources(List.of(Resource.fromPublication(publishedPublication)));
-
-        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
-        var resourceEvent = migratedResource.getResourceEvent();
-
-        assertEquals(publishedPublication.getPublishedDate(), resourceEvent.date());
-        assertInstanceOf(PublishedResourceEvent.class, resourceEvent);
-    }
-
-    @Deprecated
-    @Test
-    void shouldNotPersistPublicationPublishedLogEntryWhenPresent() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
-        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow().toPublication();
-        var logEntry = PublishedResourceEvent.create(userInstance, Instant.now())
-                           .toLogEntry(publishedPublication.getIdentifier(), null);
-        logEntry.persist(resourceService);
-        resourceService.refreshResources(List.of(Resource.fromPublication(publishedPublication)));
-
-        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
-
-        assertNull(migratedResource.getResourceEvent());
-    }
-
-    @Deprecated
-    @Test
-    void shouldPersistPublicationImportedLogEntryWhenMigratingPublicationWithNVEAsResourceOwner() throws BadRequestException {
-        var publication = randomPublication().copy()
-                              .withResourceOwner(new ResourceOwner(new Username("nve@5948.0.0.0"), randomUri()))
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
-        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow().toPublication();
-        resourceService.refreshResources(List.of(Resource.fromPublication(publishedPublication)));
-
-        var migratedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
-        var resourceEvent = migratedResource.getResourceEvent();
-
-        assertEquals(publishedPublication.getCreatedDate(), resourceEvent.date());
-        assertInstanceOf(ImportedResourceEvent.class, resourceEvent);
-    }
-
-    @Deprecated
-    @Test
-    void shouldSetFileUploadedEventWhenMigratingFileWithoutFileUploadedLogEntry() throws BadRequestException {
-        var publication = randomPublication();
-        publication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                       UserInstance.fromPublication(publication));
-        var fileEntry = FileEntry.create(randomPendingInternalFile(), publication.getIdentifier(),
-                                         UserInstance.create(randomString(), randomUri()));
-        resourceService.persistFile(fileEntry);
-        resourceService.refreshResources(List.of(fileEntry));
-
-        var migratedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-
-        assertInstanceOf(FileUploadedEvent.class, migratedFileEntry.getFileEvent());
-    }
-
-    @Deprecated
-    @Test
-    void shouldSetFileApprovedEventWhenMigratingFileWithoutFileApprovedLogEntryAndFileIsFinalized() throws BadRequestException {
-        var publication = randomPublication();
-        publication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                       UserInstance.fromPublication(publication));
-        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
-                                         UserInstance.create(randomString(), randomUri()));
-        resourceService.persistFile(fileEntry);
-        resourceService.refreshResources(List.of(fileEntry));
-
-        var migratedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-
-        assertInstanceOf(FileApprovedEvent.class, migratedFileEntry.getFileEvent());
-    }
-
-    @Deprecated
-    @Test
-    void shouldSetFileImportedEventWhenMigratingFileWithoutLogEntryAndFileOwnerIsNVE() throws BadRequestException {
-        var publication = randomPublication();
-        publication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                       UserInstance.fromPublication(publication));
-        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
-                                         UserInstance.create("nve@5948.0.0.0", randomUri()));
-        resourceService.persistFile(fileEntry);
-        resourceService.refreshResources(List.of(fileEntry));
-
-        var migratedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-
-        assertInstanceOf(FileImportedEvent.class, migratedFileEntry.getFileEvent());
-    }
-
-    @Deprecated
-    @Test
-    void shouldSetDoiRequestedEventWhenDoiRequestExists() throws ApiGatewayException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        var doiRequest =
-            DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
-        resourceService.refreshResources(List.of(doiRequest));
-
-        var migratedDoiRequest = (DoiRequest) doiRequest.fetch(ticketService);
-
-        assertInstanceOf(DoiRequestedEvent.class, migratedDoiRequest.getTicketEvent());
-    }
-
-    @Deprecated
-    @Test
-    void shouldSetDoiAssignedEventWhenDoiRequestHasBeenAccepted() throws ApiGatewayException {
-        var publication = randomPublication();
-        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
-        var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        var resource = Resource.fromPublication(publication);
-        resource.publish(resourceService, userInstance);
-        var doiRequest =
-            DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
-        publication = resource.fetch(resourceService).orElseThrow().toPublication();
-        doiRequest.complete(publication, userInstance).persistUpdate(ticketService);
-        resourceService.refreshResources(List.of(doiRequest.fetch(ticketService)));
-
-        var migratedDoiRequest = (DoiRequest) doiRequest.fetch(ticketService);
-
-        assertInstanceOf(DoiAssignedEvent.class, migratedDoiRequest.getTicketEvent());
     }
 
     @Test
