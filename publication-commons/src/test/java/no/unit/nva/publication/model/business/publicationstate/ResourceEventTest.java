@@ -11,6 +11,7 @@ import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATI
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_PUBLISHED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_REPUBLISHED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_UNPUBLISHED;
+import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_UPDATED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,7 +45,9 @@ class ResourceEventTest {
                 PUBLICATION_IMPORTED),
                          Arguments.of(DoiReservedEvent.create(randomUserInstance(), Instant.now()), DOI_RESERVED),
                          Arguments.of(MergedResourceEvent.fromImportSource(getImportSource(), randomUserInstance(),
-                                                                           Instant.now()), PUBLICATION_MERGED));
+                                                                           Instant.now()), PUBLICATION_MERGED),
+                         Arguments.of(UpdatedResourceEvent.create(randomUserInstance(),
+                                                                           Instant.now()), PUBLICATION_UPDATED));
     }
 
     public static Stream<Arguments> ticketEventProvider() {
