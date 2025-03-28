@@ -12,9 +12,9 @@ import nva.commons.core.ioutils.IoUtils;
 
 public final class ChannelRegistryMapper {
 
-    public static final String JOURNAL_SERIES_ID_MAPPING_CSV = "channelRegistry/journal_series_id_mapping_251023.csv";
+    public static final String JOURNAL_SERIES_ID_MAPPING_CSV = "channelRegistry/journals_series_by_nsd_code_280325.csv";
     private static final char SEPARATOR = ';';
-    private static final String PATH_PUBLISHER_ID_CSV = "channelRegistry/publisher_id_mapping.csv";
+    private static final String PATH_PUBLISHER_ID_CSV = "channelRegistry/publishers_by_nsd_code_280325.csv";
     private static final String PATH_PUBLISHER_NAME_CSV = "channelRegistry/publishers_by_name.csv";
     private static final String PATH_JOURNAL_NAME_CSV = "channelRegistry/journals_by_name_and_issn.csv";
 
