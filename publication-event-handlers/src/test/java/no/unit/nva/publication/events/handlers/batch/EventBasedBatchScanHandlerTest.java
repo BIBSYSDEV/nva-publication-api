@@ -87,7 +87,6 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
     }
 
-    // TODO: Uncomment assertion once we have migrated files: https://sikt.atlassian.net/browse/NP-48480
     @Test
     void shouldUpdateDataEntriesWhenValidRequestIsReceived()
         throws ApiGatewayException {
@@ -98,35 +97,33 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
 
-//        assertThat(updatedResource, is(equalTo(initialResource)));
+        assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
     }
 
-    //TODO: Enable test once we have migrated. For now test is failing because of ticket refresh when updating
-    // publication in order to populate multiple log messages under migration. Task: https://sikt.atlassian.net/browse/NP-48765
-//    @Test
-//    void shouldUpdateDataEntriesWithGivenTypeWhenRequestContainsType()
-//        throws ApiGatewayException {
-//        var createdPublication = createPublication(randomPublication());
-//        var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-//        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-//        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
-//                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
-//                                 .persistNewTicket(ticketService);
-//        var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
-//
-//        handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
-//                                                     .withPageSize(LARGE_PAGE)
-//                                                     .withStartMarker(START_FROM_BEGINNING)
-//                                                     .withTopic(TOPIC)
-//                                                     .withTypes(List.of(KeyField.RESOURCE))
-//                                                     .build()), output, context);
-//        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-//        var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
-//
-//        assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
-//        assertThat(updatedTicketDao.getVersion(), is(equalTo(originalTicketDao.getVersion())));
-//    }
+    @Test
+    void shouldUpdateDataEntriesWithGivenTypeWhenRequestContainsType()
+        throws ApiGatewayException {
+        var createdPublication = createPublication(randomPublication());
+        var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
+                                 .persistNewTicket(ticketService);
+        var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+        handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
+                                                     .withPageSize(LARGE_PAGE)
+                                                     .withStartMarker(START_FROM_BEGINNING)
+                                                     .withTopic(TOPIC)
+                                                     .withTypes(List.of(KeyField.RESOURCE))
+                                                     .build()), output, context);
+        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+        var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+        assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
+        assertThat(updatedTicketDao.getVersion(), is(equalTo(originalTicketDao.getVersion())));
+    }
 
     @Test
     void shouldUpdateTicketsWhenRequestContainsTicketKeyFieldOnly()
