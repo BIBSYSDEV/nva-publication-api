@@ -76,7 +76,7 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     public EventReference handleRequest(DynamodbEvent inputEvent, Context context) {
         var dynamodbStreamRecord = inputEvent.getRecords().getFirst();
         var dataEntryUpdateEvent = convertToDataEntryUpdateEvent(dynamodbStreamRecord);
-        return dataEntryUpdateEvent.notEmpty() ? sendEvent(dataEntryUpdateEvent, context) : DO_NOT_EMIT_EVENT;
+        return dataEntryUpdateEvent.shouldProcessUpdate() ? sendEvent(dataEntryUpdateEvent, context) : DO_NOT_EMIT_EVENT;
     }
 
     private static SortableIdentifier getIdentifier(DataEntryUpdateEvent blobObject) {

@@ -3,6 +3,8 @@ package no.unit.nva.publication.events.handlers.dynamodbstream;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.AWS_REGION;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toEntity;
@@ -13,6 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
@@ -23,11 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
@@ -79,9 +85,10 @@ class DynamodbStreamToEventBridgeHandlerTest {
     public static Stream<Arguments> dynamoDbEventProvider() {
         var publication = PublicationGenerator.randomPublication();
         return
-            Stream.of(Arguments.of(randomEventWithSingleDynamoRecord(publication, null)),
-                      Arguments.of(randomEventWithSingleDynamoRecord(null, publication)),
-                      Arguments.of(randomEventWithSingleDynamoRecord(publication, publication)));
+            Stream.of(Arguments.of(randomEventWithSingleDynamoRecord(Resource.fromPublication(publication), null)),
+                      Arguments.of(randomEventWithSingleDynamoRecord(null, Resource.fromPublication(publication))),
+                      Arguments.of(randomEventWithSingleDynamoRecord(Resource.fromPublication(publication),
+                                                                     Resource.fromPublication(publication))));
     }
 
     @ParameterizedTest
@@ -96,14 +103,27 @@ class DynamodbStreamToEventBridgeHandlerTest {
     
     @Test
     void shouldPlaceFailedEntryOnRecoveryQueueWhenStoringAnyEventRecordInS3Fails() {
-        var event = randomEventWithSingleDynamoRecord(randomPublication(), randomPublication());
+        var event = randomEventWithSingleDynamoRecord(Resource.fromPublication(randomPublication()),
+                                                      Resource.fromPublication(randomPublication()));
         handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), eventBridgeClient, fakeSqsClient);
         handler.handleRequest(event, context);
         var recoveryMessage = fakeSqsClient.getDeliveredMessages().getFirst();
         assertThat(recoveryMessage.messageAttributes().get("id"), Matchers.is(notNullValue()));
     }
+
+    @Test
+    void shouldNotEmitEventWhenDataEntryUpdateEventForFileEntryDoesNotHaveNewImage() {
+        var event = randomEventWithSingleDynamoRecord(FileEntry.create(randomOpenFile(),
+                                                           SortableIdentifier.next(), UserInstance.create(randomString(), randomUri())),
+                                          null);
+        handler.handleRequest(event, context);
+        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        var persistedEvents = s3Driver.getFiles(UnixPath.ROOT_PATH);
+
+        assertTrue(persistedEvents.isEmpty());
+    }
     
-    private static DynamodbEvent randomEventWithSingleDynamoRecord(Publication oldImage, Publication newImage) {
+    private static DynamodbEvent randomEventWithSingleDynamoRecord(Entity oldImage, Entity newImage) {
         var event = new DynamodbEvent();
         var record = randomDynamoRecord();
         record.getDynamodb().setOldImage(toDynamoDbFormat(oldImage));
@@ -112,12 +132,12 @@ class DynamodbStreamToEventBridgeHandlerTest {
         return event;
     }
 
-    private static Map<String, AttributeValue> toDynamoDbFormat(Publication publication) {
+    private static Map<String, AttributeValue> toDynamoDbFormat(Entity publication) {
         return nonNull(publication) ? publicationDynamoDbFormat(publication) : null;
     }
 
-    private static Map<String, AttributeValue> publicationDynamoDbFormat(Publication publication) {
-        var dao = Resource.fromPublication(publication).toDao().toDynamoFormat();
+    private static Map<String, AttributeValue> publicationDynamoDbFormat(Entity publication) {
+        var dao = publication.toDao().toDynamoFormat();
         var string = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
         return (Map<String, AttributeValue>) attempt(() -> dtoObjectMapper.readValue(string,
                                                                                 dynamoMapStructureAsJacksonType())).orElseThrow();
