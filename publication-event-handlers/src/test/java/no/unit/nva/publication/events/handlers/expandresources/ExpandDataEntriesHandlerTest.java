@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
@@ -39,6 +41,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
@@ -117,7 +121,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @EnumSource(
         value = PublicationStatus.class,
         mode = INCLUDE,
-        names = {"PUBLISHED", "PUBLISHED_METADATA", "UNPUBLISHED", "DELETED"})
+        names = {"PUBLISHED", "PUBLISHED_METADATA", "UNPUBLISHED", "DELETED", "DRAFT"})
     void shouldProduceAnExpandedDataEntryWhenInputHasNewImage(PublicationStatus status)
         throws IOException, BadRequestException {
         var oldImage = createPublicationWithStatus(status);
@@ -136,7 +140,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @EnumSource(
         value = PublicationStatus.class,
         mode = EXCLUDE,
-        names = {"PUBLISHED", "PUBLISHED_METADATA", "UNPUBLISHED", "DELETED"})
+        names = {"PUBLISHED", "PUBLISHED_METADATA", "UNPUBLISHED", "DELETED", "DRAFT"})
     void shouldNotProduceEntryWhenNotPublishedOrDeletedEntry(PublicationStatus status)
         throws IOException, BadRequestException {
         var oldImage = createPublicationWithStatus(status);
@@ -288,16 +292,40 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
-        var oldImage = createPublicationWithStatus(DRAFT);
-        var newImage = createUpdatedVersionOfPublication(oldImage);
+    void shouldCreateEnrichmentEventForMinimalisticInitialDrafts() throws IOException {
+        Publication oldImage = null;
+        var newImage = createMinimalisticDraft();
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
 
         expandResourceHandler.handleRequest(request, output, CONTEXT);
-        var eventReference = parseHandlerResponse();
-        assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
+
+        var persistedResource = s3Driver.getFile(UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
+        var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
+        assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
+    }
+
+    private Publication createMinimalisticDraft() {
+        var publication = createPublicationWithStatus(DRAFT);
+
+        publication.setAssociatedArtifacts(AssociatedArtifactList.empty());
+        publication.setEntityDescription(null);
+        publication.setDoi(null);
+        publication.setAdditionalIdentifiers(Collections.emptySet());
+        publication.setFundings(Collections.emptyList());
+        publication.setDuplicateOf(null);
+        publication.setHandle(null);
+        publication.setCuratingInstitutions(Collections.emptySet());
+        publication.setImportDetails(Collections.emptyList());
+        publication.setIndexedDate(null);
+        publication.setLink(null);
+        publication.setProjects(Collections.emptyList());
+        publication.setRightsHolder(null);
+        publication.setSubjects(Collections.emptyList());
+        publication.setPublicationNotes(Collections.emptyList());
+
+        return publication;
     }
 
     @Test
