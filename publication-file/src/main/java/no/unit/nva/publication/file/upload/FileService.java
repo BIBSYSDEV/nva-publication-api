@@ -11,10 +11,8 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
@@ -25,7 +23,6 @@ import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
-import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
@@ -71,22 +68,11 @@ public class FileService {
 
         var resource = fetchResource(resourceIdentifier);
 
-        if (!userInstance.isExternalClient()) {
-            validateCustomerConfig(userInstance, resource);
-        }
-
         validateUploadPermissions(userInstance, resource);
 
         var request = createUploadRequestBody.toInitiateMultipartUploadRequest(BUCKET_NAME);
 
         return amazonS3.initiateMultipartUpload(request);
-    }
-
-    private void validateCustomerConfig(UserInstance userInstance, Resource resource) throws ForbiddenException {
-        var customer = customerApiClient.fetch(userInstance.getCustomerId());
-        if (customerDoesNotAllowUploadingFile(customer, resource)) {
-            throw new ForbiddenException();
-        }
     }
 
     public File completeMultipartUpload(SortableIdentifier resourceIdentifier,
@@ -218,13 +204,5 @@ public class FileService {
         } else {
             return  NullRightsRetentionStrategy.create(configuration);
         }
-    }
-
-    private boolean customerDoesNotAllowUploadingFile(Customer customer, Resource resource) {
-        var instanceType = Optional.ofNullable(resource.getEntityDescription())
-                               .map(EntityDescription::getReference)
-                               .map(Reference::getPublicationInstance)
-                               .map(PublicationInstance::getInstanceType);
-        return instanceType.isPresent() && !customer.getAllowFileUploadForTypes().contains(instanceType.get());
     }
 }
