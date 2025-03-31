@@ -113,16 +113,19 @@ class DynamodbStreamToEventBridgeHandlerTest {
 
     @Test
     void shouldNotEmitEventWhenDataEntryUpdateEventForFileEntryDoesNotHaveNewImage() {
-        var event = randomEventWithSingleDynamoRecord(FileEntry.create(randomOpenFile(),
-                                                           SortableIdentifier.next(), UserInstance.create(randomString(), randomUri())),
-                                          null);
+        var event = randomEventWithSingleDynamoRecord(randomFileEntry(), null);
         handler.handleRequest(event, context);
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         var persistedEvents = s3Driver.getFiles(UnixPath.ROOT_PATH);
 
         assertTrue(persistedEvents.isEmpty());
     }
-    
+
+    private static FileEntry randomFileEntry() {
+        return FileEntry.create(randomOpenFile(),
+                                SortableIdentifier.next(), UserInstance.create(randomString(), randomUri()));
+    }
+
     private static DynamodbEvent randomEventWithSingleDynamoRecord(Entity oldImage, Entity newImage) {
         var event = new DynamodbEvent();
         var record = randomDynamoRecord();
