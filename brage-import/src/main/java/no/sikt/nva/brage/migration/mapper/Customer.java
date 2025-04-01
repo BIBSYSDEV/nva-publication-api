@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.mapper;
 
+import static no.sikt.nva.brage.migration.mapper.Customer.Environment.PROD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -7,6 +8,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
 import no.sikt.nva.brage.migration.record.UnknownCustomerException;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
@@ -58,8 +60,16 @@ public record Customer(String name,
                    .stream()
                    .filter(entry -> host.contains(entry.getKey().getValue()))
                    .findFirst()
-                   .orElseThrow()
+                   .orElseGet(this::getProductionIdentifier)
                    .getValue();
+    }
+
+    private Entry<Environment, String> getProductionIdentifier() {
+        return identifiers.entrySet()
+                   .stream()
+                   .filter(environmentStringEntry -> PROD.equals(environmentStringEntry.getKey()))
+                   .findFirst()
+                   .orElseThrow();
     }
 
     public enum Environment {

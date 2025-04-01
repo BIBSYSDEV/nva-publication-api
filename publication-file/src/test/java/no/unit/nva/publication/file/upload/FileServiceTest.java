@@ -176,7 +176,7 @@ class FileServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowForbiddenExceptionWhenInitiationMultipartUploadAndCustomerDoesNotAllowFileForPublicationType()
+    void shouldThrowForbiddenExceptionWhenInitiationMultipartUploadAndUserIsNotAllowedToUploadFileForPublication()
         throws BadRequestException {
         var publication = randomPublication();
         var resource = Resource.fromPublication(publication)
@@ -185,14 +185,12 @@ class FileServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.create(new User(randomString()), customerId);
         var uploadRequest = randomUploadRequest();
 
-        when(customerApiClient.fetch(customerId)).thenReturn(new Customer(Set.of(), null, null));
-
         assertThrows(ForbiddenException.class,
                      () -> fileService.initiateMultipartUpload(resource.getIdentifier(), userInstance, uploadRequest));
     }
 
     @Test
-    void shouldInitiateMultipartUpload() throws ForbiddenException, NotFoundException, BadRequestException {
+    void shouldInitiateMultipartUpload() throws NotFoundException, BadRequestException, ForbiddenException {
         var publication = randomPublication();
         UserInstance owner = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication)
@@ -209,7 +207,7 @@ class FileServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldInitiateMultipartUploadForExternalClientWithoutValidatingCustomerConfig()
-        throws ForbiddenException, NotFoundException, BadRequestException {
+        throws NotFoundException, BadRequestException, ForbiddenException {
         var publication = randomPublication();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
