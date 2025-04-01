@@ -124,6 +124,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
@@ -1873,6 +1874,32 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
+
+    @Test
+    void shouldThrowUnauthorizedWhenUpdatingFileToOpenPendingFileWhenCustomerDoesNotAllowOpenPendingFilesForPublication()
+        throws IOException, ApiGatewayException {
+        var uploadedFile = randomUploadedFile();
+        var publication = randomPublication().copy()
+                              .withAssociatedArtifacts(List.of(uploadedFile))
+                              .withPublisher(Organization.fromUri(customerId))
+                              .build();
+        publication = Resource.fromPublication(publication).persistNew(resourceService, UserInstance.fromPublication(publication));
+        stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+        var file = ((File) publication.getAssociatedArtifacts().getFirst()).toPendingOpenFile();
+        var publicationUpdate = publication.copy()
+                                    .withAssociatedArtifacts(List.of(file))
+                                    .build();
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publicationUpdate);
+
+        var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
+                                                   eventBridgeClient, secretsManagerClient,
+                                                   WiremockHttpClient.create());
+        handler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
+    }
+
 
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
         throws ApiGatewayException {

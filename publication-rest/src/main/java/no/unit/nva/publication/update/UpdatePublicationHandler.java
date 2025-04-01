@@ -23,6 +23,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -265,26 +266,46 @@ public class UpdatePublicationHandler
         validateRequest(identifierInPath, input);
 
         var existingPublication = existingResource.toPublication();
-
-        permissionStrategy.authorize(UPDATE);
-        authorizeFileEntries(existingResource, userInstance, getModifiedFiles(existingResource, input));
-
         var publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
 
+        permissionStrategy.authorize(UPDATE);
+        authorizeFileEntries(existingResource, userInstance, getModifiedFiles(existingResource, input), customer);
+
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
+
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
         return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
     }
 
-    private static void authorizeFileEntries(Resource resource, UserInstance userInstance, List<FileEntry> modifiedFiles)
+    private static boolean canNotUpdateFileToPendingOpenFile(FileEntry fileEntry, Customer customer, Resource resource) {
+        var existingFile = resource.getFileEntry(fileEntry.getIdentifier()).map(FileEntry::getFile);
+        return existingFile.isPresent()
+            && !existingFile.get().getArtifactType().equals(fileEntry.getFile().getArtifactType())
+            && fileEntry.getFile() instanceof PendingOpenFile
+            && customerDoesNotAllowOpenFiles(customer, resource);
+
+    }
+
+    private static boolean customerDoesNotAllowOpenFiles(Customer customer, Resource resource) {
+        return resource.getInstanceType()
+                   .map(instanceType -> !customer.getAllowFileUploadForTypes().contains(instanceType))
+                   .orElse(false);
+    }
+
+    private static void authorizeFileEntries(Resource resource, UserInstance userInstance, List<FileEntry> modifiedFiles,
+                                             Customer customer)
         throws UnauthorizedException {
         for (var file : modifiedFiles) {
             new FilePermissions(file, userInstance, resource).authorize(WRITE_METADATA);
+            if (canNotUpdateFileToPendingOpenFile(file, customer, resource)) {
+                throw new UnauthorizedException();
+            }
+
         }
     }
 
