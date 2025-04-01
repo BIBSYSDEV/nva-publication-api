@@ -190,7 +190,8 @@
     "cristinIdentifier": "7428.0.0.0",
     "identifiers": {
       "test": "b11f0a40-ac27-42b9-ba94-f4952e3d5a5a",
-      "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5"
+      "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5",
+      "prod": "eb732391-19ec-4d9f-9cb3-a77c8876a18f"
     },
     "shortName": "FFI"
   },
