@@ -46,6 +46,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -272,8 +273,14 @@ public class UpdatePublicationHandler
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
 
         permissionStrategy.authorize(UPDATE);
-        authorizeFileEntries(existingResource, userInstance, getModifiedFiles(existingResource, input), customer);
+        authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input));
 
+        var files = Resource.fromPublication(publicationUpdate).getFiles();
+        for (File file : files) {
+            if (canNotUpdateFileToPendingOpenFile(file, customer, existingResource)) {
+                throw new ForbiddenException();
+            }
+        }
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
 
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
@@ -282,12 +289,12 @@ public class UpdatePublicationHandler
         return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
     }
 
-    private static boolean canNotUpdateFileToPendingOpenFile(FileEntry fileEntry, Customer customer, Resource resource) {
-        var existingFile = resource.getFileEntry(fileEntry.getIdentifier()).map(FileEntry::getFile);
+    private static boolean canNotUpdateFileToPendingOpenFile(File file, Customer customer, Resource resource) {
+        var existingFile = resource.getFileByIdentifier(file.getIdentifier());
         return existingFile.isPresent()
-            && !existingFile.get().getArtifactType().equals(fileEntry.getFile().getArtifactType())
-            && fileEntry.getFile() instanceof PendingOpenFile
-            && customerDoesNotAllowOpenFiles(customer, resource);
+               && !existingFile.get().getArtifactType().equals(file.getArtifactType())
+               && file instanceof PendingOpenFile
+               && customerDoesNotAllowOpenFiles(customer, resource);
 
     }
 
@@ -297,20 +304,15 @@ public class UpdatePublicationHandler
                    .orElse(false);
     }
 
-    private static void authorizeFileEntries(Resource resource, UserInstance userInstance, List<FileEntry> modifiedFiles,
-                                             Customer customer)
+    private static void authorizeFileEntries(Resource existingResource, UserInstance userInstance, List<FileEntry> existingFiles)
         throws UnauthorizedException {
-        for (var file : modifiedFiles) {
-            new FilePermissions(file, userInstance, resource).authorize(WRITE_METADATA);
-            if (canNotUpdateFileToPendingOpenFile(file, customer, resource)) {
-                throw new UnauthorizedException();
-            }
-
+        for (var file : existingFiles) {
+            new FilePermissions(file, userInstance, existingResource).authorize(WRITE_METADATA);
         }
     }
 
-    private static List<FileEntry> getModifiedFiles(Resource existingPublication,
-                                                    UpdatePublicationRequest input) {
+    private static List<FileEntry> getExistingFilesToUpdate(Resource existingPublication,
+                                                            UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
                              .filter(File.class::isInstance)
                              .map(File.class::cast).toList();

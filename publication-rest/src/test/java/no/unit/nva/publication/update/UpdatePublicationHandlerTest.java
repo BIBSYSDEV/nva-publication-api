@@ -1876,7 +1876,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowUnauthorizedWhenUpdatingFileToOpenPendingFileWhenCustomerDoesNotAllowOpenPendingFilesForPublication()
+    void shouldThrowForbiddenWhenUpdatingFileToOpenPendingFileWhenCustomerDoesNotAllowOpenPendingFilesForPublication()
         throws IOException, ApiGatewayException {
         var uploadedFile = randomUploadedFile();
         var publication = randomPublication().copy()
@@ -1897,7 +1897,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(input, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
 
