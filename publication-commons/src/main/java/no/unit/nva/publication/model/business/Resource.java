@@ -51,6 +51,7 @@ import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -220,6 +221,7 @@ public class Resource implements Entity {
     }
 
     public Resource update(ResourceService resourceService, UserInstance userInstance) {
+        this.setResourceEvent(UpdatedResourceEvent.create(userInstance, Instant.now()));
         return resourceService.updateResource(this, userInstance);
     }
 

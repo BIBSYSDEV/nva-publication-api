@@ -15,6 +15,7 @@ import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEv
 import no.unit.nva.publication.model.business.publicationstate.DoiReservedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
@@ -41,7 +42,10 @@ public class ResourceEventTest {
                          Arguments.of(
                              MergedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
                                                                   UserInstance.create(randomString(), randomUri()),
-                                                                  Instant.now())));
+                                                                  Instant.now())),
+                         Arguments.of(
+                             UpdatedResourceEvent.create(UserInstance.create(randomString(), randomUri()),
+                                                         Instant.now())));
     }
 
     @ParameterizedTest
