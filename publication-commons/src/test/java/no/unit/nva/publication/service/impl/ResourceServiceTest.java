@@ -1596,7 +1596,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, userInstance);
-
+        resource.setDoi(randomDoi());
         Resource.fromPublication(resource).updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
         var updatedResource = resourceService.getResourceByIdentifier(resource.getIdentifier());
 
@@ -1677,7 +1677,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var ticket = createDoiRequest(publication);
-
+        publication.setDoi(randomUri());
         Resource.fromPublication(publication).update(resourceService, userInstance);
 
         var refreshedTicket = ticket.fetch(ticketService);
@@ -1728,8 +1728,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotUpdatePublicationInDatabaseWhenNoEffectiveChange() {
+    void shouldNotUpdatePublicationInDatabaseWhenNoEffectiveChange() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var updatedResource = Resource.fromPublication(publication).update(resourceService, userInstance);
 
+        assertEquals(publication, updatedResource.toPublication());
+    }
+
+    @Test
+    void shouldUpdatePublicationInDatabaseWhenThereAreEffectiveChange() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        publication.setDoi(randomUri());
+        var updatedResource = Resource.fromPublication(publication).update(resourceService, userInstance);
+
+        assertNotEquals(publication, updatedResource.toPublication());
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

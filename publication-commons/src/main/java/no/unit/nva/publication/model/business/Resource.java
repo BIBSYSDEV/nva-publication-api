@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -215,7 +216,28 @@ public class Resource implements Entity {
             .orElse(false);
     }
 
-   private static boolean instanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
+    @JsonIgnore
+    public boolean hasAffectiveChanges(Resource resource) {
+        return !(Objects.equals(getIdentifier(), resource.getIdentifier())
+                 && getStatus() == resource.getStatus()
+                 && Objects.equals(getResourceOwner(), resource.getResourceOwner())
+                 && Objects.equals(getPublisher(), resource.getPublisher())
+                 && Objects.equals(getLink(), resource.getLink())
+                 && Objects.equals(getProjects(), resource.getProjects())
+                 && Objects.equals(getEntityDescription(), resource.getEntityDescription())
+                 && Objects.equals(getDoi(), resource.getDoi())
+                 && Objects.equals(getHandle(), resource.getHandle())
+                 && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
+                 && new HashSet<>(getAssociatedArtifacts()).containsAll(resource.getAssociatedArtifacts())
+                 && Objects.equals(getFundings(), resource.getFundings())
+                 && Objects.equals(getPublicationNotes(), resource.getPublicationNotes())
+                 && Objects.equals(getDuplicateOf(), resource.getDuplicateOf())
+                 && Objects.equals(getSubjects(), resource.getSubjects())
+                 && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions())
+                 && Objects.equals(getImportDetails(), resource.getImportDetails()));
+    }
+
+    private static boolean instanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
         return Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES)
                    .anyMatch(instanceTypeClass -> instanceTypeClass.equals(publicationInstance.getClass()));
     }

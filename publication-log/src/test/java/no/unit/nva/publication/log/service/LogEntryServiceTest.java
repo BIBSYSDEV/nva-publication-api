@@ -1,5 +1,6 @@
 package no.unit.nva.publication.log.service;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
@@ -149,6 +150,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         resource.setResourceEvent(ImportedResourceEvent.fromImportSource(
             ImportSource.fromBrageArchive("A"), userInstance,
             Instant.now()));
+        resource.setDoi(randomDoi());
         resourceService.updateResource(resource, userInstance);
         logEntryService.persistLogEntry(Resource.fromPublication(publication));
 
