@@ -11,6 +11,7 @@ import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
@@ -124,7 +125,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
@@ -186,6 +186,7 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -1879,7 +1880,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldThrowForbiddenWhenUpdatingFileToOpenPendingFileWhenCustomerDoesNotAllowOpenPendingFilesForPublication()
         throws IOException, ApiGatewayException {
         var uploadedFile = randomUploadedFile();
-        var publication = randomPublication().copy()
+        var publication = randomPublication(JournalArticle.class).copy()
+                              .withStatus(DRAFT)
                               .withAssociatedArtifacts(List.of(uploadedFile))
                               .withPublisher(Organization.fromUri(customerId))
                               .build();
@@ -1898,6 +1900,32 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @Test
+    void curatorShouldbeAbleToUpdateFileToOpenPendingFileWhenCustomerDoesNotAllowOpenPendingFilesForPublication()
+        throws IOException, ApiGatewayException {
+        var uploadedFile = randomUploadedFile();
+        var publication = randomPublication(JournalArticle.class).copy()
+                              .withStatus(DRAFT)
+                              .withAssociatedArtifacts(List.of(uploadedFile))
+                              .withPublisher(Organization.fromUri(customerId))
+                              .build();
+        publication = Resource.fromPublication(publication).persistNew(resourceService, UserInstance.fromPublication(publication));
+        stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+        var file = ((File) publication.getAssociatedArtifacts().getFirst()).toPendingOpenFile();
+        var publicationUpdate = publication.copy()
+                                    .withAssociatedArtifacts(List.of(file))
+                                    .build();
+        var input = curatorPublicationOwnerUpdatesPublication(publicationUpdate);
+
+        var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
+                                                   eventBridgeClient, secretsManagerClient,
+                                                   WiremockHttpClient.create());
+        handler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
 
@@ -2465,7 +2493,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withPathParameters(pathParameters)
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withBody(publication)
-                   .withAccessRights(customerId, MANAGE_PUBLISHING_REQUESTS, MANAGE_DOI, SUPPORT)
+                   .withAccessRights(customerId, MANAGE_PUBLISHING_REQUESTS, MANAGE_DOI, SUPPORT, MANAGE_RESOURCES_STANDARD)
                    .withTopLevelCristinOrgId(randomUri())
                    .withPersonCristinId(randomUri())
                    .build();

@@ -41,6 +41,7 @@ import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -277,7 +278,7 @@ public class UpdatePublicationHandler
 
         var files = Resource.fromPublication(publicationUpdate).getFiles();
         for (File file : files) {
-            if (canNotUpdateFileToPendingOpenFile(file, customer, existingResource)) {
+            if (canNotUpdateFileToPendingOpenFile(file, customer, existingResource, userInstance)) {
                 throw new ForbiddenException();
             }
         }
@@ -289,13 +290,20 @@ public class UpdatePublicationHandler
         return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
     }
 
-    private static boolean canNotUpdateFileToPendingOpenFile(File file, Customer customer, Resource resource) {
+    private static boolean canNotUpdateFileToPendingOpenFile(File file, Customer customer, Resource resource,
+                                                             UserInstance userInstance) {
         var existingFile = resource.getFileByIdentifier(file.getIdentifier());
         return existingFile.isPresent()
                && !existingFile.get().getArtifactType().equals(file.getArtifactType())
                && file instanceof PendingOpenFile
-               && customerDoesNotAllowOpenFiles(customer, resource);
+               && customerDoesNotAllowOpenFiles(customer, resource)
+               && canNotUpdateResource(userInstance);
 
+    }
+
+    private static boolean canNotUpdateResource(UserInstance userInstance) {
+        return !(userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_STANDARD)
+                 || userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_ALL));
     }
 
     private static boolean customerDoesNotAllowOpenFiles(Customer customer, Resource resource) {
