@@ -1727,6 +1727,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                               Collections.emptyList()));
     }
 
+    @Test
+    void shouldNotUpdatePublicationInDatabaseWhenNoEffectiveChange() {
+
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }
