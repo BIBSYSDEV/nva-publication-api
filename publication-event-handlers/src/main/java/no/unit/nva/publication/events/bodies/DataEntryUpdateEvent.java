@@ -98,8 +98,12 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     }
     
     @JsonIgnore
-    public boolean notEmpty() {
-        return nonNull(oldData) || nonNull(newData);
+    public boolean shouldProcessUpdate() {
+        if (extractDataEntryType() instanceof FileEntry) {
+            return hasNewImage();
+        } else {
+            return nonNull(oldData) || nonNull(newData);
+        }
     }
     
     @JsonProperty("topic")
@@ -118,7 +122,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             default -> throw new IllegalArgumentException("Unknown entry type: " + type);
         };
     }
-    
+
     private Entity extractDataEntryType() {
         return nonNull(newData) ? newData : oldData;
     }
