@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.expandresources;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -51,7 +52,8 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     private static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     private static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
                                                                                             PUBLISHED_METADATA,
-                                                                                            UNPUBLISHED, DELETED);
+                                                                                            UNPUBLISHED, DELETED,
+                                                                                             DRAFT);
     private static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
     private static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
