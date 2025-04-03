@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration.testutils;
 import static java.util.Objects.nonNull;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
@@ -561,12 +562,12 @@ public final class ReferenceGenerator {
     }
 
     private static HashSet<RelatedDocument> extractUnconfirmedDocuments(Builder builder) {
-        return Optional.ofNullable(builder)
-                   .map(Builder::getHasPart)
-                   .orElseGet(Collections::emptyList)
-                   .stream()
-                   .map(UnconfirmedDocument::fromValue)
-                   .collect(Collectors.toCollection(HashSet::new));
+        var values = Optional.ofNullable(builder.getHasPart()).orElseGet(Collections::emptyList);
+        var relatedDocuments = new LinkedHashSet<RelatedDocument>();
+        for (int i = 0; i < values.size(); i++) {
+            relatedDocuments.add(new UnconfirmedDocument(values.get(i), i + 1));
+        }
+        return relatedDocuments;
     }
 
     private static ReportBasic generatePublicationInstanceForReport(Builder builder) {

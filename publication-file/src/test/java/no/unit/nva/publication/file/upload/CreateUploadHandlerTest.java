@@ -32,7 +32,7 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
@@ -141,7 +141,9 @@ public class CreateUploadHandlerTest {
     void createUploadWithS3ErrorReturnsNotFound() throws IOException, NotFoundException {
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class)))
             .thenThrow(SdkClientException.class);
-        var resource = Resource.fromPublication(randomPublication());
+        var resource = Resource.fromPublication(randomPublication(JournalArticle.class)
+                                                    .copy().withStatus(PublicationStatus.DRAFT)
+                                                    .build());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
         createUploadHandler.handleRequest(
             createUploadRequestWithBody(resource.getIdentifier(), createUploadRequestBody(),

@@ -31,7 +31,7 @@ public class DegreePhd extends DegreeBase {
         if (!super.equals(o)) {
             return false;
         }
-        return getRelated().containsAll(degreePhd.getRelated());
+        return Objects.equals(getRelated(), degreePhd.getRelated());
     }
 
     @JacocoGenerated
