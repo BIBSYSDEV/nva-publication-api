@@ -23,6 +23,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -40,11 +41,13 @@ import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -265,31 +268,57 @@ public class UpdatePublicationHandler
         validateRequest(identifierInPath, input);
 
         var existingPublication = existingResource.toPublication();
-
-        permissionStrategy.authorize(UPDATE);
-        authorizeFileEntries(existingResource, userInstance, getModifiedFiles(existingResource, input));
-
         var publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
 
+        permissionStrategy.authorize(UPDATE);
+        authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input));
+
+        var updatedFiles = Resource.fromPublication(publicationUpdate).getFiles();
+        if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, existingResource,
+                                                                                   userInstance))) {
+            throw new ForbiddenException();
+        }
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
+
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
         return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
     }
 
-    private static void authorizeFileEntries(Resource resource, UserInstance userInstance, List<FileEntry> modifiedFiles)
+    private static boolean canUpdateFileToPendingOpenFile(File file, Customer customer, Resource resource,
+                                                          UserInstance userInstance) {
+        var existingFile = resource.getFileByIdentifier(file.getIdentifier());
+        return existingFile.isEmpty()
+               || existingFile.get().getArtifactType().equals(file.getArtifactType())
+               || !(file instanceof PendingOpenFile)
+               || customerAllowsOpenFiles(customer, resource)
+               || canUpdateResource(userInstance);
+    }
+
+    private static boolean canUpdateResource(UserInstance userInstance) {
+        return userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_STANDARD)
+                 || userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_ALL);
+    }
+
+    private static boolean customerAllowsOpenFiles(Customer customer, Resource resource) {
+        return resource.getInstanceType()
+                   .map(instanceType -> customer.getAllowFileUploadForTypes().contains(instanceType))
+                   .orElse(false);
+    }
+
+    private static void authorizeFileEntries(Resource existingResource, UserInstance userInstance, List<FileEntry> existingFiles)
         throws UnauthorizedException {
-        for (var file : modifiedFiles) {
-            new FilePermissions(file, userInstance, resource).authorize(WRITE_METADATA);
+        for (var file : existingFiles) {
+            new FilePermissions(file, userInstance, existingResource).authorize(WRITE_METADATA);
         }
     }
 
-    private static List<FileEntry> getModifiedFiles(Resource existingPublication,
-                                                    UpdatePublicationRequest input) {
+    private static List<FileEntry> getExistingFilesToUpdate(Resource existingPublication,
+                                                            UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
                              .filter(File.class::isInstance)
                              .map(File.class::cast).toList();

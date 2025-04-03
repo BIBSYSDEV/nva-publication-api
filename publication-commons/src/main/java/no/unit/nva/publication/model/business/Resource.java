@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -164,6 +165,13 @@ public class Resource implements Entity {
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .toList();
+    }
+
+    @JsonIgnore
+    public Optional<File> getFileByIdentifier(UUID identifier) {
+        return getFiles().stream()
+                   .filter(file -> file.getIdentifier().equals(identifier))
+                   .findFirst();
     }
 
     public Set<File> getPendingFiles() {
@@ -658,6 +666,14 @@ public class Resource implements Entity {
 
     public void setImportDetails(Collection<ImportDetail> importDetails) {
         this.importDetails = nonNull(importDetails) ? new ArrayList<>(importDetails) : new ArrayList<>();
+    }
+
+    @JsonIgnore
+    public Optional<String> getInstanceType() {
+        return Optional.ofNullable(getEntityDescription())
+            .map(EntityDescription::getReference)
+            .map(Reference::getPublicationInstance)
+            .map(PublicationInstance::getInstanceType);
     }
 
     public ResourceBuilder copy() {
