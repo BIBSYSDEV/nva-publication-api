@@ -141,9 +141,7 @@ public class CreateUploadHandlerTest {
     void createUploadWithS3ErrorReturnsNotFound() throws IOException, NotFoundException {
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class)))
             .thenThrow(SdkClientException.class);
-        var resource = Resource.fromPublication(randomPublication(JournalArticle.class)
-                                                    .copy().withStatus(PublicationStatus.DRAFT)
-                                                    .build());
+        var resource = Resource.fromPublication(randomPublication().copy().withStatus(PublicationStatus.DRAFT).build());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
         createUploadHandler.handleRequest(
             createUploadRequestWithBody(resource.getIdentifier(), createUploadRequestBody(),
