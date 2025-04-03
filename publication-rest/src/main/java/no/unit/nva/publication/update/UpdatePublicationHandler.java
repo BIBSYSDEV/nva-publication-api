@@ -276,11 +276,10 @@ public class UpdatePublicationHandler
         permissionStrategy.authorize(UPDATE);
         authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input));
 
-        var files = Resource.fromPublication(publicationUpdate).getFiles();
-        for (File file : files) {
-            if (canNotUpdateFileToPendingOpenFile(file, customer, existingResource, userInstance)) {
-                throw new ForbiddenException();
-            }
+        var updatedFiles = Resource.fromPublication(publicationUpdate).getFiles();
+        if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, existingResource,
+                                                                                   userInstance))) {
+            throw new ForbiddenException();
         }
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
 
@@ -290,25 +289,24 @@ public class UpdatePublicationHandler
         return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
     }
 
-    private static boolean canNotUpdateFileToPendingOpenFile(File file, Customer customer, Resource resource,
-                                                             UserInstance userInstance) {
+    private static boolean canUpdateFileToPendingOpenFile(File file, Customer customer, Resource resource,
+                                                          UserInstance userInstance) {
         var existingFile = resource.getFileByIdentifier(file.getIdentifier());
-        return existingFile.isPresent()
-               && !existingFile.get().getArtifactType().equals(file.getArtifactType())
-               && file instanceof PendingOpenFile
-               && customerDoesNotAllowOpenFiles(customer, resource)
-               && canNotUpdateResource(userInstance);
-
+        return existingFile.isEmpty()
+               || existingFile.get().getArtifactType().equals(file.getArtifactType())
+               || !(file instanceof PendingOpenFile)
+               || customerAllowsOpenFiles(customer, resource)
+               || canUpdateResource(userInstance);
     }
 
-    private static boolean canNotUpdateResource(UserInstance userInstance) {
-        return !(userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_STANDARD)
-                 || userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_ALL));
+    private static boolean canUpdateResource(UserInstance userInstance) {
+        return userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_STANDARD)
+                 || userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_ALL);
     }
 
-    private static boolean customerDoesNotAllowOpenFiles(Customer customer, Resource resource) {
+    private static boolean customerAllowsOpenFiles(Customer customer, Resource resource) {
         return resource.getInstanceType()
-                   .map(instanceType -> !customer.getAllowFileUploadForTypes().contains(instanceType))
+                   .map(instanceType -> customer.getAllowFileUploadForTypes().contains(instanceType))
                    .orElse(false);
     }
 
