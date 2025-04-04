@@ -32,6 +32,7 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
@@ -44,6 +45,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
@@ -157,7 +159,7 @@ public class CreateUploadHandlerTest {
     void createUploadWithRuntimeErrorReturnsServerError() throws IOException, NotFoundException {
         when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class)))
             .thenThrow(RuntimeException.class);
-        var resource = Resource.fromPublication(randomPublication());
+        var resource = Resource.fromPublication(randomPublication().copy().withStatus(PublicationStatus.DRAFT).build());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
         createUploadHandler.handleRequest(
             createUploadRequestWithBody(SortableIdentifier.next(), createUploadRequestBody(),

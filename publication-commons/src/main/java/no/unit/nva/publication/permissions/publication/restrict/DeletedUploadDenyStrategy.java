@@ -7,8 +7,8 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationDenyStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
-public class DeletedUplaodDenyStrategy extends PublicationStrategyBase implements PublicationDenyStrategy {
-    public DeletedUplaodDenyStrategy(Publication publication, UserInstance userInstance) {
+public class DeletedUploadDenyStrategy extends PublicationStrategyBase implements PublicationDenyStrategy {
+    public DeletedUploadDenyStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
     }
 

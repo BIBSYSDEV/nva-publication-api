@@ -118,13 +118,17 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     public Resource updateResource(Resource resource, UserInstance userInstance) {
         var persistedResource = fetchExistingResource(resource.toPublication());
-        resource.setCreatedDate(persistedResource.getCreatedDate());
-        resource.setModifiedDate(clockForTimestamps.instant());
 
-        updateCuratingInstitutions(resource, persistedResource);
+        if (resource.hasAffectiveChanges(persistedResource)) {
+            resource.setCreatedDate(persistedResource.getCreatedDate());
+            resource.setModifiedDate(clockForTimestamps.instant());
 
-        sendTransactionWriteRequest(new TransactWriteItemsRequest().withTransactItems(
-            createUpdateResourceTransactionItems(resource, userInstance, persistedResource)));
+            updateCuratingInstitutions(resource, persistedResource);
+
+            sendTransactionWriteRequest(new TransactWriteItemsRequest().withTransactItems(
+                createUpdateResourceTransactionItems(resource, userInstance, persistedResource)));
+            return resource;
+        }
         return resource;
     }
 
