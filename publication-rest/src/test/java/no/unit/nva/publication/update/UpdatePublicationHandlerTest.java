@@ -140,6 +140,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
@@ -1928,6 +1929,59 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
+    @Test
+    void ownerShouldBeAbleToUpdateFileToPendingOpenWhenCustomerAllowsOpenPendingFilesAndPublicationIsMissingType()
+        throws IOException, ApiGatewayException {
+        var uploadedFile = randomUploadedFile();
+        var publication = randomPublication(JournalArticle.class).copy()
+                              .withStatus(DRAFT)
+                              .withAssociatedArtifacts(List.of(uploadedFile))
+                              .withEntityDescription(new EntityDescription())
+                              .withPublisher(Organization.fromUri(customerId))
+                              .build();
+        publication = Resource.fromPublication(publication).persistNew(resourceService, UserInstance.fromPublication(publication));
+        var file = ((File) publication.getAssociatedArtifacts().getFirst()).toPendingOpenFile();
+        var publicationUpdate = publication.copy()
+                                    .withAssociatedArtifacts(List.of(file))
+                                    .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                                    .build();
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publicationUpdate);
+
+        var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
+                                                   eventBridgeClient, secretsManagerClient,
+                                                   WiremockHttpClient.create());
+        handler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+    }
+
+    @Test
+    void shouldNotBeAbleToUpdatePublicationWithPendingOpenFileToTypeWhichIsNotAllowedByCustomer()
+        throws IOException, ApiGatewayException {
+        var uploadedFile = randomPendingOpenFile();
+        var publication = randomPublication(JournalArticle.class).copy()
+                              .withStatus(DRAFT)
+                              .withAssociatedArtifacts(List.of(uploadedFile))
+                              .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                              .withPublisher(Organization.fromUri(customerId))
+                              .build();
+        publication = Resource.fromPublication(publication).persistNew(resourceService, UserInstance.fromPublication(publication));
+        var file = ((File) publication.getAssociatedArtifacts().getFirst()).toPendingOpenFile();
+        var publicationUpdate = publication.copy()
+                                    .withAssociatedArtifacts(List.of(file))
+                                    .withEntityDescription(randomEntityDescription(ConferenceAbstract.class))
+                                    .build();
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publicationUpdate);
+        stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+        var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
+                                                   eventBridgeClient, secretsManagerClient,
+                                                   WiremockHttpClient.create());
+        handler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
 
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
         throws ApiGatewayException {

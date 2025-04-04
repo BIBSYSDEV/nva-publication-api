@@ -276,8 +276,10 @@ public class UpdatePublicationHandler
         permissionStrategy.authorize(UPDATE);
         authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input));
 
-        var updatedFiles = Resource.fromPublication(publicationUpdate).getFiles();
+        var updatedResource = Resource.fromPublication(publicationUpdate);
+        var updatedFiles = updatedResource.getFiles();
         if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, existingResource,
+                                                                                   updatedResource,
                                                                                    userInstance))) {
             throw new ForbiddenException();
         }
@@ -289,17 +291,16 @@ public class UpdatePublicationHandler
         return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
     }
 
-    private static boolean canUpdateFileToPendingOpenFile(File file, Customer customer, Resource resource,
-                                                          UserInstance userInstance) {
-        var existingFile = resource.getFileByIdentifier(file.getIdentifier());
+    private static boolean canUpdateFileToPendingOpenFile(File file, Customer customer, Resource existingResource,
+                                                          Resource updatedResource, UserInstance userInstance) {
+        var existingFile = existingResource.getFileByIdentifier(file.getIdentifier());
         return existingFile.isEmpty()
-               || existingFile.get().getArtifactType().equals(file.getArtifactType())
                || !(file instanceof PendingOpenFile)
-               || customerAllowsOpenFiles(customer, resource)
-               || canUpdateResource(userInstance);
+               || customerAllowsOpenFiles(customer, updatedResource)
+               || elevatedUserCanUpdateResource(userInstance);
     }
 
-    private static boolean canUpdateResource(UserInstance userInstance) {
+    private static boolean elevatedUserCanUpdateResource(UserInstance userInstance) {
         return userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_STANDARD)
                  || userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_ALL);
     }
