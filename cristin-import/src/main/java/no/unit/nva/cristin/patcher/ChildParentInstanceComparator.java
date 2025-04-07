@@ -19,7 +19,6 @@ import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
 import no.unit.nva.model.instancetypes.chapter.TextbookChapter;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
-import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportPolicy;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import nva.commons.core.JacocoGenerated;

@@ -40,7 +40,6 @@ import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Resource;
 import no.sikt.nva.scopus.conversion.files.model.ScopusFile;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
