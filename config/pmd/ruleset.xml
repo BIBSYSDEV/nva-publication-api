@@ -10,7 +10,6 @@
   <exclude-pattern>.*/test/.*</exclude-pattern>
 
   <rule ref="category/java/errorprone.xml">
-    <exclude name="DataflowAnomalyAnalysis"/>
     <exclude name="MissingSerialVersionUID"/>
     <exclude name="NonSerializableClass"/>
   </rule>
@@ -44,17 +43,8 @@
     <!-- Conflicts with the rule category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending -->
     <exclude name="CommentDefaultAccessModifier"/>
     <!-- Conflicts with the rule category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending -->
-    <exclude name="DefaultPackage"/>
-
-
-    <!--<exclude name="BeanMembersShouldSerialize"/>-->
-
     <exclude name="ConfusingTernary"/>
-
-    <!-- printStackTrace is used in the Default Amazon handler in a static clause
-        We can re-enable this rule if we find a way to set a logger there
-    -->
-    <!--<exclude name="AvoidPrintStackTrace"/>-->
+    <exclude name="UseExplicitTypes"/>
 
 
     <!-- This rule does not allow us the following:
