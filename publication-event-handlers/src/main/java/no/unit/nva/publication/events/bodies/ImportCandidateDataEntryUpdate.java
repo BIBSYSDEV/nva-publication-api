@@ -6,9 +6,11 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import nva.commons.core.JacocoGenerated;
 
 public class ImportCandidateDataEntryUpdate implements JsonSerializable {
 
@@ -25,10 +27,9 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
     private final ImportCandidate newData;
 
     @JsonCreator
-    public ImportCandidateDataEntryUpdate(
-        @JsonProperty(ACTION) String action,
-        @JsonProperty(OLD_DATA) ImportCandidate oldData,
-        @JsonProperty(NEW_DATA) ImportCandidate newData) {
+    public ImportCandidateDataEntryUpdate(@JsonProperty(ACTION) String action,
+                                          @JsonProperty(OLD_DATA) ImportCandidate oldData,
+                                          @JsonProperty(NEW_DATA) ImportCandidate newData) {
 
         this.action = action;
         this.oldData = oldData;
@@ -36,8 +37,24 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
     }
 
     public static ImportCandidateDataEntryUpdate fromJson(String json) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(json, ImportCandidateDataEntryUpdate.class))
-                   .orElseThrow();
+        return attempt(
+            () -> JsonUtils.dtoObjectMapper.readValue(json, ImportCandidateDataEntryUpdate.class)).orElseThrow();
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getAction(), getOldData(), getNewData());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ImportCandidateDataEntryUpdate that)) {
+            return false;
+        }
+        return Objects.equals(getAction(), that.getAction()) && Objects.equals(getOldData(), that.getOldData()) &&
+               Objects.equals(getNewData(), that.getNewData());
     }
 
     public String getAction() {
@@ -59,8 +76,6 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
 
     @JsonProperty("topic")
     public String getTopic() {
-        return isNull(newData)
-                   ? IMPORT_CANDIDATE_DELETION
-                   : IMPORT_CANDIDATE_UPDATE;
+        return isNull(newData) ? IMPORT_CANDIDATE_DELETION : IMPORT_CANDIDATE_UPDATE;
     }
 }
