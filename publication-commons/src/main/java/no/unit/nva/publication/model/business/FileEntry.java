@@ -33,6 +33,7 @@ import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
+@SuppressWarnings("PMD.GodClass")
 @JsonTypeName(FileEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public final class FileEntry implements Entity, QueryObject<FileEntry> {
@@ -114,6 +115,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         resourceService.persistFile(this);
     }
 
+    @Override
     public Optional<FileEntry> fetch(ResourceService resourceService) {
         return resourceService.fetchFile(this);
     }
@@ -211,6 +213,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         return this;
     }
 
+    @Override
     public void delete(ResourceService resourceIdentifier) {
         resourceIdentifier.deleteFile(this);
     }

@@ -338,9 +338,7 @@ public final class PublicationInstanceBuilder {
     }
 
     public static Time randomTime() {
-        var randomInstant = (Time) randomNvaInstant();
-        var randomPeriod = (Time) randomNvaPeriod();
-        return randomElement(randomInstant, randomPeriod);
+        return randomElement(randomNvaInstant(), randomNvaPeriod());
     }
 
     public static UnconfirmedPlace randomUnconfirmedPlace() {

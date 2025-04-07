@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class FakeHttpClient<T> extends HttpClient {
     
     private final List<FakeHttpResponse<T>> responseBodies;

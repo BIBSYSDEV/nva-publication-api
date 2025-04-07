@@ -60,7 +60,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusConverter {
 
     public static final String RESOURCE_OWNER_SIKT = "sikt@20754";
@@ -107,8 +107,8 @@ public class ScopusConverter {
         return switch (content) {
             case String string -> string.trim();
             case JAXBElement<?> jaxbElement -> extractContentAndPreserveXmlSupAndInfTags(jaxbElement.getValue());
-            case SupTp supTp -> SUP_START + extractContentAndPreserveXmlSupAndInfTags((supTp.getContent())) + SUP_END;
-            case InfTp infTp -> INF_START + extractContentAndPreserveXmlSupAndInfTags((infTp.getContent())) + INF_END;
+            case SupTp supTp -> SUP_START + extractContentAndPreserveXmlSupAndInfTags(supTp.getContent()) + SUP_END;
+            case InfTp infTp -> INF_START + extractContentAndPreserveXmlSupAndInfTags(infTp.getContent()) + INF_END;
             default -> ((ArrayList<?>) content).stream()
                            .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
                            .collect(Collectors.joining());

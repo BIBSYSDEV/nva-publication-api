@@ -63,7 +63,7 @@ public record License(URI value, String name, Map<String, String> labels) implem
             return value.toLowerCase(Locale.getDefault()).contains(this.pathParameter.toLowerCase(Locale.getDefault()));
         }
 
-        private static class Constants {
+        private static final class Constants {
 
             public static final String ENGLISH_LABEL = "en";
             public static final String NORWEGIAN_LABEL = "nb";

@@ -17,6 +17,7 @@ public record PublicationLogEntry(SortableIdentifier identifier, SortableIdentif
         return new Builder();
     }
 
+    @Override
     public void persist(ResourceService resourceService) {
         resourceService.persistLogEntry(this);
     }

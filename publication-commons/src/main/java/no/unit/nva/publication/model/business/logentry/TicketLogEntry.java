@@ -14,6 +14,7 @@ public record TicketLogEntry(SortableIdentifier identifier, SortableIdentifier t
         return new Builder();
     }
 
+    @Override
     public void persist(ResourceService resourceService) {
         resourceService.persistLogEntry(this);
     }

@@ -7,7 +7,6 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")

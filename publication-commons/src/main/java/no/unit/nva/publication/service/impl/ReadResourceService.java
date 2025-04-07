@@ -45,6 +45,7 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
+@SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
 
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";

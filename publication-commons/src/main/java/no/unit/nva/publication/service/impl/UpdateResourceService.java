@@ -53,6 +53,7 @@ import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
+@SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class UpdateResourceService extends ServiceWithTransactions {
 
     public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";

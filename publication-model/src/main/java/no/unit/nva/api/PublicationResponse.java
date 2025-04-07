@@ -98,6 +98,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         return response;
     }
 
+    @Override
     public void setAssociatedArtifacts(List<AssociatedArtifactDto> associatedArtifactRespons) {
         this.associatedArtifacts = associatedArtifactRespons;
     }

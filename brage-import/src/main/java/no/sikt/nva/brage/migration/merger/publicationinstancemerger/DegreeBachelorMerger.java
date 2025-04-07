@@ -9,6 +9,7 @@ public final class DegreeBachelorMerger extends PublicationInstanceMerger<Degree
         super(degreeBachelor);
     }
 
+    @Override
     public DegreeBachelor merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof DegreeBachelor bachelor) {
             return new DegreeBachelor(getPages(this.publicationInstance.getPages(), bachelor.getPages()),

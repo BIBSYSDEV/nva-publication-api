@@ -58,7 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class BrageEntryEventConsumer implements RequestHandler<S3Event, PublicationRepresentation> {
 
     public static final Random RANDOM = new Random(System.currentTimeMillis());
@@ -370,6 +370,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return attemptSave;
     }
 
+    @SuppressWarnings("PMD.DoNotUseThreads")
     private void avoidCongestionInDatabase() {
         int sleepTime = spreadWriteRequests();
         try {

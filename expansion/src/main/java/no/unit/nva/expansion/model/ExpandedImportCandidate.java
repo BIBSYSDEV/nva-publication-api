@@ -47,7 +47,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 

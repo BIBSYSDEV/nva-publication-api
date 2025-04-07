@@ -72,7 +72,6 @@ public final class PublishingRequestResolver {
         }
         if (thereAreNoPendingFiles(newImage)) {
             autoCompletePendingPublishingRequestsIfNeeded(newImage, pendingPublishingRequests);
-            return;
         } else {
             updateFilesForApproval(oldImage, newImage, pendingPublishingRequests);
         }

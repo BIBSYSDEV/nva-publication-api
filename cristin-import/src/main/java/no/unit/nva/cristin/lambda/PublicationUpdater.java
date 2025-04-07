@@ -28,6 +28,7 @@ import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.JacocoGenerated;
 
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.GodClass"})
 public final class PublicationUpdater {
 
     private PublicationUpdater() {
@@ -121,7 +122,7 @@ public final class PublicationUpdater {
     private static void setIdForExistingContributorWhenMissing(Contributor incomingContributor, List<Contributor> existingContributors) {
         var contributorMissingId = existingContributors.stream()
                     .filter(existingContributor -> haveSameName(incomingContributor, existingContributor))
-                    .filter(existingContributor -> hasNoId(existingContributor))
+                    .filter(PublicationUpdater::hasNoId)
                     .findFirst();
         contributorMissingId.ifPresent(existingContributor -> existingContributor.getIdentity().setId(incomingContributor.getIdentity().getId()));
     }

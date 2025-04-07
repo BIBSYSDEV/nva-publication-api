@@ -50,7 +50,7 @@ public final class FakeUriRetriever implements RawContentRetriever {
         return returnValue;
     }
 
-    @SuppressWarnings("PMD.UnusedAssignment")
+    @SuppressWarnings({"PMD.UnusedAssignment", "PMD.UnusedFormalParameter"})
     private static boolean matchesMedia(String mediaType, HttpResponse<String> response) {
         // TODO: For now, we don't match anything. We should when we design the interface properly.
 

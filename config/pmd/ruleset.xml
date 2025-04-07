@@ -12,6 +12,9 @@
   <rule ref="category/java/errorprone.xml">
     <exclude name="MissingSerialVersionUID"/>
     <exclude name="NonSerializableClass"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="ConstructorCallsOverridableMethod"/>
   </rule>
 
   <rule ref="category/java/multithreading.xml">
@@ -24,6 +27,9 @@
     <exclude name="GuardLogStatement"/>
     <exclude name="AvoidPrintStackTrace"/>
 
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="LooseCoupling"/>
+
     <!-- In TableManager we map ResourceNotFoundException to TableNotFoundException -->
     <exclude name="PreserveStackTrace"/>
 
@@ -31,6 +37,7 @@
 
   <rule ref="category/java/codestyle.xml">
     <exclude name="ShortClassName"/>
+    <exclude name="ShortMethodName"/>
     <exclude name="AtLeastOneConstructor"/>
     <exclude name="LongVariable"/>
     <exclude name="ShortVariable"/>
@@ -45,6 +52,12 @@
     <!-- Conflicts with the rule category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending -->
     <exclude name="ConfusingTernary"/>
     <exclude name="UseExplicitTypes"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="UnnecessaryFullyQualifiedName"/>
+
+    <!-- Disabled because of violations in generated code -->
+    <exclude name="UnnecessaryImport"/>
 
 
     <!-- This rule does not allow us the following:
@@ -77,6 +90,9 @@
     <exclude name="UseObjectForClearerAPI"/>
     <exclude name="TooManyMethods"/>
     <exclude name="CyclomaticComplexity"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="SimplifyBooleanReturns"/>
 
     <!-- This rule does not allow the Lambda Handler to cast  the ContainerInitializationException
         to a RuntimeException.

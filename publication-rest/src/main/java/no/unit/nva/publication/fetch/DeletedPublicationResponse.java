@@ -24,7 +24,7 @@ public final class DeletedPublicationResponse {
         var tombstone = PublicationResponseElevatedUser.fromPublicationWithAllowedOperations(
             publicationWithoutAssociatedArtifacts, allowedOperations);
         return attempt(
-            () -> JsonUtils.dtoObjectMapper.convertValue(tombstone, new TypeReference<Map<String, Object>>() {
+            () -> JsonUtils.dtoObjectMapper.convertValue(tombstone, new TypeReference<>() {
             })).orElseThrow();
     }
 }

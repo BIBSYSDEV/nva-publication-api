@@ -57,6 +57,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class CristinImportPublicationMerger {
 
     public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS

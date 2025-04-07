@@ -54,7 +54,7 @@ import software.amazon.awssdk.http.Header;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusFileConverter {
 
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
@@ -193,11 +193,6 @@ public class ScopusFileConverter {
 
     private static boolean hasSameVersion(CrossrefLink crossrefLink, License license) {
         return license.getContentVersion().equals(crossrefLink.getContentVersion());
-    }
-
-    @JacocoGenerated
-    private static boolean fileWithContent(AssociatedArtifact associatedArtifact) {
-        return ((File) associatedArtifact).getSize() != ZERO_LENGTH_CONTENT;
     }
 
     private static boolean isElsevierPlainTextResource(CrossrefLink crossrefLink) {

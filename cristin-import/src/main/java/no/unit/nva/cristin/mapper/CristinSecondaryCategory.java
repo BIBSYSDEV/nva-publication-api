@@ -9,6 +9,7 @@ import java.util.Objects;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import nva.commons.core.SingletonCollector;
 
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public enum CristinSecondaryCategory {
     ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
     ARCHITECT_DESIGN("ARKITEKTTEGNING", "ARCHITECT_DESIGN"),

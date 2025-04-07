@@ -23,7 +23,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -134,6 +133,7 @@ public class UnpublishRequest extends TicketEntry {
         return this.owner;
     }
 
+    @Override
     public void setOwner(User owner) {
         this.owner = owner;
     }

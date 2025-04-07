@@ -26,7 +26,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded"})
+@SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
@@ -37,7 +37,6 @@ public abstract class TicketEntry implements Entity {
     public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR = "Ticket without reference to "
                                                                                + "publication";
     private static final String VIEWED_BY_FIELD = "viewedBy";
-    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
@@ -279,6 +278,7 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void setOwnerAffiliation(URI ownerAffiliation);
 
+    @Override
     public abstract TicketDao toDao();
 
     public final List<Message> fetchMessages(TicketService ticketService) {

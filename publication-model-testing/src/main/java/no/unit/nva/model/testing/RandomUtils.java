@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.Map;
 
 @JacocoGenerated
-public class RandomUtils {
+public final class RandomUtils {
 
     private static final String PUBLICATION_ENDPOINT_NAME = "publication";
     public static final String EXAMPLE_HOST = "example.org";

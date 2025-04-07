@@ -38,7 +38,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(PublishingRequestCase.TYPE)
 //TODO fix God class
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
 public class PublishingRequestCase extends TicketEntry {
 
     public static final String TYPE = "PublishingRequestCase";

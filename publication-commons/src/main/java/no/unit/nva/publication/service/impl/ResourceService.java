@@ -81,7 +81,7 @@ import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
+@SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals", "PMD.CouplingBetweenObjects"})
 public class ResourceService extends ServiceWithTransactions {
 
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
