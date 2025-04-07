@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinImportConfig.cristinEntryMapper;
 import static nva.commons.core.attempt.Try.attempt;
@@ -154,6 +155,6 @@ public class CristinObject implements JsonSerializable {
     }
 
     public List<CristinAssociatedUri> getCristinAssociatedUris() {
-        return nonNull(cristinAssociatedUris) ? cristinAssociatedUris : List.of();
+        return nonNull(cristinAssociatedUris) ? cristinAssociatedUris : emptyList();
     }
 }
