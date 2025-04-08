@@ -8,7 +8,6 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DeleteImportCandidateEvent;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
