@@ -46,6 +46,7 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
     private static final String DYNAMO_DB_STREAM_SOURCE = "DynamoDbStream";
     private static final Logger logger = LoggerFactory.getLogger(
         ImportCandidateDynamoDbStreamToEventBridgeHandler.class);
+    private static final String COULD_NOT_EXTRACT_IDENTIFIER = "Could not extract identifier from new data!";
     private final S3Driver s3Driver;
     private final EventBridgeClient eventBridgeClient;
 
@@ -70,7 +71,13 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
     private static SortableIdentifier getIdentifier(ImportCandidateDataEntryUpdate blobObject) {
         return blobObject.getOldData()
                    .map(ImportCandidate::getIdentifier)
-                   .orElseGet(() -> blobObject.getNewData().orElseThrow().getIdentifier());
+                   .orElseGet(() -> getIdentifierFromNewData(blobObject));
+    }
+
+    private static SortableIdentifier getIdentifierFromNewData(ImportCandidateDataEntryUpdate blobObject) {
+        return blobObject.getNewData()
+                   .map(ImportCandidate::getIdentifier)
+                   .orElseThrow(() -> new IllegalStateException(COULD_NOT_EXTRACT_IDENTIFIER));
     }
 
     private static String toEvenBridgeDetail(EventReference eventReference) {

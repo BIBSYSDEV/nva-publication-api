@@ -109,6 +109,13 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
         assertThrows(RuntimeException.class, () -> handler.handleRequest(event, context));
     }
 
+    @Test
+    void shouldThrowExceptionWhenConsumedBlobIsEmptyAndExtractingResourceIdentifierFails() {
+        var event = dynamodbEventEventWithSingleDynamoDbRecord(null, null);
+
+        assertThrows(IllegalStateException.class, () -> handler.handleRequest(event, context));
+    }
+
     private ImportCandidateDataEntryUpdate extractPersistedDataEntryUpdateEvent() {
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         return s3Driver.getFiles(UnixPath.ROOT_PATH)
