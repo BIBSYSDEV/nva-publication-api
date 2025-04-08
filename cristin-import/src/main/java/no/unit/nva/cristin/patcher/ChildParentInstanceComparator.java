@@ -31,7 +31,7 @@ public final class ChildParentInstanceComparator {
         List.of(BookAnthology.class.getSimpleName(), Textbook.class.getSimpleName(),
                 NonFictionMonograph.class.getSimpleName(), PopularScienceMonograph.class.getSimpleName(),
                 Encyclopedia.class.getSimpleName(), ExhibitionCatalog.class.getSimpleName(),
-                AcademicMonograph.class.getSimpleName()),
+                AcademicMonograph.class.getSimpleName(), ReportResearch.class.getSimpleName()),
 
         AcademicChapter.class.getSimpleName(),
         List.of(BookAnthology.class.getSimpleName(), NonFictionMonograph.class.getSimpleName(),
@@ -43,13 +43,13 @@ public final class ChildParentInstanceComparator {
         List.of(BookAnthology.class.getSimpleName(), NonFictionMonograph.class.getSimpleName(),
                 Introduction.class.getSimpleName(), Textbook.class.getSimpleName(),
                 PopularScienceMonograph.class.getSimpleName(), AcademicMonograph.class.getSimpleName(),
-                ExhibitionCatalog.class.getSimpleName(), Encyclopedia.class.getSimpleName()),
+                ExhibitionCatalog.class.getSimpleName(), Encyclopedia.class.getSimpleName(), ReportResearch.class.getSimpleName()),
 
         PopularScienceChapter.class.getSimpleName(),
         List.of(BookAnthology.class.getSimpleName(), PopularScienceMonograph.class.getSimpleName(),
                 NonFictionMonograph.class.getSimpleName(), Textbook.class.getSimpleName(),
                 ExhibitionCatalog.class.getSimpleName(), Encyclopedia.class.getSimpleName(),
-                AcademicMonograph.class.getSimpleName()),
+                AcademicMonograph.class.getSimpleName(), ReportResearch.class.getSimpleName()),
 
         TextbookChapter.class.getSimpleName(), List.of(Textbook.class.getSimpleName()),
 
@@ -61,7 +61,7 @@ public final class ChildParentInstanceComparator {
 
         ChapterInReport.class.getSimpleName(),
         List.of(ReportResearch.class.getSimpleName(), ReportPolicy.class.getSimpleName(),
-                ConferenceReport.class.getSimpleName(), ConferenceReport.class.getSimpleName()));
+                ConferenceReport.class.getSimpleName()));
 
     @JacocoGenerated
     private ChildParentInstanceComparator() {
