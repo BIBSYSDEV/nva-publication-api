@@ -78,7 +78,7 @@ class ImportCandidateDataEntryUpdateHandlerTest {
         var blobUri = response.getUri();
         var blob = s3Driver.getFile(UriWrapper.fromUri(blobUri).toS3bucketPath());
         var eventBody = dtoObjectMapper.readValue(blob, ImportCandidateDataEntryUpdate.class);
-        assertThat(eventBody.getNewData(), is(equalTo(importCandidate)));
+        assertThat(eventBody.getNewData().orElseThrow(), is(equalTo(importCandidate)));
     }
 
     @Test
@@ -92,7 +92,7 @@ class ImportCandidateDataEntryUpdateHandlerTest {
         var blobUri = response.getUri();
         var blob = s3Driver.getFile(UriWrapper.fromUri(blobUri).toS3bucketPath());
         var eventBody = dtoObjectMapper.readValue(blob, ImportCandidateDataEntryUpdate.class);
-        assertThat(eventBody.getOldData(), is(equalTo(sampleImportCandidate)));
+        assertThat(eventBody.getOldData().orElseThrow(), is(equalTo(sampleImportCandidate)));
     }
 
     @ParameterizedTest

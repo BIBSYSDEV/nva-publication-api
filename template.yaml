@@ -1978,7 +1978,7 @@ Resources:
       - DatabaseAccessLambdaManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.ImportCandidateDynamoDbStreamToEventBridgeHandler::handleRequest
       Timeout: 360
       Tracing: Active
       ReservedConcurrentExecutions: 1
@@ -1989,7 +1989,6 @@ Resources:
           DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          OUTPUT_EVENT_TOPIC: 'ImportCandidates.Database.Update'
       Events:
         FanoutSource:
           Type: DynamoDB

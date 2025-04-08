@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -18,7 +19,6 @@ import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -27,6 +27,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -63,6 +64,13 @@ public class DeleteImportCandidateEventHandlerTest {
         handler.handleRequest(request, output, CONTEXT);
         var response = objectMapper.readValue(output.toString(), DeleteImportCandidateEvent.class);
         assertThat(oldImage.getIdentifier(), is(equalTo(response.getIdentifier())));
+    }
+
+    @Test
+    void shouldTrowExceptionWhenBlobToDeleteIsEmpty() throws IOException {
+        var request = emulateEventEmittedByImportCandidateUpdateHandler(null, null);
+
+        assertThrows(IllegalStateException.class, () -> handler.handleRequest(request, output, CONTEXT));
     }
 
     private InputStream emulateEventEmittedByImportCandidateUpdateHandler(ImportCandidate oldImage,
