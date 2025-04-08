@@ -1,30 +1,31 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.AWS_REGION;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamoDbEventTestFactory.dynamodbEventEventWithSingleDynamoDbRecord;
 import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toEntity;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
-import com.fasterxml.jackson.databind.JavaType;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
-import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
@@ -34,10 +35,12 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
@@ -48,6 +51,16 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
     private FakeContext context;
     private ImportCandidateDynamoDbStreamToEventBridgeHandler handler;
     private FakeS3Client failingS3Client;
+    private FakeEventBridgeClient eventBridgeClient;
+
+    public static Stream<Arguments> dynamoDbEventProvider() {
+        var publication = randomPublication();
+        return Stream.of(
+            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(Resource.fromPublication(publication), null)),
+            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(null, Resource.fromPublication(publication))),
+            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord (Resource.fromPublication(publication),
+                                                                    Resource.fromPublication(publication))));
+    }
 
     @BeforeEach
     public void init() {
@@ -59,22 +72,13 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
                 return randomString();
             }
         };
-        FakeEventBridgeClient eventBridgeClient = new FakeEventBridgeClient();
+        eventBridgeClient = new FakeEventBridgeClient();
         this.handler = new ImportCandidateDynamoDbStreamToEventBridgeHandler(s3Client, eventBridgeClient);
     }
 
     @AfterEach
     void closeS3Client() {
         failingS3Client.close();
-    }
-
-    public static Stream<Arguments> dynamoDbEventProvider() {
-        var publication = PublicationGenerator.randomPublication();
-        return
-            Stream.of(Arguments.of(randomEventWithSingleDynamoRecord(Resource.fromPublication(publication), null)),
-                      Arguments.of(randomEventWithSingleDynamoRecord(null, Resource.fromPublication(publication))),
-                      Arguments.of(randomEventWithSingleDynamoRecord(Resource.fromPublication(publication),
-                                                                     Resource.fromPublication(publication))));
     }
 
     @ParameterizedTest
@@ -87,27 +91,22 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
         assertThat(actualDataEntryUpdateEvent, is(equalTo(expectedDataEntryUpdateEvent)));
     }
 
-    private static DynamodbEvent randomEventWithSingleDynamoRecord(Entity oldImage, Entity newImage) {
-        var event = new DynamodbEvent();
-        var record = randomDynamoRecord();
-        record.getDynamodb().setOldImage(toDynamoDbFormat(oldImage));
-        record.getDynamodb().setNewImage(toDynamoDbFormat(newImage));
-        event.setRecords(List.of(record));
-        return event;
+    @Test
+    void shouldThrowExceptionWhenWritingEventToS3Fails() {
+        var event = dynamodbEventEventWithSingleDynamoDbRecord(Resource.fromPublication(randomPublication()), null);
+        var failingS3Client = mock(S3Client.class);
+        when(failingS3Client.putObject((PutObjectRequest) any(), (RequestBody) any())).thenThrow(new RuntimeException());
+        var failingHandler = new ImportCandidateDynamoDbStreamToEventBridgeHandler(failingS3Client, eventBridgeClient);
+
+        assertThrows(RuntimeException.class, () -> failingHandler.handleRequest(event, context));
     }
 
-    private static Map<String, AttributeValue> toDynamoDbFormat(Entity publication) {
-        return nonNull(publication) ? publicationDynamoDbFormat(publication) : null;
-    }
+    @Test
+    void shouldThrowExceptionWhenFailingOnSerializationOfEventBridgeDetails() {
+        var event =
+            dynamodbEventEventWithSingleDynamoDbRecord(DoiRequest.create(Resource.fromPublication(randomPublication()), UserInstance.create(randomString(), randomUri())), null);
 
-    private static Map<String, AttributeValue> publicationDynamoDbFormat(Entity publication) {
-        var dao = publication.toDao().toDynamoFormat();
-        var string = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
-        return (Map<String, AttributeValue>) attempt(() -> dtoObjectMapper.readValue(string, dynamoMapStructureAsJacksonType())).orElseThrow();
-    }
-
-    private static JavaType dynamoMapStructureAsJacksonType() {
-        return dtoObjectMapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(event, context));
     }
 
     private ImportCandidateDataEntryUpdate extractPersistedDataEntryUpdateEvent() {
@@ -116,19 +115,8 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
                    .stream()
                    .map(attempt(json -> dtoObjectMapper.readValue(json, ImportCandidateDataEntryUpdate.class)))
                    .map(Try::orElseThrow)
-                   .toList().getFirst();
-    }
-
-    private static DynamodbEvent.DynamodbStreamRecord randomDynamoRecord() {
-        var streamRecord = new DynamodbStreamRecord();
-        streamRecord.setEventName(randomElement(OperationType.values()));
-        streamRecord.setEventID(randomString());
-        streamRecord.setAwsRegion(AWS_REGION);
-        var dynamodb = new StreamRecord();
-        streamRecord.setDynamodb(dynamodb);
-        streamRecord.setEventSource(randomString());
-        streamRecord.setEventVersion(randomString());
-        return streamRecord;
+                   .toList()
+                   .getFirst();
     }
 
     private FakeS3Client createFailingS3Client() {
@@ -143,13 +131,12 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
 
     private ImportCandidateDataEntryUpdate convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
         return new ImportCandidateDataEntryUpdate(dynamoDbRecord.getEventName(),
-                                        getEntity(dynamoDbRecord.getDynamodb().getOldImage()),
-                                        getEntity(dynamoDbRecord.getDynamodb().getNewImage()));
+                                                  getEntity(dynamoDbRecord.getDynamodb().getOldImage()),
+                                                  getEntity(dynamoDbRecord.getDynamodb().getNewImage()));
     }
 
     private ImportCandidate getEntity(Map<String, AttributeValue> image) {
-        return attempt(() -> toEntity(image))
-                   .toOptional()
+        return attempt(() -> toEntity(image)).toOptional()
                    .flatMap(Function.identity())
                    .map(Resource.class::cast)
                    .map(Resource::toImportCandidate)

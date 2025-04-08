@@ -10,8 +10,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
@@ -70,32 +68,32 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
     }
 
     private static SortableIdentifier getIdentifier(ImportCandidateDataEntryUpdate blobObject) {
-        return Optional.ofNullable(blobObject.getOldData())
+        return blobObject.getOldData()
                    .map(ImportCandidate::getIdentifier)
-                   .orElseGet(() -> blobObject.getNewData().getIdentifier());
+                   .orElseGet(() -> blobObject.getNewData().orElseThrow().getIdentifier());
     }
 
-    private static String toEvenBridgeDetail(EventReference eventReference) throws JsonProcessingException {
+    private static String toEvenBridgeDetail(EventReference eventReference) {
         var detail = AwsEventBridgeDetail.newBuilder().withResponsePayload(eventReference).build();
-        return JsonUtils.dtoObjectMapper.writeValueAsString(detail);
+        return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(detail))
+                   .orElseThrow();
     }
 
     private EventReference sendEvent(ImportCandidateDataEntryUpdate blob, Context context) {
         logger.info(PROCESSING_EVENT_MESSAGE, getIdentifier(blob));
-        return attempt(() -> saveBlobToS3(blob)).map(blobUri -> new EventReference(blob.getTopic(), blobUri))
-                   .map(eventReference -> sendEvent(eventReference, context))
-                   .orElseThrow();
-    }
-
-    private EventReference sendEvent(EventReference eventReference, Context context) throws JsonProcessingException {
-        var eventRequest = createPutEventRequest(context, eventReference);
-        eventBridgeClient.putEvents(eventRequest);
-        logger.info(EMITTED_EVENT_MESSAGE, eventReference.toJsonString());
+        var uri = saveBlobToS3(blob);
+        var eventReference = new EventReference(blob.getTopic(), uri);
+        sendEvent(eventReference, context);
         return eventReference;
     }
 
-    private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference)
-        throws JsonProcessingException {
+    private void sendEvent(EventReference eventReference, Context context) {
+        var eventRequest = createPutEventRequest(context, eventReference);
+        eventBridgeClient.putEvents(eventRequest);
+        logger.info(EMITTED_EVENT_MESSAGE, eventReference.toJsonString());
+    }
+
+    private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference) {
         var entry = PutEventsRequestEntry.builder()
                         .eventBusName(EVENT_BUS_NAME)
                         .time(Instant.now())
@@ -107,8 +105,9 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
         return PutEventsRequest.builder().entries(entry).build();
     }
 
-    private URI saveBlobToS3(ImportCandidateDataEntryUpdate blob) throws IOException {
-        return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString());
+    private URI saveBlobToS3(ImportCandidateDataEntryUpdate blob) {
+        return attempt(() -> s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString()))
+                   .orElseThrow(failure -> new RuntimeException("Failed to save blob to S3: " + blob.toJsonString()));
     }
 
     private ImportCandidateDataEntryUpdate convertToUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {

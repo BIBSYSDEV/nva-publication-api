@@ -35,7 +35,7 @@ public class DeleteImportCandidateEventHandler
         AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
         Context context) {
         var blob = readBlobFromS3(input);
-        return new DeleteImportCandidateEvent(EVENT_TOPIC, blob.getOldData().getIdentifier());
+        return new DeleteImportCandidateEvent(EVENT_TOPIC, blob.getOldData().orElseThrow().getIdentifier());
     }
 
     private ImportCandidateDataEntryUpdate readBlobFromS3(EventReference input) {
