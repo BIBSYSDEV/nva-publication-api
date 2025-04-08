@@ -19,7 +19,6 @@ import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
 import no.unit.nva.model.instancetypes.chapter.TextbookChapter;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
-import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportPolicy;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import nva.commons.core.JacocoGenerated;
@@ -37,13 +36,14 @@ public final class ChildParentInstanceComparator {
         List.of(BookAnthology.class.getSimpleName(), NonFictionMonograph.class.getSimpleName(),
                 Textbook.class.getSimpleName(), PopularScienceMonograph.class.getSimpleName(),
                 AcademicMonograph.class.getSimpleName(), Encyclopedia.class.getSimpleName(),
-                ExhibitionCatalog.class.getSimpleName(),ReportResearch.class.getSimpleName()),
+                ExhibitionCatalog.class.getSimpleName(), ReportResearch.class.getSimpleName()),
 
         Introduction.class.getSimpleName(),
         List.of(BookAnthology.class.getSimpleName(), NonFictionMonograph.class.getSimpleName(),
                 Introduction.class.getSimpleName(), Textbook.class.getSimpleName(),
                 PopularScienceMonograph.class.getSimpleName(), AcademicMonograph.class.getSimpleName(),
-                ExhibitionCatalog.class.getSimpleName(), Encyclopedia.class.getSimpleName(), ReportResearch.class.getSimpleName()),
+                ExhibitionCatalog.class.getSimpleName(), Encyclopedia.class.getSimpleName(),
+                ReportResearch.class.getSimpleName()),
 
         PopularScienceChapter.class.getSimpleName(),
         List.of(BookAnthology.class.getSimpleName(), PopularScienceMonograph.class.getSimpleName(),

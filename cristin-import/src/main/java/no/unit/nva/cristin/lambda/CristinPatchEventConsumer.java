@@ -10,7 +10,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import java.time.Clock;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.patcher.CristinPatcher;
