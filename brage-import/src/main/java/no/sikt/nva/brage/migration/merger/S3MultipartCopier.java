@@ -99,7 +99,7 @@ public final class S3MultipartCopier {
     }
 
     private boolean missingRequiredValues() {
-        return Stream.of(sourceS3Key, sourceS3Bucket, destinationS3Key, destinationS3Key).anyMatch(Objects::isNull);
+        return Stream.of(sourceS3Key, sourceS3Bucket, destinationS3Key, destinationS3Bucket).anyMatch(Objects::isNull);
     }
 
     private void performCopying(S3Client s3Client, Context context) {
