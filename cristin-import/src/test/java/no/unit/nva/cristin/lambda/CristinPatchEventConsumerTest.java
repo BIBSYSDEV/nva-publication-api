@@ -129,6 +129,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
             Arguments.of(NonFictionChapter.class, Encyclopedia.class),
             Arguments.of(NonFictionChapter.class, ExhibitionCatalog.class),
             Arguments.of(NonFictionChapter.class, AcademicMonograph.class),
+            Arguments.of(NonFictionChapter.class, ReportResearch.class),
 
             Arguments.of(Introduction.class, BookAnthology.class),
             Arguments.of(Introduction.class, NonFictionMonograph.class),
@@ -138,6 +139,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
             Arguments.of(Introduction.class, AcademicMonograph.class),
             Arguments.of(Introduction.class, ExhibitionCatalog.class),
             Arguments.of(Introduction.class, Encyclopedia.class),
+            Arguments.of(Introduction.class, ReportResearch.class),
 
             Arguments.of(PopularScienceChapter.class, BookAnthology.class),
             Arguments.of(PopularScienceChapter.class, PopularScienceMonograph.class),
@@ -146,6 +148,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
             Arguments.of(PopularScienceChapter.class, ExhibitionCatalog.class),
             Arguments.of(PopularScienceChapter.class, Encyclopedia.class),
             Arguments.of(PopularScienceChapter.class, AcademicMonograph.class),
+            Arguments.of(PopularScienceChapter.class, ReportResearch.class),
 
             Arguments.of(TextbookChapter.class, Textbook.class),
 
