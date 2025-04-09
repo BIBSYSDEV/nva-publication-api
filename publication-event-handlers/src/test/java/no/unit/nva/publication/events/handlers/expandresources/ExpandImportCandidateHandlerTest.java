@@ -43,6 +43,7 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -226,7 +227,9 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
         var dataEntryUpdateEvent =
-            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update", oldImage, newImage);
+            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update",
+                                               Resource.fromImportCandidate(oldImage),
+                                               Resource.fromImportCandidate(newImage));
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         return s3Writer.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }

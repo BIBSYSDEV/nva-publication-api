@@ -23,7 +23,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -39,14 +38,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class ImportCandidateDynamoDbStreamToEventBridgeHandler
     implements RequestHandler<DynamodbEvent, EventReference> {
 
-    public static final ImportCandidate NO_VALUE = null;
     private static final String PROCESSING_EVENT_MESSAGE = "Processing event for identifier: {}";
     private static final String DETAIL_TYPE_NOT_IMPORTANT = "See event topic";
     private static final String EMITTED_EVENT_MESSAGE = "Emitted Event:{}";
     private static final String DYNAMO_DB_STREAM_SOURCE = "DynamoDbStream";
     private static final Logger logger = LoggerFactory.getLogger(
         ImportCandidateDynamoDbStreamToEventBridgeHandler.class);
-    private static final String COULD_NOT_EXTRACT_IDENTIFIER = "Could not extract identifier from new data!";
+    private static final EventReference EMPTY_EVENT = null;
     private final S3Driver s3Driver;
     private final EventBridgeClient eventBridgeClient;
 
@@ -65,19 +63,23 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
     public EventReference handleRequest(DynamodbEvent inputEvent, Context context) {
         var dynamodbStreamRecord = inputEvent.getRecords().getFirst();
         var dataEntryUpdateEvent = convertToUpdateEvent(dynamodbStreamRecord);
-        return sendEvent(dataEntryUpdateEvent, context);
+        return dataEntryUpdateEvent.isResource()
+                   ? sendEvent(dataEntryUpdateEvent, context)
+                   : EMPTY_EVENT;
     }
 
-    private static SortableIdentifier getIdentifier(ImportCandidateDataEntryUpdate blobObject) {
+    private static SortableIdentifier getImportCandidateIdentifier(ImportCandidateDataEntryUpdate blobObject) {
         return blobObject.getOldData()
-                   .map(ImportCandidate::getIdentifier)
+                   .map(Resource.class::cast)
+                   .map(Resource::getIdentifier)
                    .orElseGet(() -> getIdentifierFromNewData(blobObject));
     }
 
     private static SortableIdentifier getIdentifierFromNewData(ImportCandidateDataEntryUpdate blobObject) {
         return blobObject.getNewData()
-                   .map(ImportCandidate::getIdentifier)
-                   .orElseThrow(() -> new IllegalStateException(COULD_NOT_EXTRACT_IDENTIFIER));
+                   .map(Resource.class::cast)
+                   .map(Resource::getIdentifier)
+                   .orElseThrow();
     }
 
     private static String toEvenBridgeDetail(EventReference eventReference) {
@@ -87,7 +89,7 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
     }
 
     private EventReference sendEvent(ImportCandidateDataEntryUpdate blob, Context context) {
-        logger.info(PROCESSING_EVENT_MESSAGE, getIdentifier(blob));
+        logger.info(PROCESSING_EVENT_MESSAGE, getImportCandidateIdentifier(blob));
         var uri = saveBlobToS3(blob);
         var eventReference = new EventReference(blob.getTopic(), uri);
         sendEvent(eventReference, context);
@@ -123,15 +125,10 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
                                                   getImportCandidate(dynamoDbRecord.getDynamodb().getNewImage()));
     }
 
-    private ImportCandidate getImportCandidate(Map<String, AttributeValue> image) {
+    private Entity getImportCandidate(Map<String, AttributeValue> image) {
         return attempt(() -> toEntity(image)).toOptional(this::logFailureInDebugging)
                    .flatMap(Function.identity())
-                   .map(this::castToImportCandidate)
-                   .orElse(NO_VALUE);
-    }
-
-    private ImportCandidate castToImportCandidate(Entity entity) {
-        return ((Resource) entity).toImportCandidate();
+                   .orElse(null);
     }
 
     private void logFailureInDebugging(Failure<Optional<Entity>> fail) {

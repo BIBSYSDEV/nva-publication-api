@@ -10,7 +10,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.events.bodies.DeleteImportCandidateEvent;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -38,7 +38,9 @@ public class DeleteImportCandidateEventHandler
         Context context) {
         var blob = readBlobFromS3(input);
         var identifier = blob.getOldData()
-                             .map(ImportCandidate::getIdentifier)
+                             .filter(Resource.class::isInstance)
+                             .map(Resource.class::cast)
+                             .map(Resource::getIdentifier)
                              .orElseThrow(() -> new IllegalStateException(IDENTIFIER_MISSING_ERROR_MESSAGE));
         return new DeleteImportCandidateEvent(EVENT_TOPIC, identifier);
     }
