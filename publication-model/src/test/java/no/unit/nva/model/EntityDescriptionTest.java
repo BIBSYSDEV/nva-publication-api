@@ -1,27 +1,40 @@
 package no.unit.nva.model;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.testing.EntityDescriptionBuilder;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static no.unit.nva.DatamodelConfig.dataModelObjectMapper;
+import static no.unit.nva.model.EntityDescription.MAX_SIZE_ABSTRACT;
+import static no.unit.nva.model.EntityDescription.MAX_SIZE_MAIN_TITLE;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.IsNot.not;
 
 class EntityDescriptionTest {
 
     public static final Javers JAVERS = JaversBuilder.javers().build();
+    private static final String EMPTY_STRING = "";
 
     @Test
     void shouldCopyEntityDescriptionWithoutDataLoss() {
@@ -191,6 +204,54 @@ class EntityDescriptionTest {
         var expectedList = List.of(contributor1, expectedContributor2, expectedContributor3);
 
         assertThat(entityDescription.getContributors(), is(equalTo(expectedList)));
+    }
+
+    @Test
+    void shouldNotAllowLessThanMinNumberOfCharactersInEntityDescription() {
+        var entityDescription = new EntityDescription();
+        entityDescription.setMainTitle("");
+        entityDescription.setAlternativeTitles(Map.of(randomString(), ""));
+        entityDescription.setAbstract("");
+        entityDescription.setAlternativeAbstracts(Map.of(randomString(), ""));
+
+        Validator validator;
+        try (var factory = Validation.buildDefaultValidatorFactory()) {
+            validator = factory.getValidator();
+        }
+
+        Set<ConstraintViolation<EntityDescription>> violations = validator.validate(entityDescription);
+
+        assertThat(violations, notNullValue());
+        assertThat(violations, not(empty()));
+
+        var expectedInvalidProperties = List.of("mainTitle", "alternativeTitles", "abstract", "alternativeAbstracts");
+        var actualInvalidProperties = violations.stream().map(v -> v.getPropertyPath().toString()).toList();
+//        assertThat(actualInvalidProperties, containsInAnyOrder(expectedInvalidProperties));
+        assertThat(actualInvalidProperties.size(), is(equalTo(expectedInvalidProperties.size())));
+    }
+
+    @Test
+    void shouldNotAllowMoreThanMaxNumberOfCharactersInEntityDescription() {
+        var entityDescription = new EntityDescription();
+        entityDescription.setMainTitle("a".repeat(MAX_SIZE_MAIN_TITLE + 1));
+        entityDescription.setAlternativeTitles(Map.of(randomString(), "a".repeat(MAX_SIZE_MAIN_TITLE + 1)));
+        entityDescription.setAbstract("a".repeat(MAX_SIZE_ABSTRACT + 1));
+        entityDescription.setAlternativeAbstracts(Map.of(randomString(), "a".repeat(MAX_SIZE_ABSTRACT + 1)));
+
+        Validator validator;
+        try (var factory = Validation.buildDefaultValidatorFactory()) {
+            validator = factory.getValidator();
+        }
+
+        Set<ConstraintViolation<EntityDescription>> violations = validator.validate(entityDescription);
+
+        assertThat(violations, notNullValue());
+        assertThat(violations, not(empty()));
+
+        var expectedInvalidProperties = List.of("mainTitle", "alternativeTitles", "abstract", "alternativeAbstracts");
+        var actualInvalidProperties = violations.stream().map(v -> v.getPropertyPath().toString()).toList();
+//        assertThat(actualInvalidProperties, containsInAnyOrder(expectedInvalidProperties));
+        assertThat(actualInvalidProperties.size(), is(equalTo(expectedInvalidProperties.size())));
     }
 
     private static Contributor createContributor(Integer integer, String name) {

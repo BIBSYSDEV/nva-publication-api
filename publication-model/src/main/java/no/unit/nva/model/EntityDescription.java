@@ -3,6 +3,7 @@ package no.unit.nva.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.net.URI;
 import java.util.Collections;
 import java.util.Comparator;
@@ -10,22 +11,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.IntStream;
+
+import jakarta.validation.constraints.Size;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
+    public static final int MAX_SIZE_MAIN_TITLE = 256;
+    public static final int MIN_SIZE_MAIN_TITLE = 1;
+    public static final int MAX_SIZE_ABSTRACT = 4096;
+    public static final int MIN_SIZE_ABSTRACT = 1;
+
+    @Size(min = MIN_SIZE_MAIN_TITLE, max = MAX_SIZE_MAIN_TITLE)
     private String mainTitle;
-    private Map<String, String> alternativeTitles;
+    private Map<String, @Size(min = MIN_SIZE_MAIN_TITLE, max = MAX_SIZE_MAIN_TITLE) String> alternativeTitles;
     private URI language;
 
     @JsonAlias("date")
     private PublicationDate publicationDate;
     private List<Contributor> contributors;
+    @Size(min = MIN_SIZE_ABSTRACT, max = MAX_SIZE_ABSTRACT)
     @JsonSetter("abstract")
     private String mainLanguageAbstract;
 
-    private Map<String, String> alternativeAbstracts;
+    private Map<String, @Size(min = MIN_SIZE_ABSTRACT, max = MAX_SIZE_ABSTRACT) String> alternativeAbstracts;
     private String npiSubjectHeading;
     private List<String> tags;
     private String description;
@@ -107,8 +117,8 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
     private List<Contributor> extractContributors(List<Contributor> contributors) {
         var contributorList = contributors.stream()
-              .sorted(Comparator.comparing(Contributor::getSequence, Comparator.nullsLast(Comparator.naturalOrder())))
-                                  .toList();
+                .sorted(Comparator.comparing(Contributor::getSequence, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
 
         return updatedContributorSequence(contributorList);
     }

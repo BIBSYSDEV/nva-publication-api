@@ -1,17 +1,16 @@
 package no.unit.nva.publication.create;
 
 import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+
 import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
@@ -23,10 +22,12 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.publication.sanitizer.EntityDescriptionSanitizer;
 import nva.commons.core.JacocoGenerated;
 
 public class CreatePublicationRequest implements WithMetadata, WithContext {
 
+    @Valid
     private EntityDescription entityDescription;
     private AssociatedArtifactList associatedArtifacts;
     @JsonProperty("@context")
@@ -93,7 +94,7 @@ public class CreatePublicationRequest implements WithMetadata, WithContext {
     @JacocoGenerated
     @Override
     public void setEntityDescription(EntityDescription entityDescription) {
-        this.entityDescription = entityDescription;
+        this.entityDescription = EntityDescriptionSanitizer.sanitize(entityDescription);
     }
 
     @JacocoGenerated
@@ -206,15 +207,15 @@ public class CreatePublicationRequest implements WithMetadata, WithContext {
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(),
-                            getAssociatedArtifacts(),
-                            getContext(),
-                            getProjects(),
-                            getSubjects(),
-                            getAdditionalIdentifiers(),
-                            getPublicationNotes(),
-                            getDuplicateOf(),
-                            getStatus(),
-                            getImportDetails());
+                getAssociatedArtifacts(),
+                getContext(),
+                getProjects(),
+                getSubjects(),
+                getAdditionalIdentifiers(),
+                getPublicationNotes(),
+                getDuplicateOf(),
+                getStatus(),
+                getImportDetails());
     }
 
     @JacocoGenerated
@@ -227,14 +228,14 @@ public class CreatePublicationRequest implements WithMetadata, WithContext {
             return false;
         }
         return Objects.equals(getEntityDescription(), that.getEntityDescription())
-               && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
-               && Objects.equals(getContext(), that.getContext())
-               && Objects.equals(getProjects(), that.getProjects())
-               && Objects.equals(getSubjects(), that.getSubjects())
-               && Objects.equals(getDuplicateOf(), that.getDuplicateOf())
-               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
-               && Objects.equals(getPublicationNotes(), that.getPublicationNotes())
-               && Objects.equals(getStatus(), that.getStatus())
-               && Objects.equals(getImportDetails(), that.getImportDetails());
+                && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
+                && Objects.equals(getContext(), that.getContext())
+                && Objects.equals(getProjects(), that.getProjects())
+                && Objects.equals(getSubjects(), that.getSubjects())
+                && Objects.equals(getDuplicateOf(), that.getDuplicateOf())
+                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
+                && Objects.equals(getPublicationNotes(), that.getPublicationNotes())
+                && Objects.equals(getStatus(), that.getStatus())
+                && Objects.equals(getImportDetails(), that.getImportDetails());
     }
 }
