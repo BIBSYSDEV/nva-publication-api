@@ -70,10 +70,16 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, Void>
     protected ParentAndChild processChild(EventReference input) {
         var eventBody = readEventBody(input);
         return attempt(() -> retrieveChildAndParentPublications(eventBody))
-            .map(CristinPatcher::updateChildPublication)
+            .map(parentAndChild -> updateChild(input, parentAndChild))
             .map(value -> persistChangesInChild(value, input))
             .orElseThrow(fail -> saveErrorReport(fail, input, eventBody));
 
+    }
+
+    private ParentAndChild updateChild(EventReference input, ParentAndChild parentAndChild) {
+        var bucketName = input.getUri().getHost();
+        var s3Driver = new S3Driver(s3Client, bucketName);
+        return new CristinPatcher(s3Driver).updateChildPublication(parentAndChild);
     }
 
     protected ParentAndChild processParent(EventReference input) {
