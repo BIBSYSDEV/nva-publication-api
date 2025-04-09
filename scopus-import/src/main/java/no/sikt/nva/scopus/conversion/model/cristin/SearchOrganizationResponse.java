@@ -6,6 +6,7 @@ import no.unit.nva.expansion.model.cristin.CristinOrganization;
 
 public record SearchOrganizationResponse(List<CristinOrganization> hits, int size) implements JsonSerializable {
 
+    @Override
     public String toString() {
         return this.toJsonString();
     }

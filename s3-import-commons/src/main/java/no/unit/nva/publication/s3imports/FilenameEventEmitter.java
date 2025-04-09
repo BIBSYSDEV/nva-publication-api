@@ -47,6 +47,7 @@ import software.amazon.awssdk.services.s3.S3Client;
  * detail (event-body) an {@link EventReference} where s3Location is the URI of the respective file and the rest of the
  * fields are copied from the input.
  */
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class FilenameEventEmitter implements RequestStreamHandler {
     
     public static final String FILENAME_EMISSION_EVENT_TOPIC = "PublicationService.DataImport.Filename";

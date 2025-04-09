@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class HandleIdentifierEventHandler
     implements RequestHandler<SQSEvent, Void> {
 

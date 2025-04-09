@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinImportConfig.cristinEntryMapper;
 import static nva.commons.core.attempt.Try.attempt;
@@ -34,14 +35,13 @@ import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "arkivpost", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "dbh_forskres_kontroll"})
-@SuppressWarnings({"PMD.TooManyFields"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 public class CristinObject implements JsonSerializable {
 
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
     public static final String MAIN_CATEGORY_FIELD = "varbeidhovedkatkode";
     public static final String SECONDARY_CATEGORY_FIELD = "varbeidunderkatkode";
     public static final String IDENTIFIER_ORIGIN = "Cristin";
-
     public static final String BOOK_OR_REPORT_METADATA = "type_bok_rapport";
 
     @JsonProperty("id")
@@ -117,10 +117,6 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("finansiering_varbeid")
     private List<CristinGrant> cristinGrants;
 
-    public List<CristinAssociatedUri> getCristinAssociatedUris() {
-        return nonNull(cristinAssociatedUris) ? cristinAssociatedUris : List.of();
-    }
-
     @JsonProperty("varbeid_url")
     private List<CristinAssociatedUri> cristinAssociatedUris;
 
@@ -156,5 +152,9 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("peerreviewed")
     public boolean isPeerReviewed() {
         return nonNull(yearReported);
+    }
+
+    public List<CristinAssociatedUri> getCristinAssociatedUris() {
+        return nonNull(cristinAssociatedUris) ? cristinAssociatedUris : emptyList();
     }
 }

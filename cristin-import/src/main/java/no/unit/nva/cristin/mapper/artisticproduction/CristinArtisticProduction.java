@@ -79,7 +79,7 @@ import static nva.commons.core.attempt.Try.attempt;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"status_bestilt", "produkttype"})
-@SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinArtisticProduction implements DescriptionExtractor, MovingPictureExtractor {
 
     @JsonIgnore

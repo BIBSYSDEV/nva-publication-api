@@ -99,10 +99,10 @@ public final class S3MultipartCopier {
     }
 
     private boolean missingRequiredValues() {
-        return Stream.of(sourceS3Key, sourceS3Bucket, destinationS3Key, destinationS3Key).anyMatch(Objects::isNull);
+        return Stream.of(sourceS3Key, sourceS3Bucket, destinationS3Key, destinationS3Bucket).anyMatch(Objects::isNull);
     }
 
-    private void performCopying(S3Client s3Client, Context context) throws MultipartCopyException {
+    private void performCopying(S3Client s3Client, Context context) {
         var headOfObjectToCopy = getHeadOfObjectToCopy(s3Client);
         if (objectToCopyIsEmpty(headOfObjectToCopy)) {
             performSimpleCopy(s3Client);
@@ -125,6 +125,7 @@ public final class S3MultipartCopier {
         s3Client.copyObject(copyObjRequest);
     }
 
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private void performMultiPartCopy(S3Client s3Client, Context context, HeadObjectResponse headOfObjectToCopy) {
         var request = initiateMultiUploadRequest(headOfObjectToCopy);
         var response = s3Client.createMultipartUpload(request);

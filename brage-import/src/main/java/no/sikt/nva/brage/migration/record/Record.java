@@ -18,7 +18,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonPropertyOrder({"customer", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
     "publisherAuthority", "rightsholder", "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date",
     "language", "publication", "entityDescription", "recordContent", "errors", "warnings"})
-@SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass", "PMD.ExcessivePublicCount"})
 public class Record implements JsonSerializable {
 
     private EntityDescription entityDescription;

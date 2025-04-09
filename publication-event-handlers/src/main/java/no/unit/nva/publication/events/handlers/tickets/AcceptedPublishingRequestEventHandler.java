@@ -37,8 +37,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     private static final String COULD_NOT_FETCH_TICKET_MESSAGE = "Could not fetch PublishingRequest with identifier: ";
     private static final String PUBLISHING_ERROR_MESSAGE = "Could not publish publication: %s";
     private static final String EXCEPTION_MESSAGE = "Exception: {}";
-    private static final String PUBLISHING_FILE_MESSAGE =
-        "Publishing file {} of type {} from approved " + "PublishingRequest {} for publication {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;

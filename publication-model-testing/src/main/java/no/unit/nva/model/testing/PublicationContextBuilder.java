@@ -51,6 +51,7 @@ import no.unit.nva.model.time.Time;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.NcssCount"})
 public class PublicationContextBuilder {
 
     private static final Random RANDOM = new Random();

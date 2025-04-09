@@ -14,6 +14,7 @@ public record FileLogEntry(SortableIdentifier identifier, SortableIdentifier fil
 
     public static final String TYPE = "FileLogEntry";
 
+    @Override
     public void persist(ResourceService resourceService) {
         resourceService.persistLogEntry(this);
     }

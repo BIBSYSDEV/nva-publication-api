@@ -125,7 +125,7 @@ public final class ChannelRegistryMapper {
         }
     }
 
-    private static class ChannelRegistrySingletonHelper {
+    private static final class ChannelRegistrySingletonHelper {
 
         private static final ChannelRegistryMapper INSTANCE = new ChannelRegistryMapper();
     }

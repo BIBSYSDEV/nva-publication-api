@@ -26,9 +26,6 @@ public final class ManuallyUpdatePublicationUtil {
         switch (request.type()) {
             case PUBLISHER -> updatePublisher(resources, request);
             case LICENSE -> updateLicense(resources, request);
-            default -> {
-                // No action
-            }
         }
     }
 

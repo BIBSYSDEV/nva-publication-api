@@ -41,7 +41,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class Publication
     implements WithIdentifier, WithInternal, WithMetadata, WithCopy<Publication.Builder> {
 

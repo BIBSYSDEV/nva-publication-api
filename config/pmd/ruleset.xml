@@ -8,11 +8,14 @@
     PMD rules
   </description>
   <exclude-pattern>.*/test/.*</exclude-pattern>
+  <exclude-pattern>.*/build/generated/.*</exclude-pattern>
 
   <rule ref="category/java/errorprone.xml">
-    <exclude name="DataflowAnomalyAnalysis"/>
     <exclude name="MissingSerialVersionUID"/>
     <exclude name="NonSerializableClass"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="ConstructorCallsOverridableMethod"/>
   </rule>
 
   <rule ref="category/java/multithreading.xml">
@@ -25,6 +28,9 @@
     <exclude name="GuardLogStatement"/>
     <exclude name="AvoidPrintStackTrace"/>
 
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="LooseCoupling"/>
+
     <!-- In TableManager we map ResourceNotFoundException to TableNotFoundException -->
     <exclude name="PreserveStackTrace"/>
 
@@ -32,6 +38,7 @@
 
   <rule ref="category/java/codestyle.xml">
     <exclude name="ShortClassName"/>
+    <exclude name="ShortMethodName"/>
     <exclude name="AtLeastOneConstructor"/>
     <exclude name="LongVariable"/>
     <exclude name="ShortVariable"/>
@@ -44,17 +51,11 @@
     <!-- Conflicts with the rule category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending -->
     <exclude name="CommentDefaultAccessModifier"/>
     <!-- Conflicts with the rule category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending -->
-    <exclude name="DefaultPackage"/>
-
-
-    <!--<exclude name="BeanMembersShouldSerialize"/>-->
-
     <exclude name="ConfusingTernary"/>
+    <exclude name="UseExplicitTypes"/>
 
-    <!-- printStackTrace is used in the Default Amazon handler in a static clause
-        We can re-enable this rule if we find a way to set a logger there
-    -->
-    <!--<exclude name="AvoidPrintStackTrace"/>-->
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="UnnecessaryFullyQualifiedName"/>
 
 
     <!-- This rule does not allow us the following:
@@ -87,6 +88,9 @@
     <exclude name="UseObjectForClearerAPI"/>
     <exclude name="TooManyMethods"/>
     <exclude name="CyclomaticComplexity"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="SimplifyBooleanReturns"/>
 
     <!-- This rule does not allow the Lambda Handler to cast  the ContainerInitializationException
         to a RuntimeException.

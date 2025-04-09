@@ -25,6 +25,7 @@ public class IsbnPublicationFinder implements FindExistingPublicationService {
         this.duplicatePublicationReporter = duplicatePublicationReporter;
     }
 
+    @Override
     public Optional<PublicationForUpdate> findExistingPublication(PublicationRepresentation publicationRepresentation) {
         if (hasIsbn(publicationRepresentation.publication())) {
             return existingPublicationHasSameIsbn(publicationRepresentation);

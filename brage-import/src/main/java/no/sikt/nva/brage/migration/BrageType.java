@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public enum BrageType {
 
     BOOK("Book"),

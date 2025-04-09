@@ -7,7 +7,6 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 
 public record FileUploadedEvent(Instant date, User user, SortableIdentifier identifier) implements FileEvent {
 

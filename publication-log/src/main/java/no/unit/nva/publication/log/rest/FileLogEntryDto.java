@@ -8,7 +8,6 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import no.unit.nva.publication.model.business.logentry.LogUser;
 
 @JsonTypeName(FileLogEntryDto.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")

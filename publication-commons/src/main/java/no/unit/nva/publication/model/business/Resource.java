@@ -63,7 +63,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount", "PMD.CouplingBetweenObjects"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements Entity {
 

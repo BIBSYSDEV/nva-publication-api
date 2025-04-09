@@ -43,6 +43,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
+@SuppressWarnings("PMD.GodClass")
 public final class FakeUriResponse {
 
     private static final String API_HOST = new Environment().readEnv("API_HOST");
@@ -380,7 +381,7 @@ public final class FakeUriResponse {
     }
 
     private static void fakeSeriesResponse(FakeUriRetriever fakeUriRetriever, Book book) {
-        if (book.getSeries() != null && book.getSeries() instanceof Series series) {
+        if (book.getSeries() instanceof Series series) {
             var seriesId = series.getId();
             fakeUriRetriever.registerResponse(seriesId, SC_OK, APPLICATION_JSON_LD, createSeries(seriesId));
         }

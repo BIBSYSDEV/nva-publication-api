@@ -69,7 +69,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public final class BrageNvaMapper {
 
     public static final String CRISTIN = "cristin";

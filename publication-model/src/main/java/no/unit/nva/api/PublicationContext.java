@@ -8,7 +8,7 @@ import no.unit.nva.model.Publication;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
-public class PublicationContext {
+public final class PublicationContext {
 
     private static final URI API_HOST = UriWrapper.fromHost(new Environment().readEnv("API_HOST")).getUri();
 

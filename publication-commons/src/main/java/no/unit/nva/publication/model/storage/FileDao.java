@@ -79,6 +79,7 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
                    .orElseThrow();
     }
 
+    @Override
     @JsonProperty("resourceIdentifier")
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;

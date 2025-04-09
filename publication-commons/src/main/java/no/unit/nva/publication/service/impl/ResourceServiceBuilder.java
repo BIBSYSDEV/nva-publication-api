@@ -3,7 +3,6 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.service.impl.ResourceService.DEFAULT_IDENTIFIER_SUPPLIER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.environment;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.time.Clock;
 import java.util.function.Supplier;

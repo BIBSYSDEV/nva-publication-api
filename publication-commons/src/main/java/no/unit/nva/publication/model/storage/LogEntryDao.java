@@ -19,6 +19,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 
+@SuppressWarnings("PMD.UnusedPrivateMethod")
 public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
                           LogEntry data) {
 

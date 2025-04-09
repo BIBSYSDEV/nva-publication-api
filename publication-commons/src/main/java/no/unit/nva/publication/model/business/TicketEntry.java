@@ -1,8 +1,6 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -16,7 +14,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -26,7 +23,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded"})
+@SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
@@ -37,7 +34,6 @@ public abstract class TicketEntry implements Entity {
     public static final String TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR = "Ticket without reference to "
                                                                                + "publication";
     private static final String VIEWED_BY_FIELD = "viewedBy";
-    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
@@ -279,6 +275,7 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void setOwnerAffiliation(URI ownerAffiliation);
 
+    @Override
     public abstract TicketDao toDao();
 
     public final List<Message> fetchMessages(TicketService ticketService) {

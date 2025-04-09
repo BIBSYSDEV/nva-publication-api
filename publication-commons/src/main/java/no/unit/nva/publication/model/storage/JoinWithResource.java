@@ -151,7 +151,7 @@ public interface JoinWithResource {
     
     URI getCustomerId();
     
-    class Constants {
+    final class Constants {
         
         public static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT = 1;
         public static final int RESOURCE_INDEX_IN_QUERY_RESULT = 0;

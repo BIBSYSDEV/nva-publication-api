@@ -31,7 +31,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.StringUtils;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ContributorExtractor {
 
     public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";

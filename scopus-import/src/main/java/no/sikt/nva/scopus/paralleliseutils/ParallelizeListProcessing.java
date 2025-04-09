@@ -24,6 +24,7 @@ public final class ParallelizeListProcessing {
         return runAsVirtualThreads(inputList, job, DEFAULT_NUMBER_OF_VIRTUAL_THREADS_FOR_NETWORKING_OPERATIONS);
     }
 
+    @SuppressWarnings("PMD.DoNotUseThreads")
     public static <I, R> List<R> runAsVirtualThreads(List<I> inputList, Function<I, R> job, int parallelLevel) {
         var listPreprocessed = ListUtils.partition(inputList, parallelLevel);
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {

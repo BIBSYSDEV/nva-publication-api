@@ -13,6 +13,7 @@ public final class BackendClientGrantStrategy extends PublicationStrategyBase im
         super(publication, userInstance);
     }
 
+    @Override
     public boolean allowsAction(PublicationOperation permission) {
         return nonNull(userInstance) && userInstance.isBackendClient();
     }

@@ -15,6 +15,7 @@ public record InternalCompleteUploadRequest(String uploadId, String key, List<Co
 
     public static final String TYPE = "InternalCompleteUpload";
 
+    @Override
     public CompleteMultipartUploadRequest toCompleteMultipartUploadRequest(String bucketName) {
         return new CompleteMultipartUploadRequest().withBucketName(bucketName)
                    .withKey(key())
@@ -22,6 +23,7 @@ public record InternalCompleteUploadRequest(String uploadId, String key, List<Co
                    .withPartETags(partETags());
     }
 
+    @Override
     public void validate() throws BadRequestException {
         try {
             requireNonNull(this.uploadId());

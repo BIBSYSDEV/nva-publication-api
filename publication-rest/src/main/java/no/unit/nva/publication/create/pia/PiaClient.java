@@ -58,6 +58,7 @@ public class PiaClient {
         return String.format(BASIC_AUTHORIZATION, Base64.getEncoder().encodeToString(loginPassword.getBytes()));
     }
 
+    @SuppressWarnings("PMD.DoNotUseThreads")
     private void sendRequest(HttpRequest request) {
         try {
             var response = httpClient.send(request, BodyHandlers.ofString());

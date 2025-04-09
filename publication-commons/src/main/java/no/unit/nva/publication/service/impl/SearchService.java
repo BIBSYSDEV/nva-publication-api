@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
@@ -18,8 +17,6 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class SearchService {
 
-    public static final String SIZE_VALUE = "100";
-    public static final String SIZE_QUERY_PARAM = "size";
     public static final String SEARCH = "search";
     public static final String RESOURCES = "resources";
     private static final String API_HOST = new Environment().readEnv("API_HOST");

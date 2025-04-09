@@ -82,7 +82,7 @@ public class FakeHttpClient extends HttpClient {
     @JacocoGenerated
     @Override
     public <T> HttpResponse<T> send(HttpRequest request, BodyHandler<T> responseBodyHandler) {
-        return new FakeHttpResponse(request);
+        return new FakeHttpResponse<>(request);
     }
 
     @JacocoGenerated

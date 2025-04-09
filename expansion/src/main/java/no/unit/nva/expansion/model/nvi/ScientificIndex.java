@@ -11,6 +11,8 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
 
+import java.util.Locale;
+
 @JacocoGenerated
 @JsonTypeName(ScientificIndex.TYPE)
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -35,6 +37,6 @@ public record ScientificIndex(String year, String status) implements JsonSeriali
     }
 
     private String capitalize(String input) {
-        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
+        return input.substring(0, 1).toUpperCase(Locale.ROOT) + input.substring(1).toLowerCase(Locale.ROOT);
     }
 }

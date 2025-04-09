@@ -39,7 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> {
 
     public static final String BACKEND_CLIENT_SECRET_NAME = new Environment().readEnv("BACKEND_CLIENT_SECRET_NAME");
@@ -212,6 +212,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
         return attemptSave;
     }
 
+    @SuppressWarnings("PMD.DoNotUseThreads")
     private void avoidCongestionInDatabase() {
         int sleepTime = spreadWriteRequests();
         try {

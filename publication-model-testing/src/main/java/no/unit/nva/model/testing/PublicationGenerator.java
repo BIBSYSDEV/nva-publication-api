@@ -55,6 +55,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 @JacocoGenerated
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public final class PublicationGenerator {
 
     private static final BaseFaker FAKER = new BaseFaker();
@@ -187,7 +188,7 @@ public final class PublicationGenerator {
         var monetaryAmount = new MonetaryAmount();
 
         monetaryAmount.setCurrency(randomCurrency());
-        monetaryAmount.setAmount(randomInteger().longValue());
+        monetaryAmount.setAmount(randomInteger());
 
         return monetaryAmount;
     }

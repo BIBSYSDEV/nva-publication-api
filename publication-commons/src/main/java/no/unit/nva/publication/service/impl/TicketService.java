@@ -33,6 +33,7 @@ import nva.commons.core.attempt.FunctionWithException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class TicketService extends ServiceWithTransactions {
 
     private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
