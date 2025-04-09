@@ -9,7 +9,8 @@ import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.core.JacocoGenerated;
 
 public class ImportCandidateDataEntryUpdate implements JsonSerializable {
@@ -22,14 +23,14 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
     @JsonProperty(ACTION)
     private final String action;
     @JsonProperty(OLD_DATA)
-    private final ImportCandidate oldData;
+    private final Entity oldData;
     @JsonProperty(NEW_DATA)
-    private final ImportCandidate newData;
+    private final Entity newData;
 
     @JsonCreator
     public ImportCandidateDataEntryUpdate(@JsonProperty(ACTION) String action,
-                                          @JsonProperty(OLD_DATA) ImportCandidate oldData,
-                                          @JsonProperty(NEW_DATA) ImportCandidate newData) {
+                                          @JsonProperty(OLD_DATA) Entity oldData,
+                                          @JsonProperty(NEW_DATA) Entity newData) {
 
         this.action = action;
         this.oldData = oldData;
@@ -61,17 +62,18 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
         return action;
     }
 
-    public Optional<ImportCandidate> getOldData() {
+    public Optional<Entity> getOldData() {
         return Optional.ofNullable(oldData);
     }
 
-    public Optional<ImportCandidate> getNewData() {
+    public Optional<Entity> getNewData() {
         return Optional.ofNullable(newData);
     }
 
     @JsonIgnore
-    public boolean notEmpty() {
-        return getOldData().isPresent() || getNewData().isPresent();
+    public boolean isResource() {
+        return getNewData().stream().anyMatch(Resource.class::isInstance)
+            || getOldData().stream().anyMatch(Resource.class::isInstance);
     }
 
     @JsonProperty("topic")

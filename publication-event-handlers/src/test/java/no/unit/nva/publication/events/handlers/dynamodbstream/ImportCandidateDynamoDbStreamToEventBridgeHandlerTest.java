@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.dynamodbstream;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamoDbEventTestFactory.dynamodbEventEventWithSingleDynamoDbRecord;
 import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toEntity;
@@ -11,6 +12,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -21,12 +23,12 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeVal
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
-import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
@@ -58,7 +60,7 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
         return Stream.of(
             Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(Resource.fromPublication(publication), null)),
             Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(null, Resource.fromPublication(publication))),
-            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord (Resource.fromPublication(publication),
+            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(Resource.fromPublication(publication),
                                                                     Resource.fromPublication(publication))));
     }
 
@@ -102,18 +104,26 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenFailingOnSerializationOfEventBridgeDetails() {
-        var event =
-            dynamodbEventEventWithSingleDynamoDbRecord(DoiRequest.create(Resource.fromPublication(randomPublication()), UserInstance.create(randomString(), randomUri())), null);
+    void shouldNotEmitEventWhenConsumedBlobIsEmpty() {
+        var event = dynamodbEventEventWithSingleDynamoDbRecord(null, null);
 
-        assertThrows(RuntimeException.class, () -> handler.handleRequest(event, context));
+        var eventReference = handler.handleRequest(event, context);
+
+        assertNull(eventReference);
     }
 
     @Test
-    void shouldThrowExceptionWhenConsumedBlobIsEmptyAndExtractingResourceIdentifierFails() {
-        var event = dynamodbEventEventWithSingleDynamoDbRecord(null, null);
+    void shouldNotEmitEventWhenConsumedBlobFileEntry() {
+        var event = dynamodbEventEventWithSingleDynamoDbRecord(randomFileEntry(), randomFileEntry());
 
-        assertThrows(IllegalStateException.class, () -> handler.handleRequest(event, context));
+        var eventReference = handler.handleRequest(event, context);
+
+        assertNull(eventReference);
+    }
+
+    private static FileEntry randomFileEntry() {
+        return FileEntry.create(randomOpenFile(), SortableIdentifier.next(),
+                                UserInstance.create(randomString(), randomUri()));
     }
 
     private ImportCandidateDataEntryUpdate extractPersistedDataEntryUpdateEvent() {
@@ -142,11 +152,7 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
                                                   getEntity(dynamoDbRecord.getDynamodb().getNewImage()));
     }
 
-    private ImportCandidate getEntity(Map<String, AttributeValue> image) {
-        return attempt(() -> toEntity(image)).toOptional()
-                   .flatMap(Function.identity())
-                   .map(Resource.class::cast)
-                   .map(Resource::toImportCandidate)
-                   .orElse(null);
+    private Entity getEntity(Map<String, AttributeValue> image) {
+        return attempt(() -> toEntity(image)).toOptional().flatMap(Function.identity()).orElse(null);
     }
 }
