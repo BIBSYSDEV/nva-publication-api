@@ -8,6 +8,8 @@ import no.unit.nva.model.Publication;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 import java.net.HttpURLConnection;
@@ -26,8 +28,13 @@ public class FetchPublicationContextHandler extends ApiGatewayHandler<Void, Stri
     public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
     public static final String CONTEXT_PROPERTY = "@context";
 
+    @JacocoGenerated
     public FetchPublicationContextHandler() {
-        super(Void.class);
+        this(new Environment());
+    }
+
+    public FetchPublicationContextHandler(Environment environment) {
+        super(Void.class, environment);
     }
 
     @Override

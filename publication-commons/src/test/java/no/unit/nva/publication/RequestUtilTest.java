@@ -12,6 +12,7 @@ import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
 import static no.unit.nva.publication.RequestUtil.getIdentifier;
 import static no.unit.nva.publication.RequestUtil.getImportCandidateIdentifier;
 import static no.unit.nva.publication.RequestUtil.getOwner;
+import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,7 +23,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.http.HttpClient;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -50,6 +50,7 @@ class RequestUtilTest {
     public static final String INJECT_ISSUER_CLAIM = "iss";
     public static final String INJECT_CLIENT_ID_CLAIM = "client_id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
 
 
     @ParameterizedTest
@@ -66,8 +67,7 @@ class RequestUtilTest {
     }
 
     private static RequestInfo getRequestInfo() {
-        return new RequestInfo(mock(HttpClient.class), RandomDataGenerator::randomUri,
-                                          RandomDataGenerator::randomUri);
+        return attempt(() -> RequestInfo.fromString("{}")).orElseThrow();
     }
 
     private static Stream<Arguments> provideIdentifiersForTesting() {
@@ -136,7 +136,8 @@ class RequestUtilTest {
         var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
             INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
-            INJECT_CLIENT_ID_CLAIM, "clientId"
+            INJECT_CLIENT_ID_CLAIM, "clientId",
+            SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ
         )));
 
         var getExternalClientResponse = mock(GetExternalClientResponse.class);
@@ -152,7 +153,8 @@ class RequestUtilTest {
         throws NotFoundException, JsonProcessingException {
         var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
-            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER
+            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
+            SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ
         )));
 
         var getExternalClientResponse = mock(GetExternalClientResponse.class);

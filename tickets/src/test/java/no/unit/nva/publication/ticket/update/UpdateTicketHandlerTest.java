@@ -69,6 +69,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -90,7 +91,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient());
+        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient(), new Environment());
     }
 
     @Test
@@ -222,7 +223,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         this.handler = new UpdateTicketHandler(ticketService,
                                                resourceService,
-                                               new FakeDoiClientThrowingException());
+                                               new FakeDoiClientThrowingException(), new Environment());
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication, USER_INSTANCE);
@@ -237,7 +238,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         this.handler = new UpdateTicketHandler(ticketService,
                                                resourceService,
-                                               new FakeDoiClientThrowingException());
+                                               new FakeDoiClientThrowingException(), new Environment());
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
                                                                             resourceService);
         var ticket = createPersistedDoiTicket(publication);
@@ -251,7 +252,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     @Test
     void shouldDeleteDraftDoiAndUpdatePublicationSuccessfully() throws IOException, ApiGatewayException {
-        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient());
+        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient(), new Environment());
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
                                                                             resourceService);
         var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService);

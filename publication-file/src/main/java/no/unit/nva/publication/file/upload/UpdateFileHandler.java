@@ -9,6 +9,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class UpdateFileHandler extends ApiGatewayHandler<File, Void> {
@@ -17,11 +18,11 @@ public class UpdateFileHandler extends ApiGatewayHandler<File, Void> {
 
     @JacocoGenerated
     public UpdateFileHandler() {
-        this(FileService.defaultFileService());
+        this(FileService.defaultFileService(), new Environment());
     }
 
-    public UpdateFileHandler(FileService fileService) {
-        super(File.class);
+    public UpdateFileHandler(FileService fileService, Environment environment) {
+        super(File.class, environment);
         this.fileService = fileService;
     }
 

@@ -16,6 +16,7 @@ import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
@@ -24,11 +25,11 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     @JacocoGenerated
     public PublishPublicationHandler() {
-        this(ResourceService.defaultService());
+        this(ResourceService.defaultService(), new Environment());
     }
 
-    public PublishPublicationHandler(ResourceService resourceService) {
-        super(Void.class);
+    public PublishPublicationHandler(ResourceService resourceService, Environment environment) {
+        super(Void.class, environment);
         this.resourceService = resourceService;
     }
 

@@ -19,7 +19,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.http.HttpClient;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.services.UriResolver;
@@ -36,6 +35,7 @@ import org.zalando.problem.Problem;
 class ResolveShortenedUrlHandlerTest {
 
     private static final Context CONTEXT = mock(Context.class);
+    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
     private ResolveShortenedUrlHandler handler;
     private ByteArrayOutputStream output;
     private static final String ANY_ORIGIN = "*";
@@ -50,7 +50,7 @@ class ResolveShortenedUrlHandlerTest {
 
     @Test
     void shouldReturnNotFoundWhenUriResolverReturnsNotFound() throws IOException, ApiGatewayException {
-        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver, mock(HttpClient.class));
+        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver);
         when(resolver.resolve(any())).thenThrow(new NotFoundException("Not found"));
         handler.handleRequest(
             createRequest(),
@@ -63,7 +63,7 @@ class ResolveShortenedUrlHandlerTest {
     @Test
     void shouldReturnRedirectWhenUriResolverReturnsLongUri() throws IOException, ApiGatewayException {
         var expectedUri = randomUri();
-        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver, mock(HttpClient.class));
+        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver);
         when(resolver.resolve(any())).thenReturn(expectedUri);
         handler.handleRequest(
             createRequest(),
@@ -102,6 +102,7 @@ class ResolveShortenedUrlHandlerTest {
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ANY_ORIGIN);
+        when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
         return environment;
     }
 }

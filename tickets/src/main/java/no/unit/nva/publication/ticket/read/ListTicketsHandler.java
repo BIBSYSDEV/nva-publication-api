@@ -11,6 +11,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class ListTicketsHandler extends ApiGatewayHandler<Void, TicketCollection> {
@@ -19,11 +20,11 @@ public class ListTicketsHandler extends ApiGatewayHandler<Void, TicketCollection
     
     @JacocoGenerated
     public ListTicketsHandler() {
-        this(TicketService.defaultService());
+        this(TicketService.defaultService(), new Environment());
     }
     
-    public ListTicketsHandler(TicketService ticketService) {
-        super(Void.class);
+    public ListTicketsHandler(TicketService ticketService, Environment environment) {
+        super(Void.class, environment);
         this.ticketService = ticketService;
     }
 

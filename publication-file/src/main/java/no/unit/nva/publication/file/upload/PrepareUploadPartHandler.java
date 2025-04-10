@@ -10,6 +10,7 @@ import no.unit.nva.publication.file.upload.restmodel.PrepareUploadPartResponseBo
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class PrepareUploadPartHandler
@@ -19,11 +20,11 @@ public class PrepareUploadPartHandler
 
     @JacocoGenerated
     public PrepareUploadPartHandler() {
-        this(AmazonS3ClientBuilder.defaultClient());
+        this(AmazonS3ClientBuilder.defaultClient(), new Environment());
     }
 
-    public PrepareUploadPartHandler(AmazonS3 amazonS3) {
-        super(PrepareUploadPartRequestBody.class);
+    public PrepareUploadPartHandler(AmazonS3 amazonS3, Environment environment) {
+        super(PrepareUploadPartRequestBody.class, environment);
         this.amazonS3 = amazonS3;
     }
 

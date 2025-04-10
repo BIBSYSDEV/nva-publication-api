@@ -48,6 +48,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -78,7 +79,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
         s3client = mock(AmazonS3Client.class);
         resourceService = getResourceServiceBuilder().build();
         handler = new CompleteUploadHandler(new FileService(s3client, mock(CustomerApiClient.class), resourceService)
-            , mock(IdentityServiceClient.class));
+            , mock(IdentityServiceClient.class), new Environment());
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }

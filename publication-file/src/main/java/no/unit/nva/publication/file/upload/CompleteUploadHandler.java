@@ -9,6 +9,7 @@ import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequest, File> {
@@ -18,11 +19,12 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
 
     @JacocoGenerated
     public CompleteUploadHandler() {
-        this(FileService.defaultFileService(), IdentityServiceClient.prepare());
+        this(FileService.defaultFileService(), IdentityServiceClient.prepare(), new Environment());
     }
 
-    public CompleteUploadHandler(FileService fileService, IdentityServiceClient identityServiceClient) {
-        super(CompleteUploadRequest.class);
+    public CompleteUploadHandler(FileService fileService, IdentityServiceClient identityServiceClient,
+                                 Environment environment) {
+        super(CompleteUploadRequest.class, environment);
         this.fileService = fileService;
         this.identityServiceClient = identityServiceClient;
     }

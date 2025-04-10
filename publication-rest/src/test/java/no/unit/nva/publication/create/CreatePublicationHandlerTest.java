@@ -107,6 +107,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final Integer HTTP_STATUS_UNPROCESSABLE_CONTENT = 422;
+    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
+    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
     private final Context context = new FakeContext();
     private String testUserName;
     private CreatePublicationHandler handler;
@@ -136,6 +138,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         lenient().when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
+        when(environmentMock.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
         lenient().when(environmentMock.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
 
         var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
@@ -677,6 +680,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
                    .build();
     }
 
@@ -685,6 +689,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
                    .build();
     }
 

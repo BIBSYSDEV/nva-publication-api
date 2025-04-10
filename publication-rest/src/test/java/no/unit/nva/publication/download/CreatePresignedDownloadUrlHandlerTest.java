@@ -103,6 +103,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     private static final String APPLICATION_JSON = "application/json; charset=utf-8";
     private static final String APPLICATION_PDF = "application/pdf";
     private static final URI CUSTOMER = randomUri();
+    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
     private Context context;
     private ByteArrayOutputStream output;
     private UriShortener uriShortener;
@@ -126,6 +127,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ANY_ORIGIN);
         when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
             .thenReturn("https://example.com");
+        when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
 
         s3Presigner = mock(S3Presigner.class);
 
@@ -158,7 +160,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @MethodSource("fileTypeSupplier")
     void shouldReturnNotFoundWhenUserIsNotOwnerAndPublicationIsUnpublished(File file) throws IOException {
         var publication = buildPublication(DRAFT, file);
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         var request = createRequest(NON_OWNER, publication.getIdentifier(), file.getIdentifier(), httpClient);
         handler.handleRequest(request, output, context);
 
@@ -166,9 +168,9 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
-    private CreatePresignedDownloadUrlHandler getCreatePresignedDownloadUrlHandler(HttpClient httpClient) {
+    private CreatePresignedDownloadUrlHandler getCreatePresignedDownloadUrlHandler() {
         return new CreatePresignedDownloadUrlHandler(resourceService, s3Presigner, environment, uriShortener,
-                                                     httpClient, identityServiceClient);
+                                                     identityServiceClient);
     }
 
     @ParameterizedTest(
@@ -177,7 +179,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void shouldReturnNotFoundWhenUserIsUnauthorizedForFile(File file)
         throws IOException {
         var publication = buildPublication(PUBLISHED, file);
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         var request = createRequest(NON_OWNER, publication.getIdentifier(), file.getIdentifier(), httpClient);
         handler.handleRequest(request, output, context);
 
@@ -195,7 +197,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void handlerReturnsOkResponseOnValidInputPublishedPublication(String user) throws IOException {
 
         var publication = buildPublication(PUBLISHED, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         var request = createRequest(user, publication.getIdentifier(), FILE_IDENTIFIER, httpClient);
         handler.handleRequest(request, output, context);
 
@@ -207,7 +209,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnOkWhenPublicationUnpublishedAndUserIsOwner() throws IOException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         var request = createRequest(
             publication.getResourceOwner().getOwner().getValue(),
             publication.getIdentifier(),
@@ -224,7 +226,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void shouldReturnOkWhenPublicationUnpublishedAndUserHasAccessRightManageResourceFiles()
         throws IOException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         var customer = randomUri();
         handler.handleRequest(createRequestWithAccessRight(
                                   NON_OWNER,
@@ -247,7 +249,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void shouldReturnOkWhenPublicationUnpublishedAndUserIsOwnerAndMimeTypeIs(String mimeType)
         throws IOException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
 
         handler.handleRequest(createRequest(publication.getResourceOwner().getOwner().getValue(),
                                             publication.getIdentifier(), FILE_IDENTIFIER, httpClient), output, context);
@@ -262,7 +264,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void handlerReturnsNotFoundResponseOnUnknownIdentifier()
         throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenThrow(
             new nva.commons.apigateway.exceptions.NotFoundException("test"));
 
@@ -279,7 +281,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void handlerReturnsOkResponseOnValidInputPublication(String user, File file)
         throws IOException {
         var publication = buildPublication(DRAFT, file);
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         var topLevelCristinUnitId = publication.getCuratingInstitutions().stream().findFirst().get().id();
         handler.handleRequest(
             createRequestWithAccessRight(user,
@@ -301,7 +303,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void handlerReturnsNotFoundOnPublicationWithoutFile() throws IOException, ApiGatewayException {
         var publication = buildPublishedPublicationWithoutFiles();
         var fileIdentifier = UUID.randomUUID();
-        var handler = spy(getCreatePresignedDownloadUrlHandler(httpClient));
+        var handler = spy(getCreatePresignedDownloadUrlHandler());
         doAnswer((Answer<Void>) invocation -> {
             RequestInfo mockRequestInfo = mock(RequestInfo.class);
             var arg2 = invocation.getArgument(2, Context.class);
@@ -322,7 +324,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         var publication = buildPublication(PUBLISHED, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var publicationIdentifier = publication.getIdentifier();
         when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenThrow(new SdkClientException("test"));
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
 
         handler.handleRequest(
             createRequest(
@@ -340,7 +342,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void shouldReturnUnauthorizedOnAnonymousRequestForDraftPublication()
         throws IOException {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         handler.handleRequest(createAnonymousRequest(publication.getIdentifier()), output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -350,7 +352,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Should return Not Found when requester is not owner and embargo is in place")
     @MethodSource("nonOwnerProvider")
     void shouldDisallowDownloadByNonOwnerWhenEmbargoDateHasNotPassed(InputStream request) throws IOException {
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         handler.handleRequest(request, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
         assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
@@ -361,7 +363,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         when(uriShortener.shorten(any(), any(), any())).thenThrow(
             new RuntimeException("shouldThrowInternalServerExceptionIfUriShortenerFails"));
-        var handler = getCreatePresignedDownloadUrlHandler(httpClient);
+        var handler = getCreatePresignedDownloadUrlHandler();
         var customer = randomUri();
         handler.handleRequest(createRequestWithAccessRight(
                                   NON_OWNER,

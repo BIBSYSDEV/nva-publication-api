@@ -187,7 +187,6 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -216,6 +215,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String MUST_BE_A_VALID_PUBLICATION_API_URI = "must be a valid publication API URI";
     public static final String COMMENT_ON_UNPUBLISHING_REQUEST = "comment";
     public static final String BACKEND_SCOPE = "https://api.nva.unit.no/scopes/backend";
+    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
 
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     final Context context = new FakeContext();
@@ -250,6 +250,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
             NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
         when(environment.readEnv(API_HOST_KEY)).thenReturn("example.com");
+        when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
         lenient().when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
         var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
         lenient().when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
@@ -2426,6 +2427,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
                    .withBody(publicationUpdate)
                    .withTopLevelCristinOrgId(randomUri())
                    .withPersonCristinId(randomUri())

@@ -23,6 +23,7 @@ import no.unit.nva.publication.file.upload.restmodel.PrepareUploadPartRequestBod
 import no.unit.nva.publication.file.upload.restmodel.PrepareUploadPartResponseBody;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -42,7 +43,7 @@ public class PrepareUploadPartHandlerTest {
     @BeforeEach
     void setUp() {
         s3client = mock(AmazonS3Client.class);
-        prepareUploadPartHandler = new PrepareUploadPartHandler(s3client);
+        prepareUploadPartHandler = new PrepareUploadPartHandler(s3client, new Environment());
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }

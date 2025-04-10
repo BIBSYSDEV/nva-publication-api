@@ -38,6 +38,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,7 +60,7 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
         this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = getTicketService();
         this.messageService = getMessageService();
-        this.handler = new DeleteMessageHandler(messageService, ticketService, resourceService);
+        this.handler = new DeleteMessageHandler(messageService, ticketService, resourceService, new Environment());
         this.output = new ByteArrayOutputStream();
     }
 

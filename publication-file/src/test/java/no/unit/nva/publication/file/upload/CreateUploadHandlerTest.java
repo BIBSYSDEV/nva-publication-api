@@ -32,7 +32,6 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
@@ -44,8 +43,8 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
@@ -99,8 +98,8 @@ public class CreateUploadHandlerTest {
         when(identityServiceClient.getExternalClient(any())).thenReturn(
             new GetExternalClientResponse(randomString(), randomString(), randomUri(), randomUri())
         );
-        createUploadHandler = new CreateUploadHandler(s3client, customerApiClient, resourceService,
-                                                      identityServiceClient);
+        var fileservice = new FileService(s3client, customerApiClient, resourceService);
+        createUploadHandler = new CreateUploadHandler(fileservice, identityServiceClient, new Environment());
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }

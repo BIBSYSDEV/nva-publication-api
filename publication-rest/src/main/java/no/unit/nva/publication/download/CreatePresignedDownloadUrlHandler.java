@@ -2,7 +2,6 @@ package no.unit.nva.publication.download;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.http.HttpClient;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.publication.download.exception.S3ServiceException;
@@ -48,9 +47,8 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
                                              S3Presigner s3Presigner,
                                              Environment environment,
                                              UriShortener uriShortener,
-                                             HttpClient httpClient,
                                              IdentityServiceClient identityServiceClient) {
-        super(Void.class, environment, httpClient);
+        super(Void.class, environment);
         this.resourceService = resourceService;
         this.s3Presigner = s3Presigner;
         this.uriShortener = uriShortener;
@@ -67,7 +65,6 @@ public class CreatePresignedDownloadUrlHandler extends ApiGatewayHandler<Void, P
              defaultS3Presigner(),
              new Environment(),
              UriShortenerImpl.createDefault(new Environment().readEnv(API_HOST_ENV)),
-             HttpClient.newHttpClient(),
              IdentityServiceClient.prepare());
     }
 

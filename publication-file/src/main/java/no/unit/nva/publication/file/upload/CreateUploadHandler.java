@@ -2,16 +2,14 @@ package no.unit.nva.publication.file.upload;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadResponseBody;
-import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class CreateUploadHandler extends ApiGatewayHandler<CreateUploadRequestBody, CreateUploadResponseBody> {
@@ -21,20 +19,14 @@ public class CreateUploadHandler extends ApiGatewayHandler<CreateUploadRequestBo
 
     @JacocoGenerated
     public CreateUploadHandler() {
-        this(FileService.defaultFileService(), IdentityServiceClient.prepare());
+        this(FileService.defaultFileService(), IdentityServiceClient.prepare(), new Environment());
     }
 
     @JacocoGenerated
-    private CreateUploadHandler(FileService fileService, IdentityServiceClient identityServiceClient) {
-        super(CreateUploadRequestBody.class);
+    public CreateUploadHandler(FileService fileService, IdentityServiceClient identityServiceClient,
+                          Environment environment) {
+        super(CreateUploadRequestBody.class, environment);
         this.fileService = fileService;
-        this.identityServiceClient = identityServiceClient;
-    }
-
-    public CreateUploadHandler(AmazonS3 amazonS3, CustomerApiClient customerApiClient,
-                               ResourceService resourceService, IdentityServiceClient identityServiceClient) {
-        super(CreateUploadRequestBody.class);
-        this.fileService = new FileService(amazonS3, customerApiClient, resourceService);
         this.identityServiceClient = identityServiceClient;
     }
 

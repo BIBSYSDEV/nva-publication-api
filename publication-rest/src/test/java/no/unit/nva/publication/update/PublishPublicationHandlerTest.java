@@ -34,6 +34,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -51,7 +52,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         context = new FakeContext();
         output = new ByteArrayOutputStream();
         resourceService = getResourceServiceBuilder().build();
-        handler = new PublishPublicationHandler(resourceService);
+        handler = new PublishPublicationHandler(resourceService, new Environment());
     }
 
     @Test
@@ -108,7 +109,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         resourceService = mock(ResourceService.class);
         when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenReturn(Resource.fromPublication(publication));
         doThrow(new RuntimeException()).when(resourceService).updateResource(any(Resource.class), any());
-        var publishPublicationHandler = new PublishPublicationHandler(resourceService);
+        var publishPublicationHandler = new PublishPublicationHandler(resourceService, new Environment());
         publishPublicationHandler.handleRequest(request, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);

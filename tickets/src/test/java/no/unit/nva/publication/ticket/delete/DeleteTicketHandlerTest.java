@@ -38,6 +38,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -55,7 +56,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         this.ticketService = getTicketService();
         this.resourceService = getResourceServiceBuilder().build();
-        this.handler = new DeleteTicketHandler(ticketService);
+        this.handler = new DeleteTicketHandler(ticketService, new Environment());
     }
 
     @Test
@@ -85,7 +86,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
         var request = deleteRequestForUser(publication.getIdentifier(), ticket.getIdentifier(),
                                            ticket.getOwner());
 
-        new DeleteTicketHandler(ticketServiceThrowingException()).handleRequest(request, output, CONTEXT);
+        new DeleteTicketHandler(ticketServiceThrowingException(), new Environment()).handleRequest(request, output, CONTEXT);
 
         assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
     }

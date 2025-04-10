@@ -14,6 +14,7 @@ import no.unit.nva.publication.file.upload.restmodel.ListPartsResponseBody;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class ListPartsHandler extends ApiGatewayHandler<ListPartsRequestBody, ListPartsResponseBody> {
@@ -22,11 +23,11 @@ public class ListPartsHandler extends ApiGatewayHandler<ListPartsRequestBody, Li
 
     @JacocoGenerated
     public ListPartsHandler() {
-        this(AmazonS3ClientBuilder.defaultClient());
+        this(AmazonS3ClientBuilder.defaultClient(), new Environment());
     }
 
-    public ListPartsHandler(AmazonS3 amazonS3) {
-        super(ListPartsRequestBody.class);
+    public ListPartsHandler(AmazonS3 amazonS3, Environment environment) {
+        super(ListPartsRequestBody.class, environment);
         this.amazonS3 = amazonS3;
     }
 

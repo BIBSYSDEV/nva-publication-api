@@ -71,11 +71,13 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         this(TicketService.defaultService(),
              ResourceService.defaultService(),
              new DataCiteDoiClient(HttpClient.newHttpClient(), SecretsReader.defaultSecretsManagerClient(),
-                                   new Environment().readEnv(API_HOST)));
+                                   new Environment().readEnv(API_HOST)),
+             new Environment());
     }
 
-    protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService, DoiClient doiClient) {
-        super(UpdateTicketRequest.class);
+    protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService, DoiClient doiClient,
+                                  Environment environment) {
+        super(UpdateTicketRequest.class, environment);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
         this.doiClient = doiClient;

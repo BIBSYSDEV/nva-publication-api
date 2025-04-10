@@ -20,6 +20,7 @@ import java.io.InputStream;
 import no.unit.nva.publication.file.upload.restmodel.AbortMultipartUploadRequestBody;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -37,7 +38,7 @@ public class AbortMultipartUploadHandlerTest {
     @BeforeEach
     void setUp() {
         s3client = mock(AmazonS3Client.class);
-        abortMultipartUploadHandler = new AbortMultipartUploadHandler(s3client);
+        abortMultipartUploadHandler = new AbortMultipartUploadHandler(s3client, new Environment());
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }

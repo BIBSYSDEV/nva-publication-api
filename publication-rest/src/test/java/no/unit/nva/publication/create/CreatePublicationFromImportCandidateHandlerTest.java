@@ -88,6 +88,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.secrets.SecretsReader;
 import org.apache.hc.core5.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -140,7 +141,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     publicationService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
         mockPostAuidWriting();
     }
 
@@ -205,7 +206,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     publicationService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
         when(publicationService.importResource(any(), any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
@@ -235,7 +236,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     s3Client,
                                                     piaClientConfig
         );
-        handler = new CreatePublicationFromImportCandidateHandler(configs);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenThrow(new TransactionFailedException(new Exception()));
 
@@ -280,7 +281,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     publicationService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenCallRealMethod()
             .thenThrow(new NotFoundException(""));

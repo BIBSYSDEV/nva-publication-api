@@ -70,7 +70,7 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
         lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
         resourceService = getResourceServiceBuilder().build();
         output = new ByteArrayOutputStream();
-        handler = new FetchImportCandidateHandler(resourceService);
+        handler = new FetchImportCandidateHandler(resourceService, new Environment());
     }
 
     @Test

@@ -27,6 +27,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
@@ -37,12 +38,12 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
 
     @JacocoGenerated
     public NewCreateMessageHandler() {
-        this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService());
+        this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService(), new Environment());
     }
 
     public NewCreateMessageHandler(MessageService messageService, TicketService ticketService,
-                                   ResourceService resourceService) {
-        super(CreateMessageRequest.class);
+                                   ResourceService resourceService, Environment environment) {
+        super(CreateMessageRequest.class, environment);
         this.messageService = messageService;
         this.ticketService = ticketService;
         this.resourceService = resourceService;

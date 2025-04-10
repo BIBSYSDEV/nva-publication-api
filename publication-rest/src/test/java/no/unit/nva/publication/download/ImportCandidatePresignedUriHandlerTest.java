@@ -46,6 +46,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -68,7 +69,7 @@ class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
                                      .withTableName("import-candidates-table")
                                      .build();
         s3Presigner = mock(S3Presigner.class);
-        handler = new ImportCandidatePresignedUrlHandler(s3Presigner, importCandidateService);
+        handler = new ImportCandidatePresignedUrlHandler(s3Presigner, importCandidateService, new Environment());
         output = new ByteArrayOutputStream();
     }
 
