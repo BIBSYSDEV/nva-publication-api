@@ -33,17 +33,34 @@ public final class CristinPatcher {
     public ParentAndChild updateChildPublication(ParentAndChild parentAndChild) {
         var child = parentAndChild.getChildPublication();
         var parent = parentAndChild.getParentPublication();
-        if (ChildParentInstanceComparator.isValidCombination(child, parent)) {
-            var anthology = (Anthology) child.getEntityDescription().getReference().getPublicationContext();
-            anthology.setId(createPartOfUri(parentAndChild.getParentPublication()));
-        } else if (child.getEntityDescription().getReference().getPublicationContext() instanceof Anthology anthology) {
-            anthology.setId(createPartOfUri(parentAndChild.getParentPublication()));
-            persistErrorReport(child, parent, ChildPatchPublicationInstanceMismatchException.getExceptionName());
-            anthology.setId(createPartOfUri(parentAndChild.getParentPublication()));
-        } else {
+        if (childAndParentIsAValidCombination(child, parent)) {
+            setChildParentRelation(parentAndChild, child);
+        } else if (childIsAnthology(child)) {
+            setChildParentRelationAndPersistErrorReport(child, parent);
+        } else if (!childIsAnthology(child)) {
             persistErrorReport(child, parent, ChildNotAnthologyException.getExceptionName());
         }
         return parentAndChild;
+    }
+
+    private static void setChildParentRelation(ParentAndChild parentAndChild, Publication child) {
+        var anthology = (Anthology) child.getEntityDescription().getReference().getPublicationContext();
+        anthology.setId(createPartOfUri(parentAndChild.getParentPublication()));
+    }
+
+    private void setChildParentRelationAndPersistErrorReport(Publication child, Publication parent) {
+        var anthology = (Anthology) child.getEntityDescription().getReference().getPublicationContext();
+        anthology.setId(createPartOfUri(parent));
+        persistErrorReport(child, parent, ChildPatchPublicationInstanceMismatchException.getExceptionName());
+        anthology.setId(createPartOfUri(parent));
+    }
+
+    private static boolean childIsAnthology(Publication child) {
+        return child.getEntityDescription().getReference().getPublicationContext() instanceof Anthology;
+    }
+
+    private static boolean childAndParentIsAValidCombination(Publication child, Publication parent) {
+        return ChildParentInstanceComparator.isValidCombination(child, parent);
     }
 
     private void persistErrorReport(Publication child, Publication parent, String exceptionName) {
