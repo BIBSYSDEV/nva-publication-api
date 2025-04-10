@@ -125,7 +125,7 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/S3/CristinIntermediateStorage/Units'
   CognitoAuthorizerUrls:
-    Type: 'AWS::SSM::Parameter::Value<StringList>'
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Default: 'CognitoAuthorizerUrls'
   AllowedOrigins:
     Type: String
