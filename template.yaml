@@ -154,7 +154,7 @@ Globals:
         EVENTS_BUCKET: !Ref NvaEventsBucketsName
         BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
         EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
-        COGNITO_AUTHORIZER_URLS: !Ref CognitoAuthorizerUrls
+        COGNITO_AUTHORIZER_URLS: !Join [",", !Ref CognitoAuthorizerUrls]
     Architectures:
       - arm64
 
