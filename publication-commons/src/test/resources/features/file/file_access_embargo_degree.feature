@@ -115,3 +115,16 @@ Feature: File permissions for embargo and degree files
       | Degree+Embargo | Everyone else                        | download       | Not Allowed |
       | Degree+Embargo | Everyone else                        | write-metadata | Not Allowed |
       | Degree+Embargo | Everyone else                        | delete         | Not Allowed |
+
+      | Degree         | External client                      | read-metadata  | Allowed     |
+      | Degree         | External client                      | download       | Allowed     |
+      | Degree         | External client                      | write-metadata | Allowed     |
+      | Degree         | External client                      | delete         | Allowed     |
+      | Embargo        | External client                      | read-metadata  | Allowed     |
+      | Embargo        | External client                      | download       | Allowed     |
+      | Embargo        | External client                      | write-metadata | Allowed     |
+      | Embargo        | External client                      | delete         | Allowed     |
+      | Degree+Embargo | External client                      | read-metadata  | Allowed     |
+      | Degree+Embargo | External client                      | download       | Allowed     |
+      | Degree+Embargo | External client                      | write-metadata | Allowed     |
+      | Degree+Embargo | External client                      | delete         | Allowed     |

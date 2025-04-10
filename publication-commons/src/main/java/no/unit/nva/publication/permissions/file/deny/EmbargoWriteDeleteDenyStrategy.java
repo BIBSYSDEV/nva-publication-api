@@ -23,7 +23,7 @@ public class EmbargoWriteDeleteDenyStrategy extends FileStrategyBase implements 
     }
 
     private boolean isDeniedUser() {
-        return !currentUserIsFileCuratorForGivenFile();
+        return !(currentUserIsFileCuratorForGivenFile() || isExternalClientWithRelation());
     }
 
     private boolean isWriteOrDelete(FileOperation permission) {
