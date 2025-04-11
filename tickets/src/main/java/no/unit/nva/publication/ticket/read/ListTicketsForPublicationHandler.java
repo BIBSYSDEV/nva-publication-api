@@ -20,6 +20,7 @@ import no.unit.nva.publication.ticket.TicketHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class ListTicketsForPublicationHandler extends TicketHandler<Void, TicketCollection> {
@@ -30,11 +31,12 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
 
     @JacocoGenerated
     public ListTicketsForPublicationHandler() {
-        this(ResourceService.defaultService(), TicketService.defaultService());
+        this(ResourceService.defaultService(), TicketService.defaultService(), new Environment());
     }
 
-    public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService) {
-        super(Void.class);
+    public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService,
+                                            Environment environment) {
+        super(Void.class, environment);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
     }

@@ -39,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,7 +52,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -125,6 +123,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private static final String WEBKIT_DEFAULT_ACCEPT_HEADER =
         "application/xml,application/xhtml+xml,text/html;q=0" + ".9,text/plain;q=0.8,image/png,*/*;q=0.5";
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
+    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
     private final Context context = new FakeContext();
     private ResourceService publicationService;
     private UriRetriever uriRetriever;
@@ -138,13 +137,14 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     public void setUp(@Mock Environment environment, @Mock IdentityServiceClient identityServiceClient) {
         super.init();
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
         lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
 
         publicationService = getResourceServiceBuilder().build();
         output = new ByteArrayOutputStream();
         this.uriRetriever = new UriRetriever(WiremockHttpClient.create());
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, uriRetriever, environment,
-                                                              identityServiceClient, mock(HttpClient.class));
+                                                              identityServiceClient);
     }
 
     @Test

@@ -10,6 +10,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,6 +25,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,9 +35,12 @@ class GetMessageHandlerTest {
     private GetMessageHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
-    
+    private Environment environment;
+
     @BeforeEach
     public void setup() {
+        this.environment = mock(Environment.class);
+        when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
         this.handler = new GetMessageHandler();
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();

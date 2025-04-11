@@ -15,6 +15,7 @@ import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
@@ -28,7 +29,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import no.unit.nva.auth.CognitoUserInfo;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
@@ -58,7 +59,6 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -81,6 +81,7 @@ class PublicationPermissionStrategyTest {
     public static final String AUTHORIZATION = "Authorization";
     public static final String BEARER_TOKEN = "Bearer token";
     public static final String BACKEND_SCOPE = "https://api.nva.unit.no/scopes/backend";
+    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
     IdentityServiceClient identityServiceClient;
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
@@ -366,6 +367,9 @@ class PublicationPermissionStrategyTest {
         claims.put(INJECT_CUSTOMER_ID_CLAIM, customerId.toString());
 
         claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
+        claims.put(CognitoUserInfo.ACCESS_RIGHTS_CLAIM, accessRights.stream()
+            .map(AccessRight::toPersistedString)
+            .collect(Collectors.joining(",")));
 
         if (nonNull(username)) {
             claims.put(INJECT_NVA_USERNAME_CLAIM, username);
@@ -386,8 +390,7 @@ class PublicationPermissionStrategyTest {
     }
 
     private static RequestInfo getRequestInfo() {
-        return new RequestInfo(mock(HttpClient.class), RandomDataGenerator::randomUri,
-                               RandomDataGenerator::randomUri);
+        return attempt(() -> RequestInfo.fromString("{}")).orElseThrow();
     }
 
     private RequestInfo createThirdPartyRequestInfo(List<AccessRight> accessRights)
@@ -400,6 +403,7 @@ class PublicationPermissionStrategyTest {
         claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
+        claims.put(SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ);
 
         var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
@@ -413,6 +417,7 @@ class PublicationPermissionStrategyTest {
         var claims = new HashMap<String, String>();
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
+        claims.put(SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ);
 
         var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));

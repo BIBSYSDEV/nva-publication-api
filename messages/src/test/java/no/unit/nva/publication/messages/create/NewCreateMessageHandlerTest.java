@@ -45,6 +45,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +68,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = getTicketService();
         var messageService = getMessageService();
-        this.handler = new NewCreateMessageHandler(messageService, ticketService, resourceService);
+        this.handler = new NewCreateMessageHandler(messageService, ticketService, resourceService, new Environment());
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }

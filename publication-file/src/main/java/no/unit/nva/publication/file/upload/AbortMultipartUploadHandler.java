@@ -9,6 +9,7 @@ import no.unit.nva.publication.file.upload.restmodel.AbortMultipartUploadRequest
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class AbortMultipartUploadHandler extends ApiGatewayHandler<AbortMultipartUploadRequestBody, Void> {
@@ -17,11 +18,11 @@ public class AbortMultipartUploadHandler extends ApiGatewayHandler<AbortMultipar
 
     @JacocoGenerated
     public AbortMultipartUploadHandler() {
-        this(AmazonS3ClientBuilder.defaultClient());
+        this(AmazonS3ClientBuilder.defaultClient(), new Environment());
     }
 
-    public AbortMultipartUploadHandler(AmazonS3 s3Client) {
-        super(AbortMultipartUploadRequestBody.class);
+    public AbortMultipartUploadHandler(AmazonS3 s3Client, Environment environment) {
+        super(AbortMultipartUploadRequestBody.class, environment);
         this.s3Client = s3Client;
     }
 

@@ -30,5 +30,6 @@ test {
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "https://example.com"
     environment "ALLOWED_ORIGIN", "*"
+    environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
 }
 

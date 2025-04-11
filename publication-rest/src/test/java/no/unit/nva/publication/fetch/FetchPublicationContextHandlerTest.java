@@ -8,6 +8,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import com.amazonaws.services.lambda.runtime.Context;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class FetchPublicationContextHandlerTest {
     @BeforeEach
     void setUp() {
         output = new ByteArrayOutputStream();
-        fetchPublicationContextHandler = new FetchPublicationContextHandler();
+        fetchPublicationContextHandler = new FetchPublicationContextHandler(new Environment());
     }
 
     @Test

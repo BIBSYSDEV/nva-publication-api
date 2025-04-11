@@ -21,6 +21,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 
@@ -34,12 +35,13 @@ public class DeleteMessageHandler extends ApiGatewayHandler<Void, Void> {
 
     @JacocoGenerated
     public DeleteMessageHandler() {
-        this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService());
+        this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService(),
+             new Environment());
     }
 
     public DeleteMessageHandler(MessageService messageService, TicketService ticketService,
-                                ResourceService resourceService) {
-        super(Void.class);
+                                ResourceService resourceService, Environment environment) {
+        super(Void.class, environment);
         this.messageService = messageService;
         this.ticketService = ticketService;
         this.resourceService = resourceService;

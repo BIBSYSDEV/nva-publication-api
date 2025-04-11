@@ -13,6 +13,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.GoneException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
@@ -22,11 +23,11 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     
     @JacocoGenerated
     public GetTicketHandler() {
-        this(TicketService.defaultService());
+        this(TicketService.defaultService(), new Environment());
     }
     
-    public GetTicketHandler(TicketService ticketService) {
-        super(Void.class);
+    public GetTicketHandler(TicketService ticketService, Environment environment) {
+        super(Void.class, environment);
         this.ticketService = ticketService;
     }
 

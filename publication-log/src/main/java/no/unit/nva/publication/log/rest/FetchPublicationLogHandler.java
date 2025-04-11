@@ -14,6 +14,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class FetchPublicationLogHandler extends ApiGatewayHandler<Void, PublicationLogResponse> {
@@ -23,11 +24,11 @@ public class FetchPublicationLogHandler extends ApiGatewayHandler<Void, Publicat
 
     @JacocoGenerated
     public FetchPublicationLogHandler() {
-        this(ResourceService.defaultService());
+        this(ResourceService.defaultService(), new Environment());
     }
 
-    public FetchPublicationLogHandler(ResourceService resourceService) {
-        super(Void.class);
+    public FetchPublicationLogHandler(ResourceService resourceService, Environment environment) {
+        super(Void.class, environment);
         this.resourceService = resourceService;
     }
 

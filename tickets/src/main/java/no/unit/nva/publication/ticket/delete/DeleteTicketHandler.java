@@ -13,6 +13,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 
@@ -24,11 +25,11 @@ public class DeleteTicketHandler extends TicketHandler<Void, Void> {
 
     @JacocoGenerated
     public DeleteTicketHandler() {
-        this(TicketService.defaultService());
+        this(TicketService.defaultService(), new Environment());
     }
 
-    protected DeleteTicketHandler(TicketService ticketService) {
-        super(Void.class);
+    protected DeleteTicketHandler(TicketService ticketService, Environment environment) {
+        super(Void.class, environment);
         this.ticketService = ticketService;
     }
 

@@ -15,14 +15,12 @@ import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.http.HttpClient;
 import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.clients.GetExternalClientResponse;
@@ -46,6 +44,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class PublicationsByOwnerHandlerTest {
 
+    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
     private ResourceService resourceService;
     private final Context context = new FakeContext();
 
@@ -54,12 +53,14 @@ class PublicationsByOwnerHandlerTest {
     private GetExternalClientResponse getExternalClientResponse;
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
 
     @BeforeEach
     public void setUp(@Mock Environment environment,
                       @Mock ResourceService resourceService,
                       @Mock IdentityServiceClient identityServiceClient) throws NotFoundException {
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
 
         this.resourceService = resourceService;
         getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
@@ -70,7 +71,7 @@ class PublicationsByOwnerHandlerTest {
 
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
-            new PublicationsByOwnerHandler(resourceService, environment, identityServiceClient, mock(HttpClient.class));
+            new PublicationsByOwnerHandler(resourceService, environment, identityServiceClient);
     }
 
     @Test
@@ -107,6 +108,7 @@ class PublicationsByOwnerHandlerTest {
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
                                 .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                                 .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                                .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
                                 .build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
 

@@ -63,12 +63,12 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
-        this(ImportCandidateHandlerConfigs.getDefaultsConfigs());
+        this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment());
     }
 
     public CreatePublicationFromImportCandidateHandler(
-        ImportCandidateHandlerConfigs configs) {
-        super(ImportCandidate.class);
+        ImportCandidateHandlerConfigs configs, Environment environment) {
+        super(ImportCandidate.class, environment);
         this.candidateService = configs.importCandidateService();
         this.publicationService = configs.publicationService();
         this.ss3Client = configs.s3Client();

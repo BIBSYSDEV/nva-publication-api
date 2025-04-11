@@ -32,6 +32,7 @@ import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -50,7 +51,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         super.init();
         this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = getTicketService();
-        this.handler = new ListTicketsHandler(ticketService);
+        this.handler = new ListTicketsHandler(ticketService, new Environment());
         this.outputStream = new ByteArrayOutputStream();
     }
 

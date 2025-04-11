@@ -29,13 +29,12 @@ public class ImportCandidatePresignedUrlHandler extends ApiGatewayHandler<Void, 
 
     @JacocoGenerated
     public ImportCandidatePresignedUrlHandler() {
-        super(Void.class);
-        this.importCandidateService = ResourceService.defaultService();
-        this.s3Presigner = defaultS3Presigner();
+        this(defaultS3Presigner(), ResourceService.defaultService(), new Environment());
     }
 
-    public ImportCandidatePresignedUrlHandler(S3Presigner s3Presigner, ResourceService importCandidateService) {
-        super(Void.class);
+    public ImportCandidatePresignedUrlHandler(S3Presigner s3Presigner, ResourceService importCandidateService,
+                                              Environment environment) {
+        super(Void.class, environment);
         this.s3Presigner = s3Presigner;
         this.importCandidateService = importCandidateService;
     }

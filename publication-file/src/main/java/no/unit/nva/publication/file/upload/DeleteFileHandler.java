@@ -7,6 +7,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class DeleteFileHandler extends ApiGatewayHandler<Void, Void> {
@@ -15,11 +16,11 @@ public class DeleteFileHandler extends ApiGatewayHandler<Void, Void> {
 
     @JacocoGenerated
     public DeleteFileHandler() {
-        this(FileService.defaultFileService());
+        this(FileService.defaultFileService(), new Environment());
     }
 
-    public DeleteFileHandler(FileService fileService) {
-        super(Void.class);
+    public DeleteFileHandler(FileService fileService, Environment environment) {
+        super(Void.class, environment);
         this.fileService = fileService;
     }
 

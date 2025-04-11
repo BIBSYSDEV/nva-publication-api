@@ -43,6 +43,7 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -61,7 +62,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
         output = new ByteArrayOutputStream();
         resourceService = getResourceServiceBuilder().build();
         ticketService = getTicketService();
-        handler = new FetchPublicationLogHandler(resourceService);
+        handler = new FetchPublicationLogHandler(resourceService, new Environment());
     }
 
     @Test
@@ -107,8 +108,10 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
         when(resourceService.getLogEntriesForResource(Resource.fromPublication(publication))).thenThrow(
             new RuntimeException());
 
-        new FetchPublicationLogHandler(resourceService).handleRequest(createAuthorizedRequest(publication), output,
-                                                                      context);
+        new FetchPublicationLogHandler(resourceService, new Environment()).handleRequest(
+            createAuthorizedRequest(publication),
+            output,
+            context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 

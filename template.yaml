@@ -124,6 +124,9 @@ Parameters:
   CristinUnitsS3ObjectUri:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/S3/CristinIntermediateStorage/Units'
+  CognitoAuthorizerUrls:
+    Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
+    Default: 'CognitoAuthorizerUrls'
   AllowedOrigins:
     Type: String
     Description: comma separated list of external clients that are allowed to contact the HTTP APIs, "*" indicates that all origins are allowed
@@ -151,6 +154,7 @@ Globals:
         EVENTS_BUCKET: !Ref NvaEventsBucketsName
         BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
         EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
+        COGNITO_AUTHORIZER_URLS: !Join [",", !Ref CognitoAuthorizerUrls]
     Architectures:
       - arm64
 

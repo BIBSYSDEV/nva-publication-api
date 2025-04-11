@@ -19,6 +19,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -35,11 +36,12 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         this(new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
                                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
                                                                   BACKEND_CLIENT_SECRET_NAME)),
-             MessageService.defaultService());
+             MessageService.defaultService(),
+             new Environment());
     }
 
-    public CreateTicketHandler(TicketResolver ticketResolver, MessageService messageService) {
-        super(TicketDto.class);
+    public CreateTicketHandler(TicketResolver ticketResolver, MessageService messageService, Environment environment) {
+        super(TicketDto.class, environment);
         this.ticketResolver = ticketResolver;
         this.messageService = messageService;
     }

@@ -27,6 +27,7 @@ import no.unit.nva.publication.file.upload.restmodel.ListPartsRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.ListPartsResponseBody;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -46,7 +47,7 @@ public class ListPartsHandlerTest {
     @BeforeEach
     void setUp() {
         s3client = mock(AmazonS3Client.class);
-        listPartsHandler = new ListPartsHandler(s3client);
+        listPartsHandler = new ListPartsHandler(s3client, new Environment());
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }

@@ -39,6 +39,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +55,7 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
         super.init();
         resourceService = getResourceServiceBuilder().build();
         var fileService = new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService);
-        handler = new DeleteFileHandler(fileService);
+        handler = new DeleteFileHandler(fileService, new Environment());
         output = new ByteArrayOutputStream();
     }
 
@@ -191,6 +192,6 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
             Optional.of(FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance)));
         doThrow(new RuntimeException()).when(resourceService).updateFile(any());
         return new DeleteFileHandler(
-            new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService));
+            new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService), new Environment());
     }
 }

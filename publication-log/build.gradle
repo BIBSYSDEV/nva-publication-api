@@ -26,4 +26,5 @@ test {
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "BACKEND_CLIENT_SECRET_NAME", "secret"
     environment "TABLE_NAME", "someTable"
+    environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
 }
