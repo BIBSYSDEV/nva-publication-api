@@ -23,11 +23,10 @@ public class DegreeEmbargoWriteDeleteDenyStrategy extends FileStrategyBase imple
     }
 
     private boolean isDeniedUser() {
-        return !currentUserIsDegreeEmbargoFileCuratorForGivenFile();
+        return !(currentUserIsDegreeEmbargoFileCuratorForGivenFile() || isExternalClientWithRelation());
     }
 
     private boolean isWriteOrDelete(FileOperation permission) {
         return permission.equals(WRITE_METADATA) || permission.equals(DELETE);
     }
-
 }

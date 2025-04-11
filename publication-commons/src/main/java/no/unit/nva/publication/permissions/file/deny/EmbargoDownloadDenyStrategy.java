@@ -35,7 +35,9 @@ public class EmbargoDownloadDenyStrategy extends FileStrategyBase implements Fil
     }
 
     private boolean isDegreeEmbargoDeniedUser() {
-        return !(currentUserIsDegreeEmbargoFileCuratorForGivenFile() || currentUserIsFileOwner());
+        return !(currentUserIsDegreeEmbargoFileCuratorForGivenFile()
+                 || currentUserIsFileOwner()
+                 || isExternalClientWithRelation());
     }
 
     private boolean isEmbargoDeniedUser() {
@@ -43,6 +45,7 @@ public class EmbargoDownloadDenyStrategy extends FileStrategyBase implements Fil
                  || currentUserIsContributor()
                  || currentUserIsFileCuratorForGivenFile()
                  || currentUserIsDegreeEmbargoFileCuratorForGivenFile()
-                 || currentUserIsFileCurator());
+                 || currentUserIsFileCurator()
+                 || isExternalClientWithRelation());
     }
 }
