@@ -27,6 +27,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
+    @JsonSubTypes.Type(name = FilesApprovalThesis.TYPE, value = FilesApprovalThesis.class),
     @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class),
     @JsonSubTypes.Type(name = UnpublishRequest.TYPE, value = UnpublishRequest.class)})
 public abstract class TicketEntry implements Entity {
@@ -76,6 +77,8 @@ public abstract class TicketEntry implements Entity {
             return GeneralSupportRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return UnpublishRequest.fromPublication(publication);
+        } else if (FilesApprovalThesis.class.equals(ticketType)) {
+            return FilesApprovalThesis.create(resource, userInstance, null);
         }
         throw new RuntimeException("Unrecognized ticket type");
     }
@@ -91,6 +94,8 @@ public abstract class TicketEntry implements Entity {
             return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return ticketType.cast(UnpublishRequest.createQueryObject(customerId, resourceIdentifier));
+        } else if (FilesApprovalThesis.class.equals(ticketType)) {
+            return ticketType.cast(FilesApprovalThesis.createQueryObject(customerId, resourceIdentifier));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -363,6 +368,8 @@ public abstract class TicketEntry implements Entity {
             return GeneralSupportRequest.create(resource, userInstance);
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return createNewUnpublishRequest(publication, identifierProvider);
+        } else if (FilesApprovalThesis.class.equals(ticketType)) {
+            return FilesApprovalThesis.create(resource, userInstance, null);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -384,6 +391,8 @@ public abstract class TicketEntry implements Entity {
         public static final String WORKFLOW = "workflow";
         public static final String ASSIGNEE_FIELD = "assignee";
         public static final String OWNER_AFFILIATION_FIELD = "ownerAffiliation";
+        public static final String APPROVED_FILES_FIELD = "approvedFiles";
+        public static final String FILES_FOR_APPROVAL_FIELD = "filesForApproval";
 
         private Constants() {
 

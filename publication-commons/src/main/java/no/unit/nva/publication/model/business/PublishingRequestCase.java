@@ -3,9 +3,11 @@ package no.unit.nva.publication.model.business;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.APPROVED_FILES_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.FILES_FOR_APPROVAL_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
@@ -44,8 +46,6 @@ public class PublishingRequestCase extends TicketEntry {
     public static final String TYPE = "PublishingRequestCase";
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be " + "published.";
-    public static final String APPROVED_FILES_FIELD = "approvedFiles";
-    public static final String FILES_FOR_APPROVAL_FIELD = "filesForApproval";
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
     @JsonProperty(STATUS_FIELD)

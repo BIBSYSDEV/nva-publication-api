@@ -99,6 +99,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -110,6 +111,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -1747,6 +1749,21 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedResource = Resource.fromPublication(publication).update(resourceService, userInstance);
 
         assertNotEquals(publication, updatedResource.toPublication());
+    }
+
+    @Test
+    void shouldFetchPublicationForFileApprovalThesis() throws BadRequestException {
+        var publication = randomPublication(DegreeBachelor.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var fileApprovalThesis = FilesApprovalThesis.create(Resource.fromPublication(publication),
+                                                            userInstance,
+                                                            PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+
+        var fetchedPublication = fileApprovalThesis.toPublication(resourceService);
+
+        assertEquals(publication, fetchedPublication);
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

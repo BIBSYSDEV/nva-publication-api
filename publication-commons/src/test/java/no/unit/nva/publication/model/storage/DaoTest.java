@@ -55,11 +55,13 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -122,6 +124,13 @@ class DaoTest extends ResourcesLocalTest {
 
     public static Publication draftPublicationWithoutDoi() {
         return randomPublication().copy()
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withDoi(null)
+                   .build();
+    }
+
+    public static Publication draftDegreePublicationWithoutDoi() {
+        return randomPublication(DegreeBachelor.class).copy()
                    .withStatus(PublicationStatus.DRAFT)
                    .withDoi(null)
                    .build();
@@ -346,8 +355,13 @@ class DaoTest extends ResourcesLocalTest {
     }
 
     private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
-        return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next)
-                   .withOwner(randomString());
+        if (FilesApprovalThesis.class.equals(entityType)) {
+            return TicketEntry.createNewTicket(draftDegreePublicationWithoutDoi(), entityType, SortableIdentifier::next)
+                       .withOwner(randomString());
+        } else {
+            return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next)
+                       .withOwner(randomString());
+        }
     }
 
     private static Stream<Dao> instanceProvider() {

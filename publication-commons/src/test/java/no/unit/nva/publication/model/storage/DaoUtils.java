@@ -22,6 +22,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
@@ -83,7 +84,7 @@ public final class DaoUtils extends TestDataSource {
     }
 
     private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPublication().copy()
+        return randomPublication(DegreeBachelor.class).copy()
                    .withStatus(PublicationStatus.DRAFT)
                    .withDoi(null)
                    .build();

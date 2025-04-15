@@ -75,6 +75,7 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -913,6 +914,9 @@ public class TicketServiceTest extends ResourcesLocalTest {
         }
         if (UnpublishRequest.class.equals(ticketType)) {
             return createUnpublishRequest(publication);
+        }
+        if (FilesApprovalThesis.class.equals(ticketType)) {
+            return FilesApprovalThesis.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY);
         }
 
         throw new UnsupportedOperationException();
