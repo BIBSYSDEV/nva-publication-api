@@ -65,6 +65,7 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -123,6 +124,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class)
                    .filter(type -> !type.getPayload().equals(UnpublishRequest.class))
+                   .filter(type -> !type.getPayload().equals(FilesApprovalThesis.class))
                    .map(Arguments::of);
     }
 

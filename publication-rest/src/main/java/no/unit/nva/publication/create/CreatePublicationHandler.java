@@ -48,7 +48,8 @@ public class CreatePublicationHandler
     public static final String API_HOST = "API_HOST";
     private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
     private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd",
-                                                                      "DegreeLicentiate");
+                                                                      "ArtisticDegreePhd", "DegreeLicentiate",
+                                                                      "OtherStudentWork");
     private final ResourceService publicationService;
     private final String apiHost;
     private final IdentityServiceClient identityServiceClient;

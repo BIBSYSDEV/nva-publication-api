@@ -87,13 +87,11 @@ class TicketEntryTest {
     }
 
     @Test
-    void shouldMoveFilesForApprovalToApprovedFilesWhenPublishingRequestApproveFiles() throws ConflictException {
+    void shouldMoveFilesForApprovalToApprovedFilesWhenPublishingRequestApproveFiles() {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
-        var ticket = (PublishingRequestCase) TicketEntry.createNewTicket(
-            publication, PublishingRequestCase.class, SortableIdentifier::next);
-        ticket.withFilesForApproval(Set.of(randomPendingOpenFile()))
-            .withWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .approveFiles();
+        var ticket = PublishingRequestCase.create(
+            Resource.fromPublication(publication), UserInstance.fromPublication(publication), PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        ticket.withFilesForApproval(Set.of(randomPendingOpenFile())).approveFiles();
 
         assertThat(ticket.getApprovedFiles().size(), is(equalTo(1)));
     }

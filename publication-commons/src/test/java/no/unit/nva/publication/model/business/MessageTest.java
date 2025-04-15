@@ -2,7 +2,7 @@ package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.randomTicketType;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -45,7 +45,7 @@ class MessageTest extends TestDataSource {
     
     @Test
     void shouldReturnCopyWithoutLossOfInformation() throws ConflictException {
-        Publication publication = randomPublicationEligibleForDoiRequest();
+        Publication publication = randomDegreePublicationEligibleForDoiRequest();
         var ticket = TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next)
                          .withOwner(UserInstance.fromPublication(publication).getUsername());
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
@@ -67,12 +67,13 @@ class MessageTest extends TestDataSource {
         assertThrows(IllegalArgumentException.class, () -> MessageStatus.lookup(randomString()));
     }
     
-    private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPublication().copy().withStatus(PublicationStatus.DRAFT).withDoi(null).build();
+    private static Publication randomDegreePublicationEligibleForDoiRequest() {
+        return randomDegreePublication().copy()
+                   .withStatus(PublicationStatus.DRAFT).withDoi(null).build();
     }
     
     private Message createSampleMessage() throws ConflictException {
-        var publication = randomPublicationEligibleForDoiRequest();
+        var publication = randomDegreePublicationEligibleForDoiRequest();
         var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
         return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
     }

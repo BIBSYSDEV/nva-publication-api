@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -18,6 +19,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -89,7 +91,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     }
 
     private static Publication draftPublicationWithoutDoi() {
-        return randomPublication().copy().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
+        return randomDegreePublication().copy().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
     }
     
     private static List<TicketEntry> sampleTickets() {

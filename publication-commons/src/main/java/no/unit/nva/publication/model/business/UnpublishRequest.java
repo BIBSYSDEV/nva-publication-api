@@ -1,14 +1,5 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
-import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -25,7 +16,6 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
-import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -34,24 +24,8 @@ public class UnpublishRequest extends TicketEntry {
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String TYPE = "UnpublishRequest";
 
-    @JsonProperty(IDENTIFIER_FIELD)
-    private SortableIdentifier identifier;
-    @JsonProperty(CREATED_DATE_FIELD)
-    private Instant createdDate;
-    @JsonProperty(MODIFIED_DATE_FIELD)
-    private Instant modifiedDate;
-    @JsonProperty(OWNER_FIELD)
-    private User owner;
-    @JsonProperty(CUSTOMER_ID_FIELD)
-    private URI customerId;
-    @JsonProperty(STATUS_FIELD)
-    private TicketStatus status;
     @JsonProperty(RESOURCE_STATUS_FIELD)
     private PublicationStatus resourceStatus;
-    @JsonProperty(ASSIGNEE_FIELD)
-    private Username assignee;
-    @JsonProperty(OWNER_AFFILIATION_FIELD)
-    private URI ownerAffiliation;
 
     public UnpublishRequest() {
         super();
@@ -88,63 +62,8 @@ public class UnpublishRequest extends TicketEntry {
     }
 
     @Override
-    public SortableIdentifier getIdentifier() {
-        return identifier;
-    }
-
-    @Override
-    public void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
-    }
-
-    @Override
-    public Publication toPublication(ResourceService resourceService) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(getResourceIdentifier()))
-                   .orElseThrow();
-    }
-
-    @Override
     public String getType() {
         return TYPE;
-    }
-
-    @Override
-    public Instant getCreatedDate() {
-        return this.createdDate;
-    }
-
-    @Override
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    @Override
-    public Instant getModifiedDate() {
-        return this.modifiedDate;
-    }
-
-    @Override
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    @Override
-    public User getOwner() {
-        return this.owner;
-    }
-
-    @Override
-    public void setOwner(User owner) {
-        this.owner = owner;
-    }
-
-    @Override
-    public URI getCustomerId() {
-        return this.customerId;
-    }
-
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
     }
 
     @Override
@@ -187,47 +106,12 @@ public class UnpublishRequest extends TicketEntry {
                    .build();
     }
 
-    @Override
-    public TicketStatus getStatus() {
-        return this.status;
-    }
-
-    @Override
-    public void setStatus(TicketStatus ticketStatus) {
-        this.status = ticketStatus;
-    }
-
     public PublicationStatus getResourceStatus() {
         return resourceStatus;
     }
 
     public void setResourceStatus(PublicationStatus resourceStatus) {
         this.resourceStatus = resourceStatus;
-    }
-
-    @Override
-    public Username getAssignee() {
-        return this.assignee;
-    }
-
-    @Override
-    public void setAssignee(Username assignee) {
-        this.assignee = assignee;
-    }
-
-    @Override
-    public URI getOwnerAffiliation() {
-        return this.ownerAffiliation;
-    }
-
-    @Override
-    public void setOwnerAffiliation(URI ownerAffiliation) {
-        this.ownerAffiliation = ownerAffiliation;
-    }
-
-    @Override
-    public void validateAssigneeRequirements(Publication publication) {
-        // TODO:
     }
 
     @Override
