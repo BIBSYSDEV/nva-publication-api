@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
@@ -16,7 +17,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.STATUS_INDEX_FIELD_PREFIX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,12 +56,6 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.funding.FundingBuilder;
-import no.unit.nva.model.instancetypes.degree.ArtisticDegreePhd;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
-import no.unit.nva.model.instancetypes.degree.DegreeMaster;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
-import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -136,9 +130,7 @@ class DaoTest extends ResourcesLocalTest {
     }
 
     public static Publication draftDegreePublicationWithoutDoi() {
-        var degrees = List.of(DegreeBachelor.class, DegreeMaster.class, DegreePhd.class,
-                              ArtisticDegreePhd.class,DegreeLicentiate.class, OtherStudentWork.class);
-        return randomPublication(degrees.get(randomInteger(degrees.size()))).copy()
+        return randomDegreePublication().copy()
                    .withStatus(PublicationStatus.DRAFT)
                    .withDoi(null)
                    .build();

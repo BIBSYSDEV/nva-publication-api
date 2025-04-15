@@ -31,7 +31,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = FilesApprovalThesis.TYPE, value = FilesApprovalThesis.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class)})
-public abstract class FileApprovalEntry extends TicketEntry {
+public abstract class FilesApprovalEntry extends TicketEntry {
 
     @JsonProperty(WORKFLOW)
     private PublishingWorkflow workflow;
@@ -44,13 +44,13 @@ public abstract class FileApprovalEntry extends TicketEntry {
     public abstract void validateCreationRequirements(Publication publication) throws ConflictException;
 
     @Override
-    public FileApprovalEntry complete(Publication publication, UserInstance userInstance) {
-        var completed = (FileApprovalEntry) super.complete(publication, userInstance);
+    public FilesApprovalEntry complete(Publication publication, UserInstance userInstance) {
+        var completed = (FilesApprovalEntry) super.complete(publication, userInstance);
         completed.emptyFilesForApproval();
         return completed;
     }
 
-    protected FileApprovalEntry completeAndApproveFiles(Resource resource, UserInstance userInstance) {
+    protected FilesApprovalEntry completeAndApproveFiles(Resource resource, UserInstance userInstance) {
         this.setAssignee(new Username(userInstance.getUsername()));
         this.approveFiles();
         return this.complete(resource.toPublication(), userInstance);
@@ -106,7 +106,7 @@ public abstract class FileApprovalEntry extends TicketEntry {
     }
 
 
-    public FileApprovalEntry approveFiles() {
+    public FilesApprovalEntry approveFiles() {
         this.approvedFiles = getFilesForApproval().stream().map(this::toApprovedFile).collect(Collectors.toSet());
         this.filesForApproval = Set.of();
         return this;
@@ -124,8 +124,8 @@ public abstract class FileApprovalEntry extends TicketEntry {
         return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) && getFilesForApproval().isEmpty();
     }
 
-    protected FileApprovalEntry handleMetadataOnlyWorkflow(Resource resource, UserInstance userInstance,
-                                                           PublishingWorkflow workflow) {
+    protected FilesApprovalEntry handleMetadataOnlyWorkflow(Resource resource, UserInstance userInstance,
+                                                            PublishingWorkflow workflow) {
         return canPublishMetadataAndNoFilesToApprove(workflow)
                    ? this.complete(resource.toPublication(), userInstance)
                    : this;

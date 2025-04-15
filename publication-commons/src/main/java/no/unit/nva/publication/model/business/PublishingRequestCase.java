@@ -12,7 +12,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.publication.model.FileApprovalEntry;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -21,7 +21,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(PublishingRequestCase.TYPE)
-public class PublishingRequestCase extends FileApprovalEntry {
+public class PublishingRequestCase extends FilesApprovalEntry {
 
     public static final String TYPE = "PublishingRequestCase";
     public static final String MARKED_FOR_DELETION_ERROR =

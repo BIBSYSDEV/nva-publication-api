@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.FileApprovalEntry;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.storage.FileApprovalThesisDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.core.JacocoGenerated;
@@ -17,7 +17,7 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings({"PMD.GodClass"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(FilesApprovalThesis.TYPE)
-public class FilesApprovalThesis extends FileApprovalEntry {
+public class FilesApprovalThesis extends FilesApprovalEntry {
 
     public static final String TYPE = "FilesApprovalThesis";
 

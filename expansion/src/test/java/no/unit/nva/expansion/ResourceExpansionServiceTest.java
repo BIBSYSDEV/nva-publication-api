@@ -6,13 +6,13 @@ import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFileWithLicense;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -68,12 +68,6 @@ import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.instancetypes.degree.ArtisticDegreePhd;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
-import no.unit.nva.model.instancetypes.degree.DegreeMaster;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
-import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -986,9 +980,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {
-        var degrees = List.of(DegreeBachelor.class, DegreeMaster.class, DegreePhd.class,
-                              ArtisticDegreePhd.class, DegreeLicentiate.class, OtherStudentWork.class);
-        var publication = randomPublication(degrees.get(randomInteger(degrees.size()))).copy().withDoi(null).withStatus(DRAFT).build();
+        var publication = randomDegreePublication().copy().withDoi(null).withStatus(DRAFT).build();
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }

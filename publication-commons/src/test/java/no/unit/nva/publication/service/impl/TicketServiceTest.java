@@ -74,7 +74,7 @@ import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.FileApprovalEntry;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -692,7 +692,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
 
-        var persistedCompletedTicket = ((FileApprovalEntry) ticket)
+        var persistedCompletedTicket = ((FilesApprovalEntry) ticket)
                                            .persistAutoComplete(ticketService,
                                                                 publication,
                                                                 UserInstance.create(owner.getUsername(), randomUri()));
