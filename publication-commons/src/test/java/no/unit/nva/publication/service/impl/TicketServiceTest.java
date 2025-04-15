@@ -74,6 +74,7 @@ import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.FileApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -686,12 +687,12 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void publishingRequestCaseShouldBeAutoCompleted() throws ApiGatewayException {
+    void fileApprovalEntryShouldBeAutoCompleted() throws ApiGatewayException {
         var ticketType = PublishingRequestCase.class;
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
 
-        var persistedCompletedTicket = ((PublishingRequestCase) ticket)
+        var persistedCompletedTicket = ((FileApprovalEntry) ticket)
                                            .persistAutoComplete(ticketService,
                                                                 publication,
                                                                 UserInstance.create(owner.getUsername(), randomUri()));
@@ -989,15 +990,9 @@ public class TicketServiceTest extends ResourcesLocalTest {
                    .collect(Collectors.toSet());
     }
 
-    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
-        throws ApiGatewayException {
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
-                                                                                              SortableIdentifier::next)
-                                                            .withOwner(UserInstance.fromPublication(publication).getUsername())
-                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
-                                                            .withOwnerResponsibilityArea(randomUri());
-        publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
-        return publishingRequest.persistNewTicket(ticketService);
+    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication) {
+        return PublishingRequestCase.create(Resource.fromPublication(publication),
+                                     UserInstance.fromPublication(publication),
+                                     REGISTRATOR_PUBLISHES_METADATA_ONLY);
     }
-
 }

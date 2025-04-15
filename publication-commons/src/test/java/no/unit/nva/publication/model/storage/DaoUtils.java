@@ -6,6 +6,7 @@ import static no.unit.nva.publication.model.business.StorageModelTestUtils.rando
 import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -22,7 +23,12 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.instancetypes.degree.ArtisticDegreePhd;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
@@ -84,7 +90,9 @@ public final class DaoUtils extends TestDataSource {
     }
 
     private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPublication(DegreeBachelor.class).copy()
+        var degrees = List.of(DegreeBachelor.class, DegreeMaster.class, DegreePhd.class,
+                              ArtisticDegreePhd.class, DegreeLicentiate.class, OtherStudentWork.class);
+        return randomPublication(degrees.get(randomInteger(degrees.size()))).copy()
                    .withStatus(PublicationStatus.DRAFT)
                    .withDoi(null)
                    .build();

@@ -5,16 +5,24 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.randomTicketType;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.instancetypes.degree.ArtisticDegreePhd;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.publication.TestDataSource;
 import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.api.Test;
@@ -45,7 +53,7 @@ class MessageTest extends TestDataSource {
     
     @Test
     void shouldReturnCopyWithoutLossOfInformation() throws ConflictException {
-        Publication publication = randomPublicationEligibleForDoiRequest();
+        Publication publication = randomDegreePublicationEligibleForDoiRequest();
         var ticket = TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next)
                          .withOwner(UserInstance.fromPublication(publication).getUsername());
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
@@ -67,12 +75,15 @@ class MessageTest extends TestDataSource {
         assertThrows(IllegalArgumentException.class, () -> MessageStatus.lookup(randomString()));
     }
     
-    private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomPublication().copy().withStatus(PublicationStatus.DRAFT).withDoi(null).build();
+    private static Publication randomDegreePublicationEligibleForDoiRequest() {
+        var degrees = List.of(DegreeBachelor.class, DegreeMaster.class, DegreePhd.class,
+                              ArtisticDegreePhd.class, DegreeLicentiate.class, OtherStudentWork.class);
+        return randomPublication(degrees.get(randomInteger(degrees.size()))).copy()
+                   .withStatus(PublicationStatus.DRAFT).withDoi(null).build();
     }
     
     private Message createSampleMessage() throws ConflictException {
-        var publication = randomPublicationEligibleForDoiRequest();
+        var publication = randomDegreePublicationEligibleForDoiRequest();
         var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
         return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
     }

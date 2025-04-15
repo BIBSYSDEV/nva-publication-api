@@ -39,6 +39,15 @@ class FilesApprovalThesisTest {
     }
 
     @Test
+    void shouldNotThrowConflictExceptionForAllNonDegrees() {
+        var resource = Resource.fromPublication(randomPublication(JournalArticle.class));
+        var userInstance = UserInstance.create(randomString(), randomUri());
+
+        assertThrows(IllegalStateException.class,
+                     () -> FilesApprovalThesis.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY));
+    }
+
+    @Test
     void shouldCreateFileThesisApprovalWhenRegistratorCanPublishMetadataAndFiles() {
         var resource = Resource.fromPublication(randomPublication(DegreeBachelor.class));
         var userInstance = UserInstance.create(randomString(), randomUri());
