@@ -767,8 +767,10 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Policies:
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
