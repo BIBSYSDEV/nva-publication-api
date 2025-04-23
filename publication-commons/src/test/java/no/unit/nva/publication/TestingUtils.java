@@ -10,6 +10,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -35,7 +36,7 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static Publication randomPublicationWithoutDoi() {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication(DegreeBachelor.class).copy().withDoi(null).build();
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         return publication;
     }

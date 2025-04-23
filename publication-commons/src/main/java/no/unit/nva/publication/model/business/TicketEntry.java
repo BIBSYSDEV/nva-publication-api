@@ -1,7 +1,15 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -16,6 +24,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -27,6 +36,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
+    @JsonSubTypes.Type(name = FilesApprovalThesis.TYPE, value = FilesApprovalThesis.class),
     @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class),
     @JsonSubTypes.Type(name = UnpublishRequest.TYPE, value = UnpublishRequest.class)})
 public abstract class TicketEntry implements Entity {
@@ -39,18 +49,33 @@ public abstract class TicketEntry implements Entity {
     private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
     public static final String REMOVE_NON_PENDING_TICKET_MESSAGE =
         "Cannot remove a ticket that has any other status than %s";
+    protected static final String RESPONSIBILITY_AREA_FIELD = "responsibilityArea";
 
+    @JsonProperty(IDENTIFIER_FIELD)
+    private SortableIdentifier identifier;
+    @JsonProperty(STATUS_FIELD)
+    private TicketStatus status;
+    @JsonProperty(MODIFIED_DATE_FIELD)
+    private Instant modifiedDate;
+    @JsonProperty(CREATED_DATE_FIELD)
+    private Instant createdDate;
     @JsonProperty(OWNER_FIELD)
     private User owner;
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
+    @JsonProperty(ASSIGNEE_FIELD)
+    private Username assignee;
     @JsonProperty(RESOURCE_IDENTIFIER)
     private SortableIdentifier resourceIdentifier;
+    @JsonProperty(CUSTOMER_ID_FIELD)
+    private URI customerId;
     @JsonProperty(FINALIZED_BY)
     private Username finalizedBy;
     @JsonProperty(FINALIZED_DATE)
     private Instant finalizedDate;
-    @JsonProperty("responsibilityArea")
+    @JsonProperty(OWNER_AFFILIATION_FIELD)
+    private URI ownerAffiliation;
+    @JsonProperty(RESPONSIBILITY_AREA_FIELD)
     private URI responsibilityArea;
 
     protected TicketEntry() {
@@ -73,9 +98,11 @@ public abstract class TicketEntry implements Entity {
         } else if (PublishingRequestCase.class.equals(ticketType)) {
             return PublishingRequestCase.create(resource, userInstance, null);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return GeneralSupportRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
+            return GeneralSupportRequest.create(resource, userInstance);
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return UnpublishRequest.fromPublication(publication);
+        } else if (FilesApprovalThesis.class.equals(ticketType)) {
+            return FilesApprovalThesis.create(resource, userInstance, null);
         }
         throw new RuntimeException("Unrecognized ticket type");
     }
@@ -91,6 +118,8 @@ public abstract class TicketEntry implements Entity {
             return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return ticketType.cast(UnpublishRequest.createQueryObject(customerId, resourceIdentifier));
+        } else if (FilesApprovalThesis.class.equals(ticketType)) {
+            return ticketType.cast(FilesApprovalThesis.createQueryObject(customerId, resourceIdentifier));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -123,12 +152,77 @@ public abstract class TicketEntry implements Entity {
         }
     }
 
+    @Override
+    public Publication toPublication(ResourceService resourceService) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(getResourceIdentifier())).orElseThrow();
+    }
+
+    @Override
+    public SortableIdentifier getIdentifier() {
+        return identifier;
+    }
+
+    @Override
+    public void setIdentifier(SortableIdentifier identifier) {
+        this.identifier = identifier;
+    }
+
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
     }
 
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
         this.resourceIdentifier = resourceIdentifier;
+    }
+
+    @Override
+    public URI getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(URI customerId) {
+        this.customerId = customerId;
+    }
+
+    @Override
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    @Override
+    public void setCreatedDate(Instant now) {
+        this.createdDate = now;
+    }
+
+    @Override
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+
+    @Override
+    public void setModifiedDate(Instant now) {
+        this.modifiedDate = now;
+    }
+
+    public Username getAssignee() {
+        return assignee;
+    }
+
+    public void setAssignee(Username assignee) {
+        this.assignee = assignee;
+    }
+
+    @Override
+    public String getStatusString() {
+        return status.toString();
+    }
+
+    public TicketStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TicketStatus status) {
+        this.status = status;
     }
 
     public Username getFinalizedBy() {
@@ -162,6 +256,14 @@ public abstract class TicketEntry implements Entity {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public URI getOwnerAffiliation() {
+        return ownerAffiliation;
+    }
+
+    public void setOwnerAffiliation(URI ownerAffiliation) {
+        this.ownerAffiliation = ownerAffiliation;
     }
 
     public void persistUpdate(TicketService ticketService) {
@@ -231,11 +333,6 @@ public abstract class TicketEntry implements Entity {
         return responsibilityArea;
     }
 
-    public TicketEntry withOwnerResponsibilityArea(URI responsibilityArea) {
-        this.setResponsibilityArea(responsibilityArea);
-        return this;
-    }
-
     public void setResponsibilityArea(URI responsibilityArea) {
         this.responsibilityArea = responsibilityArea;
     }
@@ -262,18 +359,6 @@ public abstract class TicketEntry implements Entity {
     }
 
     public abstract TicketEntry copy();
-
-    public abstract TicketStatus getStatus();
-
-    public abstract void setStatus(TicketStatus ticketStatus);
-
-    public abstract Username getAssignee();
-
-    public abstract void setAssignee(Username assignee);
-
-    public abstract URI getOwnerAffiliation();
-
-    public abstract void setOwnerAffiliation(URI ownerAffiliation);
 
     @Override
     public abstract TicketDao toDao();
@@ -327,11 +412,8 @@ public abstract class TicketEntry implements Entity {
         return this;
     }
 
-    public abstract void validateAssigneeRequirements(Publication publication);
-
     public TicketEntry updateAssignee(Publication publication, Username assignee) {
         var updated = this.copy();
-        updated.validateAssigneeRequirements(publication);
         updated.setAssignee(assignee);
         updated.setModifiedDate(Instant.now());
         return updated;
@@ -363,6 +445,8 @@ public abstract class TicketEntry implements Entity {
             return GeneralSupportRequest.create(resource, userInstance);
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return createNewUnpublishRequest(publication, identifierProvider);
+        } else if (FilesApprovalThesis.class.equals(ticketType)) {
+            return FilesApprovalThesis.create(resource, userInstance, null);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -384,6 +468,8 @@ public abstract class TicketEntry implements Entity {
         public static final String WORKFLOW = "workflow";
         public static final String ASSIGNEE_FIELD = "assignee";
         public static final String OWNER_AFFILIATION_FIELD = "ownerAffiliation";
+        public static final String APPROVED_FILES_FIELD = "approvedFiles";
+        public static final String FILES_FOR_APPROVAL_FIELD = "filesForApproval";
 
         private Constants() {
 

@@ -6,6 +6,7 @@ import static no.unit.nva.expansion.model.ExpandedTicket.extractIdentifier;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFileWithLicense;
@@ -78,6 +79,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -119,7 +121,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static final String VIEWED_BY = "viewedBy";
     private static final String WORKFLOW = "workflow";
     private static final String ASSIGNEE = "assignee";
-    private static final String OWNERAFFILIATION = "ownerAffiliation";
+    private static final String OWNER_AFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
     public static final String APPROVED_FILES = "approvedFiles";
     public static final String FILES_FOR_APPROVAL = "filesForApproval";
@@ -193,7 +195,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         assertThat(ticket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, OWNERAFFILIATION, APPROVED_FILES,
+                                                               FINALIZED_DATE, OWNER_AFFILIATION, APPROVED_FILES,
                                                                FILES_FOR_APPROVAL,
                                                                RESPONSIBILITY_AREA, TICKET_EVENT, VIEWED_BY)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
@@ -804,12 +806,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
         throws ApiGatewayException {
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
-                                                                                              SortableIdentifier::next)
-                                                            .withOwner(UserInstance.fromPublication(publication).getUsername())
-                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
-        return publishingRequest.persistNewTicket(ticketService);
+        return PublishingRequestCase.create(Resource.fromPublication(publication),
+                                            UserInstance.fromPublication(publication),
+                                            PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                   .persistNewTicket(ticketService);
     }
 
     private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
@@ -980,7 +980,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {
-        var publication = randomPublication().copy().withDoi(null).withStatus(DRAFT).build();
+        var publication = randomDegreePublication().copy().withDoi(null).withStatus(DRAFT).build();
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
@@ -999,6 +999,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setApprovedFiles(expandedPublishingRequest.getApprovedFiles());
         publishingRequest.setFilesForApproval(expandedPublishingRequest.getFilesForApproval());
         publishingRequest.setOwnerAffiliation(expandedPublishingRequest.getOrganization().id());
+        publishingRequest.setWorkflow(expandedPublishingRequest.getWorkflow());
         return publishingRequest;
     }
 

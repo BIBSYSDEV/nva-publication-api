@@ -11,6 +11,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -24,6 +25,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     public static final String MESSAGE_UPDATE_EVENT_TOPIC = "PublicationService.Message.Update";
     public static final String PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.PublishingRequest.Update";
+    public static final String FILES_APPROVAL_THESIS_UPDATE_EVENT_TOPIC =
+        "PublicationService.FilesApprovalThesis.Update";
     public static final String GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC =
         "PublicationService.GeneralSupportRequest.Update";
     private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
@@ -113,6 +116,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             case Resource resource -> RESOURCE_UPDATE_EVENT_TOPIC;
             case DoiRequest doiRequest -> DOI_REQUEST_UPDATE_EVENT_TOPIC;
             case PublishingRequestCase publishingRequestCase -> PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC;
+            case FilesApprovalThesis filesApprovalThesis -> FILES_APPROVAL_THESIS_UPDATE_EVENT_TOPIC;
             case Message message -> MESSAGE_UPDATE_EVENT_TOPIC;
             case GeneralSupportRequest generalSupportRequest -> GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC;
             case UnpublishRequest unpublishRequest -> UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC;
