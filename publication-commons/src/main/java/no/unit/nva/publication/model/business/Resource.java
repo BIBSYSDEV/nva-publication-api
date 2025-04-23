@@ -381,7 +381,7 @@ public class Resource implements Entity {
         resourceService.updateResource(this, userInstance);
     }
 
-    private void publish(UserInstance userInstance) {
+    public void publish(UserInstance userInstance) {
         if (isNotPublishable()) {
             throw new IllegalStateException("Resource is not publishable!");
         } else if (this.isNotPublished()) {
