@@ -1,9 +1,6 @@
 package no.unit.nva.expansion.model;
 
 import static nva.commons.core.attempt.Try.attempt;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.net.URI;
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,15 +22,7 @@ import nva.commons.core.JacocoGenerated;
 public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public static final String TYPE = "PublishingRequest";
-    public static final String STATUS_FIELD = "status";
 
-    @JsonProperty("organizationIds")
-    private Set<URI> organizationIds;
-    @JsonProperty(STATUS_FIELD)
-    private ExpandedTicketStatus status;
-    private URI customerId;
-    private Instant modifiedDate;
-    private Instant createdDate;
     private PublishingWorkflow workflow;
     private Set<File> approvedFiles;
     private Set<File> filesForApproval;
@@ -72,15 +61,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         return extractIdentifier(getId());
     }
 
-    @Override
-    public ExpandedTicketStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ExpandedTicketStatus status) {
-        this.status = status;
-    }
-
     public Set<File> getFilesForApproval() {
         return filesForApproval;
     }
@@ -95,30 +75,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public void setApprovedFiles(Set<File> approvedFiles) {
         this.approvedFiles = approvedFiles;
-    }
-
-    public Instant getCreatedDate() {
-        return this.createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public Instant getModifiedDate() {
-        return this.modifiedDate;
-    }
-
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    public URI getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
     }
 
     public PublishingWorkflow getWorkflow() {
