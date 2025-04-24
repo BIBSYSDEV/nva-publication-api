@@ -72,7 +72,6 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -163,8 +162,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                              UserInstance.fromPublication(persistedPublication),
                                                              REGISTRATOR_PUBLISHES_METADATA_ONLY)
                                       .persistNewTicket(ticketService);
-        var expandedFilesApproval = ExpandedFileApprovalThesis.createEntry(filesApprovalThesis, resourceService,
-                                                                             resourceExpansionService, ticketService);
+        var expandedFilesApproval = ExpandedFilesApprovalThesis.createEntry(filesApprovalThesis, resourceService,
+                                                                            resourceExpansionService, ticketService);
         assertThat(filesApprovalThesis.getIdentifier(), is(equalTo(expandedFilesApproval.identifyExpandedEntry())));
     }
 
@@ -506,7 +505,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 return new ExpandedDataEntryWithAssociatedPublication(
                     createExpandedUnpublishRequest(publication, resourceService, expansionService,
                                                    ticketService));
-            } else if (expandedDataEntryClass.equals(ExpandedFileApprovalThesis.class)) {
+            } else if (expandedDataEntryClass.equals(ExpandedFilesApprovalThesis.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(
                     createExpandedFilesApprovalThesis(publication, resourceService, expansionService,
                                                    ticketService));
@@ -545,8 +544,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 Resource.fromPublication(publication), UserInstance.fromPublication(publication),
                 REGISTRATOR_PUBLISHES_METADATA_ONLY
             );
-            return ExpandedFileApprovalThesis.create(filesApprovalThesis, resourceService, expansionService,
-                                                   ticketService);
+            return ExpandedFilesApprovalThesis.create(filesApprovalThesis, resourceService, expansionService,
+                                                      ticketService);
         }
 
         private static Publication createPublication(ResourceService resourceService) throws BadRequestException {

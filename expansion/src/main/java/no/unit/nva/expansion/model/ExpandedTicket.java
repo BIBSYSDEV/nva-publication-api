@@ -30,7 +30,7 @@ import nva.commons.core.paths.UriWrapper;
     @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
     @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class),
     @JsonSubTypes.Type(name = ExpandedUnpublishRequest.TYPE, value = ExpandedUnpublishRequest.class),
-    @JsonSubTypes.Type(name = ExpandedFileApprovalThesis.TYPE, value = ExpandedFileApprovalThesis.class)
+    @JsonSubTypes.Type(name = ExpandedFilesApprovalThesis.TYPE, value = ExpandedFilesApprovalThesis.class)
 })
 public abstract class ExpandedTicket implements ExpandedDataEntry {
 
@@ -100,7 +100,7 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
                 expansionService,
                 ticketService
             );
-            case FilesApprovalThesis filesApprovalThesis -> ExpandedFileApprovalThesis.createEntry(
+            case FilesApprovalThesis filesApprovalThesis -> ExpandedFilesApprovalThesis.createEntry(
                 filesApprovalThesis,
                 resourceService,
                 expansionService,

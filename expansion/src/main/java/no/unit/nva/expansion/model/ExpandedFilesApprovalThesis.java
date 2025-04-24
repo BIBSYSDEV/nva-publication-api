@@ -18,10 +18,10 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 
-@JsonTypeName(ExpandedFileApprovalThesis.TYPE)
-public class ExpandedFileApprovalThesis extends ExpandedTicket {
+@JsonTypeName(ExpandedFilesApprovalThesis.TYPE)
+public class ExpandedFilesApprovalThesis extends ExpandedTicket {
 
-    public static final String TYPE = "FileApprovalThesis";
+    public static final String TYPE = "FilesApprovalThesis";
 
 
     private PublishingWorkflow workflow;
@@ -32,7 +32,7 @@ public class ExpandedFileApprovalThesis extends ExpandedTicket {
                                                 ResourceExpansionService resourceExpansionService,
                                                 TicketService ticketService) throws NotFoundException {
         var publication = resourceService.getPublicationByIdentifier(dataEntry.getResourceIdentifier());
-        var entry = new ExpandedFileApprovalThesis();
+        var entry = new ExpandedFilesApprovalThesis();
         var publicationSummary = PublicationSummary.create(publication);
         entry.setPublication(publicationSummary);
         entry.setOrganization(resourceExpansionService.getOrganization(dataEntry));
