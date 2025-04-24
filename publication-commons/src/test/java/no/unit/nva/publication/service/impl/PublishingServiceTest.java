@@ -30,6 +30,7 @@ import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -68,11 +69,11 @@ class PublishingServiceTest extends ResourcesLocalTest {
                               .withAssociatedArtifacts(List.of())
                               .build();
         var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        publishingService.publishResource(publication.getIdentifier(), userInstance);
+        publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
 
-        var publishedPublication = Resource.fromPublication(publication).fetch(resourceService);
+        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService);
 
         assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
     }
@@ -115,7 +116,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotPersistPublishingRequestWhenPublicationToPublishHasNoPendingFiles() throws ApiGatewayException {
-        var publication = randomPublication().copy()
+        var publication = randomPublication(DataSet.class).copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .withAssociatedArtifacts(List.of())
                               .build();

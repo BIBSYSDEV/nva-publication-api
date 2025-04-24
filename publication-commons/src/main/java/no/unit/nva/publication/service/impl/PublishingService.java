@@ -3,6 +3,9 @@ package no.unit.nva.publication.service.impl;
 import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.clients.ChannelClaimDto;
+import no.unit.nva.clients.ChannelClaimDto.ChannelClaim;
+import no.unit.nva.clients.ChannelClaimDto.ChannelClaim.ChannelConstraint;
+import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -28,10 +31,11 @@ import nva.commons.core.paths.UriWrapper;
 
 public class PublishingService {
 
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
     protected static final String CUSTOMER = "customer";
     protected static final String CHANNEL_CLAIM = "channel-claim";
     protected static final String EVERYONE = "Everyone";
+    protected static final String NOT_FOUND_MESSAGE = "Resource with identifier %s not found!";
+    private static final String API_HOST = new Environment().readEnv("API_HOST");
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final IdentityServiceClient identityServiceClient;
@@ -54,7 +58,7 @@ public class PublishingService {
         var resource = getResource(resourceIdentifier);
         validatePermissions(resource, userInstance);
 
-        publishPublication(userInstance, resource);
+        publishResource(userInstance, resource);
 
         if (!resource.getPendingFiles().isEmpty()) {
             publishResourceWithPendingFiles(userInstance, resource);
@@ -79,7 +83,20 @@ public class PublishingService {
         }
     }
 
-    private void publishPublication(UserInstance userInstance, Resource resource)
+    private static boolean everyoneCanPublish(ChannelClaimDto channelClaim) {
+        return Optional.ofNullable(channelClaim)
+                   .map(ChannelClaimDto::channelClaim)
+                   .map(ChannelClaim::constraint)
+                   .map(ChannelConstraint::publishingPolicy)
+                   .map(EVERYONE::equals)
+                   .orElse(false);
+    }
+
+    private static URI getOrganizationId(ChannelClaimDto channelClaim) {
+        return channelClaim.claimedBy().organizationId();
+    }
+
+    private void publishResource(UserInstance userInstance, Resource resource)
         throws BadGatewayException, ForbiddenException {
         var publisher = getPublisher(resource);
         if (publisher.isEmpty()) {
@@ -88,13 +105,12 @@ public class PublishingService {
         }
 
         var channelClaim = getChannelClaim(publisher.get());
-        if (channelClaim.isEmpty()
-            || EVERYONE.equals(channelClaim.get().channelClaim().constraint().publishingPolicy())) {
+        if (channelClaim.isEmpty() ||   everyoneCanPublish(channelClaim.get())) {
             resource.publish(resourceService, userInstance);
             return;
         }
 
-        if (!userInstance.getTopLevelOrgCristinId().equals(channelClaim.get().claimedBy().organizationId())) {
+        if (isClaimedByDifferentOrganization(channelClaim.get(), userInstance)) {
             throw new ForbiddenException();
         }
 
@@ -104,7 +120,7 @@ public class PublishingService {
     private Resource getResource(SortableIdentifier resourceIdentifier) throws NotFoundException {
         return Resource.resourceQueryObject(resourceIdentifier)
                    .fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException("Resource not found!"));
+                   .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE.formatted(resourceIdentifier)));
     }
 
     private void publishResourceWithPendingFiles(UserInstance userInstance, Resource resource)
@@ -129,12 +145,7 @@ public class PublishingService {
                 return;
             }
         }
-        FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow)
-            .persistNewTicket(ticketService);
-    }
-
-    private static URI getOrganizationId(ChannelClaimDto channelClaim) {
-        return channelClaim.claimedBy().organizationId();
+        FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow).persistNewTicket(ticketService);
     }
 
     private Optional<ChannelClaimDto> getChannelClaim(Publisher publisher) throws BadGatewayException {
@@ -148,7 +159,11 @@ public class PublishingService {
     }
 
     private boolean isClaimedByDifferentOrganization(ChannelClaimDto channelClaim, UserInstance userInstance) {
-        return !channelClaim.claimedBy().id().equals(userInstance.getCustomerId());
+        return Optional.ofNullable(channelClaim)
+                   .map(ChannelClaimDto::claimedBy)
+                   .map(CustomerSummaryDto::id)
+                   .map(id -> !userInstance.getCustomerId().equals(id))
+                   .orElse(true);
     }
 
     private URI createChannelClaimUri(Publisher publisher) {
