@@ -1,10 +1,8 @@
 package no.unit.nva.expansion.model;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
@@ -25,15 +23,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket {
 
     public static final String TYPE = "DoiRequest";
 
-    @JsonProperty()
-    private ExpandedTicketStatus status;
-    @JsonProperty
-    private Instant modifiedDate;
-    @JsonProperty
-    @JsonAlias("date")
-    private Instant createdDate;
-    @JsonProperty
-    private URI customerId;
     @JsonProperty("doi")
     private URI doi;
 
@@ -53,36 +42,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket {
     }
 
     @JacocoGenerated
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    @JacocoGenerated
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    @JacocoGenerated
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-
-    @JacocoGenerated
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    @JacocoGenerated
-    public URI getCustomerId() {
-        return customerId;
-    }
-
-    @JacocoGenerated
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
-    }
-
-    @JacocoGenerated
     public URI getDoi() {
         return doi;
     }
@@ -90,17 +49,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket {
     @JacocoGenerated
     public void setDoi(URI doi) {
         this.doi = doi;
-    }
-
-    @Override
-    @JacocoGenerated
-    public ExpandedTicketStatus getStatus() {
-        return status;
-    }
-
-    @JacocoGenerated
-    public void setStatus(ExpandedTicketStatus status) {
-        this.status = status;
     }
 
     @Override

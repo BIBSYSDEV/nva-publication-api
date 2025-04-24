@@ -74,7 +74,8 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
         var actualTicketEntry = toTicket(ticketDto);
-        assertThat(TicketDto.fromTicket(actualTicketEntry), is(equalTo(ticketDto)));
+        var expected = TicketDto.fromTicket(actualTicketEntry);
+        assertThat(ticketDto, is(equalTo(expected)));
     }
 
     @Test
@@ -163,7 +164,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
         var actualTicketEntry = toTicket(ticketDto);
-        assertThat(TicketDto.fromTicket(actualTicketEntry), is(equalTo(ticketDto)));
+        assertThat(ticketDto, is(equalTo(TicketDto.fromTicket(actualTicketEntry))));
     }
 
     @ParameterizedTest

@@ -1548,6 +1548,7 @@ Resources:
                     - "PublicationService.Message.Update"
                     - "PublicationService.DoiRequest.Update"
                     - "PublicationService.PublishingRequest.Update"
+                    - "PublicationService.FilesApprovalThesis.Update"
                     - "PublicationService.GeneralSupportRequest.Update"
                     - "PublicationService.UnpublishRequest.Update"
       EventInvokeConfig:
@@ -1670,7 +1671,8 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.PublishingRequest.Update" ]
+                  topic:
+                    - "PublicationService.PublishingRequest.Update"
 
   HandleIdentifierEventHandler:
     DependsOn: EventsLambdaManagedPolicy
