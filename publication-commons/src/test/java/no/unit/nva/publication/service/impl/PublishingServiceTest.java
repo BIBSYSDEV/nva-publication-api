@@ -140,7 +140,8 @@ class PublishingServiceTest extends ResourcesLocalTest {
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(userInstance.getCustomerId(),
-                                                                                   userInstance.getTopLevelOrgCristinId(), getPublisherChannelClaimId(publication)));
+                                                                                   userInstance.getTopLevelOrgCristinId(), getPublisherChannelClaimId(publication),
+                                                                                   "Everyone"));
         publishingService.publishResource(publication.getIdentifier(), userInstance);
 
         var ticket = (FilesApprovalThesis) resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).findFirst().orElseThrow();
@@ -162,7 +163,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
         var channelClaimOwner = randomUri();
         when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(randomUri(),
                                                                                    channelClaimOwner,
-                                                                                   getPublisherChannelClaimId(publication)));
+                                                                                   getPublisherChannelClaimId(publication), "Everyone"));
         publishingService.publishResource(publication.getIdentifier(), userInstance);
 
         var ticket = (FilesApprovalThesis) resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).findFirst().orElseThrow();
@@ -179,9 +180,9 @@ class PublishingServiceTest extends ResourcesLocalTest {
                    .getUri();
     }
 
-    private ChannelClaimDto channelClaim(URI customerId, URI topLevelOrgCristinId, URI id) {
+    private ChannelClaimDto channelClaim(URI customerId, URI topLevelOrgCristinId, URI id, String publishingPolicy) {
         return new ChannelClaimDto(new CustomerSummaryDto(customerId, topLevelOrgCristinId),
-                                   new ChannelClaim(id, new ChannelConstraint(randomString(), randomString(),
+                                   new ChannelClaim(id, new ChannelConstraint(publishingPolicy, randomString(),
                                                                               List.of(randomString()))));
     }
 
