@@ -4,6 +4,7 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -61,15 +62,17 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
-import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -150,6 +153,20 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
     }
 
+    @Test
+    void shouldExpandFilesApprovalThesisSuccessfully() throws ApiGatewayException {
+        var publication = randomPublicationWithoutDoi(DegreePhd.class);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(persistedPublication, uriRetriever, resourceService);
+        var filesApprovalThesis = (FilesApprovalThesis) FilesApprovalThesis.create(Resource.fromPublication(persistedPublication),
+                                                             UserInstance.fromPublication(persistedPublication),
+                                                             REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                                      .persistNewTicket(ticketService);
+        var expandedFilesApproval = ExpandedFileApprovalThesis.createEntry(filesApprovalThesis, resourceService,
+                                                                             resourceExpansionService, ticketService);
+        assertThat(filesApprovalThesis.getIdentifier(), is(equalTo(expandedFilesApproval.identifyExpandedEntry())));
+    }
 
     @Test
     void shouldExpandImportCandidateCristinOrgWhenAffiliatedWithNvaCustomer() {
@@ -489,6 +506,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 return new ExpandedDataEntryWithAssociatedPublication(
                     createExpandedUnpublishRequest(publication, resourceService, expansionService,
                                                    ticketService));
+            } else if (expandedDataEntryClass.equals(ExpandedFileApprovalThesis.class)) {
+                return new ExpandedDataEntryWithAssociatedPublication(
+                    createExpandedFilesApprovalThesis(publication, resourceService, expansionService,
+                                                   ticketService));
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -515,8 +536,21 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                    ticketService);
         }
 
+        private static ExpandedDataEntry createExpandedFilesApprovalThesis(Publication publication,
+                                                                        ResourceService resourceService,
+                                                                        ResourceExpansionService expansionService,
+                                                                        TicketService ticketService)
+            throws NotFoundException, JsonProcessingException {
+            var filesApprovalThesis = FilesApprovalThesis.create(
+                Resource.fromPublication(publication), UserInstance.fromPublication(publication),
+                REGISTRATOR_PUBLISHES_METADATA_ONLY
+            );
+            return ExpandedFileApprovalThesis.create(filesApprovalThesis, resourceService, expansionService,
+                                                   ticketService);
+        }
+
         private static Publication createPublication(ResourceService resourceService) throws BadRequestException {
-            var publication = randomPublicationWithoutDoi(AcademicArticle.class);
+            var publication = randomPublicationWithoutDoi(DegreePhd.class);
             publication = Resource.fromPublication(publication)
                               .persistNew(resourceService, UserInstance.fromPublication(publication));
             return publication;
