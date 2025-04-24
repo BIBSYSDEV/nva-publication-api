@@ -305,24 +305,26 @@ public abstract class TicketDto implements JsonSerializable {
         }
 
         public TicketDto build(TicketEntry ticketEntry) {
+            return switch (ticketEntry) {
+                case DoiRequest ignored -> createDoiRequestDto();
+                case PublishingRequestCase publishingRequestCase -> createPublishingRequestDto(publishingRequestCase);
+                case GeneralSupportRequest ignored -> createGeneralSupportCaseDto();
+                case UnpublishRequest ignored -> createUnpublishRequestDto();
+                case FilesApprovalThesis filesApprovalThesis -> createFilesApprovalThesisDto(filesApprovalThesis);
+                default -> throw new RuntimeException("Unsupported type");
+            };
+        }
 
-            var ticketClass = ticketEntry.getClass();
-            if (DoiRequest.class.equals(ticketClass)) {
-                return createDoiRequestDto();
-            } else if (ticketEntry instanceof PublishingRequestCase publishingRequestCase) {
-                return createPublishingRequestDto(publishingRequestCase);
-            } else if (ticketEntry instanceof GeneralSupportRequest) {
-                return new GeneralSupportRequestDto(status, createdDate, modifiedDate, identifier,
-                                                    publicationIdentifier, id, messages, viewedBy, assignee, owner,
-                                                    ownerAffiliation, finalizedBy, finalizedDate);
-            } else if (ticketEntry instanceof UnpublishRequest) {
-                return new UnpublishRequestDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id,
-                                               messages, viewedBy, assignee, owner, ownerAffiliation, finalizedBy,
-                                               finalizedDate);
-            } else if (ticketEntry instanceof FilesApprovalThesis filesApprovalThesis) {
-                return createFileApprovalThesisDto(filesApprovalThesis);
-            }
-            throw new RuntimeException("Unsupported type");
+        private UnpublishRequestDto createUnpublishRequestDto() {
+            return new UnpublishRequestDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id,
+                                           messages, viewedBy, assignee, owner, ownerAffiliation, finalizedBy,
+                                           finalizedDate);
+        }
+
+        private GeneralSupportRequestDto createGeneralSupportCaseDto() {
+            return new GeneralSupportRequestDto(status, createdDate, modifiedDate, identifier,
+                                                publicationIdentifier, id, messages, viewedBy, assignee, owner,
+                                                ownerAffiliation, finalizedBy, finalizedDate);
         }
 
         public Builder withViewedBy(Set<User> viewedBy) {
@@ -339,7 +341,7 @@ public abstract class TicketDto implements JsonSerializable {
                                             finalizedBy, finalizedDate);
         }
 
-        private FileApprovalThesisDto createFileApprovalThesisDto(FilesApprovalThesis filesApprovalThesis) {
+        private FileApprovalThesisDto createFilesApprovalThesisDto(FilesApprovalThesis filesApprovalThesis) {
             return new FileApprovalThesisDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id,
                                             messages, viewedBy, assignee, owner, ownerAffiliation,
                                             filesApprovalThesis.getWorkflow(), filesApprovalThesis.getApprovedFiles(),
