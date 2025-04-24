@@ -1668,7 +1668,9 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.PublishingRequest.Update" ]
+                  topic:
+                    - "PublicationService.PublishingRequest.Update"
+                    - "PublicationService.FilesApprovalThesis.Update"
 
   HandleIdentifierEventHandler:
     DependsOn: EventsLambdaManagedPolicy

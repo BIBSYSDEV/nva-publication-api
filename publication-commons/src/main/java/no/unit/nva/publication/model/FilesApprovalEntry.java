@@ -61,6 +61,15 @@ public abstract class FilesApprovalEntry extends TicketEntry {
         return this.complete(publication, userInstance).persistNewTicket(ticketService);
     }
 
+    public void rejectRejectedFiles(ResourceService resourceService) {
+        getFilesForApproval().stream()
+            .map(PendingFile.class::cast)
+            .forEach(file -> FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
+                                 .fetch(resourceService)
+                                 .ifPresent(fileEntry -> fileEntry.reject(resourceService,
+                                                                          new User(getFinalizedBy().getValue()))));
+    }
+
     @Override
     public abstract TicketEntry copy();
 
