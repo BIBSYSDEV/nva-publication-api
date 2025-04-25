@@ -158,7 +158,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                 UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(persistedPublication, uriRetriever, resourceService);
-        var filesApprovalThesis = (FilesApprovalThesis) FilesApprovalThesis.create(Resource.fromPublication(persistedPublication),
+        var filesApprovalThesis =
+            (FilesApprovalThesis) FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(persistedPublication),
                                                              UserInstance.fromPublication(persistedPublication),
                                                              REGISTRATOR_PUBLISHES_METADATA_ONLY)
                                       .persistNewTicket(ticketService);
@@ -540,7 +541,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                                         ResourceExpansionService expansionService,
                                                                         TicketService ticketService)
             throws NotFoundException, JsonProcessingException {
-            var filesApprovalThesis = FilesApprovalThesis.create(
+            var filesApprovalThesis = FilesApprovalThesis.createForUserInstitution(
                 Resource.fromPublication(publication), UserInstance.fromPublication(publication),
                 REGISTRATOR_PUBLISHES_METADATA_ONLY
             );

@@ -10,6 +10,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePubl
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,15 +23,23 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.PublishingService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -44,15 +54,21 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     private Context context;
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
+    private TicketService ticketService;
     private PublishPublicationHandler handler;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws NotFoundException {
         super.init();
         context = new FakeContext();
         output = new ByteArrayOutputStream();
         resourceService = getResourceServiceBuilder().build();
-        handler = new PublishPublicationHandler(resourceService, new Environment());
+        ticketService = getTicketService();
+        var identityServiceClient = mock(IdentityServiceClient.class);
+        when(identityServiceClient.getCustomerById(any())).thenReturn(customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue()));
+        var publishingService = new PublishingService(resourceService, ticketService,
+                                                      identityServiceClient);
+        handler = new PublishPublicationHandler(publishingService, new Environment());
     }
 
     @Test
@@ -107,9 +123,12 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
 
         resourceService = mock(ResourceService.class);
-        when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenReturn(Resource.fromPublication(publication));
+        when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenReturn(
+            Resource.fromPublication(publication));
         doThrow(new RuntimeException()).when(resourceService).updateResource(any(Resource.class), any());
-        var publishPublicationHandler = new PublishPublicationHandler(resourceService, new Environment());
+        var publishPublicationHandler = new PublishPublicationHandler(
+            new PublishingService(resourceService, ticketService, mock(IdentityServiceClient.class)),
+            new Environment());
         publishPublicationHandler.handleRequest(request, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -118,8 +137,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnOkWhenPublishingPublication()
-        throws IOException, BadRequestException {
+    void shouldReturnOkWhenPublishingPublication() throws IOException, BadRequestException {
         var publication = createPublication();
         var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
 
@@ -161,7 +179,8 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream createRequestWithUserWithPermissionsToPublishPublication(Publication publication) throws JsonProcessingException {
+    private InputStream createRequestWithUserWithPermissionsToPublishPublication(Publication publication)
+        throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(dtoObjectMapper).withPathParameters(
                 publicationIdentifierPathParam(publication.getIdentifier()))
                    .withCurrentCustomer(publication.getPublisher().getId())
@@ -176,5 +195,14 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(dtoObjectMapper).withPathParameters(
             publicationIdentifierPathParam(publicationIdentifier)).build();
+    }
+
+    private CustomerDto customerWithWorkflow(String workflow) {
+        return new CustomerDto(RandomDataGenerator.randomUri(), UUID.randomUUID(), randomString(), randomString(),
+                               randomString(), RandomDataGenerator.randomUri(),
+                               workflow, randomBoolean(),
+                               randomBoolean(), randomBoolean(), Collections.emptyList(),
+                               new CustomerDto.RightsRetentionStrategy(randomString(),
+                                                                       RandomDataGenerator.randomUri()));
     }
 }

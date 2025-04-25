@@ -102,7 +102,7 @@ public abstract class TicketEntry implements Entity {
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return UnpublishRequest.fromPublication(publication);
         } else if (FilesApprovalThesis.class.equals(ticketType)) {
-            return FilesApprovalThesis.create(resource, userInstance, null);
+            return FilesApprovalThesis.createForUserInstitution(resource, userInstance, null);
         }
         throw new RuntimeException("Unrecognized ticket type");
     }
@@ -446,7 +446,7 @@ public abstract class TicketEntry implements Entity {
         } else if (UnpublishRequest.class.equals(ticketType)) {
             return createNewUnpublishRequest(publication, identifierProvider);
         } else if (FilesApprovalThesis.class.equals(ticketType)) {
-            return FilesApprovalThesis.create(resource, userInstance, null);
+            return FilesApprovalThesis.createForUserInstitution(resource, userInstance, null);
         } else {
             throw new UnsupportedOperationException();
         }
