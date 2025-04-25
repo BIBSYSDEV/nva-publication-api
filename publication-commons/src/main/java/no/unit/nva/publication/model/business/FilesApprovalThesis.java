@@ -10,7 +10,7 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.FilesApprovalEntry;
-import no.unit.nva.publication.model.storage.FileApprovalThesisDao;
+import no.unit.nva.publication.model.storage.FilesApprovalThesisDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.core.JacocoGenerated;
 
@@ -84,7 +84,7 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
 
     @Override
     public TicketDao toDao() {
-        return new FileApprovalThesisDao(this);
+        return new FilesApprovalThesisDao(this);
     }
 
     @Override

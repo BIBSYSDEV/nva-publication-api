@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -47,6 +48,8 @@ import org.junit.jupiter.api.Test;
 
 class PublishingServiceTest extends ResourcesLocalTest {
 
+    protected static final String OWNER_ONLY = "OwnerOnly";
+    protected static final String EVERYONE = "Everyone";
     private ResourceService resourceService;
     private IdentityServiceClient identityServiceClient;
     private PublishingService publishingService;
@@ -86,6 +89,49 @@ class PublishingServiceTest extends ResourcesLocalTest {
         var randomUserInstance = UserInstance.create(randomString(), randomUri());
         assertThrows(ForbiddenException.class,
                      () -> publishingService.publishResource(publication.getIdentifier(), randomUserInstance));
+    }
+
+    @Test
+    void shouldThrowForbiddenExceptionWhenPublicationToPublishHasChannelClaimedByAnotherCustomerAndIsInScopeWhereOwnerOnlyCanPublish()
+        throws ApiGatewayException {
+        var instanceType = DegreeBachelor.class;
+        var publication = randomPublication(instanceType).copy()
+                              .withStatus(PublicationStatus.DRAFT)
+                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+                              .build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(randomUri(),
+                                                                                   randomUri(), getPublisherChannelClaimId(persistedPublication),
+                                                                                   OWNER_ONLY,
+                                                                                   instanceType.getSimpleName()));
+        assertThrows(ForbiddenException.class,
+                     () -> publishingService.publishResource(persistedPublication.getIdentifier(), userInstance));
+    }
+
+    @Test
+    void shouldPublishPublicationWhenPublicationToPublishHasChannelClaimedByUserCustomerAndIsInScopeWhereOwnerOnlyCanPublish()
+        throws ApiGatewayException {
+        var instanceType = DegreeBachelor.class;
+        var publication = randomPublication(instanceType).copy()
+                              .withStatus(PublicationStatus.DRAFT)
+                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+                              .build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(userInstance.getCustomerId(),
+                                                                                   userInstance.getTopLevelOrgCristinId(),
+                                                                                   getPublisherChannelClaimId(persistedPublication),
+                                                                                   OWNER_ONLY,
+                                                                                   instanceType.getSimpleName()));
+
+        publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
+
+        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService);
+
+        assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
     }
 
     @Test
@@ -131,9 +177,10 @@ class PublishingServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistFileApprovalThesisForUserInstitutionWhenPublicationToPublishHasPendingFilesAndIsDegreeAndPublisherIsOwnedByUserInstitution()
+    void shouldPersistFilesApprovalThesisForUserInstitutionWhenPublicationToPublishHasPendingFilesAndIsDegreeAndPublisherIsOwnedByUserInstitution()
         throws ApiGatewayException {
-        var publication = randomPublication(DegreeBachelor.class).copy()
+        var instanceType = DegreeBachelor.class;
+        var publication = randomPublication(instanceType).copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
                               .build();
@@ -142,7 +189,8 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
         when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(userInstance.getCustomerId(),
                                                                                    userInstance.getTopLevelOrgCristinId(), getPublisherChannelClaimId(publication),
-                                                                                   "Everyone"));
+                                                                                   EVERYONE,
+                                                                                   instanceType.getSimpleName()));
         publishingService.publishResource(publication.getIdentifier(), userInstance);
 
         var ticket = (FilesApprovalThesis) resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).findFirst().orElseThrow();
@@ -152,9 +200,10 @@ class PublishingServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistFileApprovalThesisForChannelClaimInstitutionWhenPublicationToPublishHasPendingFilesAndIsDegreeAndPublisherIsOwnedByOtherInstitution()
+    void shouldPersistFilesApprovalThesisForChannelClaimInstitutionWhenPublicationToPublishHasPendingFilesAndIsDegreeAndPublisherIsOwnedByOtherInstitution()
         throws ApiGatewayException {
-        var publication = randomPublication(DegreeBachelor.class).copy()
+        var instanceType = DegreeBachelor.class;
+        var publication = randomPublication(instanceType).copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
                               .build();
@@ -164,7 +213,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
         var channelClaimOwner = randomUri();
         when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(randomUri(),
                                                                                    channelClaimOwner,
-                                                                                   getPublisherChannelClaimId(publication), "Everyone"));
+                                                                                   getPublisherChannelClaimId(publication), EVERYONE, instanceType.getSimpleName()));
         publishingService.publishResource(publication.getIdentifier(), userInstance);
 
         var ticket = (FilesApprovalThesis) resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).findFirst().orElseThrow();
@@ -181,10 +230,11 @@ class PublishingServiceTest extends ResourcesLocalTest {
                    .getUri();
     }
 
-    private ChannelClaimDto channelClaim(URI customerId, URI topLevelOrgCristinId, URI id, String publishingPolicy) {
+    private ChannelClaimDto channelClaim(URI customerId, URI topLevelOrgCristinId, URI id, String publishingPolicy,
+                                         String... scope) {
         return new ChannelClaimDto(new CustomerSummaryDto(customerId, topLevelOrgCristinId),
                                    new ChannelClaim(id, new ChannelConstraint(publishingPolicy, randomString(),
-                                                                              List.of(randomString()))));
+                                                                              Arrays.asList(scope))));
     }
 
     private CustomerDto customerWithWorkflow(String workflow) {

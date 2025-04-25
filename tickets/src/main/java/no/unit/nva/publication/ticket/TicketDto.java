@@ -34,7 +34,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(DoiRequestDto.class), @JsonSubTypes.Type(PublishingRequestDto.class),
     @JsonSubTypes.Type(GeneralSupportRequestDto.class), @JsonSubTypes.Type(UnpublishRequestDto.class),
-    @JsonSubTypes.Type(FileApprovalThesisDto.class)})
+    @JsonSubTypes.Type(FilesApprovalThesisDto.class)})
 public abstract class TicketDto implements JsonSerializable {
 
     public static final String STATUS_FIELD = "status";
@@ -341,12 +341,12 @@ public abstract class TicketDto implements JsonSerializable {
                                             finalizedBy, finalizedDate);
         }
 
-        private FileApprovalThesisDto createFilesApprovalThesisDto(FilesApprovalThesis filesApprovalThesis) {
-            return new FileApprovalThesisDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id,
-                                            messages, viewedBy, assignee, owner, ownerAffiliation,
-                                            filesApprovalThesis.getWorkflow(), filesApprovalThesis.getApprovedFiles(),
-                                             filesApprovalThesis.getFilesForApproval(),
-                                            finalizedBy, finalizedDate);
+        private FilesApprovalThesisDto createFilesApprovalThesisDto(FilesApprovalThesis filesApprovalThesis) {
+            return new FilesApprovalThesisDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id,
+                                              messages, viewedBy, assignee, owner, ownerAffiliation,
+                                              filesApprovalThesis.getWorkflow(), filesApprovalThesis.getApprovedFiles(),
+                                              filesApprovalThesis.getFilesForApproval(),
+                                              finalizedBy, finalizedDate);
         }
 
         private DoiRequestDto createDoiRequestDto() {
