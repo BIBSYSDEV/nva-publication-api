@@ -46,6 +46,7 @@ import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
@@ -535,6 +536,19 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         assertEquals(publishingRequest.getOwner().toString(), resource.getResourceEvent().user().toString());
     }
 
+    @Test
+    void shouldHandleFilesApprovalThesis() throws ApiGatewayException, IOException {
+        var publication =
+            TicketTestUtils.createPersistedDegreePublication(PublicationStatus.PUBLISHED, resourceService);
+        var filesApprovalThesis = pendingFilesApprovalThesis(publication);
+        var approvedTicket = filesApprovalThesis
+                .complete(publication, USER_INSTANCE)
+                .persistNewTicket(ticketService);
+        var event = createEvent(filesApprovalThesis, approvedTicket);
+
+        assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
+    }
+
     private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
             Publication publication, File file) throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
@@ -638,6 +652,14 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
                                             List.of(), UserClientType.INTERNAL);
         return PublishingRequestCase.create(Resource.fromPublication(publication), userInstance,
+                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
+
+    }
+
+    private FilesApprovalThesis pendingFilesApprovalThesis(Publication publication) {
+        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
+                                            List.of(), UserClientType.INTERNAL);
+        return FilesApprovalThesis.create(Resource.fromPublication(publication), userInstance,
                                             REGISTRATOR_PUBLISHES_METADATA_ONLY);
 
     }
