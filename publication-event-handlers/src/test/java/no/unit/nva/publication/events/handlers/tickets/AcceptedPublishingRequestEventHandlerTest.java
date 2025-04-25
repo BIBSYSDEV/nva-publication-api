@@ -659,7 +659,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private FilesApprovalThesis pendingFilesApprovalThesis(Publication publication) {
         var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
                                             List.of(), UserClientType.INTERNAL);
-        return FilesApprovalThesis.create(Resource.fromPublication(publication), userInstance,
+        return FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication), userInstance,
                                             REGISTRATOR_PUBLISHES_METADATA_ONLY);
 
     }
