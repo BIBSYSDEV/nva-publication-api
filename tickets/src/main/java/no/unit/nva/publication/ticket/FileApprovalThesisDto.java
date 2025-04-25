@@ -2,9 +2,6 @@ package no.unit.nva.publication.ticket;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -13,17 +10,13 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
-@JsonTypeInfo(use = Id.NAME, property = "type")
-@JsonTypeName(PublishingRequestDto.TYPE)
-public class PublishingRequestDto extends TicketDto {
-
-    public static final String TYPE = "PublishingRequest";
+public class FileApprovalThesisDto extends TicketDto {
 
     private static final String WORKFLOW_FIELD = "workflow";
     private static final String APPROVED_FILES_FIELD = "approvedFiles";
@@ -38,7 +31,7 @@ public class PublishingRequestDto extends TicketDto {
 
     @SuppressWarnings({"PMD.ExcessiveParameterList"})
     @JsonCreator
-    public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
+    public FileApprovalThesisDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
                                 @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                 @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                 @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
@@ -70,25 +63,6 @@ public class PublishingRequestDto extends TicketDto {
         this.filesForApproval = filesForApproval;
     }
 
-    public static TicketDto empty() {
-        return new PublishingRequestDto(null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        null,
-                                        Set.of(),
-                                        Set.of(),
-                                        null,
-                                        null);
-    }
-
     public PublishingWorkflow getWorkflow() {
         return workflow;
     }
@@ -101,9 +75,11 @@ public class PublishingRequestDto extends TicketDto {
         return filesForApproval;
     }
 
+
     @Override
+    @JacocoGenerated
     public Class<? extends TicketEntry> ticketType() {
-        return PublishingRequestCase.class;
+        return FilesApprovalThesis.class;
     }
 
     @Override
@@ -121,7 +97,7 @@ public class PublishingRequestDto extends TicketDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PublishingRequestDto that)) {
+        if (!(o instanceof FileApprovalThesisDto that)) {
             return false;
         }
         return getStatus() == that.getStatus()

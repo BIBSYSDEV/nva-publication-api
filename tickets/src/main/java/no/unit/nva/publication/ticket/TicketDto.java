@@ -12,14 +12,15 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -27,15 +28,13 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.ViewedBy;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@JsonSubTypes({
-    @JsonSubTypes.Type(DoiRequestDto.class),
-    @JsonSubTypes.Type(PublishingRequestDto.class),
-    @JsonSubTypes.Type(GeneralSupportRequestDto.class),
-    @JsonSubTypes.Type(UnpublishRequestDto.class)
-})
+@JsonSubTypes({@JsonSubTypes.Type(DoiRequestDto.class), @JsonSubTypes.Type(PublishingRequestDto.class),
+    @JsonSubTypes.Type(GeneralSupportRequestDto.class), @JsonSubTypes.Type(UnpublishRequestDto.class),
+    @JsonSubTypes.Type(FileApprovalThesisDto.class)})
 public abstract class TicketDto implements JsonSerializable {
 
     public static final String STATUS_FIELD = "status";
@@ -47,6 +46,19 @@ public abstract class TicketDto implements JsonSerializable {
     public static final String PUBLICATION_IDENTIFIER_FIELD = "publicationIdentifier";
     public static final String FINALIZED_BY_FIELD = "finalizedBy";
     public static final String FINALIZED_DATE_FIELD = "finalizedDate";
+    public static final String CREATED_DATE_FIELD = "createdDate";
+    public static final String MODIFIED_DATE_FIELD = "modifiedDate";
+    public static final String IDENTIFIER_FIELD = "identifier";
+    public static final String ID_FIELD = "id";
+
+    @JsonProperty(ID_FIELD)
+    private final URI id;
+    @JsonProperty(IDENTIFIER_FIELD)
+    private final SortableIdentifier identifier;
+    @JsonProperty(CREATED_DATE_FIELD)
+    private final Instant createdDate;
+    @JsonProperty(MODIFIED_DATE_FIELD)
+    private final Instant modifiedDate;
     @JsonProperty(STATUS_FIELD)
     private final TicketDtoStatus status;
     @JsonProperty(VIEWED_BY)
@@ -66,15 +78,13 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(FINALIZED_DATE_FIELD)
     private final Instant finalizedDate;
 
-    protected TicketDto(TicketDtoStatus status,
-                        List<MessageDto> messages,
-                        Set<User> viewedBy,
-                        Username assignee,
-                        SortableIdentifier publicationIdentifier,
-                        User owner,
-                        URI ownerAffiliation,
-                        Username finalizedBy,
-                        Instant finalizedDate) {
+    @SuppressWarnings({"PMD.ExcessiveParameterList"})
+    protected TicketDto(URI id, SortableIdentifier identifier, TicketDtoStatus status, List<MessageDto> messages,
+                        Set<User> viewedBy, Username assignee, SortableIdentifier publicationIdentifier, User owner,
+                        URI ownerAffiliation, Username finalizedBy, Instant finalizedDate, Instant createdDate,
+                        Instant modifiedDate) {
+        this.id = id;
+        this.identifier = identifier;
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
@@ -84,6 +94,8 @@ public abstract class TicketDto implements JsonSerializable {
         this.ownerAffiliation = ownerAffiliation;
         this.finalizedBy = finalizedBy;
         this.finalizedDate = finalizedDate;
+        this.createdDate = createdDate;
+        this.modifiedDate = modifiedDate;
     }
 
     public static TicketDto fromTicket(TicketEntry ticket) {
@@ -95,9 +107,7 @@ public abstract class TicketDto implements JsonSerializable {
     }
 
     public static TicketDto create(TicketEntry ticket, Collection<Message> messages) {
-        var messageDtos = messages.stream()
-                              .map(MessageDto::fromMessage)
-                              .collect(Collectors.toList());
+        var messageDtos = messages.stream().map(MessageDto::fromMessage).collect(Collectors.toList());
         return TicketDto.builder()
                    .withCreatedDate(ticket.getCreatedDate())
                    .withStatus(getTicketDtoStatus(ticket))
@@ -124,6 +134,34 @@ public abstract class TicketDto implements JsonSerializable {
                    .addChild(PublicationServiceConfig.TICKET_PATH)
                    .addChild(ticket.getIdentifier().toString())
                    .getUri();
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getIdentifier(), getCreatedDate(), getModifiedDate(), getStatus(), getViewedBy(),
+                            getMessages(), getAssignee(), getPublicationIdentifier(), getOwner(), getOwnerAffiliation(),
+                            getFinalizedBy(), getFinalizedDate());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof TicketDto ticketDto)) {
+            return false;
+        }
+        return Objects.equals(getId(), ticketDto.getId()) &&
+               Objects.equals(getIdentifier(), ticketDto.getIdentifier()) &&
+               Objects.equals(getCreatedDate(), ticketDto.getCreatedDate()) &&
+               Objects.equals(getModifiedDate(), ticketDto.getModifiedDate()) && getStatus() == ticketDto.getStatus() &&
+               Objects.equals(getViewedBy(), ticketDto.getViewedBy()) &&
+               Objects.equals(getMessages(), ticketDto.getMessages()) &&
+               Objects.equals(getAssignee(), ticketDto.getAssignee()) &&
+               Objects.equals(getPublicationIdentifier(), ticketDto.getPublicationIdentifier()) &&
+               Objects.equals(getOwner(), ticketDto.getOwner()) &&
+               Objects.equals(getOwnerAffiliation(), ticketDto.getOwnerAffiliation()) &&
+               Objects.equals(getFinalizedBy(), ticketDto.getFinalizedBy()) &&
+               Objects.equals(getFinalizedDate(), ticketDto.getFinalizedDate());
     }
 
     public SortableIdentifier getPublicationIdentifier() {
@@ -162,6 +200,22 @@ public abstract class TicketDto implements JsonSerializable {
 
     public Instant getFinalizedDate() {
         return finalizedDate;
+    }
+
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+
+    public SortableIdentifier getIdentifier() {
+        return identifier;
+    }
+
+    public URI getId() {
+        return id;
     }
 
     private static URI createPublicationId(SortableIdentifier publicationIdentifier) {
@@ -251,42 +305,26 @@ public abstract class TicketDto implements JsonSerializable {
         }
 
         public TicketDto build(TicketEntry ticketEntry) {
+            return switch (ticketEntry) {
+                case DoiRequest ignored -> createDoiRequestDto();
+                case PublishingRequestCase publishingRequestCase -> createPublishingRequestDto(publishingRequestCase);
+                case GeneralSupportRequest ignored -> createGeneralSupportCaseDto();
+                case UnpublishRequest ignored -> createUnpublishRequestDto();
+                case FilesApprovalThesis filesApprovalThesis -> createFilesApprovalThesisDto(filesApprovalThesis);
+                default -> throw new RuntimeException("Unsupported type");
+            };
+        }
 
-            var ticketClass = ticketEntry.getClass();
-            if (DoiRequest.class.equals(ticketClass)) {
-                return createDoiRequestDto();
-            } else if (PublishingRequestCase.class.equals(ticketClass)) {
-                return createPublishingRequestDto((PublishingRequestCase) ticketEntry);
-            } else if (GeneralSupportRequest.class.equals(ticketClass)) {
-                return new GeneralSupportRequestDto(status,
-                                                    createdDate,
-                                                    modifiedDate,
-                                                    identifier,
-                                                    publicationIdentifier,
-                                                    id,
-                                                    messages,
-                                                    viewedBy,
-                                                    assignee,
-                                                    owner,
-                                                    ownerAffiliation,
-                                                    finalizedBy,
-                                                    finalizedDate);
-            } else if (UnpublishRequest.class.equals(ticketClass)) {
-                return new UnpublishRequestDto(status,
-                                               createdDate,
-                                               modifiedDate,
-                                               identifier,
-                                               publicationIdentifier,
-                                               id,
-                                               messages,
-                                               viewedBy,
-                                               assignee,
-                                               owner,
-                                               ownerAffiliation,
-                                               finalizedBy,
-                                               finalizedDate);
-            }
-            throw new RuntimeException("Unsupported type");
+        private UnpublishRequestDto createUnpublishRequestDto() {
+            return new UnpublishRequestDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id,
+                                           messages, viewedBy, assignee, owner, ownerAffiliation, finalizedBy,
+                                           finalizedDate);
+        }
+
+        private GeneralSupportRequestDto createGeneralSupportCaseDto() {
+            return new GeneralSupportRequestDto(status, createdDate, modifiedDate, identifier,
+                                                publicationIdentifier, id, messages, viewedBy, assignee, owner,
+                                                ownerAffiliation, finalizedBy, finalizedDate);
         }
 
         public Builder withViewedBy(Set<User> viewedBy) {
@@ -295,43 +333,25 @@ public abstract class TicketDto implements JsonSerializable {
         }
 
         private PublishingRequestDto createPublishingRequestDto(PublishingRequestCase publishingRequestCase) {
-            var filesForApproval = publishingRequestCase.getFilesForApproval().stream()
-                                       .map(File.class::cast)
-                                       .collect(Collectors.toSet());
-            var approvedFiles = publishingRequestCase.getApprovedFiles().stream().map(File.class::cast)
-                                    .collect(Collectors.toSet());
-            return new PublishingRequestDto(status,
-                                            createdDate,
-                                            modifiedDate,
-                                            identifier,
-                                            publicationIdentifier,
-                                            id,
-                                            messages,
-                                            viewedBy,
-                                            assignee,
-                                            owner,
-                                            ownerAffiliation,
+            return new PublishingRequestDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id,
+                                            messages, viewedBy, assignee, owner, ownerAffiliation,
                                             publishingRequestCase.getWorkflow(),
-                                            approvedFiles,
-                                            filesForApproval,
-                                            finalizedBy,
-                                            finalizedDate);
+                                            publishingRequestCase.getApprovedFiles(),
+                                            publishingRequestCase.getFilesForApproval(),
+                                            finalizedBy, finalizedDate);
+        }
+
+        private FileApprovalThesisDto createFilesApprovalThesisDto(FilesApprovalThesis filesApprovalThesis) {
+            return new FileApprovalThesisDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id,
+                                            messages, viewedBy, assignee, owner, ownerAffiliation,
+                                            filesApprovalThesis.getWorkflow(), filesApprovalThesis.getApprovedFiles(),
+                                             filesApprovalThesis.getFilesForApproval(),
+                                            finalizedBy, finalizedDate);
         }
 
         private DoiRequestDto createDoiRequestDto() {
-            return new DoiRequestDto(status,
-                                     createdDate,
-                                     modifiedDate,
-                                     identifier,
-                                     publicationIdentifier,
-                                     id,
-                                     messages,
-                                     viewedBy,
-                                     assignee,
-                                     owner,
-                                     ownerAffiliation,
-                                     finalizedBy,
-                                     finalizedDate);
+            return new DoiRequestDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, id, messages,
+                                     viewedBy, assignee, owner, ownerAffiliation, finalizedBy, finalizedDate);
         }
     }
 }
