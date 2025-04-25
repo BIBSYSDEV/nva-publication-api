@@ -2,6 +2,9 @@ package no.unit.nva.publication.ticket;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -16,11 +19,14 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
+@JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonTypeName(FileApprovalThesisDto.TYPE)
 public class FileApprovalThesisDto extends TicketDto {
 
     private static final String WORKFLOW_FIELD = "workflow";
     private static final String APPROVED_FILES_FIELD = "approvedFiles";
     private static final String FILES_FOR_APPROVAL = "filesForApproval";
+    public static final String TYPE = "FileApprovalThesis";
 
     @JsonProperty(WORKFLOW_FIELD)
     private final PublishingWorkflow workflow;
