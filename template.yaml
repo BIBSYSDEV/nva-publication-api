@@ -1673,6 +1673,7 @@ Resources:
                 responsePayload:
                   topic:
                     - "PublicationService.PublishingRequest.Update"
+                    - "PublicationService.FilesApprovalThesis.Update"
 
   HandleIdentifierEventHandler:
     DependsOn: EventsLambdaManagedPolicy

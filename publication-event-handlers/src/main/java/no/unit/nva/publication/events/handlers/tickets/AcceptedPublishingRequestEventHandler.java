@@ -15,9 +15,9 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -87,24 +87,24 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
     }
 
-    private void handleChanges(PublishingRequestCase publishingRequest) {
-        switch (publishingRequest.getStatus()) {
-            case PENDING -> handlePendingPublishingRequest(publishingRequest);
-            case COMPLETED -> handleCompletedPublishingRequest(publishingRequest);
-            case CLOSED -> handleClosedPublishingRequest(publishingRequest);
+    private void handleChanges(FilesApprovalEntry filesApprovalEntry) {
+        switch (filesApprovalEntry.getStatus()) {
+            case PENDING -> handlePendingPublishingRequest(filesApprovalEntry);
+            case COMPLETED -> handleCompletedPublishingRequest(filesApprovalEntry);
+            case CLOSED -> handleClosedPublishingRequest(filesApprovalEntry);
             default -> {
                 // Ignore other non-final statuses
             }
         }
     }
 
-    private void handlePendingPublishingRequest(PublishingRequestCase publishingRequest) {
-        var resource = fetchResource(publishingRequest.getResourceIdentifier());
-        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequest.getWorkflow())) {
-            publishResource(resource, publishingRequest);
-            refreshPublishingRequestAfterPublishingMetadata(publishingRequest);
+    private void handlePendingPublishingRequest(FilesApprovalEntry entry) {
+        var resource = fetchResource(entry.getResourceIdentifier());
+        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(entry.getWorkflow())) {
+            publishResource(resource, entry);
+            refreshPublishingRequestAfterPublishingMetadata(entry);
         }
-        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(entry));
     }
 
     /**
@@ -112,11 +112,11 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
      *
      * @param publishingRequest to refresh
      */
-    private void refreshPublishingRequestAfterPublishingMetadata(PublishingRequestCase publishingRequest) {
+    private void refreshPublishingRequestAfterPublishingMetadata(FilesApprovalEntry publishingRequest) {
         publishingRequest.persistUpdate(ticketService);
     }
 
-    private void handleClosedPublishingRequest(PublishingRequestCase publishingRequestCase) {
+    private void handleClosedPublishingRequest(FilesApprovalEntry publishingRequestCase) {
         publishingRequestCase.rejectRejectedFiles(resourceService);
     }
 
@@ -124,30 +124,30 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
     }
 
-    private void handleCompletedPublishingRequest(PublishingRequestCase publishingRequestCase) {
-        var resource = fetchResource(publishingRequestCase.getResourceIdentifier());
-        var publishingRequest = fetchPublishingRequest(publishingRequestCase);
+    private void handleCompletedPublishingRequest(FilesApprovalEntry entry) {
+        var resource = fetchResource(entry.getResourceIdentifier());
+        var filesApprovalEntry = fetchTicket(entry);
 
-        publishWhenPublicationStatusDraft(resource, publishingRequest);
+        publishWhenPublicationStatusDraft(resource, filesApprovalEntry);
 
-        if (!publishingRequest.getApprovedFiles().isEmpty()) {
-            publishingRequest.publishApprovedFiles(resourceService);
+        if (!filesApprovalEntry.getApprovedFiles().isEmpty()) {
+            filesApprovalEntry.publishApprovedFiles(resourceService);
         }
 
-        logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), publishingRequest.getIdentifier());
+        logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), filesApprovalEntry.getIdentifier());
 
-        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(publishingRequest));
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(filesApprovalEntry));
     }
 
-    private void publishWhenPublicationStatusDraft(Resource resource, PublishingRequestCase publishingRequest) {
+    private void publishWhenPublicationStatusDraft(Resource resource, FilesApprovalEntry filesApprovalEntry) {
         if (PublicationStatus.DRAFT.equals(resource.getStatus())) {
-            publishResource(resource, publishingRequest);
+            publishResource(resource, filesApprovalEntry);
         }
     }
 
-    private PublishingRequestCase fetchPublishingRequest(PublishingRequestCase latestUpdate) {
-        return attempt(() -> ticketService.fetchTicket(latestUpdate)).map(PublishingRequestCase.class::cast)
-                   .orElseThrow(failure -> throwException(COULD_NOT_FETCH_TICKET_MESSAGE + latestUpdate.getIdentifier(),
+    private FilesApprovalEntry fetchTicket(FilesApprovalEntry entry) {
+        return attempt(() -> ticketService.fetchTicket(entry)).map(FilesApprovalEntry.class::cast)
+                   .orElseThrow(failure -> throwException(COULD_NOT_FETCH_TICKET_MESSAGE + entry.getIdentifier(),
                                                           failure.getException()));
     }
 
@@ -157,8 +157,8 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         throw new RuntimeException();
     }
 
-    private void publishResource(Resource resource, PublishingRequestCase publishingRequestCase) {
-        var userInstance = UserInstance.fromTicket(publishingRequestCase);
+    private void publishResource(Resource resource, FilesApprovalEntry entry) {
+        var userInstance = UserInstance.fromTicket(entry);
         logger.info("Publishing resource: {}", resource.getIdentifier());
         try {
             resource.publish(resourceService, userInstance);
@@ -196,8 +196,8 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
                                                              DoiRequest.class);
     }
 
-    private PublishingRequestCase parseInput(String eventBlob) {
+    private FilesApprovalEntry parseInput(String eventBlob) {
         var entryUpdate = DataEntryUpdateEvent.fromJson(eventBlob);
-        return (PublishingRequestCase) entryUpdate.getNewData();
+        return (FilesApprovalEntry) entryUpdate.getNewData();
     }
 }
