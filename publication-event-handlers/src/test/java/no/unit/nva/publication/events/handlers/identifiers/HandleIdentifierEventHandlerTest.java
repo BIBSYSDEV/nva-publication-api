@@ -62,7 +62,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     private static final String RESPONSE_BODY = "{\"handle\": \"https://test.handle.net/123/456\"}";
     public static final int BAD_REQUEST = 400;
-    public static final String API_NVA_TEST_DOMAIN = "api.nvatest.no";
+    public static final String API_NVA_TEST_DOMAIN = "localhost";
     public static final String HANDLE_BASE_PATH = "handle";
     private ResourceService resourceService;
     private HandleIdentifierEventHandler handler;

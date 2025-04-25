@@ -210,7 +210,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String EVENT_BUS_NAME = "EVENT_BUS_NAME";
     public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
     private static final String API_HOST_KEY = "API_HOST";
-    private static final String API_HOST_DOMAIN = "example.com";
+    private static final String API_HOST_DOMAIN = "localhost";
     public static final String PUBLICATION = "publication";
     public static final String MUST_BE_A_VALID_PUBLICATION_API_URI = "must be a valid publication API URI";
     public static final String COMMENT_ON_UNPUBLISHING_REQUEST = "comment";
@@ -249,7 +249,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
             NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
-        when(environment.readEnv(API_HOST_KEY)).thenReturn("example.com");
+        when(environment.readEnv(API_HOST_KEY)).thenReturn("localhost");
         when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
         lenient().when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
         var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());

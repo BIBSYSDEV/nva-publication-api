@@ -5,6 +5,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationDate;
 
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -42,5 +43,12 @@ public final class RandomUtils {
                                             .withMonth(randomString())
                                             .withYear(randomString())
                                             .build();
+    }
+
+    public static URI randomBackendUri(String path) {
+        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+                   .addChild(path)
+                   .addChild(randomString())
+                   .getUri();
     }
 }

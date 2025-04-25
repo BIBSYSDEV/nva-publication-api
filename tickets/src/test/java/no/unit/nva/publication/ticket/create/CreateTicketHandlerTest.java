@@ -12,6 +12,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWi
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.RandomUtils.randomBackendUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
@@ -247,7 +248,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), status, resourceService);
+        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomBackendUri("customer"), status,
+                                                                              resourceService);
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(ticketType);
         var input = createHttpTicketCreationRequest(requestBody, publication, owner);
@@ -296,7 +298,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = createPersistedPublishedPublication();
         var requestBody = constructDto(DoiRequest.class);
-        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, randomUri(),
+        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication,
+                                                                             randomBackendUri("customer"),
                                                                              AccessRight.MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1047,7 +1050,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withBody(ticketDto)
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()))
                    .withUserName(username)
-                   .withCurrentCustomer(randomUri())
+                   .withCurrentCustomer(randomBackendUri("customer"))
                    .withPersonCristinId(userCristinId)
                    .withTopLevelCristinOrgId(topLevelCristinOrganizationId)
                    .withAccessRights(randomUri(), accessRights)

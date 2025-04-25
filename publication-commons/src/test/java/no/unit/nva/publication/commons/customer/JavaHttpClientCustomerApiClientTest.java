@@ -1,6 +1,6 @@
 package no.unit.nva.publication.commons.customer;
 
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static no.unit.nva.model.testing.RandomUtils.randomBackendUri;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -40,7 +40,7 @@ public class JavaHttpClientCustomerApiClientTest {
 
     @Test
     void shouldReturnCustomerIfEverythingIsOk() throws InterruptedException, IOException {
-        var customerUri = randomUri();
+        var customerUri = randomBackendUri("customer");
 
         var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
         doReturn(okCustomerResponse())
@@ -65,7 +65,7 @@ public class JavaHttpClientCustomerApiClientTest {
 
     @Test
     void shouldThrowExceptionIfNotSuccessFromCustomerApi() throws IOException, InterruptedException {
-        var customerUri = randomUri();
+        var customerUri = randomBackendUri("customer");
         doReturn(failedCustomerResponse())
             .when(httpClient)
             .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
@@ -77,7 +77,7 @@ public class JavaHttpClientCustomerApiClientTest {
 
     @Test
     void shouldThrowExceptionIfDeserializationOfResponseFails() throws IOException, InterruptedException {
-        var customerUri = randomUri();
+        var customerUri = randomBackendUri("customer");
         doReturn(customerResponseWithInvalidJsonFormat())
             .when(httpClient)
             .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
@@ -89,7 +89,7 @@ public class JavaHttpClientCustomerApiClientTest {
 
     @Test
     void shouldThrowExceptionIfIoFails() throws IOException, InterruptedException {
-        var customerUri = randomUri();
+        var customerUri = randomBackendUri("customer");
         doThrow(new ConnectException())
             .when(httpClient)
             .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
