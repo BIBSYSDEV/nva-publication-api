@@ -709,21 +709,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi() throws BadRequestException {
-        Publication publication = createPersistedPublicationWithDoi();
-        assertThatIdentifierEntryHasBeenCreated();
-        Executable fetchResourceAction = () -> resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertDoesNotThrow(fetchResourceAction);
-
-        var userInstance = UserInstance.fromPublication(publication);
-        Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
-                                                                               publication.getIdentifier());
-        assertThrows(TransactionFailedException.class, deleteAction);
-
-        assertThatTheEntriesHaveNotBeenDeleted();
-    }
-
-    @Test
     void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished() throws ApiGatewayException {
         var publication = createPersistedPublicationWithoutDoi();
         var userInstance = UserInstance.fromPublication(publication);

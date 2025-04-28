@@ -4,11 +4,9 @@ import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -63,7 +61,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
         if (publication.getStatus() == PublicationStatus.DRAFT) {
             PublicationPermissions.create(publication, userInstance).authorize(DELETE);
-            handleDraftDeletion(userInstance, publicationIdentifier);
+            resourceService.deleteDraftPublication(userInstance, publicationIdentifier);
         } else {
             unsupportedPublicationForDeletion(publication);
         }
@@ -79,10 +77,5 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     private static void unsupportedPublicationForDeletion(Publication publication) throws BadRequestException {
         throw new BadRequestException(
             String.format("Publication status %s is not supported for deletion", publication.getStatus()));
-    }
-
-    private void handleDraftDeletion(UserInstance userInstance, SortableIdentifier publicationIdentifier)
-        throws ApiGatewayException {
-        resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
     }
 }

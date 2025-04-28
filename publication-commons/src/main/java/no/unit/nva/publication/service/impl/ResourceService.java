@@ -618,13 +618,12 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
-        Map<String, String> expressionAttributeNames = Map.of("#status", STATUS_FIELD_IN_RESOURCE, "#doi",
-                                                              DOI_FIELD_IN_RESOURCE);
+        Map<String, String> expressionAttributeNames = Map.of("#status", STATUS_FIELD_IN_RESOURCE);
         Map<String, AttributeValue> expressionAttributeValues = Map.of(":publishedStatus",
                                                                        new AttributeValue(PUBLISHED.getValue()));
 
         deleteResource.getDelete()
-            .withConditionExpression("#status <> :publishedStatus AND attribute_not_exists(#doi)")
+            .withConditionExpression("#status <> :publishedStatus")
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues);
     }
