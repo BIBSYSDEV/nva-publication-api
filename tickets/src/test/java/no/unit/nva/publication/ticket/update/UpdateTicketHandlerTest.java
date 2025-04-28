@@ -17,6 +17,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENT
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
@@ -49,11 +50,15 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -567,6 +572,31 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
+    void shouldSetPendingFilesAsApprovedFilesForFilesApprovalThesisWhenUpdatingStatusToComplete()
+        throws ApiGatewayException, IOException {
+        var publication = randomPublication(DegreeBachelor.class).copy()
+                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+                              .build();
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var ticket = persistFilesApprovalThesisContainingExistingPendingOpenFiles(persistedPublication);
+        var closedTicket = ticket.complete(persistedPublication, USER_INSTANCE);
+        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
+                                                          ticket.getCustomerId(),
+                                                          MANAGE_RESOURCES_STANDARD,
+                                                          MANAGE_DEGREE);
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var completedPublishingRequest = (FilesApprovalThesis) ticketService.fetchTicket(ticket);
+        var approvedFile = (File) persistedPublication.getAssociatedArtifacts().getFirst();
+
+        var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
+                                .map(File::getIdentifier)
+                                .collect(Collectors.toSet());
+        assertThat(approvedFiles, hasItem(approvedFile.getIdentifier()));
+    }
+
+    @Test
     void shouldEmptyFilesForApprovalWhenPublishingRequestIsBeingApproved()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
@@ -801,6 +831,14 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                                 publication.getResourceOwner().getOwnerAffiliation());
         publishingRequest.withFilesForApproval(getPendingFiles(publication));
         return publishingRequest.persistNewTicket(ticketService);
+    }
+
+    private TicketEntry persistFilesApprovalThesisContainingExistingPendingOpenFiles(Publication publication)
+        throws ApiGatewayException {
+        return FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
+                                                                                 UserInstance.fromPublication(publication),
+                                                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                                      .persistNewTicket(ticketService);
     }
 
     private Set<File> getPendingFiles(Publication publication) {

@@ -101,20 +101,17 @@ public class PublishingService {
         var publisher = getPublisher(resource);
         if (publisher.isEmpty()) {
             resource.publish(resourceService, userInstance);
-            return;
+        } else {
+            var channelClaim = getChannelClaim(publisher.get());
+            var instanceType = resource.getInstanceType().orElseThrow();
+            if (channelClaim.isPresent() && channelClaim.get().channelClaim().constraint().scope().contains(instanceType)) {
+                if (everyoneCanPublish(channelClaim.get()) || isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
+                    resource.publish(resourceService, userInstance);
+                } else {
+                    throw new ForbiddenException();
+                }
+            }
         }
-
-        var channelClaim = getChannelClaim(publisher.get());
-        if (channelClaim.isEmpty() ||   everyoneCanPublish(channelClaim.get())) {
-            resource.publish(resourceService, userInstance);
-            return;
-        }
-
-        if (isClaimedByDifferentOrganization(channelClaim.get(), userInstance)) {
-            throw new ForbiddenException();
-        }
-
-        resource.publish(resourceService, userInstance);
     }
 
     private Resource getResource(SortableIdentifier resourceIdentifier) throws NotFoundException {
@@ -138,7 +135,7 @@ public class PublishingService {
         var publisher = getPublisher(resource);
         if (publisher.isPresent()) {
             var channelClaim = getChannelClaim(publisher.get());
-            if (channelClaim.isPresent() && isClaimedByDifferentOrganization(channelClaim.get(), userInstance)) {
+            if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
                 var organizationId = getOrganizationId(channelClaim.get());
                 FilesApprovalThesis.create(resource, userInstance, organizationId, workflow)
                     .persistNewTicket(ticketService);
@@ -158,11 +155,11 @@ public class PublishingService {
         }
     }
 
-    private boolean isClaimedByDifferentOrganization(ChannelClaimDto channelClaim, UserInstance userInstance) {
+    private boolean isClaimedByUserOrganization(ChannelClaimDto channelClaim, UserInstance userInstance) {
         return Optional.ofNullable(channelClaim)
                    .map(ChannelClaimDto::claimedBy)
                    .map(CustomerSummaryDto::id)
-                   .map(id -> !userInstance.getCustomerId().equals(id))
+                   .map(id -> userInstance.getCustomerId().equals(id))
                    .orElse(true);
     }
 

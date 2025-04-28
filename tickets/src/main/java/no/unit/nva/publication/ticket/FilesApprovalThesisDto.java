@@ -20,13 +20,13 @@ import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@JsonTypeName(FileApprovalThesisDto.TYPE)
-public class FileApprovalThesisDto extends TicketDto {
+@JsonTypeName(FilesApprovalThesisDto.TYPE)
+public class FilesApprovalThesisDto extends TicketDto {
 
     private static final String WORKFLOW_FIELD = "workflow";
     private static final String APPROVED_FILES_FIELD = "approvedFiles";
     private static final String FILES_FOR_APPROVAL = "filesForApproval";
-    public static final String TYPE = "FileApprovalThesis";
+    public static final String TYPE = "FilesApprovalThesis";
 
     @JsonProperty(WORKFLOW_FIELD)
     private final PublishingWorkflow workflow;
@@ -37,22 +37,22 @@ public class FileApprovalThesisDto extends TicketDto {
 
     @SuppressWarnings({"PMD.ExcessiveParameterList"})
     @JsonCreator
-    public FileApprovalThesisDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
-                                @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
-                                @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
-                                @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                                @JsonProperty(PUBLICATION_IDENTIFIER_FIELD) SortableIdentifier publicationIdentifier,
-                                @JsonProperty(ID_FIELD) URI id,
-                                @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
-                                @JsonProperty(VIEWED_BY) Set<User> viewedBy,
-                                @JsonProperty(ASSIGNEE_FIELD) Username assignee,
-                                @JsonProperty(OWNER_FIELD) User owner,
-                                @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
-                                @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow,
-                                @JsonProperty(APPROVED_FILES_FIELD) Set<File> approvedFiles,
-                                @JsonProperty(FILES_FOR_APPROVAL) Set<File> filesForApproval,
-                                @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
-                                @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
+    public FilesApprovalThesisDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
+                                  @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
+                                  @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
+                                  @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
+                                  @JsonProperty(PUBLICATION_IDENTIFIER_FIELD) SortableIdentifier publicationIdentifier,
+                                  @JsonProperty(ID_FIELD) URI id,
+                                  @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
+                                  @JsonProperty(VIEWED_BY) Set<User> viewedBy,
+                                  @JsonProperty(ASSIGNEE_FIELD) Username assignee,
+                                  @JsonProperty(OWNER_FIELD) User owner,
+                                  @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
+                                  @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow,
+                                  @JsonProperty(APPROVED_FILES_FIELD) Set<File> approvedFiles,
+                                  @JsonProperty(FILES_FOR_APPROVAL) Set<File> filesForApproval,
+                                  @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
+                                  @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
         super(id,
               identifier,
               status,
@@ -103,7 +103,7 @@ public class FileApprovalThesisDto extends TicketDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof FileApprovalThesisDto that)) {
+        if (!(o instanceof FilesApprovalThesisDto that)) {
             return false;
         }
         return getStatus() == that.getStatus()

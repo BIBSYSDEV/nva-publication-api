@@ -17,8 +17,8 @@ import no.unit.nva.doi.DoiClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -186,8 +186,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         if (ticket instanceof DoiRequest) {
             doiTicketSideEffects(ticketRequest, requestUtils);
         }
-        if (ticket instanceof PublishingRequestCase publishingRequestCase) {
-            publishingRequestSideEffects(publishingRequestCase, ticketRequest);
+        if (ticket instanceof FilesApprovalEntry filesApprovalEntry) {
+            fileApprovalEntrySideEffects(filesApprovalEntry, ticketRequest);
         }
         var username = requestUtils.username();
         logger.info(TICKET_STATUS_UPDATE_MESSAGE,
@@ -198,7 +198,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), requestUtils.toUserInstance());
     }
 
-    private void publishingRequestSideEffects(PublishingRequestCase ticket,
+    private void fileApprovalEntrySideEffects(FilesApprovalEntry ticket,
                                               UpdateTicketRequest ticketRequest) throws ConflictException {
 
         if (COMPLETED.equals(ticketRequest.getStatus())) {
@@ -207,7 +207,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         }
     }
 
-    private void validateFilesForApproval(PublishingRequestCase ticket) throws ConflictException {
+    private void validateFilesForApproval(FilesApprovalEntry ticket) throws ConflictException {
         if (filesForApprovalAreNotApprovable(ticket)) {
             var fileIdsMissingMandatoryFields = getFileIdsMissingMandatoryFields(ticket);
             throw new ConflictException(FILES_MISSING_MANDATORY_FIELDS_MESSAGE
@@ -215,7 +215,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         }
     }
 
-    private static String getFileIdsMissingMandatoryFields(PublishingRequestCase ticket) {
+    private static String getFileIdsMissingMandatoryFields(FilesApprovalEntry ticket) {
         return ticket.getFilesForApproval().stream()
                    .map(PendingFile.class::cast)
                    .filter(PendingFile::isNotApprovable)
@@ -225,7 +225,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                    .collect(Collectors.joining(","));
     }
 
-    private static boolean filesForApprovalAreNotApprovable(PublishingRequestCase ticket) {
+    private static boolean filesForApprovalAreNotApprovable(FilesApprovalEntry ticket) {
         return ticket.getFilesForApproval().stream()
                    .map(PendingFile.class::cast)
                    .anyMatch(PendingFile::isNotApprovable);
