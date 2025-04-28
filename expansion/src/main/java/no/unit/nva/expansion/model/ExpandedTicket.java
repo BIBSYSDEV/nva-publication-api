@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
@@ -13,6 +14,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -27,18 +29,30 @@ import nva.commons.core.paths.UriWrapper;
     @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
     @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
     @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class),
-    @JsonSubTypes.Type(name = ExpandedUnpublishRequest.TYPE, value = ExpandedUnpublishRequest.class)
+    @JsonSubTypes.Type(name = ExpandedUnpublishRequest.TYPE, value = ExpandedUnpublishRequest.class),
+    @JsonSubTypes.Type(name = ExpandedFilesApprovalThesis.TYPE, value = ExpandedFilesApprovalThesis.class)
 })
 public abstract class ExpandedTicket implements ExpandedDataEntry {
 
-    public static final String PUBLICATION_FIELD = "publication";
-    public static final String ORGANIZATION_FIELD = "organization";
-    public static final String ID_FIELD = "id";
-    public static final String VIEWED_BY_FIELD = "viewedBy";
-    public static final String ASSIGNEE_FIELD = "assignee";
-    public static final String FINALIZED_BY_FIELD = "finalizedBy";
-    public static final String OWNER_FIELD = "owner";
+    private static final String PUBLICATION_FIELD = "publication";
+    private static final String ORGANIZATION_FIELD = "organization";
+    private static final String ID_FIELD = "id";
+    private static final String VIEWED_BY_FIELD = "viewedBy";
+    private static final String ASSIGNEE_FIELD = "assignee";
+    private static final String FINALIZED_BY_FIELD = "finalizedBy";
+    private static final String OWNER_FIELD = "owner";
     private static final String MESSAGES_FIELD = "messages";
+    protected static final String MODIFIED_DATE_FIELD = "modifiedDate";
+    protected static final String CREATED_DATE_FIELD = "createdDate";
+    protected static final String CUSTOMER_ID_FIELD = "customerId";
+    protected static final String STATUS_FIELD = "status";
+
+    @JsonProperty(CUSTOMER_ID_FIELD)
+    private URI customerId;
+    @JsonProperty(MODIFIED_DATE_FIELD)
+    private Instant modifiedDate;
+    @JsonProperty(CREATED_DATE_FIELD)
+    private Instant createdDate;
     @JsonProperty(ID_FIELD)
     private URI id;
     @JsonProperty(MESSAGES_FIELD)
@@ -55,40 +69,46 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     private ExpandedPerson assignee;
     @JsonProperty(ORGANIZATION_FIELD)
     private ExpandedOrganization organization;
+    @JsonProperty(STATUS_FIELD)
+    private ExpandedTicketStatus status;
+
 
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
                                            ResourceExpansionService expansionService,
                                            TicketService ticketService)
         throws NotFoundException, JsonProcessingException {
-
-        if (ticketEntry instanceof DoiRequest doiRequest) {
-            return ExpandedDoiRequest.createEntry(doiRequest,
-                                                  expansionService,
-                                                  resourceService,
-                                                  ticketService);
-        } else if (ticketEntry instanceof PublishingRequestCase publishingRequestCase) {
-            return ExpandedPublishingRequest.createEntry(
+        return switch (ticketEntry) {
+            case DoiRequest doiRequest -> ExpandedDoiRequest.createEntry(doiRequest,
+                                                                         expansionService,
+                                                                         resourceService,
+                                                                         ticketService);
+            case PublishingRequestCase publishingRequestCase -> ExpandedPublishingRequest.createEntry(
                 publishingRequestCase,
                 resourceService,
                 expansionService,
                 ticketService);
-        } else if (ticketEntry instanceof GeneralSupportRequest generalSupportRequest) {
-            return ExpandedGeneralSupportRequest.createEntry(
+            case GeneralSupportRequest generalSupportRequest -> ExpandedGeneralSupportRequest.createEntry(
                 generalSupportRequest,
                 resourceService,
                 expansionService,
                 ticketService
             );
-        } else if (ticketEntry instanceof UnpublishRequest unpublishRequest) {
-            return ExpandedUnpublishRequest.createEntry(
+            case UnpublishRequest unpublishRequest -> ExpandedUnpublishRequest.createEntry(
                 unpublishRequest,
                 resourceService,
                 expansionService,
                 ticketService
             );
-        }
-        throw new UnsupportedOperationException();
+            case FilesApprovalThesis filesApprovalThesis -> ExpandedFilesApprovalThesis.createEntry(
+                filesApprovalThesis,
+                resourceService,
+                expansionService,
+                ticketService
+            );
+            default -> throw new UnsupportedOperationException("Unsupported ticket entry type %s"
+                                                                   .formatted(ticketEntry.getClass().getSimpleName()));
+        };
     }
 
     public static SortableIdentifier extractIdentifier(URI id) {
@@ -138,7 +158,9 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
         this.id = id;
     }
 
-    public abstract ExpandedTicketStatus getStatus();
+    public ExpandedTicketStatus getStatus() {
+        return status;
+    }
 
     public final List<ExpandedMessage> getMessages() {
         return this.messages;
@@ -162,6 +184,34 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
 
     public final void setAssignee(ExpandedPerson assignee) {
         this.assignee = assignee;
+    }
+
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
+    }
+
+    public URI getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(URI customerId) {
+        this.customerId = customerId;
+    }
+
+    public void setStatus(ExpandedTicketStatus status) {
+        this.status = status;
     }
 
     protected static URI generateId(URI publicationId, SortableIdentifier identifier) {

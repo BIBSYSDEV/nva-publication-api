@@ -4,6 +4,7 @@ import static java.util.function.Predicate.not;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstanceType;
 import static no.unit.nva.model.testing.RandomCurrencyUtil.randomCurrency;
+import static no.unit.nva.model.testing.RandomUtils.randomBackendUri;
 import static no.unit.nva.model.testing.RandomUtils.randomLabels;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -239,7 +240,7 @@ public final class PublicationGenerator {
 
     public static Organization randomOrganization() {
         return new Organization.Builder()
-                   .withId(randomUri())
+                   .withId(randomBackendUri("customer"))
                    .build();
     }
 

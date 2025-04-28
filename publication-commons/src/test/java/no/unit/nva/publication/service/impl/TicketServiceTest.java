@@ -917,7 +917,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
             return createUnpublishRequest(publication);
         }
         if (FilesApprovalThesis.class.equals(ticketType)) {
-            return FilesApprovalThesis.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+            return FilesApprovalThesis.createForUserInstitution(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY);
         }
 
         throw new UnsupportedOperationException();

@@ -12,18 +12,18 @@ import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.TicketEntry;
 import nva.commons.core.JacocoGenerated;
 
-@JsonTypeName(FileApprovalThesisDao.TYPE)
+@JsonTypeName(FilesApprovalThesisDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class FileApprovalThesisDao extends TicketDao implements JoinWithResource, JsonSerializable {
+public class FilesApprovalThesisDao extends TicketDao implements JoinWithResource, JsonSerializable {
 
-    public static final String TYPE = "FileApprovalThesis";
+    public static final String TYPE = "FilesApprovalThesis";
 
     @JacocoGenerated
-    public FileApprovalThesisDao() {
+    public FilesApprovalThesisDao() {
         super();
     }
 
-    public FileApprovalThesisDao(TicketEntry data) {
+    public FilesApprovalThesisDao(TicketEntry data) {
         super(data);
     }
 
@@ -50,6 +50,6 @@ public class FileApprovalThesisDao extends TicketDao implements JoinWithResource
     }
 
     private TransactWriteItem createInsertionEntry() {
-        return newPutTransactionItem(new FileApprovalThesisDao(getTicketEntry()));
+        return newPutTransactionItem(new FilesApprovalThesisDao(getTicketEntry()));
     }
 }

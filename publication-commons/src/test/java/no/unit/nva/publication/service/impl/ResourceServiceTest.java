@@ -1742,7 +1742,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        var fileApprovalThesis = FilesApprovalThesis.create(Resource.fromPublication(publication),
+        var fileApprovalThesis = FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
                                                             userInstance,
                                                             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
 

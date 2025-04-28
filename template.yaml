@@ -767,8 +767,10 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Policies:
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -1546,6 +1548,7 @@ Resources:
                     - "PublicationService.Message.Update"
                     - "PublicationService.DoiRequest.Update"
                     - "PublicationService.PublishingRequest.Update"
+                    - "PublicationService.FilesApprovalThesis.Update"
                     - "PublicationService.GeneralSupportRequest.Update"
                     - "PublicationService.UnpublishRequest.Update"
       EventInvokeConfig:
@@ -1668,7 +1671,9 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.PublishingRequest.Update" ]
+                  topic:
+                    - "PublicationService.PublishingRequest.Update"
+                    - "PublicationService.FilesApprovalThesis.Update"
 
   HandleIdentifierEventHandler:
     DependsOn: EventsLambdaManagedPolicy

@@ -10,7 +10,7 @@ import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.FilesApprovalEntry;
-import no.unit.nva.publication.model.storage.FileApprovalThesisDao;
+import no.unit.nva.publication.model.storage.FilesApprovalThesisDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.core.JacocoGenerated;
 
@@ -25,8 +25,16 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         super();
     }
 
-    public static FilesApprovalThesis create(Resource resource, UserInstance userInstance,
+    public static FilesApprovalThesis create(Resource resource, UserInstance userInstance, URI organizationId,
                                              PublishingWorkflow workflow) {
+        var fileApproval = createFileApproval(resource, userInstance, organizationId, workflow);
+        return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
+                   ? (FilesApprovalThesis) fileApproval.completeAndApproveFiles(resource, userInstance)
+                   : (FilesApprovalThesis) fileApproval.handleMetadataOnlyWorkflow(resource, userInstance, workflow);
+    }
+
+    public static FilesApprovalThesis createForUserInstitution(Resource resource, UserInstance userInstance,
+                                                               PublishingWorkflow workflow) {
         var fileApproval = createFileApproval(resource, userInstance, workflow);
         return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
                    ? (FilesApprovalThesis) fileApproval.completeAndApproveFiles(resource, userInstance)
@@ -76,7 +84,7 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
 
     @Override
     public TicketDao toDao() {
-        return new FileApprovalThesisDao(this);
+        return new FilesApprovalThesisDao(this);
     }
 
     @Override
@@ -107,7 +115,23 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
     }
 
     private static FilesApprovalThesis createFileApproval(Resource resource, UserInstance userInstance,
-                                                          PublishingWorkflow workflow) {
+                                                          URI organizationId, PublishingWorkflow workflow) {
+        var fileApproval = new FilesApprovalThesis();
+        fileApproval.setIdentifier(SortableIdentifier.next());
+        fileApproval.setCustomerId(resource.getCustomerId());
+        fileApproval.setStatus(TicketStatus.PENDING);
+        fileApproval.setViewedBy(Collections.emptySet());
+        fileApproval.setResourceIdentifier(resource.getIdentifier());
+        fileApproval.setOwnerAffiliation(organizationId);
+        fileApproval.setResponsibilityArea(organizationId);
+        fileApproval.setOwner(userInstance.getUser());
+        fileApproval.setFilesForApproval(resource.getPendingFiles());
+        fileApproval.setWorkflow(workflow);
+        fileApproval.validateCreationRequirements(resource.toPublication());
+        return fileApproval;
+    }
+
+    private static FilesApprovalThesis createFileApproval(Resource resource, UserInstance userInstance, PublishingWorkflow workflow) {
         var fileApproval = new FilesApprovalThesis();
         fileApproval.setIdentifier(SortableIdentifier.next());
         fileApproval.setCustomerId(resource.getCustomerId());

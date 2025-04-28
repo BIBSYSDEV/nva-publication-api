@@ -11,11 +11,9 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
-import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
@@ -104,15 +102,6 @@ public class PublishingRequestCase extends FilesApprovalEntry {
     public PublishingRequestCase withFilesForApproval(Set<File> filesForApproval) {
         setFilesForApproval(filesForApproval);
         return this;
-    }
-
-    public void rejectRejectedFiles(ResourceService resourceService) {
-        getFilesForApproval().stream()
-            .map(PendingFile.class::cast)
-            .forEach(file -> FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
-                                 .fetch(resourceService)
-                                 .ifPresent(fileEntry -> fileEntry.reject(resourceService,
-                                                                          new User(getFinalizedBy().getValue()))));
     }
 
     @Override

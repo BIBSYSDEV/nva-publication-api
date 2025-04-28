@@ -1797,6 +1797,7 @@ components:
             - DoiRequest
             - PublishingRequest
             - GeneralSupportCase
+            - FilesApprovalThesis
         viewedBy:
           type: array
           items:

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.utils;
 
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -73,6 +75,7 @@ public record RequestUtils(List<AccessRight> accessRights,
         return switch (ticket) {
             case DoiRequest doi -> hasAccessRight(MANAGE_DOI);
             case PublishingRequestCase publishing -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
+            case FilesApprovalThesis thesis -> hasAccessRight(MANAGE_DEGREE);
             case GeneralSupportRequest support -> hasAccessRight(SUPPORT);
             case UnpublishRequest unpublish -> true;
             case null, default -> false;

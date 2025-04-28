@@ -28,7 +28,7 @@ class FilesApprovalThesisTest {
     void shouldDoRoundTripWithoutLossOfInformation() throws JsonProcessingException {
         var resource = randomDegree();
         var userInstance = UserInstance.create(randomString(), randomUri());
-        var filesApprovalThesis = FilesApprovalThesis.create(resource, userInstance,
+        var filesApprovalThesis = FilesApprovalThesis.createForUserInstitution(resource, userInstance,
                                                              REGISTRATOR_PUBLISHES_METADATA_ONLY);
 
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(filesApprovalThesis);
@@ -43,14 +43,14 @@ class FilesApprovalThesisTest {
         var userInstance = UserInstance.create(randomString(), randomUri());
 
         assertThrows(IllegalStateException.class,
-                     () -> FilesApprovalThesis.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY));
+                     () -> FilesApprovalThesis.createForUserInstitution(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY));
     }
 
     @Test
     void shouldCreateFileThesisApprovalWhenRegistratorCanPublishMetadataAndFiles() {
         var resource = randomDegree();
         var userInstance = UserInstance.create(randomString(), randomUri());
-        var fileApprovalThesis = FilesApprovalThesis.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+        var fileApprovalThesis = FilesApprovalThesis.createForUserInstitution(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
 
         assertFalse(fileApprovalThesis.getApprovedFiles().isEmpty());
     }
