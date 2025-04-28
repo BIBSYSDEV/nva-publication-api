@@ -89,7 +89,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        when(environment.readEnv("API_HOST")).thenReturn("localhost");
         when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
         context = new FakeContext();
         output = new ByteArrayOutputStream();
