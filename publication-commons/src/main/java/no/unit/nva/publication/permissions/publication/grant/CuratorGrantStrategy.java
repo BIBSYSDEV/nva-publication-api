@@ -1,5 +1,7 @@
 package no.unit.nva.publication.permissions.publication.grant;
 
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
@@ -36,6 +38,7 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
             case PUBLISHING_REQUEST_APPROVE,
                  READ_HIDDEN_FILES -> canManagePublishingRequests();
             case SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);
+            case THESIS_APPROVAL -> hasAccessRight(MANAGE_DEGREE) || hasAccessRight(MANAGE_DEGREE_EMBARGO);
             case REPUBLISH, DELETE, TERMINATE -> false;
         };
     }
