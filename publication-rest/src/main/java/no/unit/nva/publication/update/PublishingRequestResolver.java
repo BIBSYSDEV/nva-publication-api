@@ -2,6 +2,7 @@ package no.unit.nva.publication.update;
 
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.createWithFilesForApproval;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.lookUp;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
@@ -118,11 +119,14 @@ public final class PublishingRequestResolver {
                    .fetchAllTicketsForResource(Resource.fromPublication(publication))
                    .filter(FilesApprovalEntry.class::isInstance)
                    .map(FilesApprovalEntry.class::cast)
-                   .filter(ticketEntry -> Resource.fromPublication(publication).isDegree()
-                                              ? !ticketEntry.getFilesForApproval().isEmpty()
-                                              : ticketEntry.hasSameOwnerAffiliationAs(userInstance))
+                   .filter(ticketEntry -> shouldIncludeEntry(publication, ticketEntry, userInstance))
                    .filter(PublishingRequestResolver::isPending)
                    .toList();
+    }
+
+    private boolean shouldIncludeEntry(Publication publication, FilesApprovalEntry ticketEntry, UserInstance userInstance) {
+        return Resource.fromPublication(publication).isDegree() && !ticketEntry.getFilesForApproval().isEmpty()
+               || ticketEntry.hasSameOwnerAffiliationAs(userInstance);
     }
 
     private void createPublishingRequestOnFileUpdate(Publication oldImage, Publication newImage)
@@ -149,25 +153,37 @@ public final class PublishingRequestResolver {
         var workflow = lookUp(customer.getPublicationWorkflow());
 
         if (resource.isDegree()) {
-            var publisher = getPublisher(resource);
-            if (publisher.isPresent()) {
-                var channelClaim = getChannelClaim(publisher.get());
-                if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
-                    var organizationId = channelClaim.get().claimedBy().organizationId();
-                    FilesApprovalThesis.create(resource, userInstance, organizationId, workflow)
-                        .withFilesForApproval(files)
-                        .persistNewTicket(ticketService);
-                    return;
-                }
-            }
-            FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow)
-                .withFilesForApproval(files)
-                .persistNewTicket(ticketService);
+            handleDegree(resource, workflow, files);
+        } else {
+            var publishingRequest = createWithFilesForApproval(resource, userInstance, workflow, files);
+            attempt(() -> persistPublishingRequest(newImage, publishingRequest));
         }
-        var publishingRequest = PublishingRequestCase
-                                    .createWithFilesForApproval(resource, userInstance, workflow, files);
+    }
 
-        attempt(() -> persistPublishingRequest(newImage, publishingRequest));
+    private void handleDegree(Resource resource, PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
+        var publisher = getPublisher(resource);
+        if (publisher.isPresent()) {
+            var channelClaim = getChannelClaim(publisher.get());
+            if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
+                persistFilesApprovalThesis(channelClaim.get(), resource, workflow, files);
+                return;
+            }
+        }
+        persistFilesApprovalThesisForUserInstitution(resource, workflow, files);
+    }
+
+    private void persistFilesApprovalThesisForUserInstitution(Resource resource, PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
+        FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow)
+            .withFilesForApproval(files)
+            .persistNewTicket(ticketService);
+    }
+
+    private void persistFilesApprovalThesis(ChannelClaimDto channelClaim, Resource resource,
+                                            PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
+        var organizationId = channelClaim.claimedBy().organizationId();
+        FilesApprovalThesis.create(resource, userInstance, organizationId, workflow)
+            .withFilesForApproval(files)
+            .persistNewTicket(ticketService);
     }
 
     private boolean isClaimedByUserOrganization(ChannelClaimDto channelClaim, UserInstance userInstance) {
