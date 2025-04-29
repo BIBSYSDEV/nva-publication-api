@@ -213,5 +213,22 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                   .create(publication, userInstance)
                                   .allowsAction(PublicationOperation.THESIS_APPROVAL));
     }
+
+    @Test
+    void shouldNotAllowCuratorToPerformThesisApprovalWhenMissingManageDegreeAccess()
+        throws JsonProcessingException, UnauthorizedException {
+        var cristinTopLevelId = randomUri();
+
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), List.of(AccessRight.MANAGE_PUBLISHING_REQUESTS),
+                                                randomUri(), cristinTopLevelId);
+
+        var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
+                                  .create(publication, userInstance)
+                                  .allowsAction(PublicationOperation.THESIS_APPROVAL));
+    }
     //endregion
 }
