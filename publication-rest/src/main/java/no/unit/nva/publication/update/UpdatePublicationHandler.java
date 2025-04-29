@@ -285,7 +285,7 @@ public class UpdatePublicationHandler
         }
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
 
-        new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
+        new PublishingRequestResolver(resourceService, ticketService, identityServiceClient, userInstance, customer)
             .resolve(existingPublication, publicationUpdate);
 
         return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);

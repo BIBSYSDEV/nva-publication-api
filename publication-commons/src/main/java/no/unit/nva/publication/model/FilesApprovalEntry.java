@@ -121,6 +121,11 @@ public abstract class FilesApprovalEntry extends TicketEntry {
         return this;
     }
 
+    public FilesApprovalEntry withFilesForApproval(Set<File> filesForApproval) {
+        setFilesForApproval(filesForApproval);
+        return this;
+    }
+
     private File toApprovedFile(File file) {
         return file instanceof PendingFile<?, ?> pendingFile ? pendingFile.approve() : file;
     }

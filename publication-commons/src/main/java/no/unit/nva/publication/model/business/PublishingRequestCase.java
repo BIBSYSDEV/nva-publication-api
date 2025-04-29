@@ -99,11 +99,6 @@ public class PublishingRequestCase extends FilesApprovalEntry {
         return PublishingRequestCase.TYPE;
     }
 
-    public PublishingRequestCase withFilesForApproval(Set<File> filesForApproval) {
-        setFilesForApproval(filesForApproval);
-        return this;
-    }
-
     @Override
     @JacocoGenerated
     public int hashCode() {
