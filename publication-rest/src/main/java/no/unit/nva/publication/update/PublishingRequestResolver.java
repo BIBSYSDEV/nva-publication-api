@@ -89,7 +89,7 @@ public final class PublishingRequestResolver {
     }
 
     private void handlePublishingRequest(Publication oldImage, Publication newImage) throws ApiGatewayException {
-        var filesApprovalEntries = fetchPendingFileApprovalEntryForUserInstitution(oldImage);
+        var filesApprovalEntries = fetchPendingFileApprovalEntryForUserInstitutionOrWithFilesForApprovalWhenDegree(oldImage);
         if (filesApprovalEntries.isEmpty()) {
             createPublishingRequestOnFileUpdate(oldImage, newImage);
             return;
@@ -112,13 +112,15 @@ public final class PublishingRequestResolver {
                    .noneMatch(PendingFile.class::isInstance);
     }
 
-    private List<FilesApprovalEntry> fetchPendingFileApprovalEntryForUserInstitution(
+    private List<FilesApprovalEntry> fetchPendingFileApprovalEntryForUserInstitutionOrWithFilesForApprovalWhenDegree(
         Publication publication) {
         return resourceService
                    .fetchAllTicketsForResource(Resource.fromPublication(publication))
                    .filter(FilesApprovalEntry.class::isInstance)
                    .map(FilesApprovalEntry.class::cast)
-                   .filter(ticketEntry -> ticketEntry.hasSameOwnerAffiliationAs(userInstance))
+                   .filter(ticketEntry -> Resource.fromPublication(publication).isDegree()
+                                              ? !ticketEntry.getFilesForApproval().isEmpty()
+                                              : ticketEntry.hasSameOwnerAffiliationAs(userInstance))
                    .filter(PublishingRequestResolver::isPending)
                    .toList();
     }
