@@ -36,8 +36,8 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
                 canManageStandardResources();
             case UNPUBLISH -> canManagePublishingRequests() && isPublished();
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
-            case APPROVE_FILES,
-                 READ_HIDDEN_FILES -> canApproveFiles();
+            case PUBLISHING_REQUEST_APPROVE,
+                 READ_HIDDEN_FILES, APPROVE_FILES -> canApproveFiles();
             case SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);
             case REPUBLISH, DELETE, TERMINATE -> false;
         };

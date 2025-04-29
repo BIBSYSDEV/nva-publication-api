@@ -23,7 +23,7 @@ public final class ResourceOwnerGrantStrategy extends PublicationStrategyBase im
             case UNPUBLISH -> isPublished() && !hasApprovedFiles();
             case DELETE -> isDraft();
             case UPDATE_FILES, READ_HIDDEN_FILES, REPUBLISH, TERMINATE, DOI_REQUEST_APPROVE,
-                 APPROVE_FILES, SUPPORT_REQUEST_APPROVE -> false;
+                 PUBLISHING_REQUEST_APPROVE, APPROVE_FILES, SUPPORT_REQUEST_APPROVE -> false;
         };
     }
 }
