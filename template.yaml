@@ -2373,6 +2373,41 @@ Resources:
       EventInvokeConfig:
         MaximumRetryAttempts: 0
 
+  EventForwardingRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: ForwardFromInternalToNvaEventBusRule
+      EventBusName: !Ref InternalBus
+      EventPattern:
+        detail:
+          responsePayload:
+            topic:
+              - "PublicationService.Resource.Deleted"
+      Targets:
+        - Arn: !Ref NewNvaEventBusArn
+          Id: "NvaEventBusTarget"
+          RoleArn: !GetAtt EventBridgeForwardingRole.Arn
+
+  EventBridgeForwardingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EventBridgeForwardingRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowPutEventsToNvaEventsBus
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:PutEvents
+                Resource: !Ref NewNvaEventBusArn
+
   #=============================Internal Event Bus=============================================================
   InternalBus:
     Type: AWS::Events::EventBus
