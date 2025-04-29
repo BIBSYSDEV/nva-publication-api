@@ -31,6 +31,7 @@ public final class EditorGrantStrategy extends PublicationStrategyBase implement
                  UPDATE_FILES,
                  DOI_REQUEST_APPROVE,
                  PUBLISHING_REQUEST_APPROVE,
+                 APPROVE_FILES,
                  SUPPORT_REQUEST_APPROVE,
                  UPLOAD_FILE -> false;
         };

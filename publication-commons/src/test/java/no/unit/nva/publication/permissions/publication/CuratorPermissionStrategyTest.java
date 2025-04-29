@@ -11,6 +11,7 @@ import java.util.List;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.publication.RequestUtil;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -194,6 +195,40 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(operation));
+    }
+
+    @Test
+    void shouldAllowCuratorToPerformApproveFilesWhenDegreeAndManageDegreeAccessRightIsPresent()
+        throws JsonProcessingException, UnauthorizedException {
+        var cristinTopLevelId = randomUri();
+
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), List.of(AccessRight.MANAGE_DEGREE),
+                                                randomUri(), cristinTopLevelId);
+
+        var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(publication, userInstance)
+                                  .allowsAction(PublicationOperation.APPROVE_FILES));
+    }
+
+    @Test
+    void shouldNotAllowCuratorToPerformApproveFilesOnDegreesWhenMissingManageDegreeAccess()
+        throws JsonProcessingException, UnauthorizedException {
+        var cristinTopLevelId = randomUri();
+
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), List.of(AccessRight.MANAGE_PUBLISHING_REQUESTS),
+                                                randomUri(), cristinTopLevelId);
+
+        var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
+                                  .create(publication, userInstance)
+                                  .allowsAction(PublicationOperation.APPROVE_FILES));
     }
     //endregion
 }

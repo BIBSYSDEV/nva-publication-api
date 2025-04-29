@@ -44,6 +44,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 class PublishingServiceTest extends ResourcesLocalTest {
@@ -146,7 +147,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistPublishingRequestWhenPublicationToPublishHasPendingFiles() throws ApiGatewayException {
-        var publication = randomPublication().copy()
+        var publication = randomPublication(JournalArticle.class).copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
                               .build();

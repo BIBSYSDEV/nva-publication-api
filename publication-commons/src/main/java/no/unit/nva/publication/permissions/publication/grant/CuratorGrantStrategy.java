@@ -1,5 +1,7 @@
 package no.unit.nva.publication.permissions.publication.grant;
 
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
@@ -7,6 +9,7 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationGrantStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
@@ -34,10 +37,16 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
             case UNPUBLISH -> canManagePublishingRequests() && isPublished();
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
             case PUBLISHING_REQUEST_APPROVE,
-                 READ_HIDDEN_FILES -> canManagePublishingRequests();
+                 READ_HIDDEN_FILES, APPROVE_FILES -> canApproveFiles();
             case SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);
             case REPUBLISH, DELETE, TERMINATE -> false;
         };
+    }
+
+    private boolean canApproveFiles() {
+        return Resource.fromPublication(publication).isDegree()
+                   ? hasAccessRight(MANAGE_DEGREE) || hasAccessRight(MANAGE_DEGREE_EMBARGO)
+                   : canManagePublishingRequests();
     }
 
     private boolean canManageStandardResources() {
