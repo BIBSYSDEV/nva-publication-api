@@ -198,7 +198,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldAllowCuratorToPerformThesisApprovalWhenDegreeAccessRightIsPresent()
+    void shouldAllowCuratorToPerformApproveFilesWhenDegreeAndManageDegreeAccessRightIsPresent()
         throws JsonProcessingException, UnauthorizedException {
         var cristinTopLevelId = randomUri();
 
@@ -211,11 +211,11 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
-                                  .allowsAction(PublicationOperation.THESIS_APPROVAL));
+                                  .allowsAction(PublicationOperation.APPROVE_FILES));
     }
 
     @Test
-    void shouldNotAllowCuratorToPerformThesisApprovalWhenMissingManageDegreeAccess()
+    void shouldNotAllowCuratorToPerformApproveFilesOnDegreesWhenMissingManageDegreeAccess()
         throws JsonProcessingException, UnauthorizedException {
         var cristinTopLevelId = randomUri();
 
@@ -228,7 +228,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                   .create(publication, userInstance)
-                                  .allowsAction(PublicationOperation.THESIS_APPROVAL));
+                                  .allowsAction(PublicationOperation.APPROVE_FILES));
     }
     //endregion
 }

@@ -9,6 +9,7 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationGrantStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
@@ -35,12 +36,17 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
                 canManageStandardResources();
             case UNPUBLISH -> canManagePublishingRequests() && isPublished();
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
-            case PUBLISHING_REQUEST_APPROVE,
-                 READ_HIDDEN_FILES -> canManagePublishingRequests();
+            case APPROVE_FILES,
+                 READ_HIDDEN_FILES -> canApproveFiles();
             case SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);
-            case THESIS_APPROVAL -> hasAccessRight(MANAGE_DEGREE) || hasAccessRight(MANAGE_DEGREE_EMBARGO);
             case REPUBLISH, DELETE, TERMINATE -> false;
         };
+    }
+
+    private boolean canApproveFiles() {
+        return Resource.fromPublication(publication).isDegree()
+                   ? hasAccessRight(MANAGE_DEGREE) || hasAccessRight(MANAGE_DEGREE_EMBARGO)
+                   : canManagePublishingRequests();
     }
 
     private boolean canManageStandardResources() {

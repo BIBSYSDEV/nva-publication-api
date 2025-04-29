@@ -31,12 +31,11 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase impl
             case UPDATE_FILES,
                  REPUBLISH,
                  DOI_REQUEST_APPROVE,
-                 PUBLISHING_REQUEST_APPROVE,
+                 APPROVE_FILES,
                  SUPPORT_REQUEST_APPROVE,
                  TERMINATE,
                  DELETE,
-                 READ_HIDDEN_FILES,
-                 THESIS_APPROVAL -> false;
+                 READ_HIDDEN_FILES -> false;
         };
     }
 

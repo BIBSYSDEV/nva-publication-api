@@ -18,8 +18,7 @@ public enum PublicationOperation {
     DOI_REQUEST_CREATE("doi-request-create"),
     DOI_REQUEST_APPROVE("doi-request-approve"),
     PUBLISHING_REQUEST_CREATE("publishing-request-create"),
-    PUBLISHING_REQUEST_APPROVE("publishing-request-approve"),
-    THESIS_APPROVAL("thesis-approval"),
+    APPROVE_FILES("approve-files"),
     SUPPORT_REQUEST_CREATE("support-request-create"),
     SUPPORT_REQUEST_APPROVE("support-request-approve"),
     UPLOAD_FILE("upload-file");
