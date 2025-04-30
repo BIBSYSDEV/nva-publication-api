@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.bodies;
 
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -114,7 +115,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public String getTopic() {
         var type = extractDataEntryType();
         return switch (type) {
-            case Resource resource -> !hasNewImage() && "REMOVE".equals(action) ?
+            case Resource resource -> !hasNewImage() && OperationType.REMOVE.equals(OperationType.fromValue(action)) ?
                                           RESOURCE_DELETED_EVENT_TOPIC : RESOURCE_UPDATE_EVENT_TOPIC;
             case DoiRequest doiRequest -> DOI_REQUEST_UPDATE_EVENT_TOPIC;
             case PublishingRequestCase publishingRequestCase -> PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC;

@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 
@@ -64,9 +65,9 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
         var newDraft = randomPublication().copy()
                            .withDoi(null)
                            .withStatus(PublicationStatus.DRAFT).build();
-        var eventBody = new DataEntryUpdateEvent(randomString(),
-            null,
-            Resource.fromPublication(newDraft));
+        var eventBody = new DataEntryUpdateEvent(OperationType.INSERT.toString(),
+                                                 null,
+                                                 Resource.fromPublication(newDraft));
         var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventBody);
         handler.handleRequest(event, outputStream, context);
         
@@ -77,7 +78,8 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
     
     @Test
     void handleRequestReturnsNullOnMissingNewPublication() throws JsonProcessingException {
-        var eventBody = new DataEntryUpdateEvent(randomString(), Resource.fromPublication(randomPublication()), null);
+        var eventBody = new DataEntryUpdateEvent(OperationType.REMOVE.toString(),
+                                                 Resource.fromPublication(randomPublication()), null);
         var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventBody);
         
         handler.handleRequest(event, outputStream, context);
