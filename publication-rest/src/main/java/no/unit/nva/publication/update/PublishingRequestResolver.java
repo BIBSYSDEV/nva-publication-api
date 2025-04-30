@@ -190,8 +190,12 @@ public final class PublishingRequestResolver {
         return Optional.ofNullable(channelClaim)
                    .map(ChannelClaimDto::claimedBy)
                    .map(CustomerSummaryDto::id)
-                   .map(id -> userInstance.getCustomerId().equals(id))
+                   .map(id -> hasTheSameCustomer(userInstance, id))
                    .orElse(true);
+    }
+
+    private static Boolean hasTheSameCustomer(UserInstance userInstance, URI id) {
+        return Optional.ofNullable(userInstance).map(UserInstance::getCustomerId).map(id::equals).orElse(false);
     }
 
     private Optional<ChannelClaimDto> getChannelClaim(Publisher publisher) throws BadGatewayException {
