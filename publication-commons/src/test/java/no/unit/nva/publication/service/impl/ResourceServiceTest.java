@@ -142,7 +142,6 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
@@ -437,7 +436,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
         UserInstance userInstance = randomUserInstance();
         Set<PublicationSummary> userResources = createSamplePublicationsOfSingleOwner(userInstance)
-                                             .stream().map(PublicationSummary::create).collect(Collectors.toSet());
+                                                    .stream()
+                                                    .map(PublicationSummary::create)
+                                                    .collect(Collectors.toSet());
 
         List<PublicationSummary> actualResources = resourceService.getPublicationSummaryByOwner(userInstance);
         HashSet<PublicationSummary> actualResourcesSet = new HashSet<>(actualResources);
@@ -506,7 +507,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var failingResourceService = getResourceServiceBuilder(client).build();
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                                                  () -> failingResourceService.getPublicationSummaryByOwner(SAMPLE_USER));
+                                                  () -> failingResourceService.getPublicationSummaryByOwner(
+                                                      SAMPLE_USER));
 
         assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
     }
@@ -523,7 +525,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
-                                                    () -> failingResourceService.getPublicationSummaryByOwner(SAMPLE_USER));
+                                                    () -> failingResourceService.getPublicationSummaryByOwner(
+                                                        SAMPLE_USER));
     }
 
     @Test
@@ -694,8 +697,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void deleteDraftPublicationDeletesDraftResourceWithoutDoi() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
+    void deleteDraftPublicationDeletesDraftResource() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
         assertThatIdentifierEntryHasBeenCreated();
 
         Executable fetchResourceAction = () -> resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -710,7 +713,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
+        var publication = createPersistedPublicationWithDoi();
         var userInstance = UserInstance.fromPublication(publication);
         Resource.fromPublication(publication).publish(resourceService, userInstance);
         assertThatIdentifierEntryHasBeenCreated();
@@ -788,7 +791,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(samplePublication);
 
         assertThrows(IllegalStateException.class, () -> Resource.fromPublication(samplePublication)
-                                                       .publish(resourceService, userInstance));
+                                                            .publish(resourceService, userInstance));
     }
 
     @Test
@@ -859,7 +862,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publication.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
         publication.setAssociatedArtifacts(AssociatedArtifactList.empty());
         var resource = Resource.fromPublication(publication).persistNew(resourceService,
-                                                             UserInstance.fromPublication(publication));
+                                                                        UserInstance.fromPublication(publication));
         var updatedResource = resourceService.updatePublication(resource);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
@@ -1046,7 +1049,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
             GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService)
                 .close(randomUserInstance());
         ticketService.updateTicket(closedGeneralSupportTicket);
-        var publishingRequestTicket = PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var publishingRequestTicket = PublishingRequestCase.create(resource, userInstance,
+                                                                   PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
         publishingRequestTicket.persistNewTicket(ticketService);
         resourceService.unpublishPublication(publication, userInstance);
@@ -1428,9 +1432,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldFetchResourceWithNewFilesWhenEnvironmentVariableShouldUseNewFileIsSet() throws BadRequestException {
-        var environment = mock(Environment.class);
         var resourceService = getResourceServiceBuilder(client)
-                                  .withEnvironment(environment)
                                   .build();
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1448,8 +1450,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldApproveApprovedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
-        var environment = mock(Environment.class);
-        var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
+        var resourceService = getResourceServiceBuilder().build();
 
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1459,10 +1460,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
 
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase
-                                                            .createWithFilesForApproval(Resource.fromPublication(publication),
-                                                                                        userInstance,
-                                                                                        PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                                                                                        Set.of(file))
+                                                            .createWithFilesForApproval(
+                                                                Resource.fromPublication(publication),
+                                                                userInstance,
+                                                                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                                                                Set.of(file))
                                                             .persistNewTicket(ticketService);
 
         publishingRequest.approveFiles().persistUpdate(ticketService);
@@ -1484,8 +1486,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
-            Resource.fromPublication(publication), userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY, Set.of(file))
-                                    .persistNewTicket(ticketService);
+                Resource.fromPublication(publication), userInstance,
+                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                Set.of(file))
+                                                            .persistNewTicket(ticketService);
         publishingRequest.approveFiles().close(randomUserInstance()).persistUpdate(ticketService);
         publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
@@ -1498,8 +1502,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldRejectRejectedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
-        var environment = mock(Environment.class);
-        var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
+        var resourceService = getResourceServiceBuilder().build();
 
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1509,11 +1512,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
         FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
 
         var publishingRequest =
-            (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(Resource.fromPublication(publication),
-                                                                 UserInstance.create(randomString(), randomUri()),
-                                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                                                                 Set.of(file))
-                                                            .persistNewTicket(ticketService);
+            (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
+                    Resource.fromPublication(publication),
+                    UserInstance.create(randomString(), randomUri()),
+                    PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                    Set.of(file))
+                                        .persistNewTicket(ticketService);
 
         publishingRequest.setFinalizedBy(new Username(randomString()));
         publishingRequest.rejectRejectedFiles(resourceService);
@@ -1533,7 +1537,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase
-                                    .createWithFilesForApproval(Resource.fromPublication(publication),
+                                                            .createWithFilesForApproval(
+                                                                Resource.fromPublication(publication),
                                                                 userInstance,
                                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
                                                                 Set.of(file)).persistNewTicket(ticketService);
@@ -1558,8 +1563,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         fileEntry.persist(resourceService);
 
         var resourceWithFileEntry = Resource.resourceQueryObject(resource.getIdentifier())
-                                 .fetch(resourceService)
-                                 .orElseThrow();
+                                        .fetch(resourceService)
+                                        .orElseThrow();
 
         assertTrue(resourceWithFileEntry.getFileEntries().contains(fileEntry));
         assertNotNull(resourceWithFileEntry.getFileEntry(fileEntry.getIdentifier()));
@@ -1584,7 +1589,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, userInstance);
         resource.setDoi(randomDoi());
-        Resource.fromPublication(resource).updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
+        Resource.fromPublication(resource)
+            .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
         var updatedResource = resourceService.getResourceByIdentifier(resource.getIdentifier());
 
         var resourceEvent = (MergedResourceEvent) updatedResource.getResourceEvent();
@@ -1683,13 +1689,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
         fileEntry.persist(resourceService);
 
         var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-        var persistedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME).withKey(fileEntry.toDao().primaryKey()));
+        var persistedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                                                 .withKey(fileEntry.toDao().primaryKey()));
         var persistedDao = Optional.ofNullable(persistedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
 
         resourceService.refreshFile(fileEntry.getIdentifier());
 
         var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-        var refreshedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME).withKey(fileEntry.toDao().primaryKey()));
+        var refreshedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                                                 .withKey(fileEntry.toDao().primaryKey()));
         var refreshedDao = Optional.ofNullable(refreshedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
 
         assertEquals(persistedFileEntry, refreshedFileEntry);
@@ -1699,7 +1707,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void scanResourcesShouldScanFileEntries() throws BadRequestException {
         createPersistedPublicationWithDoi();
-        var entries =  resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(), Collections.emptyList());
+        var entries = resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(),
+                                                    Collections.emptyList());
 
         assertTrue(entries.getDatabaseEntries().stream().anyMatch(FileEntry.class::isInstance));
     }
@@ -1709,9 +1718,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var userInstance = UserInstance.create(randomString(), randomUri());
         resourceService.persistLogEntry(CreatedResourceEvent.create(userInstance, Instant.now())
                                             .toLogEntry(SortableIdentifier.next(), new LogOrganization(randomUri(),
-                                                                                                       randomString(), Map.of())));
+                                                                                                       randomString(),
+                                                                                                       Map.of())));
         assertDoesNotThrow(() -> resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(),
-                                              Collections.emptyList()));
+                                                               Collections.emptyList()));
     }
 
     @Test
@@ -1743,8 +1753,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var fileApprovalThesis = FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
-                                                            userInstance,
-                                                            PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+                                                                              userInstance,
+                                                                              PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
 
         var fetchedPublication = fileApprovalThesis.toPublication(resourceService);
 
@@ -1769,9 +1779,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private void persistSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
         UserInstance userInstance = randomUserInstance();
         Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
-                   .map(publication -> injectOwner(userInstance, publication))
-                   .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
-                   .forEach(res -> attempt(() -> createPersistedPublicationWithDoi(resourceService, res)));
+            .map(publication -> injectOwner(userInstance, publication))
+            .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
+            .forEach(res -> attempt(() -> createPersistedPublicationWithDoi(resourceService, res)));
     }
 
     private Publication injectCristinIdentifier(String cristinIdentifier, Publication publication) {
@@ -1932,7 +1942,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
-        return (DoiRequest) DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication))
+        return (DoiRequest) DoiRequest.create(Resource.fromPublication(publication),
+                                              UserInstance.fromPublication(publication))
                                 .persistNewTicket(ticketService);
     }
 
