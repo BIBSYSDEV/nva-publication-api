@@ -36,22 +36,32 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
                 return DENY;
             }
             if (hasOpenFiles()) {
-                if (!hasAccessRight(MANAGE_DEGREE)) {
-                    return DENY;
-                }
-                if (!userIsFromSameInstitutionAsPublicationOwner()) {
-                    return DENY;
-                }
+                return openFileStrategy();
             } else {
-                if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
-                    return DENY;
-                }
-                if (!currentUserHaveSameTopLevelAsOwner() && userIsCuratingSupervisorsOnly()) {
-                    return DENY;
-                }
+                 return nonOpenFileStrategy();
             }
         }
 
+        return PASS;
+    }
+
+    private boolean nonOpenFileStrategy() {
+        if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
+            return DENY;
+        }
+        if (!currentUserHaveSameTopLevelAsOwner() && userIsCuratingSupervisorsOnly()) {
+            return DENY;
+        }
+        return PASS;
+    }
+
+    private boolean openFileStrategy() {
+        if (!hasAccessRight(MANAGE_DEGREE)) {
+            return DENY;
+        }
+        if (!userIsFromSameInstitutionAsPublicationOwner()) {
+            return DENY;
+        }
         return PASS;
     }
 
