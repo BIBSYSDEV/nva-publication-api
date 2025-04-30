@@ -18,6 +18,9 @@ import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
 public class DegreeDenyStrategy extends PublicationStrategyBase implements PublicationDenyStrategy {
 
+    private static final boolean DENY = true;
+    private static final boolean PASS = false;
+
     public DegreeDenyStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
     }
@@ -25,23 +28,31 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     @Override
     public boolean deniesAction(PublicationOperation permission) {
         if (isUsersDraft() || userInstance.isExternalClient() || userInstance.isBackendClient()) {
-            return false; // allow
+            return PASS;
         }
 
         if (isProtectedDegreeInstanceType()) {
-            if (!hasAccessRight(MANAGE_DEGREE)) {
-                return true; // deny
-            }
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
-                return true; // deny
+                return DENY;
             }
-            if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
-                return true; // deny
+            if (hasOpenFiles()) {
+                if (!hasAccessRight(MANAGE_DEGREE)) {
+                    return DENY;
+                }
+                if (!userIsFromSameInstitutionAsPublicationOwner()) {
+                    return DENY;
+                }
+            } else {
+                if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
+                    return DENY;
+                }
+                if (!currentUserHaveSameTopLevelAsOwner() && userIsCuratingSupervisorsOnly()) {
+                    return DENY;
+                }
             }
-            return !currentUserHaveSameTopLevelAsOwner() && userIsCuratingSupervisorsOnly(); // deny
         }
 
-        return false; // allow
+        return PASS;
     }
 
     private boolean userIsCuratingSupervisorsOnly() {

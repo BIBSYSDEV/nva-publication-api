@@ -15,6 +15,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -92,6 +93,12 @@ public class PublicationStrategyBase {
                    .stream()
                    .anyMatch(artifact -> ACCEPTED_FILE_TYPES
                                              .contains(artifact.getClass()));
+    }
+
+    protected boolean hasOpenFiles() {
+        return publication.getAssociatedArtifacts()
+                   .stream()
+                   .anyMatch(artifact -> OpenFile.class.equals(artifact.getClass()));
     }
 
     protected boolean isOwner() {

@@ -8,6 +8,8 @@ import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifactsExcluding;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
@@ -53,6 +55,8 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.pages.MonographPages;
@@ -235,6 +239,33 @@ class PublicationPermissionStrategyTest {
                    .build();
     }
 
+    static Publication createPublicationWithOpenFile(Class<?> instanceTypeClass,
+                                                     String resourceOwner,
+                                                     URI customer,
+                                                     URI cristinId) {
+        return createPublication(instanceTypeClass, resourceOwner, customer, cristinId).copy()
+                   .withAssociatedArtifacts(List.of(randomOpenFile()))
+                   .build();
+    }
+
+    static Publication createPublicationWithoutOpenFiles(Class<?> instanceTypeClass,
+                                                         String resourceOwner,
+                                                         URI customer,
+                                                         URI cristinId) {
+        return createPublication(instanceTypeClass, resourceOwner, customer, cristinId).copy()
+                          .withAssociatedArtifacts(randomAssociatedArtifactsExcluding(List.of(OpenFile.class)))
+                          .build();
+    }
+
+    static Publication createPublicationWithoutOpenOrInternalFiles(Class<?> instanceTypeClass,
+                                                                   String resourceOwner,
+                                                                   URI customer,
+                                                                   URI cristinId) {
+        return createPublication(instanceTypeClass, resourceOwner, customer, cristinId).copy()
+                   .withAssociatedArtifacts(randomAssociatedArtifactsExcluding(List.of(OpenFile.class, InternalFile.class)))
+                   .build();
+    }
+
     static void setFileToPendingOpenFiles(Publication publication) {
         var list = publication.getAssociatedArtifacts()
                        .stream()
@@ -320,7 +351,6 @@ class PublicationPermissionStrategyTest {
 
     protected List<AccessRight> getAccessRightsForEditor() {
         var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
         return accessRights;
     }
@@ -349,6 +379,18 @@ class PublicationPermissionStrategyTest {
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         accessRights.add(AccessRight.MANAGE_RESOURCE_FILES);
+        return accessRights;
+    }
+
+    protected List<AccessRight> getAccessRightsForRegistrator() {
+        var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_OWN_RESOURCES);
+        return accessRights;
+    }
+
+    protected List<AccessRight> getAccessRightsForContributor() {
+        var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_OWN_RESOURCES);
         return accessRights;
     }
 
