@@ -8,6 +8,8 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKF
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
@@ -91,8 +93,8 @@ public abstract class FilesApprovalEntry extends TicketEntry {
         return nonNull(filesForApproval) ? filesForApproval : Set.of();
     }
 
-    public void setFilesForApproval(Set<File> filesForApproval) {
-        this.filesForApproval = filesForApproval;
+    public void setFilesForApproval(Collection<File> filesForApproval) {
+        this.filesForApproval = new HashSet<>(filesForApproval);
     }
 
     public PublishingWorkflow getWorkflow() {
@@ -118,6 +120,11 @@ public abstract class FilesApprovalEntry extends TicketEntry {
     public FilesApprovalEntry approveFiles() {
         this.approvedFiles = getFilesForApproval().stream().map(this::toApprovedFile).collect(Collectors.toSet());
         this.filesForApproval = Set.of();
+        return this;
+    }
+
+    public FilesApprovalEntry withFilesForApproval(Collection<File> filesForApproval) {
+        setFilesForApproval(filesForApproval);
         return this;
     }
 
