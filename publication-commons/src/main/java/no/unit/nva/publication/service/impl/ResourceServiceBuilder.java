@@ -9,7 +9,6 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
-import nva.commons.core.Environment;
 
 public final class ResourceServiceBuilder {
 
@@ -18,7 +17,6 @@ public final class ResourceServiceBuilder {
     private Clock clock = Clock.systemDefaultZone();
     Supplier<SortableIdentifier> identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
     private RawContentRetriever uriRetriever = UriRetriever.defaultUriRetriever();
-    private Environment environment = new Environment();
 
     ResourceServiceBuilder() {
     }
@@ -48,12 +46,7 @@ public final class ResourceServiceBuilder {
         return this;
     }
 
-    public ResourceServiceBuilder withEnvironment(Environment environment) {
-        this.environment = environment;
-        return this;
-    }
-
     public ResourceService build() {
-        return new ResourceService(dynamoDbClient, tableName, clock, identifierSupplier, uriRetriever, environment);
+        return new ResourceService(dynamoDbClient, tableName, clock, identifierSupplier, uriRetriever);
     }
 }

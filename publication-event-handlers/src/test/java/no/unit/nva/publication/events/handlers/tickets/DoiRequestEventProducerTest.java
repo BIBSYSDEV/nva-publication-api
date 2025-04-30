@@ -24,6 +24,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -296,7 +297,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     }
 
     private DataEntryUpdateEvent createDataEntry(Entity draftRequest, Entity approvedRequest) {
-        return new DataEntryUpdateEvent(randomString(), draftRequest, approvedRequest);
+        return new DataEntryUpdateEvent(randomElement(OperationType.values()).toString(), draftRequest, approvedRequest);
     }
 
     private Publication persistPublicationWithDoi() throws BadRequestException {

@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -131,7 +132,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
-        var persistedResource = s3Driver.getFile(UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
+        var persistedResource = s3Driver.getFile(
+            UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
         var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
         assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
     }
@@ -186,7 +188,6 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
 
-
         var sqsClient = new FakeSqsClient();
         expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -203,7 +204,6 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
-
 
         var sqsClient = new FakeSqsClient();
         expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
@@ -301,7 +301,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         expandResourceHandler.handleRequest(request, output, CONTEXT);
 
-        var persistedResource = s3Driver.getFile(UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
+        var persistedResource = s3Driver.getFile(
+            UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
         var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
         assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
     }
@@ -339,7 +340,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @Test
     @Disabled
-    //TODO: implement this test as a test or a set of tests
+        //TODO: implement this test as a test or a set of tests
     void shouldAlwaysEmitEventsForAllTypesOfDataEntries() {
 
     }
@@ -363,7 +364,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var oldImageResource = crateDataEntry(oldImage);
         var newImageResource = crateDataEntry(newImage);
         var dataEntryUpdateEvent =
-            new DataEntryUpdateEvent(RESOURCE_UPDATE_EVENT_TOPIC, oldImageResource, newImageResource);
+            new DataEntryUpdateEvent(OperationType.MODIFY.toString(), oldImageResource, newImageResource);
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }
@@ -398,8 +399,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private DoiRequest doiRequestForDraftResource() {
         var publication = randomPublication().copy()
-                                      .withStatus(DRAFT)
-                                      .build();
+                              .withStatus(DRAFT)
+                              .build();
         var resource = Resource.fromPublication(publication);
         return DoiRequest.create(resource, UserInstance.fromPublication(publication));
     }
