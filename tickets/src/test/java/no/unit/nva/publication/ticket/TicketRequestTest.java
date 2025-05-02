@@ -8,6 +8,7 @@ import org.junit.Test;
 public class TicketRequestTest {
 
     @Test
+    @Deprecated
     public void shouldSerializeRequestBodyWithoutTypeAsUpdateTicketRequest() throws JsonProcessingException {
         var json = """
             {
