@@ -1,14 +1,12 @@
 package no.unit.nva.publication.ticket.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -25,17 +23,13 @@ import nva.commons.core.paths.UriWrapper;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
 
-    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
-    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String LOCATION_HEADER = "Location";
     private final TicketResolver ticketResolver;
     private final MessageService messageService;
 
     @JacocoGenerated
     public CreateTicketHandler() {
-        this(new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
-                                new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                                                                  BACKEND_CLIENT_SECRET_NAME)),
+        this(new TicketResolver(ResourceService.defaultService(), TicketService.defaultService()),
              MessageService.defaultService(),
              new Environment());
     }
