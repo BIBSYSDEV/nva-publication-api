@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -29,16 +30,15 @@ public class UnpublishRequestDto extends TicketDto {
                                @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
                                @JsonProperty(PUBLICATION_IDENTIFIER_FIELD) SortableIdentifier publicationIdentifier,
-                               @JsonProperty(ID_FIELD) URI id,
                                @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                @JsonProperty(ASSIGNEE_FIELD) Username assignee,
                                @JsonProperty(OWNER_FIELD) User owner,
                                @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
-                               @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
-        super(id,
-              identifier,
+                               @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate,
+                               @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions) {
+        super(identifier,
               status,
               messages,
               viewedBy,
@@ -49,7 +49,8 @@ public class UnpublishRequestDto extends TicketDto {
               finalizedBy,
               finalizedDate,
               createdDate,
-              modifiedDate);
+              modifiedDate,
+              availableInstitutions);
 
     }
 

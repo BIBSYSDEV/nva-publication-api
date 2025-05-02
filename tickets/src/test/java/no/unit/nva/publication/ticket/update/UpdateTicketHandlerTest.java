@@ -36,6 +36,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -803,7 +804,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     private InputStream createAssigneeTicketHttpRequest(TicketEntry ticket, URI customer)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket,
+                                                                                                             Collections.emptyList(), Collections.emptyList()))
                    .withCurrentCustomer(customer)
                    .withUserName(USER_INSTANCE.getUsername())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
@@ -851,7 +853,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, URI customer, AccessRight... accessRights)
         throws JsonProcessingException {
         var publication = ticket.toPublication(resourceService);
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket, Collections.emptyList(), Collections.emptyList()))
                    .withAccessRights(customer, accessRights)
                    .withCurrentCustomer(customer)
                    .withUserName(USER_INSTANCE.getUsername())
