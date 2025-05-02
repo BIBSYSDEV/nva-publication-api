@@ -59,7 +59,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
             return DENY;
         }
-        if (!currentUserHaveSameTopLevelAsOwner() && userIsCuratingSupervisorsOnly()) {
+        if (!userIsFromSameInstitutionAsPublicationOwner() && userIsCuratingSupervisorsOnly()) {
             return DENY;
         }
         return PASS;
@@ -77,11 +77,6 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
                         .toList();
 
         return !roles.isEmpty() && roles.stream().allMatch(role -> role.equals(SUPERVISOR));
-    }
-
-    private boolean currentUserHaveSameTopLevelAsOwner() {
-        return nonNull(userInstance) && userInstance.getTopLevelOrgCristinId()
-                                            .equals(publication.getResourceOwner().getOwnerAffiliation());
     }
 
     private Optional<CuratingInstitution> getCuratingInstitutionsForCurrentUser() {
