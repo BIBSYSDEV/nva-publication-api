@@ -12,7 +12,7 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.ticket.FileApprovalThesisDto;
+import no.unit.nva.publication.ticket.FilesApprovalThesisDto;
 import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.publication.utils.RequestUtils;
@@ -51,7 +51,7 @@ class TicketResolverTest extends TicketTestLocal {
                                                                   UserInstance.fromPublication(publication),
                                                                   PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         assertThrows(ForbiddenException.class,
-                     () -> ticketResolver.resolveAndPersistTicket(FileApprovalThesisDto.fromTicket(ticket),
+                     () -> ticketResolver.resolveAndPersistTicket(FilesApprovalThesisDto.fromTicket(ticket),
                                                                   requestUtils));
     }
 
