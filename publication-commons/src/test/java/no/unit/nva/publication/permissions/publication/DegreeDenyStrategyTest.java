@@ -39,8 +39,35 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
-    // AnonBeforeOpenFile ?
-    // AnonAfterOpenFile ?
+    @ParameterizedTest(name = "Should deny anonymous user {0} operation on instance type {1} when degree has no open "
+                              + "files")
+    @MethodSource("argumentsForAnonymousUser")
+    void shouldDenyAnonymousUserOperationsOnDegreeWithoutOpenFiles(PublicationOperation operation, Class<?> degreeInstanceClass) {
+        var registrator = User.random();
+        var publication = createPublicationWithoutOpenFiles(degreeInstanceClass,
+                                                            registrator.name,
+                                                            registrator.customer,
+                                                            registrator.topLevelCristinId);
+
+        Assertions.assertFalse(PublicationPermissions
+                                  .create(publication, null)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should deny anonymous user {0} operation on instance type {1} when degree has open "
+                              + "files")
+    @MethodSource("argumentsForAnonymousUser")
+    void shouldDenyAnonymousUserOperationsOnDegreeWithOpenFiles(PublicationOperation operation, Class<?> degreeInstanceClass) {
+        var registrator = User.random();
+        var publication = createPublicationWithOpenFile(degreeInstanceClass,
+                                                        registrator.name,
+                                                        registrator.customer,
+                                                        registrator.topLevelCristinId);
+
+        Assertions.assertFalse(PublicationPermissions
+                                   .create(publication, null)
+                                   .allowsAction(operation));
+    }
 
     @ParameterizedTest(name = "Should allow Registrator {0} operation on instance type {1} when degree has no open "
                               + "files")
@@ -630,6 +657,16 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissions
                                   .create(publication, userInstance)
                                   .allowsAction(operation));
+    }
+
+    private static Stream<Arguments> argumentsForAnonymousUser() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.UNPUBLISH,
+                                      PublicationOperation.DELETE,
+                                      PublicationOperation.UPDATE_FILES,
+                                      PublicationOperation.UPLOAD_FILE);
+
+        return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
 
     private static Stream<Arguments> argumentsForRegistrator() {
