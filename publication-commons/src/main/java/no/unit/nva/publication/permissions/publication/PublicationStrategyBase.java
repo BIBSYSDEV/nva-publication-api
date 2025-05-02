@@ -98,7 +98,7 @@ public class PublicationStrategyBase {
     protected boolean hasOpenFiles() {
         return publication.getAssociatedArtifacts()
                    .stream()
-                   .anyMatch(artifact -> OpenFile.class.equals(artifact.getClass()));
+                   .anyMatch(OpenFile.class::isInstance);
     }
 
     protected boolean isOwner() {
