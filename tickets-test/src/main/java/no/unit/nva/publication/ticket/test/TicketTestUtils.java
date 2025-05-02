@@ -93,16 +93,12 @@ public final class TicketTestUtils {
         return Stream.of(
                 Arguments.of(DoiRequest.class, PUBLISHED),
                 Arguments.of(DoiRequest.class, PUBLISHED_METADATA),
-                Arguments.of(PublishingRequestCase.class, DRAFT),
                 Arguments.of(GeneralSupportRequest.class, DRAFT));
     }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
         return Stream.of(
                 Arguments.of(PUBLISHED, DoiRequest.class, new AccessRight[]{MANAGE_DOI, MANAGE_RESOURCES_STANDARD}),
-                Arguments.of(
-                        DRAFT, PublishingRequestCase.class,
-                        new AccessRight[]{MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD}),
                 Arguments.of(DRAFT, GeneralSupportRequest.class,
                              new AccessRight[]{SUPPORT, MANAGE_RESOURCES_STANDARD}));
     }

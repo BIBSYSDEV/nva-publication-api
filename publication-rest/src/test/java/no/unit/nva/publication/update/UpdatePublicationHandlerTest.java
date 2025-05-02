@@ -1852,7 +1852,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         var input = ownerUpdatesOwnPublication(resource.getIdentifier(), updatedPublication);
 
-        var resourceService = getResourceServiceBuilder().withEnvironment(environment).build();
+        var resourceService = getResourceServiceBuilder().build();
         var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
                                                    eventBridgeClient, secretsManagerClient,
                                                    WiremockHttpClient.create());

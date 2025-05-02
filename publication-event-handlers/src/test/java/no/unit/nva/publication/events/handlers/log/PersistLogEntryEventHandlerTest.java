@@ -5,6 +5,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -14,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -107,7 +109,7 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createEvent(Publication oldImage, Publication newImage) throws IOException {
-        var dataEntryUpdateEvent = new DataEntryUpdateEvent(RESOURCE_UPDATE_EVENT_TOPIC,
+        var dataEntryUpdateEvent = new DataEntryUpdateEvent(randomElement(OperationType.values()).toString(),
                                                             Resource.fromPublication(oldImage),
                                                             Resource.fromPublication(newImage));
         var uri = new S3Driver(s3Client, EVENTS_BUCKET).insertEvent(UnixPath.of(UUID.randomUUID().toString()),

@@ -17,7 +17,7 @@ public class FakeResourceServiceThrowingException extends ResourceService {
 
     public FakeResourceServiceThrowingException(AmazonDynamoDB client) {
         super(client, FAKE_TABLE_NAME, Clock.systemDefaultZone(), DEFAULT_IDENTIFIER_SUPPLIER,
-              mock(UriRetriever.class), mock(Environment.class));
+              mock(UriRetriever.class));
     }
 
     @Override

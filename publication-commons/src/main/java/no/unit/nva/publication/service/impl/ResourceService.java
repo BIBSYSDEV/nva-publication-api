@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
@@ -73,7 +74,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
@@ -106,11 +106,9 @@ public class ResourceService extends ServiceWithTransactions {
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
     private final RawContentRetriever uriRetriever;
-    private final Environment environment;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
-                              Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
-                              Environment environment) {
+                              Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
@@ -120,7 +118,6 @@ public class ResourceService extends ServiceWithTransactions {
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService, uriRetriever);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
-        this.environment = environment;
     }
 
     @JacocoGenerated
@@ -618,13 +615,12 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
-        Map<String, String> expressionAttributeNames = Map.of("#status", STATUS_FIELD_IN_RESOURCE, "#doi",
-                                                              DOI_FIELD_IN_RESOURCE);
+        Map<String, String> expressionAttributeNames = Map.of("#status", STATUS_FIELD_IN_RESOURCE);
         Map<String, AttributeValue> expressionAttributeValues = Map.of(":publishedStatus",
-                                                                       new AttributeValue(PUBLISHED.getValue()));
+                                                                       new AttributeValue(DRAFT.getValue()));
 
         deleteResource.getDelete()
-            .withConditionExpression("#status <> :publishedStatus AND attribute_not_exists(#doi)")
+            .withConditionExpression("#status = :publishedStatus")
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues);
     }
