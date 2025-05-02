@@ -349,13 +349,13 @@ class PublicationPermissionStrategyTest {
         return publication;
     }
 
-    protected List<AccessRight> getAccessRightsForEditor() {
+    protected static List<AccessRight> getAccessRightsForEditor() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
         return accessRights;
     }
 
-    protected List<AccessRight> getAccessRightsForCurator() {
+    protected static List<AccessRight> getAccessRightsForCurator() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
@@ -363,7 +363,7 @@ class PublicationPermissionStrategyTest {
         return accessRights;
     }
 
-    protected List<AccessRight> getAccessRightsForThesisCurator() {
+    protected static List<AccessRight> getAccessRightsForThesisCurator() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
@@ -372,7 +372,7 @@ class PublicationPermissionStrategyTest {
         return accessRights;
     }
 
-    protected List<AccessRight> getAccessRightsForEmbargoThesisCurator() {
+    protected static List<AccessRight> getAccessRightsForEmbargoThesisCurator() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_DEGREE_EMBARGO);
@@ -382,13 +382,13 @@ class PublicationPermissionStrategyTest {
         return accessRights;
     }
 
-    protected List<AccessRight> getAccessRightsForRegistrator() {
+    protected static List<AccessRight> getAccessRightsForRegistrator() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_OWN_RESOURCES);
         return accessRights;
     }
 
-    protected List<AccessRight> getAccessRightsForContributor() {
+    protected static List<AccessRight> getAccessRightsForContributor() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_OWN_RESOURCES);
         return accessRights;
