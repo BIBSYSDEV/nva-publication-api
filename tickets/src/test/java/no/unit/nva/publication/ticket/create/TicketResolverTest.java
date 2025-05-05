@@ -5,6 +5,7 @@ import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersiste
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.util.List;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -51,7 +52,8 @@ class TicketResolverTest extends TicketTestLocal {
                                                                   UserInstance.fromPublication(publication),
                                                                   PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         assertThrows(ForbiddenException.class,
-                     () -> ticketResolver.resolveAndPersistTicket(FilesApprovalThesisDto.fromTicket(ticket),
+                     () -> ticketResolver.resolveAndPersistTicket(FilesApprovalThesisDto.fromTicket(ticket, List.of(),
+                                                                                                    List.of()),
                                                                   requestUtils));
     }
 
