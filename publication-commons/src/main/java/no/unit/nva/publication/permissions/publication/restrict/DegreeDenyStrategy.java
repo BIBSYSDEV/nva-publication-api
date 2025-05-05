@@ -49,9 +49,10 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         if (!hasAccessRight(MANAGE_DEGREE)) {
             return DENY;
         }
-        if (!userIsFromSameInstitutionAsPublicationOwner()) {
-            return DENY;
-        }
+        // TODO: Implement when channelClaim is available in publication object
+//        if (!userIsFromSameInstitutionAsPublicationOwner()) {
+//            return DENY;
+//        }
         return PASS;
     }
 
