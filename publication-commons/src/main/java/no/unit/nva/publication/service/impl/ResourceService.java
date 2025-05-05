@@ -53,7 +53,6 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
@@ -325,8 +324,7 @@ public class ResourceService extends ServiceWithTransactions {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
         var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
-        var unpublishRequestTicket = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
-        updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket,
+        updateResourceService.unpublishPublication(publication, allTicketsForResource,
                                                    userInstance);
     }
 
