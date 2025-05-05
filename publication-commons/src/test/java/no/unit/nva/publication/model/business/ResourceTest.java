@@ -41,8 +41,9 @@ public class ResourceTest {
     public static final String RESOURCE_EVENT = "resourceEvent";
     public static final String FILES_FIELD = "files";
     public static final String FILE_ENTRIES_FIELD = "fileEntries";
+    protected static final String PUBLICATION_CHANNELS = "publicationChannels";
     public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS, RESOURCE_EVENT,
-                                                              FILES_FIELD, FILE_ENTRIES_FIELD);
+                                                              FILES_FIELD, FILE_ENTRIES_FIELD, PUBLICATION_CHANNELS);
     private final Javers javers = JaversBuilder.javers()
                                       .registerEntity(EntityDefinitionBuilder.entityDefinition(Resource.class)
                                                           .withIdPropertyName("identifier")

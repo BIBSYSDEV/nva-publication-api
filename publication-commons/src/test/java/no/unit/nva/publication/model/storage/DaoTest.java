@@ -100,6 +100,8 @@ class DaoTest extends ResourcesLocalTest {
     private static final String RESOURCE_FILE_ENTRIES = ".resource.fileEntries";
     public static final String DATA_TICKET_EVENT = "data.ticketEvent";
     private static final String DATA_VIEWED_BY = "data.viewedBy";
+    protected static final String DATA_PUBLICATION_CHANNELS = "data.publicationChannels";
+    protected static final String RESOURCE_PUBLICATION_CHANNELS = "resource.publicationChannels";
     public static final Set<String> IGNORED_FIELDS = Set.of(DATA_OWNER_AFFILIATION,
                                                             DATA_RESPONSIBILITY_AREA,
                                                             DATA_ASSIGNEE,
@@ -112,7 +114,9 @@ class DaoTest extends ResourcesLocalTest {
                                                             DATA_STATE, RESOURCE_STATE, RESOURCE_FILES, DATA_FILES,
                                                             RESOURCE_FILE_ENTRIES, DATA_FILE_ENTRIES,
                                                             DATA_TICKET_EVENT,
-                                                            DATA_VIEWED_BY);
+                                                            DATA_VIEWED_BY,
+                                                            DATA_PUBLICATION_CHANNELS,
+                                                            RESOURCE_PUBLICATION_CHANNELS);
 
     public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
