@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -67,7 +68,7 @@ public class GeneralSupportRequestDto extends TicketDto {
                                             null,
                                             null,
                                             null,
-                                            Set.of());
+                                            Collections.emptySet());
     }
 
     @JacocoGenerated

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -82,11 +83,11 @@ public class PublishingRequestDto extends TicketDto {
                                         null,
                                         null,
                                         null,
-                                        Set.of(),
-                                        Set.of(),
+                                        Collections.emptySet(),
+                                        Collections.emptySet(),
                                         null,
                                         null,
-                                        Set.of());
+                                        Collections.emptySet());
     }
 
     public PublishingWorkflow getWorkflow() {
