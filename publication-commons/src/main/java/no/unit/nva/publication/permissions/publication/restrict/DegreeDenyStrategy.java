@@ -18,6 +18,9 @@ import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
 public class DegreeDenyStrategy extends PublicationStrategyBase implements PublicationDenyStrategy {
 
+    private static final boolean DENY = true;
+    private static final boolean PASS = false;
+
     public DegreeDenyStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
     }
@@ -25,23 +28,41 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     @Override
     public boolean deniesAction(PublicationOperation permission) {
         if (isUsersDraft() || userInstance.isExternalClient() || userInstance.isBackendClient()) {
-            return false; // allow
+            return PASS;
         }
 
         if (isProtectedDegreeInstanceType()) {
-            if (!hasAccessRight(MANAGE_DEGREE)) {
-                return true; // deny
-            }
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
-                return true; // deny
+                return DENY;
             }
-            if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
-                return true; // deny
+            if (hasOpenFiles()) {
+                return openFileStrategy();
+            } else {
+                 return nonOpenFileStrategy();
             }
-            return !currentUserHaveSameTopLevelAsOwner() && userIsCuratingSupervisorsOnly(); // deny
         }
 
-        return false; // allow
+        return PASS;
+    }
+
+    private boolean openFileStrategy() {
+        if (!hasAccessRight(MANAGE_DEGREE)) {
+            return DENY;
+        }
+        if (!userIsFromSameInstitutionAsPublicationOwner()) {
+            return DENY;
+        }
+        return PASS;
+    }
+
+    private boolean nonOpenFileStrategy() {
+        if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
+            return DENY;
+        }
+        if (!userIsFromSameInstitutionAsPublicationOwner() && userIsCuratingSupervisorsOnly()) {
+            return DENY;
+        }
+        return PASS;
     }
 
     private boolean userIsCuratingSupervisorsOnly() {
@@ -56,11 +77,6 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
                         .toList();
 
         return !roles.isEmpty() && roles.stream().allMatch(role -> role.equals(SUPERVISOR));
-    }
-
-    private boolean currentUserHaveSameTopLevelAsOwner() {
-        return nonNull(userInstance) && userInstance.getTopLevelOrgCristinId()
-                                            .equals(publication.getResourceOwner().getOwnerAffiliation());
     }
 
     private Optional<CuratingInstitution> getCuratingInstitutionsForCurrentUser() {

@@ -33,6 +33,13 @@ public final class AssociatedArtifactsGenerator {
                                           randomAssociatedLink(), randomHiddenFile());
     }
 
+    public static List<AssociatedArtifact> randomAssociatedArtifactsExcluding(List<Class<?>> clazz) {
+        return randomAssociatedArtifacts()
+                   .stream()
+                   .filter(artifact -> !clazz.contains(artifact.getClass()))
+                   .toList();
+    }
+
     public static AssociatedLink randomAssociatedLink() {
         return new AssociatedLink(randomUri(), randomString(), randomString(), RelationType.SAME_AS);
     }

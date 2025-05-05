@@ -69,6 +69,7 @@ import no.unit.nva.publication.ticket.TicketAndPublicationStatusProvider;
 import no.unit.nva.publication.ticket.TicketConfig;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
+import no.unit.nva.publication.ticket.UpdateTicketOwnershipRequest;
 import no.unit.nva.publication.ticket.UpdateTicketRequest;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -703,6 +704,80 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+    }
+
+    @Test
+    void shouldUpdateTicketOwnershipToOneOfCuratingInstitutionsWhenUserInstitutionOwnsTicket() throws ApiGatewayException, IOException {
+        var curatingInstitution = randomUri();
+        var publication =
+            randomPublication().copy().withCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of()))).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance).persistNewTicket(ticketService);
+        var httpRequest = createUpdateTicketOwnershipRequest(ticket, curatingInstitution, SUPPORT);
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenUpdatingTicketOwnershipToNotOneOfCuratingInstitutions() throws ApiGatewayException, IOException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance).persistNewTicket(ticketService);
+        var httpRequest = createUpdateTicketOwnershipRequest(ticket, randomUri(), SUPPORT);
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenUpdatingTicketOwnershipAndUserInstitutionDoesNotOwnTicket() throws ApiGatewayException, IOException {
+        var curatingInstitution = randomUri();
+        var publication =
+            randomPublication().copy().withCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of()))).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance).persistNewTicket(ticketService);
+        var httpRequest = createUpdateTicketOwnershipRequestWithRandomInstitution(ticket, curatingInstitution, SUPPORT);
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    private InputStream createUpdateTicketOwnershipRequestWithRandomInstitution(TicketEntry ticket,
+                                                                             URI newOwnerAffiliation,
+                                                            AccessRight accessRight)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<UpdateTicketOwnershipRequest>(JsonUtils.dtoObjectMapper).withBody(
+                new UpdateTicketOwnershipRequest(newOwnerAffiliation, newOwnerAffiliation))
+                   .withCurrentCustomer(randomUri())
+                   .withTopLevelCristinOrgId(randomUri())
+                   .withAccessRights(randomUri(), accessRight)
+                   .withUserName(randomString())
+                   .withPathParameters(createPathParameters(ticket, ticket.getResourceIdentifier()))
+                   .withPersonCristinId(randomUri())
+                   .build();
+    }
+
+    private InputStream createUpdateTicketOwnershipRequest(TicketEntry ticket, URI newOwnerAffiliation, AccessRight accessRight)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<UpdateTicketOwnershipRequest>(JsonUtils.dtoObjectMapper).withBody(
+                new UpdateTicketOwnershipRequest(newOwnerAffiliation, newOwnerAffiliation))
+                   .withCurrentCustomer(ticket.getCustomerId())
+                   .withTopLevelCristinOrgId(ticket.getOwnerAffiliation())
+                   .withAccessRights(ticket.getOwnerAffiliation(), accessRight)
+                   .withUserName(randomString())
+                   .withPathParameters(createPathParameters(ticket, ticket.getResourceIdentifier()))
+                   .withPersonCristinId(randomUri())
+                   .build();
     }
 
     private AssociatedArtifact pendingFileWithoutLicense() {

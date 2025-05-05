@@ -274,6 +274,12 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void validateCompletionRequirements(Publication publication);
 
+    public TicketEntry updateCuratingInstitution(URI ownerAffiliation, URI responsibilityArea) {
+        this.setOwnerAffiliation(ownerAffiliation);
+        this.setResponsibilityArea(responsibilityArea);
+        return this;
+    }
+
     public TicketEntry complete(Publication publication, UserInstance userInstance) {
         var updated = this.copy();
         var now = Instant.now();
