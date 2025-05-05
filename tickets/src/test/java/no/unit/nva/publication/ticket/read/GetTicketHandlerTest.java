@@ -17,6 +17,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
@@ -56,7 +57,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new GetTicketHandler(ticketService, new Environment());
+        this.handler = new GetTicketHandler(ticketService, resourceService, new Environment());
         this.messageService = getMessageService();
     }
 
@@ -74,7 +75,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
         var actualTicketEntry = toTicket(ticketDto);
-        var expected = TicketDto.fromTicket(actualTicketEntry);
+        var expected = TicketDto.fromTicket(actualTicketEntry, Collections.emptyList(), Collections.emptyList());
         assertThat(ticketDto, is(equalTo(expected)));
     }
 
@@ -164,7 +165,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
         var actualTicketEntry = toTicket(ticketDto);
-        assertThat(ticketDto, is(equalTo(TicketDto.fromTicket(actualTicketEntry))));
+        assertThat(ticketDto, is(equalTo(TicketDto.fromTicket(actualTicketEntry, Collections.emptyList(), Collections.emptyList()))));
     }
 
     @ParameterizedTest

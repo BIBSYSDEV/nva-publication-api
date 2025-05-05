@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -42,7 +43,6 @@ public class FilesApprovalThesisDto extends TicketDto {
                                   @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                   @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
                                   @JsonProperty(PUBLICATION_IDENTIFIER_FIELD) SortableIdentifier publicationIdentifier,
-                                  @JsonProperty(ID_FIELD) URI id,
                                   @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                   @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                   @JsonProperty(ASSIGNEE_FIELD) Username assignee,
@@ -52,9 +52,9 @@ public class FilesApprovalThesisDto extends TicketDto {
                                   @JsonProperty(APPROVED_FILES_FIELD) Set<File> approvedFiles,
                                   @JsonProperty(FILES_FOR_APPROVAL) Set<File> filesForApproval,
                                   @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
-                                  @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
-        super(id,
-              identifier,
+                                  @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate,
+                                  @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions) {
+        super(identifier,
               status,
               messages,
               viewedBy,
@@ -63,7 +63,10 @@ public class FilesApprovalThesisDto extends TicketDto {
               owner,
               ownerAffiliation,
               finalizedBy,
-              finalizedDate, createdDate, modifiedDate);
+              finalizedDate,
+              createdDate,
+              modifiedDate,
+              availableInstitutions);
         this.workflow = workflow;
         this.approvedFiles = approvedFiles;
         this.filesForApproval = filesForApproval;

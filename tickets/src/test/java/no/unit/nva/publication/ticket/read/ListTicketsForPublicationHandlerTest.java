@@ -46,6 +46,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -318,9 +319,14 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         return ticket;
     }
 
-    private TicketDto constructDto(TicketEntry ticketEntry) {
+    private TicketDto constructDto(TicketEntry ticketEntry) throws NotFoundException {
         var messages = ticketEntry.fetchMessages(ticketService);
-        return TicketDto.fromTicket(ticketEntry, messages);
+        var resource = resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier());
+        return TicketDto.fromTicket(ticketEntry, messages, getCuratingInstitutionsIdList(resource));
+    }
+
+    private static List<URI> getCuratingInstitutionsIdList(Resource resource) {
+        return resource.getCuratingInstitutions().stream().map(CuratingInstitution::id).toList();
     }
 
     private static InputStream ownerRequestsTicketsForPublication(Publication publication)
