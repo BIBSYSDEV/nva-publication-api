@@ -50,6 +50,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
@@ -122,6 +123,8 @@ public class Resource implements Entity {
     private ResourceEvent resourceEvent;
     @JsonIgnore
     private List<FileEntry> files;
+    @JsonIgnore
+    private List<PublicationChannel> publicationChannels;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -243,6 +246,14 @@ public class Resource implements Entity {
                  && Objects.equals(getSubjects(), resource.getSubjects())
                  && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions())
                  && Objects.equals(getImportDetails(), resource.getImportDetails()));
+    }
+
+    public void setPublicationChannels(List<PublicationChannel> publicationChannels) {
+        this.publicationChannels = publicationChannels;
+    }
+
+    public List<PublicationChannel> getPublicationChannels() {
+        return nonNull(publicationChannels) ? publicationChannels : Collections.emptyList();
     }
 
     private static boolean instanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {

@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -71,6 +72,7 @@ public class ReadResourceService {
         return queryResultToListOfPublicationSummaries(result);
     }
 
+    // TODO: Fetch PublicationChannels and set them when persistence of PublicationChannel is implemented in NP-49090
     public Optional<Resource> getResourceByIdentifier(SortableIdentifier identifier) {
         var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
         var queryRequest = new QueryRequest()
@@ -100,6 +102,7 @@ public class ReadResourceService {
 
             res.setFileEntries(fileEntries);
             res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+            res.setPublicationChannels(Collections.emptyList());
         });
         return resource;
     }
