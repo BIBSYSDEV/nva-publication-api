@@ -2,6 +2,8 @@ package no.unit.nva.publication.model.business.publicationchannel;
 
 import static java.util.Arrays.stream;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URI;
+import java.util.Locale;
 
 public enum ChannelType {
 
@@ -17,6 +19,14 @@ public enum ChannelType {
         return stream(values()).filter(publicationStatus -> publicationStatus.getValue().equalsIgnoreCase(value))
                    .findAny()
                    .orElseThrow();
+    }
+
+    public static ChannelType fromChannelId(URI id) {
+        if (id.getPath().toLowerCase(Locale.ROOT).contains("publisher")) {
+            return PUBLISHER;
+        } else {
+            return SERIAL_PUBLICATION;
+        }
     }
 
     @JsonProperty

@@ -8,6 +8,7 @@ dependencies {
     implementation libs.aws.sdk.dynamodb
     implementation libs.hamcrest.base
     implementation libs.nva.apigateway
+    implementation libs.nva.clients
 
     implementation libs.bundles.logging
 
@@ -49,4 +50,6 @@ test {
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "AWS_REGION", "eu-west-1"
     environment "API_HOST", "test.nva.aws.unit.no"
+    environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
 }

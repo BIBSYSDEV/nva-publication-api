@@ -24,7 +24,8 @@ test {
     environment "API_HOST", "api.dev.nva.aws.unit.no"
     environment "AWS_REGION", "eu-west-1"
     environment "ID_NAMESPACE", "https://api.dev.nva.aws.unit.no/publication"
-
+    environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     // Disable remote context loading for JsonLd
     System.setProperty("com.github.jsonldjava.disallowRemoteContextLoading", "true")
 }

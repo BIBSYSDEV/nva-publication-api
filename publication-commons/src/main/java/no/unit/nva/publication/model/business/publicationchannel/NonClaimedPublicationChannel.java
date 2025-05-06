@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.business.publicationchannel;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -12,10 +11,10 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(NonClaimedPublicationChannel.TYPE)
@@ -42,6 +41,13 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
         this.resourceIdentifier = resourceIdentifier;
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
+    }
+
+    public static NonClaimedPublicationChannel create(URI channelClaimId, SortableIdentifier resourceIdentifier,
+                                                      ChannelType channelType) {
+        var identifier = new SortableIdentifier(UriWrapper.fromUri(channelClaimId).getLastPathElement());
+        return new NonClaimedPublicationChannel(channelClaimId, channelType, identifier,
+                                                resourceIdentifier, Instant.now(), Instant.now());
     }
 
     @JacocoGenerated
@@ -101,7 +107,6 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
     }
 
     @JacocoGenerated
-    @JsonIgnore
     @Override
     public String getType() {
         return TYPE;
@@ -145,7 +150,7 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
 
     @JacocoGenerated
     @Override
-    public Dao toDao() {
+    public PublicationChannelDao toDao() {
         return PublicationChannelDao.fromPublicationChannel(this);
     }
 

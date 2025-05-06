@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.business.publicationchannel;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -9,14 +8,15 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import no.unit.nva.clients.ChannelClaimDto;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(ClaimedPublicationChannel.TYPE)
@@ -52,6 +52,18 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Json
         this.resourceIdentifier = resourceIdentifier;
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
+    }
+
+    public static ClaimedPublicationChannel create(URI id, ChannelClaimDto channelClaimDto,
+                                                   SortableIdentifier resourceIdentifier) {
+        var identifier = new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
+        return new ClaimedPublicationChannel(id, channelClaimDto.claimedBy().id(),
+                                             channelClaimDto.claimedBy().organizationId(), new Constraint(
+            ChannelPolicy.fromValue(channelClaimDto.channelClaim().constraint().publishingPolicy()),
+            ChannelPolicy.fromValue(channelClaimDto.channelClaim().constraint().editingPolicy()),
+            channelClaimDto.channelClaim().constraint().scope()),
+                                             ChannelType.fromChannelId(channelClaimDto.channelClaim().channel()),
+                                             identifier, resourceIdentifier, Instant.now(), Instant.now());
     }
 
     @JacocoGenerated
@@ -101,7 +113,6 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Json
     }
 
     @JacocoGenerated
-    @JsonIgnore
     @Override
     public String getType() {
         return TYPE;
@@ -145,7 +156,7 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Json
 
     @JacocoGenerated
     @Override
-    public Dao toDao() {
+    public PublicationChannelDao toDao() {
         return PublicationChannelDao.fromPublicationChannel(this);
     }
 

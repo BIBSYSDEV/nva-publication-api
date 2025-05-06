@@ -6,6 +6,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.time.Clock;
 import java.util.function.Supplier;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -17,6 +18,7 @@ public final class ResourceServiceBuilder {
     private Clock clock = Clock.systemDefaultZone();
     Supplier<SortableIdentifier> identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
     private RawContentRetriever uriRetriever = UriRetriever.defaultUriRetriever();
+    private IdentityServiceClient identityService;
 
     ResourceServiceBuilder() {
     }
@@ -46,7 +48,12 @@ public final class ResourceServiceBuilder {
         return this;
     }
 
+    public ResourceServiceBuilder withIdentityService(IdentityServiceClient identityService) {
+        this.identityService = identityService;
+        return this;
+    }
+
     public ResourceService build() {
-        return new ResourceService(dynamoDbClient, tableName, clock, identifierSupplier, uriRetriever);
+        return new ResourceService(dynamoDbClient, tableName, clock, identifierSupplier, uriRetriever, identityService);
     }
 }

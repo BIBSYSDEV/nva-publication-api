@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
@@ -27,10 +28,12 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +41,15 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.clients.ChannelClaimDto;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -58,6 +64,9 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
@@ -75,9 +84,11 @@ import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,6 +110,8 @@ public class ResourceService extends ServiceWithTransactions {
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+    private static final String CUSTOMER = "customer";
+    private static final String CHANNEL_CLAIM = "channel-claim";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -106,14 +119,17 @@ public class ResourceService extends ServiceWithTransactions {
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
     private final RawContentRetriever uriRetriever;
+    private final IdentityServiceClient identityService;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
-                              Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever) {
+                              Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
+                              IdentityServiceClient identityService) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
         this.uriRetriever = uriRetriever;
+        this.identityService = identityService;
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService, uriRetriever);
@@ -408,6 +424,60 @@ public class ResourceService extends ServiceWithTransactions {
         return resource;
     }
 
+    private Collection<? extends TransactWriteItem> createPublicationChannelsTransaction(Resource resource) {
+        var transactWriteItems = new ArrayList<TransactWriteItem>();
+
+        resource.getPublisherWhenDegree().ifPresent(publisher -> {
+
+            var channelClaimId = toChannelClaimUri(publisher.getId());
+            var transactionItem = createTransaction(resource, publisher, channelClaimId);
+
+            transactWriteItems.add(transactionItem);
+        });
+
+        return transactWriteItems;
+    }
+
+    private TransactWriteItem createTransaction(Resource resource, Publisher publisher, URI claimId) {
+        return getChannelClaim(claimId)
+                   .map(claim -> transactionForClaimedChannel(resource, claim, claimId))
+                   .orElseGet(() -> transactionForNonClaimedChannel(resource, publisher, claimId));
+    }
+
+    private TransactWriteItem transactionForNonClaimedChannel(Resource resource, Publisher publisher, URI channelClaimId) {
+        return NonClaimedPublicationChannel.create(channelClaimId, resource.getIdentifier(),
+                                                   ChannelType.fromChannelId(publisher.getId()))
+                   .toDao().toPutNewTransactionItem(tableName);
+    }
+
+    private TransactWriteItem transactionForClaimedChannel(Resource resource, ChannelClaimDto claim, URI channelClaimId) {
+        return ClaimedPublicationChannel
+                   .create(channelClaimId, claim, resource.getIdentifier())
+                   .toDao()
+                   .toPutNewTransactionItem(tableName);
+    }
+
+    private Optional<ChannelClaimDto> getChannelClaim(URI channelClaimId) {
+        try {
+            return Optional.ofNullable(identityService.getChannelClaim(channelClaimId));
+        } catch (NotFoundException exception) {
+            return Optional.empty();
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not fetch channel owner!");
+        }
+    }
+
+    private URI toChannelClaimUri(URI publisherId) {
+        var channelClaimIdentifier = UriWrapper.fromUri(publisherId)
+                                         .replacePathElementByIndexFromEnd(0, StringUtils.EMPTY_STRING)
+                                         .getLastPathElement();
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(CUSTOMER)
+                   .addChild(CHANNEL_CLAIM)
+                   .addChild(channelClaimIdentifier)
+                   .getUri();
+    }
+
     // TODO: Should we fetch files here?
     private List<TransactWriteItem> deleteResourceFilesTransaction(SortableIdentifier identifier) {
         var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
@@ -539,6 +609,7 @@ public class ResourceService extends ServiceWithTransactions {
         var transactions = new ArrayList<>(fileTransactionWriteItems);
         transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
         transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
+        transactions.addAll(createPublicationChannelsTransaction(resource));
 
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);

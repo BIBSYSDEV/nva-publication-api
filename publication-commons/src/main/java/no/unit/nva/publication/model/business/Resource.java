@@ -42,6 +42,9 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -254,6 +257,17 @@ public class Resource implements Entity {
 
     public List<PublicationChannel> getPublicationChannels() {
         return nonNull(publicationChannels) ? publicationChannels : Collections.emptyList();
+    }
+
+    public Optional<Publisher> getPublisherWhenDegree() {
+        return Optional.ofNullable(getEntityDescription())
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationContext)
+                   .filter(Degree.class::isInstance)
+                   .map(Degree.class::cast)
+                   .map(Book::getPublisher)
+                   .filter(Publisher.class::isInstance)
+                   .map(Publisher.class::cast);
     }
 
     private static boolean instanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
