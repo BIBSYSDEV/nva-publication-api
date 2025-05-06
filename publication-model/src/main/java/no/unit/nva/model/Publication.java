@@ -404,11 +404,6 @@ public class Publication
         this.curatingInstitutions = curatingInstitutions;
     }
 
-    @JsonProperty("availableCuratingInstitutions")
-    public List<URI> getAvailableCuratingInstitutions() {
-        return getCuratingInstitutions().stream().map(CuratingInstitution::id).toList();
-    }
-
     @Override
     public List<ImportDetail> getImportDetails() {
         return nonNull(importDetails) ? importDetails : Collections.emptyList();

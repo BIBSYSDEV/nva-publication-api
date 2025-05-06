@@ -7,15 +7,13 @@ import static no.unit.nva.model.PublicationTest.IMPORT_DETAILS_FIELD;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import java.util.List;
 import java.util.Set;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNote;
+import no.unit.nva.model.PublicationOperation;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -32,12 +30,11 @@ public class PublicationResponseElevatedUserTest {
     }
 
     @Test
-    void shouldReceiveAvailableCuratingInstitutionsWhenConvertingFromPublication() {
+    void shouldReceiveCuratingInstitutionsWhenConvertingFromPublication() {
         var publication = randomPublication();
         var publicationResponseForElevatedUsers = PublicationResponseElevatedUser.fromPublication(publication);
-        assertThat(publicationResponseForElevatedUsers.getAvailableCuratingInstitutions(), is(not(empty())));
-        assertThat(publicationResponseForElevatedUsers.getAvailableCuratingInstitutions(),
-                   is(equalTo(publication.getAvailableCuratingInstitutions())));
+        assertThat(publicationResponseForElevatedUsers.getCuratingInstitutions(),
+                   is(equalTo(publication.getCuratingInstitutions())));
     }
 
     @Test
