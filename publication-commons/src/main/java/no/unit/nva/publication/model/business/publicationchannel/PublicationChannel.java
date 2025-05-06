@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.Entity;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = ClaimedPublicationChannel.TYPE, value = ClaimedPublicationChannel.class),
     @JsonSubTypes.Type(name = NonClaimedPublicationChannel.TYPE, value = NonClaimedPublicationChannel.class)})
-public sealed interface PublicationChannel permits ClaimedPublicationChannel, NonClaimedPublicationChannel {
+public sealed interface PublicationChannel extends Entity
+    permits ClaimedPublicationChannel, NonClaimedPublicationChannel {
 
     String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
     String CREATED_DATE_FIELD = "createdDate";
@@ -22,6 +24,7 @@ public sealed interface PublicationChannel permits ClaimedPublicationChannel, No
 
     URI getId();
 
+    @Override
     SortableIdentifier getIdentifier();
 
     SortableIdentifier getResourceIdentifier();
