@@ -3,12 +3,14 @@ package no.unit.nva.publication.model.business.publicationchannel;
 import static java.util.Arrays.stream;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
-import java.util.Locale;
+import nva.commons.core.paths.UriWrapper;
 
 public enum ChannelType {
 
     PUBLISHER("Publisher"), SERIAL_PUBLICATION("SerialPublication");
 
+    private static final String PUBLISHER_PATH = "publisher";
+    private static final String SERIAL_PUBLICATION_PATH = "serial-publication";
     private final String value;
 
     ChannelType(String value) {
@@ -22,11 +24,12 @@ public enum ChannelType {
     }
 
     public static ChannelType fromChannelId(URI id) {
-        if (id.getPath().toLowerCase(Locale.ROOT).contains("publisher")) {
-            return PUBLISHER;
-        } else {
-            return SERIAL_PUBLICATION;
-        }
+        var channelType = UriWrapper.fromUri(id).getPath().getPathElementByIndexFromEnd(2);
+        return switch (channelType) {
+            case PUBLISHER_PATH ->  PUBLISHER;
+            case SERIAL_PUBLICATION_PATH -> SERIAL_PUBLICATION;
+            default -> throw new IllegalArgumentException("Invalid channel type!");
+        };
     }
 
     @JsonProperty

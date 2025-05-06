@@ -130,7 +130,7 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistNonClaimedPublicationChannelWhenPublisherIsPresentAndChannelClaimExistsInIdentityService()
+    void shouldPersistNonClaimedPublicationChannelWhenPublisherIsPresentButChannelClaimDoesNotExistsInIdentityService()
         throws InvalidUnconfirmedSeriesException, BadRequestException, NotFoundException {
         var publisherId = randomPublisherId();
         var publication = randomPublication(DegreeBachelor.class);

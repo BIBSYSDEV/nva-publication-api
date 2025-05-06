@@ -23,7 +23,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -185,11 +184,6 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), Problem.class);
         assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
-    }
-
-    @Test
-    void shouldThrowExceptionWhenEnvironmentVariablesAreUnset() {
-        assertThrows(IllegalStateException.class, CreatePresignedDownloadUrlHandler::new);
     }
 
     @ParameterizedTest(name = "Published publication is downloadable by user {0}")

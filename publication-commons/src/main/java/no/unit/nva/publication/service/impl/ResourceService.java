@@ -84,7 +84,6 @@ import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
@@ -138,7 +137,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     @JacocoGenerated
     public static ResourceService defaultService() {
-        return builder().build();
+        return builder().withIdentityService(IdentityServiceClient.prepare()).build();
     }
 
     /**
@@ -429,7 +428,7 @@ public class ResourceService extends ServiceWithTransactions {
 
         resource.getPublisherWhenDegree().ifPresent(publisher -> {
 
-            var channelClaimId = toChannelClaimUri(publisher.getId());
+            var channelClaimId = toChannelClaimUri(publisher);
             var transactionItem = createTransaction(resource, publisher, channelClaimId);
 
             transactWriteItems.add(transactionItem);
@@ -467,14 +466,11 @@ public class ResourceService extends ServiceWithTransactions {
         }
     }
 
-    private URI toChannelClaimUri(URI publisherId) {
-        var channelClaimIdentifier = UriWrapper.fromUri(publisherId)
-                                         .replacePathElementByIndexFromEnd(0, StringUtils.EMPTY_STRING)
-                                         .getLastPathElement();
+    private URI toChannelClaimUri(Publisher publisher) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(CUSTOMER)
                    .addChild(CHANNEL_CLAIM)
-                   .addChild(channelClaimIdentifier)
+                   .addChild(publisher.getIdentifier().toString())
                    .getUri();
     }
 

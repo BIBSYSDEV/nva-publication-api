@@ -19,7 +19,6 @@ import no.unit.nva.clients.cristin.TypedValue;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
@@ -104,7 +103,7 @@ class LogEntryTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistFileLogEntry() throws BadRequestException {
-        var publication = randomPublication(DegreeBachelor.class);
+        var publication = randomPublication();
         var persistedPublication = Resource.fromPublication(publication)
                                        .persistNew(resourceService, UserInstance.fromPublication(publication));
         var fileLogEntry = randomFileLogEntry(persistedPublication);

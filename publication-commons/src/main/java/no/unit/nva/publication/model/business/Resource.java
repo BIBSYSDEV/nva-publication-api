@@ -42,7 +42,6 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.funding.Funding;
@@ -57,10 +56,10 @@ import no.unit.nva.publication.model.business.publicationchannel.PublicationChan
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -259,13 +258,14 @@ public class Resource implements Entity {
         return nonNull(publicationChannels) ? publicationChannels : Collections.emptyList();
     }
 
+    @JsonIgnore
     public Optional<Publisher> getPublisherWhenDegree() {
         return Optional.ofNullable(getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)
                    .filter(Degree.class::isInstance)
                    .map(Degree.class::cast)
-                   .map(Book::getPublisher)
+                   .map(Degree::getPublisher)
                    .filter(Publisher.class::isInstance)
                    .map(Publisher.class::cast);
     }
