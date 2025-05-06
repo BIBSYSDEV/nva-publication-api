@@ -31,6 +31,14 @@ public class PublicationResponseElevatedUserTest {
     }
 
     @Test
+    void shouldReceiveCuratingInstitutionsWhenConvertingFromPublication() {
+        var publication = randomPublication();
+        var publicationResponseForElevatedUsers = PublicationResponseElevatedUser.fromPublication(publication);
+        assertThat(publicationResponseForElevatedUsers.getCuratingInstitutions(),
+                   is(equalTo(publication.getCuratingInstitutions())));
+    }
+
+    @Test
     void staticConstructorShouldReturnPublicationResponseForElevatedUsersWithoutUnexpectedLossOfInformation() {
         Publication publication = randomPublication();
         assertThat(publication,
