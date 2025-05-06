@@ -49,6 +49,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
@@ -272,8 +273,11 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldSaveAllSuppliedInformationOfPublicationRequestExceptForInternalInformationDecidedByService()
         throws Exception {
-        var publicationWithoutFiles = samplePublication.copy().withAssociatedArtifacts(List.of()).build();
-        var request = CreatePublicationRequest.fromPublication(publicationWithoutFiles);
+        var publicationWithoutFilesAndCuratingInstitutions = samplePublication.copy()
+                                                                 .withAssociatedArtifacts(List.of())
+                                                                 .withCuratingInstitutions(Set.of())
+                                                                 .build();
+        var request = CreatePublicationRequest.fromPublication(publicationWithoutFilesAndCuratingInstitutions);
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
@@ -282,7 +286,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var actualPublicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
 
         var expectedPublicationResponse =
-            constructResponseSettingFieldsThatAreNotCopiedByTheRequest(publicationWithoutFiles,
+            constructResponseSettingFieldsThatAreNotCopiedByTheRequest(publicationWithoutFilesAndCuratingInstitutions,
                                                                        actualPublicationResponse);
 
         var diff = JAVERS.compare(expectedPublicationResponse, actualPublicationResponse);
