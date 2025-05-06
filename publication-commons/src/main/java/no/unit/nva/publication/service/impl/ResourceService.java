@@ -105,6 +105,7 @@ public class ResourceService extends ServiceWithTransactions {
         "Only published " + "publications can be " + "unpublished";
     public static final String DELETE_PUBLICATION_ERROR_MESSAGE = "Only unpublished publication can be deleted";
     public static final String RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE = "Resource to refresh is not found: {}";
+    protected static final String IDENTITY_SERVICE_EXCEPTION = "Something went wrong while retrieving channel claim!";
     private static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: {}";
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
@@ -462,7 +463,8 @@ public class ResourceService extends ServiceWithTransactions {
         } catch (NotFoundException exception) {
             return Optional.empty();
         } catch (Exception e) {
-            throw new IllegalStateException("Could not fetch channel owner!");
+            logger.error("Exception: {}", e.getMessage());
+            throw new IllegalStateException(IDENTITY_SERVICE_EXCEPTION);
         }
     }
 

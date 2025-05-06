@@ -5,6 +5,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,6 +30,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -146,6 +148,19 @@ class PublicationChannelTest extends ResourcesLocalTest {
         var expectedClaim = constructExpectedNonClaimedChannel(publisherId, fetchedResource, actualPublicationChannel);
 
         assertEquals(expectedClaim, actualPublicationChannel);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenIdentityServiceRespondsWithUnhandledError()
+        throws InvalidUnconfirmedSeriesException, NotFoundException {
+        var publisherId = randomPublisherId();
+        var publication = randomPublication(DegreeBachelor.class);
+        publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(publisherId));
+
+        when(identityService.getChannelClaim(toChannelClaimUri(publisherId))).thenThrow(new RuntimeException(randomString()));
+
+        assertThrows(IllegalStateException.class, () -> Resource.fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication)));
     }
 
     private NonClaimedPublicationChannel constructExpectedNonClaimedChannel(URI publisherId, Resource fetchedResource,
