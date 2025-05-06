@@ -1142,26 +1142,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /tickets:
-    get:
-      operationId: listTicketsForUser
-      description: List tickets for user
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TicketCollection"
-
-      security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      x-amazon-apigateway-integration:
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListTicketsHandler.Arn}/invocations
-        responses: { }
-        httpMethod: POST
-        type: AWS_PROXY
   /{publicationIdentifier}/log:
     get:
       operationId: fetchPublicationLog
