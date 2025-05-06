@@ -153,6 +153,7 @@ Globals:
         ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
         EVENTS_BUCKET: !Ref NvaEventsBucketsName
         BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+        BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
         EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
         COGNITO_AUTHORIZER_URLS: !Join [",", !Ref CognitoAuthorizerUrls]
     Architectures:
@@ -1122,8 +1123,6 @@ Resources:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: !Ref AllowedOrigins
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.CreateUploadHandler::handleRequest
       Policies:
@@ -1203,8 +1202,6 @@ Resources:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           ALLOWED_ORIGIN: !Ref AllowedOrigins
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.CompleteUploadHandler::handleRequest
       Policies:
@@ -1226,8 +1223,6 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.UpdateFileHandler::handleRequest
       Policies:
@@ -1248,8 +1243,6 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.DeleteFileHandler::handleRequest
       Policies:
@@ -1512,8 +1505,6 @@ Resources:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           RECOVERY_QUEUE: !Ref RecoveryQueue
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
@@ -1555,8 +1546,6 @@ Resources:
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
           TABLE_NAME: !Ref NvaImportCandidatesTable
           API_HOST: !Ref ApiDomain
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1671,8 +1660,6 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_DOMAIN: !Ref ApiDomain
           HANDLE_BASE_PATH: handle
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
       Events:
         HandleWorkQueueEvent:
