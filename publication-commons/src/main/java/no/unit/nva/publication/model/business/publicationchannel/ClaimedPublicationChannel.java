@@ -12,15 +12,15 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(ClaimedPublicationChannel.TYPE)
-public final class ClaimedPublicationChannel implements PublicationChannel, Entity, JsonSerializable {
+public final class ClaimedPublicationChannel implements PublicationChannel, JsonSerializable {
 
     static final String TYPE = "ClaimedPublicationChannel";
 
@@ -146,7 +146,7 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Enti
     @JacocoGenerated
     @Override
     public Dao toDao() {
-        return null;
+        return PublicationChannelDao.fromPublicationChannel(this);
     }
 
     @JacocoGenerated

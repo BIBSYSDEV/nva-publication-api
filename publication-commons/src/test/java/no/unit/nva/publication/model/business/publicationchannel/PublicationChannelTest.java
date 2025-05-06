@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -44,6 +45,30 @@ class PublicationChannelTest {
         var channelPolicy = ChannelPolicy.fromValue(value);
 
         assertEquals(value, channelPolicy.getValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("publicationChannelProvider")
+    void shouldConvertPublicationChannelToDaoWithExpectedPrimaryPartitionAndSortKey(
+        PublicationChannel publicationChannel) {
+        var dao = PublicationChannelDao.fromPublicationChannel(publicationChannel);
+
+        assertEquals("%s:%s".formatted("PublicationChannel", publicationChannel.getIdentifier()),
+                     dao.getPrimaryKeyPartitionKey());
+        assertEquals("%s:%s".formatted("Resource", publicationChannel.getResourceIdentifier()),
+                     dao.getPrimaryKeySortKey());
+    }
+
+    @ParameterizedTest
+    @MethodSource("publicationChannelProvider")
+    void shouldConvertPublicationChannelToDaoWithExpectedByTypeAndIdentifierGSIPartitionAndSortKey(
+        PublicationChannel publicationChannel) {
+        var dao = PublicationChannelDao.fromPublicationChannel(publicationChannel);
+
+        assertEquals("%s:%s".formatted("Resource", publicationChannel.getResourceIdentifier()),
+                     dao.getByTypeAndIdentifierPartitionKey());
+        assertEquals("%s:%s".formatted("PublicationChannel", publicationChannel.getIdentifier()),
+                     dao.getByTypeAndIdentifierSortKey());
     }
 
     private static ClaimedPublicationChannel randomClaimedPublicationChannel() {
