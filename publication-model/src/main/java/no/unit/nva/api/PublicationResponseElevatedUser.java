@@ -2,9 +2,11 @@ package no.unit.nva.api;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationOperation;
@@ -18,6 +20,7 @@ import nva.commons.core.JacocoGenerated;
 public class PublicationResponseElevatedUser extends PublicationResponse {
 
     private List<PublicationNoteBase> publicationNotes;
+    private List<URI> availableCuratingInstitutions;
 
     public static PublicationResponseElevatedUser fromPublication(Publication publication) {
         var response = new PublicationResponseElevatedUser();
@@ -47,6 +50,7 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
         response.setAllowedOperations(Set.of());
         response.setImportDetails(publication.getImportDetails());
         response.setPendingOpenFileCount(publication.getPendingOpenFileCount());
+        response.setAvailableCuratingInstitutions(getAvailableCuratingInstitutions(publication));
         return response;
     }
 
@@ -59,12 +63,27 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
         return response;
     }
 
+    protected static List<URI> getAvailableCuratingInstitutions(Publication publication) {
+        return publication.getCuratingInstitutions()
+                   .stream()
+                   .map(CuratingInstitution::id)
+                   .toList();
+    }
+
     public List<PublicationNoteBase> getPublicationNotes() {
         return publicationNotes;
     }
 
     public void setPublicationNotes(List<PublicationNoteBase> publicationNotes) {
         this.publicationNotes = publicationNotes;
+    }
+
+    public List<URI> getAvailableCuratingInstitutions() {
+        return availableCuratingInstitutions;
+    }
+
+    public void setAvailableCuratingInstitutions(List<URI> curatingInstitutions) {
+        this.availableCuratingInstitutions = curatingInstitutions;
     }
 
     @Override
@@ -75,7 +94,7 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), publicationNotes);
+        return Objects.hash(super.hashCode(), publicationNotes, availableCuratingInstitutions);
     }
 
     @JacocoGenerated
@@ -91,6 +110,7 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
             return false;
         }
         PublicationResponseElevatedUser that = (PublicationResponseElevatedUser) o;
-        return Objects.equals(publicationNotes, that.publicationNotes);
+        return Objects.equals(publicationNotes, that.publicationNotes)
+               && Objects.equals(availableCuratingInstitutions, that.availableCuratingInstitutions);
     }
 }
