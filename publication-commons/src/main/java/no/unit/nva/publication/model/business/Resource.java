@@ -253,7 +253,7 @@ public class Resource implements Entity {
     }
 
     public List<PublicationChannel> getPublicationChannels() {
-        return publicationChannels;
+        return nonNull(publicationChannels) ? publicationChannels : Collections.emptyList();
     }
 
     private static boolean instanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
