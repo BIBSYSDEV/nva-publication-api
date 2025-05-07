@@ -40,6 +40,7 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 import nva.commons.apigateway.AccessRight;
 

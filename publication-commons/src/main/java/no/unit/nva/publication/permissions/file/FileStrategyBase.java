@@ -38,53 +38,17 @@ public class FileStrategyBase {
         this.resource = resource;
     }
 
+    public boolean fileHasEmbargo() {
+        return file.getFile().hasActiveEmbargo();
+    }
+
     protected boolean hasAccessRight(AccessRight accessRight) {
         return nonNull(userInstance) && userInstance.getAccessRights().contains(accessRight);
     }
 
     protected boolean currentUserIsFileCuratorForGivenFile() {
-        return currentUserIsFileCurator() && haveTopLevelRelationForCurrentFile();
-    }
-
-    private boolean haveTopLevelRelationForCurrentFile() {
-        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
-
-        logger.info("checking if file top level affiliation {} for user {} is equal to {}.",
-                    file.getOwnerAffiliation(),
-                    userInstance.getUser(),
-                    userTopLevelOrg);
-
-        return file.getOwnerAffiliation().equals(userTopLevelOrg);
-    }
-
-    private boolean userBelongsToCuratingInstitution() {
-        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
-
-        logger.info("checking if resource top level affiliation {} for user {} is equal to {}.",
-                    resource.getCuratingInstitutions().stream().map(CuratingInstitution::id).map(
-                        URI::toString).collect(Collectors.joining(", ")),
-                    userInstance.getUser(),
-                    userTopLevelOrg);
-
-        return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
-    }
-
-    private boolean userRelatesToPublication() {
-        return userIsFromSameInstitutionAsPublicationOwner()
-               || userBelongsToCuratingInstitution()
-            || userRelatesToClaimedChannelInstitution();
-    }
-
-    private boolean userRelatesToClaimedChannelInstitution() {
-        return resource.getPublicationChannels().stream()
-                   .filter(ClaimedPublicationChannel.class::isInstance)
-                   .map(ClaimedPublicationChannel.class::cast)
-                   .map(ClaimedPublicationChannel::getOrganizationId)
-                   .anyMatch(userInstance.getTopLevelOrgCristinId()::equals);
-    }
-
-    private boolean userIsFromSameInstitutionAsPublicationOwner() {
-        return resource.getResourceOwner().getOwnerAffiliation().equals(userInstance.getTopLevelOrgCristinId());
+        return currentUserIsFileCurator() &&
+               (haveTopLevelRelationForCurrentFile() || userIsAffiliatedWithChannelClaimeeOrganization());
     }
 
     protected boolean currentUserIsFileCurator() {
@@ -98,20 +62,6 @@ public class FileStrategyBase {
                    .orElse(false);
     }
 
-    private boolean isVerifiedContributorAtResource(URI personCristinId) {
-        return Optional.ofNullable(resource.getEntityDescription())
-                   .map(EntityDescription::getContributors)
-                   .stream()
-                   .flatMap(List::stream)
-                   .filter(this::isVerifiedContributor)
-                   .anyMatch(contributor -> contributor.getIdentity().getId().equals(personCristinId));
-    }
-
-
-    private boolean isVerifiedContributor(Contributor contributor) {
-        return nonNull(contributor.getIdentity()) && contributor.getIdentity().getId() != null;
-    }
-
     protected boolean currentUserIsFileOwner() {
         return Optional.ofNullable(userInstance)
                    .map(UserInstance::getUser)
@@ -120,23 +70,17 @@ public class FileStrategyBase {
     }
 
     protected boolean fileIsFinalized() {
-        return file.getFile() instanceof OpenFile
-               || file.getFile() instanceof InternalFile
-               || file.getFile() instanceof HiddenFile;
+        return file.getFile() instanceof OpenFile || file.getFile() instanceof InternalFile ||
+               file.getFile() instanceof HiddenFile;
     }
 
     protected boolean isExternalClientWithRelation() {
-        return nonNull(userInstance) &&
-               userInstance.isExternalClient() &&
+        return nonNull(userInstance) && userInstance.isExternalClient() &&
                userInstance.getCustomerId().equals(resource.getPublisher().getId());
     }
 
     protected boolean resourceIsDegree() {
         return resource.isDegree();
-    }
-
-    public boolean fileHasEmbargo() {
-        return file.getFile().hasActiveEmbargo();
     }
 
     protected boolean currentUserIsDegreeEmbargoFileCuratorForGivenFile() {
@@ -149,5 +93,58 @@ public class FileStrategyBase {
 
     protected boolean isWriteOrDelete(FileOperation permission) {
         return permission.equals(WRITE_METADATA) || permission.equals(DELETE);
+    }
+
+    private boolean haveTopLevelRelationForCurrentFile() {
+        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
+
+        logger.info("checking if file top level affiliation {} for user {} is equal to {}.", file.getOwnerAffiliation(),
+                    userInstance.getUser(), userTopLevelOrg);
+
+        return file.getOwnerAffiliation().equals(userTopLevelOrg);
+    }
+
+    private boolean userBelongsToCuratingInstitution() {
+        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
+
+        logger.info("checking if resource top level affiliation {} for user {} is equal to {}.",
+                    resource.getCuratingInstitutions()
+                        .stream()
+                        .map(CuratingInstitution::id)
+                        .map(URI::toString)
+                        .collect(Collectors.joining(", ")), userInstance.getUser(), userTopLevelOrg);
+
+        return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
+    }
+
+    private boolean userRelatesToPublication() {
+        return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution() ||
+               userIsAffiliatedWithChannelClaimeeOrganization();
+    }
+
+    private boolean userIsAffiliatedWithChannelClaimeeOrganization() {
+        return resource.getPublicationChannels()
+                   .stream()
+                   .filter(ClaimedPublicationChannel.class::isInstance)
+                   .map(ClaimedPublicationChannel.class::cast)
+                   .map(ClaimedPublicationChannel::getOrganizationId)
+                   .anyMatch(userInstance.getTopLevelOrgCristinId()::equals);
+    }
+
+    private boolean userIsFromSameInstitutionAsPublicationOwner() {
+        return resource.getResourceOwner().getOwnerAffiliation().equals(userInstance.getTopLevelOrgCristinId());
+    }
+
+    private boolean isVerifiedContributorAtResource(URI personCristinId) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .map(EntityDescription::getContributors)
+                   .stream()
+                   .flatMap(List::stream)
+                   .filter(this::isVerifiedContributor)
+                   .anyMatch(contributor -> contributor.getIdentity().getId().equals(personCristinId));
+    }
+
+    private boolean isVerifiedContributor(Contributor contributor) {
+        return nonNull(contributor.getIdentity()) && contributor.getIdentity().getId() != null;
     }
 }

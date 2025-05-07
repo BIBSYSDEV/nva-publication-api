@@ -28,8 +28,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
-import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -70,7 +68,7 @@ class FilePermissionTest {
 
     @ParameterizedTest
     @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowFileCuratorOnFileForResourceWithClaimedPublisherOwnedByCuratorInstitution(FileOperation fileOperation) {
+    void shouldAllowFileCuratorOnFileForResourceWithClaimedPublisherOwnedByCuratorOrganization(FileOperation fileOperation) {
         var institutionId = getInstitutionId();
         var claimedPublisher = createClaimedPublisher(institutionId);
         var resource = randomResource();
