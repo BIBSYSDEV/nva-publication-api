@@ -1,32 +1,13 @@
 package no.unit.nva.publication.model.business.publicationchannel;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
-import nva.commons.core.JacocoGenerated;
 
-public class Constraint {
+@JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonTypeName(Constraint.TYPE)
+public record Constraint(ChannelPolicy publishingPolicy, ChannelPolicy editingPolicy, List<String> scope) {
 
-    private final ChannelPolicy publishingPolicy;
-    private final ChannelPolicy editingPolicy;
-    private final List<String> scope;
-
-    public Constraint(ChannelPolicy publishingPolicy, ChannelPolicy editingPolicy, List<String> scope) {
-        this.publishingPolicy = publishingPolicy;
-        this.editingPolicy = editingPolicy;
-        this.scope = scope;
-    }
-
-    @JacocoGenerated
-    public ChannelPolicy getPublishingPolicy() {
-        return publishingPolicy;
-    }
-
-    @JacocoGenerated
-    public ChannelPolicy getEditingPolicy() {
-        return editingPolicy;
-    }
-
-    @JacocoGenerated
-    public List<String> getScope() {
-        return scope;
-    }
+    static final String TYPE = "Constraint";
 }

@@ -31,6 +31,7 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -47,6 +48,7 @@ public class ResourcesLocalTest extends TestDataSource {
     public static final ScalarAttributeType STRING_TYPE = ScalarAttributeType.S;
     protected AmazonDynamoDB client;
     protected UriRetriever uriRetriever;
+    protected IdentityServiceClient identityService;
 
     public ResourcesLocalTest() {
         super();
@@ -54,6 +56,7 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public void init() {
         uriRetriever = mock(UriRetriever.class);
+        identityService = mock(IdentityServiceClient.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         CreateTableRequest request = createTableRequest(RESOURCES_TABLE_NAME);
         client.createTable(request);
@@ -61,6 +64,7 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public void init(String tableName) {
         uriRetriever = mock(UriRetriever.class);
+        identityService = mock(IdentityServiceClient.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         CreateTableRequest request = createTableRequest(tableName);
         client.createTable(request);
@@ -68,6 +72,7 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public void init(String firstTable, String secondTable) {
         uriRetriever = mock(UriRetriever.class);
+        identityService = mock(IdentityServiceClient.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         var firstTableRequest = createTableRequest(firstTable);
         var secondTableRequest = createTableRequest(secondTable);
@@ -164,7 +169,7 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     public ResourceServiceBuilder getResourceServiceBuilder(AmazonDynamoDB dynamoDbClient) {
-        return ResourceService.builder().withDynamoDbClient(dynamoDbClient).withUriRetriever(uriRetriever);
+        return ResourceService.builder().withDynamoDbClient(dynamoDbClient).withUriRetriever(uriRetriever).withIdentityService(identityService);
     }
 
     public ResourceServiceBuilder getResourceServiceBuilder() {

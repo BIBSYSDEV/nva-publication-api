@@ -26,7 +26,6 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
 public class PublishingService {
@@ -164,13 +163,10 @@ public class PublishingService {
     }
 
     private URI createChannelClaimUri(Publisher publisher) {
-        var channelClaimIdentifier = UriWrapper.fromUri(publisher.getId())
-                                         .replacePathElementByIndexFromEnd(0, StringUtils.EMPTY_STRING)
-                                         .getLastPathElement();
         return UriWrapper.fromHost(API_HOST)
                    .addChild(CUSTOMER)
                    .addChild(CHANNEL_CLAIM)
-                   .addChild(channelClaimIdentifier)
+                   .addChild(publisher.getIdentifier().toString())
                    .getUri();
     }
 

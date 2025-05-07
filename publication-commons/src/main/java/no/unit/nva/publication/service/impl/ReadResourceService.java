@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,10 +37,12 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
+import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -88,6 +89,7 @@ public class ReadResourceService {
 
         var resource = extractResource(entries);
         var fileEntries = extractFileEntries(entries);
+        var publicationChannels = extractPublicationChannels(entries);
 
         resource.ifPresent(res -> {
             var associatedArtifacts = new ArrayList<AssociatedArtifact>();
@@ -102,7 +104,7 @@ public class ReadResourceService {
 
             res.setFileEntries(fileEntries);
             res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-            res.setPublicationChannels(Collections.emptyList());
+            res.setPublicationChannels(publicationChannels);
         });
         return resource;
     }
@@ -134,6 +136,15 @@ public class ReadResourceService {
                    .map(FileDao.class::cast)
                    .map(FileDao::getFileEntry)
                    .filter(ReadResourceService::isNotSoftDeleted)
+                   .toList();
+    }
+
+    private List<PublicationChannel> extractPublicationChannels(List<Dao> entries) {
+        return entries.stream()
+                   .filter(PublicationChannelDao.class::isInstance)
+                   .map(PublicationChannelDao.class::cast)
+                   .map(PublicationChannelDao::getData)
+                   .map(PublicationChannel.class::cast)
                    .toList();
     }
 

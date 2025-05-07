@@ -1,5 +1,7 @@
 package no.unit.nva.model.testing;
 
+import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.RandomUtils.randomPublicationDate;
 import static no.unit.nva.model.testing.RandomUtils.randomPublicationId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -14,7 +16,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 import no.unit.nva.model.Agent;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Revision;
@@ -55,6 +56,8 @@ import nva.commons.core.JacocoGenerated;
 public class PublicationContextBuilder {
 
     private static final Random RANDOM = new Random();
+    protected static final List<String> CHANNEL_TYPES_SUB_PATH = List.of(
+        "publisher", "serial-publication");
 
     public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
         String className = publicationInstance.getSimpleName();
@@ -260,7 +263,12 @@ public class PublicationContextBuilder {
     }
 
     private static URI randomPublicationChannelsUri() {
-        return URI.create("https://api.dev.nva.aws.unit.no/publication-channels/" + UUID.randomUUID());
+        return URI.create("https://api.dev.nva.aws.unit.no/publication-channels-v2/%s/%s/%s".formatted(
+            randomChannelType(), randomUUID(), randomPublicationDate().getYear()));
+    }
+
+    private static String randomChannelType() {
+        return CHANNEL_TYPES_SUB_PATH.get(new Random().nextInt(2));
     }
 
     private static Artistic randomArtistic() {

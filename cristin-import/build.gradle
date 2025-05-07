@@ -77,6 +77,8 @@ test {
     environment "TABLE_NAME", "sometable"
     environment "AWS_REGION", "eu-west-1"
     environment "CRISTIN_IMPORT_BUCKET", "cristinBucket"
+    environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
 }
 
 configurations {
