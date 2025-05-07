@@ -22,6 +22,7 @@ import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -67,6 +68,7 @@ import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
@@ -74,6 +76,7 @@ import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.LogEntryDao;
+import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
@@ -399,6 +402,29 @@ public class ResourceService extends ServiceWithTransactions {
         fileEntry.toDao().updateExistingEntry(client);
     }
 
+    public ListingResult<PublicationChannel> fetchAllPublicationChannelsByIdentifier(SortableIdentifier identifier,
+                                                                                     Map<String, AttributeValue> startMarker) {
+        var queryRequest = new QueryRequest().withTableName(tableName)
+                               .withKeyConditionExpression("PK0 = :value")
+                               .withExclusiveStartKey(startMarker)
+                               .withExpressionAttributeValues(
+                                   Map.of(":value", new AttributeValue().withS("PublicationChannel:%s".formatted(identifier))));
+
+        var result = client.query(queryRequest);
+        var values = getPublicationChannels(result);
+        var isTruncated = nonNull(result.getLastEvaluatedKey()) && !result.getLastEvaluatedKey().isEmpty();
+        return new ListingResult<>(values, result.getLastEvaluatedKey(), isTruncated);
+    }
+
+    private static List<PublicationChannel> getPublicationChannels(QueryResult result) {
+        return result.getItems().stream().map(value -> parseAttributeValuesMap(value, Dao.class))
+                   .filter(PublicationChannelDao.class::isInstance)
+                   .map(PublicationChannelDao.class::cast)
+                   .map(PublicationChannelDao::getData)
+                   .map(PublicationChannel.class::cast)
+                   .toList();
+    }
+
     private Resource insertImportedResource(Resource resource, ImportSource importSource) {
         if (resource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(resource);
@@ -439,20 +465,22 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem createTransaction(Resource resource, Publisher publisher, URI claimId) {
+        var channelType = ChannelType.fromChannelId(publisher.getId());
         return getChannelClaim(claimId)
-                   .map(claim -> transactionForClaimedChannel(resource, claim, claimId))
-                   .orElseGet(() -> transactionForNonClaimedChannel(resource, publisher, claimId));
+                   .map(claim -> transactionForClaimedChannel(resource, claim, claimId, channelType))
+                   .orElseGet(() -> transactionForNonClaimedChannel(resource, channelType, claimId));
     }
 
-    private TransactWriteItem transactionForNonClaimedChannel(Resource resource, Publisher publisher, URI channelClaimId) {
-        return NonClaimedPublicationChannel.create(channelClaimId, resource.getIdentifier(),
-                                                   ChannelType.fromChannelId(publisher.getId()))
+    private TransactWriteItem transactionForNonClaimedChannel(Resource resource, ChannelType channelType,
+                                                              URI channelClaimId) {
+        return NonClaimedPublicationChannel.create(channelClaimId, resource.getIdentifier(), channelType)
                    .toDao().toPutNewTransactionItem(tableName);
     }
 
-    private TransactWriteItem transactionForClaimedChannel(Resource resource, ChannelClaimDto claim, URI channelClaimId) {
+    private TransactWriteItem transactionForClaimedChannel(Resource resource, ChannelClaimDto claim, URI channelClaimId,
+                                                           ChannelType channelType) {
         return ClaimedPublicationChannel
-                   .create(channelClaimId, claim, resource.getIdentifier())
+                   .create(channelClaimId, claim, resource.getIdentifier(), channelType)
                    .toDao()
                    .toPutNewTransactionItem(tableName);
     }
