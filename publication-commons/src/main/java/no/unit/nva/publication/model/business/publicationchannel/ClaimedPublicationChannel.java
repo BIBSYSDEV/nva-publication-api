@@ -55,14 +55,14 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Json
     }
 
     public static ClaimedPublicationChannel create(URI id, ChannelClaimDto channelClaimDto,
-                                                   SortableIdentifier resourceIdentifier) {
+                                                   SortableIdentifier resourceIdentifier, ChannelType channelType) {
         var identifier = new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
         return new ClaimedPublicationChannel(id, channelClaimDto.claimedBy().id(),
                                              channelClaimDto.claimedBy().organizationId(), new Constraint(
             ChannelPolicy.fromValue(channelClaimDto.channelClaim().constraint().publishingPolicy()),
             ChannelPolicy.fromValue(channelClaimDto.channelClaim().constraint().editingPolicy()),
             channelClaimDto.channelClaim().constraint().scope()),
-                                             ChannelType.fromChannelId(channelClaimDto.channelClaim().channel()),
+                                             channelType,
                                              identifier, resourceIdentifier, Instant.now(), Instant.now());
     }
 
