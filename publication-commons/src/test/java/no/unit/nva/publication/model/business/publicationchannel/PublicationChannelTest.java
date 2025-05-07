@@ -30,7 +30,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -212,7 +211,8 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     private ChannelClaimDto channelClaimDtoForPublisher() {
-        return new ChannelClaimDto(new CustomerSummaryDto(randomUri(), randomUri()), new ChannelClaim(randomPublisherId(),
+        return new ChannelClaimDto(randomUri(), new CustomerSummaryDto(randomUri(), randomUri()),
+                                   new ChannelClaim(randomPublisherId(),
                                                                                                       new ChannelConstraint(
                                                                                                           "OwnerOnly",
                                                                                                           "Everyone",
