@@ -1,21 +1,25 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.FileOperation.DELETE;
+import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import nva.commons.apigateway.AccessRight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,8 +69,18 @@ public class FileStrategyBase {
         return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
     }
 
-    private boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() {
-        return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
+    private boolean userRelatesToPublication() {
+        return userIsFromSameInstitutionAsPublicationOwner()
+               || userBelongsToCuratingInstitution()
+            || userRelatesToClaimedChannelInstitution();
+    }
+
+    private boolean userRelatesToClaimedChannelInstitution() {
+        return resource.getPublicationChannels().stream()
+                   .filter(ClaimedPublicationChannel.class::isInstance)
+                   .map(ClaimedPublicationChannel.class::cast)
+                   .map(ClaimedPublicationChannel::getOrganizationId)
+                   .anyMatch(userInstance.getTopLevelOrgCristinId()::equals);
     }
 
     private boolean userIsFromSameInstitutionAsPublicationOwner() {
@@ -74,7 +88,7 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsFileCurator() {
-        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && userRelatesToPublication();
     }
 
     protected boolean currentUserIsContributor() {
@@ -126,10 +140,14 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsDegreeEmbargoFileCuratorForGivenFile() {
-        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && userRelatesToPublication();
     }
 
     protected boolean currentUserIsDegreeFileCuratorForGivenFile() {
         return hasAccessRight(MANAGE_DEGREE) && haveTopLevelRelationForCurrentFile();
+    }
+
+    protected boolean isWriteOrDelete(FileOperation permission) {
+        return permission.equals(WRITE_METADATA) || permission.equals(DELETE);
     }
 }
