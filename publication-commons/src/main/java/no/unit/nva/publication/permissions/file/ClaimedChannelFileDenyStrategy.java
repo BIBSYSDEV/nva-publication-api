@@ -16,7 +16,10 @@ public class ClaimedChannelFileDenyStrategy extends FileStrategyBase implements 
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        return isWriteOrDelete(permission) && hasClaimedPublisher() && isDeniedUser();
+        return isWriteOrDelete(permission)
+               && !isExternalClientWithRelation()
+               && hasClaimedPublisher()
+               && isDeniedUser();
     }
 
     private boolean isDeniedUser() {

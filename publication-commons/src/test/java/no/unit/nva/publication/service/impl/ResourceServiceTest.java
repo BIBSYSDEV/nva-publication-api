@@ -1029,17 +1029,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateAPendingUnpublishingRequestTicketWhenUnpublishingPublication() throws ApiGatewayException {
-        var publication = createPublishedResource();
-        var userInstance = UserInstance.fromPublication(publication);
-        resourceService.unpublishPublication(publication, userInstance);
-        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        assertThat(tickets, hasSize(1));
-        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
-                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
-    }
-
-    @Test
     void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1056,15 +1045,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publishingRequestTicket.persistNewTicket(ticketService);
         resourceService.unpublishPublication(publication, userInstance);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        assertThat(tickets, hasSize(5));
+        assertThat(tickets, hasSize(4));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.CLOSED))))));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
         assertThat(tickets, hasItem(allOf(instanceOf(DoiRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
-        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
-                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
         assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class),
                                           hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
         assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),

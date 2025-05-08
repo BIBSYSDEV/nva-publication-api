@@ -32,6 +32,8 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
@@ -127,6 +129,20 @@ class DynamodbStreamToEventBridgeHandlerTest {
         var persistedEvents = s3Driver.getFiles(UnixPath.ROOT_PATH);
 
         assertTrue(persistedEvents.isEmpty());
+    }
+
+    @Test
+    void shouldNotEmitEventWhenPublicationChannel() {
+        var event = randomEventWithSingleDynamoRecord(OperationType.MODIFY, randomPublicationChannel(), null);
+        handler.handleRequest(event, context);
+        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        var persistedEvents = s3Driver.getFiles(UnixPath.ROOT_PATH);
+
+        assertTrue(persistedEvents.isEmpty());
+    }
+
+    private Entity randomPublicationChannel() {
+        return NonClaimedPublicationChannel.create(randomUri(), SortableIdentifier.next(), ChannelType.SERIAL_PUBLICATION);
     }
 
     private static FileEntry randomFileEntry() {

@@ -54,15 +54,16 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Json
         this.modifiedDate = modifiedDate;
     }
 
-    public static ClaimedPublicationChannel create(URI id, ChannelClaimDto channelClaimDto,
-                                                   SortableIdentifier resourceIdentifier) {
+    public static ClaimedPublicationChannel create(ChannelClaimDto channelClaimDto,
+                                                   SortableIdentifier resourceIdentifier, ChannelType channelType) {
+        var id = channelClaimDto.id();
         var identifier = new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
         return new ClaimedPublicationChannel(id, channelClaimDto.claimedBy().id(),
                                              channelClaimDto.claimedBy().organizationId(), new Constraint(
             ChannelPolicy.fromValue(channelClaimDto.channelClaim().constraint().publishingPolicy()),
             ChannelPolicy.fromValue(channelClaimDto.channelClaim().constraint().editingPolicy()),
             channelClaimDto.channelClaim().constraint().scope()),
-                                             ChannelType.fromChannelId(channelClaimDto.channelClaim().channel()),
+                                             channelType,
                                              identifier, resourceIdentifier, Instant.now(), Instant.now());
     }
 

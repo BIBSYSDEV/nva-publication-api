@@ -23,6 +23,7 @@ import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -74,6 +75,20 @@ class FilePermissionTest {
         var resource = randomResource();
         resource.setPublicationChannels(List.of(claimedPublisher));
         var userInstance = fileCuratorUserInstance(institutionId);
+        var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
+
+        assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
+    void shouldAllowExternalClientOnFileForResourceWithClaimedPublisherWhenClientRelatesToPublication(FileOperation fileOperation) {
+        var institutionId = getInstitutionId();
+        var claimedPublisher = createClaimedPublisher(institutionId);
+        var publication = randomPublication(DegreeBachelor.class);
+        var resource = Resource.fromPublication(publication);
+        resource.setPublicationChannels(List.of(claimedPublisher));
+        var userInstance = UserInstance.createExternalUser(publication.getResourceOwner(), publication.getPublisher().getId());
         var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
         assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
