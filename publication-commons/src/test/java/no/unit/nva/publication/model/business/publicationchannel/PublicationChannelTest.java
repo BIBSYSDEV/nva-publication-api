@@ -175,7 +175,8 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdatePublicationChannelWhenPublisherIsUpdated() throws BadRequestException, NotFoundException {
+    void shouldReplacePublicationChannelWhenPublisherIsReplacedOnPublication() throws BadRequestException,
+                                                                                 NotFoundException {
         var publisherId = randomPublisherId(randomUUID());
         var persistedPublication = persistDegreeWithPublisher(new Publisher(publisherId));
 
@@ -199,7 +200,8 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldRemovePublicationChannelWhenPublisherIsRemoved() throws BadRequestException, NotFoundException {
+    void shouldRemovePublicationChannelWhenPublisherIsRemovedFromPublication() throws BadRequestException,
+                                                                                 NotFoundException {
         var publisherId = randomPublisherId(randomUUID());
         var persistedPublication = persistDegreeWithPublisher(new Publisher(publisherId));
 
@@ -214,7 +216,8 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAddPublicationChannelWhenNoPublisherIsAdded() throws BadRequestException, NotFoundException {
+    void shouldPersistPublicationChannelWhenPublisherIsSetOnPublication() throws BadRequestException,
+                                                                                 NotFoundException {
         var persistedPublication = persistDegreeWithPublisher(null);
 
         var existingResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
