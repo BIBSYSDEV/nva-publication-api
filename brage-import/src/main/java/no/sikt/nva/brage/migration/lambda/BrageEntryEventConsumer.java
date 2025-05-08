@@ -3,14 +3,12 @@ package no.sikt.nva.brage.migration.lambda;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
-import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -30,17 +28,14 @@ import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
-import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -456,24 +451,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         throws JsonProcessingException, InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var brageRecord = getBrageRecordFromS3(event);
         var nvaPublication = BrageNvaMapper.toNvaPublication(brageRecord, apiHost, s3Client);
-        validateEntry(brageRecord, nvaPublication);
         return new PublicationRepresentation(brageRecord, nvaPublication);
-    }
-
-    private void validateEntry(Record brageRecord, Publication publication) {
-        if (publicationShouldBeIgnored(brageRecord, publication)) {
-            throw new IgnoredPublicationException();
-        }
-    }
-
-    private boolean publicationShouldBeIgnored(Record brageRecord, Publication publication) {
-        var type = Optional.ofNullable(publication.getEntityDescription())
-                       .map(EntityDescription::getReference)
-                       .map(Reference::getPublicationInstance)
-                       .map(PublicationInstance::getClass)
-                       .orElse(null);
-        return UIO.equals(brageRecord.getCustomer().getName())
-               && Arrays.asList(PROTECTED_DEGREE_INSTANCE_TYPES).contains(type);
     }
 
     private Record getBrageRecordFromS3(S3Event event) throws JsonProcessingException {
