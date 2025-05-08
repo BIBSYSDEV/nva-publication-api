@@ -43,7 +43,6 @@ import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -52,7 +51,6 @@ import no.unit.nva.publication.model.business.publicationstate.UnpublishedResour
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
-import no.unit.nva.publication.model.storage.UnpublishRequestDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -192,7 +190,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public void unpublishPublication(Publication publication, Stream<TicketEntry> existingTicketStream,
-                                     UnpublishRequest unpublishRequest, UserInstance userInstance) {
+                                     UserInstance userInstance) {
         publication.setStatus(UNPUBLISHED);
         var currentTime = clockForTimestamps.instant();
         publication.setModifiedDate(currentTime);
@@ -202,7 +200,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(createPutTransaction(resource));
         transactionItems.addAll(updateExistingPendingTicketsToNotApplicable(existingTicketStream));
-        transactionItems.addAll(createPendingUnpublishingRequestTicket(unpublishRequest));
 
         var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
@@ -251,10 +248,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private static List<Contributor> getContributors(Resource resource) {
         return nonNull(resource.getEntityDescription()) ? resource.getEntityDescription().getContributors() : List.of();
-    }
-
-    private static List<TransactWriteItem> createPendingUnpublishingRequestTicket(UnpublishRequest unpublishRequest) {
-        return new UnpublishRequestDao(unpublishRequest).createInsertionTransactionRequest().getTransactItems();
     }
 
     private static boolean isNotImported(Resource resource) {

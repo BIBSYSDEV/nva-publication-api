@@ -57,7 +57,8 @@ public class FilePermissions {
             new EmbargoDownloadDenyStrategy(file, userInstance, resource),
             new EmbargoWriteDeleteDenyStrategy(file, userInstance, resource),
             new DegreeWriteDeleteDenyStrategy(file, userInstance, resource),
-            new DegreeEmbargoWriteDeleteDenyStrategy(file, userInstance, resource)
+            new DegreeEmbargoWriteDeleteDenyStrategy(file, userInstance, resource),
+            new ClaimedChannelFileDenyStrategy(file, userInstance, resource)
         );
     }
 

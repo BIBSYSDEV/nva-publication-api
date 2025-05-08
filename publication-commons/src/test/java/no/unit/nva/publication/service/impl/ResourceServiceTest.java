@@ -153,6 +153,7 @@ import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1028,17 +1029,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateAPendingUnpublishingRequestTicketWhenUnpublishingPublication() throws ApiGatewayException {
-        var publication = createPublishedResource();
-        var userInstance = UserInstance.fromPublication(publication);
-        resourceService.unpublishPublication(publication, userInstance);
-        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        assertThat(tickets, hasSize(1));
-        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
-                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
-    }
-
-    @Test
     void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1055,15 +1045,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publishingRequestTicket.persistNewTicket(ticketService);
         resourceService.unpublishPublication(publication, userInstance);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        assertThat(tickets, hasSize(5));
+        assertThat(tickets, hasSize(4));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.CLOSED))))));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
         assertThat(tickets, hasItem(allOf(instanceOf(DoiRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
-        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
-                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
         assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class),
                                           hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
         assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
@@ -1869,7 +1857,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication(JournalArticle.class).copy().withDoi(null).build();
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
@@ -1887,7 +1875,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPersistedPublicationWithDoi() throws BadRequestException {
-        return createPersistedPublicationWithDoi(resourceService, randomPublication());
+        return createPersistedPublicationWithDoi(resourceService, randomPublication(JournalArticle.class));
     }
 
     private Publication createUnpublishablePublication() throws BadRequestException {

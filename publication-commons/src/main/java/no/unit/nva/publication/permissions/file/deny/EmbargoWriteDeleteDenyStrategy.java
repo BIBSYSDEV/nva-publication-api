@@ -1,7 +1,5 @@
 package no.unit.nva.publication.permissions.file.deny;
 
-import static no.unit.nva.model.FileOperation.DELETE;
-import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -24,9 +22,5 @@ public class EmbargoWriteDeleteDenyStrategy extends FileStrategyBase implements 
 
     private boolean isDeniedUser() {
         return !(currentUserIsFileCuratorForGivenFile() || isExternalClientWithRelation());
-    }
-
-    private boolean isWriteOrDelete(FileOperation permission) {
-        return permission.equals(WRITE_METADATA) || permission.equals(DELETE);
     }
 }

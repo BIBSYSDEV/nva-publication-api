@@ -1259,10 +1259,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             resourceService.fetchAllTicketsForResource(resource).toList();
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(updatedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
-        assertThat(ticketsAfterUnpublishing,
-                   hasItem(allOf(instanceOf(UnpublishRequest.class),
-                                 hasProperty("status", equalTo(PENDING)))));
-
         assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(PublishingRequestCase.class),
                                                            hasProperty("status", equalTo(COMPLETED)))));
         assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(DoiRequest.class),
@@ -1294,8 +1290,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
 
         assertThat(unpublishedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
-        assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(UnpublishRequest.class),
-                                                           hasProperty("status", equalTo(PENDING)))));
         assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(DoiRequest.class),
                                                            hasProperty("status", equalTo(NOT_APPLICABLE)))));
         assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
@@ -1565,25 +1559,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
-    }
-
-    @Test
-    void shouldPersistUnpublishRequestWhenDeletingPublishedPublication()
-        throws ApiGatewayException, IOException {
-        var publication = createAndPersistDegreeWithoutDoi();
-        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
-        var publisherUri = publication.getPublisher().getId();
-        var request = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
-                                                    MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD,
-                                                    MANAGE_PUBLISHING_REQUESTS);
-        updatePublicationHandler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        var persistedTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
-                                                                            publication.getIdentifier(),
-                                                                            UnpublishRequest.class);
-
-        assertTrue(persistedTicket.isPresent());
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
     }
 
     @Test

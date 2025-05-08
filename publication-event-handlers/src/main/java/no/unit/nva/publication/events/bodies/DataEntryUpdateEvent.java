@@ -18,6 +18,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UnpublishRequest;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import nva.commons.core.JacocoGenerated;
 
@@ -106,6 +107,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public boolean shouldProcessUpdate() {
         if (extractDataEntryType() instanceof FileEntry) {
             return hasNewImage();
+        } else if (extractDataEntryType() instanceof PublicationChannel) {
+            return false;
         } else {
             return nonNull(oldData) || nonNull(newData);
         }

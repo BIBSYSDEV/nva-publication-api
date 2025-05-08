@@ -755,7 +755,8 @@ public class Resource implements Entity {
                    .withRightsHolder(getRightsHolder())
                    .withCuratingInstitutions(getCuratingInstitutions())
                    .withImportDetails(getImportDetails())
-                   .withResourceEvent(getResourceEvent());
+                   .withResourceEvent(getResourceEvent())
+                   .withPublicationChannels(getPublicationChannels());
     }
 
     public List<URI> getSubjects() {
@@ -794,7 +795,7 @@ public class Resource implements Entity {
                             getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
                             getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
                             getSubjects(), getFundings(), getAssociatedArtifacts(), getPublicationNotes(),
-                            getDuplicateOf(), getCuratingInstitutions(), getImportDetails());
+                            getDuplicateOf(), getCuratingInstitutions(), getImportDetails(), getPublicationChannels());
     }
 
     /**
@@ -832,7 +833,8 @@ public class Resource implements Entity {
                && Objects.equals(getDuplicateOf(), resource.getDuplicateOf())
                && Objects.equals(getSubjects(), resource.getSubjects())
                && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions())
-               && Objects.equals(getImportDetails(), resource.getImportDetails());
+               && Objects.equals(getImportDetails(), resource.getImportDetails())
+               && Objects.equals(getPublicationChannels(), resource.getPublicationChannels());
     }
 
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
