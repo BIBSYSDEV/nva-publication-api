@@ -7,6 +7,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.toChannelClaimUri;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
@@ -61,6 +62,8 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
@@ -305,7 +308,27 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
+        if (dataEntry instanceof Resource resource) {
+            persistPublicationChannelForPublisherWhenDegree(resource);
+        }
         return dataEntry;
+    }
+
+    private void persistPublicationChannelForPublisherWhenDegree(Resource resource) {
+        resource.getPublisherWhenDegree().ifPresent(publisher -> {
+            var channelClaimId = toChannelClaimUri(publisher.getIdentifier());
+            var channelType = ChannelType.fromChannelId(publisher.getId());
+            var nonClaimedPublicationChannelDao = NonClaimedPublicationChannel
+                                                      .create(channelClaimId, resource.getIdentifier(), channelType)
+                                                      .toDao();
+            var transactionItem = toPutTransactionItem(nonClaimedPublicationChannelDao, tableName);
+            sendTransactionWriteRequest(new TransactWriteItemsRequest().withTransactItems(transactionItem));
+        });
+    }
+
+    public TransactWriteItem toPutTransactionItem(PublicationChannelDao dao, String tableName) {
+        var put = new Put().withItem(dao.toDynamoFormat()).withTableName(tableName);
+        return new TransactWriteItem().withPut(put);
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {

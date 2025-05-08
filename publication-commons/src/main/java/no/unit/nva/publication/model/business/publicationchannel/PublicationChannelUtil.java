@@ -43,7 +43,7 @@ public final class PublicationChannelUtil {
                    .orElseGet(() -> createNonClaimedChannelDao(resource, channelClaimId, channelType));
     }
 
-    private static URI toChannelClaimUri(UUID channelClaimIdentifier) {
+    public static URI toChannelClaimUri(UUID channelClaimIdentifier) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(CUSTOMER)
                    .addChild(CHANNEL_CLAIM)
