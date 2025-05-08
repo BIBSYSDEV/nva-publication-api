@@ -20,7 +20,7 @@ public final class PublicationChannelUtil {
     private static final String IDENTITY_SERVICE_EXCEPTION = "Something went wrong while retrieving channel claim!";
 
     @JacocoGenerated
-    public PublicationChannelUtil() {
+    private PublicationChannelUtil() {
     }
 
     public static Optional<ChannelClaimDto> getChannelClaim(IdentityServiceClient identityService, URI channelClaimId) {
