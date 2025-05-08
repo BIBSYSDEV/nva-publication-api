@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -55,7 +56,7 @@ import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-@SuppressWarnings({"PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class UpdateResourceService extends ServiceWithTransactions {
 
     public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";
@@ -130,21 +131,27 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var newPublisherIdentifier = getPublisherIdentifier(resource);
 
         if (!Objects.equals(oldPublisherIdentifier, newPublisherIdentifier)) {
-            oldPublisherIdentifier.flatMap(id -> persistedResource.getPublicationChannelByIdentifier(
-                new SortableIdentifier(id.toString())))
-                .ifPresent(publicationChannel -> {
-                    TransactWriteItem deleteAction = newDeleteTransactionItem(publicationChannel.toDao());
-                    transactWriteItems.add(deleteAction);
-            });
-            newPublisherIdentifier.ifPresent(id -> {
-                var publisher = resource.getPublisherWhenDegree().orElseThrow();
-                var publicationChannelDao = createPublicationChannelDao(identityService, resource, publisher);
-                var insertionAction = newPutTransactionItem(publicationChannelDao, tableName);
-                transactWriteItems.add(insertionAction);
-            });
+            oldPublisherIdentifier.ifPresent(id -> removePublicationChannel(persistedResource, id, transactWriteItems));
+            newPublisherIdentifier.ifPresent(id -> addPublicationChannel(resource, transactWriteItems));
         }
 
         return transactWriteItems;
+    }
+
+    private void removePublicationChannel(Resource persistedResource, UUID publisherIdentifier,
+                                          List<TransactWriteItem> transactWriteItems) {
+        persistedResource.getPublicationChannelByIdentifier(new SortableIdentifier(publisherIdentifier.toString()))
+            .ifPresent(publicationChannel -> {
+                TransactWriteItem deleteAction = newDeleteTransactionItem(publicationChannel.toDao());
+                transactWriteItems.add(deleteAction);
+            });
+    }
+
+    private void addPublicationChannel(Resource resource, List<TransactWriteItem> transactWriteItems) {
+        var publisher = resource.getPublisherWhenDegree().orElseThrow();
+        var publicationChannelDao = createPublicationChannelDao(identityService, resource, publisher);
+        var insertionAction = newPutTransactionItem(publicationChannelDao, tableName);
+        transactWriteItems.add(insertionAction);
     }
 
     public Resource updateResource(Resource resource, UserInstance userInstance) {
