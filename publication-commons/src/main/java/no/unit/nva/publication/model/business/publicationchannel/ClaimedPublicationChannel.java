@@ -188,4 +188,13 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Json
     public Constraint getConstraint() {
         return constraint;
     }
+
+    public ClaimedPublicationChannel update(URI customerId, URI organizationId, Constraint constraint) {
+        return new ClaimedPublicationChannel(id, customerId, organizationId, constraint, channelType, identifier,
+                                             resourceIdentifier, createdDate, Instant.now());
+    }
+
+    public NonClaimedPublicationChannel toNonClaimedChannel() {
+        return new NonClaimedPublicationChannel(id, channelType, identifier, resourceIdentifier, createdDate, Instant.now());
+    }
 }

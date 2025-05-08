@@ -6,6 +6,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -31,12 +32,12 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
+import no.unit.nva.publication.service.PublicationChannelLocalTestUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class PublicationChannelTest extends ResourcesLocalTest {
+class PublicationChannelTest extends PublicationChannelLocalTestUtil {
 
     private ResourceService resourceService;
     private IdentityServiceClient identityService;
@@ -190,6 +191,14 @@ class PublicationChannelTest extends ResourcesLocalTest {
         assertEquals(2000, totalChannelsRetrieved.size());
     }
 
+    @Test
+    void shouldUpdatePublicationChannelsInBatch() {
+        var channel = randomClaimedPublicationChannel();
+        super.persistPublicationChannel(channel);
+
+        assertDoesNotThrow(() -> resourceService.batchUpdateChannels(List.of(channel)));
+    }
+
     private void persistResourcesPublicationChannels(int numberOfResources, URI publisherId, ChannelClaimDto claim,
                                                      UUID channelIdentifier) throws NotFoundException {
         when(identityService.getChannelClaim(toChannelClaimId(channelIdentifier))).thenReturn(claim);
@@ -217,14 +226,6 @@ class PublicationChannelTest extends ResourcesLocalTest {
                    .addChild("publisher")
                    .addChild(channelIdentifier.toString())
                    .addChild(randomInteger().toString())
-                   .getUri();
-    }
-
-    private static URI randomChannelIdWithoutYear(UUID channelIdentifier) {
-        return UriWrapper.fromUri(randomUri())
-                   .addChild("publication-channel-v2")
-                   .addChild("publisher")
-                   .addChild(channelIdentifier.toString())
                    .getUri();
     }
 
@@ -275,11 +276,5 @@ class PublicationChannelTest extends ResourcesLocalTest {
                    .addChild("channel-claim")
                    .addChild(channelClaimIdentifier.toString())
                    .getUri();
-    }
-
-    private static String getChannelClaimIdentifier(URI publisher) {
-        return UriWrapper.fromUri(publisher)
-                   .replacePathElementByIndexFromEnd(0, StringUtils.EMPTY_STRING)
-                   .getLastPathElement();
     }
 }
