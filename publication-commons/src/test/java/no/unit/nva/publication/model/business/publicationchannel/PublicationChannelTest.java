@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.publicationchannel;
 
+import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -361,7 +362,7 @@ class PublicationChannelTest extends ResourcesLocalTest {
         var publication = randomPublication(DegreeBachelor.class);
         publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(publisher));
 
-        if (publisher != null) {
+        if (nonNull(publisher)) {
             when(identityService.getChannelClaim(toChannelClaimUri(publisher.getIdentifier())))
                 .thenThrow(new NotFoundException(randomString()));
         }
