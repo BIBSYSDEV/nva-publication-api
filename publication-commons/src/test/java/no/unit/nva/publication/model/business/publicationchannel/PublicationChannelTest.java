@@ -6,7 +6,9 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,12 +33,11 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
-import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.PublicationChannelLocalTestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class PublicationChannelTest extends ResourcesLocalTest {
+class PublicationChannelTest extends PublicationChannelLocalTestUtil {
 
     private ResourceService resourceService;
     private IdentityServiceClient identityService;
@@ -176,7 +177,7 @@ class PublicationChannelTest extends ResourcesLocalTest {
         var publisherId = randomPublisherId(channelIdentifier);
         var claim = channelClaimDtoForPublisher(channelIdentifier);
 
-        persistResourcesPublicationChannels(2000, publisherId, claim, channelIdentifier);
+        persistResourcesPublicationChannels(publisherId, claim, channelIdentifier);
 
         var publicationChannelIdentifier = new SortableIdentifier(channelIdentifier.toString());
         var firstListingResult = resourceService.fetchAllPublicationChannelsByIdentifier(publicationChannelIdentifier, null);
@@ -190,10 +191,57 @@ class PublicationChannelTest extends ResourcesLocalTest {
         assertEquals(2000, totalChannelsRetrieved.size());
     }
 
-    private void persistResourcesPublicationChannels(int numberOfResources, URI publisherId, ChannelClaimDto claim,
+    @Test
+    void shouldUpdatePublicationChannelsInBatch() {
+        var channel = randomClaimedPublicationChannel();
+        super.persistPublicationChannel(channel);
+
+        assertDoesNotThrow(() -> resourceService.batchUpdateChannels(List.of(channel)));
+    }
+
+    @Test
+    void shouldUpdateNonClaimedChannelToClaimed() {
+        var channel = randomNonClaimedPublicationChannel();
+        var customerId = randomUri();
+        var organizationId = randomUri();
+        var constraint = randomConstraint();
+
+        var claimedChannel = channel.toClaimedChannel(customerId, organizationId, constraint);
+
+        assertInstanceOf(ClaimedPublicationChannel.class, claimedChannel);
+        assertEquals(customerId, claimedChannel.getCustomerId());
+        assertEquals(organizationId, claimedChannel.getOrganizationId());
+        assertEquals(constraint, claimedChannel.getConstraint());
+    }
+
+    @Test
+    void shouldUpdateClaimedChannel() {
+        var channel = randomClaimedPublicationChannel();
+        var customerId = randomUri();
+        var organizationId = randomUri();
+        var constraint = randomConstraint();
+
+        var claimedChannel = channel.update(customerId, organizationId, constraint);
+
+        assertInstanceOf(ClaimedPublicationChannel.class, claimedChannel);
+        assertEquals(customerId, claimedChannel.getCustomerId());
+        assertEquals(organizationId, claimedChannel.getOrganizationId());
+        assertEquals(constraint, claimedChannel.getConstraint());
+    }
+
+    @Test
+    void shouldUpdateClaimedChannelToNonClaimed() {
+        var channel = randomClaimedPublicationChannel();
+        var claimedChannel = channel.toNonClaimedChannel();
+
+        assertInstanceOf(NonClaimedPublicationChannel.class, claimedChannel);
+        assertEquals(channel.getIdentifier(), claimedChannel.getIdentifier());
+    }
+
+    private void persistResourcesPublicationChannels(URI publisherId, ChannelClaimDto claim,
                                                      UUID channelIdentifier) throws NotFoundException {
         when(identityService.getChannelClaim(toChannelClaimId(channelIdentifier))).thenReturn(claim);
-        IntStream.range(0, numberOfResources)
+        IntStream.range(0, 2000)
             .forEach(i -> {
                 var publication = randomPublication(DegreeBachelor.class);
                 publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(publisherId));
@@ -220,14 +268,6 @@ class PublicationChannelTest extends ResourcesLocalTest {
                    .getUri();
     }
 
-    private static URI randomChannelIdWithoutYear(UUID channelIdentifier) {
-        return UriWrapper.fromUri(randomUri())
-                   .addChild("publication-channel-v2")
-                   .addChild("publisher")
-                   .addChild(channelIdentifier.toString())
-                   .getUri();
-    }
-
     private static Degree degreeWithPublisher(URI publisher) {
         return attempt(() -> new Degree(null, null, null, new Publisher(publisher), List.of(), null))
                    .orElseThrow();
@@ -235,10 +275,14 @@ class PublicationChannelTest extends ResourcesLocalTest {
 
     private static ClaimedPublicationChannel randomClaimedPublicationChannel() {
         return new ClaimedPublicationChannel(randomUri(), randomUri(), randomUri(),
-                                             new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY,
-                                                            List.of(randomString())), ChannelType.PUBLISHER,
+                                             randomConstraint(), ChannelType.PUBLISHER,
                                              SortableIdentifier.next(), SortableIdentifier.next(), Instant.now(),
                                              Instant.now());
+    }
+
+    private static Constraint randomConstraint() {
+        return new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY,
+                              List.of(randomString()));
     }
 
     private static NonClaimedPublicationChannel randomNonClaimedPublicationChannel() {
@@ -275,11 +319,5 @@ class PublicationChannelTest extends ResourcesLocalTest {
                    .addChild("channel-claim")
                    .addChild(channelClaimIdentifier.toString())
                    .getUri();
-    }
-
-    private static String getChannelClaimIdentifier(URI publisher) {
-        return UriWrapper.fromUri(publisher)
-                   .replacePathElementByIndexFromEnd(0, StringUtils.EMPTY_STRING)
-                   .getLastPathElement();
     }
 }

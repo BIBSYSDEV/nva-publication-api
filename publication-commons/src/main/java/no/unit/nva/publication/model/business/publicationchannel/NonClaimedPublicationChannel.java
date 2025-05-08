@@ -159,4 +159,9 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
     public String getStatusString() {
         return null;
     }
+
+    public ClaimedPublicationChannel toClaimedChannel(URI customerId, URI organizationId, Constraint constraint) {
+        return new ClaimedPublicationChannel(id, customerId, organizationId, constraint, channelType, identifier,
+                                             resourceIdentifier, createdDate, Instant.now());
+    }
 }
