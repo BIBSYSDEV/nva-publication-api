@@ -61,8 +61,8 @@ public class UserInstance implements JsonSerializable {
                                 resourceOwner.getOwnerAffiliation(), null, null, null, UserClientType.INTERNAL);
     }
 
-    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
-        var userInstance = create(resourceOwner, topLevelOrgCristinId);
+    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI customerId) {
+        var userInstance = create(resourceOwner, customerId);
         userInstance.userClientType = UserClientType.EXTERNAL;
         return userInstance;
     }

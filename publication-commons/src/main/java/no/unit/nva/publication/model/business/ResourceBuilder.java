@@ -18,9 +18,10 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 
-@SuppressWarnings("PMD.TooManyFields")
+@SuppressWarnings({"PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 public final class ResourceBuilder {
 
     private SortableIdentifier identifier;
@@ -48,6 +49,7 @@ public final class ResourceBuilder {
     private Set<CuratingInstitution> curatingInstitutions;
     private List<ImportDetail> importDetails;
     private ResourceEvent resourceEvent;
+    private List<PublicationChannel> publicationChannels;
 
     ResourceBuilder() {
     }
@@ -167,6 +169,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withPublicationChannels(List<PublicationChannel> publicationChannels) {
+        this.publicationChannels = publicationChannels;
+        return this;
+    }
+
     public ResourceBuilder withImportDetails(Collection<ImportDetail> importDetails) {
         this.importDetails = new ArrayList<>(importDetails);
         return this;
@@ -204,6 +211,7 @@ public final class ResourceBuilder {
         resource.setCuratingInstitutions(curatingInstitutions);
         resource.setImportDetails(importDetails);
         resource.setResourceEvent(resourceEvent);
+        resource.setPublicationChannels(publicationChannels);
         return resource;
     }
 }

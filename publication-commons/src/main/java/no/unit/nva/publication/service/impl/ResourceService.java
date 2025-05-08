@@ -465,7 +465,7 @@ public class ResourceService extends ServiceWithTransactions {
     private TransactWriteItem createTransaction(Resource resource, Publisher publisher, URI claimId) {
         var channelType = ChannelType.fromChannelId(publisher.getId());
         return getChannelClaim(claimId)
-                   .map(claim -> transactionForClaimedChannel(resource, claim, claimId, channelType))
+                   .map(claim -> transactionForClaimedChannel(resource, claim, channelType))
                    .orElseGet(() -> transactionForNonClaimedChannel(resource, channelType, claimId));
     }
 
@@ -475,10 +475,10 @@ public class ResourceService extends ServiceWithTransactions {
                    .toDao().toPutNewTransactionItem(tableName);
     }
 
-    private TransactWriteItem transactionForClaimedChannel(Resource resource, ChannelClaimDto claim, URI channelClaimId,
+    private TransactWriteItem transactionForClaimedChannel(Resource resource, ChannelClaimDto claim,
                                                            ChannelType channelType) {
         return ClaimedPublicationChannel
-                   .create(channelClaimId, claim, resource.getIdentifier(), channelType)
+                   .create(claim, resource.getIdentifier(), channelType)
                    .toDao()
                    .toPutNewTransactionItem(tableName);
     }

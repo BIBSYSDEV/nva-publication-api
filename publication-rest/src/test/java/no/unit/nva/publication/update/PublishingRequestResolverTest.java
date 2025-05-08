@@ -23,7 +23,6 @@ import no.unit.nva.clients.ChannelClaimDto.ChannelClaim;
 import no.unit.nva.clients.ChannelClaimDto.ChannelClaim.ChannelConstraint;
 import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -39,7 +38,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.Assertions;
@@ -289,7 +287,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     }
 
     private ChannelClaimDto channelClaimDto(URI customerId, URI organizationId, String... scope) {
-        return new ChannelClaimDto(new CustomerSummaryDto(customerId, organizationId),
+        return new ChannelClaimDto(randomUri(), new CustomerSummaryDto(customerId, organizationId),
                                    new ChannelClaim(randomUri(), new ChannelConstraint(
                                        "Everyone", "Everyone", Arrays.asList(scope)
                                    )));

@@ -232,7 +232,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
     private ChannelClaimDto channelClaim(URI customerId, URI topLevelOrgCristinId, URI id, String publishingPolicy,
                                          String... scope) {
-        return new ChannelClaimDto(new CustomerSummaryDto(customerId, topLevelOrgCristinId),
+        return new ChannelClaimDto(randomUri(), new CustomerSummaryDto(customerId, topLevelOrgCristinId),
                                    new ChannelClaim(id, new ChannelConstraint(publishingPolicy, randomString(),
                                                                               Arrays.asList(scope))));
     }
