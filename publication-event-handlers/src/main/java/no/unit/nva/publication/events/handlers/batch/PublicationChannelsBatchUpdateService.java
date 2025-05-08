@@ -9,9 +9,13 @@ import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicat
 import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.service.impl.ResourceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PublicationChannelsBatchUpdateService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PublicationChannelsBatchUpdateService.class);
+    protected static final String UPDATED_PUBLICATION_CHANNELS_MESSAGE = "Updated {} publication channels with identifier {}";
     private final ResourceService resourceService;
 
     public PublicationChannelsBatchUpdateService(ResourceService resourceService) {
@@ -24,6 +28,8 @@ public class PublicationChannelsBatchUpdateService {
 
         var updatedChannels = publicationChannels.stream().map(channel -> update(channel, event)).toList();
         resourceService.batchUpdateChannels(updatedChannels);
+
+        logger.info(UPDATED_PUBLICATION_CHANNELS_MESSAGE, updatedChannels.size(), identifier);
     }
 
     private static ClaimedPublicationChannel updateClaimedChannel(PublicationChannelSummary summary,
@@ -60,7 +66,6 @@ public class PublicationChannelsBatchUpdateService {
     private ArrayList<PublicationChannel> listAllPublicationChannelsWithIdentifier(SortableIdentifier identifier) {
         Map<String, AttributeValue> startMarker = null;
         var publicationChannels = new ArrayList<PublicationChannel>();
-
         boolean isTruncated;
         do {
             var listingResult = resourceService.fetchAllPublicationChannelsByIdentifier(identifier, startMarker);
