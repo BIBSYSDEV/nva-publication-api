@@ -3,6 +3,7 @@ package no.unit.nva.publication.model.business.publicationchannel;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.toChannelClaimUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -49,6 +50,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class PublicationChannelTest extends ResourcesLocalTest {
+
+    private final int NUMBER_OF_RESOURCES = 2000;
     private final int ONE = 1;
     private ResourceService resourceService;
     private IdentityServiceClient identityService;
@@ -159,8 +162,7 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenIdentityServiceRespondsWithUnhandledError()
-        throws NotFoundException {
+    void shouldThrowExceptionWhenIdentityServiceRespondsWithUnhandledError() throws NotFoundException {
         var channelIdentifier = randomUUID();
         var publisherId = randomPublisherId(channelIdentifier);
         var publication = randomPublication(DegreeBachelor.class);
@@ -173,19 +175,19 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdatePublicationChannelWhenPublisherIsUpdated()
-        throws InvalidUnconfirmedSeriesException, BadRequestException, NotFoundException {
-        var publisherId = randomPublisherId();
+    void shouldUpdatePublicationChannelWhenPublisherIsUpdated() throws BadRequestException, NotFoundException {
+        var publisherId = randomPublisherId(randomUUID());
         var persistedPublication = persistDegreeWithPublisher(new Publisher(publisherId));
 
         var existingResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         var existingPublicationChannel = existingResource.getPublicationChannels().getFirst();
         assertEquals(getChannelClaimIdentifier(publisherId), existingPublicationChannel.getIdentifier().toString());
 
-        var newPublisherId = randomPublisherId();
+        var newChannelIdentifier = randomUUID();
+        var newPublisherId = randomPublisherId(newChannelIdentifier);
         persistedPublication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(newPublisherId));
 
-        when(identityService.getChannelClaim(toChannelClaimUri(newPublisherId))).thenThrow(new NotFoundException(randomString()));
+        when(identityService.getChannelClaim(toChannelClaimUri(newChannelIdentifier))).thenThrow(new NotFoundException(randomString()));
         resourceService.updatePublication(persistedPublication);
 
         var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
@@ -197,9 +199,8 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldRemovePublicationChannelWhenPublisherIsRemoved()
-        throws InvalidUnconfirmedSeriesException, BadRequestException, NotFoundException {
-        var publisherId = randomPublisherId();
+    void shouldRemovePublicationChannelWhenPublisherIsRemoved() throws BadRequestException, NotFoundException {
+        var publisherId = randomPublisherId(randomUUID());
         var persistedPublication = persistDegreeWithPublisher(new Publisher(publisherId));
 
         var existingResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
@@ -213,18 +214,18 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAddPublicationChannelWhenNoPublisherIsAdded()
-        throws InvalidUnconfirmedSeriesException, BadRequestException, NotFoundException {
+    void shouldAddPublicationChannelWhenNoPublisherIsAdded() throws BadRequestException, NotFoundException {
         var persistedPublication = persistDegreeWithPublisher(null);
 
         var existingResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         assertTrue(existingResource.getPublicationChannels().isEmpty());
 
-        var publisherId = randomPublisherId();
+        var channelIdentifier = randomUUID();
+        var publisherId = randomPublisherId(channelIdentifier);
         persistedPublication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(publisherId));
 
-        var channelClaimDto = channelClaimDtoForPublisher();
-        when(identityService.getChannelClaim(toChannelClaimUri(publisherId))).thenReturn(channelClaimDto);
+        var channelClaimDto = channelClaimDtoForPublisher(channelIdentifier);
+        when(identityService.getChannelClaim(toChannelClaimUri(channelIdentifier))).thenReturn(channelClaimDto);
         resourceService.updatePublication(persistedPublication);
 
         var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
@@ -236,13 +237,12 @@ class PublicationChannelTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnListingResultWhenListingPublicationChannels()
-        throws NotFoundException {
+    void shouldReturnListingResultWhenListingPublicationChannels() throws NotFoundException {
         var channelIdentifier = randomUUID();
         var publisherId = randomPublisherId(channelIdentifier);
         var claim = channelClaimDtoForPublisher(channelIdentifier);
 
-        persistResourcesPublicationChannels(2000, publisherId, claim, channelIdentifier);
+        persistResourcesPublicationChannels(NUMBER_OF_RESOURCES, publisherId, claim, channelIdentifier);
 
         var publicationChannelIdentifier = new SortableIdentifier(channelIdentifier.toString());
         var firstListingResult = resourceService.fetchAllPublicationChannelsByIdentifier(publicationChannelIdentifier, null);
@@ -253,7 +253,7 @@ class PublicationChannelTest extends ResourcesLocalTest {
         totalChannelsRetrieved.addAll(firstListingResult.getDatabaseEntries());
         totalChannelsRetrieved.addAll(secondListingResult.getDatabaseEntries());
 
-        assertEquals(2000, totalChannelsRetrieved.size());
+        assertEquals(NUMBER_OF_RESOURCES, totalChannelsRetrieved.size());
     }
 
     private void persistResourcesPublicationChannels(int numberOfResources, URI publisherId, ChannelClaimDto claim,
@@ -262,7 +262,7 @@ class PublicationChannelTest extends ResourcesLocalTest {
         IntStream.range(0, numberOfResources)
             .forEach(i -> {
                 var publication = randomPublication(DegreeBachelor.class);
-                publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(publisherId));
+                publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(publisherId));
                 var userInstance = UserInstance.fromPublication(publication);
                 attempt(() -> resourceService.createPublication(userInstance, publication));
             });
@@ -270,7 +270,8 @@ class PublicationChannelTest extends ResourcesLocalTest {
 
     private NonClaimedPublicationChannel constructExpectedNonClaimedChannel(UUID channelIdentifier, Resource fetchedResource,
                                                                             PublicationChannel actualPublicationChannel) {
-        return new NonClaimedPublicationChannel(toChannelClaimId(channelIdentifier), ChannelType.PUBLISHER,
+        return new NonClaimedPublicationChannel(toChannelClaimId(channelIdentifier),
+                                                ChannelType.PUBLISHER,
                                                 new SortableIdentifier(channelIdentifier.toString()),
                                                 fetchedResource.getIdentifier(),
                                                 actualPublicationChannel.getCreatedDate(),
@@ -286,32 +287,26 @@ class PublicationChannelTest extends ResourcesLocalTest {
                    .getUri();
     }
 
-    private static Degree degreeWithPublisherId(URI publisherId) throws InvalidUnconfirmedSeriesException {
-        return degreeWithPublisher(new Publisher(publisherId));
+    private static Degree degreeWithPublisherId(URI publisherId) {
+        return attempt(() -> degreeWithPublisher(new Publisher(publisherId))).orElseThrow();
     }
 
-    private static Degree degreeWithPublisher(Publisher publisher) throws InvalidUnconfirmedSeriesException {
-        return new Degree(null, null, null, publisher, List.of(), null);
-    }
-
-    private static Degree degreeWithPublisher(URI publisher) {
-        return attempt(() -> new Degree(null, null, null, new Publisher(publisher), List.of(), null))
+    private static Degree degreeWithPublisher(Publisher publisher) {
+        return attempt(() ->  new Degree(null, null, null, publisher, List.of(), null))
                    .orElseThrow();
     }
 
-    private static URI randomChannelIdWithoutYear(UUID channelIdentifier) {
-        return UriWrapper.fromUri(randomUri())
-                   .addChild("publication-channel-v2")
-                   .addChild("publisher")
-                   .addChild(channelIdentifier.toString())
-                   .getUri();
-    }
-
     private static ClaimedPublicationChannel randomClaimedPublicationChannel() {
-        return new ClaimedPublicationChannel(randomUri(), randomUri(), randomUri(),
-                                             new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY,
-                                                            List.of(randomString())), ChannelType.PUBLISHER,
-                                             SortableIdentifier.next(), SortableIdentifier.next(), Instant.now(),
+        return new ClaimedPublicationChannel(randomUri(),
+                                             randomUri(),
+                                             randomUri(),
+                                             new Constraint(ChannelPolicy.EVERYONE,
+                                                            ChannelPolicy.OWNER_ONLY,
+                                                            List.of(randomString())),
+                                             ChannelType.PUBLISHER,
+                                             SortableIdentifier.next(),
+                                             SortableIdentifier.next(),
+                                             Instant.now(),
                                              Instant.now());
     }
 
@@ -320,34 +315,29 @@ class PublicationChannelTest extends ResourcesLocalTest {
                                                 SortableIdentifier.next(), Instant.now(), Instant.now());
     }
 
-    private static NonClaimedPublicationChannel createNonClaimedPublicationChannel(URI publisherId,
-                                                                                   SortableIdentifier resourceIdentifier) {
-        return new NonClaimedPublicationChannel(publisherId, ChannelType.PUBLISHER,
-                                                new SortableIdentifier(getChannelClaimIdentifier(publisherId)),
-                                                resourceIdentifier, Instant.now(), Instant.now());
-    }
-
-    private PublicationChannel constructExpectedPublicationChannel(UUID channelIdentifier, SortableIdentifier resourceIdentifier,
-                                                                   ChannelClaimDto claim, Instant createdDate,
+    private PublicationChannel constructExpectedPublicationChannel(UUID channelIdentifier,
+                                                                   SortableIdentifier resourceIdentifier,
+                                                                   ChannelClaimDto claim,
+                                                                   Instant createdDate,
                                                                    Instant modifiedDate) {
-        return new ClaimedPublicationChannel(toChannelClaimId(channelIdentifier), claim.claimedBy().id(), claim.claimedBy()
-                                                                                                         .organizationId(),
+        return new ClaimedPublicationChannel(toChannelClaimId(channelIdentifier),
+                                             claim.claimedBy().id(),
+                                             claim.claimedBy().organizationId(),
                                              new Constraint(ChannelPolicy.fromValue(claim.channelClaim().constraint().publishingPolicy()),
                                                             ChannelPolicy.fromValue(claim.channelClaim().constraint().editingPolicy()),
                                                             claim.channelClaim().constraint().scope()),
                                              ChannelType.PUBLISHER,
                                              new SortableIdentifier(channelIdentifier.toString()),
-                                             resourceIdentifier, createdDate, modifiedDate);
+                                             resourceIdentifier,
+                                             createdDate,
+                                             modifiedDate);
     }
 
     private ChannelClaimDto channelClaimDtoForPublisher(UUID channelIdentifier) {
-        return new ChannelClaimDto(toChannelClaimId(channelIdentifier), new CustomerSummaryDto(randomUri(), randomUri()),
+        return new ChannelClaimDto(toChannelClaimId(channelIdentifier),
+                                   new CustomerSummaryDto(randomUri(), randomUri()),
                                    new ChannelClaim(randomPublisherId(channelIdentifier),
-                                                                                                      new ChannelConstraint(
-                                                                                                          "OwnerOnly",
-                                                                                                          "Everyone",
-                                                                                                          List.of(
-                                                                                                              randomString()))));
+                                                    new ChannelConstraint("OwnerOnly", "Everyone", List.of(randomString()))));
     }
 
     private URI toChannelClaimId(UUID channelClaimIdentifier) {
@@ -364,13 +354,12 @@ class PublicationChannelTest extends ResourcesLocalTest {
                    .getLastPathElement();
     }
 
-    private Publication persistDegreeWithPublisher(Publisher publisher)
-        throws InvalidUnconfirmedSeriesException, NotFoundException, BadRequestException {
+    private Publication persistDegreeWithPublisher(Publisher publisher) throws NotFoundException, BadRequestException {
         var publication = randomPublication(DegreeBachelor.class);
         publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(publisher));
 
         if (publisher != null) {
-            when(identityService.getChannelClaim(toChannelClaimUri(publisher.getId())))
+            when(identityService.getChannelClaim(toChannelClaimUri(publisher.getIdentifier())))
                 .thenThrow(new NotFoundException(randomString()));
         }
 

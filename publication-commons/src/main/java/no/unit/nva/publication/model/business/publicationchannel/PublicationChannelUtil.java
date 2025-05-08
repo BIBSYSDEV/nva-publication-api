@@ -3,6 +3,7 @@ package no.unit.nva.publication.model.business.publicationchannel;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import java.net.URI;
 import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.clients.ChannelClaimDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -14,12 +15,13 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class PublicationChannelUtil {
 
-    public static final String CUSTOMER = "customer";
-    public static final String CHANNEL_CLAIM = "channel-claim";
+    private static final String CUSTOMER = "customer";
+    private static final String CHANNEL_CLAIM = "channel-claim";
     private static final String IDENTITY_SERVICE_EXCEPTION = "Something went wrong while retrieving channel claim!";
 
     @JacocoGenerated
-    public PublicationChannelUtil(){}
+    public PublicationChannelUtil() {
+    }
 
     public static Optional<ChannelClaimDto> getChannelClaim(IdentityServiceClient identityService, URI channelClaimId) {
         try {
@@ -34,32 +36,33 @@ public final class PublicationChannelUtil {
     public static PublicationChannelDao createPublicationChannelDao(IdentityServiceClient identityService,
                                                                     Resource resource,
                                                                     Publisher publisher) {
-        var channelClaimId = toChannelClaimUri(publisher);
+        var channelClaimId = toChannelClaimUri(publisher.getIdentifier());
+        var channelType = ChannelType.fromChannelId(publisher.getId());
         return getChannelClaim(identityService, channelClaimId)
-                   .map(channelClaimDto -> createClaimedChannelDao(resource, channelClaimDto, channelClaimId))
-                   .orElseGet(() -> createNonClaimedChannelDao(resource, publisher, channelClaimId));
+                   .map(channelClaimDto -> createClaimedChannelDao(resource, channelClaimDto, channelType))
+                   .orElseGet(() -> createNonClaimedChannelDao(resource, channelClaimId, channelType));
     }
 
-    private static URI toChannelClaimUri(Publisher publisher) {
+    public static URI toChannelClaimUri(UUID channelClaimIdentifier) {
         // The channel claim id will be available in channel claim response later, doing it manually until then
         return UriWrapper.fromHost(API_HOST)
                    .addChild(CUSTOMER)
                    .addChild(CHANNEL_CLAIM)
-                   .addChild(publisher.getIdentifier().toString())
+                   .addChild(channelClaimIdentifier.toString())
                    .getUri();
     }
 
-    private static PublicationChannelDao createNonClaimedChannelDao(Resource resource, Publisher publisher,
-                                                                    URI channelClaimId) {
+    private static PublicationChannelDao createNonClaimedChannelDao(Resource resource, URI channelClaimId,
+                                                                    ChannelType channelType) {
         return NonClaimedPublicationChannel
-                   .create(channelClaimId, resource.getIdentifier(), ChannelType.fromChannelId(publisher.getId()))
+                   .create(channelClaimId, resource.getIdentifier(), channelType)
                    .toDao();
     }
 
     private static PublicationChannelDao createClaimedChannelDao(Resource resource, ChannelClaimDto claim,
-                                                                 URI channelClaimId) {
+                                                                 ChannelType channelType) {
         return ClaimedPublicationChannel
-                   .create(channelClaimId, claim, resource.getIdentifier())
+                   .create(claim, resource.getIdentifier(), channelType)
                    .toDao();
     }
 }
