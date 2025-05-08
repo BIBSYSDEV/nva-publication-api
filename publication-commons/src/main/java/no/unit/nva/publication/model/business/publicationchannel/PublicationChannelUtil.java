@@ -64,4 +64,8 @@ public final class PublicationChannelUtil {
                    .create(claim, resource.getIdentifier(), channelType)
                    .toDao();
     }
+
+    public static Optional<UUID> getPublisherIdentifier(Resource resource) {
+        return resource.getPublisherWhenDegree().map(Publisher::getIdentifier);
+    }
 }

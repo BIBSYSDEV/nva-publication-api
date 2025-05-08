@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.getPublisherIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -25,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -34,7 +34,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -131,33 +130,22 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var newPublisherIdentifier = getPublisherIdentifier(resource);
 
         if (!Objects.equals(oldPublisherIdentifier, newPublisherIdentifier)) {
-            oldPublisherIdentifier.ifPresent(id -> removePublicationChannel(persistedResource, id, transactWriteItems));
-            newPublisherIdentifier.ifPresent(id -> addPublicationChannel(resource, transactWriteItems));
+            oldPublisherIdentifier.flatMap(id -> persistedResource.getPublicationChannelByIdentifier(
+                new SortableIdentifier(id.toString())))
+                .ifPresent(publicationChannel -> {
+                    TransactWriteItem deleteAction = newDeleteTransactionItem(publicationChannel.toDao());
+                    transactWriteItems.add(deleteAction);
+            });
+            newPublisherIdentifier.ifPresent(id -> {
+                var publisher = resource.getPublisherWhenDegree().orElseThrow();
+                var publicationChannelDao = createPublicationChannelDao(identityService, resource, publisher);
+                var insertionAction = newPutTransactionItem(publicationChannelDao, tableName);
+                transactWriteItems.add(insertionAction);
+            });
         }
 
         return transactWriteItems;
     }
-
-    private Optional<UUID> getPublisherIdentifier(Resource resource) {
-        return resource.getPublisherWhenDegree().map(Publisher::getIdentifier);
-    }
-
-    private void removePublicationChannel(Resource persistedResource, UUID publisherIdentifier,
-                                          List<TransactWriteItem> transactWriteItems) {
-        persistedResource.getPublicationChannelByIdentifier(new SortableIdentifier(publisherIdentifier.toString()))
-            .ifPresent(publicationChannel -> {
-                TransactWriteItem deleteAction = newDeleteTransactionItem(publicationChannel.toDao());
-                transactWriteItems.add(deleteAction);
-            });
-    }
-
-    private void addPublicationChannel(Resource resource, List<TransactWriteItem> transactWriteItems) {
-        var publisher = resource.getPublisherWhenDegree().orElseThrow();
-        var publicationChannelDao = createPublicationChannelDao(identityService, resource, publisher);
-        var insertionAction = newPutTransactionItem(publicationChannelDao, tableName);
-        transactWriteItems.add(insertionAction);
-    }
-
 
     public Resource updateResource(Resource resource, UserInstance userInstance) {
         var persistedResource = fetchExistingResource(resource.toPublication());
