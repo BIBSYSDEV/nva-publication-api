@@ -417,7 +417,8 @@ public class ResourceService extends ServiceWithTransactions {
     public void batchUpdateChannels(List<PublicationChannel> publicationChannels) {
         var writeRequests = publicationChannels.stream()
                                 .map(PublicationChannel::toDao)
-                                .map(dao -> new PutRequest().withItem(dao.toDynamoFormat()))
+                                .map(PublicationChannelDao::toDynamoFormat)
+                                .map(item -> new PutRequest().withItem(item))
                                 .map(WriteRequest::new)
                                 .toList();
         Lists.partition(writeRequests, 25)

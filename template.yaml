@@ -2045,6 +2045,7 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.PublicationChannelsUpdateHandler::handleRequest
+      Timeout: 900
       Policies:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn

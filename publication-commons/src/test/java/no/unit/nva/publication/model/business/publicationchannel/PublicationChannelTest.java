@@ -208,10 +208,11 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
 
         var claimedChannel = channel.toClaimedChannel(customerId, organizationId, constraint);
 
-        assertInstanceOf(ClaimedPublicationChannel.class, claimedChannel);
-        assertEquals(customerId, claimedChannel.getCustomerId());
-        assertEquals(organizationId, claimedChannel.getOrganizationId());
-        assertEquals(constraint, claimedChannel.getConstraint());
+        var expectedChannel = new ClaimedPublicationChannel(channel.getId(), customerId, organizationId, constraint,
+                                                            channel.getChannelType(), channel.getIdentifier(),
+                                                            channel.getResourceIdentifier(), channel.getCreatedDate(),
+                                                            claimedChannel.getModifiedDate());
+        assertEquals(expectedChannel, claimedChannel);
     }
 
     @Test
@@ -223,10 +224,12 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
 
         var claimedChannel = channel.update(customerId, organizationId, constraint);
 
-        assertInstanceOf(ClaimedPublicationChannel.class, claimedChannel);
-        assertEquals(customerId, claimedChannel.getCustomerId());
-        assertEquals(organizationId, claimedChannel.getOrganizationId());
-        assertEquals(constraint, claimedChannel.getConstraint());
+        var expectedChannel = new ClaimedPublicationChannel(channel.getId(), customerId, organizationId, constraint,
+                                      channel.getChannelType(), channel.getIdentifier(),
+                                      channel.getResourceIdentifier(), channel.getCreatedDate(),
+                                      claimedChannel.getModifiedDate());
+
+        assertEquals(expectedChannel, claimedChannel);
     }
 
     @Test
