@@ -140,7 +140,7 @@ public class UpdatePublicationHandler
         var existingResource = fetchResource(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var permissionStrategy = PublicationPermissions.create(existingResource.toPublication(), userInstance);
+        var permissionStrategy = PublicationPermissions.create(existingResource, userInstance);
         var updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,

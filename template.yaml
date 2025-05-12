@@ -131,6 +131,10 @@ Parameters:
     Type: String
     Description: comma separated list of external clients that are allowed to contact the HTTP APIs, "*" indicates that all origins are allowed
     Default: '*'
+  S3NoncurrentVersionExpirationDays:
+    Type: Number
+    Default: 60
+    Description: Number of days to retain non-current object versions in versioned S3 buckets
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -2677,11 +2681,31 @@ Resources:
           - Id: DeleteContentAfter3Days
             Status: Enabled
             ExpirationInDays: 3
+          - Id: ExpireOldObjectVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
+      Tags:
+          - Key: IncludedInBackup
+            Value: "false"
+      VersioningConfiguration:
+          Status: Enabled
 
   BrageMigrationErrorBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldObjectVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
+      Tags:
+          - Key: IncludedInBackup
+            Value: "false"
+      VersioningConfiguration:
+          Status: Enabled
 
   ScopusZipBucket:
     Type: AWS::S3::Bucket
@@ -2693,6 +2717,15 @@ Resources:
             Status: Enabled
             ExpirationInDays: 3
             Prefix: 'unzipped'
+          - Id: ExpireOldObjectVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
+      Tags:
+          - Key: IncludedInBackup
+            Value: "false"
+      VersioningConfiguration:
+          Status: Enabled
 
   ScopusXmlBucket:
     Type: AWS::S3::Bucket
@@ -2703,11 +2736,31 @@ Resources:
           - Id: DeleteContentAfter3Months
             Status: Enabled
             ExpirationInDays: 90
+          - Id: ExpireOldObjectVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
+      Tags:
+          - Key: IncludedInBackup
+            Value: "false"
+      VersioningConfiguration:
+          Status: Enabled
 
   ImportCandidateStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${ImportCandidateStorageBucketName}-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldObjectVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
+      Tags:
+          - Key: IncludedInBackup
+            Value: "true"
+      VersioningConfiguration:
+          Status: Enabled
 
   ScopusImportReportBucket:
     Type: AWS::S3::Bucket

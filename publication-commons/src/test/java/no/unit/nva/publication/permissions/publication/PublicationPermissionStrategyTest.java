@@ -63,6 +63,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -109,7 +110,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(randomString(), randomUri(), randomUri());
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
+                                   .create(Resource.fromPublication(publication), RequestUtil.createUserInstanceFromRequest(
                                        requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
@@ -123,7 +124,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertThrows(UnauthorizedException.class, () ->
                                                                  PublicationPermissions
-                                                                     .create(publication,
+                                                                     .create(Resource.fromPublication(publication),
                                                                              RequestUtil.createUserInstanceFromRequest(
                                                                                  requestInfo, identityServiceClient))
                                                                      .allowsAction(UNPUBLISH));
@@ -134,7 +135,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(randomString(), randomUri());
         var requestInfo = createThirdPartyRequestInfo(getAccessRightsForCurator());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var strategy = PublicationPermissions.create(publication, userInstance);
+        var strategy = PublicationPermissions.create(Resource.fromPublication(publication), userInstance);
 
         Assertions.assertThrows(UnauthorizedException.class, () -> strategy.authorize(UPDATE));
     }
@@ -151,7 +152,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, editorInstitution, randomUri());
 
         assertThat(
-            PublicationPermissions.create(publication, RequestUtil.createUserInstanceFromRequest(
+            PublicationPermissions.create(Resource.fromPublication(publication), RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
                 .getAllAllowedActions(), is(empty()));
     }
@@ -170,7 +171,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, editorInstitution, topLevelCristinOrgId);
 
         assertThat(
-            PublicationPermissions.create(publication, RequestUtil.createUserInstanceFromRequest(
+            PublicationPermissions.create(Resource.fromPublication(publication), RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
                 .getAllAllowedActions(), hasItems(UPDATE, UNPUBLISH, UPDATE_FILES));
     }
@@ -189,7 +190,7 @@ class PublicationPermissionStrategyTest {
                                                            randomUri(), randomUri());
 
         PublicationPermissions
-            .create(publication, RequestUtil.createUserInstanceFromRequest(
+            .create(Resource.fromPublication(publication), RequestUtil.createUserInstanceFromRequest(
                 requestInfo, identityServiceClient))
             .authorize(UPDATE);
         assertThat(appender.getMessages(), containsString(contributorName));
@@ -211,7 +212,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, editorInstitution, topLevelCristinOrgId);
 
         assertTrue(
-            PublicationPermissions.create(publication, RequestUtil.createUserInstanceFromRequest(
+            PublicationPermissions.create(Resource.fromPublication(publication), RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
                 .isPublishingCuratorOnPublication());
     }

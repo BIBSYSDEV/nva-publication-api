@@ -9,7 +9,6 @@ import java.util.Collection;
 import java.util.Optional;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.Resource;
@@ -24,8 +23,8 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     private static final boolean DENY = true;
     private static final boolean PASS = false;
 
-    public DegreeDenyStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public DegreeDenyStrategy(Resource resource, UserInstance userInstance) {
+        super(resource, userInstance);
     }
 
     @Override
@@ -98,7 +97,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private Optional<CuratingInstitution> getCuratingInstitutionsForCurrentUser() {
-        return Optional.ofNullable(publication.getCuratingInstitutions())
+        return Optional.ofNullable(resource.getCuratingInstitutions())
                    .stream()
                    .flatMap(Collection::stream)
                    .filter(org -> nonNull(userInstance) && org.id().equals(userInstance.getTopLevelOrgCristinId()))
@@ -106,7 +105,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private Optional<Contributor> getContributor(URI contributorId) {
-        return publication.getEntityDescription()
+        return resource.getEntityDescription()
                    .getContributors()
                    .stream()
                    .filter(contributor -> contributorId.equals(contributor.getIdentity().getId()))

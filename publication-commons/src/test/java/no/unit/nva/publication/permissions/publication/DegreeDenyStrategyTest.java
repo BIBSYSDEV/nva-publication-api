@@ -38,6 +38,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.Constraint;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
@@ -60,7 +61,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                             registrator.topLevelCristinId);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publication, null)
+                                  .create(Resource.fromPublication(publication), null)
                                   .allowsAction(operation));
     }
 
@@ -75,7 +76,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         registrator.topLevelCristinId);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, null)
+                                   .create(Resource.fromPublication(publication), null)
                                    .allowsAction(operation));
     }
 
@@ -104,7 +105,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publicationWithStatus, userInstance)
+                                  .create(Resource.fromPublication(publicationWithStatus), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -123,7 +124,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -156,7 +157,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                       identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -185,7 +186,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -207,7 +208,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -229,7 +230,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -258,7 +259,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -288,7 +289,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -311,7 +312,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(thesisCurator), identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -334,7 +335,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(thesisCurator), identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -364,7 +365,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -394,7 +395,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -417,7 +418,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(thesisCurator), identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publicationWithPendingFileWithEmbargo, userInstance)
+                                  .create(Resource.fromPublication(publicationWithPendingFileWithEmbargo), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -439,7 +440,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(thesisCurator), identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publicationWithOpenFileWithEmbargo, userInstance)
+                                  .create(Resource.fromPublication(publicationWithOpenFileWithEmbargo), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -462,7 +463,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(embargoThesisCurator), identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publicationWithPendingFileWithEmbargo, userInstance)
+                                  .create(Resource.fromPublication(publicationWithPendingFileWithEmbargo), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -486,7 +487,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publicationWithOpenFileWithEmbargo, userInstance)
+                                  .create(Resource.fromPublication(publicationWithOpenFileWithEmbargo), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -522,7 +523,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -559,7 +560,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
@@ -775,7 +776,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
@@ -814,7 +815,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -846,7 +847,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 

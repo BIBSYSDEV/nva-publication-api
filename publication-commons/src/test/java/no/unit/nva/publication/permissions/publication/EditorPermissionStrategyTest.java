@@ -11,6 +11,7 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -38,7 +39,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
@@ -57,7 +58,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(UPDATE));
     }
 
@@ -81,7 +82,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -99,7 +100,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
@@ -119,7 +120,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(REPUBLISH));
     }
 }
