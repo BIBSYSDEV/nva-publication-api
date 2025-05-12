@@ -1,11 +1,16 @@
 package no.unit.nva.publication.permissions.publication;
 
+import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
+import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
+import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Instant;
@@ -14,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
@@ -28,12 +34,15 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.Constraint;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -359,7 +368,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                   .allowsAction(operation));
     }
 
-    @Disabled("Until channel claim is available in publication object")
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance "
                               + "type {1} when degree has open files")
     @MethodSource("argumentsForThesisCurator")
@@ -389,7 +397,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                   .create(publication, userInstance)
                                   .allowsAction(operation));
     }
-
 
     @ParameterizedTest(name = "Should deny Thesis Curator from Registrators institution {0} operation on instance "
                               + "type {1} when degree has embargo but no open files")
@@ -519,7 +526,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                   .allowsAction(operation));
     }
 
-    @Disabled("Until channel claim is available in publication object")
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance type "
                               + "{1} when curating institution has supervisor only and publication has open files")
     @MethodSource("argumentsForThesisCurator")
@@ -556,6 +562,188 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                    .create(publication, userInstance)
                                    .allowsAction(operation));
     }
+
+    @ParameterizedTest(name = "Should deny Registrator {0} operation on instance type {1} when degree has open file "
+                              + "and channel owned by own institution")
+    @MethodSource("argumentsForRegistrator")
+    void shouldDenyRegistratorWhenOpenFileAndChannelOwnedByOwnInstitution(PublicationOperation operation,
+                                                            Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution;
+
+        var publication = createPublicationWithOpenFile(degreeInstanceClass,
+                                                        owningInstitution.registrator.name,
+                                                        owningInstitution.registrator.customer,
+                                                        owningInstitution.registrator.topLevelCristinId);
+
+        var resource = Resource.fromPublication(publication);
+        var publicationChannel = new ClaimedPublicationChannel(randomUri(), owningInstitution.registrator.customer,
+                                                               owningInstitution.registrator.topLevelCristinId,
+                                                               new Constraint(EVERYONE, OWNER_ONLY, List.of()),
+                                                               PUBLISHER, new SortableIdentifier(randomUUID().toString()),
+                                                               resource.getIdentifier(),
+                                                               Instant.now(), Instant.now());
+
+        resource.setPublicationChannels(List.of(publicationChannel));
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.registrator),
+                                                                     identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
+                                   .create(publication, userInstance)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} when degree has open file "
+                              + "and channel owned by own institution")
+    @MethodSource("argumentsForCurator")
+    void shouldDenyCuratorWhenOpenFileAndChannelOwnedByOwnInstitution(PublicationOperation operation,
+                                                                          Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution;
+
+        var publication = createPublicationWithOpenFile(degreeInstanceClass,
+                                                        owningInstitution.registrator.name,
+                                                        owningInstitution.registrator.customer,
+                                                        owningInstitution.registrator.topLevelCristinId);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.curator),
+                                                                     identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
+                                   .create(publication, userInstance)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow Thesis Curator {0} operation on instance type {1} when degree has open "
+                              + "file and channel owned by own institution")
+    @MethodSource("argumentsForThesisCurator")
+    void shouldAllowThesisCuratorWhenOpenFileAndChannelOwnedByOwnInstitution(PublicationOperation operation,
+                                                                      Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    @ParameterizedTest(name = "Should deny Curator from another institution {0} operation on instance type {1} when "
+                              + "degree has open file and channel owned by own institution")
+    @MethodSource("argumentsForCurator")
+    void shouldDenyCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByOwnInstitution(PublicationOperation operation,
+                                                                      Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    @ParameterizedTest(name = "Should deny Thesis Curator from another institution {0} operation on instance type {1} "
+                              + "when degree has open file and channel owned by own institution")
+    @MethodSource("argumentsForThesisCurator")
+    void shouldDenyThesisCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByOwnInstitution(PublicationOperation operation,
+                                                                             Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    @ParameterizedTest(name = "Should deny Registrator {0} operation on instance type {1} when degree has open file "
+                              + "and channel owned by another institution")
+    @MethodSource("argumentsForRegistrator")
+    void shouldDenyRegistratorWhenOpenFileAndChannelOwnedByAnotherInstitution(PublicationOperation operation,
+                                                                          Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution;
+        var curatingInstitution = suite.curatingInstitution;
+
+        var publication = createPublicationWithOpenFile(degreeInstanceClass,
+                                                        owningInstitution.registrator.name,
+                                                        owningInstitution.registrator.customer,
+                                                        owningInstitution.registrator.topLevelCristinId);
+
+        var contributor = createContributor(Role.CREATOR, curatingInstitution.contributor.cristinId,
+                                            curatingInstitution.contributor.topLevelCristinId);
+        publication.getEntityDescription().setContributors(List.of(contributor));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution.contributor.topLevelCristinId,
+                                                                           Set.of(curatingInstitution.contributor.cristinId))));
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.thesisCurator),
+                                                                     identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
+                                   .create(publication, userInstance)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} when degree has open file "
+                              + "and channel owned by another institution")
+    @MethodSource("argumentsForCurator")
+    void shouldDenyCuratorWhenOpenFileAndChannelOwnedByAnotherInstitution(PublicationOperation operation,
+                                                                      Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    @ParameterizedTest(name = "Should deny Thesis Curator {0} operation on instance type {1} when degree has open "
+                              + "file and channel owned by another institution")
+    @MethodSource("argumentsForThesisCurator")
+    void shouldDenyThesisCuratorWhenOpenFileAndChannelOwnedByAnotherInstitution(PublicationOperation operation,
+                                                                             Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    @ParameterizedTest(name = "Should deny Curator from another institution {0} operation on instance type {1} when "
+                              + "degree has open file and channel owned by that institution")
+    @MethodSource("argumentsForCurator")
+    void shouldDenyCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByThatInstitution(PublicationOperation operation,
+                                                                                            Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    @ParameterizedTest(name = "Should allow Thesis Curator from another institution {0} operation on instance type {1} "
+                              + "when degree has open file and channel owned by that institution")
+    @MethodSource("argumentsForThesisCurator")
+    void shouldAllowThesisCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByThatInstitution(PublicationOperation operation,
+                                                                                                  Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    @ParameterizedTest(name = "Should deny Curator from institution Z {0} operation on instance type {1} when "
+                              + "Registrator is from institution X and degree has open file and channel owned by "
+                              + "institution Y")
+    @MethodSource("argumentsForCurator")
+    void shouldDenyCuratorFromInstitutionZWhenRegistratorFromInstitutionXAndOpenFileAndChannelOwnedByInstitutionY(PublicationOperation operation,
+                                                                                                    Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    @ParameterizedTest(name = "Should deny Thesis Curator from institution Z {0} operation on instance type {1} when "
+                              + "Registrator is from institution X and degree has open file and channel owned by "
+                              + "institution Y")
+    @MethodSource("argumentsForThesisCurator")
+    void shouldDenyThesisCuratorFromInstitutionZWhenRegistratorFromInstitutionXAndOpenFileAndChannelOwnedByInstitutionY(PublicationOperation operation,
+                                                                                                                  Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+    }
+
+    // Claimed by X with editing policy OwnerOnly, degree from X with open file -> Registrator          denied
+    // Claimed by X with editing policy OwnerOnly, degree from X with open file -> Curator from X       denied
+    // Claimed by X with editing policy OwnerOnly, degree from X with open file -> ThesisCurator from X allowed
+    // Claimed by X with editing policy OwnerOnly, degree from X with open file -> Curator from Y       denied
+    // Claimed by X with editing policy OwnerOnly, degree from X with open file -> ThesisCurator from Y denied
+
+    // Claimed by Y with editing policy OwnerOnly, degree from X with open file -> Registrator          denied
+    // Claimed by Y with editing policy OwnerOnly, degree from X with open file -> Curator from X       denied
+    // Claimed by Y with editing policy OwnerOnly, degree from X with open file -> ThesisCurator from X denied
+    // Claimed by Y with editing policy OwnerOnly, degree from X with open file -> Curator from Y       denied
+    // Claimed by Y with editing policy OwnerOnly, degree from X with open file -> ThesisCurator from Y allowed
+
+    // Claimed by X with editing policy OwnerOnly, degree from X with open file -> Curator from Z       denied
+    // Claimed by X with editing policy OwnerOnly, degree from X with open file -> ThesisCurator from Z denied
 
     @ParameterizedTest(name = "Should not throw NPE when contributor is missing ID")
     @MethodSource("argumentsForCurator")
@@ -740,7 +928,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     public static OpenFile randomOpenFileWithEmbargo() {
-        return new OpenFile(UUID.randomUUID(), RandomDataGenerator.randomString(),
+        return new OpenFile(randomUUID(), RandomDataGenerator.randomString(),
                             RandomDataGenerator.randomString(), RandomDataGenerator.randomInteger().longValue(),
                             RandomDataGenerator.randomUri(), PublisherVersion.PUBLISHED_VERSION,
                             Instant.now().plusSeconds(60 * 60 * 24),
@@ -751,7 +939,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     public static PendingOpenFile randomPendingOpenFileWithEmbargo() {
-        return new PendingOpenFile(UUID.randomUUID(), RandomDataGenerator.randomString(),
+        return new PendingOpenFile(randomUUID(), RandomDataGenerator.randomString(),
                                    RandomDataGenerator.randomString(), RandomDataGenerator.randomInteger().longValue(),
                                    RandomDataGenerator.randomUri(), PublisherVersion.PUBLISHED_VERSION,
                                    Instant.now().plusSeconds(60 * 60 * 24),
