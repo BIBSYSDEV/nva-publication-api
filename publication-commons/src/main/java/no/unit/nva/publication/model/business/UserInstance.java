@@ -4,7 +4,9 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import nva.commons.apigateway.AccessRight;
@@ -94,7 +96,7 @@ public class UserInstance implements JsonSerializable {
 
     public static UserInstance fromPublication(Publication publication) {
         return new UserInstance(publication.getResourceOwner().getOwner().getValue(),
-                                publication.getPublisher().getId(),
+                                Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null),
                                 publication.getResourceOwner().getOwnerAffiliation(),
                                 null, null, List.of(), UserClientType.INTERNAL);
     }

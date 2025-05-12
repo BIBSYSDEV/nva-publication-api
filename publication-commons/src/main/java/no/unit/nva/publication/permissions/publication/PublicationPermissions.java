@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.grant.BackendClientGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.ContributorGrantStrategy;
@@ -26,29 +26,29 @@ public class PublicationPermissions {
     private final Set<PublicationGrantStrategy> grantStrategies;
     private final Set<PublicationDenyStrategy> denyStrategies;
     private final UserInstance userInstance;
-    private final Publication publication;
+    private final Resource resource;
 
     public PublicationPermissions(
-        Publication publication,
+        Resource resource,
         UserInstance userInstance) {
         this.userInstance = userInstance;
-        this.publication = publication;
+        this.resource = resource;
         this.grantStrategies = Set.of(
-            new EditorGrantStrategy(publication, userInstance),
-            new CuratorGrantStrategy(publication, userInstance),
-            new ContributorGrantStrategy(publication, userInstance),
-            new ResourceOwnerGrantStrategy(publication, userInstance),
-            new TrustedThirdPartyGrantStrategy(publication, userInstance),
-            new BackendClientGrantStrategy(publication, userInstance)
+            new EditorGrantStrategy(resource, userInstance),
+            new CuratorGrantStrategy(resource, userInstance),
+            new ContributorGrantStrategy(resource, userInstance),
+            new ResourceOwnerGrantStrategy(resource, userInstance),
+            new TrustedThirdPartyGrantStrategy(resource, userInstance),
+            new BackendClientGrantStrategy(resource, userInstance)
         );
         this.denyStrategies = Set.of(
-            new DegreeDenyStrategy(publication, userInstance),
-            new DeletedUploadDenyStrategy(publication, userInstance)
+            new DegreeDenyStrategy(resource, userInstance),
+            new DeletedUploadDenyStrategy(resource, userInstance)
         );
     }
 
-    public static PublicationPermissions create(Publication publication, UserInstance userInstance) {
-        return new PublicationPermissions(publication, userInstance);
+    public static PublicationPermissions create(Resource resource, UserInstance userInstance) {
+        return new PublicationPermissions(resource, userInstance);
     }
 
     public boolean isCuratorOnPublication() {
@@ -112,7 +112,7 @@ public class PublicationPermissions {
             logger.info("User {} was denied access {} on publication {} from strategies {}",
                         userInstance.getUsername(),
                         requestedPermission,
-                        publication.getIdentifier(),
+                        resource.getIdentifier(),
                         String.join(COMMA_DELIMITER, strategies));
 
             throw new UnauthorizedException(formatUnauthorizedMessage(requestedPermission));
@@ -132,13 +132,13 @@ public class PublicationPermissions {
         logger.info("User {} was allowed {} on publication {} from strategies {}",
                     userInstance.getUsername(),
                     requestedPermission,
-                    publication.getIdentifier(),
+                    resource.getIdentifier(),
                     String.join(COMMA_DELIMITER, strategies));
     }
 
     private String formatUnauthorizedMessage(PublicationOperation requestedPermission) {
         return String.format("Unauthorized: %s is not allowed to perform %s on %s", userInstance.getUsername(),
-                             requestedPermission, publication.getIdentifier());
+                             requestedPermission, resource.getIdentifier());
     }
 
 }

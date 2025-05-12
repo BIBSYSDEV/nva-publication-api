@@ -4,16 +4,16 @@ import static java.util.Objects.nonNull;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationGrantStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
 public final class ContributorGrantStrategy extends PublicationStrategyBase implements PublicationGrantStrategy {
 
-    public ContributorGrantStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public ContributorGrantStrategy(Resource resource, UserInstance userInstance) {
+        super(resource, userInstance);
     }
 
     @Override
@@ -43,7 +43,7 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase impl
     private boolean userIsVerifiedContributor() {
         return nonNull(userInstance)
                 && nonNull(this.userInstance.getPersonCristinId())
-                && Optional.ofNullable(publication.getEntityDescription())
+                && Optional.ofNullable(resource.getEntityDescription())
                    .map(EntityDescription::getContributors)
                    .stream()
                    .flatMap(List::stream)
@@ -57,7 +57,7 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase impl
     }
 
     private boolean userInstitutionIsCuratingInstitution() {
-        return publication.getCuratingInstitutions()
+        return resource.getCuratingInstitutions()
                    .stream()
                    .anyMatch(curatingInstitution ->
                                  curatingInstitution.id().equals(userInstance.getTopLevelOrgCristinId()));
