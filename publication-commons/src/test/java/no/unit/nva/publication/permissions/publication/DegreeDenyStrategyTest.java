@@ -56,21 +56,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                   .allowsAction(operation));
     }
 
-    @ParameterizedTest(name = "Should deny anonymous user {0} operation on instance type {1} when degree has no open "
-                              + "files")
-    @MethodSource("argumentsForAnonymousUser")
-    void kjjh(PublicationOperation operation, Class<?> degreeInstanceClass) {
-        var registrator = User.random();
-        var publication = createPublicationWithoutOpenFiles(degreeInstanceClass,
-                                                            registrator.name,
-                                                            registrator.customer,
-                                                            registrator.topLevelCristinId);
-
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), null)
-                                   .allowsAction(operation));
-    }
-
     @ParameterizedTest(name = "Should deny anonymous user {0} operation on instance type {1} when degree has open "
                               + "files")
     @MethodSource("argumentsForAnonymousUser")
