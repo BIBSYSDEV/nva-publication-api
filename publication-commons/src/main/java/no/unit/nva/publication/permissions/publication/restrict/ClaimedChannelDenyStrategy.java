@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
+import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
 import java.net.URI;
@@ -12,14 +13,20 @@ import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
 public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implements PublicationDenyStrategy {
 
+    private static final boolean PASS = false;
+
     public ClaimedChannelDenyStrategy(Resource resource, UserInstance userInstance) {
         super(resource, userInstance);
     }
 
     @Override
     public boolean deniesAction(PublicationOperation permission) {
-        if (userInstance.isExternalClient() || userInstance.isBackendClient()) {
-            return false;
+        if (isUsersDraft() || userInstance.isExternalClient() || userInstance.isBackendClient()) {
+            return PASS;
+        }
+
+        if (PARTIAL_UPDATE.equals(permission)) {
+            return PASS;
         }
 
         var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();

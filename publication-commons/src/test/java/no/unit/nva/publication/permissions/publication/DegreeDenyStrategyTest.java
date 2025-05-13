@@ -34,6 +34,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.Institution;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.InstitutionSuite;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.User;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -667,6 +668,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .create(resource, userInstance)
                                    .allowsAction(operation));
     }

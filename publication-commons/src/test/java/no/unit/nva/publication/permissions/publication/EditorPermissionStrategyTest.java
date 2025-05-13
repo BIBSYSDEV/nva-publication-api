@@ -3,7 +3,6 @@ package no.unit.nva.publication.permissions.publication;
 import static no.unit.nva.model.PublicationOperation.REPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.publication.permissions.PermissionsTestUtils.getAccessRightsForEditor;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,7 +24,8 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
 
     @ParameterizedTest(name = "Should deny editor {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE", "TERMINATE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE",
+        "PARTIAL_UPDATE", "TERMINATE"})
     void shouldDenyEditorOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -44,8 +44,10 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                    .allowsAction(operation));
     }
 
-    @Test
-    void shouldAllowEditorUpdateOnDegreeWithResourceOwnerAffiliation()
+    @ParameterizedTest
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
+        names = {"UNPUBLISH", "UPDATE", "PARTIAL_UPDATE"})
+    void shouldAllowEditorUpdateOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
         var cristinTopLevelId = randomUri();
@@ -60,7 +62,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissions
                                   .create(Resource.fromPublication(publication), userInstance)
-                                  .allowsAction(UPDATE));
+                                  .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should allow Editor {0} operation on degree resources with matching resource owner "

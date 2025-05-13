@@ -46,8 +46,8 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should deny trusted third party {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE", "TERMINATE",
-        "READ_HIDDEN_FILES", "UPLOAD_FILE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE",
+        "PARTIAL_UPDATE", "TERMINATE", "READ_HIDDEN_FILES", "UPLOAD_FILE"})
     void shouldDenyTrustedThirdPartyOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
