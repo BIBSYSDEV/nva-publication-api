@@ -107,6 +107,10 @@ public class PublicationStrategyBase {
                    .orElse(fail -> false);
     }
 
+    protected boolean isUsersDraft() {
+        return isDraft() && isOwner();
+    }
+
     protected boolean isDraft() {
         return publication.getStatus().equals(DRAFT);
     }

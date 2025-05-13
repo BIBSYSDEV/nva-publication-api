@@ -99,8 +99,4 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
                    .filter(contributor -> contributorId.equals(contributor.getIdentity().getId()))
                    .findFirst();
     }
-
-    private boolean isUsersDraft() {
-        return isDraft() && isOwner();
-    }
 }
