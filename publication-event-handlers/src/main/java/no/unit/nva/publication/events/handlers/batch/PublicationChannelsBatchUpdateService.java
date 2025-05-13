@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 public class PublicationChannelsBatchUpdateService {
 
     private static final Logger logger = LoggerFactory.getLogger(PublicationChannelsBatchUpdateService.class);
-    protected static final String UPDATED_PUBLICATION_CHANNELS_MESSAGE = "Updated {} publication channels with identifier {}";
+    protected static final String UPDATED_PUBLICATION_CHANNELS_MESSAGE = "Updated {} publications with channel {}";
     private final ResourceService resourceService;
 
     public PublicationChannelsBatchUpdateService(ResourceService resourceService) {
