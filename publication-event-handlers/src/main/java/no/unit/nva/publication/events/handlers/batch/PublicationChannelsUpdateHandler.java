@@ -18,7 +18,7 @@ public class PublicationChannelsUpdateHandler extends DestinationsEventBridgeEve
     private final PublicationChannelsBatchUpdateService service;
 
     @JacocoGenerated
-    protected PublicationChannelsUpdateHandler() {
+    public PublicationChannelsUpdateHandler() {
         this(new PublicationChannelsBatchUpdateService(ResourceService.defaultService()));
     }
 
