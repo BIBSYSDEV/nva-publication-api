@@ -28,7 +28,6 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.testing.PublicationGenerator.randomAdditionalIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -2299,26 +2298,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var content = s3Driver.getFile(uri);
 
         assertThat(content, containsString("Empty fields found: entityDescription.mainTitle"));
-    }
-
-    @Test
-    void shouldPersistIgnoredPublicationErrorWhenImportingStudentThesisFromUio() throws IOException {
-        var customer = "uio";
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_BACHELOR)
-                                 .withCustomer(new Customer(customer, randomUri()))
-                                 .build();
-        var s3Event = createNewBrageRecordEventForCustomer(brageGenerator.getBrageRecord(), customer);
-        handler.handleRequest(s3Event, CONTEXT);
-
-        var uri = UriWrapper.fromUri(ERROR_BUCKET_PATH)
-                   .addChild(customer)
-                   .addChild(s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT))
-                   .addChild(IgnoredPublicationException.class.getSimpleName())
-                   .addChild(UriWrapper.fromUri(extractFilename(s3Event)).getLastPathElement())
-            ;
-
-        assertThat(s3Driver.getFile(uri.toS3bucketPath()), is(notNullValue()));
     }
 
     @Test

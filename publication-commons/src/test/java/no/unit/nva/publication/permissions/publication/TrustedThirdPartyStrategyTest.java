@@ -14,6 +14,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -40,13 +41,13 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should deny trusted third party {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE", "TERMINATE",
-        "READ_HIDDEN_FILES", "UPLOAD_FILE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE",
+        "PARTIAL_UPDATE", "TERMINATE", "READ_HIDDEN_FILES", "UPLOAD_FILE"})
     void shouldDenyTrustedThirdPartyOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -55,7 +56,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
@@ -72,7 +73,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(DELETE));
     }
 
@@ -89,7 +90,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                 .build();
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(DELETE));
     }
 
@@ -101,7 +102,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         var requestInfo = createThirdPartyRequestInfo();
 
         Assertions.assertFalse(
-            PublicationPermissions.create(publication, RequestUtil.createUserInstanceFromRequest(
+            PublicationPermissions.create(Resource.fromPublication(publication), RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
                 .allowsAction(UPDATE));
     }
@@ -115,7 +116,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                                           userInstanse.getTopLevelOrgCristinId());
 
         Assertions.assertTrue(
-            PublicationPermissions.create(publication, userInstanse)
+            PublicationPermissions.create(Resource.fromPublication(publication), userInstanse)
                 .allowsAction(UPDATE));
     }
 
@@ -128,7 +129,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         var publication = createDegreePhd(randomString(), publisher, userInstanse.getTopLevelOrgCristinId());
 
         Assertions.assertFalse(
-            PublicationPermissions.create(publication, userInstanse)
+            PublicationPermissions.create(Resource.fromPublication(publication), userInstanse)
                 .allowsAction(UPDATE));
     }
 }

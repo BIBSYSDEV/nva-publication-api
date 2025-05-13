@@ -25,7 +25,7 @@ public final class ReserveDoiRequestValidator {
     }
 
     private static boolean userHasNoRightsToCreateDoi(UserInstance userInstance, Resource resource) {
-        return !PublicationPermissions.create(resource.toPublication(), userInstance)
+        return !PublicationPermissions.create(resource, userInstance)
                     .allowsAction(PublicationOperation.DOI_REQUEST_CREATE);
     }
 

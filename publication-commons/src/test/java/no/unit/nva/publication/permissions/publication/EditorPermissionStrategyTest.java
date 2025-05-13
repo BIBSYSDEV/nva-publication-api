@@ -11,6 +11,7 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,8 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
 
     @ParameterizedTest(name = "Should deny editor {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE", "TERMINATE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE",
+        "PARTIAL_UPDATE", "TERMINATE"})
     void shouldDenyEditorOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -38,12 +40,14 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
-    @Test
-    void shouldAllowEditorUpdateOnDegreeWithResourceOwnerAffiliation()
+    @ParameterizedTest
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
+        names = {"UNPUBLISH", "UPDATE", "PARTIAL_UPDATE"})
+    void shouldAllowEditorUpdateOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
         var cristinTopLevelId = randomUri();
@@ -57,8 +61,8 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
-                                  .allowsAction(UPDATE));
+                                  .create(Resource.fromPublication(publication), userInstance)
+                                  .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should allow Editor {0} operation on degree resources with matching resource owner "
@@ -81,7 +85,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -99,7 +103,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
@@ -119,7 +123,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(REPUBLISH));
     }
 }

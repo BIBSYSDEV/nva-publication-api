@@ -3,6 +3,7 @@ package no.unit.nva.publication.permissions.file;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
 import java.util.Optional;
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -17,6 +18,7 @@ public class ClaimedChannelFileDenyStrategy extends FileStrategyBase implements 
     @Override
     public boolean deniesAction(FileOperation permission) {
         return isWriteOrDelete(permission)
+               && file.getFile() instanceof OpenFile
                && !isExternalClientWithRelation()
                && hasClaimedPublisher()
                && isDeniedUser();

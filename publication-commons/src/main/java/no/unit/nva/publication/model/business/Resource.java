@@ -258,6 +258,13 @@ public class Resource implements Entity {
         return nonNull(publicationChannels) ? publicationChannels : Collections.emptyList();
     }
 
+    public Optional<PublicationChannel> getPublicationChannelByIdentifier(SortableIdentifier identifier) {
+        return getPublicationChannels()
+                   .stream()
+                   .filter(publicationChannel -> identifier.equals(publicationChannel.getIdentifier()))
+                   .findFirst();
+    }
+
     @JsonIgnore
     public Optional<Publisher> getPublisherWhenDegree() {
         return Optional.ofNullable(getEntityDescription())

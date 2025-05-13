@@ -2,10 +2,14 @@ package no.unit.nva.publication.permissions.file;
 
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
@@ -96,7 +100,7 @@ class FilePermissionTest {
 
     @ParameterizedTest
     @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldDenyFileCuratorOnFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
+    void shouldDenyFileCuratorOnOpenFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
         var claimedPublisher = createClaimedPublisher(randomUri());
         var resource = randomResource();
         resource.setPublicationChannels(List.of(claimedPublisher));
@@ -104,6 +108,18 @@ class FilePermissionTest {
         var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
         assertFalse(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
+    void shouldAllowRelatedUserOnNonOpenFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
+        var claimedPublisher = createClaimedPublisher(randomUri());
+        var resource = Resource.fromPublication(randomDegreePublication());
+        resource.setPublicationChannels(List.of(claimedPublisher));
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var fileEntry = FileEntry.create(randomPendingOpenFile(), resource.getIdentifier(), userInstance);
+
+        assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
     }
 
     private static UserInstance fileCuratorUserInstance(URI institutionId) {

@@ -8,6 +8,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
 
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -61,13 +62,14 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
 
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should deny verified contributor {0} operation on non-degree resources")
     @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
-        names = {"UNPUBLISH", "UPDATE", "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE", "DOI_REQUEST_CREATE",
+        names = {"UNPUBLISH", "UPDATE", "PARTIAL_UPDATE", "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE",
+            "DOI_REQUEST_CREATE",
             "UPLOAD_FILE"})
     void shouldDenyVerifiedContributorOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
@@ -82,7 +84,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
@@ -106,7 +108,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
                                                            topLevelCristinOrgId);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication,
+                                   .create(Resource.fromPublication(publication),
                                            RequestUtil.createUserInstanceFromRequest(
                                                requestInfo,
                                                identityServiceClient))

@@ -17,7 +17,9 @@ public enum PermissionsRole {
     CONTRIBUTOR_FOR_GIVEN_FILE("contributor at x"),
     OTHER_CONTRIBUTORS("other contributors", "contributor"),
     EXTERNAL_CLIENT("external client"),
-    PUBLICATION_OWNER("publication owner");
+    RELATED_EXTERNAL_CLIENT("related external client"),
+    PUBLICATION_OWNER("publication owner"),
+    EDITOR("editor"),;
 
     private final String[] values;
 

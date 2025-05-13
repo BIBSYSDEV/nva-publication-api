@@ -4,6 +4,8 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.getPublisherIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -22,8 +24,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
@@ -51,7 +56,7 @@ import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-@SuppressWarnings({"PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class UpdateResourceService extends ServiceWithTransactions {
 
     public static final String RESOURCE_ALREADY_DELETED = "Resource already deleted";
@@ -64,14 +69,17 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
     private final RawContentRetriever uriRetriever;
+    private final IdentityServiceClient identityService;
 
     public UpdateResourceService(AmazonDynamoDB client, String tableName, Clock clockForTimestamps,
-                                 ReadResourceService readResourceService, RawContentRetriever uriRetriever) {
+                                 ReadResourceService readResourceService, RawContentRetriever uriRetriever,
+                                 IdentityServiceClient identityService) {
         super(client);
         this.tableName = tableName;
         this.clockForTimestamps = clockForTimestamps;
         this.readResourceService = readResourceService;
         this.uriRetriever = uriRetriever;
+        this.identityService = identityService;
     }
 
     public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
@@ -113,6 +121,37 @@ public class UpdateResourceService extends ServiceWithTransactions {
         TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource), tableName);
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         sendTransactionWriteRequest(request);
+    }
+
+    public List<TransactWriteItem> updatePublicationChannelsForPublisherWhenDegree(Resource resource,
+                                                                                Resource persistedResource) {
+        var transactWriteItems = new ArrayList<TransactWriteItem>();
+
+        var oldPublisherIdentifier = getPublisherIdentifier(persistedResource);
+        var newPublisherIdentifier = getPublisherIdentifier(resource);
+
+        if (!Objects.equals(oldPublisherIdentifier, newPublisherIdentifier)) {
+            oldPublisherIdentifier.ifPresent(id -> removePublicationChannel(persistedResource, id, transactWriteItems));
+            newPublisherIdentifier.ifPresent(id -> addPublicationChannel(resource, transactWriteItems));
+        }
+
+        return transactWriteItems;
+    }
+
+    private void removePublicationChannel(Resource persistedResource, UUID publisherIdentifier,
+                                          List<TransactWriteItem> transactWriteItems) {
+        persistedResource.getPublicationChannelByIdentifier(new SortableIdentifier(publisherIdentifier.toString()))
+            .ifPresent(publicationChannel -> {
+                TransactWriteItem deleteAction = newDeleteTransactionItem(publicationChannel.toDao());
+                transactWriteItems.add(deleteAction);
+            });
+    }
+
+    private void addPublicationChannel(Resource resource, List<TransactWriteItem> transactWriteItems) {
+        var publisher = resource.getPublisherWhenDegree().orElseThrow();
+        var publicationChannelDao = createPublicationChannelDao(identityService, resource, publisher);
+        var insertionAction = newPutTransactionItem(publicationChannelDao, tableName);
+        transactWriteItems.add(insertionAction);
     }
 
     public Resource updateResource(Resource resource, UserInstance userInstance) {
@@ -231,6 +270,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         transactionItems.add(createPutTransaction(resource));
         transactionItems.addAll(updateFilesTransactions(resource, userInstance, persistedResource));
         transactionItems.addAll(ticketsTransactions);
+        transactionItems.addAll(updatePublicationChannelsForPublisherWhenDegree(resource, persistedResource));
         return transactionItems;
     }
 

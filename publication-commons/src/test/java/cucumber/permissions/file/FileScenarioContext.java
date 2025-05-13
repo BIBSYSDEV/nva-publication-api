@@ -1,14 +1,14 @@
 package cucumber.permissions.file;
 
 import static cucumber.permissions.PermissionsRole.EXTERNAL_CLIENT;
-import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_PUBLICATION_OWNER;
+import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE_EMBARGO;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
-import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS;
 import static cucumber.permissions.PermissionsRole.OTHER_CONTRIBUTORS;
 import static cucumber.permissions.PermissionsRole.PUBLICATION_OWNER;
 import static cucumber.permissions.PermissionsRole.UNAUTHENTICATED;
+import static cucumber.permissions.RolesToAccessRights.roleToAccessRightsMap;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
@@ -22,17 +22,16 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -40,7 +39,6 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 import nva.commons.apigateway.AccessRight;
 
@@ -54,14 +52,6 @@ public final class FileScenarioContext {
     private Set<PermissionsRole> roles = new HashSet<>();
     private boolean isEmbargo = false;
     private FileOwner fileOwnerType = FileOwner.OTHER_CONTRIBUTOR;
-
-    private static final Map<PermissionsRole, Set<AccessRight>> roleToAccessRightsMap = Map.of(
-        FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES),
-        FILE_CURATOR_BY_PUBLICATION_OWNER, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES),
-        FILE_CURATOR_DEGREE_EMBARGO, Set.of(AccessRight.MANAGE_DEGREE, AccessRight.MANAGE_DEGREE_EMBARGO),
-        FILE_CURATOR_DEGREE, Set.of(AccessRight.MANAGE_DEGREE),
-        FILE_CURATOR_FOR_GIVEN_FILE, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES)
-    );
 
     public void setFileType(String fileType) throws ClassNotFoundException {
         this.fileType = getFileType(fileType);
