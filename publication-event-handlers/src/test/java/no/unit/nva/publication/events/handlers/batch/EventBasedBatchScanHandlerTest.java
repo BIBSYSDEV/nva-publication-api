@@ -13,6 +13,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -22,10 +23,12 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -51,6 +54,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
@@ -89,7 +93,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateDataEntriesWhenValidRequestIsReceived()
-        throws ApiGatewayException {
+        throws ApiGatewayException, JsonProcessingException {
         Publication createdPublication = createPublication(randomPublication());
         Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
@@ -97,7 +101,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
 
-        assertThat(updatedResource, is(equalTo(initialResource)));
+        assertEquals(JsonUtils.dtoObjectMapper.writeValueAsString(initialResource),
+                     JsonUtils.dtoObjectMapper.writeValueAsString(updatedResource));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
     }
 

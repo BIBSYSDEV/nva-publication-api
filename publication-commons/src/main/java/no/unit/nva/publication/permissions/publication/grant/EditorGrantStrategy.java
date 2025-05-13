@@ -1,17 +1,16 @@
 package no.unit.nva.publication.permissions.publication.grant;
 
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationGrantStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
 public final class EditorGrantStrategy extends PublicationStrategyBase implements PublicationGrantStrategy {
 
-    public EditorGrantStrategy(Publication publication,
-                               UserInstance userInstance) {
-        super(publication, userInstance);
+    public EditorGrantStrategy(Resource resource, UserInstance userInstance) {
+        super(resource, userInstance);
     }
 
     @Override

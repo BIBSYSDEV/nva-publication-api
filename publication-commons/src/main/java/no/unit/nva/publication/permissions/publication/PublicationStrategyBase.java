@@ -7,17 +7,17 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.file.File.ACCEPTED_FILE_TYPES;
-import static nva.commons.core.attempt.Try.attempt;
 import java.util.Arrays;
 import java.util.Optional;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Publication;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
 import org.slf4j.Logger;
@@ -27,11 +27,11 @@ public class PublicationStrategyBase {
 
     public static final Logger logger = LoggerFactory.getLogger(PublicationStrategyBase.class);
 
-    protected final Publication publication;
+    protected final Resource resource;
     protected final UserInstance userInstance;
 
-    protected PublicationStrategyBase(Publication publication, UserInstance userInstance) {
-        this.publication = publication;
+    protected PublicationStrategyBase(Resource resource, UserInstance userInstance) {
+        this.resource = resource;
         this.userInstance = userInstance;
     }
 
@@ -40,7 +40,7 @@ public class PublicationStrategyBase {
     }
 
     protected boolean isProtectedDegreeInstanceType() {
-        return Optional.ofNullable(publication.getEntityDescription())
+        return Optional.ofNullable(resource.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationInstance)
                    .map(PublicationStrategyBase::publicationInstanceIsDegree)
@@ -59,22 +59,22 @@ public class PublicationStrategyBase {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("found topLevels {} for user {} of {}.",
-                    publication.getCuratingInstitutions(),
+                    resource.getCuratingInstitutions(),
                     userInstance.getUser(),
                     userTopLevelOrg);
-        return publication.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
+        return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
     }
 
     protected boolean userIsFromSameInstitutionAsPublicationOwner() {
-        if (isNull(userInstance) || isNull(userInstance.getTopLevelOrgCristinId()) || isNull(publication.getResourceOwner())) {
+        if (isNull(userInstance) || isNull(userInstance.getTopLevelOrgCristinId()) || isNull(resource.getResourceOwner())) {
             return false;
         }
 
-        return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
+        return userInstance.getTopLevelOrgCristinId().equals(resource.getResourceOwner().getOwnerAffiliation());
     }
 
     protected boolean isProtectedDegreeInstanceTypeWithEmbargo() {
-        return isProtectedDegreeInstanceType() && publication.getAssociatedArtifacts().stream()
+        return isProtectedDegreeInstanceType() && resource.getAssociatedArtifacts().stream()
                                                       .filter(File.class::isInstance)
                                                       .map(File.class::cast)
                                                       .anyMatch(this::hasEmbargo);
@@ -85,26 +85,27 @@ public class PublicationStrategyBase {
     }
 
     protected boolean isVerifiedContributor(Contributor contributor) {
-        return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
+        return Optional.ofNullable(contributor.getIdentity()).map(Identity::getId).isPresent();
     }
 
     protected boolean hasApprovedFiles() {
-        return publication.getAssociatedArtifacts()
+        return resource.getAssociatedArtifacts()
                    .stream()
                    .anyMatch(artifact -> ACCEPTED_FILE_TYPES
                                              .contains(artifact.getClass()));
     }
 
     protected boolean hasOpenFiles() {
-        return publication.getAssociatedArtifacts()
+        return resource.getAssociatedArtifacts()
                    .stream()
                    .anyMatch(OpenFile.class::isInstance);
     }
 
     protected boolean isOwner() {
-        return nonNull(userInstance) && attempt(userInstance::getUsername)
-                   .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
-                   .orElse(fail -> false);
+        var owner = UserInstance.fromPublication(resource.toPublication()).getUsername();
+        return Optional.ofNullable(userInstance)
+                   .map(userInstance -> owner.equals(userInstance.getUsername()))
+                   .orElse(false);
     }
 
     protected boolean isUsersDraft() {
@@ -112,15 +113,15 @@ public class PublicationStrategyBase {
     }
 
     protected boolean isDraft() {
-        return publication.getStatus().equals(DRAFT);
+        return resource.getStatus().equals(DRAFT);
     }
 
     protected boolean isUnpublished() {
-        return publication.getStatus().equals(UNPUBLISHED);
+        return resource.getStatus().equals(UNPUBLISHED);
     }
 
     protected boolean isPublished() {
-        return publication.getStatus().equals(PUBLISHED);
+        return resource.getStatus().equals(PUBLISHED);
     }
 
     private static Boolean publicationInstanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {

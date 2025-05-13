@@ -95,7 +95,7 @@ public class PublicationScenarioContext {
                                            .build())
                 .build();
 
-        return new PublicationPermissions(resource.toPublication(), user);
+        return new PublicationPermissions(resource, user);
     }
 
     private List<PublicationChannel> generatePublicationChannels(Resource randomResource) {

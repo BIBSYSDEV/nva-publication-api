@@ -3,7 +3,6 @@ package no.unit.nva.publication.permissions.publication.restrict;
 import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
 import java.util.Optional;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -15,8 +14,8 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
 
     private static final boolean PASS = false;
 
-    public ClaimedChannelDenyStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public ClaimedChannelDenyStrategy(Resource resource, UserInstance userInstance) {
+        super(resource, userInstance);
     }
 
     @Override
@@ -40,7 +39,7 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
 
 
     private Optional<ClaimedPublicationChannel> getClaimedPublisher() {
-        return Resource.fromPublication(publication).getPublicationChannels()
+        return resource.getPublicationChannels()
                    .stream()
                    .filter(ClaimedPublicationChannel.class::isInstance)
                    .map(ClaimedPublicationChannel.class::cast)

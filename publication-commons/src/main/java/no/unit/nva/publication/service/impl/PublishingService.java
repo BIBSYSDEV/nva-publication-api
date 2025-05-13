@@ -76,7 +76,7 @@ public class PublishingService {
     }
 
     private static void validatePermissions(Resource resource, UserInstance userInstance) throws ForbiddenException {
-        var permissionStrategy = PublicationPermissions.create(resource.toPublication(), userInstance);
+        var permissionStrategy = PublicationPermissions.create(resource, userInstance);
         if (!permissionStrategy.allowsAction(PublicationOperation.UPDATE)) {
             throw new ForbiddenException();
         }

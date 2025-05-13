@@ -210,7 +210,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     private Optional<PublicationPermissions> getPublicationPermissionStrategy(RequestInfo requestInfo,
                                                                               Resource resource) {
         return attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissions.create(resource.toPublication(), userInstance));
+                   .map(userInstance -> PublicationPermissions.create(resource, userInstance));
     }
 
     private String createDataCiteMetadata(Resource resource) {
