@@ -29,7 +29,7 @@ public class PublicationChannelsUpdateHandler extends EventHandler<ChannelUpdate
     @Override
     protected Void processInput(ChannelUpdateEvent channelUpdateEvent, AwsEventBridgeEvent<ChannelUpdateEvent> event,
                                 Context context) {
-        logger.info(CONSUMED_EVENT_MESSAGE, channelUpdateEvent);
+        logger.info(CONSUMED_EVENT_MESSAGE, channelUpdateEvent.toJsonString());
         try {
             service.updateChannels(channelUpdateEvent);
         } catch (Exception e) {
