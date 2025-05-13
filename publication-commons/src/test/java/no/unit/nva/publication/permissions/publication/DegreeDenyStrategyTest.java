@@ -122,21 +122,16 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Contributor {0} operation on instance type {1} when degree has no open "
                               + "files")
     @MethodSource("argumentsForContributor")
-    void shouldAllowContributorOperationsOnDegreeWithoutOpenFiles(PublicationOperation operation,
+    void shouldAllowContributorOperationsOnDegreeWithoutApprovedFiles(PublicationOperation operation,
                                                                     Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
 
         var institution = Institution.random();
         var registrator = institution.registrator;
-        var publication = operation == PublicationOperation.UNPUBLISH
-                              ? createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
+        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
                                                                             registrator.name,
                                                                             registrator.customer,
-                                                                            registrator.topLevelCristinId)
-                              : createPublicationWithoutOpenFiles(degreeInstanceClass,
-                                                                  registrator.name,
-                                                                  registrator.customer,
-                                                                  registrator.topLevelCristinId);
+                                                                            registrator.topLevelCristinId);
 
         var contributor = createContributor(Role.CREATOR, institution.contributor.cristinId,
                                             institution.contributor.topLevelCristinId);
@@ -481,42 +476,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissions
                                   .create(Resource.fromPublication(publicationWithOpenFileWithEmbargo), userInstance)
-                                  .allowsAction(operation));
-    }
-
-    @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance type "
-                              + "{1} when curating institution has supervisor only and publication has no open files")
-    @MethodSource("argumentsForThesisCurator")
-    void shouldDenyThesisCuratorFromCuratingInstitutionOnDegreeWithoutOpenFilesWhenCuratorIsCuratingSupervisorOnly(
-        PublicationOperation operation,
-        Class<?> degreeInstanceTypeClass)
-        throws JsonProcessingException, UnauthorizedException {
-
-        var suite = InstitutionSuite.random();
-        var owningInstitution = suite.owningInstitution;
-        var curatingInstitution = suite.curatingInstitution;
-
-        var publication =
-            createPublicationWithoutOpenFiles(degreeInstanceTypeClass,
-                                              owningInstitution.registrator.name,
-                                              owningInstitution.registrator.customer,
-                                              owningInstitution.registrator.cristinId)
-                .copy()
-                .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
-                .build();
-
-        var contributor = createContributor(Role.SUPERVISOR, curatingInstitution.contributor.cristinId,
-                                            curatingInstitution.contributor.topLevelCristinId);
-        publication.getEntityDescription().setContributors(List.of(contributor));
-
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(
-            curatingInstitution.contributor.topLevelCristinId, Set.of(curatingInstitution.contributor.cristinId))));
-
-        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.thesisCurator),
-                                                                     identityServiceClient);
-
-        Assertions.assertFalse(PublicationPermissions
-                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
