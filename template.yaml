@@ -2058,10 +2058,8 @@ Resources:
           Properties:
             EventBusName: !Ref NewNvaEventBusName
             Pattern:
-              detail:
-                responsePayload:
-                  topic:
-                    - NotImplementedYet
+              detail-type:
+                - nva.resourceupdate.channelclaim
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:

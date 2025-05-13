@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -17,7 +18,17 @@ public record ChannelUpdateEvent(Action action,
     }
 
     public enum Action {
-        ADDED, UPDATED, REMOVED
+        ADDED("Added"), REMOVED("Removed"), UPDATED("Updated");
+        private final String value;
+
+        Action(String value) {
+            this.value = value;
+        }
+
+        @JsonValue
+        public String getValue() {
+            return value;
+        }
     }
 
     public record PublicationChannelSummary(URI id, URI channelId, URI customerId, URI organizationId,
