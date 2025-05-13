@@ -67,7 +67,7 @@ public class TicketResolver {
 
     private void validateUserPermissions(Resource resource, TicketDto ticketDto, UserInstance userInstance)
         throws ForbiddenException {
-        var permissionStrategy = PublicationPermissions.create(resource.toPublication(), userInstance);
+        var permissionStrategy = PublicationPermissions.create(resource, userInstance);
         if (!userHasPermissionToCreateTicket(permissionStrategy, ticketDto)) {
             logger.error(CREATING_TICKET_ERROR_MESSAGE,
                          ticketDto.ticketType().getSimpleName(),

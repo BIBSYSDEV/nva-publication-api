@@ -31,6 +31,15 @@ class UserInstanceTest {
         assertThat(userInstance.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
     }
 
+    @Test
+    void shouldReturnUserInstanceFromPublicationWhenPublisherIsNull() {
+        var publication = randomPublication();
+        publication.setPublisher(null);
+        var userInstance = UserInstance.fromPublication(publication);
+        assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
+        assertThat(userInstance.getCustomerId(), is(equalTo(null)));
+    }
+
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldReturnUserInstanceFromMessage(Class<? extends TicketEntry> ticketType, PublicationStatus status) {

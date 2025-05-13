@@ -22,6 +22,7 @@ import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,7 +50,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                  .create(publication, userInstance)
+                                  .create(Resource.fromPublication(publication), userInstance)
                                   .allowsAction(operation));
     }
 
@@ -68,7 +69,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 
@@ -91,7 +92,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(PublicationOperation.UNPUBLISH));
     }
 
@@ -114,7 +115,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(PublicationOperation.UNPUBLISH));
     }
     //endregion
@@ -134,7 +135,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(publication, userInstance)
+                                   .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(operation));
     }
 

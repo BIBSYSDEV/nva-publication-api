@@ -14,6 +14,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -97,7 +98,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
 
     private PublicationPermissions fetchPermissions(RequestInfo requestInfo, Publication publication)
         throws UnauthorizedException {
-        return PublicationPermissions.create(publication, UserInstance.fromRequestInfo(requestInfo));
+        return PublicationPermissions.create(Resource.fromPublication(publication), UserInstance.fromRequestInfo(requestInfo));
     }
 
     private void isAuthorizedToManageTicket(PublicationPermissions permissions, TicketEntry ticket)

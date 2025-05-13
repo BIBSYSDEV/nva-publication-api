@@ -75,7 +75,7 @@ public class PublicationScenarioContext {
                     randomResource.getEntityDescription().copy().withContributors(contributors).build())
                 .build();
 
-        return new PublicationPermissions(resource.toPublication(), user);
+        return new PublicationPermissions(resource, user);
     }
 
     private static HashSet<CuratingInstitution> getCuratingInstitutions(boolean currentUserIsFileCurator,

@@ -7,6 +7,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -60,7 +61,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
 
         if (publication.getStatus() == PublicationStatus.DRAFT) {
-            PublicationPermissions.create(publication, userInstance).authorize(DELETE);
+            PublicationPermissions.create(Resource.fromPublication(publication), userInstance).authorize(DELETE);
             resourceService.deleteDraftPublication(userInstance, publicationIdentifier);
         } else {
             unsupportedPublicationForDeletion(publication);

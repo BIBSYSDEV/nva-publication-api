@@ -154,7 +154,7 @@ public class FileService {
 
     private static void validateUploadPermissions(UserInstance userInstance, Resource resource)
         throws ForbiddenException {
-        if (!new PublicationPermissions(resource.toPublication(), userInstance)
+        if (!new PublicationPermissions(resource, userInstance)
                  .allowsAction(PublicationOperation.UPLOAD_FILE)) {
             throw new ForbiddenException();
         }
