@@ -7,6 +7,8 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
+import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.SERIAL_PUBLICATION;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -52,6 +54,8 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
@@ -263,6 +267,19 @@ public class Resource implements Entity {
                    .stream()
                    .filter(publicationChannel -> identifier.equals(publicationChannel.getIdentifier()))
                    .findFirst();
+    }
+
+    public Optional<ClaimedPublicationChannel> getPrioritizedClaimedPublicationChannel() {
+        return Optional.ofNullable(getClaimedPublicationChannel(PUBLISHER))
+                   .orElse(getClaimedPublicationChannel(SERIAL_PUBLICATION));
+    }
+
+    public Optional<ClaimedPublicationChannel> getClaimedPublicationChannel(ChannelType channelType) {
+        return getPublicationChannels().stream()
+                   .filter(publicationChannel -> channelType.equals(publicationChannel.getChannelType()))
+                   .findFirst()
+                   .filter(ClaimedPublicationChannel.class::isInstance)
+                   .map(ClaimedPublicationChannel.class::cast);
     }
 
     @JsonIgnore

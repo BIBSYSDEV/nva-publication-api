@@ -8,11 +8,13 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.grant.BackendClientGrantStrategy;
+import no.unit.nva.publication.permissions.publication.grant.ClaimedChannelGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.ContributorGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.CuratorGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.EditorGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.ResourceOwnerGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.TrustedThirdPartyGrantStrategy;
+import no.unit.nva.publication.permissions.publication.restrict.ClaimedChannelDenyStrategy;
 import no.unit.nva.publication.permissions.publication.restrict.DegreeDenyStrategy;
 import no.unit.nva.publication.permissions.publication.restrict.DeletedUploadDenyStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -28,9 +30,7 @@ public class PublicationPermissions {
     private final UserInstance userInstance;
     private final Resource resource;
 
-    public PublicationPermissions(
-        Resource resource,
-        UserInstance userInstance) {
+    public PublicationPermissions(Resource resource, UserInstance userInstance) {
         this.userInstance = userInstance;
         this.resource = resource;
         this.grantStrategies = Set.of(
@@ -39,11 +39,13 @@ public class PublicationPermissions {
             new ContributorGrantStrategy(resource, userInstance),
             new ResourceOwnerGrantStrategy(resource, userInstance),
             new TrustedThirdPartyGrantStrategy(resource, userInstance),
-            new BackendClientGrantStrategy(resource, userInstance)
+            new BackendClientGrantStrategy(resource, userInstance),
+            new ClaimedChannelGrantStrategy(resource, userInstance)
         );
         this.denyStrategies = Set.of(
             new DegreeDenyStrategy(resource, userInstance),
-            new DeletedUploadDenyStrategy(resource, userInstance)
+            new DeletedUploadDenyStrategy(resource, userInstance),
+            new ClaimedChannelDenyStrategy(resource, userInstance)
         );
     }
 

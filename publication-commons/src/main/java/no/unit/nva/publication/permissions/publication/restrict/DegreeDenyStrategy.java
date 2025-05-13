@@ -13,8 +13,6 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
-import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.permissions.publication.PublicationDenyStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
@@ -51,24 +49,9 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         if (!hasAccessRight(MANAGE_DEGREE)) {
             return DENY;
         }
-//        var resource = Resource.fromPublication(publication);
-//        if (resource.getPublicationChannels().isEmpty()) {
-//            if (!userIsFromSameInstitutionAsPublicationOwner()) {
-//                return DENY;
-//            }
-//        } else {
-//            var publisher = resource.getPublicationChannels().stream()
-//                                .filter(pc -> pc.getChannelType() == ChannelType.PUBLISHER)
-//                                .findFirst()
-//                                .filter(ClaimedPublicationChannel.class::isInstance)
-//                                .map(ClaimedPublicationChannel.class::cast)
-//                                .orElse(null);
-//            if (nonNull(publisher)) {
-//                var owner = publisher.getOwner();
-//            } else {
-//
-//            }
-//        }
+        if (resource.getPrioritizedClaimedPublicationChannel().isEmpty()) {
+            return !userIsFromSameInstitutionAsPublicationOwner();
+        } // else: ClaimedChannelDenyStrategy takes care of denying by channel claim
         return PASS;
     }
 
