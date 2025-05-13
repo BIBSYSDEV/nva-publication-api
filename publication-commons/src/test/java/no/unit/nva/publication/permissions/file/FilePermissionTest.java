@@ -112,9 +112,9 @@ class FilePermissionTest {
 
     @ParameterizedTest
     @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowRelatedUserOnNonOpenFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
+    void shouldAllowRelatedUserOnNonOpenFileForNonDegreeWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
         var claimedPublisher = createClaimedPublisher(randomUri());
-        var resource = Resource.fromPublication(randomDegreePublication());
+        var resource = Resource.fromPublication(randomNonDegreePublication());
         resource.setPublicationChannels(List.of(claimedPublisher));
         var userInstance = UserInstance.fromPublication(resource.toPublication());
         var fileEntry = FileEntry.create(randomPendingOpenFile(), resource.getIdentifier(), userInstance);
