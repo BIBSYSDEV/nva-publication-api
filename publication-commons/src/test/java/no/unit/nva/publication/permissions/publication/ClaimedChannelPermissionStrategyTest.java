@@ -592,8 +592,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(resource, userInstance)
-                                  .allowsAction(operation));
+                                   .create(resource, userInstance)
+                                   .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should allow registrator {0} operation on publication with open files and channel "
@@ -686,8 +686,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(resource, userInstance)
-                                  .allowsAction(operation));
+                                   .create(resource, userInstance)
+                                   .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should deny curator from curating institution {0} operation on publication with open "
@@ -711,8 +711,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                  .create(resource, userInstance)
-                                  .allowsAction(operation));
+                                   .create(resource, userInstance)
+                                   .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should deny curator from non curating institution {0} operation on publication with "
@@ -742,6 +742,236 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     }
 
     @Test
+    void shouldAllowRegistratorToUploadFileOnPublicationWithoutClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var institution = Institution.random();
+        var registrator = institution.registrator();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var resource = Resource.fromPublication(publication);
+        resource.setPublicationChannels(List.of());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowRegistratorToUploadFileOnPublicationWithClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var institution = Institution.random();
+        var registrator = institution.registrator();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, institution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowContributorToUploadFileOnPublicationWithoutClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var institution = Institution.random();
+        var registrator = institution.registrator();
+        var contributor = institution.contributor();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        setContributor(publication, contributor);
+        var resource = Resource.fromPublication(publication);
+        resource.setPublicationChannels(List.of());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowContributorToUploadFileOnPublicationWithClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var institution = Institution.random();
+        var registrator = institution.registrator();
+        var contributor = institution.contributor();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        setContributor(publication, contributor);
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, institution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowCuratorToUploadFileOnPublicationWithoutClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var institution = Institution.random();
+        var registrator = institution.registrator();
+        var curator = institution.curator();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var resource = Resource.fromPublication(publication);
+        resource.setPublicationChannels(List.of());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowCuratorToUploadFileOnPublicationWithClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var institution = Institution.random();
+        var registrator = institution.registrator();
+        var curator = institution.curator();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, institution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowContributorFromAnotherInstitutionToUploadFileOnPublicationWithoutClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curatingInstitution = suite.curatingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        setContributor(publication, curatingInstitution.contributor());
+        var resource = Resource.fromPublication(publication);
+        resource.setPublicationChannels(List.of());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowContributorFromAnotherInstitutionToUploadFileOnPublicationWithClaimedChannelWithPolicyOwnerOnly()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curatingInstitution = suite.curatingInstitution();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        setContributor(publication, curatingInstitution.contributor());
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowCuratorFromCuratingInstitutionToUploadFileOnPublicationWithoutClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curatingInstitution = suite.curatingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        setContributor(publication, curatingInstitution.contributor());
+        var resource = Resource.fromPublication(publication);
+        resource.setPublicationChannels(List.of());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldAllowCuratorFromCuratingInstitutionToUploadFileOnPublicationWithClaimedChannelWithPolicyOwnerOnly()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curatingInstitution = suite.curatingInstitution();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        setContributor(publication, curatingInstitution.contributor());
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
+                                                                     identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldDenyCuratorFromNonCuratingInstitutionToUploadFileOnPublicationWithoutClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curatingInstitution = suite.curatingInstitution();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        setContributor(publication, curatingInstitution.contributor());
+        var resource = Resource.fromPublication(publication);
+        resource.setPublicationChannels(List.of());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
+                                                                     identityServiceClient);
+        Assertions.assertFalse(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
+    void shouldDenyCuratorFromNonCuratingInstitutionToUploadFileOnPublicationWithClaimedChannel()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curatingInstitution = suite.curatingInstitution();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        setContributor(publication, curatingInstitution.contributor());
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
+                                                                     identityServiceClient);
+        Assertions.assertFalse(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+    }
+
+    @Test
     void shouldAllowExternalUserWhenPublishingPolicyOwnerOnly() {
         var institution = Institution.random();
         var registrator = institution.registrator();
@@ -752,8 +982,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
         var userInstance = createExternalUser(resource);
         Assertions.assertTrue(PublicationPermissions
-                                   .create(resource, userInstance)
-                                   .allowsAction(PublicationOperation.UPDATE));
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPDATE));
     }
 
     @Test
@@ -767,8 +997,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
         var userInstance = createExternalUser(resource);
         Assertions.assertTrue(PublicationPermissions
-                                   .create(resource, userInstance)
-                                   .allowsAction(PublicationOperation.UPDATE));
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPDATE));
     }
 
     private static Stream<Arguments> argumentsForRegistrator() {
@@ -803,6 +1033,10 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         return operations.stream().map(Arguments::of);
     }
 
+    private static UserInstance createExternalUser(Resource resource) {
+        return UserInstance.createExternalUser(resource.toPublication().getResourceOwner(), randomUri());
+    }
+
     private RequestInfo toRequestInfo(User user) throws JsonProcessingException {
         return createUserRequestInfo(user.name(), user.customer(), user.accessRights(), user.cristinId(),
                                      user.topLevelCristinId());
@@ -827,9 +1061,5 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                                            registrator.name(),
                                                            registrator.customer(),
                                                            registrator.topLevelCristinId());
-    }
-
-    private static UserInstance createExternalUser(Resource resource) {
-        return UserInstance.createExternalUser(resource.toPublication().getResourceOwner(), randomUri());
     }
 }

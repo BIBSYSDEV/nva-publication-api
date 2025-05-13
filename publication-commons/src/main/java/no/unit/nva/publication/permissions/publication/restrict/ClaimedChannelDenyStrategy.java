@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
 import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
+import static no.unit.nva.model.PublicationOperation.UPLOAD_FILE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
 import java.net.URI;
@@ -25,13 +26,13 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
             return PASS;
         }
 
-        if (PARTIAL_UPDATE.equals(permission)) {
+        if (PARTIAL_UPDATE.equals(permission) || UPLOAD_FILE.equals(permission)) {
             return PASS;
         }
 
         var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
         if (claimedPublicationChannel.isEmpty()) {
-            return false;
+            return PASS;
         }
 
         var publicationChannel = claimedPublicationChannel.get();
@@ -52,6 +53,6 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         } else if (EVERYONE.equals(policy)) {
             return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
         }
-        return false;
+        return PASS;
     }
 }

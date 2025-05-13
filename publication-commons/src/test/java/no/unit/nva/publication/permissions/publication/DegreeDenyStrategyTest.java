@@ -7,6 +7,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.setContributor;
 import static no.unit.nva.publication.permissions.PermissionsTestUtils.setPublicationChannel;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,7 +35,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.Institution;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.InstitutionSuite;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.User;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -141,12 +141,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                   registrator.customer(),
                                                                   registrator.topLevelCristinId());
 
-        var contributor = createContributor(Role.CREATOR, institution.contributor().cristinId(),
-                                            institution.contributor().topLevelCristinId());
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        publication.setCuratingInstitutions(
-            Set.of(new CuratingInstitution(institution.contributor().topLevelCristinId(),
-                                           Set.of(institution.contributor().cristinId()))));
+        setContributor(publication, institution.contributor());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(institution.contributor()),
                                                                      identityServiceClient);
@@ -169,12 +164,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         registrator.customer(),
                                                         registrator.topLevelCristinId());
 
-        var contributor = createContributor(Role.CREATOR, institution.contributor().cristinId(),
-                                            institution.contributor().topLevelCristinId());
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        publication.setCuratingInstitutions(
-            Set.of(new CuratingInstitution(institution.contributor().topLevelCristinId(),
-                                           Set.of(institution.contributor().cristinId()))));
+        setContributor(publication, institution.contributor());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(institution.contributor()),
                                                                      identityServiceClient);
@@ -241,12 +231,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                             owningInstitution.registrator().customer(),
                                                             owningInstitution.registrator().topLevelCristinId());
 
-        var contributor = createContributor(Role.CREATOR, curatingInstitution.contributor().cristinId(),
-                                            curatingInstitution.contributor().topLevelCristinId());
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        publication.setCuratingInstitutions(
-            Set.of(new CuratingInstitution(curatingInstitution.contributor().topLevelCristinId(),
-                                           Set.of(curatingInstitution.contributor().cristinId()))));
+        setContributor(publication, curatingInstitution.contributor());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -271,12 +256,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().customer(),
                                                         owningInstitution.registrator().topLevelCristinId());
 
-        var contributor = createContributor(Role.CREATOR, curatingInstitution.contributor().cristinId(),
-                                            curatingInstitution.contributor().topLevelCristinId());
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        publication.setCuratingInstitutions(
-            Set.of(new CuratingInstitution(curatingInstitution.contributor().topLevelCristinId(),
-                                           Set.of(curatingInstitution.contributor().cristinId()))));
+        setContributor(publication, curatingInstitution.contributor());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -350,12 +330,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                             owningInstitution.registrator().customer(),
                                                             owningInstitution.registrator().topLevelCristinId());
 
-        var contributor = createContributor(Role.CREATOR, curatingInstitution.contributor().cristinId(),
-                                            curatingInstitution.contributor().topLevelCristinId());
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        publication.setCuratingInstitutions(
-            Set.of(new CuratingInstitution(curatingInstitution.contributor().topLevelCristinId(),
-                                           Set.of(curatingInstitution.contributor().cristinId()))));
+        setContributor(publication, curatingInstitution.contributor());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.thesisCurator()),
                                                                      identityServiceClient);
@@ -380,12 +355,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().customer(),
                                                         owningInstitution.registrator().topLevelCristinId());
 
-        var contributor = createContributor(Role.CREATOR, curatingInstitution.contributor().cristinId(),
-                                            curatingInstitution.contributor().topLevelCristinId());
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        publication.setCuratingInstitutions(
-            Set.of(new CuratingInstitution(curatingInstitution.contributor().topLevelCristinId(),
-                                           Set.of(curatingInstitution.contributor().cristinId()))));
+        setContributor(publication, curatingInstitution.contributor());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.thesisCurator()),
                                                                      identityServiceClient);
@@ -668,7 +638,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), userInstance)
                                    .create(resource, userInstance)
                                    .allowsAction(operation));
     }
@@ -689,12 +658,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().customer(),
                                                         owningInstitution.registrator().topLevelCristinId());
 
-        var contributor = createContributor(Role.CREATOR, curatingInstitution.contributor().cristinId(),
-                                            curatingInstitution.contributor().topLevelCristinId());
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        publication.setCuratingInstitutions(
-            Set.of(new CuratingInstitution(curatingInstitution.contributor().topLevelCristinId(),
-                                           Set.of(curatingInstitution.contributor().cristinId()))));
+        setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
@@ -725,7 +689,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var resource = Resource.fromPublication(publication);
         setPublicationChannel(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
 
-
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.registrator()),
                                                                      identityServiceClient);
 
@@ -752,7 +715,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var resource = Resource.fromPublication(publication);
         setPublicationChannel(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
 
-
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.curator()),
                                                                      identityServiceClient);
 
@@ -778,7 +740,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannel(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
-
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.thesisCurator()),
                                                                      identityServiceClient);
@@ -914,10 +875,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var publication = createPublication(degreeInstanceTypeClass,
                                             owningInstitution.registrator().name(),
                                             owningInstitution.registrator().customer(),
-                                            owningInstitution.registrator().cristinId())
-                              .copy()
-                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
-                              .build();
+                                            owningInstitution.registrator().cristinId());
 
         var contributor = createContributorWithoutId(Role.CREATOR,
                                                      curatingInstitution.contributor().topLevelCristinId());
@@ -951,10 +909,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
             createPublicationWithoutOpenFiles(degreeInstanceTypeClass,
                                               owningInstitution.registrator().name(),
                                               owningInstitution.registrator().customer(),
-                                              owningInstitution.registrator().cristinId())
-                .copy()
-                .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
-                .build();
+                                              owningInstitution.registrator().cristinId());
 
         var supervisor = createContributor(Role.SUPERVISOR, curatingInstitution.contributor().cristinId(),
                                            curatingInstitution.contributor().topLevelCristinId());
@@ -989,10 +944,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var publication = createPublicationWithoutOpenFiles(degreeInstanceTypeClass,
                                                             owningInstitution.registrator().name(),
                                                             owningInstitution.registrator().customer(),
-                                                            owningInstitution.registrator().cristinId())
-                              .copy()
-                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
-                              .build();
+                                                            owningInstitution.registrator().cristinId());
 
         publication.getEntityDescription().setContributors(List.of());
         publication.setCuratingInstitutions(
@@ -1000,6 +952,96 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                            Set.of())));
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.thesisCurator()),
+                                                                     identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(Resource.fromPublication(publication), userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow Registrator {0} operation on instance type {1} when degree has open files")
+    @MethodSource("argumentsEveryoneShouldBeAllowedAfterOpenFiles")
+    void shouldAllowRegistratorOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
+                                                               Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+        var registrator = User.random();
+        var publication = createPublicationWithOpenFile(degreeInstanceClass,
+                                                        registrator.name(),
+                                                        registrator.customer(),
+                                                        registrator.topLevelCristinId());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(Resource.fromPublication(publication), userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow Contributor {0} operation on instance type {1} when degree has open files")
+    @MethodSource("argumentsEveryoneShouldBeAllowedAfterOpenFiles")
+    void shouldAllowContributorOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
+                                                               Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+        var institution = Institution.random();
+        var registrator = institution.registrator();
+        var contributor = institution.contributor();
+
+        var publication = createPublicationWithOpenFile(degreeInstanceClass,
+                                                        registrator.name(),
+                                                        registrator.customer(),
+                                                        registrator.topLevelCristinId());
+        setContributor(publication, contributor);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor), identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(Resource.fromPublication(publication), userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow contributor from another institution {0} operation on instance type {1} "
+                              + "when degree has open files")
+    @MethodSource("argumentsEveryoneShouldBeAllowedAfterOpenFiles")
+    void shouldAllowContributorFromAnotherInstitutionOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
+                                                                                     Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curatingInstitution = suite.curatingInstitution();
+
+        var publication = createPublicationWithOpenFile(degreeInstanceClass,
+                                                        registrator.name(),
+                                                        registrator.customer(),
+                                                        registrator.topLevelCristinId());
+        setContributor(publication, curatingInstitution.contributor());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
+                                                                     identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(Resource.fromPublication(publication), userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow curator from curating institution {0} operation on instance type {1} "
+                              + "when degree has open files")
+    @MethodSource("argumentsEveryoneShouldBeAllowedAfterOpenFiles")
+    void shouldAllowCuratorFromCuratingInstitutionOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
+                                                                                  Class<?> degreeInstanceClass)
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curatingInstitution = suite.curatingInstitution();
+
+        var publication = createPublicationWithOpenFile(degreeInstanceClass,
+                                                        registrator.name(),
+                                                        registrator.customer(),
+                                                        registrator.topLevelCristinId());
+        setContributor(publication, curatingInstitution.contributor());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
@@ -1026,7 +1068,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
 
-    // TODO: Should we test that this should be allowed after open file?
     private static Stream<Arguments> argumentsEveryoneShouldBeAllowedAfterOpenFiles() {
         final var operations = Set.of(PublicationOperation.UPLOAD_FILE);
 
