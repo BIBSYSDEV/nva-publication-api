@@ -56,9 +56,6 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
             return DENY;
         }
-        if (!userIsFromSameInstitutionAsPublicationOwner()) {
-            return DENY;
-        }
         return PASS;
     }
 }

@@ -74,20 +74,15 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Registrator {0} operation on instance type {1} when degree has no open "
                               + "files")
     @MethodSource("argumentsForRegistrator")
-    void shouldAllowRegistratorOperationsOnDegreeWithoutOpenFiles(PublicationOperation operation,
+    void shouldAllowRegistratorOperationsOnDegreeWithoutApprovedFiles(PublicationOperation operation,
                                                              Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
 
         var registrator = User.random();
-        var publication = operation == PublicationOperation.UNPUBLISH
-                              ? createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
+        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
                                                                           registrator.name,
                                                                           registrator.customer,
-                                                                          registrator.topLevelCristinId)
-                              : createPublicationWithoutOpenFiles(degreeInstanceClass,
-                                                                  registrator.name,
-                                                                  registrator.customer,
-                                                                  registrator.topLevelCristinId);
+                                                                          registrator.topLevelCristinId);
 
         var publicationWithStatus = publication.copy()
                                         .withStatus(operation == PublicationOperation.DELETE ? DRAFT : PUBLISHED)
@@ -178,7 +173,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on instance type {1} when degree has no open files")
     @MethodSource("argumentsForCurator")
-    void shouldAllowCuratorOperationsOnDegreeWithoutOpenFiles(PublicationOperation operation,
+    void shouldAllowCuratorOperationsOnDegreeWithoutApprovedFiles(PublicationOperation operation,
                                                               Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -186,7 +181,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var registrator = institution.registrator;
         var curator = institution.curator;
 
-        var publication = createPublicationWithoutOpenFiles(degreeInstanceClass,
+        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
                                                             registrator.name,
                                                             registrator.customer,
                                                             registrator.topLevelCristinId);
@@ -223,14 +218,14 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Curator from curating institution {0} operation on instance type {1} "
                               + "when degree has no open files")
     @MethodSource("argumentsForCurator")
-    void shouldAllowCuratorOnCuratingInstitutionOperationsOnDegreeWithoutOpenFiles(PublicationOperation operation,
+    void shouldAllowCuratorOnCuratingInstitutionOperationsOnDegreeWithoutApprovedFiles(PublicationOperation operation,
                                                                                    Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution;
         var curatingInstitution = suite.curatingInstitution;
 
-        var publication = createPublicationWithoutOpenFiles(degreeInstanceClass,
+        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
                                                             owningInstitution.registrator.name,
                                                             owningInstitution.registrator.customer,
                                                             owningInstitution.registrator.topLevelCristinId);
