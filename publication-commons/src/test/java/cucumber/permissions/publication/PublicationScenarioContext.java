@@ -1,30 +1,42 @@
 package cucumber.permissions.publication;
 
-import static cucumber.permissions.PermissionsRole.ANY_CURATOR_TYPE;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS;
+import static cucumber.permissions.PermissionsRole.RELATED_EXTERNAL_CLIENT;
+import static cucumber.permissions.RolesToAccessRights.roleToAccessRightsMap;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import cucumber.permissions.PermissionsRole;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.Constraint;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.AccessRight;
 
@@ -33,6 +45,8 @@ public class PublicationScenarioContext {
     private PublicationOperation operation;
     private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
     private Set<PermissionsRole> roles = new HashSet<>();
+    private boolean isDegree;
+    private boolean hasClaimedPublisher;
 
     public void setOperation(PublicationOperation operation) {
         this.operation = operation;
@@ -48,12 +62,14 @@ public class PublicationScenarioContext {
 
     public PublicationPermissions getPublicationPermissions() {
         var topLevelOrgCristinId = randomUri();
+        var customerId = randomUri();
 
         var access = getAccessRights(roles);
 
-        var user = UserInstance.create(randomString(), randomUri(), randomUri(),
-                                       access.stream().toList(),
-                                       topLevelOrgCristinId);
+        var user =
+            roles.contains(RELATED_EXTERNAL_CLIENT) ?
+                UserInstance.createExternalUser(new ResourceOwner(new Username(randomString()), randomUri()), customerId)
+                : UserInstance.create(randomString(), customerId, randomUri(), access.stream().toList(), topLevelOrgCristinId);
 
         var currentUserIsContributor = roles.contains(PermissionsRole.OTHER_CONTRIBUTORS);
         var contributors = getContributors(user, currentUserIsContributor);
@@ -64,18 +80,47 @@ public class PublicationScenarioContext {
         var currentUserIsPublicationOwner = roles.contains(PermissionsRole.PUBLICATION_OWNER);
         var owner = getOwner(user, topLevelOrgCristinId, currentUserIsPublicationOwner);
 
-        var randomResource = Resource.fromPublication(randomNonDegreePublication());
+        var randomResource =
+            Resource.fromPublication(isDegree ? randomDegreePublication() : randomNonDegreePublication());
 
         var resource =
             randomResource.copy()
+                .withPublisher(Organization.fromUri(roles.contains(RELATED_EXTERNAL_CLIENT) ? customerId : randomUri()))
                 .withStatus(publicationStatus)
                 .withResourceOwner(owner)
                 .withCuratingInstitutions(curatingInstitutions)
-                .withEntityDescription(
-                    randomResource.getEntityDescription().copy().withContributors(contributors).build())
+                .withPublicationChannels(generatePublicationChannels(randomResource))
+                .withEntityDescription(randomResource.getEntityDescription().copy()
+                                           .withContributors(contributors)
+                                           .build())
                 .build();
 
         return new PublicationPermissions(resource.toPublication(), user);
+    }
+
+    private List<PublicationChannel> generatePublicationChannels(Resource randomResource) {
+        return hasClaimedPublisher
+                   ? List.of(randomClaimedChannel(randomResource.getIdentifier()))
+                   : List.of();
+    }
+
+    private PublicationChannel randomClaimedChannel(SortableIdentifier resourceIdentifier) {
+        return new ClaimedPublicationChannel(randomUri(), randomUri(), randomUri(),
+                                             new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY,
+                                                            List.of()), ChannelType.PUBLISHER,
+                                             SortableIdentifier.next(), resourceIdentifier, Instant.now(), Instant.now());
+    }
+
+    public void setIsDegree(boolean isDegree) {
+        this.isDegree = isDegree;
+    }
+
+    public Set<PermissionsRole> getRoles() {
+        return roles;
+    }
+
+    public void setHasClaimedPublisher(boolean hasClaimedPublisher) {
+        this.hasClaimedPublisher = hasClaimedPublisher;
     }
 
     private static HashSet<CuratingInstitution> getCuratingInstitutions(boolean currentUserIsFileCurator,
@@ -107,15 +152,11 @@ public class PublicationScenarioContext {
     }
 
     private static HashSet<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
-        var access = new HashSet<AccessRight>();
-        if (roles.contains(FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS)) {
-            access.add(MANAGE_RESOURCES_STANDARD);
-            access.add(MANAGE_RESOURCE_FILES);
-        }
-        if (roles.contains(ANY_CURATOR_TYPE)) {
-            access.add(MANAGE_RESOURCES_STANDARD);
-        }
-        return access;
+        return roleToAccessRightsMap.entrySet().stream()
+                   .filter(entry -> roles.contains(entry.getKey()))
+                   .map(Map.Entry::getValue)
+                   .flatMap(Collection::stream)
+                   .collect(Collectors.toCollection(HashSet::new));
     }
 
     public PublicationOperation getOperation() {

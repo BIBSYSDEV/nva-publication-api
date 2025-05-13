@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum PublicationOperation {
 
     UPDATE("update"),
+    PARTIAL_UPDATE("partial-update"),
     UPDATE_FILES("update-including-files"),
     READ_HIDDEN_FILES("read-hidden-files"),
     UNPUBLISH("unpublish"),

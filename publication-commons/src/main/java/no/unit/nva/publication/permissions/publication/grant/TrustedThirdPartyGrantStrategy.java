@@ -19,6 +19,7 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
     public boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
             case UPDATE,
+                 PARTIAL_UPDATE,
                  UNPUBLISH,
                  TERMINATE,
                  READ_HIDDEN_FILES,

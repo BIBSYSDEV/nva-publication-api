@@ -20,20 +20,14 @@ public final class EditorGrantStrategy extends PublicationStrategyBase implement
             return false;
         }
         return switch (permission) {
-            case UPDATE -> true;
+            case UPDATE, PARTIAL_UPDATE -> true;
             case UNPUBLISH -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isPublished();
             case REPUBLISH, TERMINATE -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isUnpublished();
             case DOI_REQUEST_CREATE,
                  PUBLISHING_REQUEST_CREATE,
                  SUPPORT_REQUEST_CREATE,
                  READ_HIDDEN_FILES -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
-            case DELETE,
-                 UPDATE_FILES,
-                 DOI_REQUEST_APPROVE,
-                 PUBLISHING_REQUEST_APPROVE,
-                 APPROVE_FILES,
-                 SUPPORT_REQUEST_APPROVE,
-                 UPLOAD_FILE -> false;
+            default -> false;
         };
     }
 }
