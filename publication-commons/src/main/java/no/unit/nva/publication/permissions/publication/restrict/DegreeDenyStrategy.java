@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
 import static no.unit.nva.model.role.Role.SUPERVISOR;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
@@ -32,13 +33,16 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         }
 
         if (isProtectedDegreeInstanceType()) {
+            if (PARTIAL_UPDATE.equals(permission)) {
+                return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+            }
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
                 return DENY;
             }
             if (hasOpenFiles()) {
                 return openFileStrategy();
             } else {
-                 return nonOpenFileStrategy();
+                return nonOpenFileStrategy();
             }
         }
 
@@ -94,9 +98,5 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
                    .stream()
                    .filter(contributor -> contributorId.equals(contributor.getIdentity().getId()))
                    .findFirst();
-    }
-
-    private boolean isUsersDraft() {
-        return isDraft() && isOwner();
     }
 }

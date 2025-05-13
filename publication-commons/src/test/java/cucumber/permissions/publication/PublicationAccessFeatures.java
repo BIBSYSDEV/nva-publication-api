@@ -42,6 +42,20 @@ public class PublicationAccessFeatures {
 
         var actual = permissions.allowsAction(scenarioContext.getOperation());
 
-        assertThat(actual, is(equalTo(expected)));
+        assertThat( "%s is %s to perform %s".formatted(scenarioContext.getRoles().stream().map(
+                                                           PermissionsRole::getValue).toList(), outcome,
+                                                       scenarioContext.getOperation()),
+                    actual,
+                    is(equalTo(expected)));
+    }
+
+    @And("publication is a degree")
+    public void publicationIsADegree() {
+        scenarioContext.setIsDegree(true);
+    }
+
+    @And("publication has claimed publisher")
+    public void publicationHasClaimedPublisher() {
+        scenarioContext.setHasClaimedPublisher(true);
     }
 }

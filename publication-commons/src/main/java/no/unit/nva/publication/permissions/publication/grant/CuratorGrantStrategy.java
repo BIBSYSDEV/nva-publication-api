@@ -31,8 +31,12 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
 
         return switch (permission) {
             case UPDATE_FILES -> hasAccessRight(MANAGE_RESOURCE_FILES);
-            case UPDATE, SUPPORT_REQUEST_CREATE, DOI_REQUEST_CREATE, PUBLISHING_REQUEST_CREATE, UPLOAD_FILE ->
-                canManageStandardResources();
+            case UPDATE,
+                 PARTIAL_UPDATE,
+                 SUPPORT_REQUEST_CREATE,
+                 DOI_REQUEST_CREATE,
+                 PUBLISHING_REQUEST_CREATE,
+                 UPLOAD_FILE -> canManageStandardResources();
             case UNPUBLISH -> canManagePublishingRequests() && isPublished();
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
             case PUBLISHING_REQUEST_APPROVE,

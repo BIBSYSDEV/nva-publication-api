@@ -13,6 +13,7 @@ import no.unit.nva.publication.permissions.publication.grant.CuratorGrantStrateg
 import no.unit.nva.publication.permissions.publication.grant.EditorGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.ResourceOwnerGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.TrustedThirdPartyGrantStrategy;
+import no.unit.nva.publication.permissions.publication.restrict.ClaimedChannelDenyStrategy;
 import no.unit.nva.publication.permissions.publication.restrict.DegreeDenyStrategy;
 import no.unit.nva.publication.permissions.publication.restrict.DeletedUploadDenyStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -43,7 +44,8 @@ public class PublicationPermissions {
         );
         this.denyStrategies = Set.of(
             new DegreeDenyStrategy(resource, userInstance),
-            new DeletedUploadDenyStrategy(resource, userInstance)
+            new DeletedUploadDenyStrategy(resource, userInstance),
+            new ClaimedChannelDenyStrategy(resource, userInstance)
         );
     }
 
