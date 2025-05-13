@@ -3,6 +3,7 @@ package no.unit.nva.publication.permissions.file;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -111,9 +112,9 @@ class FilePermissionTest {
 
     @ParameterizedTest
     @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowRelatedUserOnNonOpenFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
+    void shouldAllowRelatedUserOnNonOpenFileForNonDegreeWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
         var claimedPublisher = createClaimedPublisher(randomUri());
-        var resource = randomResource();
+        var resource = Resource.fromPublication(randomNonDegreePublication());
         resource.setPublicationChannels(List.of(claimedPublisher));
         var userInstance = UserInstance.fromPublication(resource.toPublication());
         var fileEntry = FileEntry.create(randomPendingOpenFile(), resource.getIdentifier(), userInstance);

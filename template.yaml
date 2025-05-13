@@ -382,6 +382,8 @@ Resources:
     Type: "AWS::SQS::Queue"
   DeleteFileFromS3EventHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  PublicationChannelBatchUpdateDLQ:
+    Type: "AWS::SQS::Queue"
 
 
 
@@ -2041,6 +2043,34 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeleteFileFromS3EventHandlerDLQ.Arn
 
+  PublicationChannelBatchUpdateFunction:
+    DependsOn: EventsLambdaManagedPolicy
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.PublicationChannelsUpdateHandler::handleRequest
+      Timeout: 900
+      Policies:
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref NewNvaEventBusName
+            Pattern:
+              detail-type:
+                - nva.resourceupdate.channelclaim
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt PublicationChannelBatchUpdateDLQ.Arn
+
   #==========================Manually triggered functions=============================================
 
   BatchScanStartHandler:
@@ -2781,6 +2811,24 @@ Resources:
       Dimensions:
         - Name: QueueName
           Value: !GetAtt RecoveryQueue.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
+  PublicationChannelBatchUpdateDLQQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: PublicationChannelBatchUpdate failed events threshold exceeded
+      AlarmDescription: If this alarm is triggered, then check sqs messages on publication-api PublicationChannelBatchUpdateDLQ.
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt PublicationChannelBatchUpdateDLQ.QueueName
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1

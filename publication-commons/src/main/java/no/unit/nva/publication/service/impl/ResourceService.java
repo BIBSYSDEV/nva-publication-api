@@ -426,6 +426,19 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, result.getLastEvaluatedKey(), isTruncated);
     }
 
+    public void batchUpdateChannels(List<PublicationChannel> publicationChannels) {
+        var writeRequests = publicationChannels.stream()
+                                .map(PublicationChannel::toDao)
+                                .map(PublicationChannelDao::toDynamoFormat)
+                                .map(item -> new PutRequest().withItem(item))
+                                .map(WriteRequest::new)
+                                .toList();
+        Lists.partition(writeRequests, 25)
+            .stream()
+            .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
+            .forEach(this::writeBatchToDynamo);
+    }
+
     private static List<PublicationChannel> getPublicationChannels(QueryResult result) {
         return result.getItems().stream().map(value -> parseAttributeValuesMap(value, Dao.class))
                    .filter(PublicationChannelDao.class::isInstance)
