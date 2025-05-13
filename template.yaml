@@ -2053,6 +2053,7 @@ Resources:
       Policies:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Environment:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
