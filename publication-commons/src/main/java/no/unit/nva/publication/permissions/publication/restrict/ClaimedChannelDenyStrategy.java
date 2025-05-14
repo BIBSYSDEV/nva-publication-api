@@ -48,8 +48,8 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         var channelConstraint = claimedPublicationChannel.getConstraint();
         var editingPolicy = channelConstraint.editingPolicy();
         var publishingPolicy = channelConstraint.publishingPolicy();
-
         var organization = claimedPublicationChannel.getOrganizationId();
+
         return hasOpenFiles()
                    ? channelPolicyDenies(editingPolicy, organization)
                    : channelPolicyDenies(publishingPolicy, organization);
