@@ -57,7 +57,7 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         if (OWNER_ONLY.equals(policy)) {
             return !userInstance.getTopLevelOrgCristinId().equals(organizationId);
         } else if (EVERYONE.equals(policy)) {
-            return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+            return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim();
         }
         return PASS;
     }
