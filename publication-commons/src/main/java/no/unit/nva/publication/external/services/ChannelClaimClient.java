@@ -46,10 +46,10 @@ public final class ChannelClaimClient {
 
     private NotFoundException handleFailure(Failure<?> responseFailure) {
         var exception = responseFailure.getException();
-        if (exception instanceof NotFoundException) {
-            return new NotFoundException(exception);
+        if (exception instanceof NotFoundException notFoundException) {
+            return notFoundException;
         }
 
-        throw new RuntimeException("Something went wrong!");
+        throw new RuntimeException("Something went wrong!" + exception.getMessage());
     }
 }
