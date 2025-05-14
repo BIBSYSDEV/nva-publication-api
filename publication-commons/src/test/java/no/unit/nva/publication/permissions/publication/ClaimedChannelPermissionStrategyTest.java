@@ -403,8 +403,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     @ParameterizedTest(name = "Should deny contributor from another institution {0} operation on publication with "
                               + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
                               + "files")
-    @MethodSource("argumentsForContributor")
-    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyEveryoneAndPublicationHasNoApprovedFiles(
+    @MethodSource("argumentsForContributorExcludingUploadFileAndPartialUpdate")
+    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyEveryoneAndPublicationHasNoOpenFile(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -429,8 +429,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     @ParameterizedTest(name = "Should deny curator from curating institution {0} operation on publication with "
                               + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
                               + "files")
-    @MethodSource("argumentsForCurator")
-    void shouldDenyCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyOwnerOnlyAndPublicationHasNoApprovedFile(
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
+    void shouldDenyCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyOwnerOnlyAndPublicationHasNoOpenFile(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -666,9 +666,9 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     }
 
     @ParameterizedTest(name = "Should deny contributor from another institution {0} operation on publication with "
-                              + "approved files and channel claimed by own institution with editing policy 'OwnerOnly'")
-    @MethodSource("argumentsForContributor")
-    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasApprovedFiles(
+                              + "open files and channel claimed by own institution with editing policy 'OwnerOnly'")
+    @MethodSource("argumentsForContributorExcludingUploadFileAndPartialUpdate")
+    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasOpenFiles(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -692,7 +692,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
     @ParameterizedTest(name = "Should deny curator from curating institution {0} operation on publication with open "
                               + "files and channel claimed by own institution with editing policy 'OwnerOnly'")
-    @MethodSource("argumentsForCurator")
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasOpenFiles(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
@@ -1005,14 +1005,16 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.DELETE,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
 
         return operations.stream().map(Arguments::of);
     }
 
     private static Stream<Arguments> argumentsForRegistratorAfterOpenFiles() {
         final var operations = Set.of(PublicationOperation.UPDATE,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
 
         return operations.stream().map(Arguments::of);
     }
@@ -1020,7 +1022,16 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     private static Stream<Arguments> argumentsForContributor() {
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UNPUBLISH,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
+
+        return operations.stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> argumentsForContributorExcludingUploadFileAndPartialUpdate() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.UNPUBLISH);
+
         return operations.stream().map(Arguments::of);
     }
 
@@ -1028,7 +1039,16 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
+
+        return operations.stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> argumentsForCuratorExcludingUploadFileAndPartialUpdate() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.UPDATE_FILES,
+                                      PublicationOperation.UNPUBLISH);
 
         return operations.stream().map(Arguments::of);
     }
