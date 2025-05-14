@@ -29,7 +29,7 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
 
         if (PARTIAL_UPDATE.equals(permission) || UPLOAD_FILE.equals(permission)) {
             return publicationChannelIsClaimed()
-                   && !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim();
+                   && !userRelatesToPublication();
         }
 
         var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
@@ -53,7 +53,7 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         if (OWNER_ONLY.equals(policy)) {
             return !userInstance.getCustomerId().equals(channelOwner);
         } else if (EVERYONE.equals(policy)) {
-            return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim();
+            return !userRelatesToPublication();
         }
         return PASS;
     }

@@ -21,13 +21,13 @@ public final class EditorGrantStrategy extends PublicationStrategyBase implement
         return switch (permission) {
             case UPDATE, PARTIAL_UPDATE -> true;
             case UNPUBLISH ->
-                userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim() && isPublished();
+                userRelatesToPublication() && isPublished();
             case REPUBLISH, TERMINATE ->
-                userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim() && isUnpublished();
+                userRelatesToPublication() && isUnpublished();
             case DOI_REQUEST_CREATE,
                  PUBLISHING_REQUEST_CREATE,
                  SUPPORT_REQUEST_CREATE,
-                 READ_HIDDEN_FILES -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim();
+                 READ_HIDDEN_FILES -> userRelatesToPublication();
             default -> false;
         };
     }

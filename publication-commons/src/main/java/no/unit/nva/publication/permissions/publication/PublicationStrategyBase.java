@@ -51,7 +51,7 @@ public class PublicationStrategyBase {
         return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
     }
 
-    protected boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim() {
+    protected boolean userRelatesToPublication() {
         return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() || userBelongsToPublicationChannelOwner();
     }
 
