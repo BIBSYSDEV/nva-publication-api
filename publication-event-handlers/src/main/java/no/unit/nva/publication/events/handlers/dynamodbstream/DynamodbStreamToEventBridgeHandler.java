@@ -58,25 +58,28 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     private final S3Driver s3Driver;
     private final QueueClient sqsClient;
     private final EventBridgeClient eventBridgeClient;
+    private final Environment environment;
 
     @JacocoGenerated
     public DynamodbStreamToEventBridgeHandler() {
         this(S3Driver.defaultS3Client().build(), defaultEventBridgeClient(),
-             ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE));
+             ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE), new Environment());
     }
 
     protected DynamodbStreamToEventBridgeHandler(S3Client s3Client, EventBridgeClient eventBridgeClient,
-                                                 QueueClient sqsClient) {
+                                                 QueueClient sqsClient, Environment environment) {
         this.s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         this.eventBridgeClient = eventBridgeClient;
         this.sqsClient = sqsClient;
+        this.environment = environment;
     }
 
     @Override
     public EventReference handleRequest(DynamodbEvent inputEvent, Context context) {
         var dynamodbStreamRecord = inputEvent.getRecords().getFirst();
         var dataEntryUpdateEvent = convertToDataEntryUpdateEvent(dynamodbStreamRecord);
-        return dataEntryUpdateEvent.shouldProcessUpdate() ? sendEvent(dataEntryUpdateEvent, context) : DO_NOT_EMIT_EVENT;
+        return dataEntryUpdateEvent.shouldProcessUpdate(environment) ? sendEvent(dataEntryUpdateEvent, context) :
+                                                                                                          DO_NOT_EMIT_EVENT;
     }
 
     private static SortableIdentifier getIdentifier(DataEntryUpdateEvent blobObject) {

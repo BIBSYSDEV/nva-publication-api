@@ -39,6 +39,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
 import org.hamcrest.Matchers;
@@ -74,7 +75,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
         };
         fakeSqsClient = new FakeSqsClient();
         this.eventBridgeClient = new FakeEventBridgeClient();
-        this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient, fakeSqsClient);
+        this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient, fakeSqsClient, new Environment());
     }
 
     @AfterEach
@@ -95,7 +96,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
                                    "PublicationService.Resource.Update"),
                       Arguments.of(randomEventWithSingleDynamoRecord(OperationType.MODIFY,
                                                                      Resource.fromPublication(publication),
-                                                                     Resource.fromPublication(publication)),
+                                                                     Resource.fromPublication(randomPublication())),
                                    "PublicationService.Resource.Update"));
     }
 
@@ -115,7 +116,8 @@ class DynamodbStreamToEventBridgeHandlerTest {
         var event = randomEventWithSingleDynamoRecord(OperationType.MODIFY,
                                                       Resource.fromPublication(randomPublication()),
                                                       Resource.fromPublication(randomPublication()));
-        handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), eventBridgeClient, fakeSqsClient);
+        handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), eventBridgeClient, fakeSqsClient,
+                                                         new Environment());
         handler.handleRequest(event, context);
         var recoveryMessage = fakeSqsClient.getDeliveredMessages().getFirst();
         assertThat(recoveryMessage.messageAttributes().get("id"), Matchers.is(notNullValue()));

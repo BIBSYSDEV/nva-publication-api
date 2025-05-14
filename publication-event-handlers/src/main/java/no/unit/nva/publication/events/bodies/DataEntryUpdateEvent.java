@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -20,6 +21,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class DataEntryUpdateEvent implements JsonSerializable {
@@ -39,6 +41,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
+    protected static final String SHOULD_IGNORE_BATCH_SCAN = "SHOULD_IGNORE_BATCH_SCAN";
 
     @JsonProperty(ACTION)
     private final String action;
@@ -104,13 +107,32 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     }
 
     @JsonIgnore
-    public boolean shouldProcessUpdate() {
+    public boolean shouldProcessUpdate(Environment environment) {
+        if (!isUserUpdate() && shouldIgnoreBatchScan(environment)) {
+            return false;
+        }
         if (extractDataEntryType() instanceof FileEntry) {
             return hasNewImage();
         } else if (extractDataEntryType() instanceof PublicationChannel) {
             return false;
         } else {
             return nonNull(oldData) || nonNull(newData);
+        }
+    }
+
+    private static Boolean shouldIgnoreBatchScan(Environment environment) {
+        return environment.readEnvOpt(SHOULD_IGNORE_BATCH_SCAN)
+                   .map(Boolean::valueOf)
+                   .orElse(true);
+    }
+
+    private boolean isUserUpdate() {
+        var oldModifiedDate =  Optional.ofNullable(oldData).map(Entity::getModifiedDate);
+        var newModifiedDate =  Optional.ofNullable(newData).map(Entity::getModifiedDate);
+        if (oldModifiedDate.isPresent() && newModifiedDate.isPresent()) {
+            return !oldModifiedDate.get().equals(newModifiedDate.get());
+        } else {
+            return true;
         }
     }
 
