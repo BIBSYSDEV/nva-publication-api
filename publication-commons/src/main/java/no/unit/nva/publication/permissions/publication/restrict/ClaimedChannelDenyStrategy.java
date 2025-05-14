@@ -41,13 +41,13 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
     }
 
     private boolean claimedPublicationChannelDenies(ClaimedPublicationChannel claimedPublicationChannel) {
-        var channelConstraint = claimedPublicationChannel.getConstraint();
-        var editingPolicy = channelConstraint.editingPolicy();
-        var publishingPolicy = channelConstraint.publishingPolicy();
-
         if (!resource.isPartOfClaimedChannelScope()) {
             return PASS;
         }
+
+        var channelConstraint = claimedPublicationChannel.getConstraint();
+        var editingPolicy = channelConstraint.editingPolicy();
+        var publishingPolicy = channelConstraint.publishingPolicy();
 
         var organization = claimedPublicationChannel.getOrganizationId();
         return hasOpenFiles()
