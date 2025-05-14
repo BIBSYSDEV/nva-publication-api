@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.time.Clock;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.ImportSource;
+import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -17,7 +18,7 @@ public class FakeResourceServiceThrowingException extends ResourceService {
 
     public FakeResourceServiceThrowingException(AmazonDynamoDB client) {
         super(client, FAKE_TABLE_NAME, Clock.systemDefaultZone(), DEFAULT_IDENTIFIER_SUPPLIER,
-              mock(UriRetriever.class), mock(IdentityServiceClient.class));
+              mock(UriRetriever.class), mock(ChannelClaimClient.class));
     }
 
     @Override
