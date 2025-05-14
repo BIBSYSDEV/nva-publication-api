@@ -334,9 +334,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
 
-        var publication = operation == PublicationOperation.UNPUBLISH
-                              ? createNonDegreePublicationWithoutOpenOrInternalFiles(registrator)
-                              : createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var publicationWithStatus = publication.copy()
                                         .withStatus(operation == PublicationOperation.DELETE ? DRAFT : PUBLISHED)
@@ -363,7 +361,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curator = owningInstitution.curator();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
@@ -379,7 +377,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                               + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
                               + "files")
     @MethodSource("argumentsForContributor")
-    void shouldAllowContributorFromSameInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyOwnerOnlyAndPublicationHasNoOpenFile(
+    void shouldAllowContributorFromSameInstitutionWhenChannelIsClaimedByContributorInstitutionWithPublishingPolicyOwnerOnlyAndPublicationHasNoOpenFile(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -643,8 +641,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
     @ParameterizedTest(name = "Should allow contributor from same institution {0} operation on publication with open "
                               + "files and channel claimed by own institution with editing policy 'OwnerOnly'")
-    @MethodSource("argumentsForContributorAfterOpenFiles")
-    void shouldAllowContributorFromSameInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasOpenFiles(
+    @MethodSource("argumentsForContributor")
+    void shouldAllowContributorFromSameInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasApprovedFiles(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -652,7 +650,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var contributor = owningInstitution.contributor();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);

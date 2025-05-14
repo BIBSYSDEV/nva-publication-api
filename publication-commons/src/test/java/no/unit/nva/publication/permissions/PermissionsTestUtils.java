@@ -127,7 +127,7 @@ public class PermissionsTestUtils {
         }
 
         public URI getTopLevelCristinId() {
-            return registrator.customer();
+            return registrator.topLevelCristinId();
         }
     }
 

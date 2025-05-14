@@ -6,6 +6,7 @@ import static no.unit.nva.publication.model.business.publicationchannel.ChannelP
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
 import java.net.URI;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
@@ -41,16 +42,20 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         var channelConstraint = claimedPublicationChannel.getConstraint();
         var editingPolicy = channelConstraint.editingPolicy();
         var publishingPolicy = channelConstraint.publishingPolicy();
-        var channelOwner = claimedPublicationChannel.getCustomerId();
+        var organization = claimedPublicationChannel.getOrganizationId();
 
         return hasOpenFiles()
-                   ? channelPolicyDenies(editingPolicy, channelOwner)
-                   : channelPolicyDenies(publishingPolicy, channelOwner);
+                   ? channelPolicyDenies(editingPolicy, organization)
+                   : channelPolicyDenies(publishingPolicy, organization);
     }
 
-    private boolean channelPolicyDenies(ChannelPolicy policy, URI channelOwner) {
+    private boolean hasOpenFiles() {
+        return resource.getFiles().stream().anyMatch(OpenFile.class::isInstance);
+    }
+
+    private boolean channelPolicyDenies(ChannelPolicy policy, URI organizationId) {
         if (OWNER_ONLY.equals(policy)) {
-            return !userInstance.getCustomerId().equals(channelOwner);
+            return !userInstance.getTopLevelOrgCristinId().equals(organizationId);
         } else if (EVERYONE.equals(policy)) {
             return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim();
         }
