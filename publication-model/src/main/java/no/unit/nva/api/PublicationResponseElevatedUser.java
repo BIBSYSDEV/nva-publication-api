@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationOperation;
@@ -19,7 +18,6 @@ import nva.commons.core.JacocoGenerated;
 public class PublicationResponseElevatedUser extends PublicationResponse {
 
     private List<PublicationNoteBase> publicationNotes;
-    private Set<CuratingInstitution> curatingInstitutions;
 
     public static PublicationResponseElevatedUser fromPublication(Publication publication) {
         var response = new PublicationResponseElevatedUser();
@@ -70,14 +68,6 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
         this.publicationNotes = publicationNotes;
     }
 
-    public Set<CuratingInstitution> getCuratingInstitutions() {
-        return curatingInstitutions;
-    }
-
-    public void setCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
-        this.curatingInstitutions = curatingInstitutions;
-    }
-
     @Override
     public List<AssociatedArtifactDto> getAssociatedArtifacts() {
         return super.getAssociatedArtifactsForElevatedUser();
@@ -86,7 +76,7 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), publicationNotes, curatingInstitutions);
+        return Objects.hash(super.hashCode(), publicationNotes);
     }
 
     @JacocoGenerated
@@ -102,7 +92,6 @@ public class PublicationResponseElevatedUser extends PublicationResponse {
             return false;
         }
         PublicationResponseElevatedUser that = (PublicationResponseElevatedUser) o;
-        return Objects.equals(publicationNotes, that.publicationNotes)
-               && Objects.equals(curatingInstitutions, that.curatingInstitutions);
+        return Objects.equals(publicationNotes, that.publicationNotes);
     }
 }

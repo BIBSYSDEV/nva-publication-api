@@ -22,6 +22,7 @@ import no.unit.nva.WithInternal;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
@@ -61,6 +62,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     private List<URI> subjects;
     private List<AssociatedArtifactDto> associatedArtifacts;
     private List<ImportDetail> importDetails;
+    private Set<CuratingInstitution> curatingInstitutions;
 
     private Set<AdditionalIdentifierBase> additionalIdentifiers;
     private String rightsHolder;
@@ -95,6 +97,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         response.setAllowedOperations(Set.of());
         response.setImportDetails(publication.getImportDetails());
         response.setPendingOpenFileCount(publication.getPendingOpenFileCount());
+        response.setCuratingInstitutions(publication.getCuratingInstitutions());
         return response;
     }
 
@@ -323,6 +326,14 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         this.importDetails = new ArrayList<>(importDetails);
     }
 
+    public Set<CuratingInstitution> getCuratingInstitutions() {
+        return curatingInstitutions;
+    }
+
+    public void setCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
+        this.curatingInstitutions = curatingInstitutions;
+    }
+
     @Override
     public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
         return additionalIdentifiers;
@@ -374,7 +385,8 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
                             getRightsHolder(),
                             getAllowedOperations(),
                             getImportDetails(),
-                            getPendingOpenFileCount());
+                            getPendingOpenFileCount(),
+                            getCuratingInstitutions());
     }
 
     @Override
@@ -408,6 +420,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
                && Objects.equals(getRightsHolder(), that.getRightsHolder())
                && Objects.equals(getAllowedOperations(), that.getAllowedOperations())
                && Objects.equals(getImportDetails(), that.getImportDetails())
-               && Objects.equals(getPendingOpenFileCount(), that.getPendingOpenFileCount());
+               && Objects.equals(getPendingOpenFileCount(), that.getPendingOpenFileCount())
+               && Objects.equals(getCuratingInstitutions(), that.getCuratingInstitutions());
     }
 }
