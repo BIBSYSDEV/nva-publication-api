@@ -56,7 +56,7 @@ public class PublicationStrategyBase {
     }
 
     private boolean userBelongsToPublicationChannelOwner() {
-        if (isNull(userInstance)) {
+        if (Optional.ofNullable(userInstance).map(UserInstance::getCustomerId).isEmpty()) {
             return false;
         }
 
