@@ -3,7 +3,8 @@ Feature: Update permissions
   I want publication permission to be enforced based on publication and user role
   So that only authorized users can perform operation
 
-  Scenario Outline: Verify partial-update and update permissions
+  Scenario Outline: Verify partial-update and update permissions when
+  user is not from the same organization as claimed publisher
     Given a "published" publication
     And publication is a degree
     And publication has claimed publisher
@@ -33,4 +34,26 @@ Feature: Update permissions
       | Related external client           | Allowed     | update         |
 
 
-    #TODO: Add new scenario with claimed publisher at file curators institution and allow update
+  Scenario Outline: Verify update permissions when
+  user is from the same organization as claimed publisher
+    Given a "published" publication
+    And publication is a degree
+    And publication has claimed publisher
+    And publisher is claimed by organization
+    When the user have the role "<UserRole>"
+    And the user is from the same organization
+    And the user attempts to "<Operation>"
+    Then the action outcome is "<Outcome>"
+
+    Examples:
+      | UserRole                          | Outcome     | Operation |
+      | Everyone else                     | Not Allowed | update    |
+      | External client                   | Not Allowed | update    |
+      | Publication owner                 | Not Allowed | update    |
+      | Contributor                       | Not Allowed | update    |
+      | File, support, doi or nvi curator | Not Allowed | update    |
+      | Editor                            | Not Allowed | update    |
+      | Degree file curator               | Allowed     | update    |
+      | Related external client           | Allowed     | update    |
+
+

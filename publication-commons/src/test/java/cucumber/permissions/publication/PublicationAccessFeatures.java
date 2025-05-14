@@ -1,5 +1,6 @@
 package cucumber.permissions.publication;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -8,11 +9,13 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.net.URI;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 
 public class PublicationAccessFeatures {
 
+    protected static final URI ORGANIZATION = randomUri();
     private final PublicationScenarioContext scenarioContext;
 
     public PublicationAccessFeatures(PublicationScenarioContext scenarioContext) {
@@ -57,5 +60,15 @@ public class PublicationAccessFeatures {
     @And("publication has claimed publisher")
     public void publicationHasClaimedPublisher() {
         scenarioContext.setHasClaimedPublisher(true);
+    }
+
+    @And("publisher is claimed by organization")
+    public void publisherIsClaimedByOrganization() {
+        scenarioContext.setPublisherOrganization(ORGANIZATION);
+    }
+
+    @And("the user is from the same organization")
+    public void theUserIsFromTheSameOrganization() {
+        scenarioContext.setUserOrganization(ORGANIZATION);
     }
 }
