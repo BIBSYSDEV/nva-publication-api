@@ -50,11 +50,11 @@ public class PublicationStrategyBase {
         return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
     }
 
-    protected boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim() {
+    protected boolean userRelatesToPublication() {
         return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() || userBelongsToPublicationChannelOwner();
     }
 
-    private boolean userBelongsToPublicationChannelOwner() {
+    protected boolean userBelongsToPublicationChannelOwner() {
         if (Optional.ofNullable(userInstance).map(UserInstance::getCustomerId).isEmpty()) {
             return false;
         }
@@ -67,6 +67,10 @@ public class PublicationStrategyBase {
 
         var channelOwner = claimedPublicationChannel.get().getCustomerId();
         return userInstance.getCustomerId().equals(channelOwner);
+    }
+
+    protected boolean publicationChannelIsClaimed() {
+        return resource.getPrioritizedClaimedPublicationChannel().isPresent();
     }
 
     private boolean userBelongsToCuratingInstitution() {

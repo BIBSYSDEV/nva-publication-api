@@ -28,6 +28,8 @@ public class PermissionsTestUtils {
     public static List<AccessRight> getAccessRightsForEditor() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
+        accessRights.add(AccessRight.MANAGE_OWN_AFFILIATION);
+        accessRights.add(AccessRight.MANAGE_CHANNEL_CLAIMS);
         return accessRights;
     }
 
@@ -109,7 +111,7 @@ public class PermissionsTestUtils {
     }
 
     public record Institution(User registrator, User contributor, User curator, User thesisCurator,
-                              User embargoThesisCurator) {
+                              User embargoThesisCurator, User editor) {
 
         public static Institution random() {
             var customer = randomUri();
@@ -119,7 +121,8 @@ public class PermissionsTestUtils {
                 User.randomContributor(customer, topLevelCristinId),
                 User.randomCurator(customer, topLevelCristinId),
                 User.randomThesisCurator(customer, topLevelCristinId),
-                User.randomEmbargoThesisCurator(customer, topLevelCristinId));
+                User.randomEmbargoThesisCurator(customer, topLevelCristinId),
+                User.randomEditor(customer, topLevelCristinId));
         }
 
         public URI getCustomerId() {
@@ -158,6 +161,11 @@ public class PermissionsTestUtils {
         public static User randomEmbargoThesisCurator(URI customer, URI topLevelCristinId) {
             return new User(randomString(), randomUri(), customer, topLevelCristinId,
                             getAccessRightsForEmbargoThesisCurator());
+        }
+
+        public static User randomEditor(URI customer, URI topLevelCristinId) {
+            return new User(randomString(), randomUri(), customer, topLevelCristinId,
+                            getAccessRightsForEditor());
         }
     }
 }

@@ -2,6 +2,7 @@ package no.unit.nva.publication.permissions.publication;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
@@ -754,8 +755,9 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var resource = Resource.fromPublication(publication);
         setPublicationChannel(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
 
-        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.contributor()),
-                                                                     identityServiceClient);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(
+            toRequestInfo(nonCuratingInstitution.contributor()),
+            identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(resource, userInstance)
@@ -778,6 +780,81 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setPublicationChannel(resource, nonCuratingInstitution, EVERYONE, EVERYONE);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
+                                                                     identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow editor from non curating institution {0} operation on publication "
+                              + "with channel claimed by editors institution")
+    @MethodSource("argumentsForEditor")
+    void shouldAllowEditorFromNonCuratingInstitutionWhenChannelIsClaimedByTheirInstitution(
+        PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator).copy()
+                              .withStatus(operation == PublicationOperation.REPUBLISH ? UNPUBLISHED : PUBLISHED)
+                              .build();
+
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.editor()),
+                                                                     identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should deny editor from non curating institution {0} operation on publication "
+                              + "with channel claimed by another institution")
+    @MethodSource("argumentsForEditor")
+    void shouldDenyEditorFromNonCuratingInstitutionWhenChannelIsClaimedByAnotherInstitution(
+        PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator).copy()
+                              .withStatus(operation == PublicationOperation.REPUBLISH ? UNPUBLISHED : PUBLISHED)
+                              .build();
+
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.editor()),
+                                                                     identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow editor from non curating institution {0} operation on publication "
+                              + "with non claimed channel")
+    @MethodSource("argumentsForEditorExcludingUnpublishAndRepublish")
+    void shouldAllowEditorFromNonCuratingInstitutionWhenChannelIsNotClaimedByAnyone(
+        PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator).copy()
+                              .withStatus(operation == PublicationOperation.REPUBLISH ? UNPUBLISHED : PUBLISHED)
+                              .build();
+
+        var resource = Resource.fromPublication(publication);
+        resource.setPublicationChannels(List.of());
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.editor()),
                                                                      identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissions
@@ -1101,6 +1178,22 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH);
+
+        return operations.stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> argumentsForEditor() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.PARTIAL_UPDATE,
+                                      PublicationOperation.UNPUBLISH,
+                                      PublicationOperation.REPUBLISH);
+
+        return operations.stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> argumentsForEditorExcludingUnpublishAndRepublish() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.PARTIAL_UPDATE);
 
         return operations.stream().map(Arguments::of);
     }
