@@ -106,7 +106,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should deny Registrator {0} operation on instance type {1} when degree has open files")
-    @MethodSource("argumentsForRegistrator")
+    @MethodSource("argumentsForRegistratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyRegistratorOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
                                                               Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -152,7 +152,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should deny Contributor {0} operation on instance type {1} when degree has open files")
-    @MethodSource("argumentsForContributor")
+    @MethodSource("argumentsForContributorExcludingUploadFileAndPartialUpdate")
     void shouldDenyContributorOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
                                                               Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -196,7 +196,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} when degree has open files")
-    @MethodSource("argumentsForCurator")
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyCuratorOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
                                                           Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -243,7 +243,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator from curating institution {0} operation on instance type {1} when"
                               + " degree has open files")
-    @MethodSource("argumentsForCurator")
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyCuratorOnCuratingInstitutionOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
                                                                                Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -342,7 +342,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance "
                               + "type {1} when degree has open files")
-    @MethodSource("argumentsForThesisCurator")
+    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyThesisCuratorFromCuratingInstitutionOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
                                                                                        Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -367,7 +367,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator from Registrators institution {0} operation on instance "
                               + "type {1} when degree has embargo but no open files")
-    @MethodSource("argumentsForThesisCurator")
+    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyThesisCuratorOperationsOnEmbargoDegreeWithoutOpenFiles(PublicationOperation operation,
                                                                           Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -392,7 +392,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator from Registrators institution {0} operation on instance "
                               + "type {1} when degree has open file with embargo")
-    @MethodSource("argumentsForThesisCurator")
+    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyThesisCuratorOperationsOnEmbargoDegreeWithOpenFiles(PublicationOperation operation,
                                                                        Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -461,7 +461,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance type "
                               + "{1} when curating institution has supervisor only and publication has no open files")
-    @MethodSource("argumentsForThesisCurator")
+    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyThesisCuratorFromCuratingInstitutionOnDegreeWithoutOpenFilesWhenCuratorIsCuratingSupervisorOnly(
         PublicationOperation operation,
         Class<?> degreeInstanceTypeClass)
@@ -497,7 +497,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance type "
                               + "{1} when curating institution has supervisor only and publication has open files")
-    @MethodSource("argumentsForThesisCurator")
+    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyThesisCuratorFromCuratingInstitutionOnDegreeWithOpenFilesWhenCuratorIsCuratingSupervisorOnly(
         PublicationOperation operation,
         Class<?> degreeInstanceTypeClass)
@@ -533,7 +533,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Registrator {0} operation on instance type {1} when degree has open file "
                               + "and channel owned by own institution")
-    @MethodSource("argumentsForRegistrator")
+    @MethodSource("argumentsForRegistratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyRegistratorWhenOpenFileAndChannelOwnedByOwnInstitution(PublicationOperation operation,
                                                                           Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -558,7 +558,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} when degree has open file "
                               + "and channel owned by own institution")
-    @MethodSource("argumentsForCurator")
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyCuratorWhenOpenFileAndChannelOwnedByOwnInstitution(PublicationOperation operation,
                                                                       Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -610,7 +610,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator from curating institution {0} operation on instance type {1} when "
                               + "degree has open file and channel owned by own institution")
-    @MethodSource("argumentsForCurator")
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyCuratorFromCuratingInstitutionWhenOpenFileAndChannelOwnedByOwnInstitution(
         PublicationOperation operation,
         Class<?> degreeInstanceClass)
@@ -644,7 +644,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance type {1} "
                               + "when degree has open file and channel owned by own institution")
-    @MethodSource("argumentsForThesisCurator")
+    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyThesisCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByOwnInstitution(
         PublicationOperation operation,
         Class<?> degreeInstanceClass)
@@ -673,7 +673,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Registrator {0} operation on instance type {1} when degree has open file "
                               + "and channel owned by another institution")
-    @MethodSource("argumentsForRegistrator")
+    @MethodSource("argumentsForRegistratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyRegistratorWhenOpenFileAndChannelOwnedByAnotherInstitution(PublicationOperation operation,
                                                                               Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -699,7 +699,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} when degree has open file "
                               + "and channel owned by another institution")
-    @MethodSource("argumentsForCurator")
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyCuratorWhenOpenFileAndChannelOwnedByAnotherInstitution(PublicationOperation operation,
                                                                           Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -725,7 +725,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator {0} operation on instance type {1} when degree has open "
                               + "file and channel owned by another institution")
-    @MethodSource("argumentsForThesisCurator")
+    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
     void shouldDenyThesisCuratorWhenOpenFileAndChannelOwnedByAnotherInstitution(PublicationOperation operation,
                                                                                 Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
@@ -778,7 +778,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow Thesis Curator from another institution {0} operation on instance type {1} "
                               + "when degree has open file and channel owned by that institution")
-    @MethodSource("argumentsForThesisCurator")
+    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
     void shouldAllowThesisCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByThatInstitution(
         PublicationOperation operation,
         Class<?> degreeInstanceClass)
@@ -862,7 +862,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should not throw NPE when contributor is missing ID")
-    @MethodSource("argumentsForCurator")
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
     void shouldNotThrowNPEWhenContributorIsMissingId(
         PublicationOperation operation,
         Class<?> degreeInstanceTypeClass)
@@ -1054,7 +1054,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.DELETE,
                                       PublicationOperation.UPDATE_FILES,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
 
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
@@ -1063,13 +1064,23 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.DELETE,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
+
+        return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
+    }
+
+    private static Stream<Arguments> argumentsForRegistratorExcludingUploadFileAndPartialUpdate() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.UNPUBLISH,
+                                      PublicationOperation.DELETE);
 
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
 
     private static Stream<Arguments> argumentsEveryoneShouldBeAllowedAfterOpenFiles() {
-        final var operations = Set.of(PublicationOperation.UPLOAD_FILE);
+        final var operations = Set.of(PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
 
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
@@ -1077,7 +1088,15 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     private static Stream<Arguments> argumentsForContributor() {
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UNPUBLISH,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
+
+        return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
+    }
+
+    private static Stream<Arguments> argumentsForContributorExcludingUploadFileAndPartialUpdate() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.UNPUBLISH);
 
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
@@ -1086,7 +1105,16 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
+
+        return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
+    }
+
+    private static Stream<Arguments> argumentsForCuratorExcludingUploadFileAndPartialUpdate() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.UPDATE_FILES,
+                                      PublicationOperation.UNPUBLISH);
 
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
@@ -1095,7 +1123,16 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH,
-                                      PublicationOperation.UPLOAD_FILE);
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
+
+        return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
+    }
+
+    private static Stream<Arguments> argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.UPDATE_FILES,
+                                      PublicationOperation.UNPUBLISH);
 
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
