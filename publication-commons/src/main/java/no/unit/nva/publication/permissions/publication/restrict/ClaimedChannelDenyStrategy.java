@@ -28,12 +28,13 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
             return PASS;
         }
 
+        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
+
         if (PARTIAL_UPDATE.equals(permission) || UPLOAD_FILE.equals(permission)) {
             return publicationChannelIsClaimed()
+                   && resource.isPartOfClaimedChannelScope()
                    && !userRelatesToPublication();
         }
-
-        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
 
         return claimedPublicationChannel.isPresent()
                && claimedPublicationChannelDenies(claimedPublicationChannel.get());
@@ -43,8 +44,12 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         var channelConstraint = claimedPublicationChannel.getConstraint();
         var editingPolicy = channelConstraint.editingPolicy();
         var publishingPolicy = channelConstraint.publishingPolicy();
-        var organization = claimedPublicationChannel.getOrganizationId();
 
+        if (!resource.isPartOfClaimedChannelScope()) {
+            return PASS;
+        }
+
+        var organization = claimedPublicationChannel.getOrganizationId();
         return hasOpenFiles()
                    ? channelPolicyDenies(editingPolicy, organization)
                    : channelPolicyDenies(publishingPolicy, organization);

@@ -35,7 +35,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
             if (hasApprovedFiles()) {
                 return approvedFileStrategy();
             } else {
-                return nonOpenFileStrategy();
+                return nonApprovedFileStrategy();
             }
         }
 
@@ -52,7 +52,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         return PASS;
     }
 
-    private boolean nonOpenFileStrategy() {
+    private boolean nonApprovedFileStrategy() {
         if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
             return DENY;
         }

@@ -282,6 +282,22 @@ public class Resource implements Entity {
                    .map(ClaimedPublicationChannel.class::cast);
     }
 
+    public boolean isPartOfClaimedChannelScope() {
+        var claimedChannel = getPrioritizedClaimedPublicationChannel();
+        if (claimedChannel.isEmpty()) {
+            return false;
+        }
+
+        var instanceType = getInstanceType();
+        if (instanceType.isEmpty()) {
+            return false;
+        }
+
+        var scope = claimedChannel.get().getConstraint().scope();
+
+        return scope.contains(instanceType.get());
+    }
+
     @JsonIgnore
     public Optional<Publisher> getPublisherWhenDegree() {
         return Optional.ofNullable(getEntityDescription())
