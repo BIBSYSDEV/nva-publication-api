@@ -72,6 +72,9 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     }
 
     private boolean hasAccessToTicket(TicketEntry ticketEntry, UserInstance userInstance) {
+        if (ticketEntry.getOwner().equals(userInstance.getUser())) {
+            return true;
+        }
         if (ticketEntry instanceof GeneralSupportRequest) {
             return ticketEntry.hasSameOwnerAffiliationAs(userInstance);
         } else {

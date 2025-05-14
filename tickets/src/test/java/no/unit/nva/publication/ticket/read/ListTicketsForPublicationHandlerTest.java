@@ -15,6 +15,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -312,6 +314,32 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         assertThat(body.getTickets(), is(emptyIterable()));
     }
 
+    @Test
+    void shouldListTicketsWhereUserIsOwner()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var contributorId = randomUri();
+        var contributor = randomContributorWithId(contributorId);
+        publication.getEntityDescription().setContributors(List.of(contributor));
+        resourceService.updatePublication(publication);
+        var userIdentifier = randomString();
+        GeneralSupportRequest.create(Resource.fromPublication(publication), UserInstance.create(userIdentifier,
+                                                                                                randomUri(),
+                                                                                                randomUri(),
+                                                                                                List.of(),
+                                                                                                contributor.getIdentity().getId()))
+            .persistNewTicket(ticketService)
+            .complete(publication, randomUserInstance()).persistUpdate(ticketService);
+
+        var request = userRequestsTickets(publication, userIdentifier, contributorId);
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
+        var body = response.getBodyObject(TicketCollection.class);
+
+        assertFalse(body.getTickets().isEmpty());
+    }
+
     private TicketEntry createPersistedTicketWithMessage(Class<? extends TicketEntry> ticketType,
                                                          Publication publication) throws ApiGatewayException {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -417,6 +445,17 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withAccessRights(publication.getPublisher().getId(), accessRight)
                    .withPersonCristinId(userId)
                    .withTopLevelCristinOrgId(topLevelOrgCristinId)
+                   .build();
+    }
+
+    private InputStream userRequestsTickets(Publication publication, String userName, URI userId)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                   .withPathParameters(constructPathParameters(publication))
+                   .withCurrentCustomer(randomUri())
+                   .withUserName(userName)
+                   .withPersonCristinId(userId)
+                   .withTopLevelCristinOrgId(randomUri())
                    .build();
     }
 }
