@@ -404,7 +404,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                               + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
                               + "files")
     @MethodSource("argumentsForContributor")
-    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyEveryoneAndPublicationHasNoOpenFile(
+    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyEveryoneAndPublicationHasNoApprovedFiles(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -430,7 +430,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                               + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
                               + "files")
     @MethodSource("argumentsForCurator")
-    void shouldDenyCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyOwnerOnlyAndPublicationHasNoOpenFile(
+    void shouldDenyCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyOwnerOnlyAndPublicationHasNoApprovedFile(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -666,9 +666,9 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     }
 
     @ParameterizedTest(name = "Should deny contributor from another institution {0} operation on publication with "
-                              + "open files and channel claimed by own institution with editing policy 'OwnerOnly'")
+                              + "approved files and channel claimed by own institution with editing policy 'OwnerOnly'")
     @MethodSource("argumentsForContributor")
-    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasOpenFiles(
+    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasApprovedFiles(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
