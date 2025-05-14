@@ -18,15 +18,24 @@ public final class EditorGrantStrategy extends PublicationStrategyBase implement
         if (!hasAccessRight(MANAGE_RESOURCES_ALL)) {
             return false;
         }
+        if (publicationChannelIsClaimed() && !userBelongsToPublicationChannelOwner()) {
+            return false;
+        }
         return switch (permission) {
             case UPDATE, PARTIAL_UPDATE -> true;
-            case UNPUBLISH -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isPublished();
-            case REPUBLISH, TERMINATE -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() && isUnpublished();
+            case UNPUBLISH ->
+                userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim() && isPublished();
+            case REPUBLISH, TERMINATE ->
+                userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim() && isUnpublished();
             case DOI_REQUEST_CREATE,
                  PUBLISHING_REQUEST_CREATE,
                  SUPPORT_REQUEST_CREATE,
                  READ_HIDDEN_FILES -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
             default -> false;
         };
+    }
+
+    private boolean publicationChannelIsClaimed() {
+        return resource.getPrioritizedClaimedPublicationChannel().isPresent();
     }
 }

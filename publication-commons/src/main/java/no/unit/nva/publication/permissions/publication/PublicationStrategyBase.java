@@ -55,7 +55,7 @@ public class PublicationStrategyBase {
         return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() || userBelongsToPublicationChannelOwner();
     }
 
-    private boolean userBelongsToPublicationChannelOwner() {
+    protected boolean userBelongsToPublicationChannelOwner() {
         if (isNull(userInstance)) {
             return false;
         }
