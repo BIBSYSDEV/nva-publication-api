@@ -28,7 +28,8 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         }
 
         if (PARTIAL_UPDATE.equals(permission) || UPLOAD_FILE.equals(permission)) {
-            return PASS;
+            return publicationChannelIsClaimed()
+                   && !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim();
         }
 
         var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();

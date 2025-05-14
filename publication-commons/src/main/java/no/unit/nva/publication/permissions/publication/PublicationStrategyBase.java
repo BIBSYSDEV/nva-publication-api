@@ -70,6 +70,10 @@ public class PublicationStrategyBase {
         return userInstance.getCustomerId().equals(channelOwner);
     }
 
+    protected boolean publicationChannelIsClaimed() {
+        return resource.getPrioritizedClaimedPublicationChannel().isPresent();
+    }
+
     private boolean userBelongsToCuratingInstitution() {
         if (isNull(userInstance)) {
             return false;

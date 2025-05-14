@@ -18,9 +18,6 @@ public final class EditorGrantStrategy extends PublicationStrategyBase implement
         if (!hasAccessRight(MANAGE_RESOURCES_ALL)) {
             return false;
         }
-        if (publicationChannelIsClaimed() && !userBelongsToPublicationChannelOwner()) {
-            return false;
-        }
         return switch (permission) {
             case UPDATE, PARTIAL_UPDATE -> true;
             case UNPUBLISH ->
@@ -30,12 +27,8 @@ public final class EditorGrantStrategy extends PublicationStrategyBase implement
             case DOI_REQUEST_CREATE,
                  PUBLISHING_REQUEST_CREATE,
                  SUPPORT_REQUEST_CREATE,
-                 READ_HIDDEN_FILES -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+                 READ_HIDDEN_FILES -> userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim();
             default -> false;
         };
-    }
-
-    private boolean publicationChannelIsClaimed() {
-        return resource.getPrioritizedClaimedPublicationChannel().isPresent();
     }
 }
