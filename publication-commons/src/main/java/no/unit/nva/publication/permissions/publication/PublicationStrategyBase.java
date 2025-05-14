@@ -51,6 +51,25 @@ public class PublicationStrategyBase {
         return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
     }
 
+    protected boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim() {
+        return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() || userBelongsToPublicationChannelOwner();
+    }
+
+    private boolean userBelongsToPublicationChannelOwner() {
+        if (isNull(userInstance)) {
+            return false;
+        }
+
+        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
+
+        if (claimedPublicationChannel.isEmpty()) {
+            return false;
+        }
+
+        var channelOwner = claimedPublicationChannel.get().getCustomerId();
+        return userInstance.getCustomerId().equals(channelOwner);
+    }
+
     private boolean userBelongsToCuratingInstitution() {
         if (isNull(userInstance)) {
             return false;

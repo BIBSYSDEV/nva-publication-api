@@ -52,7 +52,7 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         if (OWNER_ONLY.equals(policy)) {
             return !userInstance.getCustomerId().equals(channelOwner);
         } else if (EVERYONE.equals(policy)) {
-            return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+            return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitutionOrChannelClaim();
         }
         return PASS;
     }

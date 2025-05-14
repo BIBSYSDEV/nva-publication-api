@@ -260,7 +260,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var contributor = owningInstitution.contributor();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);
@@ -285,7 +285,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -387,7 +387,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var contributor = owningInstitution.contributor();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);
@@ -498,7 +498,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
     @ParameterizedTest(name = "Should allow contributor from same institution {0} operation on publication with open "
                               + "files and channel claimed by own institution with editing policy 'Everyone'")
-    @MethodSource("argumentsForContributor")
+    @MethodSource("argumentsForContributorAfterOpenFiles")
     void shouldAllowContributorFromSameInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyEveryoneAndPublicationHasOpenFiles(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
@@ -522,7 +522,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
     @ParameterizedTest(name = "Should allow contributor from another institution {0} operation on publication with "
                               + "open files and channel claimed by own institution with editing policy 'Everyone'")
-    @MethodSource("argumentsForContributor")
+    @MethodSource("argumentsForContributorAfterOpenFiles")
     void shouldAllowContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyEveryoneAndPublicationHasOpenFiles(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
@@ -643,7 +643,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
     @ParameterizedTest(name = "Should allow contributor from same institution {0} operation on publication with open "
                               + "files and channel claimed by own institution with editing policy 'OwnerOnly'")
-    @MethodSource("argumentsForContributor")
+    @MethodSource("argumentsForContributorAfterOpenFiles")
     void shouldAllowContributorFromSameInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasOpenFiles(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
@@ -737,6 +737,52 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
+                                   .create(resource, userInstance)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should deny contributor from non curating institution {0} operation on publication with "
+                              + "channel claimed by contributors institution")
+    @MethodSource("argumentsForContributor")
+    void shouldDenyContributorFromNonCuratingInstitutionWhenChannelIsClaimedByTheirInstitution(
+        PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.contributor()),
+                                                                     identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
+                                   .create(resource, userInstance)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow curator from non curating institution {0} operation on publication "
+                              + "with channel claimed by curators institution")
+    @MethodSource("argumentsForCurator")
+    void shouldAllowCuratorFromNonCuratingInstitutionWhenChannelIsClaimedByTheirInstitution(
+        PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannel(resource, nonCuratingInstitution, EVERYONE, EVERYONE);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
+                                                                     identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissions
                                    .create(resource, userInstance)
                                    .allowsAction(operation));
     }
@@ -946,8 +992,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
                                                                      identityServiceClient);
         Assertions.assertFalse(PublicationPermissions
-                                  .create(resource, userInstance)
-                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+                                   .create(resource, userInstance)
+                                   .allowsAction(PublicationOperation.UPLOAD_FILE));
     }
 
     @Test
@@ -967,8 +1013,8 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
                                                                      identityServiceClient);
         Assertions.assertFalse(PublicationPermissions
-                                  .create(resource, userInstance)
-                                  .allowsAction(PublicationOperation.UPLOAD_FILE));
+                                   .create(resource, userInstance)
+                                   .allowsAction(PublicationOperation.UPLOAD_FILE));
     }
 
     @Test
@@ -1022,6 +1068,14 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     private static Stream<Arguments> argumentsForContributor() {
         final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UNPUBLISH,
+                                      PublicationOperation.UPLOAD_FILE,
+                                      PublicationOperation.PARTIAL_UPDATE);
+
+        return operations.stream().map(Arguments::of);
+    }
+
+    private static Stream<Arguments> argumentsForContributorAfterOpenFiles() {
+        final var operations = Set.of(PublicationOperation.UPDATE,
                                       PublicationOperation.UPLOAD_FILE,
                                       PublicationOperation.PARTIAL_UPDATE);
 
