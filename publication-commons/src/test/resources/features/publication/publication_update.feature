@@ -1,6 +1,6 @@
-Feature: Update permissions
+Feature: Update permissions - user not from the same organization as publisher
   As a system user
-  I want publication permission to be enforced based on publication and user role
+  I want publication permission to be enforced based on publication, user role and channel claim
   So that only authorized users can perform operation
 
   Scenario Outline: Verify partial-update and update permissions when
@@ -13,25 +13,25 @@ Feature: Update permissions
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                          | Outcome     | Operation      |
+      | UserRole                          | Operation      | Outcome     |
 
-      | Everyone else                     | Not Allowed | partial-update |
-      | External client                   | Not Allowed | partial-update |
-      | Publication owner                 | Allowed     | partial-update |
-      | Contributor                       | Allowed     | partial-update |
-      | File, support, doi or nvi curator | Allowed     | partial-update |
-      | Editor                            | Allowed     | partial-update |
-      | Related external client           | Allowed     | partial-update |
-      | Degree file curator               | Allowed     | partial-update |
+      | Everyone else                     | partial-update | Not Allowed |
+      | External client                   | partial-update | Not Allowed |
+      | Publication owner                 | partial-update | Allowed     |
+      | Contributor                       | partial-update | Allowed     |
+      | File, support, doi or nvi curator | partial-update | Allowed     |
+      | Editor                            | partial-update | Allowed     |
+      | Related external client           | partial-update | Allowed     |
+      | Degree file curator               | partial-update | Allowed     |
 
-      | Everyone else                     | Not Allowed | update         |
-      | External client                   | Not Allowed | update         |
-      | Publication owner                 | Not Allowed | update         |
-      | Contributor                       | Not Allowed | update         |
-      | File, support, doi or nvi curator | Not Allowed | update         |
-      | Editor                            | Not Allowed | update         |
-      | Degree file curator               | Not Allowed | update         |
-      | Related external client           | Allowed     | update         |
+      | Everyone else                     | update         | Not Allowed |
+      | External client                   | update         | Not Allowed |
+      | Publication owner                 | update         | Not Allowed |
+      | Contributor                       | update         | Not Allowed |
+      | File, support, doi or nvi curator | update         | Not Allowed |
+      | Editor                            | update         | Not Allowed |
+      | Degree file curator               | update         | Not Allowed |
+      | Related external client           | update         | Allowed     |
 
 
   Scenario Outline: Verify update permissions when
@@ -46,14 +46,14 @@ Feature: Update permissions
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                          | Outcome     | Operation |
-      | Everyone else                     | Not Allowed | update    |
-      | External client                   | Not Allowed | update    |
-      | Publication owner                 | Not Allowed | update    |
-      | Contributor                       | Not Allowed | update    |
-      | File, support, doi or nvi curator | Not Allowed | update    |
-      | Editor                            | Not Allowed | update    |
-      | Degree file curator               | Allowed     | update    |
-      | Related external client           | Allowed     | update    |
+      | UserRole                          | Operation | Outcome     |
+      | Everyone else                     | update    | Not Allowed |
+      | External client                   | update    | Not Allowed |
+      | Publication owner                 | update    | Not Allowed |
+      | Contributor                       | update    | Not Allowed |
+      | File, support, doi or nvi curator | update    | Not Allowed |
+      | Editor                            | update    | Not Allowed |
+      | Degree file curator               | update    | Allowed     |
+      | Related external client           | update    | Allowed     |
 
 

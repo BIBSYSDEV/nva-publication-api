@@ -1,8 +1,8 @@
 package no.unit.nva.publication.permissions.publication;
 
 import static no.unit.nva.model.PublicationOperation.REPUBLISH;
-import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.getAccessRightsForEditor;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;

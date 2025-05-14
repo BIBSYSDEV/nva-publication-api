@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
 import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
+import static no.unit.nva.model.PublicationOperation.UPLOAD_FILE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import no.unit.nva.model.PublicationOperation;
@@ -25,7 +26,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         }
 
         if (isProtectedDegreeInstanceType()) {
-            if (PARTIAL_UPDATE.equals(permission)) {
+            if (PARTIAL_UPDATE.equals(permission) || UPLOAD_FILE.equals(permission)) {
                 return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
             }
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
@@ -45,10 +46,9 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         if (!hasAccessRight(MANAGE_DEGREE)) {
             return DENY;
         }
-        // TODO: Implement when channelClaim is available in publication object
-        //        if (!userIsFromSameInstitutionAsPublicationOwner()) {
-        //            return DENY;
-        //        }
+        if (resource.getPrioritizedClaimedPublicationChannel().isEmpty()) {
+            return !userIsFromSameInstitutionAsPublicationOwner();
+        } // else: ClaimedChannelDenyStrategy takes care of denying by channel claim
         return PASS;
     }
 

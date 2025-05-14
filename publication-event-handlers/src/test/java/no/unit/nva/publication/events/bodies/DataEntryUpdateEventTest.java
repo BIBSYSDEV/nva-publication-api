@@ -7,19 +7,25 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import nva.commons.core.Environment;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -59,6 +65,17 @@ public class DataEntryUpdateEventTest {
         var dataEntryUpdateEvent = new DataEntryUpdateEvent(randomString(), fileEntry, null);
 
         assertThrows(IllegalArgumentException.class, dataEntryUpdateEvent::getTopic);
+    }
+
+    @Test
+    public void shouldNotProduceEventTopicForEntityWithUnchangedModifiedDateAndWhenIgnoringBatchScan() {
+        var publication = randomPublication();
+        var resource = Resource.fromPublication(publication);
+        var dataEntryUpdateEvent = new DataEntryUpdateEvent(randomString(), resource, resource);
+        var environment = mock(Environment.class);
+        when(environment.readEnvOpt("SHOULD_IGNORE_BATCH_SCAN")).thenReturn(Optional.of("true"));
+
+        assertFalse(dataEntryUpdateEvent.shouldProcessUpdate(environment));
     }
     
     private static boolean isTypeWithSubtypes(Type type) {

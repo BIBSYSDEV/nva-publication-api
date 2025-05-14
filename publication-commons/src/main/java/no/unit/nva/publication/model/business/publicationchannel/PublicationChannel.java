@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.storage.PublicationChannelDao;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = ClaimedPublicationChannel.TYPE, value = ClaimedPublicationChannel.class),
@@ -30,4 +31,7 @@ public sealed interface PublicationChannel extends Entity
     SortableIdentifier getResourceIdentifier();
 
     ChannelType getChannelType();
+
+    @Override
+    PublicationChannelDao toDao();
 }
