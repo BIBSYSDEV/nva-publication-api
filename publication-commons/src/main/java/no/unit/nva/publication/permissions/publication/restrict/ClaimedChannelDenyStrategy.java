@@ -28,13 +28,13 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
             return PASS;
         }
 
-        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
-
         if (PARTIAL_UPDATE.equals(permission) || UPLOAD_FILE.equals(permission)) {
             return publicationChannelIsClaimed()
                    && resource.isPartOfClaimedChannelScope()
                    && !userRelatesToPublication();
         }
+
+        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
 
         return claimedPublicationChannel.isPresent()
                && claimedPublicationChannelDenies(claimedPublicationChannel.get());
