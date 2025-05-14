@@ -33,7 +33,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     @ParameterizedTest(name = "Should deny curator from non curating institution {0} operation on publication with "
                               + "non claimed channel")
     @MethodSource("argumentsForCurator")
-    void shouldNotAllowNonCuratingInstitutionWhenNoClaimedChannel(PublicationOperation operation)
+    void shouldDenyNonCuratingInstitutionWhenNoClaimedChannel(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();

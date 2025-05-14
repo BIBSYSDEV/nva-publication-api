@@ -5,10 +5,12 @@ import static no.unit.nva.model.PublicationOperation.UPLOAD_FILE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
 import java.net.URI;
+import java.util.Optional;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.permissions.publication.PublicationDenyStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
 
@@ -31,20 +33,20 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         }
 
         var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
-        if (claimedPublicationChannel.isEmpty()) {
-            return PASS;
-        }
 
-        var publicationChannel = claimedPublicationChannel.get();
-        var editingPolicy = publicationChannel.getConstraint().editingPolicy();
-        var publishingPolicy = publicationChannel.getConstraint().publishingPolicy();
-        var channelOwner = publicationChannel.getCustomerId();
+        return claimedPublicationChannel.isPresent()
+               && claimedPublicationChannelDenies(claimedPublicationChannel.get());
+    }
 
-        if (hasOpenFiles()) {
-            return channelPolicyDenies(editingPolicy, channelOwner);
-        } else {
-            return channelPolicyDenies(publishingPolicy, channelOwner);
-        }
+    private boolean claimedPublicationChannelDenies(ClaimedPublicationChannel claimedPublicationChannel) {
+        var channelConstraint = claimedPublicationChannel.getConstraint();
+        var editingPolicy = channelConstraint.editingPolicy();
+        var publishingPolicy = channelConstraint.publishingPolicy();
+        var channelOwner = claimedPublicationChannel.getCustomerId();
+
+        return hasOpenFiles()
+                   ? channelPolicyDenies(editingPolicy, channelOwner)
+                   : channelPolicyDenies(publishingPolicy, channelOwner);
     }
 
     private boolean channelPolicyDenies(ChannelPolicy policy, URI channelOwner) {

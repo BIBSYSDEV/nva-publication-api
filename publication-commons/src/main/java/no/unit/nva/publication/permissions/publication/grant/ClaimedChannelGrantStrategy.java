@@ -7,14 +7,11 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.permissions.publication.PublicationGrantStrategy;
 import no.unit.nva.publication.permissions.publication.PublicationStrategyBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ClaimedChannelGrantStrategy extends PublicationStrategyBase implements PublicationGrantStrategy {
-
-    public static final Logger logger = LoggerFactory.getLogger(ClaimedChannelGrantStrategy.class);
 
     public ClaimedChannelGrantStrategy(Resource resource, UserInstance userInstance) {
         super(resource, userInstance);
@@ -23,20 +20,20 @@ public class ClaimedChannelGrantStrategy extends PublicationStrategyBase impleme
     @Override
     public boolean allowsAction(PublicationOperation permission) {
         var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
-        if (claimedPublicationChannel.isEmpty()) {
-            return false;
-        }
 
-        var publicationChannel = claimedPublicationChannel.get();
-        var channelOwner = publicationChannel.getCustomerId();
-        var editingPolicy = publicationChannel.getConstraint().editingPolicy();
-        var publishingPolicy = publicationChannel.getConstraint().publishingPolicy();
+        return claimedPublicationChannel.isPresent()
+               && claimedPublicationChannelAllows(claimedPublicationChannel.get());
+    }
 
-        if (hasOpenFiles()) {
-            return channelPolicyAllows(editingPolicy, channelOwner);
-        } else {
-            return channelPolicyAllows(publishingPolicy, channelOwner);
-        }
+    private boolean claimedPublicationChannelAllows(ClaimedPublicationChannel claimedPublicationChannel) {
+        var channelOwner = claimedPublicationChannel.getCustomerId();
+        var channelConstraint = claimedPublicationChannel.getConstraint();
+        var editingPolicy = channelConstraint.editingPolicy();
+        var publishingPolicy = channelConstraint.publishingPolicy();
+
+        return hasOpenFiles()
+                   ? channelPolicyAllows(editingPolicy, channelOwner)
+                   : channelPolicyAllows(publishingPolicy, channelOwner);
     }
 
     private boolean channelPolicyAllows(ChannelPolicy policy, URI channelOwner) {
