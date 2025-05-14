@@ -1,6 +1,8 @@
 package no.unit.nva.publication.permissions.publication;
 
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.getAccessRightsForCurator;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.getAccessRightsForThesisCurator;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
