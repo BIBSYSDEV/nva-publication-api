@@ -14,7 +14,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.Resource;
@@ -49,6 +48,29 @@ public class PublicationStrategyBase {
 
     protected boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() {
         return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
+    }
+
+    protected boolean userRelatesToPublication() {
+        return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() || userBelongsToPublicationChannelOwner();
+    }
+
+    protected boolean userBelongsToPublicationChannelOwner() {
+        if (Optional.ofNullable(userInstance).map(UserInstance::getCustomerId).isEmpty()) {
+            return false;
+        }
+
+        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
+
+        if (claimedPublicationChannel.isEmpty()) {
+            return false;
+        }
+
+        var channelOwner = claimedPublicationChannel.get().getCustomerId();
+        return userInstance.getCustomerId().equals(channelOwner);
+    }
+
+    protected boolean publicationChannelIsClaimed() {
+        return resource.getPrioritizedClaimedPublicationChannel().isPresent();
     }
 
     private boolean userBelongsToCuratingInstitution() {
@@ -93,12 +115,6 @@ public class PublicationStrategyBase {
                    .stream()
                    .anyMatch(artifact -> ACCEPTED_FILE_TYPES
                                              .contains(artifact.getClass()));
-    }
-
-    protected boolean hasOpenFiles() {
-        return resource.getAssociatedArtifacts()
-                   .stream()
-                   .anyMatch(OpenFile.class::isInstance);
     }
 
     protected boolean isOwner() {

@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
@@ -36,6 +35,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
@@ -69,17 +69,17 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
     private final RawContentRetriever uriRetriever;
-    private final IdentityServiceClient identityService;
+    private final ChannelClaimClient channelClaimClient;
 
     public UpdateResourceService(AmazonDynamoDB client, String tableName, Clock clockForTimestamps,
                                  ReadResourceService readResourceService, RawContentRetriever uriRetriever,
-                                 IdentityServiceClient identityService) {
+                                 ChannelClaimClient channelClaimClient) {
         super(client);
         this.tableName = tableName;
         this.clockForTimestamps = clockForTimestamps;
         this.readResourceService = readResourceService;
         this.uriRetriever = uriRetriever;
-        this.identityService = identityService;
+        this.channelClaimClient = channelClaimClient;
     }
 
     public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
@@ -149,7 +149,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private void addPublicationChannel(Resource resource, List<TransactWriteItem> transactWriteItems) {
         var publisher = resource.getPublisherWhenDegree().orElseThrow();
-        var publicationChannelDao = createPublicationChannelDao(identityService, resource, publisher);
+        var publicationChannelDao = createPublicationChannelDao(channelClaimClient, resource, publisher);
         var insertionAction = newPutTransactionItem(publicationChannelDao, tableName);
         transactWriteItems.add(insertionAction);
     }

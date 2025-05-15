@@ -29,9 +29,7 @@ public class PublicationPermissions {
     private final UserInstance userInstance;
     private final Resource resource;
 
-    public PublicationPermissions(
-        Resource resource,
-        UserInstance userInstance) {
+    public PublicationPermissions(Resource resource, UserInstance userInstance) {
         this.userInstance = userInstance;
         this.resource = resource;
         this.grantStrategies = Set.of(

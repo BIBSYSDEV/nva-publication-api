@@ -3,6 +3,7 @@ package cucumber.permissions.publication;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS;
 import static cucumber.permissions.PermissionsRole.RELATED_EXTERNAL_CLIENT;
 import static cucumber.permissions.RolesToAccessRights.roleToAccessRightsMap;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -42,11 +43,19 @@ import nva.commons.apigateway.AccessRight;
 
 public class PublicationScenarioContext {
 
+    public URI publisherOrganization;
+    private URI userOrganization;
     private PublicationOperation operation;
     private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
     private Set<PermissionsRole> roles = new HashSet<>();
     private boolean isDegree;
     private boolean hasClaimedPublisher;
+    private List<String> DEGREE_SCOPE = List.of("DegreeLicentiate",
+                                                "DegreeBachelor",
+                                                "DegreeMaster",
+                                                "DegreePhd",
+                                                "ArtisticDegreePhd",
+                                                "OtherStudentWork");
 
     public void setOperation(PublicationOperation operation) {
         this.operation = operation;
@@ -61,7 +70,7 @@ public class PublicationScenarioContext {
     }
 
     public PublicationPermissions getPublicationPermissions() {
-        var topLevelOrgCristinId = randomUri();
+        var topLevelOrgCristinId = nonNull(userOrganization) ? userOrganization : randomUri();
         var customerId = randomUri();
 
         var access = getAccessRights(roles);
@@ -98,16 +107,25 @@ public class PublicationScenarioContext {
         return new PublicationPermissions(resource, user);
     }
 
+    public void setPublisherOrganization(URI organization) {
+        this.publisherOrganization = organization;
+    }
+
+    public void setUserOrganization(URI organization) {
+        this.userOrganization = organization;
+    }
+
     private List<PublicationChannel> generatePublicationChannels(Resource randomResource) {
+        var organizationId = nonNull(publisherOrganization) ? publisherOrganization : randomUri();
         return hasClaimedPublisher
-                   ? List.of(randomClaimedChannel(randomResource.getIdentifier()))
+                   ? List.of(randomClaimedChannel(randomResource.getIdentifier(), organizationId))
                    : List.of();
     }
 
-    private PublicationChannel randomClaimedChannel(SortableIdentifier resourceIdentifier) {
-        return new ClaimedPublicationChannel(randomUri(), randomUri(), randomUri(),
+    private PublicationChannel randomClaimedChannel(SortableIdentifier resourceIdentifier, URI organizationId) {
+        return new ClaimedPublicationChannel(randomUri(), randomUri(), organizationId,
                                              new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY,
-                                                            List.of()), ChannelType.PUBLISHER,
+                                                            DEGREE_SCOPE), ChannelType.PUBLISHER,
                                              SortableIdentifier.next(), resourceIdentifier, Instant.now(), Instant.now());
     }
 

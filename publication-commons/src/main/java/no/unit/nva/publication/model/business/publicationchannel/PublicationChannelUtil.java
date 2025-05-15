@@ -4,9 +4,9 @@ import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
-import no.unit.nva.clients.ChannelClaimDto;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.publication.external.services.ChannelClaimClient;
+import no.unit.nva.publication.external.services.ChannelClaimDto;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -23,9 +23,9 @@ public final class PublicationChannelUtil {
     private PublicationChannelUtil() {
     }
 
-    public static Optional<ChannelClaimDto> getChannelClaim(IdentityServiceClient identityService, URI channelClaimId) {
+    public static Optional<ChannelClaimDto> getChannelClaim(ChannelClaimClient channelClaimClient, URI channelClaimId) {
         try {
-            return Optional.ofNullable(identityService.getChannelClaim(channelClaimId));
+            return Optional.ofNullable(channelClaimClient.fetchChannelClaim(channelClaimId));
         } catch (NotFoundException exception) {
             return Optional.empty();
         } catch (Exception e) {
@@ -33,12 +33,12 @@ public final class PublicationChannelUtil {
         }
     }
 
-    public static PublicationChannelDao createPublicationChannelDao(IdentityServiceClient identityService,
+    public static PublicationChannelDao createPublicationChannelDao(ChannelClaimClient channelClaimClient,
                                                                     Resource resource,
                                                                     Publisher publisher) {
         var channelClaimId = toChannelClaimUri(publisher.getIdentifier());
         var channelType = ChannelType.fromChannelId(publisher.getId());
-        return getChannelClaim(identityService, channelClaimId)
+        return getChannelClaim(channelClaimClient, channelClaimId)
                    .map(channelClaimDto -> createClaimedChannelDao(resource, channelClaimDto, channelType))
                    .orElseGet(() -> createNonClaimedChannelDao(resource, channelClaimId, channelType));
     }

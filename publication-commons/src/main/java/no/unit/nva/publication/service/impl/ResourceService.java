@@ -43,14 +43,15 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -115,28 +116,28 @@ public class ResourceService extends ServiceWithTransactions {
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
     private final RawContentRetriever uriRetriever;
-    private final IdentityServiceClient identityService;
+    private final ChannelClaimClient channelClaimClient;
     private final CounterService counterService;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
                               Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
-                              IdentityServiceClient identityService) {
+                              ChannelClaimClient channelClaimClient) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
         this.uriRetriever = uriRetriever;
-        this.identityService = identityService;
         this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
+        this.channelClaimClient = channelClaimClient;
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
-                                                               readResourceService, uriRetriever, identityService);
+                                                               readResourceService, uriRetriever, channelClaimClient);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
     @JacocoGenerated
     public static ResourceService defaultService() {
-        return builder().withIdentityService(IdentityServiceClient.prepare()).build();
+        return builder().withChannelClaimClient(ChannelClaimClient.create(new UriRetriever())).build();
     }
 
     /**
@@ -486,7 +487,7 @@ public class ResourceService extends ServiceWithTransactions {
         var transactWriteItems = new ArrayList<TransactWriteItem>();
 
         resource.getPublisherWhenDegree().ifPresent(publisher -> {
-            var publicationChannelDao = createPublicationChannelDao(identityService, resource, publisher);
+            var publicationChannelDao = createPublicationChannelDao(channelClaimClient, resource, publisher);
             transactWriteItems.add(publicationChannelDao.toPutNewTransactionItem(tableName));
         });
 

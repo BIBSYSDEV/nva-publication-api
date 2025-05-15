@@ -23,17 +23,17 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import no.unit.nva.clients.ChannelClaimDto;
-import no.unit.nva.clients.ChannelClaimDto.ChannelClaim;
-import no.unit.nva.clients.ChannelClaimDto.ChannelClaim.ChannelConstraint;
-import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.publication.external.services.ChannelClaimClient;
+import no.unit.nva.publication.external.services.ChannelClaimDto;
+import no.unit.nva.publication.external.services.ChannelClaimDto.ChannelClaim;
+import no.unit.nva.publication.external.services.ChannelClaimDto.ChannelClaim.ChannelConstraint;
+import no.unit.nva.publication.external.services.ChannelClaimDto.CustomerSummaryDto;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
@@ -56,7 +56,7 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
     private final int NUMBER_OF_RESOURCES = 2000;
     private final int ONE = 1;
     private ResourceService resourceService;
-    private IdentityServiceClient identityService;
+    private ChannelClaimClient channelClaimClient;
 
     public static Stream<Arguments> publicationChannelProvider() {
         return Stream.of(Arguments.of(randomNonClaimedPublicationChannel(), randomClaimedPublicationChannel()));
@@ -65,8 +65,8 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
     @BeforeEach
     public void init() {
         super.init();
-        identityService = mock(IdentityServiceClient.class);
-        resourceService = getResourceServiceBuilder().withIdentityService(identityService).build();
+        channelClaimClient = mock(ChannelClaimClient.class);
+        resourceService = getResourceServiceBuilder().withChannelClaimClient(channelClaimClient).build();
     }
 
     @ParameterizedTest
@@ -128,7 +128,7 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
         publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(publisherId));
 
         var claim = channelClaimDtoForPublisher(channelIdentifier);
-        when(identityService.getChannelClaim(toChannelClaimId(channelIdentifier))).thenReturn(claim);
+        when(channelClaimClient.fetchChannelClaim(toChannelClaimId(channelIdentifier))).thenReturn(claim);
         var persistedPublication = Resource.fromPublication(publication)
                                        .persistNew(resourceService, UserInstance.fromPublication(publication));
 
@@ -150,7 +150,7 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
         var publication = randomPublication(DegreeBachelor.class);
         publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(publisherId));
 
-        when(identityService.getChannelClaim(toChannelClaimId(channelIdentifier)))
+        when(channelClaimClient.fetchChannelClaim(toChannelClaimId(channelIdentifier)))
             .thenThrow(new NotFoundException(randomString()));
         var persistedPublication = Resource.fromPublication(publication)
                                        .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -170,7 +170,8 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
         var publication = randomPublication(DegreeBachelor.class);
         publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(publisherId));
 
-        when(identityService.getChannelClaim(toChannelClaimId(channelIdentifier))).thenThrow(new RuntimeException(randomString()));
+        when(
+            channelClaimClient.fetchChannelClaim(toChannelClaimId(channelIdentifier))).thenThrow(new RuntimeException(randomString()));
 
         assertThrows(IllegalStateException.class, () -> Resource.fromPublication(publication)
                                        .persistNew(resourceService, UserInstance.fromPublication(publication)));
@@ -191,7 +192,7 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
         persistedPublication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(newPublisherId));
 
         var channelClaimDto = channelClaimDtoForPublisher(newChannelIdentifier);
-        when(identityService.getChannelClaim(channelClaimDto.id())).thenReturn(channelClaimDto);
+        when(channelClaimClient.fetchChannelClaim(channelClaimDto.id())).thenReturn(channelClaimDto);
         resourceService.updatePublication(persistedPublication);
 
         var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
@@ -230,7 +231,7 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
         var publisherId = randomPublisherId(channelIdentifier);
         persistedPublication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(publisherId));
 
-        when(identityService.getChannelClaim(publisherId)).thenThrow(new NotFoundException(randomString()));
+        when(channelClaimClient.fetchChannelClaim(publisherId)).thenThrow(new NotFoundException(randomString()));
         resourceService.updatePublication(persistedPublication);
 
         var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
@@ -313,7 +314,7 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
 
     private void persistResourcesPublicationChannels(URI publisherId, ChannelClaimDto claim,
                                                      UUID channelIdentifier) throws NotFoundException {
-        when(identityService.getChannelClaim(toChannelClaimId(channelIdentifier))).thenReturn(claim);
+        when(channelClaimClient.fetchChannelClaim(toChannelClaimId(channelIdentifier))).thenReturn(claim);
         IntStream.range(0, 2000)
             .forEach(i -> {
                 var publication = randomPublication(DegreeBachelor.class);
@@ -420,7 +421,7 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
 
         if (nonNull(publisher)) {
             var channelClaimDto = channelClaimDtoForPublisher(publisher.getIdentifier());
-            when(identityService.getChannelClaim(channelClaimDto.id())).thenReturn(channelClaimDto);
+            when(channelClaimClient.fetchChannelClaim(channelClaimDto.id())).thenReturn(channelClaimDto);
         }
 
         return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
