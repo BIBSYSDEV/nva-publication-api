@@ -55,7 +55,7 @@ public class PublicationStrategyBase {
     }
 
     protected boolean userBelongsToPublicationChannelOwner() {
-        if (Optional.ofNullable(userInstance).map(UserInstance::getCustomerId).isEmpty()) {
+        if (Optional.ofNullable(userInstance).map(UserInstance::getTopLevelOrgCristinId).isEmpty()) {
             return false;
         }
 
@@ -65,8 +65,8 @@ public class PublicationStrategyBase {
             return false;
         }
 
-        var channelOwner = claimedPublicationChannel.get().getCustomerId();
-        return userInstance.getCustomerId().equals(channelOwner);
+        var channelOwner = claimedPublicationChannel.get().getOrganizationId();
+        return userInstance.getTopLevelOrgCristinId().equals(channelOwner);
     }
 
     protected boolean publicationChannelIsClaimed() {

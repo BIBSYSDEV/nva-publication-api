@@ -4,7 +4,6 @@ import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
 import static no.unit.nva.publication.permissions.PermissionsTestUtils.setContributor;
@@ -669,8 +668,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator from another institution {0} operation on instance type {1} when "
                               + "degree has open file and channel owned by that institution")
-    @MethodSource("argumentsForCurator")
-    void shouldDenyCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByThatInstitution(
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
+    void shouldDenyCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByCuratorInstitution(
         PublicationOperation operation,
         Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
