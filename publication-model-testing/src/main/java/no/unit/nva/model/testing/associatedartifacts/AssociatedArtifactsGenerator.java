@@ -1,11 +1,13 @@
 package no.unit.nva.model.testing.associatedartifacts;
 
+import static no.unit.nva.model.associatedartifacts.file.File.ACCEPTED_FILE_TYPES;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -33,10 +35,10 @@ public final class AssociatedArtifactsGenerator {
                                           randomAssociatedLink(), randomHiddenFile());
     }
 
-    public static List<AssociatedArtifact> randomAssociatedArtifactsExcluding(List<Class<?>> clazz) {
+    public static List<AssociatedArtifact> randomAssociatedArtifactsExcludingAcceptedFiles() {
         return randomAssociatedArtifacts()
                    .stream()
-                   .filter(artifact -> !clazz.contains(artifact.getClass()))
+                   .filter(artifact -> !ACCEPTED_FILE_TYPES.contains(artifact.getClass()))
                    .toList();
     }
 
@@ -54,6 +56,13 @@ public final class AssociatedArtifactsGenerator {
 
     public static File randomOpenFile() {
         return randomFileBuilder().buildOpenFile();
+    }
+
+    public static File randomAcceptedFile() {
+        var acceptedFilesTypes = ACCEPTED_FILE_TYPES.stream().toList();
+        var randomIndex = new Random().nextInt(acceptedFilesTypes.size());
+        var acceptedFileType = acceptedFilesTypes.get(randomIndex);
+        return randomFileBuilder().build(acceptedFileType);
     }
 
     public static File randomPendingInternalFile() {

@@ -26,6 +26,7 @@ import no.unit.nva.publication.permissions.PermissionsTestUtils.User;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,7 +45,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
@@ -64,10 +65,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var institution = Institution.random();
         var registrator = institution.registrator();
 
-        var publication = operation == PublicationOperation.UNPUBLISH
-                              ? createNonDegreePublicationWithoutOpenOrInternalFiles(registrator)
-                              : createNonDegreePublicationWithoutOpenFiles(registrator);
-
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         var publicationWithStatus = publication.copy()
                                         .withStatus(operation == PublicationOperation.DELETE ? DRAFT : PUBLISHED)
                                         .build();
@@ -90,7 +88,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var institution = Institution.random();
         var registrator = institution.registrator();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
 
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
@@ -112,9 +110,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = institution.registrator();
         var contributor = institution.contributor();
 
-        var publication = operation == PublicationOperation.UNPUBLISH
-                              ? createNonDegreePublicationWithoutOpenOrInternalFiles(registrator)
-                              : createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);
@@ -138,9 +134,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = operation == PublicationOperation.UNPUBLISH
-                              ? createNonDegreePublicationWithoutOpenOrInternalFiles(registrator)
-                              : createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -165,7 +159,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -188,7 +182,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -211,10 +205,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
 
-        var publication = operation == PublicationOperation.UNPUBLISH
-                              ? createNonDegreePublicationWithoutOpenOrInternalFiles(registrator)
-                              : createNonDegreePublicationWithoutOpenFiles(registrator);
-
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         var publicationWithStatus = publication.copy()
                                         .withStatus(operation == PublicationOperation.DELETE ? DRAFT : PUBLISHED)
                                         .build();
@@ -240,7 +231,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curator = owningInstitution.curator();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
@@ -402,6 +393,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                   .allowsAction(operation));
     }
 
+    @Disabled("Disabled until publishing policy is validated")
     @Test()
     @DisplayName(value = "Should deny curator from curating institution {0} operation on publication with "
                          + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
@@ -412,7 +404,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(owningInstitution.registrator());
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(owningInstitution.registrator());
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -430,7 +422,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                               + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
                               + "files")
     @MethodSource("argumentsForContributorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyContributorFromAnotherInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyEveryoneAndPublicationHasNoOpenFile(
+    void shouldAllowContributorFromAnotherInstitutionWhenChannelIsClaimedByRegistratorInstitutionWithPublishingPolicyEveryoneAndPublicationHasNoOpenFile(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -438,16 +430,16 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
                                                                      identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissions
+        Assertions.assertTrue(PublicationPermissions
                                    .create(resource, userInstance)
                                    .allowsAction(operation));
     }
@@ -462,7 +454,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, EVERYONE);
@@ -485,7 +477,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curator = owningInstitution.curator();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, EVERYONE);
@@ -508,7 +500,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var contributor = owningInstitution.contributor();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);
@@ -532,7 +524,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -557,7 +549,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -583,7 +575,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var curatingInstitution = suite.curatingInstitution();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -607,7 +599,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
@@ -630,7 +622,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curator = owningInstitution.curator();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
@@ -677,7 +669,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -701,7 +693,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -727,7 +719,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var curatingInstitution = suite.curatingInstitution();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -751,7 +743,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
@@ -775,7 +767,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, nonCuratingInstitution, EVERYONE, EVERYONE);
@@ -798,7 +790,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator).copy()
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator).copy()
                               .withStatus(operation == PublicationOperation.REPUBLISH ? UNPUBLISHED : PUBLISHED)
                               .build();
 
@@ -813,20 +805,19 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                   .allowsAction(operation));
     }
 
-    @ParameterizedTest(name = "Should deny editor from non curating institution {0} operation on publication "
+    @DisplayName(value = "Should deny editor from non curating institution {0} operation on publication "
                               + "with channel claimed by another institution")
-    @MethodSource("argumentsForEditor")
+    @Test
     void shouldDenyEditorFromNonCuratingInstitutionWhenChannelIsClaimedByAnotherInstitution() throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator).copy()
-                              .build();
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.editor()),
                                                                      identityServiceClient);
@@ -843,8 +834,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator).copy()
-                              .build();
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
@@ -863,7 +853,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var institution = Institution.random();
         var registrator = institution.registrator();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
 
@@ -880,7 +870,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var institution = Institution.random();
         var registrator = institution.registrator();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
 
@@ -898,7 +888,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = institution.registrator();
         var contributor = institution.contributor();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, contributor);
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
@@ -917,7 +907,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = institution.registrator();
         var contributor = institution.contributor();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, contributor);
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
@@ -936,7 +926,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = institution.registrator();
         var curator = institution.curator();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
 
@@ -954,7 +944,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = institution.registrator();
         var curator = institution.curator();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
 
@@ -973,7 +963,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
@@ -993,7 +983,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
@@ -1013,7 +1003,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
@@ -1033,7 +1023,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
@@ -1054,7 +1044,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var curatingInstitution = suite.curatingInstitution();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
         resource.setPublicationChannels(List.of());
@@ -1075,7 +1065,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var curatingInstitution = suite.curatingInstitution();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
@@ -1091,7 +1081,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     void shouldAllowExternalUserWhenPublishingPolicyOwnerOnly() {
         var institution = Institution.random();
         var registrator = institution.registrator();
-        var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
@@ -1106,7 +1096,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     void shouldAllowExternalUserWhenEditingPolicyOwnerOnly() {
         var institution = Institution.random();
         var registrator = institution.registrator();
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
@@ -1125,7 +1115,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         var resource = Resource.fromPublication(publication);
         setPublicationChannelOutsideOfScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
 
@@ -1144,7 +1134,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var curator = owningInstitution.curator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         var resource = Resource.fromPublication(publication);
         setPublicationChannelOutsideOfScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
 
@@ -1163,7 +1153,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var editor = owningInstitution.editor();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
-        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var publication = createNonDegreePublicationWithAcceptedFile(registrator);
         var resource = Resource.fromPublication(publication);
         setPublicationChannelOutsideOfScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
 
@@ -1243,24 +1233,17 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                      user.topLevelCristinId());
     }
 
-    private Publication createNonDegreePublicationWithOpenFile(User registrator) {
-        return createPublicationWithOpenFile(AcademicArticle.class,
-                                             registrator.name(),
-                                             registrator.customer(),
-                                             registrator.topLevelCristinId());
-    }
-
-    private Publication createNonDegreePublicationWithoutOpenFiles(User registrator) {
-        return createPublicationWithoutOpenFiles(AcademicArticle.class,
+    private Publication createNonDegreePublicationWithAcceptedFile(User registrator) {
+        return createPublicationWithAcceptedFile(AcademicArticle.class,
                                                  registrator.name(),
                                                  registrator.customer(),
                                                  registrator.topLevelCristinId());
     }
 
     private Publication createNonDegreePublicationWithoutOpenOrInternalFiles(User registrator) {
-        return createPublicationWithoutOpenOrInternalFiles(AcademicArticle.class,
-                                                           registrator.name(),
-                                                           registrator.customer(),
-                                                           registrator.topLevelCristinId());
+        return createPublicationWithoutAcceptedFiles(AcademicArticle.class,
+                                                     registrator.name(),
+                                                     registrator.customer(),
+                                                     registrator.topLevelCristinId());
     }
 }

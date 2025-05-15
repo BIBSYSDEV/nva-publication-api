@@ -1,7 +1,5 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
-import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
-import static no.unit.nva.model.PublicationOperation.UPLOAD_FILE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import no.unit.nva.model.PublicationOperation;

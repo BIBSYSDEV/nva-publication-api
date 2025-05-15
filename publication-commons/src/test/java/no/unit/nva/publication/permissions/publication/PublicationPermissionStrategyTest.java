@@ -8,8 +8,8 @@ import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifactsExcluding;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAcceptedFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifactsExcludingAcceptedFiles;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.permissions.PermissionsTestUtils.getAccessRightsForCurator;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
@@ -56,8 +56,6 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.pages.MonographPages;
@@ -241,30 +239,21 @@ class PublicationPermissionStrategyTest {
                    .build();
     }
 
-    static Publication createPublicationWithOpenFile(Class<?> instanceTypeClass,
-                                                     String resourceOwner,
-                                                     URI customer,
-                                                     URI cristinId) {
-        return createPublication(instanceTypeClass, resourceOwner, customer, cristinId).copy()
-                   .withAssociatedArtifacts(List.of(randomOpenFile()))
-                   .build();
-    }
-
-    static Publication createPublicationWithoutOpenFiles(Class<?> instanceTypeClass,
+    static Publication createPublicationWithAcceptedFile(Class<?> instanceTypeClass,
                                                          String resourceOwner,
                                                          URI customer,
                                                          URI cristinId) {
         return createPublication(instanceTypeClass, resourceOwner, customer, cristinId).copy()
-                          .withAssociatedArtifacts(randomAssociatedArtifactsExcluding(List.of(OpenFile.class)))
-                          .build();
+                   .withAssociatedArtifacts(List.of(randomAcceptedFile()))
+                   .build();
     }
 
-    static Publication createPublicationWithoutOpenOrInternalFiles(Class<?> instanceTypeClass,
-                                                                   String resourceOwner,
-                                                                   URI customer,
-                                                                   URI cristinId) {
+    static Publication createPublicationWithoutAcceptedFiles(Class<?> instanceTypeClass,
+                                                             String resourceOwner,
+                                                             URI customer,
+                                                             URI cristinId) {
         return createPublication(instanceTypeClass, resourceOwner, customer, cristinId).copy()
-                   .withAssociatedArtifacts(randomAssociatedArtifactsExcluding(List.of(OpenFile.class, InternalFile.class)))
+                   .withAssociatedArtifacts(randomAssociatedArtifactsExcludingAcceptedFiles())
                    .build();
     }
 

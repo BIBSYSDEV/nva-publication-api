@@ -51,10 +51,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     void shouldDenyAnonymousUserOperationsOnDegreeWithoutOpenFiles(PublicationOperation operation,
                                                                    Class<?> degreeInstanceClass) {
         var registrator = User.random();
-        var publication = createPublicationWithoutOpenFiles(degreeInstanceClass,
-                                                            registrator.name(),
-                                                            registrator.customer(),
-                                                            registrator.topLevelCristinId());
+        var publication = createPublicationWithoutAcceptedFiles(degreeInstanceClass,
+                                                                registrator.name(),
+                                                                registrator.customer(),
+                                                                registrator.topLevelCristinId());
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publication), null)
@@ -67,10 +67,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     void shouldDenyAnonymousUserOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
                                                                 Class<?> degreeInstanceClass) {
         var registrator = User.random();
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publication), null)
@@ -84,10 +84,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                              Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var registrator = User.random();
-        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
-                                                                          registrator.name(),
-                                                                          registrator.customer(),
-                                                                          registrator.topLevelCristinId());
+        var publication = createPublicationWithoutAcceptedFiles(degreeInstanceClass,
+                                                                registrator.name(),
+                                                                registrator.customer(),
+                                                                registrator.topLevelCristinId());
 
         var publicationWithStatus = publication.copy()
                                         .withStatus(operation == PublicationOperation.DELETE ? DRAFT : PUBLISHED)
@@ -106,10 +106,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                               Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var registrator = User.random();
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
@@ -126,10 +126,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         throws JsonProcessingException, UnauthorizedException {
         var institution = Institution.random();
         var registrator = institution.registrator();
-        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
-                                                                            registrator.name(),
-                                                                            registrator.customer(),
-                                                                            registrator.topLevelCristinId());
+        var publication = createPublicationWithoutAcceptedFiles(degreeInstanceClass,
+                                                                registrator.name(),
+                                                                registrator.customer(),
+                                                                registrator.topLevelCristinId());
 
         setContributor(publication, institution.contributor());
 
@@ -149,10 +149,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var institution = Institution.random();
         var registrator = institution.registrator();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         setContributor(publication, institution.contributor());
 
@@ -173,10 +173,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var registrator = institution.registrator();
         var curator = institution.curator();
 
-        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
-                                                            registrator.name(),
-                                                            registrator.customer(),
-                                                            registrator.topLevelCristinId());
+        var publication = createPublicationWithoutAcceptedFiles(degreeInstanceClass,
+                                                                registrator.name(),
+                                                                registrator.customer(),
+                                                                registrator.topLevelCristinId());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
 
@@ -194,10 +194,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var registrator = institution.registrator();
         var curator = institution.curator();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
 
@@ -216,10 +216,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
-                                                            owningInstitution.registrator().name(),
-                                                            owningInstitution.registrator().customer(),
-                                                            owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithoutAcceptedFiles(degreeInstanceClass,
+                                                                owningInstitution.registrator().name(),
+                                                                owningInstitution.registrator().customer(),
+                                                                owningInstitution.registrator().topLevelCristinId());
 
         setContributor(publication, curatingInstitution.contributor());
 
@@ -241,10 +241,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         setContributor(publication, curatingInstitution.contributor());
 
@@ -267,10 +267,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var registrator = institution.registrator();
         var thesisCurator = institution.thesisCurator();
 
-        var publication = createPublicationWithoutOpenFiles(degreeInstanceClass,
-                                                            registrator.name(),
-                                                            registrator.customer(),
-                                                            registrator.topLevelCristinId());
+        var publication = createPublicationWithoutAcceptedFiles(degreeInstanceClass,
+                                                                registrator.name(),
+                                                                registrator.customer(),
+                                                                registrator.topLevelCristinId());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(thesisCurator),
                                                                      identityServiceClient);
@@ -291,10 +291,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var registrator = institution.registrator();
         var thesisCurator = institution.thesisCurator();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(thesisCurator),
                                                                      identityServiceClient);
@@ -315,10 +315,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceClass,
-                                                            owningInstitution.registrator().name(),
-                                                            owningInstitution.registrator().customer(),
-                                                            owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithoutAcceptedFiles(degreeInstanceClass,
+                                                                owningInstitution.registrator().name(),
+                                                                owningInstitution.registrator().customer(),
+                                                                owningInstitution.registrator().topLevelCristinId());
 
         setContributor(publication, curatingInstitution.contributor());
 
@@ -340,10 +340,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         setContributor(publication, curatingInstitution.contributor());
 
@@ -459,10 +459,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
@@ -484,10 +484,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
@@ -510,10 +510,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
@@ -537,10 +537,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         var contributor = createContributor(Role.CREATOR, curatingInstitution.contributor().cristinId(),
                                             curatingInstitution.contributor().topLevelCristinId());
@@ -569,10 +569,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         setContributor(publication, curatingInstitution.contributor());
 
@@ -597,10 +597,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var anotherInstitution = suite.nonCuratingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
@@ -623,10 +623,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var anotherInstitution = suite.nonCuratingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
@@ -648,10 +648,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var anotherInstitution = suite.nonCuratingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
@@ -675,10 +675,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
@@ -702,10 +702,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
@@ -731,10 +731,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var curatingInstitution = suite.curatingInstitution();
         var anotherInstitution = suite.nonCuratingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
@@ -760,10 +760,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var curatingInstitution = suite.curatingInstitution();
         var anotherInstitution = suite.nonCuratingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        owningInstitution.registrator().name(),
-                                                        owningInstitution.registrator().customer(),
-                                                        owningInstitution.registrator().topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            owningInstitution.registrator().name(),
+                                                            owningInstitution.registrator().customer(),
+                                                            owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
         setPublicationChannelWithDegreeScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
@@ -820,10 +820,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithoutOpenOrInternalFiles(degreeInstanceTypeClass,
-                                                            owningInstitution.registrator().name(),
-                                                            owningInstitution.registrator().customer(),
-                                                            owningInstitution.registrator().cristinId());
+        var publication = createPublicationWithoutAcceptedFiles(degreeInstanceTypeClass,
+                                                                owningInstitution.registrator().name(),
+                                                                owningInstitution.registrator().customer(),
+                                                                owningInstitution.registrator().cristinId());
 
         publication.getEntityDescription().setContributors(List.of());
         publication.setCuratingInstitutions(
@@ -844,10 +844,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                                Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var registrator = User.random();
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
@@ -865,10 +865,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var registrator = institution.registrator();
         var contributor = institution.contributor();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
         setContributor(publication, contributor);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor), identityServiceClient);
@@ -889,10 +889,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
         setContributor(publication, curatingInstitution.contributor());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
@@ -914,10 +914,10 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         var registrator = owningInstitution.registrator();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createPublicationWithOpenFile(degreeInstanceClass,
-                                                        registrator.name(),
-                                                        registrator.customer(),
-                                                        registrator.topLevelCristinId());
+        var publication = createPublicationWithAcceptedFile(degreeInstanceClass,
+                                                            registrator.name(),
+                                                            registrator.customer(),
+                                                            registrator.topLevelCristinId());
         setContributor(publication, curatingInstitution.contributor());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
