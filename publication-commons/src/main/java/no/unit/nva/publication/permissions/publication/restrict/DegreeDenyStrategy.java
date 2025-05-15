@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
+import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import no.unit.nva.model.PublicationOperation;
@@ -23,17 +24,12 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
             return PASS;
         }
 
-        if (isProtectedDegreeInstanceType()) {
-            return switch (permission) {
-                case UPLOAD_FILE, PARTIAL_UPDATE, READ_HIDDEN_FILES -> !userRelatesToPublication();
-                default -> handle();
-            };
-        }
-
-        return PASS;
+        return UPDATE.equals(permission)
+            && isProtectedDegreeInstanceType()
+            && handleUpdate();
     }
 
-    private boolean handle() {
+    private boolean handleUpdate() {
         if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) { // SKAL FJERNES
             return DENY;
         }                                                                                           // SKAL FJERNES
@@ -45,7 +41,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private boolean approvedFileStrategy() {
-        if (!hasAccessRight(MANAGE_DEGREE)) {
+        if (!hasAccessRight(MANAGE_DEGREE)) { // Allow editor to unpublish all degrees.
             return DENY;
         }
         if (resource.getPrioritizedClaimedPublicationChannelWithinScope().isEmpty()) {
