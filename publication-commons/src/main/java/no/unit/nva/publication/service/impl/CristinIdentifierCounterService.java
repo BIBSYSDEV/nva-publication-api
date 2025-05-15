@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 public class CristinIdentifierCounterService implements CounterService {
 
-    public static final String UPDATING_COUNTER_EXCEPTION_MESSAGE = "Failed to update counter";
+    public static final String UPDATING_COUNTER_EXCEPTION_MESSAGE = "Failed to update counter: {}";
     private static final String COLUMN_NAME = "value";
     private static final String ONE = "1";
     private final AmazonDynamoDB client;
@@ -72,7 +72,7 @@ public class CristinIdentifierCounterService implements CounterService {
     @Override
     public CounterDao increment() {
         return attempt(this::incrementAndReturn).orElse(failure -> {
-            logger.error(UPDATING_COUNTER_EXCEPTION_MESSAGE, failure.getException());
+            logger.error(UPDATING_COUNTER_EXCEPTION_MESSAGE, failure.getException().getMessage());
             // Assuming the counter does not exist, we create it
             createCounterStartingAt(client);
             return fetchCount(client);
