@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permissions.publication;
 
+import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -25,6 +26,7 @@ import no.unit.nva.publication.permissions.PermissionsTestUtils.User;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -305,14 +307,14 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                               + "channel claimed by own institution with publishing policy 'Everyone' and no open "
                               + "files")
     @MethodSource("argumentsForCurator")
-    void shouldAllowCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyEveryoneAndPublicationHasNoOpenFile(
+    void shouldAllowCuratorFromCuratingInstitutionWhenChannelIsClaimedByRegistratorInstitutionWithPublishingPolicyEveryoneAndPublicationHasNoApprovedFile(
         PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
         var curatingInstitution = suite.curatingInstitution();
 
-        var publication = createNonDegreePublicationWithoutOpenFiles(owningInstitution.registrator());
+        var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(owningInstitution.registrator());
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
@@ -400,6 +402,30 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                   .allowsAction(operation));
     }
 
+    @Test()
+    @DisplayName(value = "Should deny curator from curating institution {0} operation on publication with "
+                         + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
+                         + "files")
+    void shouldDenyUpdateForCuratorFromCuratingInstitutionWhenChannelIsClaimedByRegistratorInstitutionWithPublishingPolicyOwnerOnlyAndPublicationHasNoOpenFile()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var curatingInstitution = suite.curatingInstitution();
+
+        var publication = createNonDegreePublicationWithoutOpenFiles(owningInstitution.registrator());
+        setContributor(publication, curatingInstitution.contributor());
+
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
+                                                                     identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(UPDATE));
+    }
+
     @ParameterizedTest(name = "Should deny contributor from another institution {0} operation on publication with "
                               + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
                               + "files")
@@ -419,31 +445,6 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
-                                                                     identityServiceClient);
-
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(resource, userInstance)
-                                   .allowsAction(operation));
-    }
-
-    @ParameterizedTest(name = "Should deny curator from curating institution {0} operation on publication with "
-                              + "channel claimed by own institution with publishing policy 'OwnerOnly' and no open "
-                              + "files")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithPublishingPolicyOwnerOnlyAndPublicationHasNoOpenFile(
-        PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
-        var suite = InstitutionSuite.random();
-        var owningInstitution = suite.owningInstitution();
-        var curatingInstitution = suite.curatingInstitution();
-
-        var publication = createNonDegreePublicationWithoutOpenFiles(owningInstitution.registrator());
-        setContributor(publication, curatingInstitution.contributor());
-
-        var resource = Resource.fromPublication(publication);
-        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
-
-        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissions
@@ -690,11 +691,10 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                    .allowsAction(operation));
     }
 
-    @ParameterizedTest(name = "Should deny curator from curating institution {0} operation on publication with open "
+    @DisplayName(value = "Should deny curator from curating institution {0} operation on publication with open "
                               + "files and channel claimed by own institution with editing policy 'OwnerOnly'")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasOpenFiles(
-        PublicationOperation operation)
+    @Test
+    void shouldDenyCuratorFromCuratingInstitutionWhenChannelIsClaimedByOwnInstitutionWithEditingPolicyOwnerOnlyAndPublicationHasOpenFiles()
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
@@ -712,7 +712,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should deny curator from non curating institution {0} operation on publication with "
@@ -791,7 +791,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     @ParameterizedTest(name = "Should allow editor from non curating institution {0} operation on publication "
                               + "with channel claimed by editors institution")
     @MethodSource("argumentsForEditor")
-    void shouldAllowEditorFromNonCuratingInstitutionWhenChannelIsClaimedByTheirInstitution(
+    void shouldAllowEditorFromNonCuratingInstitutionWhenChannelIsClaimedByEditorInstitution(
         PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
@@ -816,15 +816,13 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     @ParameterizedTest(name = "Should deny editor from non curating institution {0} operation on publication "
                               + "with channel claimed by another institution")
     @MethodSource("argumentsForEditor")
-    void shouldDenyEditorFromNonCuratingInstitutionWhenChannelIsClaimedByAnotherInstitution(
-        PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
+    void shouldDenyEditorFromNonCuratingInstitutionWhenChannelIsClaimedByAnotherInstitution() throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
         var publication = createNonDegreePublicationWithoutOpenFiles(registrator).copy()
-                              .withStatus(operation == PublicationOperation.REPUBLISH ? UNPUBLISHED : PUBLISHED)
                               .build();
 
         var resource = Resource.fromPublication(publication);
@@ -835,21 +833,17 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
         Assertions.assertFalse(PublicationPermissions
                                   .create(resource, userInstance)
-                                  .allowsAction(operation));
+                                  .allowsAction(UPDATE));
     }
 
-    @ParameterizedTest(name = "Should allow editor from non curating institution {0} operation on publication "
-                              + "with non claimed channel")
-    @MethodSource("argumentsForEditorExcludingUnpublishAndRepublish")
-    void shouldAllowEditorFromNonCuratingInstitutionWhenChannelIsNotClaimedByAnyone(
-        PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
+    @Test()
+    void shouldAllowEditorFromNonCuratingInstitutionWhenChannelIsNotClaimedByAnyone() throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
         var registrator = owningInstitution.registrator();
         var nonCuratingInstitution = suite.nonCuratingInstitution();
 
         var publication = createNonDegreePublicationWithoutOpenFiles(registrator).copy()
-                              .withStatus(operation == PublicationOperation.REPUBLISH ? UNPUBLISHED : PUBLISHED)
                               .build();
 
         var resource = Resource.fromPublication(publication);
@@ -860,7 +854,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
         Assertions.assertTrue(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @Test
@@ -1105,7 +1099,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var userInstance = createExternalUser(resource);
         Assertions.assertTrue(PublicationPermissions
                                   .create(resource, userInstance)
-                                  .allowsAction(PublicationOperation.UPDATE));
+                                  .allowsAction(UPDATE));
     }
 
     @Test
@@ -1120,7 +1114,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var userInstance = createExternalUser(resource);
         Assertions.assertTrue(PublicationPermissions
                                   .create(resource, userInstance)
-                                  .allowsAction(PublicationOperation.UPDATE));
+                                  .allowsAction(UPDATE));
     }
 
     @Test
@@ -1138,7 +1132,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
         Assertions.assertTrue(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(PublicationOperation.UPDATE));
+                                   .allowsAction(UPDATE));
     }
 
     @Test
@@ -1157,7 +1151,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
         Assertions.assertTrue(PublicationPermissions
                                   .create(resource, userInstance)
-                                  .allowsAction(PublicationOperation.UPDATE));
+                                  .allowsAction(UPDATE));
     }
 
     @Test
@@ -1176,11 +1170,11 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(editor), identityServiceClient);
         Assertions.assertTrue(PublicationPermissions
                                   .create(resource, userInstance)
-                                  .allowsAction(PublicationOperation.UPDATE));
+                                  .allowsAction(UPDATE));
     }
 
     private static Stream<Arguments> argumentsForRegistrator() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.DELETE,
                                       PublicationOperation.UPLOAD_FILE,
@@ -1190,7 +1184,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     }
 
     private static Stream<Arguments> argumentsForRegistratorAfterOpenFiles() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UPLOAD_FILE,
                                       PublicationOperation.PARTIAL_UPDATE);
 
@@ -1198,7 +1192,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     }
 
     private static Stream<Arguments> argumentsForContributor() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.UPLOAD_FILE,
                                       PublicationOperation.PARTIAL_UPDATE);
@@ -1207,7 +1201,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     }
 
     private static Stream<Arguments> argumentsForContributorAfterOpenFiles() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UPLOAD_FILE,
                                       PublicationOperation.PARTIAL_UPDATE);
 
@@ -1215,14 +1209,14 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     }
 
     private static Stream<Arguments> argumentsForContributorExcludingUploadFileAndPartialUpdate() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UNPUBLISH);
 
         return operations.stream().map(Arguments::of);
     }
 
     private static Stream<Arguments> argumentsForCurator() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.UPLOAD_FILE,
@@ -1231,26 +1225,11 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         return operations.stream().map(Arguments::of);
     }
 
-    private static Stream<Arguments> argumentsForCuratorExcludingUploadFileAndPartialUpdate() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
-                                      PublicationOperation.UPDATE_FILES,
-                                      PublicationOperation.UNPUBLISH);
-
-        return operations.stream().map(Arguments::of);
-    }
-
     private static Stream<Arguments> argumentsForEditor() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.PARTIAL_UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.REPUBLISH);
-
-        return operations.stream().map(Arguments::of);
-    }
-
-    private static Stream<Arguments> argumentsForEditorExcludingUnpublishAndRepublish() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
-                                      PublicationOperation.PARTIAL_UPDATE);
 
         return operations.stream().map(Arguments::of);
     }

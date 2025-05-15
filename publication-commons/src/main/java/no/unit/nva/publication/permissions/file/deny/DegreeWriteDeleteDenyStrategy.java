@@ -22,7 +22,12 @@ public class DegreeWriteDeleteDenyStrategy extends FileStrategyBase implements F
 
     private boolean isDeniedUser() {
         return !(currentUserIsDegreeFileCuratorForGivenFile()
+                 || currentUserIsFileOwnerAndFileIsNotFinalized() // = false
                  || currentUserIsDegreeEmbargoFileCuratorForGivenFile()
                  || isExternalClientWithRelation());
+    }
+
+    private boolean currentUserIsFileOwnerAndFileIsNotFinalized() {
+        return currentUserIsFileOwner() && !fileIsFinalized();
     }
 }

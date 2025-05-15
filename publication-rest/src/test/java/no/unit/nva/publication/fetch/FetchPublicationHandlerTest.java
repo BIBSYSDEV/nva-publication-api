@@ -12,6 +12,8 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
@@ -94,6 +96,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -411,7 +414,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnPublicationWithInternalFilesWhenUserIsOwner() throws ApiGatewayException, IOException {
-        var publication = createPublicationWithNonPublicFilesOnly();
+        var publication = createPublicationWithNonPublicFilesOnly(false);
         fetchPublicationHandler.handleRequest(generateOwnerRequest(publication), output, context);
         var gatewayResponse = parseHandlerResponse();
 
@@ -427,7 +430,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnPublicationWithoutNonPublicFilesWhenNoAccess() throws ApiGatewayException, IOException {
-        var publication = createPublicationWithNonPublicFilesOnly();
+        var publication = createPublicationWithNonPublicFilesOnly(false);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseHandlerResponse();
@@ -439,8 +442,25 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnPublicationWithHiddenFilesWhenUserIsCurator() throws ApiGatewayException, IOException {
-        var publication = createPublicationWithNonPublicFilesOnly();
+    void shouldReturnPublicationWithHiddenFilesWhenUserIsCuratorAndPublicationIsNonDegree()
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithNonPublicFilesOnly(false);
+        fetchPublicationHandler.handleRequest(generateCuratorRequest(publication), output, context);
+        var gatewayResponse = parseHandlerResponse();
+
+        var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
+                                                                      PublicationResponseElevatedUser.class);
+
+        var artifacts = publicationResponse.getAssociatedArtifacts().stream().toList();
+
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(InternalFile.TYPE)));
+        assertTrue(artifacts.stream().anyMatch(artifact -> artifact.getArtifactType().equals(HiddenFile.TYPE)));
+    }
+
+    @Test
+    void shouldReturnPublicationWithHiddenFilesWhenUserIsThesisCuratorAndPublicationIsDegree()
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithNonPublicFilesOnly(true);
         fetchPublicationHandler.handleRequest(generateCuratorRequest(publication), output, context);
         var gatewayResponse = parseHandlerResponse();
 
@@ -633,15 +653,15 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomNonDegreePublication();
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getResourceByIdentifier(publicationIdentifier).toPublication();
     }
 
-    private Publication createPublicationWithNonPublicFilesOnly() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
+    private Publication createPublicationWithNonPublicFilesOnly(boolean isDegree) throws ApiGatewayException {
+        var publication = isDegree ? randomDegreePublication() : randomNonDegreePublication();
         publication.setAssociatedArtifacts(
             new AssociatedArtifactList(randomPendingInternalFile(), randomInternalFile(), randomHiddenFile()));
         var userInstance = UserInstance.fromPublication(publication);

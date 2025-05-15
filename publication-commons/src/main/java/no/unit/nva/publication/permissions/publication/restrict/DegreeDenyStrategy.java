@@ -26,27 +26,31 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         }
 
         if (isProtectedDegreeInstanceType()) {
-            if (PARTIAL_UPDATE.equals(permission) || UPLOAD_FILE.equals(permission)) {
-                return !userRelatesToPublication();
-            }
-            if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
-                return DENY;
-            }
-            if (hasApprovedFiles()) {
-                return approvedFileStrategy();
-            } else {
-                return nonApprovedFileStrategy();
-            }
+            return switch (permission) {
+                case UPLOAD_FILE, PARTIAL_UPDATE, READ_HIDDEN_FILES -> !userRelatesToPublication();
+                default -> handle();
+            };
         }
 
         return PASS;
+    }
+
+    private boolean handle() {
+        if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) { // SKAL FJERNES
+            return DENY;
+        }                                                                                           // SKAL FJERNES
+        if (hasApprovedFiles()) {
+            return approvedFileStrategy();
+        } else {
+            return nonApprovedFileStrategy();
+        }
     }
 
     private boolean approvedFileStrategy() {
         if (!hasAccessRight(MANAGE_DEGREE)) {
             return DENY;
         }
-        if (resource.getPrioritizedClaimedPublicationChannel().isEmpty()) {
+        if (resource.getPrioritizedClaimedPublicationChannelWithinScope().isEmpty()) {
             return !userIsFromSameInstitutionAsPublicationOwner();
         } // else: ClaimedChannelDenyStrategy takes care of denying by channel claim
         return PASS;
