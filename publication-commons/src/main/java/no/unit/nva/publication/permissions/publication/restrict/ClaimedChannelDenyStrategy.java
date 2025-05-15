@@ -7,7 +7,6 @@ import static no.unit.nva.publication.model.business.publicationchannel.ChannelP
 import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
@@ -51,13 +50,9 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         var publishingPolicy = channelConstraint.publishingPolicy();
         var organization = claimedPublicationChannel.getOrganizationId();
 
-        return hasOpenFiles()
+        return hasApprovedFiles()
                    ? channelPolicyDenies(editingPolicy, organization)
                    : channelPolicyDenies(publishingPolicy, organization);
-    }
-
-    private boolean hasOpenFiles() {
-        return resource.getFiles().stream().anyMatch(OpenFile.class::isInstance);
     }
 
     private boolean channelPolicyDenies(ChannelPolicy policy, URI organizationId) {
