@@ -459,7 +459,7 @@ public class ResourceService extends ServiceWithTransactions {
         }
 
         if (resource.getCristinIdentifier().isEmpty()) {
-            var counterEntry = counterService.increment();
+            var counterEntry = counterService.next();
             injectSyntheticCristinIdentifier(resource, counterEntry.value());
         }
 
@@ -624,7 +624,7 @@ public class ResourceService extends ServiceWithTransactions {
         }
 
         if (resource.getCristinIdentifier().isEmpty()) {
-            var counterEntry = counterService.increment();
+            var counterEntry = counterService.next();
             injectSyntheticCristinIdentifier(resource, counterEntry.value());
         }
 

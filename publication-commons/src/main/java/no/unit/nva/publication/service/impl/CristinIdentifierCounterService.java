@@ -70,7 +70,7 @@ public class CristinIdentifierCounterService implements CounterService {
     }
 
     @Override
-    public CounterDao increment() {
+    public CounterDao next() {
         return attempt(this::incrementAndReturn).orElse(failure -> {
             logger.error(UPDATING_COUNTER_EXCEPTION_MESSAGE, failure.getException().getMessage());
             // Assuming the counter does not exist, we create it

@@ -33,10 +33,17 @@ class CounterServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldIncreaseCounter() {
-        CounterDao.increment(counterService);
-        var persistedCounter = CounterDao.increment(counterService);
+        var initialCount = counterService.next();
+
+        assertEquals(CounterDao.fromValue(10_000_000), initialCount);
+
+        var persistedCounter = counterService.next();
 
         assertEquals(CounterDao.fromValue(10_000_001), persistedCounter);
+
+        var fetchedCounter = counterService.fetch();
+
+        assertEquals(CounterDao.fromValue(10_000_001), fetchedCounter);
     }
 
     @Test

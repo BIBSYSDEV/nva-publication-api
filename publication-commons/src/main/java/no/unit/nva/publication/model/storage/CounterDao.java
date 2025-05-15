@@ -13,7 +13,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
 import java.util.Optional;
-import no.unit.nva.publication.service.impl.CounterService;
 
 public record CounterDao(@JsonProperty("value") int value) {
 
@@ -36,14 +35,6 @@ public record CounterDao(@JsonProperty("value") int value) {
         return attempt(() -> ItemUtils.toItem(getItemResult.getItem())).map(Item::toJSON)
                    .map(CounterDao::toDao)
                    .toOptional();
-    }
-
-    public static CounterDao fetch(CounterService counterService) {
-        return counterService.fetch();
-    }
-
-    public static CounterDao increment(CounterService counterService) {
-        return counterService.increment();
     }
 
     private static CounterDao toDao(String value) throws JsonProcessingException {
