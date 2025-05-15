@@ -59,7 +59,7 @@ public class PublicationStrategyBase {
             return false;
         }
 
-        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannel();
+        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannelWithinScope();
 
         if (claimedPublicationChannel.isEmpty()) {
             return false;
@@ -67,10 +67,6 @@ public class PublicationStrategyBase {
 
         var channelOwner = claimedPublicationChannel.get().getOrganizationId();
         return userInstance.getTopLevelOrgCristinId().equals(channelOwner);
-    }
-
-    protected boolean publicationChannelIsClaimed() {
-        return resource.getPrioritizedClaimedPublicationChannel().isPresent();
     }
 
     private boolean userBelongsToCuratingInstitution() {

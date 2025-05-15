@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -187,6 +188,13 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Json
     @JacocoGenerated
     public Constraint getConstraint() {
         return constraint;
+    }
+
+    public boolean instanceTypeIsWithinScope(String instanceType) {
+        return Optional.ofNullable(getConstraint())
+                   .map(Constraint::scope)
+                   .map(scope -> scope.contains(instanceType))
+                   .orElse(false);
     }
 
     public ClaimedPublicationChannel update(URI customerId, URI organizationId, Constraint constraint) {

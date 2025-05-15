@@ -2,6 +2,7 @@ package no.unit.nva.publication.permissions.publication;
 
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
+import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
@@ -561,10 +562,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance type {1} "
                               + "when degree has open file and channel owned by own institution")
-    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyThesisCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByOwnInstitution(
-        PublicationOperation operation,
-        Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyUpdateForThesisCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByOwnInstitution(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
@@ -585,7 +584,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should deny Registrator {0} operation on instance type {1} when degree has open file "
@@ -642,9 +641,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator {0} operation on instance type {1} when degree has open "
                               + "file and channel owned by another institution")
-    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyThesisCuratorWhenOpenFileAndChannelOwnedByAnotherInstitution(PublicationOperation operation,
-                                                                                Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyThesisCuratorWhenAcceptedFileAndChannelOwnedByAnotherInstitution(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
@@ -663,7 +661,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should deny Curator from another institution {0} operation on instance type {1} when "
@@ -931,7 +929,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     private static Stream<Arguments> argumentsForAnonymousUser() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.DELETE,
                                       PublicationOperation.UPDATE_FILES,
@@ -942,7 +940,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     private static Stream<Arguments> argumentsForRegistrator() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.DELETE,
                                       PublicationOperation.UPLOAD_FILE,
@@ -952,7 +950,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     private static Stream<Arguments> argumentsForRegistratorExcludingUploadFileAndPartialUpdate() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.DELETE);
 
@@ -967,7 +965,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     private static Stream<Arguments> argumentsForContributor() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.UPLOAD_FILE,
                                       PublicationOperation.PARTIAL_UPDATE);
@@ -976,14 +974,14 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     private static Stream<Arguments> argumentsForContributorExcludingUploadFileAndPartialUpdate() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UNPUBLISH);
 
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
 
     private static Stream<Arguments> argumentsForCurator() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.UPLOAD_FILE,
@@ -993,7 +991,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     private static Stream<Arguments> argumentsForCuratorExcludingUploadFileAndPartialUpdate() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH);
 
@@ -1001,7 +999,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     private static Stream<Arguments> argumentsForThesisCurator() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.UPLOAD_FILE,
@@ -1011,20 +1009,23 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     private static Stream<Arguments> argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate() {
-        final var operations = Set.of(PublicationOperation.UPDATE,
+        final var operations = Set.of(UPDATE,
                                       PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH);
 
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
 
+    private static Stream<Arguments> degreesProvider() {
+        return Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES).toList().stream()
+            .map(Arguments::of);
+    }
+
     private static Stream<Arguments> generateAllCombinationsOfOperationsAndInstanceClasses(
         final Set<PublicationOperation> operations) {
         return operations.stream()
                    .flatMap(operation -> Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES).toList().stream()
-                                             .map(instanceClass -> Arguments.of(operation, instanceClass)))
-                   .toList()
-                   .stream();
+                                             .map(instanceClass -> Arguments.of(operation, instanceClass)));
     }
 
     private static Contributor createContributor(Role role, URI cristinPersonId, URI cristinOrganizationId) {

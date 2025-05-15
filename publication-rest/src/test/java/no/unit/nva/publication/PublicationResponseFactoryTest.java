@@ -148,7 +148,7 @@ class PublicationResponseFactoryTest {
     @Test
     void shouldReturnAuthenticatedResponseWhenUserHasPartialUpdateAndUploadFileAllowedOperationsOnly() {
         var resource = Resource.fromPublication(randomPublication(DegreeBachelor.class));
-        var claim = randomClaimedChannel();
+        var claim = randomClaimedChannel(resource.getInstanceType().orElseThrow());
         resource.setPublicationChannels(List.of(claim));
         resource.setStatus(PUBLISHED);
         var requestInfo = getRequestInfo();
@@ -160,10 +160,10 @@ class PublicationResponseFactoryTest {
         assertTrue(response.getAllowedOperations().contains(PublicationOperation.UPLOAD_FILE));
     }
 
-    private ClaimedPublicationChannel randomClaimedChannel() {
+    private ClaimedPublicationChannel randomClaimedChannel(String instanceType) {
         return new ClaimedPublicationChannel(randomUri(), randomUri(), randomUri(),
                                              new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY,
-                                                            List.of()), ChannelType.PUBLISHER,
+                                                            List.of(instanceType)), ChannelType.PUBLISHER,
                                              SortableIdentifier.next(), SortableIdentifier.next(), Instant.now(), Instant.now());
     }
 }
