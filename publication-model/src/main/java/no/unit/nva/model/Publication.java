@@ -362,7 +362,7 @@ public class Publication
                              && new HashSet<>(getAssociatedArtifacts()).containsAll(that.getAssociatedArtifacts())
                              && Objects.equals(getProjects(), that.getProjects())
                              && Objects.equals(getFundings(), that.getFundings())
-                             && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
+                             && new HashSet<>(getAdditionalIdentifiers()).containsAll(that.getAdditionalIdentifiers())
                              && Objects.equals(getSubjects(), that.getSubjects())
                              && Objects.equals(getRightsHolder(), that.getRightsHolder())
                              && Objects.equals(getPublicationNotes(), that.getPublicationNotes())

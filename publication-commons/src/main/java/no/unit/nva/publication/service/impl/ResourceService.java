@@ -51,7 +51,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -69,7 +68,6 @@ import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
 import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
-import no.unit.nva.publication.model.storage.CounterDao;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -129,7 +127,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.identifierSupplier = identifierSupplier;
         this.uriRetriever = uriRetriever;
         this.identityService = identityService;
-        this.counterService = new CristinIdentifierCounterService(dynamoDBClient);
+        this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService, uriRetriever, identityService);
@@ -459,6 +457,11 @@ public class ResourceService extends ServiceWithTransactions {
             setCuratingInstitutions(resource);
         }
 
+        if (resource.getCristinIdentifier().isEmpty()) {
+            var counterEntry = counterService.increment();
+            injectSyntheticCristinIdentifier(resource, counterEntry.value());
+        }
+
         var userInstance = UserInstance.fromPublication(resource.toPublication());
         var fileTransactionWriteItems = resource.getFiles()
                                             .stream()
@@ -606,9 +609,9 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private static void injectSyntheticCristinIdentifier(Resource resource,
-                                                             AdditionalIdentifierBase syntheticCristinIdentifier) {
+                                                         int counterValue) {
         var additionalIdentifiers = new HashSet<>(resource.getAdditionalIdentifiers());
-        additionalIdentifiers.add(syntheticCristinIdentifier);
+        additionalIdentifiers.add(CristinIdentifier.fromCounter(counterValue));
         resource.setAdditionalIdentifiers(additionalIdentifiers);
     }
 
@@ -620,10 +623,8 @@ public class ResourceService extends ServiceWithTransactions {
         }
 
         if (resource.getCristinIdentifier().isEmpty()) {
-            var counterEntry = CounterDao.fetch(counterService).increment();
-            var syntheticCristinIdentifier = CristinIdentifier.fromCounter(counterEntry.value());
-            injectSyntheticCristinIdentifier(resource, syntheticCristinIdentifier);
-            transactions.add(counterEntry.toPutTransactionWriteItem());
+            var counterEntry = counterService.increment();
+            injectSyntheticCristinIdentifier(resource, counterEntry.value());
         }
 
         var userInstance = UserInstance.fromPublication(resource.toPublication());

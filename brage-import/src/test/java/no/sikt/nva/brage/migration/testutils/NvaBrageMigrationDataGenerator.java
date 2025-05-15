@@ -101,6 +101,8 @@ public class NvaBrageMigrationDataGenerator {
         if (nonNull(builder.getCristinIdentifier())) {
             additionalIdentifiers.add(new CristinIdentifier(SourceName.fromBrage(builder.getCustomer().getName()),
                                                             builder.getCristinIdentifier()));
+        } else {
+            additionalIdentifiers.add(new CristinIdentifier(SourceName.nva(),"10000000"));
         }
         if (nonNull(builder.getInsperaIdentifier())) {
             additionalIdentifiers.add(new AdditionalIdentifier(INSPERA_IDENTIFIER_SOURCE_NAME,

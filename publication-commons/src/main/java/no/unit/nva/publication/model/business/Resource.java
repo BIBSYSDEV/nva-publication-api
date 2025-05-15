@@ -791,10 +791,12 @@ public class Resource implements Entity {
      */
 
     public Optional<CristinIdentifier> getCristinIdentifier() {
-        return additionalIdentifiers.stream()
-                   .filter(CristinIdentifier.class::isInstance)
-                   .map(CristinIdentifier.class::cast)
-                   .findFirst();
+        return Optional.ofNullable(additionalIdentifiers)
+                       .orElse(Collections.emptySet())
+                       .stream()
+                       .filter(CristinIdentifier.class::isInstance)
+                       .map(CristinIdentifier.class::cast)
+                       .findFirst();
     }
 
     @JacocoGenerated

@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,31 +28,19 @@ class CounterServiceTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         resourceService = getResourceServiceBuilder().build();
-        counterService = new CristinIdentifierCounterService(super.client);
-    }
-
-    @Test
-    void shouldPersistCounter() {
-        var counter = 1;
-        CounterDao.fromValue(counter).insert(counterService);
-        var persistedCounter = CounterDao.fetch(counterService);
-
-        assertEquals(CounterDao.fromValue(counter), persistedCounter);
+        counterService = new CristinIdentifierCounterService(super.client, RESOURCES_TABLE_NAME);
     }
 
     @Test
     void shouldIncreaseCounter() {
-        var counter = 1;
-        CounterDao.fromValue(counter).increment(counterService);
-        CounterDao.fetch(counterService).increment(counterService);
-        var persistedCounter = CounterDao.fetch(counterService);
+        CounterDao.increment(counterService);
+        var persistedCounter = CounterDao.increment(counterService);
 
-        assertEquals(CounterDao.fromValue(2), persistedCounter);
+        assertEquals(CounterDao.fromValue(10_000_001), persistedCounter);
     }
 
     @Test
     void shouldCreatePublicationWithSyntheticCristinIdentifier() throws BadRequestException, NotFoundException {
-        CounterDao.fromValue(1).insert(counterService);
         var publication = randomPublication().copy().withAdditionalIdentifiers(Set.of()).build();
         var peristedPublication = persistPublication(publication);
         var peristedResource = resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
@@ -62,7 +51,6 @@ class CounterServiceTest extends ResourcesLocalTest {
     @Test
     void shouldNotCreatePublicationWithSyntheticCristinIdentifierWhenCristinIdentifierAlreadyExists()
         throws BadRequestException, NotFoundException {
-        CounterDao.fromValue(1).insert(counterService);
         var existingCristinIdentifier = randomCristinIdentifier();
         var publication = randomPublicationWithAdditionalIdentifier(existingCristinIdentifier);
         var peristedPublication = persistPublication(publication);

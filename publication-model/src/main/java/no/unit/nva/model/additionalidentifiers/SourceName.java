@@ -3,6 +3,7 @@ package no.unit.nva.model.additionalidentifiers;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * A record representing a source name.
@@ -36,7 +37,7 @@ public record SourceName(String system, String instanceName) {
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     SourceName(String sourceName) {
         this(sourceName.contains(SEPARATOR) ? sourceName.split(SEPARATOR)[0] : null,
-             sourceName.contains(SEPARATOR) ? sourceName.split(SEPARATOR)[1] : sourceName);
+             sourceName.contains(SEPARATOR) ? getNull(sourceName.split(SEPARATOR)[1]) : sourceName);
     }
 
     /**
@@ -45,7 +46,7 @@ public record SourceName(String system, String instanceName) {
      * @param instanceName the instance name of the source. e.g. "194.0.0.0", "20754.0.0.0", etc
      */
     public static SourceName fromBrage(String instanceName) {
-        return new SourceName(BRAGE_SYSTEM, instanceName);
+        return new SourceName(BRAGE_SYSTEM, getNull(instanceName));
     }
 
     /**
@@ -54,7 +55,11 @@ public record SourceName(String system, String instanceName) {
      * @param instanceName the instance name of the source. e.g. "194.0.0.0", "20754.0.0.0", etc
      */
     public static SourceName fromCristin(String instanceName) {
-        return new SourceName(CRISTIN_SYSTEM, instanceName);
+        return new SourceName(CRISTIN_SYSTEM, getNull(instanceName));
+    }
+
+    private static String getNull(String instanceName) {
+        return Objects.equals(instanceName, "null") ? null : instanceName;
     }
 
     public boolean isFromBrageSystem() {
