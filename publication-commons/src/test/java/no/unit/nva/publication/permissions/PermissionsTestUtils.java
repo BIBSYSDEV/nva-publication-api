@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permissions;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstanceType;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -24,6 +25,15 @@ import no.unit.nva.publication.model.business.publicationchannel.Constraint;
 import nva.commons.apigateway.AccessRight;
 
 public class PermissionsTestUtils {
+
+    private static final List<String> DEGREE_SCOPE = List.of("DegreeLicentiate",
+                                                             "DegreeBachelor",
+                                                             "DegreeMaster",
+                                                             "DegreePhd",
+                                                             "ArtisticDegreePhd",
+                                                             "OtherStudentWork");
+    private static final String ACADEMIC_ARTICLE = "AcademicArticle";
+    private static final String ENCYCLOPEDIA = "Encyclopedia";
 
     public static List<AccessRight> getAccessRightsForEditor() {
         var accessRights = new ArrayList<AccessRight>();
@@ -72,17 +82,25 @@ public class PermissionsTestUtils {
         return accessRights;
     }
 
-    public static void setPublicationChannel(Resource resource, Institution owner, ChannelPolicy publishingPolicy,
-                                             ChannelPolicy editingPolicy) {
-        var claimedChannel = new ClaimedPublicationChannel(randomUri(),
-                                                           owner.getCustomerId(),
-                                                           owner.getTopLevelCristinId(),
-                                                           new Constraint(publishingPolicy, editingPolicy, List.of()),
-                                                           PUBLISHER,
-                                                           new SortableIdentifier(randomUUID().toString()),
-                                                           resource.getIdentifier(),
-                                                           Instant.now(), Instant.now());
-        resource.setPublicationChannels(List.of(claimedChannel));
+    public static void setPublicationChannelWithDegreeScope(Resource resource, Institution owner,
+                                                            ChannelPolicy publishingPolicy,
+                                                            ChannelPolicy editingPolicy) {
+        setPublicationChannel(resource, owner, publishingPolicy, editingPolicy, DEGREE_SCOPE);
+    }
+
+    public static void setPublicationChannelWithinScope(Resource resource, Institution owner,
+                                                        ChannelPolicy publishingPolicy,
+                                                        ChannelPolicy editingPolicy) {
+        var instanceType = resource.getInstanceType().orElseThrow();
+        setPublicationChannel(resource, owner, publishingPolicy, editingPolicy, List.of(instanceType));
+    }
+
+    public static void setPublicationChannelOutsideOfScope(Resource resource, Institution owner,
+                                                           ChannelPolicy publishingPolicy,
+                                                           ChannelPolicy editingPolicy) {
+        var instanceTypeFromResource = resource.getInstanceType().orElseThrow();
+        var instanceType = ACADEMIC_ARTICLE.equals(instanceTypeFromResource) ? ENCYCLOPEDIA : ACADEMIC_ARTICLE;
+        setPublicationChannel(resource, owner, publishingPolicy, editingPolicy, List.of(instanceType));
     }
 
     public static void setContributor(Publication publication, User contributor) {
@@ -92,6 +110,19 @@ public class PermissionsTestUtils {
         publication.getEntityDescription().setContributors(contributors);
         publication.setCuratingInstitutions(
             Set.of(new CuratingInstitution(contributor.topLevelCristinId(), Set.of(contributor.cristinId()))));
+    }
+
+    private static void setPublicationChannel(Resource resource, Institution owner, ChannelPolicy publishingPolicy,
+                                              ChannelPolicy editingPolicy, List<String> scope) {
+        var claimedChannel = new ClaimedPublicationChannel(randomUri(),
+                                                           owner.getCustomerId(),
+                                                           owner.getTopLevelCristinId(),
+                                                           new Constraint(publishingPolicy, editingPolicy, scope),
+                                                           PUBLISHER,
+                                                           new SortableIdentifier(randomUUID().toString()),
+                                                           resource.getIdentifier(),
+                                                           Instant.now(), Instant.now());
+        resource.setPublicationChannels(List.of(claimedChannel));
     }
 
     private static Contributor createContributor(Role role, URI cristinPersonId, URI cristinOrganizationId) {
