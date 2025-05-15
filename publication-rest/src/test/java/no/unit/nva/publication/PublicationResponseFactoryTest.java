@@ -146,7 +146,7 @@ class PublicationResponseFactoryTest {
     }
 
     @Test
-    void shouldReturnAuthenticatedResponseWhenUserHasPartialUpdateAllowedOperationOnly() {
+    void shouldReturnAuthenticatedResponseWhenUserHasPartialUpdateAndUploadFileAllowedOperationsOnly() {
         var resource = Resource.fromPublication(randomPublication(DegreeBachelor.class));
         var claim = randomClaimedChannel();
         resource.setPublicationChannels(List.of(claim));
@@ -157,6 +157,7 @@ class PublicationResponseFactoryTest {
         var response =  PublicationResponseFactory.create(resource, requestInfo, getIdentityServiceClient());
 
         assertTrue(response.getAllowedOperations().contains(PublicationOperation.PARTIAL_UPDATE));
+        assertTrue(response.getAllowedOperations().contains(PublicationOperation.UPLOAD_FILE));
     }
 
     private ClaimedPublicationChannel randomClaimedChannel() {
