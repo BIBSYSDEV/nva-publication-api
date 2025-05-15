@@ -81,17 +81,6 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
                                      new TikaUtils()));
     }
 
-    @JacocoGenerated
-    private static AuthorizedBackendUriRetriever getAuthorizedBackendUriRetriever() {
-        authorizedBackendUriRetriever.updateAndGet(existing -> {
-            if (existing == null) {
-                return new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME);
-            }
-            return existing;
-        });
-        return authorizedBackendUriRetriever.get();
-    }
-
     public ScopusHandler(S3Client s3Client, PiaConnection piaConnection, CristinConnection cristinConnection,
                          PublicationChannelConnection publicationChannelConnection,
                          NvaCustomerConnection nvaCustomerConnection, ResourceService resourceService,
@@ -130,6 +119,21 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     @JacocoGenerated
     private static CristinConnection defaultCristinConnection() {
         return new CristinConnection();
+    }
+
+    @JacocoGenerated
+    private static AuthorizedBackendUriRetriever getAuthorizedBackendUriRetriever() {
+        authorizedBackendUriRetriever.updateAndGet(ScopusHandler::getAuthorizedBackendUriRetriever);
+        return authorizedBackendUriRetriever.get();
+    }
+
+    @JacocoGenerated
+    private static AuthorizedBackendUriRetriever getAuthorizedBackendUriRetriever(
+        AuthorizedBackendUriRetriever existing) {
+        if (existing == null) {
+            return new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME);
+        }
+        return existing;
     }
 
     private static ImportResult<String> generateReportFromContent(Failure<ImportCandidate> fail, String content) {
