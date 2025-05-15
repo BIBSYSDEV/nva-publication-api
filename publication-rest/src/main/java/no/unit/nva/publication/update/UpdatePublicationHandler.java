@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -85,6 +86,7 @@ public class UpdatePublicationHandler
     private final SecretsReader secretsReader;
     private final HttpClient httpClient;
     private final String apiHost;
+    private final JavaHttpClientCustomerApiClient customerApiClient;
 
     /**
      * Default constructor for MainHandler.
@@ -122,6 +124,7 @@ public class UpdatePublicationHandler
         this.apiHost = environment.readEnv(API_HOST_ENV_KEY);
         this.secretsReader = new SecretsReader(secretsManagerClient);
         this.httpClient = httpClient;
+        this.customerApiClient = getCustomerApiClient();
     }
 
     @Override
@@ -270,7 +273,6 @@ public class UpdatePublicationHandler
         var existingPublication = existingResource.toPublication();
         var publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
-        var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
 
         permissionStrategy.authorize(UPDATE);
@@ -348,7 +350,9 @@ public class UpdatePublicationHandler
         var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
                                                         backendClientCredentials::getSecret,
                                                         cognitoServerUri);
-        return new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+        var authorizedBackendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient,
+                                                                                             cognitoCredentials);
+        return new JavaHttpClientCustomerApiClient(authorizedBackendClient);
     }
 
     private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,

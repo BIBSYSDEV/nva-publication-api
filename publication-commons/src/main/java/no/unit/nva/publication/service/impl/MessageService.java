@@ -12,8 +12,8 @@ import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
@@ -52,7 +52,7 @@ public class MessageService extends ServiceWithTransactions {
     
     @JacocoGenerated
     public static MessageService defaultService() {
-        return new MessageService(DEFAULT_DYNAMODB_CLIENT, UriRetriever.defaultUriRetriever());
+        return new MessageService(DEFAULT_DYNAMODB_CLIENT, new UriRetriever());
     }
     
     public Message createMessage(TicketEntry ticketEntry, UserInstance sender, String messageText) {

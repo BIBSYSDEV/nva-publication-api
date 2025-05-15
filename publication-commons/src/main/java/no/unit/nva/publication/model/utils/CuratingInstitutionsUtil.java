@@ -10,12 +10,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 
 public final class CuratingInstitutionsUtil {

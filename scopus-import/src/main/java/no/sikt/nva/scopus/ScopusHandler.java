@@ -74,7 +74,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
                                                                          BACKEND_CLIENT_SECRET_NAME)),
              ResourceService.defaultService(),
              new ScopusUpdater(ResourceService.defaultService(),
-                               new no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever(
+                               new AuthorizedBackendUriRetriever(
                                    BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
              new ScopusFileConverter(defaultHttpClientWithRedirect(),
                                      S3Driver.defaultS3Client().build(),

@@ -20,9 +20,10 @@ import java.net.URI;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -55,7 +56,7 @@ class SearchServiceTest extends ResourcesLocalTest {
         var id = createPublicationId(publication.getIdentifier());
         var responseBody = new SearchResourceApiResponse(1, List.of(new ResourceWithId(id)));
         var response = httpResponse(HTTP_OK, responseBody.toJsonString());
-        when(uriRetriever.fetchResponse(any())).thenReturn(response);
+        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
 
         var fetchedPublications = searchService.searchPublicationsByParam(searchParams);
 
@@ -70,7 +71,7 @@ class SearchServiceTest extends ResourcesLocalTest {
         var id = createPublicationId(existingPublication.getIdentifier());
         var responseBody = new SearchResourceApiResponse(1, List.of(new ResourceWithId(id)));
         var response = httpResponse(HTTP_OK, responseBody.toJsonString());
-        when(uriRetriever.fetchResponse(any())).thenReturn(response);
+        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
         resourceService = mock(ResourceService.class);
         when(resourceService.getPublicationByIdentifier(any())).thenThrow(NotFoundException.class);
 
@@ -83,7 +84,7 @@ class SearchServiceTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenCouldNotParseResponse() {
         var searchParams = Map.of(randomString(), randomString());
         var response = httpResponse(HTTP_NOT_FOUND, randomString());
-        when(uriRetriever.fetchResponse(any())).thenReturn(response);
+        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
 
         assertThrows(SearchServiceException.class, () -> searchService.searchPublicationsByParam(searchParams));
     }
@@ -94,7 +95,7 @@ class SearchServiceTest extends ResourcesLocalTest {
         var responseBody = new SearchResourceApiResponse(1, List.of(
             new ResourceWithId(createPublicationId(SortableIdentifier.next()))));
         var response = httpResponse(HTTP_CONFLICT, responseBody.toJsonString());
-        when(uriRetriever.fetchResponse(any())).thenReturn(response);
+        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
 
         assertThrows(SearchServiceException.class, () -> searchService.searchPublicationsByParam(searchParams));
     }

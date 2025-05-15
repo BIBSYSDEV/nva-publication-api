@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.net.http.HttpResponse;
 import java.util.Optional;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;

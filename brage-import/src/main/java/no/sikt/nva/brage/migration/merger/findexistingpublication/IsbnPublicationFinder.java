@@ -6,9 +6,9 @@ import no.sikt.nva.brage.migration.lambda.MergeSource;
 import no.sikt.nva.brage.migration.lambda.PublicationComparator;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 public class IsbnPublicationFinder implements FindExistingPublicationService {

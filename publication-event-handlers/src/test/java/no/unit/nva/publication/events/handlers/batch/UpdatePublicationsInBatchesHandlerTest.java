@@ -17,7 +17,9 @@ import java.net.URI;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -28,7 +30,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
 import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -214,7 +215,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var resourcesWithId = convertToResourcesWithId(publicationList);
         var responseBody = new SearchResourceApiResponse(publicationList.size(), resourcesWithId);
         var response = httpResponse(200, responseBody.toJsonString());
-        when(uriRetriever.fetchResponse(any())).thenReturn(response);
+        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
     }
 
     private HttpResponse<String> httpResponse(int statusCode, String responseBody) {
