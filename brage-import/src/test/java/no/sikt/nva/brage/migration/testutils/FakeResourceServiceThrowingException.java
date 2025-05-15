@@ -4,10 +4,9 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumerTest.RES
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.time.Clock;
-import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
 

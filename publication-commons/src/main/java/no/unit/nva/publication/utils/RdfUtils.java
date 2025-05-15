@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecutionFactory;

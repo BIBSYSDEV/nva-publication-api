@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.List;
 import java.util.Optional;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.external.services.ChannelClaimDto.ChannelClaim;
 import no.unit.nva.publication.external.services.ChannelClaimDto.ChannelClaim.ChannelConstraint;
 import no.unit.nva.publication.external.services.ChannelClaimDto.CustomerSummaryDto;

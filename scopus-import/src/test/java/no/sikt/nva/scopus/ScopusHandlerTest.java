@@ -145,6 +145,7 @@ import no.sikt.nva.scopus.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.utils.PiaResponseGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
@@ -182,7 +183,6 @@ import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
@@ -1259,8 +1259,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static Optional<String> toResponse(ImportCandidate importCandidate) {
         return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
             List.of(ExpandedImportCandidate
-                        .fromImportCandidate(importCandidate, mock(
-                            no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.class))), 1)));
+                        .fromImportCandidate(importCandidate, mock(AuthorizedBackendUriRetriever.class))), 1)));
     }
 
     private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {

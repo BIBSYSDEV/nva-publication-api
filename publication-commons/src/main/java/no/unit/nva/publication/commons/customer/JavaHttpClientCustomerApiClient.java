@@ -23,6 +23,7 @@ public class JavaHttpClientCustomerApiClient implements CustomerApiClient {
 
     private final HttpClient httpClient;
     private final CognitoCredentials cognitoCredentials;
+    private AuthorizedBackendClient cachedAuthorizedBackendClient;
 
     public JavaHttpClientCustomerApiClient(final HttpClient httpClient,
                                            final CognitoCredentials cognitoCredentials) {
@@ -43,12 +44,18 @@ public class JavaHttpClientCustomerApiClient implements CustomerApiClient {
 
     @Override
     public Customer fetch(URI customerId) {
-        var authorizedBackendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient,
-                                                                                            cognitoCredentials);
+        var authorizedBackendClient = getAuthorizedBackendClient();
+
         var requestBuilder = createGetRequest(customerId);
         var response = executeRequest(customerId, authorizedBackendClient, requestBuilder);
 
         return deserializeResponseOrThrowException(customerId, response);
+    }
+
+    private AuthorizedBackendClient getAuthorizedBackendClient() {
+        return this.cachedAuthorizedBackendClient != null
+                   ? this.cachedAuthorizedBackendClient
+                   : AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, cognitoCredentials);
     }
 
     private static Customer deserializeResponseOrThrowException(URI customerId, HttpResponse<String> response) {

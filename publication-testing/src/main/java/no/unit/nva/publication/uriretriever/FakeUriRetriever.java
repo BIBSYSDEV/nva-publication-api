@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.net.ssl.SSLSession;
-import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
 
 public final class FakeUriRetriever implements RawContentRetriever {
 

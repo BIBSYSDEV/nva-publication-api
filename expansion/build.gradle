@@ -4,6 +4,7 @@ dependencies {
     implementation(project(':publication-commons'))
     implementation libs.nva.core
     implementation libs.nva.json
+    implementation libs.nva.auth
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.secrets
