@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -348,7 +349,9 @@ public class UpdatePublicationHandler
         var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
                                                         backendClientCredentials::getSecret,
                                                         cognitoServerUri);
-        return new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+        var authorizedBackendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient,
+                                                                                             cognitoCredentials);
+        return new JavaHttpClientCustomerApiClient(authorizedBackendClient);
     }
 
     private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,

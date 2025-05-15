@@ -89,6 +89,8 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.MediaTypes;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
@@ -521,11 +523,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publication.setDuplicateOf(null);
         publication.setCuratingInstitutions(
             Set.of(new CuratingInstitution(RandomDataGenerator.randomUri(), Set.of(RandomDataGenerator.randomUri()))));
-        var userInstance = UserInstance.fromPublication(publication);
-        var publicationIdentifier = Resource.fromPublication(publication)
-                                        .persistNew(publicationService, userInstance)
-                                        .getIdentifier();
-        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+        return persistNewPublication(publication);
     }
 
     private Publication createDeletedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
@@ -576,7 +574,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createUnpublishedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
-        var publication = createPublication();
+        var publication = createNondegreePublication();
         publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
         Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
         var publishedPublication = publicationService.getPublicationByIdentifier(publication.getIdentifier());
@@ -634,30 +632,31 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication createPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
+        return persistNewPublication(publication);
+    }
+
+    private Publication persistNewPublication(Publication publication) throws BadRequestException, NotFoundException {
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
-        return publicationService.getResourceByIdentifier(publicationIdentifier).toPublication();
+        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createNondegreePublication() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomNonDegreePublication();
+        return persistNewPublication(publication);
     }
 
     private Publication createPublicationWithNonPublicFilesOnly() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         publication.setAssociatedArtifacts(
             new AssociatedArtifactList(randomPendingInternalFile(), randomInternalFile(), randomHiddenFile()));
-        var userInstance = UserInstance.fromPublication(publication);
-        var publicationIdentifier = Resource.fromPublication(publication)
-                                        .persistNew(publicationService, userInstance)
-                                        .getIdentifier();
-        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+        return persistNewPublication(publication);
     }
 
     private Publication createPublication(Class<? extends PublicationInstance<?>> instance) throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication(instance);
-        var userInstance = UserInstance.fromPublication(publication);
-        var publicationIdentifier = Resource.fromPublication(publication)
-                                                       .persistNew(publicationService, userInstance)
-                                                       .getIdentifier();
-        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+        return persistNewPublication(publication);
     }
 
     private Publication createDraftForDeletion() throws ApiGatewayException {

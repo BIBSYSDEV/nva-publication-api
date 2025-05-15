@@ -13,39 +13,29 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
-import no.unit.nva.auth.CognitoCredentials;
-import no.unit.nva.testutils.JwtTestToken;
-import nva.commons.core.Environment;
+import no.unit.nva.auth.AuthorizedBackendClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class JavaHttpClientCustomerApiClientTest {
 
-    private HttpClient httpClient;
+    private AuthorizedBackendClient authorizedBackendClient;
 
     @BeforeEach
     void setup() throws IOException, InterruptedException {
-        httpClient = mock(HttpClient.class);
+        authorizedBackendClient = mock(AuthorizedBackendClient.class);
 
-        doReturn(okTokenResponse())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals("/oauth2/token")), any());
+        doReturn(okCustomerResponse())
+            .when(authorizedBackendClient)
+            .send(argThat(request -> request.build().uri().getPath().startsWith("/customer/")), any());
     }
 
-    public static final URI BACKEND_CLIENT_AUTH_URL = URI.create(
-        new Environment().readEnv("BACKEND_CLIENT_AUTH_URL"));
-
     @Test
-    void shouldReturnCustomerIfEverythingIsOk() throws InterruptedException, IOException {
+    void shouldReturnCustomerIfEverythingIsOk() {
         var customerUri = randomBackendUri("customer");
 
-        var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
-        doReturn(okCustomerResponse())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
+        var customerApiClient = getJavaHttpClientCustomerApiClient();
 
         var customer = customerApiClient.fetch(customerUri);
 
@@ -55,22 +45,19 @@ public class JavaHttpClientCustomerApiClientTest {
         assertThat(customer.getRightsRetentionStrategy().getId(), is(equalTo("https://example.org/1")));
     }
 
-    private static JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient(HttpClient httpClient) {
-        var cognitoCredentials = new CognitoCredentials(() -> "clientId",
-                                                        () -> "clientSecret",
-                                                        BACKEND_CLIENT_AUTH_URL);
-        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
-        return customerApiClient;
+    private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
+        return new JavaHttpClientCustomerApiClient(authorizedBackendClient);
     }
 
     @Test
     void shouldThrowExceptionIfNotSuccessFromCustomerApi() throws IOException, InterruptedException {
         var customerUri = randomBackendUri("customer");
-        doReturn(failedCustomerResponse())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
 
-        var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
+        doReturn(failedCustomerResponse())
+            .when(authorizedBackendClient)
+            .send(argThat(request -> request.build().uri().getPath().startsWith("/customer/")), any());
+
+        var customerApiClient = getJavaHttpClientCustomerApiClient();
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));
     }
@@ -78,11 +65,12 @@ public class JavaHttpClientCustomerApiClientTest {
     @Test
     void shouldThrowExceptionIfDeserializationOfResponseFails() throws IOException, InterruptedException {
         var customerUri = randomBackendUri("customer");
-        doReturn(customerResponseWithInvalidJsonFormat())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
 
-        var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
+        doReturn(customerResponseWithInvalidJsonFormat())
+            .when(authorizedBackendClient)
+            .send(argThat(request -> request.build().uri().getPath().startsWith("/customer/")), any());
+
+        var customerApiClient = getJavaHttpClientCustomerApiClient();
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));
     }
@@ -90,11 +78,12 @@ public class JavaHttpClientCustomerApiClientTest {
     @Test
     void shouldThrowExceptionIfIoFails() throws IOException, InterruptedException {
         var customerUri = randomBackendUri("customer");
-        doThrow(new ConnectException())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
 
-        var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
+        doThrow(new ConnectException())
+            .when(authorizedBackendClient)
+            .send(argThat(request -> request.build().uri().getPath().startsWith("/customer/")), any());
+
+        var customerApiClient = getJavaHttpClientCustomerApiClient();
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));
     }
@@ -139,21 +128,6 @@ public class JavaHttpClientCustomerApiClientTest {
         var httpResponse = mock(HttpResponse.class);
 
         doReturn(404).when(httpResponse).statusCode();
-
-        //noinspection unchecked
-        return httpResponse;
-    }
-
-    private HttpResponse<String> okTokenResponse() {
-        var httpResponse = mock(HttpResponse.class);
-
-        doReturn(200).when(httpResponse).statusCode();
-        var response = """
-            {
-                "access_token": "%s"
-            }
-            """.formatted(JwtTestToken.randomToken());
-        doReturn(response).when(httpResponse).body();
 
         //noinspection unchecked
         return httpResponse;
