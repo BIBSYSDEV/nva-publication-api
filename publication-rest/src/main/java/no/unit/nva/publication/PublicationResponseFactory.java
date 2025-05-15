@@ -37,7 +37,7 @@ public final class PublicationResponseFactory {
     }
 
     private static boolean hasAuthenticatedAccessOnPublication(PublicationPermissions userStrategy) {
-        return userStrategy.allowsAction(PublicationOperation.UPDATE);
+        return userStrategy.allowsAction(PublicationOperation.PARTIAL_UPDATE);
     }
 
     private static PublicationResponse createPublicResponse(PublicationPermissions publicationPermissions,

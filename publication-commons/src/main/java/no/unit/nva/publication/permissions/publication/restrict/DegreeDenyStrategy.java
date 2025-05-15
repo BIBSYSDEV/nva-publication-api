@@ -27,7 +27,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
 
         if (isProtectedDegreeInstanceType()) {
             if (PARTIAL_UPDATE.equals(permission) || UPLOAD_FILE.equals(permission)) {
-                return !userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution();
+                return !userRelatesToPublication();
             }
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
                 return DENY;

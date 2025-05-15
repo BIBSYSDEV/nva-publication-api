@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationOperation.UPLOAD_FILE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
 import java.net.URI;
+import java.util.Optional;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.Resource;
@@ -61,7 +62,7 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
 
     private boolean channelPolicyDenies(ChannelPolicy policy, URI organizationId) {
         if (OWNER_ONLY.equals(policy)) {
-            return !userInstance.getTopLevelOrgCristinId().equals(organizationId);
+            return !Optional.ofNullable(userInstance).map(UserInstance::getTopLevelOrgCristinId).map(value -> value.equals(organizationId)).orElse(false);
         } else if (EVERYONE.equals(policy)) {
             return !userRelatesToPublication();
         }

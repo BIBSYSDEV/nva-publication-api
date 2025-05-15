@@ -668,8 +668,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator from another institution {0} operation on instance type {1} when "
                               + "degree has open file and channel owned by that institution")
-    @MethodSource("argumentsForCurator")
-    void shouldDenyCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByThatInstitution(
+    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
+    void shouldDenyCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByCuratorInstitution(
         PublicationOperation operation,
         Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
