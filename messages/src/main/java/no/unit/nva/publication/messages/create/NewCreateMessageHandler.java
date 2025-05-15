@@ -1,8 +1,8 @@
 package no.unit.nva.publication.messages.create;
 
 import static no.unit.nva.model.PublicationOperation.DOI_REQUEST_CREATE;
+import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
 import static no.unit.nva.model.PublicationOperation.PUBLISHING_REQUEST_CREATE;
-import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -81,7 +81,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return switch (ticketDto) {
             case DoiRequest ignored -> permissionStrategy.allowsAction(DOI_REQUEST_CREATE);
             case PublishingRequestCase ignored -> permissionStrategy.allowsAction(PUBLISHING_REQUEST_CREATE);
-            case GeneralSupportRequest ignored -> permissionStrategy.allowsAction(UPDATE);
+            case GeneralSupportRequest ignored -> permissionStrategy.allowsAction(PARTIAL_UPDATE);
             case null, default -> false;
         };
     }

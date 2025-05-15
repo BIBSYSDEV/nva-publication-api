@@ -8,6 +8,7 @@ import no.unit.nva.model.FileOperation;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.file.deny.ClaimedChannelFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.EmbargoDownloadDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.DegreeEmbargoWriteDeleteDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.DegreeWriteDeleteDenyStrategy;

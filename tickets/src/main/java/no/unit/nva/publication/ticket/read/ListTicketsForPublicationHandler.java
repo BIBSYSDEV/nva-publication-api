@@ -90,7 +90,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
 
     private boolean isAllowedToListTickets(UserInstance userInstance, Resource resource) {
         return PublicationPermissions.create(resource, userInstance)
-                   .allowsAction(PublicationOperation.UPDATE);
+                   .allowsAction(PublicationOperation.PARTIAL_UPDATE);
     }
 
     private TicketDto createDto(TicketEntry ticket, Resource resource) {

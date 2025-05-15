@@ -66,6 +66,6 @@ public class FetchPublicationLogHandler extends ApiGatewayHandler<Void, Publicat
     private static boolean userHasNoAccessToLog(RequestInfo requestInfo, Resource resource)
         throws UnauthorizedException {
         return !PublicationPermissions.create(resource, UserInstance.fromRequestInfo(requestInfo))
-                    .allowsAction(PublicationOperation.UPDATE);
+                    .allowsAction(PublicationOperation.PARTIAL_UPDATE);
     }
 }
