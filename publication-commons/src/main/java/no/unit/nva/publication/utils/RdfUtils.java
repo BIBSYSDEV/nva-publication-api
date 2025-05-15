@@ -3,11 +3,12 @@ package no.unit.nva.publication.utils;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -24,11 +25,10 @@ import org.slf4j.LoggerFactory;
 @JacocoGenerated
 public class RdfUtils {
     private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
-    public static final String APPLICATION_JSON = "application/json";
     public static final Logger logger = LoggerFactory.getLogger(RdfUtils.class);
 
-    public static List<URI> getAllNestedPartOfs(UriRetriever uriRetriever, URI organizationId) {
-        return attempt(() -> uriRetriever.getRawContent(organizationId, APPLICATION_JSON)).map(
+    public static List<URI> getAllNestedPartOfs(RawContentRetriever uriRetriever, URI organizationId) {
+        return attempt(() -> uriRetriever.getRawContent(organizationId, APPLICATION_JSON.getMimeType())).map(
                 Optional::orElseThrow)
                    .map(str -> createModel(stringToStream(str)))
                    .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
@@ -38,8 +38,8 @@ public class RdfUtils {
 
     }
 
-    public static URI getTopLevelOrgUri(UriRetriever uriRetriever, URI id) {
-        var data = attempt(() -> uriRetriever.getRawContent(id, APPLICATION_JSON)).orElseThrow();
+    public static URI getTopLevelOrgUri(RawContentRetriever uriRetriever, URI id) {
+        var data = attempt(() -> uriRetriever.getRawContent(id, APPLICATION_JSON.getMimeType())).orElseThrow();
 
         if (data.isEmpty()) {
             return null;

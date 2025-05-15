@@ -23,19 +23,20 @@ import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
 import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
@@ -56,13 +57,14 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class CristinImportPublicationMerger {
 
     public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
         = "dummy_handle_unis";
-    public static final String PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE = "contributorsWithCreatorRole";
     public static final String PRIORITIZE_MAIN_TITLE = "mainTitle";
     public static final String PRIORITIZE_ALTERNATIVE_TITLES = "alternativeTitles";
+    public static final String PRIORITIZE_PUBLICATION_DATE = "publicationDate";
     public static final String PRIORITIZE_ABSTRACT = "abstract";
     public static final String PRIORITIZE_ALTERNATIVE_ABSTRACTS = "alternativeAbstracts";
     public static final String PRIORITIZE_REFERENCE = "reference";
@@ -91,6 +93,9 @@ public class CristinImportPublicationMerger {
                    .withAssociatedArtifacts(addDublinCoreToExistingAssociatedArtifacts())
                    .withEntityDescription(existingPublication.getEntityDescription().copy()
                                               .withTags(determineTags())
+                                              .withPublicationDate(bragePublicationRepresentation.publication()
+                                                                       .getEntityDescription()
+                                                                       .getPublicationDate())
                                               .build())
                    .build();
     }
@@ -141,13 +146,18 @@ public class CristinImportPublicationMerger {
                    .withAbstract(getCorrectAbstract())
                    .withAlternativeAbstracts(determineAlternativeAbstracts())
                    .withTags(determineTags())
+                   .withPublicationDate(determinePublicationDate())
                    .build();
     }
 
+    private PublicationDate determinePublicationDate() {
+        return shouldPrioritizeField(PRIORITIZE_PUBLICATION_DATE)
+                   ? bragePublicationRepresentation.publication().getEntityDescription().getPublicationDate()
+                   : existingPublication.getEntityDescription().getPublicationDate();
+    }
+
     private List<String> determineTags() {
-        return shouldPrioritizeField(PRIORITIZE_TAGS)
-                   ? mergeTags()
-                   : existingPublication.getEntityDescription().getTags();
+        return mergeTags();
     }
 
     private List<String> mergeTags() {
@@ -403,7 +413,7 @@ public class CristinImportPublicationMerger {
         if (existingAssociatedArtifactsAreEmpty()) {
             return bragePublicationRepresentation.publication().getAssociatedArtifacts();
         }
-        if (existingPublicationHasNoPublishedFiles()) {
+        if (existingPublicationHasNoOpenFiles()) {
             var mergedAssociatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
             mergedAssociatedArtifacts.addAll(bragePublicationRepresentation.publication().getAssociatedArtifacts());
             return new AssociatedArtifactList(mergedAssociatedArtifacts);
@@ -411,11 +421,11 @@ public class CristinImportPublicationMerger {
         if (shouldOverWriteWithBrageArtifacts()) {
             return keepBrageAssociatedArtifactAndKeepDublinCoreFromExisting();
         }
-        if (!hasAdministrativeAgreement(existingPublication)) {
+        if (!hasHiddenFile(existingPublication)) {
             var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
-            var administrativeAgreements = extractAdministrativeAgreements(
+            var hiddenFiles = extractHiddenFiles(
                 bragePublicationRepresentation.publication());
-            associatedArtifacts.addAll(administrativeAgreements);
+            associatedArtifacts.addAll(hiddenFiles);
             return new AssociatedArtifactList(associatedArtifacts);
         } else {
             var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
@@ -425,26 +435,26 @@ public class CristinImportPublicationMerger {
         }
     }
 
-    private List<AdministrativeAgreement> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
+    private List<HiddenFile> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
         return associatedArtifactList.stream()
-                   .filter(AdministrativeAgreement.class::isInstance)
-                   .map(AdministrativeAgreement.class::cast)
+                   .filter(HiddenFile.class::isInstance)
+                   .map(HiddenFile.class::cast)
                    .filter(CristinImportPublicationMerger::isDublinCore)
                    .toList();
     }
 
-    private static boolean isDublinCore(AdministrativeAgreement administrativeAgreement) {
-        return DUBLIN_CORE_XML.equals(administrativeAgreement.getName());
+    private static boolean isDublinCore(File file) {
+        return DUBLIN_CORE_XML.equals(file.getName());
     }
 
     private boolean existingAssociatedArtifactsAreEmpty() {
         return existingPublication.getAssociatedArtifacts().isEmpty();
     }
 
-    private boolean existingPublicationHasNoPublishedFiles() {
+    private boolean existingPublicationHasNoOpenFiles() {
         return existingPublication.getAssociatedArtifacts()
                    .stream()
-                   .noneMatch(PublishedFile.class::isInstance);
+                   .noneMatch(OpenFile.class::isInstance);
     }
 
     private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExisting() {
@@ -461,32 +471,32 @@ public class CristinImportPublicationMerger {
 
     private boolean academicArticleRulesApply() {
         return isAcademicArticle()
-               && noneOfTheExistingFilesArePublishedVersion(extractPublishedFiles(existingPublication))
-               && brageFileIsPublishedVersion(extractPublishedFiles(bragePublicationRepresentation.publication()));
+               && noneOfTheExistingFilesArePublishedVersion(extractOpenFiles(existingPublication))
+               && brageFileIsPublishedVersion(extractOpenFiles(bragePublicationRepresentation.publication()));
     }
 
-    private List<PublishedFile> extractPublishedFiles(Publication publication) {
+    private List<OpenFile> extractOpenFiles(Publication publication) {
         return publication.getAssociatedArtifacts()
                    .stream()
                    .filter(associatedArtifact -> associatedArtifact instanceof File)
                    .map(associatedArtifact -> (File) associatedArtifact)
-                   .filter(PublishedFile.class::isInstance)
-                   .map(PublishedFile.class::cast)
+                   .filter(OpenFile.class::isInstance)
+                   .map(OpenFile.class::cast)
                    .toList();
     }
 
-    private boolean brageFileIsPublishedVersion(List<PublishedFile> publishedFiles) {
-        return publishedFiles
+    private boolean brageFileIsPublishedVersion(List<OpenFile> files) {
+        return files
                    .stream()
                    .map(File::getPublisherVersion)
                    .anyMatch(PublisherVersion.PUBLISHED_VERSION::equals);
     }
 
-    private boolean noneOfTheExistingFilesArePublishedVersion(List<PublishedFile> publishedFiles) {
-        return publishedFiles
+    private boolean noneOfTheExistingFilesArePublishedVersion(List<OpenFile> files) {
+        return files
                    .stream()
-                   .noneMatch(
-                       publishedFile -> PublisherVersion.PUBLISHED_VERSION == publishedFile.getPublisherVersion());
+                   .map(File::getPublisherVersion)
+                   .noneMatch(PublisherVersion.PUBLISHED_VERSION::equals);
     }
 
     private boolean isAcademicArticle() {
@@ -503,15 +513,15 @@ public class CristinImportPublicationMerger {
         return bragePublicationRepresentation.brageRecord().getId().equals(existingPublication.getHandle());
     }
 
-    private List<AssociatedArtifact> extractAdministrativeAgreements(Publication publication) {
+    private List<AssociatedArtifact> extractHiddenFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .filter(AdministrativeAgreement.class::isInstance)
+                   .filter(HiddenFile.class::isInstance)
                    .toList();
     }
 
-    private boolean hasAdministrativeAgreement(Publication publication) {
+    private boolean hasHiddenFile(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .anyMatch(AdministrativeAgreement.class::isInstance);
+                   .anyMatch(HiddenFile.class::isInstance);
     }
 
     private String getCorrectDescription() {

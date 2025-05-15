@@ -39,6 +39,7 @@ public class CristinGrant {
 
     public static final String IDENTIFIER_FIELD = "finansieringslopenr";
     public static final String GRANT_SOURCE_CODE_FIELD = "finansieringskildekode";
+    public static final String GRANT_SOURCE_CODE_ENGLISH_FIELD = "finansieringskildekode_engelsk";
     public static final String GRANT_RERERENCE_FIELD = "finansieringsreferanse";
     public static final String YEAR_FROM_FIELD = "arstall_fra";
     public static final String YEAR_TO_FIELD = "arstall_til";
@@ -55,6 +56,9 @@ public class CristinGrant {
 
     @JsonProperty(GRANT_SOURCE_CODE_FIELD)
     private String sourceCode;
+
+    @JsonProperty(GRANT_SOURCE_CODE_ENGLISH_FIELD)
+    private String sourceCodeEnglish;
 
     @JsonProperty(GRANT_RERERENCE_FIELD)
     private String grantReference;
@@ -89,7 +93,7 @@ public class CristinGrant {
                           + UnixPath.PATH_DELIMITER
                           + FUNDING_SOURCES
                           + UnixPath.PATH_DELIMITER
-                          + urlEncode(sourceCode));
+                          + urlEncode(sourceCodeEnglish));
     }
 
     private Instant convertDateToInstant(Integer yearOrNull) {
@@ -104,13 +108,13 @@ public class CristinGrant {
         return shouldHaveId()
                    ? UriWrapper.fromUri(NVA_API_DOMAIN)
                          .addChild(VERIFIED_FUNDING_PATH)
-                         .addChild(sourceCode.toLowerCase(Locale.ROOT))
+                         .addChild(sourceCodeEnglish.toLowerCase(Locale.ROOT))
                          .addChild(grantReference)
                          .getUri()
                    : null;
     }
 
     private boolean shouldHaveId() {
-        return NFR_SOURCE_CODE.equalsIgnoreCase(sourceCode);
+        return NFR_SOURCE_CODE.equalsIgnoreCase(sourceCodeEnglish);
     }
 }

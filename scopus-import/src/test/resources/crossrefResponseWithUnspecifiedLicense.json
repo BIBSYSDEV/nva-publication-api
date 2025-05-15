@@ -1,0 +1,30 @@
+{
+  "message": {
+    "license": [
+      {
+        "start": {
+          "date-parts": [
+            [
+              2022,
+              10,
+              24
+            ]
+          ],
+          "date-time": "2022-10-24T00:00:00Z",
+          "timestamp": 1666569600000
+        },
+        "content-version": "unspecified",
+        "delay-in-days": 10,
+        "URL": "https:\/\/creativecommons.org\/licenses\/by\/4.0"
+      }
+    ],
+    "link": [
+      {
+        "URL": "https://www.nature.com/articles/s41467-023-40306-w",
+        "content-type": "application/pdf",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ]
+  }
+}

@@ -1,46 +1,42 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class AcceptedPublishingRequestEventHandler
-    extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+public class AcceptedPublishingRequestEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    public static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
+    private static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
+    private static final String PUBLISHING_FILES_MESSAGE =
+        "Publishing files for publication {} via approved " + "publishing request {}";
+    private static final String COULD_NOT_FETCH_TICKET_MESSAGE = "Could not fetch PublishingRequest with identifier: ";
+    private static final String PUBLISHING_ERROR_MESSAGE = "Could not publish publication: %s";
+    private static final String EXCEPTION_MESSAGE = "Exception: {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
@@ -52,8 +48,7 @@ public class AcceptedPublishingRequestEventHandler
              S3Driver.defaultS3Client().build());
     }
 
-    protected AcceptedPublishingRequestEventHandler(ResourceService resourceService,
-                                                    TicketService ticketService,
+    protected AcceptedPublishingRequestEventHandler(ResourceService resourceService, TicketService ticketService,
                                                     S3Client s3Client) {
         super(EventReference.class);
         this.resourceService = resourceService;
@@ -68,18 +63,14 @@ public class AcceptedPublishingRequestEventHandler
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
         var ticketUpdate = parseInput(eventBlob);
-        if (isCompleted(ticketUpdate) && hasEffectiveChanges(eventBlob)) {
-            publishPublicationAndFiles(ticketUpdate);
+        if (hasEffectiveChanges(eventBlob)) {
+            handleChanges(ticketUpdate);
         }
         return null;
     }
 
-    private static boolean isCompleted(PublishingRequestCase latestUpdate) {
-        return TicketStatus.COMPLETED.equals(latestUpdate.getStatus());
-    }
-
-    private static boolean hasDoi(Publication publication) {
-        return nonNull(publication.getDoi());
+    private static boolean hasDoi(Resource resource) {
+        return nonNull(resource.getDoi());
     }
 
     private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
@@ -89,96 +80,124 @@ public class AcceptedPublishingRequestEventHandler
     }
 
     private static Optional<String> getOldStatus(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
-                   .map(DataEntryUpdateEvent::getOldData)
-                   .map(Entity::getStatusString);
+        return Optional.of(updateEvent).map(DataEntryUpdateEvent::getOldData).map(Entity::getStatusString);
     }
 
     private static Optional<String> getNewStatus(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
-                   .map(DataEntryUpdateEvent::getNewData)
-                   .map(Entity::getStatusString);
+        return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
+    }
+
+    private void handleChanges(FilesApprovalEntry filesApprovalEntry) {
+        switch (filesApprovalEntry.getStatus()) {
+            case PENDING -> handlePendingPublishingRequest(filesApprovalEntry);
+            case COMPLETED -> handleCompletedPublishingRequest(filesApprovalEntry);
+            case CLOSED -> handleClosedPublishingRequest(filesApprovalEntry);
+            default -> {
+                // Ignore other non-final statuses
+            }
+        }
+    }
+
+    private void handlePendingPublishingRequest(FilesApprovalEntry entry) {
+        var resource = fetchResource(entry.getResourceIdentifier());
+        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(entry.getWorkflow())) {
+            publishResource(resource, entry);
+            refreshPublishingRequestAfterPublishingMetadata(entry);
+        }
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(entry));
+    }
+
+    /**
+     * Is needed in order to populate publication status changes in search-index when publication is being published.
+     *
+     * @param publishingRequest to refresh
+     */
+    private void refreshPublishingRequestAfterPublishingMetadata(FilesApprovalEntry publishingRequest) {
+        publishingRequest.persistUpdate(ticketService);
+    }
+
+    private void handleClosedPublishingRequest(FilesApprovalEntry publishingRequestCase) {
+        publishingRequestCase.rejectRejectedFiles(resourceService);
     }
 
     private boolean hasEffectiveChanges(String eventBlob) {
         return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
     }
 
-    private void publishPublicationAndFiles(PublishingRequestCase latestUpdate) {
-        var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
-        var publication = fetchPublication(userInstance, latestUpdate.getResourceIdentifier());
-        var updatedPublication = toPublicationWithPublishedFiles(publication);
-        if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())
-            || PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(latestUpdate.getWorkflow())) {
-            publishFiles(updatedPublication);
+    private void handleCompletedPublishingRequest(FilesApprovalEntry entry) {
+        var resource = fetchResource(entry.getResourceIdentifier());
+        var filesApprovalEntry = fetchTicket(entry);
+
+        publishWhenPublicationStatusDraft(resource, filesApprovalEntry);
+
+        if (!filesApprovalEntry.getApprovedFiles().isEmpty()) {
+            filesApprovalEntry.publishApprovedFiles(resourceService);
         }
-        if (PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(
-            latestUpdate.getWorkflow())) {
-            publishFiles(updatedPublication);
-            publishPublication(latestUpdate, userInstance);
-        }
-        createDoiRequestIfNeeded(updatedPublication);
+
+        logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), filesApprovalEntry.getIdentifier());
+
+        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(filesApprovalEntry));
     }
 
-    private void publishPublication(PublishingRequestCase latestUpdate, UserInstance userInstance) {
-        attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.getResourceIdentifier()))
-            .orElse(fail -> logError(fail.getException()));
-    }
-
-    private void publishFiles(Publication updatedPublication) {
-        attempt(() -> resourceService.updatePublication(updatedPublication));
-    }
-
-    private Publication toPublicationWithPublishedFiles(Publication publication) {
-        return publication.copy()
-                   .withAssociatedArtifacts(convertFilesToPublished(publication.getAssociatedArtifacts()))
-                   .build();
-    }
-
-    private List<AssociatedArtifact> convertFilesToPublished(AssociatedArtifactList associatedArtifacts) {
-        return associatedArtifacts.stream()
-                   .map(this::updateFileToPublished)
-                   .collect(Collectors.toList());
-    }
-
-    private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
-        if (artifact instanceof UnpublishedFile) {
-            var file = (File) artifact;
-            return file.toPublishedFile();
-        } else {
-            return artifact;
+    private void publishWhenPublicationStatusDraft(Resource resource, FilesApprovalEntry filesApprovalEntry) {
+        if (PublicationStatus.DRAFT.equals(resource.getStatus())) {
+            publishResource(resource, filesApprovalEntry);
         }
     }
 
-    private Publication fetchPublication(UserInstance userInstance, SortableIdentifier publicationIdentifier) {
-        return attempt(() -> resourceService.getPublication(userInstance, publicationIdentifier))
-                   .orElseThrow();
+    private FilesApprovalEntry fetchTicket(FilesApprovalEntry entry) {
+        return attempt(() -> ticketService.fetchTicket(entry)).map(FilesApprovalEntry.class::cast)
+                   .orElseThrow(failure -> throwException(COULD_NOT_FETCH_TICKET_MESSAGE + entry.getIdentifier(),
+                                                          failure.getException()));
     }
 
-    private void createDoiRequestIfNeeded(Publication publication) {
-        if (hasDoi(publication) && !doiRequestExists(publication)) {
-            attempt(() -> DoiRequest.fromPublication(publication).persistNewTicket(ticketService)).orElseThrow();
-            logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
+    private RuntimeException throwException(String message, Exception exception) {
+        logger.error(message);
+        logger.error(EXCEPTION_MESSAGE, exception.getMessage());
+        throw new RuntimeException();
+    }
+
+    private void publishResource(Resource resource, FilesApprovalEntry entry) {
+        var userInstance = UserInstance.fromTicket(entry);
+        logger.info("Publishing resource: {}", resource.getIdentifier());
+        try {
+            resource.publish(resourceService, userInstance);
+        } catch (Exception e) {
+            throwException(String.format(PUBLISHING_ERROR_MESSAGE, resource.getIdentifier()), e);
         }
     }
 
-    private boolean doiRequestExists(Publication publication) {
-        return fetchTicket(publication).isPresent();
+    private Resource fetchResource(SortableIdentifier resourceIdentifier) {
+        return Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow();
     }
 
-    private Optional<DoiRequest> fetchTicket(Publication publication) {
-        return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
-                                                             publication.getIdentifier(),
+    /**
+     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not
+     * the institution that requests the doi.
+     *
+     * @param resourceIdentifier to create a DoiRequest for
+     * @param userInstance
+     */
+    private void createDoiRequestIfNeeded(SortableIdentifier resourceIdentifier, UserInstance userInstance) {
+        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow();
+        if (hasDoi(resource) && !doiRequestExists(resource)) {
+            var doiRequest = DoiRequest.create(resource, userInstance);
+            attempt(() -> doiRequest.persistNewTicket(ticketService)).orElseThrow();
+            logger.info(DOI_REQUEST_CREATION_MESSAGE, resource.getIdentifier());
+        }
+    }
+
+    private boolean doiRequestExists(Resource resource) {
+        return fetchDoiRequest(resource).isPresent();
+    }
+
+    private Optional<DoiRequest> fetchDoiRequest(Resource resource) {
+        return ticketService.fetchTicketByResourceIdentifier(resource.getCustomerId(), resource.getIdentifier(),
                                                              DoiRequest.class);
     }
 
-    private PublishPublicationStatusResponse logError(Exception exception) {
-        logger.warn(ExceptionUtils.stackTraceInSingleLine(exception));
-        return null;
-    }
-
-    private PublishingRequestCase parseInput(String eventBlob) {
+    private FilesApprovalEntry parseInput(String eventBlob) {
         var entryUpdate = DataEntryUpdateEvent.fromJson(eventBlob);
-        return (PublishingRequestCase) entryUpdate.getNewData();
+        return (FilesApprovalEntry) entryUpdate.getNewData();
     }
 }

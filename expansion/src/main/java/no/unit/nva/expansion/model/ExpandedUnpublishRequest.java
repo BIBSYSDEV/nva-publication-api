@@ -1,8 +1,6 @@
 package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.net.URI;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
@@ -21,10 +19,6 @@ import nva.commons.core.JacocoGenerated;
 public class ExpandedUnpublishRequest extends ExpandedTicket {
 
     public static final String TYPE = "UnpublishRequest";
-    private ExpandedTicketStatus status;
-    private Instant modifiedDate;
-    private Instant createdDate;
-    private URI customerId;
 
     public static ExpandedDataEntry createEntry(UnpublishRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
@@ -51,43 +45,6 @@ public class ExpandedUnpublishRequest extends ExpandedTicket {
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return extractIdentifier(getId());
-    }
-
-    @JacocoGenerated
-    @Override
-    public ExpandedTicketStatus getStatus() {
-        return this.status;
-    }
-
-    public void setStatus(ExpandedTicketStatus status) {
-        this.status = status;
-    }
-
-    @JacocoGenerated
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    @JacocoGenerated
-    public Instant getCreatedDate() {
-        return this.createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    @JacocoGenerated
-    public URI getCustomerId() {
-        return this.customerId;
-    }
-
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
     }
 
     @JacocoGenerated

@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public enum BrageType {
 
     BOOK("Book"),
@@ -59,7 +60,10 @@ public enum BrageType {
     LITERARY_ARTS("Literary arts"),
     POPULAR_SCIENCE_MONOGRAPH("Popular science monograph"),
     EDITORIAL("Editorial"),
-    FILM("Film");
+    FILM("Film"),
+    VITEN("Viten"),
+    FAGARTIKKEL("Fagartikkel"),
+    EKSTERNNOTAT("Eksternnotat");
     private final String value;
 
     BrageType(String type) {

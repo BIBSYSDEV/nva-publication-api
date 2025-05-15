@@ -119,6 +119,10 @@ public class CrossrefResponse implements JsonSerializable {
         public boolean hasDelay() {
             return delay != 0;
         }
+
+        public boolean hasUnspecifiedContentVersion() {
+            return ContentVersion.UNSPECIFIED.equals(contentVersion);
+        }
     }
 
     public static class Start implements JsonSerializable {

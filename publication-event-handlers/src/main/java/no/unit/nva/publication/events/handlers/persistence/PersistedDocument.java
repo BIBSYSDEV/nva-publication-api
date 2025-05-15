@@ -5,7 +5,6 @@ import static no.unit.nva.publication.events.handlers.persistence.PersistedDocum
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
@@ -31,10 +30,6 @@ public class PersistedDocument implements JsonSerializable {
     
     public static PersistedDocument createIndexDocument(ExpandedDataEntry expandedResourceUpdate) {
         return new PersistedDocument(expandedResourceUpdate, createAttributes(expandedResourceUpdate));
-    }
-    
-    public static PersistedDocument fromJsonString(String indexingEventPayload) throws JsonProcessingException {
-        return objectMapper.readValue(indexingEventPayload, PersistedDocument.class);
     }
     
     @JacocoGenerated

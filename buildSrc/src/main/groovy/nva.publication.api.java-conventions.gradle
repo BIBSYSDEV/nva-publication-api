@@ -3,6 +3,7 @@ plugins {
     id 'checkstyle'
     id 'pmd'
     id 'jacoco-report-aggregation'
+    id 'com.diffplug.spotless'
 }
 
 
@@ -43,7 +44,7 @@ tasks.named('test') {
     useJUnitPlatform {
         excludeTags "RemoteTest", "integrationTest", "KarateTest"
     }
-    failFast = true
+    failFast = false
     testLogging {
         events 'skipped', 'passed', 'failed'
         showCauses true
@@ -52,13 +53,14 @@ tasks.named('test') {
 }
 
 pmd {
-    toolVersion = '6.55.0'
+    toolVersion = '7.11.0'
     ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
     ruleSets = []
     ignoreFailures = false
 }
 
 checkstyle {
+    toolVersion = '10.18.2'
     configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
     showViolations = true
 }
@@ -94,3 +96,27 @@ jacocoTestCoverageVerification {
         }
     }
 }
+
+spotless {
+    java {
+        toggleOffOn() // Ignores sections between `spotless:off` / `spotless:on`
+        googleJavaFormat().reflowLongStrings().formatJavadoc(true).reorderImports(true)
+    }
+
+    format 'misc', {
+        target '.gitignore', '.gitattributes', '.editorconfig', '**/*.gradle'
+        leadingTabsToSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    enforceCheck false // Temporarily disable checking during build until the project is reformatted
+}
+
+// Commented out for now, uncomment when the project is reformatted and ready to enforce the formatting rules
+//tasks.named('build').configure {
+//    dependsOn('spotlessApply')
+//}
+//
+//tasks.named('test').configure {
+//    dependsOn('spotlessApply')
+//}

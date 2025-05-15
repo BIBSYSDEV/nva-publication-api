@@ -18,14 +18,12 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -50,6 +48,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
+    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
     private final Context context = new FakeContext();
     private DeletePublicationHandler handler;
     private ResourceService publicationService;
@@ -98,6 +98,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                                                        createdPublication.getIdentifier().toString()))
                                       .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                                       .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                                      .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
                                       .build();
 
         handler.handleRequest(inputStream, outputStream, context);
@@ -204,6 +205,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private void prepareEnvironment() {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
+        when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
         when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
             NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
     }

@@ -13,6 +13,7 @@ import static no.unit.nva.model.role.Role.ACTOR;
 import static no.unit.nva.model.role.Role.SUPERVISOR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,7 +25,9 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.net.URI;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -34,16 +37,18 @@ import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
@@ -73,7 +78,6 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -339,7 +343,7 @@ class CristinImportPublicationMergerTest {
     void shouldKeepFileFromNewPublicationWhenExistingPublicationHasAssociatedLinkOnly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var associatedLink = randomAssociatedLink();
-        var newPublishedFile = randomPublishedFile();
+        var newPublishedFile = randomOpenFile();
 
         var existingPublication = randomPublication(Map.class);
         existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(associatedLink)));
@@ -353,10 +357,10 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldKeepFileFromNewPublicationWhenExistingPublicationHasAdministrativeAgreementOnly()
+    void shouldKeepFileFromNewPublicationWhenExistingPublicationHasHiddenFileOnly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var administrativeAgreement = randomAdministrativeAgreement();
-        var newPublishedFile = randomPublishedFile();
+        var newPublishedFile = randomOpenFile();
 
         var existingPublication = randomPublication(Map.class);
         existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(administrativeAgreement)));
@@ -369,25 +373,16 @@ class CristinImportPublicationMergerTest {
                    containsInAnyOrder(administrativeAgreement, newPublishedFile));
     }
 
-    private AssociatedArtifact randomPublishedFile() {
-        return File.builder()
-                   .withName(randomString())
-                   .withIdentifier(UUID.randomUUID())
-                   .withLicense(randomUri())
-                   .buildPublishedFile();
-    }
-
     private File randomAdministrativeAgreement() {
         return File.builder()
                    .withName(randomString())
                    .withIdentifier(UUID.randomUUID())
                    .withLicense(randomUri())
-                   .withAdministrativeAgreement(true)
-                   .buildUnpublishableFile();
+                   .buildHiddenFile();
     }
 
     private static AssociatedLink randomAssociatedLink() {
-        return new AssociatedLink(randomUri(), null, null);
+        return new AssociatedLink(randomUri(), null, null, RelationType.SAME_AS);
     }
 
     @Test
@@ -424,7 +419,7 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldPioritizeAlternativeTitleIfRecordHasAlternativeTitleSetAsPrioritized()
+    void shouldPrioritizeAlternativeTitleIfRecordHasAlternativeTitleSetAsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(Textbook.class);
         existingPublication.setAdditionalIdentifiers(Set.of());
@@ -531,8 +526,8 @@ class CristinImportPublicationMergerTest {
 
         var updatedPublication = mergePublications(existingPublication, bragePublication, record);
 
-        var acutalTags = updatedPublication.getEntityDescription().getTags();
-        assertThat(acutalTags, is(containsInAnyOrder(tag,
+        var actualTags = updatedPublication.getEntityDescription().getTags();
+        assertThat(actualTags, is(containsInAnyOrder(tag,
                                                                                               duplicatedTag,
                                                                                               newTag)));
     }
@@ -557,9 +552,9 @@ class CristinImportPublicationMergerTest {
         record.setId(bragePublication.getHandle());
         record.setPrioritizedProperties(Set.of(PRIORITIZE_FUNDINGS));
 
-        var updatedPublicaiton = mergePublications(existingPublication, bragePublication, record);
+        var updatedPublication = mergePublications(existingPublication, bragePublication, record);
 
-        assertThat(updatedPublicaiton.getFundings(), is(containsInAnyOrder(funding, newFunding)));
+        assertThat(updatedPublication.getFundings(), is(containsInAnyOrder(funding, newFunding)));
     }
 
     @Test
@@ -567,11 +562,11 @@ class CristinImportPublicationMergerTest {
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(AcademicMonograph.class);
         var existingDublinCore = randomDublinCore();
-        var existingAssociatedArtifact = List.of(existingDublinCore, randomPublishedFile());
+        var existingAssociatedArtifact = List.of(existingDublinCore, randomOpenFile());
         existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(existingAssociatedArtifact));
         var newPublication = randomPublication(AcademicMonograph.class);
         var newDublinCore = randomDublinCore();
-        var newAssociatedArtifact = List.of(newDublinCore, randomPublishedFile());
+        var newAssociatedArtifact = List.of(newDublinCore, randomOpenFile());
         newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
 
         var record = new Record();
@@ -588,11 +583,11 @@ class CristinImportPublicationMergerTest {
     void shouldAddDublinCoreFromIncomingPublicationToExistingOneWhenItIsPresentInNewPublicationOnly()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(AcademicMonograph.class);
-        var existingAssociatedArtifact = List.of(randomPublishedFile());
+        var existingAssociatedArtifact = List.<AssociatedArtifact>of(randomOpenFile());
         existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(existingAssociatedArtifact));
         var newPublication = randomPublication(AcademicMonograph.class);
         var newDublinCore = randomDublinCore();
-        var newAssociatedArtifact = List.of(newDublinCore, randomPublishedFile());
+        var newAssociatedArtifact = List.of(newDublinCore, randomOpenFile());
         newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
 
         var record = new Record();
@@ -605,10 +600,10 @@ class CristinImportPublicationMergerTest {
         assertThat(dublinCores, containsInAnyOrder(newDublinCore));
     }
 
-    private static @NotNull Set<AdministrativeAgreement> extractDublinCores(Publication updatedPublication) {
+    private static Set<HiddenFile> extractDublinCores(Publication updatedPublication) {
         return updatedPublication.getAssociatedArtifacts().stream()
-                   .filter(AdministrativeAgreement.class::isInstance)
-                   .map(AdministrativeAgreement.class::cast)
+                   .filter(HiddenFile.class::isInstance)
+                   .map(HiddenFile.class::cast)
                    .filter(administrativeAgreement -> "dublin_core.xml".equals(administrativeAgreement.getName()))
                    .collect(Collectors.toSet());
     }
@@ -669,15 +664,28 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldMergeTagsWhenMergingDegree()
+    void shouldUpdatePublicationDateOfExistingPublicationWhenIncomingPublicationIsDegree()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(DegreeBachelor.class);
+        existingPublication.setAdditionalIdentifiers(Set.of(handleIdentifierFrom(randomUri())));
+        var bragePublication = randomPublication(DegreeBachelor.class);
+
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getPublicationDate(),
+                   is(equalTo(bragePublication.getEntityDescription().getPublicationDate())));
+    }
+
+    @Test
+    void shouldMergeTags()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var handle = randomUri();
         var handleIdentifier = new HandleIdentifier(SourceName.fromBrage("ntnu"), handle);
-        var existingPublication = randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+        var existingPublication = randomPublicationWithHandleIdAdditionalIdentifiers(ReportResearch.class,
                                                                                      handleIdentifier);
         var bragePublication =
-            randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
-                                                               new HandleIdentifier(SourceName.fromBrage("nmbu"), handle));;
+            randomPublicationWithHandleIdAdditionalIdentifiers(ReportResearch.class,
+                                                               new HandleIdentifier(SourceName.fromBrage("nmbu"), handle));
         bragePublication.getEntityDescription().getReference().setPublicationContext(null);
         bragePublication.getEntityDescription().getReference().setPublicationInstance(null);
         var updatedPublication = mergePublications(existingPublication, bragePublication);
@@ -686,6 +694,23 @@ class CristinImportPublicationMergerTest {
 
         assertThat(tags, hasItems(existingPublication.getEntityDescription().getTags().toArray(String[]::new)));
         assertThat(tags, hasItems(bragePublication.getEntityDescription().getTags().toArray(String[]::new)));
+    }
+
+    @Test
+    void shouldOverridePublicationDateWhenPublicationDateFromBrageIsPrioritized()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var handle = randomUri();
+        var handleIdentifier = new HandleIdentifier(SourceName.fromBrage("ntnu"), handle);
+        var existingPublication = randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+                                                                                     handleIdentifier);
+        var bragePublication =
+            randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+                                                               new HandleIdentifier(SourceName.fromBrage("nmbu"), handle));
+        bragePublication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertEquals(bragePublication.getEntityDescription().getPublicationDate(),
+                                updatedPublication.getEntityDescription().getPublicationDate());
     }
 
     private static Publication randomPublicationWithHandleIdAdditionalIdentifiers(Class<?> publicationInstance,
@@ -710,7 +735,7 @@ class CristinImportPublicationMergerTest {
         return File.builder()
                    .withName("dublin_core.xml")
                    .withLicense(randomUri())
-                   .buildUnpublishableFile();
+                   .buildHiddenFile();
     }
 
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {

@@ -8,7 +8,6 @@ dependencies {
     implementation libs.nva.secrets
     implementation project(":publication-model")
     implementation project(":publication-model-testing")
-    implementation libs.jsonld
     implementation libs.guava
     implementation libs.aws.sdk.dynamodb
     implementation libs.junit.jupiter.params
@@ -17,7 +16,7 @@ dependencies {
     testImplementation libs.nva.testutils
     testImplementation libs.jsonassert
 
-    implementation(libs.dynamodDbLocal) {
+    testImplementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
         exclude group: 'org.apache.commons', module: 'commons-lang3'

@@ -4,12 +4,11 @@ import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -38,8 +37,8 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     /**
      * Constructor for DeletePublicationHandler.
      *
-     * @param resourceService   resourceService
-     * @param environment       environment
+     * @param resourceService resourceService
+     * @param environment     environment
      */
     public DeletePublicationHandler(ResourceService resourceService,
                                     Environment environment,
@@ -61,10 +60,9 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
 
-
         if (publication.getStatus() == PublicationStatus.DRAFT) {
-            PublicationPermissionStrategy.create(publication, userInstance, resourceService).authorize(DELETE);
-            handleDraftDeletion(userInstance, publicationIdentifier);
+            PublicationPermissions.create(Resource.fromPublication(publication), userInstance).authorize(DELETE);
+            resourceService.deleteDraftPublication(userInstance, publicationIdentifier);
         } else {
             unsupportedPublicationForDeletion(publication);
         }
@@ -80,10 +78,5 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     private static void unsupportedPublicationForDeletion(Publication publication) throws BadRequestException {
         throw new BadRequestException(
             String.format("Publication status %s is not supported for deletion", publication.getStatus()));
-    }
-
-    private void handleDraftDeletion(UserInstance userInstance, SortableIdentifier publicationIdentifier)
-        throws ApiGatewayException {
-        resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
     }
 }

@@ -13,9 +13,7 @@ import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -41,6 +39,7 @@ import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -59,6 +58,7 @@ import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.DoesNotHaveEmptyValues;
 import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
@@ -121,11 +121,11 @@ public class CristinMapper extends CristinMappingModule {
                 .withCuratingInstitutions(extractCuratingInstitutions(entityDescription))
                 .withAssociatedArtifacts(AssociatedLinkExtractor.extractAssociatedLinks(cristinObject))
                 .build();
-        assertPublicationDoesNotHaveEmptyFields(publication);
+        validateDoesNotHaveEmptyFields(publication);
         return publication;
     }
 
-    protected Set<URI> extractCuratingInstitutions(EntityDescription entityDescription) {
+    protected Set<CuratingInstitution> extractCuratingInstitutions(EntityDescription entityDescription) {
         return CuratingInstitutionsUtil.getCuratingInstitutionsCached(entityDescription, cristinUnitsUtil);
     }
 
@@ -168,7 +168,7 @@ public class CristinMapper extends CristinMappingModule {
     private static List<CristinContributor> sortCristinContributors(List<CristinContributor> cristinContributors) {
         return cristinContributors.stream()
                    .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private static PublicationDate convertToPublicationDate(LocalDate publishedDate) {
@@ -183,7 +183,12 @@ public class CristinMapper extends CristinMappingModule {
     private URI extractHandle() {
         return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
                    .flatMap(CristinMapper::extractArchiveUri)
+                   .map(this::updateHttpScheme)
                    .orElse(null);
+    }
+
+    private URI updateHttpScheme(URI uri) {
+        return UriWrapper.fromHost(uri.getHost()).addChild(uri.getPath()).getUri();
     }
 
     private List<PublicationNoteBase> extractPublicationNotes() {
@@ -217,7 +222,7 @@ public class CristinMapper extends CristinMappingModule {
     private List<CristinLocale> getValidCristinLocales() {
         return Optional.ofNullable(cristinObject.getCristinLocales())
                    .map(list -> list.stream().filter(this::doesNotContainInvalidInstitutionCode))
-                   .map(stream -> stream.collect(Collectors.toList()))
+                   .map(Stream::toList)
                    .orElse(List.of());
     }
 
@@ -258,19 +263,17 @@ public class CristinMapper extends CristinMappingModule {
 
     private List<Funding> mapToNvaFunding(List<CristinGrant> grants) {
         return grants.stream().map(CristinGrant::toNvaFunding)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
-    private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
+    private void validateDoesNotHaveEmptyFields(Publication publication) {
         try {
             if (publication.getEntityDescription().getContributors().isEmpty()) {
-                assertThat(publication,
-                           doesNotHaveEmptyValuesIgnoringFields(IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY));
+                DoesNotHaveEmptyValues.checkForEmptyFields(publication, IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY);
             } else {
-                assertThat(publication,
-                           doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
+                DoesNotHaveEmptyValues.checkForEmptyFields(publication, IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS);
             }
-        } catch (Error error) {
+        } catch (Exception error) {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
         }
@@ -278,13 +281,13 @@ public class CristinMapper extends CristinMappingModule {
 
     private List<ResearchProject> extractProjects() {
         if (cristinObject.getPresentationalWork() == null) {
-            return null;
+            return List.of();
         }
         return cristinObject.getPresentationalWork()
                    .stream()
                    .filter(CristinPresentationalWork::isProject)
                    .map(CristinPresentationalWork::toNvaResearchProject)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private Organization extractOrganization() {
@@ -345,12 +348,12 @@ public class CristinMapper extends CristinMappingModule {
                    .map(cristinContributor -> attempt(() -> cristinContributor.toNvaContributor(cristinIdentifier,
                                                                                                 s3Client)))
                    .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private List<URI> generateNvaHrcsCategoriesAndActivities() {
         if (isNull(extractCristinHrcsCategoriesAndActivities())) {
-            return null;
+            return List.of();
         }
         List<URI> listOfCategoriesAndActivities = new ArrayList<>();
         listOfCategoriesAndActivities.addAll(extractHrcsCategories());
@@ -369,7 +372,7 @@ public class CristinMapper extends CristinMappingModule {
                    .filter(CristinHrcsCategoriesAndActivities::validateCategory)
                    .map(categoryId -> HRCS_CATEGORY_URI + HRCS_CATEGORIES_MAP.get(categoryId).toLowerCase(Locale.ROOT))
                    .map(URI::create)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private Collection<URI> extractHrcsActivities() {
@@ -379,7 +382,7 @@ public class CristinMapper extends CristinMappingModule {
                    .filter(CristinHrcsCategoriesAndActivities::validateActivity)
                    .map(activityId -> HRCS_ACTIVITY_URI + HRCS_ACTIVITIES_MAP.get(activityId).toLowerCase(Locale.ROOT))
                    .map(URI::create)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private PublicationDate extractPublicationDate() {
@@ -522,7 +525,7 @@ public class CristinMapper extends CristinMappingModule {
     private List<String> extractTags() {
         var tags = extractCristinTags();
         if (isNull(tags)) {
-            return null;
+            return List.of();
         }
         return tags.stream()
                    .flatMap(tag -> Stream.of(tag.getBokmal(), tag.getEnglish(), tag.getNynorsk()))

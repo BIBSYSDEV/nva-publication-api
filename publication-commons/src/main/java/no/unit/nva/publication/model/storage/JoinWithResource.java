@@ -24,6 +24,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
     @JsonSubTypes.Type(name = "PublishingRequest", value = PublishingRequestDao.class),
     @JsonSubTypes.Type(name = "UnpublishRequest", value = UnpublishRequestDao.class),
     @JsonSubTypes.Type(name = "MessageDao", value = MessageDao.class),
+    @JsonSubTypes.Type(name = FileDao.TYPE, value = FileDao.class),
 })
 public interface JoinWithResource {
     
@@ -150,7 +151,7 @@ public interface JoinWithResource {
     
     URI getCustomerId();
     
-    class Constants {
+    final class Constants {
         
         public static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT = 1;
         public static final int RESOURCE_INDEX_IN_QUERY_RESULT = 0;

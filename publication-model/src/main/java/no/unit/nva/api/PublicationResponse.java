@@ -1,5 +1,6 @@
 package no.unit.nva.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -19,25 +20,27 @@ import no.unit.nva.WithId;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithInternal;
 import no.unit.nva.WithMetadata;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
-import no.unit.nva.model.ImportDetail;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.funding.Funding;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
+import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName("Publication")
 public class PublicationResponse implements WithIdentifier, WithInternal, WithMetadata, WithAssociatedArtifact, WithId,
-                                            WithContext, WithAdditionalIdentifiers {
+                                            WithContext, WithAdditionalIdentifiers, JsonSerializable {
 
     private SortableIdentifier identifier;
     private PublicationStatus status;
@@ -56,7 +59,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     private List<ResearchProject> projects;
     private List<Funding> fundings;
     private List<URI> subjects;
-    private AssociatedArtifactList associatedArtifacts;
+    private List<AssociatedArtifactDto> associatedArtifacts;
     private List<ImportDetail> importDetails;
 
     private Set<AdditionalIdentifierBase> additionalIdentifiers;
@@ -65,6 +68,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     private Set<PublicationOperation> allowedOperations;
 
     private URI duplicateOf;
+    private long pendingOpenFileCount;
 
     public static PublicationResponse fromPublication(Publication publication) {
         var response = new PublicationResponse();
@@ -80,18 +84,34 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         response.setHandle(publication.getHandle());
         response.setLink(publication.getLink());
         response.setEntityDescription(publication.getEntityDescription());
-        response.setAssociatedArtifacts(publication.getAssociatedArtifacts());
         response.setDoi(publication.getDoi());
         response.setProjects(publication.getProjects());
         response.setFundings(publication.getFundings());
         response.setSubjects(publication.getSubjects());
         response.setContext(PublicationContext.getContext(publication));
-        response.setAssociatedArtifacts(publication.getAssociatedArtifacts());
+        response.setAssociatedArtifacts(getPublicAssociatedArtifacts(publication));
         response.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
         response.setRightsHolder(publication.getRightsHolder());
         response.setAllowedOperations(Set.of());
         response.setImportDetails(publication.getImportDetails());
+        response.setPendingOpenFileCount(publication.getPendingOpenFileCount());
         return response;
+    }
+
+    @Override
+    public void setAssociatedArtifacts(List<AssociatedArtifactDto> associatedArtifactRespons) {
+        this.associatedArtifacts = associatedArtifactRespons;
+    }
+
+    private static List<AssociatedArtifactDto> getPublicAssociatedArtifacts(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(PublicationResponse::isPublicArtifact)
+                   .map(AssociatedArtifact::toDto)
+                   .toList();
+    }
+
+    private static boolean isPublicArtifact(AssociatedArtifact artifact) {
+        return AssociatedArtifact.PUBLIC_ARTIFACT_TYPES.contains(artifact.getClass());
     }
 
     public static PublicationResponse fromPublicationWithAllowedOperations(
@@ -282,13 +302,15 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     }
 
     @Override
-    public AssociatedArtifactList getAssociatedArtifacts() {
-        return associatedArtifacts;
+    public List<AssociatedArtifactDto> getAssociatedArtifacts() {
+        return this.associatedArtifacts.stream()
+                   .filter(artifactResponse -> AssociatedArtifact.getPublicArtifactTypeNames().contains(artifactResponse.getArtifactType()))
+                   .toList();
     }
 
-    @Override
-    public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
-        this.associatedArtifacts = associatedArtifacts;
+    @JsonIgnore
+    public List<AssociatedArtifactDto> getAssociatedArtifactsForElevatedUser() {
+        return associatedArtifacts;
     }
 
     @Override
@@ -319,6 +341,14 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
         this.allowedOperations = allowedOperations;
     }
 
+    public long getPendingOpenFileCount() {
+        return pendingOpenFileCount;
+    }
+
+    public void setPendingOpenFileCount(long count) {
+        this.pendingOpenFileCount = count;
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
@@ -343,7 +373,8 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
                             getAssociatedArtifacts(),
                             getRightsHolder(),
                             getAllowedOperations(),
-                            getImportDetails());
+                            getImportDetails(),
+                            getPendingOpenFileCount());
     }
 
     @Override
@@ -376,6 +407,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
                && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
                && Objects.equals(getRightsHolder(), that.getRightsHolder())
                && Objects.equals(getAllowedOperations(), that.getAllowedOperations())
-               && Objects.equals(getImportDetails(), that.getImportDetails());
+               && Objects.equals(getImportDetails(), that.getImportDetails())
+               && Objects.equals(getPendingOpenFileCount(), that.getPendingOpenFileCount());
     }
 }

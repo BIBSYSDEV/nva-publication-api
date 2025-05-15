@@ -6,18 +6,14 @@ import nva.commons.core.SingletonCollector;
 
 public record ChannelRegistryEntry(String id, ChannelType type) {
 
-    public static final String SERIES_URI_PATH = "series";
-    public static final String JOURNAL_URI_PATH = "journal";
+    public static final String SERIAL_PUBLICATION_URI_PATH = "serial-publication";
 
     public static ChannelRegistryEntry fromChannelRegistryRepresentation(ChannelRegistryRepresentation representation) {
         return new ChannelRegistryEntry(representation.getPid(), ChannelType.fromValue(representation.getType()));
     }
 
     public String getEntryPath() {
-        return switch (type) {
-            case SERIES -> SERIES_URI_PATH;
-            case JOURNAL -> JOURNAL_URI_PATH;
-        };
+        return SERIAL_PUBLICATION_URI_PATH;
     }
 
     public enum ChannelType {

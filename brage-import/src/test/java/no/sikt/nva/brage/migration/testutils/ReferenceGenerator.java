@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration.testutils;
 import static java.util.Objects.nonNull;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
@@ -73,6 +74,7 @@ import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
+import no.unit.nva.model.instancetypes.journal.PopularScienceArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
@@ -376,6 +378,16 @@ public final class ReferenceGenerator {
                            .withDoi(builder.getDoi())
                            .build();
             }
+            if (NvaType.POPULAR_SCIENCE_ARTICLE.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new PopularScienceArticle(generateRange(builder), builder.getVolume(), null,
+                                                                              null))
+                           .withPublishingContext(new UnconfirmedJournal(builder.getJournalTitle(),
+                                                                         builder.getIssnList().get(0),
+                                                                         builder.getIssnList().get(1)))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
             if (NvaType.CRISTIN_RECORD.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(null)
                            .withPublishingContext(null)
@@ -505,7 +517,7 @@ public final class ReferenceGenerator {
     private static BookSeries generateSeries(Builder builder) throws InvalidIssnException {
         if (nonNull(builder.getSeriesId())) {
             return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
-                                  .addChild(ChannelType.SERIES.getType())
+                                  .addChild(ChannelType.SERIAL_PUBLICATION.getType())
                                   .addChild(builder.getSeriesId())
                                   .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                   .getUri());
@@ -525,7 +537,7 @@ public final class ReferenceGenerator {
 
     private static PublicationContext createJournal(Builder builder) {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
-                               .addChild(ChannelType.JOURNAL.getType())
+                               .addChild(ChannelType.SERIAL_PUBLICATION.getType())
                                .addChild(builder.getJournalId())
                                .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                .getUri());
@@ -550,12 +562,12 @@ public final class ReferenceGenerator {
     }
 
     private static HashSet<RelatedDocument> extractUnconfirmedDocuments(Builder builder) {
-        return Optional.ofNullable(builder)
-                   .map(Builder::getHasPart)
-                   .orElseGet(Collections::emptyList)
-                   .stream()
-                   .map(UnconfirmedDocument::fromValue)
-                   .collect(Collectors.toCollection(HashSet::new));
+        var values = Optional.ofNullable(builder.getHasPart()).orElseGet(Collections::emptyList);
+        var relatedDocuments = new LinkedHashSet<RelatedDocument>();
+        for (int i = 0; i < values.size(); i++) {
+            relatedDocuments.add(new UnconfirmedDocument(values.get(i), i + 1));
+        }
+        return relatedDocuments;
     }
 
     private static ReportBasic generatePublicationInstanceForReport(Builder builder) {

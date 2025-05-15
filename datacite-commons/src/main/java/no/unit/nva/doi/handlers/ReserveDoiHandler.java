@@ -7,6 +7,7 @@ import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.model.DoiResponse;
 import no.unit.nva.doi.service.ReserveDoiService;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -42,9 +43,9 @@ public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
     @Override
     protected DoiResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var owner = RequestUtil.getOwner(requestInfo);
+        var userInstance = UserInstance.fromRequestInfo(requestInfo);
         var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
-        return reserveDoiService.reserve(owner, publicationIdentifier);
+        return reserveDoiService.reserve(userInstance, publicationIdentifier);
     }
 
     @Override

@@ -1,23 +1,23 @@
 plugins {
-    id "com.github.gmazzo.buildconfig" version '5.4.0'
+    id "com.github.gmazzo.buildconfig" version '5.5.0'
 }
 
 dependencies {
     implementation( libs.nva.core )
     implementation( libs.nva.json )
     implementation( libs.nva.identifiers )
-    implementation( libs.nva.testutils )
-
-    implementation ( libs.jsonld )
     implementation ( libs.commons.validator )
     implementation( libs.jackson.databind )
+    implementation libs.bundles.logging
 
+    testImplementation( libs.reflections )
     testImplementation( libs.jena.core )
     testImplementation( libs.jena.arq )
 
     testImplementation( libs.nva.testutils )
     testImplementation( libs.javers )
     testImplementation( libs.swagger.core )
+    testImplementation( libs.nva.logutils )
     testImplementation project(":publication-model-testing")
 }
 
@@ -25,7 +25,7 @@ test {
     environment "ID_NAMESPACE", "https://www.example.org"
 }
 
-def modelVersion = '0.23.2'
+def modelVersion = '0.23.3'
 
 buildConfig {
     className("ResourcesBuildConfig")   // forces the class name. Defaults to 'BuildConfig'

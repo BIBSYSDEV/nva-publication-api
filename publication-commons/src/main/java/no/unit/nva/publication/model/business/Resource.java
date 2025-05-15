@@ -1,6 +1,13 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
+import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -8,41 +15,66 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
+import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount", "PMD.CouplingBetweenObjects"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements Entity {
 
     public static final String TYPE = "Resource";
     public static final URI NOT_IMPORTANT = null;
+    public static final List<PublicationStatus> PUBLISHABLE_STATUSES = List.of(DRAFT, PUBLISHED_METADATA,
+                                                                               UNPUBLISHED);
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -64,7 +96,6 @@ public class Resource implements Entity {
     private URI link;
     @JsonProperty
     private AssociatedArtifactList associatedArtifacts;
-
     @JsonProperty
     private List<ResearchProject> projects;
     @JsonProperty
@@ -88,9 +119,15 @@ public class Resource implements Entity {
     @JsonProperty
     private URI duplicateOf;
     @JsonProperty
-    private Set<URI> curatingInstitutions;
+    private Set<CuratingInstitution> curatingInstitutions;
     @JsonProperty
     private List<ImportDetail> importDetails;
+    @JsonProperty
+    private ResourceEvent resourceEvent;
+    @JsonIgnore
+    private List<FileEntry> files;
+    @JsonIgnore
+    private List<PublicationChannel> publicationChannels;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -117,6 +154,140 @@ public class Resource implements Entity {
         return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
     }
 
+    public ResourceEvent getResourceEvent() {
+        return resourceEvent;
+    }
+
+    public void setResourceEvent(ResourceEvent resourceEvent) {
+        this.resourceEvent = resourceEvent;
+    }
+
+    public boolean hasResourceEvent() {
+        return nonNull(getResourceEvent());
+    }
+
+    @JsonIgnore
+    public List<File> getFiles() {
+        return getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .toList();
+    }
+
+    @JsonIgnore
+    public Optional<File> getFileByIdentifier(UUID identifier) {
+        return getFiles().stream()
+                   .filter(file -> file.getIdentifier().equals(identifier))
+                   .findFirst();
+    }
+
+    public Set<File> getPendingFiles() {
+        return getAssociatedArtifacts().stream()
+                   .filter(PendingFile.class::isInstance)
+                   .map(File.class::cast)
+                   .collect(Collectors.toSet());
+    }
+
+    @JsonIgnore
+    public List<FileEntry> getFileEntries() {
+        return nonNull(files) ? files : Collections.emptyList();
+    }
+
+    public Optional<FileEntry> getFileEntry(SortableIdentifier identifier) {
+        return getFileEntries().stream().filter(file -> file.getIdentifier().equals(identifier)).findFirst();
+    }
+
+    public void setFileEntries(List<FileEntry> files) {
+        this.files = files;
+    }
+
+    public PublicationSummary toSummary() {
+        return PublicationSummary.create(this.toPublication());
+    }
+
+    public Resource delete(UserInstance userInstance, Instant currentTime) {
+        return new ResourceBuilder()
+                   .withIdentifier(getIdentifier())
+                   .withStatus(DELETED)
+                   .withDoi(getDoi())
+                   .withPublisher(getPublisher())
+                   .withResourceOwner(getResourceOwner())
+                   .withEntityDescription(getEntityDescription())
+                   .withCreatedDate(getCreatedDate())
+                   .withPublishedDate(getPublishedDate())
+                   .withModifiedDate(currentTime)
+                   .withDuplicateOf(getDuplicateOf())
+                   .withPublicationNotes(getPublicationNotes())
+                   .withResourceEvent(DeletedResourceEvent.create(userInstance, currentTime))
+                   .build();
+    }
+
+    public boolean isDegree() {
+        return Optional.ofNullable(getEntityDescription())
+            .map(EntityDescription::getReference)
+            .map(Reference::getPublicationInstance)
+            .map(Resource::instanceIsDegree)
+            .orElse(false);
+    }
+
+    @JsonIgnore
+    public boolean hasAffectiveChanges(Resource resource) {
+        return !(Objects.equals(getIdentifier(), resource.getIdentifier())
+                 && getStatus() == resource.getStatus()
+                 && Objects.equals(getResourceOwner(), resource.getResourceOwner())
+                 && Objects.equals(getPublisher(), resource.getPublisher())
+                 && Objects.equals(getLink(), resource.getLink())
+                 && Objects.equals(getProjects(), resource.getProjects())
+                 && Objects.equals(getEntityDescription(), resource.getEntityDescription())
+                 && Objects.equals(getDoi(), resource.getDoi())
+                 && Objects.equals(getHandle(), resource.getHandle())
+                 && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
+                 && new HashSet<>(getAssociatedArtifacts()).containsAll(resource.getAssociatedArtifacts())
+                 && Objects.equals(getFundings(), resource.getFundings())
+                 && Objects.equals(getPublicationNotes(), resource.getPublicationNotes())
+                 && Objects.equals(getDuplicateOf(), resource.getDuplicateOf())
+                 && Objects.equals(getSubjects(), resource.getSubjects())
+                 && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions())
+                 && Objects.equals(getImportDetails(), resource.getImportDetails()));
+    }
+
+    public void setPublicationChannels(List<PublicationChannel> publicationChannels) {
+        this.publicationChannels = publicationChannels;
+    }
+
+    public List<PublicationChannel> getPublicationChannels() {
+        return nonNull(publicationChannels) ? publicationChannels : Collections.emptyList();
+    }
+
+    public Optional<PublicationChannel> getPublicationChannelByIdentifier(SortableIdentifier identifier) {
+        return getPublicationChannels()
+                   .stream()
+                   .filter(publicationChannel -> identifier.equals(publicationChannel.getIdentifier()))
+                   .findFirst();
+    }
+
+    @JsonIgnore
+    public Optional<Publisher> getPublisherWhenDegree() {
+        return Optional.ofNullable(getEntityDescription())
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationContext)
+                   .filter(Degree.class::isInstance)
+                   .map(Degree.class::cast)
+                   .map(Degree::getPublisher)
+                   .filter(Publisher.class::isInstance)
+                   .map(Publisher.class::cast);
+    }
+
+    private static boolean instanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
+        return Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES)
+                   .anyMatch(instanceTypeClass -> instanceTypeClass.equals(publicationInstance.getClass()));
+    }
+
+    public Resource update(ResourceService resourceService, UserInstance userInstance) {
+        this.setResourceEvent(UpdatedResourceEvent.create(userInstance, Instant.now()));
+        return resourceService.updateResource(this, userInstance);
+    }
+
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
@@ -127,6 +298,7 @@ public class Resource implements Entity {
                    .withPublishedDate(publication.getPublishedDate())
                    .withStatus(publication.getStatus())
                    .withAssociatedArtifactsList(publication.getAssociatedArtifacts())
+                   .withFilesEntries(getFileEntriesFromPublication(publication))
                    .withPublisher(publication.getPublisher())
                    .withLink(publication.getLink())
                    .withProjects(publication.getProjects())
@@ -144,33 +316,52 @@ public class Resource implements Entity {
                    .build();
     }
 
+    /**
+     * Extracts FileEntries from a Publication.
+     *
+     * <p><b style="color: red;">Warning:</b> This method does not include all the needed FileEntry metadata and
+     * should not be used when handling files.</p>
+     *
+     * @param publication the Publication extract FileEntries from.
+     * @return the list of FileEntries.
+     */
+    private static List<FileEntry> getFileEntriesFromPublication(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .map(file -> FileEntry.create(file, publication.getIdentifier(),
+                                                 UserInstance.fromPublication(publication)))
+                   .toList();
+    }
+
     private static Resource convertToResource(ImportCandidate importCandidate) {
         return Resource.builder()
-                    .withIdentifier(importCandidate.getIdentifier())
-                    .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
-                    .withCreatedDate(importCandidate.getCreatedDate())
-                    .withModifiedDate(importCandidate.getModifiedDate())
-                    .withIndexedDate(importCandidate.getIndexedDate())
-                    .withPublishedDate(importCandidate.getPublishedDate())
-                    .withStatus(importCandidate.getStatus())
-                    .withPublishedDate(importCandidate.getPublishedDate())
-                    .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
-                    .withPublisher(importCandidate.getPublisher())
-                    .withLink(importCandidate.getLink())
-                    .withProjects(importCandidate.getProjects())
-                    .withEntityDescription(importCandidate.getEntityDescription())
-                    .withDoi(importCandidate.getDoi())
-                    .withHandle(importCandidate.getHandle())
-                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
-                    .withSubjects(importCandidate.getSubjects())
-                    .withFundings(importCandidate.getFundings())
-                    .withRightsHolder(importCandidate.getRightsHolder())
-                    .withImportStatus(importCandidate.getImportStatus())
-                    .withPublicationNotes(importCandidate.getPublicationNotes())
-                    .withDuplicateOf(importCandidate.getDuplicateOf())
-                    .withCuratingInstitutions(importCandidate.getCuratingInstitutions())
+                   .withIdentifier(importCandidate.getIdentifier())
+                   .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
+                   .withCreatedDate(importCandidate.getCreatedDate())
+                   .withModifiedDate(importCandidate.getModifiedDate())
+                   .withIndexedDate(importCandidate.getIndexedDate())
+                   .withPublishedDate(importCandidate.getPublishedDate())
+                   .withStatus(importCandidate.getStatus())
+                   .withPublishedDate(importCandidate.getPublishedDate())
+                   .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
+                   .withPublisher(importCandidate.getPublisher())
+                   .withLink(importCandidate.getLink())
+                   .withProjects(importCandidate.getProjects())
+                   .withEntityDescription(importCandidate.getEntityDescription())
+                   .withFilesEntries(getFileEntriesFromPublication(importCandidate))
+                   .withDoi(importCandidate.getDoi())
+                   .withHandle(importCandidate.getHandle())
+                   .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+                   .withSubjects(importCandidate.getSubjects())
+                   .withFundings(importCandidate.getFundings())
+                   .withRightsHolder(importCandidate.getRightsHolder())
+                   .withImportStatus(importCandidate.getImportStatus())
+                   .withPublicationNotes(importCandidate.getPublicationNotes())
+                   .withDuplicateOf(importCandidate.getDuplicateOf())
+                   .withCuratingInstitutions(importCandidate.getCuratingInstitutions())
                    .withImportDetails(importCandidate.getImportDetails())
-                    .build();
+                   .build();
     }
 
     public static ResourceBuilder builder() {
@@ -179,12 +370,93 @@ public class Resource implements Entity {
 
     public static Resource fromImportCandidate(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate).map(Resource::convertToResource).orElse(null);
-
     }
 
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
         throws BadRequestException {
         return resourceService.createPublication(userInstance, this.toPublication());
+    }
+
+    public Resource importResource(ResourceService resourceService, ImportSource importSource) {
+        var now = Instant.now();
+        this.setCreatedDate(now);
+        this.setModifiedDate(now);
+        this.setPublishedDate(now);
+        this.setIdentifier(SortableIdentifier.next());
+        this.setStatus(PUBLISHED);
+        var userInstance = UserInstance.fromPublication(this.toPublication());
+        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, userInstance, now));
+        return resourceService.importResource(this, importSource);
+    }
+
+    public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
+        var userInstance = UserInstance.fromPublication(this.toPublication());
+        this.setResourceEvent(MergedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
+        resourceService.updateResource(this, userInstance);
+    }
+
+    public List<LogEntry> fetchLogEntries(ResourceService resourceService) {
+        return resourceService.getLogEntriesForResource(this);
+    }
+
+    public Optional<Resource> fetch(ResourceService resourceService) {
+        return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).toOptional();
+    }
+
+    public void publish(ResourceService resourceService, UserInstance userInstance) {
+        fetch(resourceService)
+            .filter(Resource::isNotPublished)
+            .ifPresent(resource -> resource.publish(userInstance, resourceService));
+    }
+
+    private void publish(UserInstance userInstance, ResourceService resourceService) {
+        publish(userInstance);
+        resourceService.updateResource(this, userInstance);
+    }
+
+    public void publish(UserInstance userInstance) {
+        if (isNotPublishable()) {
+            throw new IllegalStateException("Resource is not publishable!");
+        } else if (this.isNotPublished()) {
+            this.setStatus(PUBLISHED);
+            var currentTime = Instant.now();
+            this.setPublishedDate(currentTime);
+            this.setResourceEvent(PublishedResourceEvent.create(userInstance, currentTime));
+        }
+    }
+
+    private boolean isNotPublishable() {
+        return !PUBLISHABLE_STATUSES.contains(this.getStatus())
+               || Optional.ofNullable(this.getEntityDescription()).map(EntityDescription::getMainTitle).isEmpty();
+    }
+
+    private boolean isNotPublished() {
+        return !isPublished();
+    }
+
+    private boolean isPublished() {
+        return PUBLISHED.equals(this.getStatus());
+    }
+
+    public void republish(ResourceService resourceService, UserInstance userInstance) {
+        fetch(resourceService)
+            .filter(Resource::isNotPublished)
+            .ifPresent(resource -> resource.republish(userInstance, resourceService));
+    }
+
+    private void republish(UserInstance userInstance, ResourceService resourceService) {
+        republish(userInstance);
+        resourceService.updateResource(this, userInstance);
+    }
+
+    private void republish(UserInstance userInstance) {
+        if (!UNPUBLISHED.equals(this.getStatus())) {
+            throw new IllegalStateException("Only unpublished resource can be republished!");
+        }
+        this.setStatus(PUBLISHED);
+        var timestamp = Instant.now();
+        this.setPublishedDate(timestamp);
+        this.setResourceEvent(RepublishedResourceEvent.create(userInstance, timestamp));
     }
 
     public URI getDuplicateOf() {
@@ -223,6 +495,7 @@ public class Resource implements Entity {
 
     /**
      * This gets the import status for importCandidate and should be null in other context.
+     *
      * @return importStatus if Resource is an ImportCandidate
      */
     public Optional<ImportStatus> getImportStatus() {
@@ -241,11 +514,11 @@ public class Resource implements Entity {
         this.publicationNotes = publicationNotes;
     }
 
-    public Set<URI> getCuratingInstitutions() {
+    public Set<CuratingInstitution> getCuratingInstitutions() {
         return nonNull(this.curatingInstitutions) ? this.curatingInstitutions : Collections.emptySet();
     }
 
-    public void setCuratingInstitutions(Set<URI> curatingInstitutions) {
+    public void setCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
         this.curatingInstitutions = curatingInstitutions;
     }
 
@@ -283,30 +556,30 @@ public class Resource implements Entity {
 
     public ImportCandidate toImportCandidate() {
         return new ImportCandidate.Builder()
-                    .withIdentifier(getIdentifier())
-                    .withResourceOwner(extractResourceOwner())
-                    .withStatus(getStatus())
-                    .withCreatedDate(getCreatedDate())
-                    .withModifiedDate(getModifiedDate())
-                    .withIndexedDate(getIndexedDate())
-                    .withPublisher(getPublisher())
-                    .withPublishedDate(getPublishedDate())
-                    .withLink(getLink())
-                    .withProjects(getProjects())
-                    .withEntityDescription(getEntityDescription())
-                    .withDoi(getDoi())
-                    .withHandle(getHandle())
-                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                    .withAssociatedArtifacts(getAssociatedArtifacts())
-                    .withSubjects(getSubjects())
-                    .withFundings(getFundings())
-                    .withRightsHolder(getRightsHolder())
-                    .withImportStatus(getImportStatus().orElse(null))
-                    .withPublicationNotes(getPublicationNotes())
-                    .withDuplicateOf(getDuplicateOf())
-                    .withCuratingInstitutions(getCuratingInstitutions())
-                    .withImportDetails(getImportDetails())
-                    .build();
+                   .withIdentifier(getIdentifier())
+                   .withResourceOwner(extractResourceOwner())
+                   .withStatus(getStatus())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withIndexedDate(getIndexedDate())
+                   .withPublisher(getPublisher())
+                   .withPublishedDate(getPublishedDate())
+                   .withLink(getLink())
+                   .withProjects(getProjects())
+                   .withEntityDescription(getEntityDescription())
+                   .withDoi(getDoi())
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withAssociatedArtifacts(getAssociatedArtifacts())
+                   .withSubjects(getSubjects())
+                   .withFundings(getFundings())
+                   .withRightsHolder(getRightsHolder())
+                   .withImportStatus(getImportStatus().orElse(null))
+                   .withPublicationNotes(getPublicationNotes())
+                   .withDuplicateOf(getDuplicateOf())
+                   .withCuratingInstitutions(getCuratingInstitutions())
+                   .withImportDetails(getImportDetails())
+                   .build();
     }
 
     private ResourceOwner extractResourceOwner() {
@@ -401,7 +674,9 @@ public class Resource implements Entity {
     }
 
     public AssociatedArtifactList getAssociatedArtifacts() {
-        return associatedArtifacts;
+        return nonNull(associatedArtifacts)
+                   ? associatedArtifacts
+                   : new AssociatedArtifactList(new ArrayList<>());
     }
 
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
@@ -445,7 +720,15 @@ public class Resource implements Entity {
     }
 
     public void setImportDetails(Collection<ImportDetail> importDetails) {
-        this.importDetails = new ArrayList<>(importDetails);
+        this.importDetails = nonNull(importDetails) ? new ArrayList<>(importDetails) : new ArrayList<>();
+    }
+
+    @JsonIgnore
+    public Optional<String> getInstanceType() {
+        return Optional.ofNullable(getEntityDescription())
+            .map(EntityDescription::getReference)
+            .map(Reference::getPublicationInstance)
+            .map(PublicationInstance::getInstanceType);
     }
 
     public ResourceBuilder copy() {
@@ -460,6 +743,7 @@ public class Resource implements Entity {
                    .withIndexedDate(getIndexedDate())
                    .withLink(getLink())
                    .withAssociatedArtifactsList(getAssociatedArtifacts())
+                   .withFilesEntries(getFileEntries())
                    .withProjects(getProjects())
                    .withEntityDescription(getEntityDescription())
                    .withDoi(getDoi())
@@ -471,7 +755,9 @@ public class Resource implements Entity {
                    .withDuplicateOf(getDuplicateOf())
                    .withRightsHolder(getRightsHolder())
                    .withCuratingInstitutions(getCuratingInstitutions())
-                   .withImportDetails(getImportDetails());
+                   .withImportDetails(getImportDetails())
+                   .withResourceEvent(getResourceEvent())
+                   .withPublicationChannels(getPublicationChannels());
     }
 
     public List<URI> getSubjects() {
@@ -518,7 +804,7 @@ public class Resource implements Entity {
                             getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
                             getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
                             getSubjects(), getFundings(), getAssociatedArtifacts(), getPublicationNotes(),
-                            getDuplicateOf(), getCuratingInstitutions(), getImportDetails());
+                            getDuplicateOf(), getCuratingInstitutions(), getImportDetails(), getPublicationChannels());
     }
 
     /**
@@ -533,10 +819,9 @@ public class Resource implements Entity {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Resource)) {
+        if (!(o instanceof Resource resource)) {
             return false;
         }
-        Resource resource = (Resource) o;
         return Objects.equals(getIdentifier(), resource.getIdentifier())
                && getStatus() == resource.getStatus()
                && Objects.equals(getResourceOwner(), resource.getResourceOwner())
@@ -557,7 +842,8 @@ public class Resource implements Entity {
                && Objects.equals(getDuplicateOf(), resource.getDuplicateOf())
                && Objects.equals(getSubjects(), resource.getSubjects())
                && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions())
-               && Objects.equals(getImportDetails(), resource.getImportDetails());
+               && Objects.equals(getImportDetails(), resource.getImportDetails())
+               && Objects.equals(getPublicationChannels(), resource.getPublicationChannels());
     }
 
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {

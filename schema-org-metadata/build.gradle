@@ -12,7 +12,7 @@ dependencies {
     testImplementation libs.nva.identifiers
     testImplementation project(':publication-testing')
     testImplementation project(":publication-model-testing")
-    testImplementation 'uk.co.datumedge:hamcrest-json:0.2'
+    testImplementation libs.hamcrest.json
 }
 
 test {

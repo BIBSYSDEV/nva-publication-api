@@ -8,8 +8,10 @@ import static no.unit.nva.model.testing.RandomUtils.randomPublicationDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
@@ -23,9 +25,12 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.role.RoleTypeOther;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JacocoGenerated
 public final class EntityDescriptionBuilder {
+
+    public static final String EXAMPLE_HOST = "example.org";
 
     private EntityDescriptionBuilder() {
         // NO-OP
@@ -80,7 +85,7 @@ public final class EntityDescriptionBuilder {
 
     private static Identity randomIdentity() {
         return new Identity.Builder()
-                   .withId(randomUri())
+                   .withId(randomUriWithPath("person"))
                    .withName(randomString())
                    .withOrcId(randomString())
                    .withNameType(randomNameType())
@@ -111,9 +116,17 @@ public final class EntityDescriptionBuilder {
     }
 
     private static Organization randomOrganization() {
+        var uri = randomUriWithPath("organization");
         return new Organization.Builder()
-                   .withId(randomUri())
+                   .withId(uri)
                    .build();
+    }
+
+    private static URI randomUriWithPath(String path) {
+        return UriWrapper.fromHost(EXAMPLE_HOST)
+                   .addChild(path)
+                   .addChild(UUID.randomUUID().toString())
+                   .getUri();
     }
 
     private static List<String> randomTags() {

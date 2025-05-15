@@ -1,8 +1,12 @@
 package no.unit.nva.cristin.patcher.exception;
 
-public class ChildPatchPublicationInstanceMismatchException extends RuntimeException {
+public final class ChildPatchPublicationInstanceMismatchException extends RuntimeException {
 
-    public ChildPatchPublicationInstanceMismatchException(String message) {
-        super(message);
+    private ChildPatchPublicationInstanceMismatchException() {
+        super();
+    }
+
+    public static String getExceptionName() {
+        return ChildPatchPublicationInstanceMismatchException.class.getSimpleName();
     }
 }

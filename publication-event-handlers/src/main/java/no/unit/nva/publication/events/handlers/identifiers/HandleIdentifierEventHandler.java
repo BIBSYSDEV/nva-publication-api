@@ -21,16 +21,15 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
@@ -42,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class HandleIdentifierEventHandler
     implements RequestHandler<SQSEvent, Void> {
 
@@ -125,8 +125,7 @@ public class HandleIdentifierEventHandler
             var resourceUpdate = parseResourceUpdateInput(eventBlob);
             if (isPublished(resourceUpdate) && isMissingHandle(resourceUpdate)) {
                 logger.info("Creating handle for publication: {}", resourceUpdate.getIdentifier());
-                var userInstance = UserInstance.create(resourceUpdate.getOwner(), resourceUpdate.getCustomerId());
-                var publication = fetchPublication(userInstance, resourceUpdate.getIdentifier());
+                var publication = fetchPublication(resourceUpdate.getIdentifier());
                 var additionalIdentifiers = new HashSet<>(publication.getAdditionalIdentifiers());
                 var handle = createNewHandle(getLandingPage(publication.getIdentifier()));
                 logger.info("Created handle: {}", handle.value());
@@ -168,9 +167,8 @@ public class HandleIdentifierEventHandler
         return new HandleIdentifier(new SourceName("nva", "sikt"), handleService.createHandle(link));
     }
 
-    private Publication fetchPublication(UserInstance userInstance, SortableIdentifier publicationIdentifier) {
-        return attempt(() -> resourceService.getPublication(userInstance, publicationIdentifier))
-                   .orElseThrow();
+    private Publication fetchPublication(SortableIdentifier publicationIdentifier) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(publicationIdentifier)).orElseThrow();
     }
 
     private static Resource parseResourceUpdateInput(String eventBlob) {

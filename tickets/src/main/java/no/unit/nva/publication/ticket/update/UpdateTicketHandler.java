@@ -4,36 +4,38 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
-import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
-import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
+import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.List;
+import java.util.stream.Collectors;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketHandler;
+import no.unit.nva.publication.ticket.TicketRequest;
+import no.unit.nva.publication.ticket.UpdateTicketOwnershipRequest;
 import no.unit.nva.publication.ticket.UpdateTicketRequest;
 import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -44,7 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
-public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void> {
+public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
     public static final String API_HOST = "API_HOST";
     public static final String EXCEPTION_MESSAGE = "Creating findable doi failed with exception: {}";
@@ -55,10 +57,18 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                                                                                                  + "DOI requirements";
     public static final String UNKNOWN_VIEWED_STATUS_MESSAGE = "Unknown ViewedStatus";
     private static final Logger logger = LoggerFactory.getLogger(UpdateTicketHandler.class);
+    public static final String TICKET_STATUS_UPDATE_MESSAGE =
+        "User {} with access rights {} updates ticket status to {} for publication {}";
+    public static final String NOT_AUTHORIZED_MESSAGE =
+        "User {} is not authorized to manage ticket {} for publication {}";
+    private static final String TICKET_ASSIGNEE_UPDATE_MESSAGE =
+        "User {} updates assignee to {} for publication {}";
+    public static final String UPDATE_FORBIDDEN_MESSAGE =
+        "Updating ticket {} for publication {} is forbidden for user {}";
+    public static final String FILES_MISSING_MANDATORY_FIELDS_MESSAGE = "Files missing mandatory fields: %s";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
-    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public UpdateTicketHandler() {
@@ -66,56 +76,92 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
              ResourceService.defaultService(),
              new DataCiteDoiClient(HttpClient.newHttpClient(), SecretsReader.defaultSecretsManagerClient(),
                                    new Environment().readEnv(API_HOST)),
-             UriRetriever.defaultUriRetriever());
+             new Environment());
     }
 
     protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService, DoiClient doiClient,
-                                  UriRetriever uriRetriever) {
-        super(UpdateTicketRequest.class);
+                                  Environment environment) {
+        super(TicketRequest.class, environment);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
         this.doiClient = doiClient;
-        this.uriRetriever = uriRetriever;
-    }
-
-    protected static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo)
-        throws NotFoundException {
-        return attempt(() -> requestInfo.getPathParameter(TICKET_IDENTIFIER_PARAMETER_NAME)).map(
-            SortableIdentifier::new).orElseThrow(fail -> new NotFoundException(TICKET_NOT_FOUND));
     }
 
     @Override
-    protected void validateRequest(UpdateTicketRequest updateTicketRequest, RequestInfo requestInfo, Context context)
+    protected void validateRequest(TicketRequest ticketRequest, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         //Do nothing
     }
 
     @Override
-    protected Void processInput(UpdateTicketRequest input, RequestInfo requestInfo, Context context)
+    protected Void processInput(TicketRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
-        var ticket = fetchTicketForElevatedUser(ticketIdentifier, UserInstance.fromRequestInfo(requestInfo));
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
-        if (hasEffectiveChanges(ticket, input)) {
-            updateTicket(input, requestUtils, ticket);
+        var ticket = fetchTicket(requestUtils);
+
+        switch (input) {
+            case UpdateTicketRequest request -> handleUpdateTicketRequest(ticket, request, requestUtils);
+            case UpdateTicketOwnershipRequest request -> updateOwnership(ticket, request, requestUtils);
+            default -> {
+                // NO OP
+            }
         }
+
         return null;
     }
 
+    private void updateOwnership(TicketEntry ticket, UpdateTicketOwnershipRequest request,
+                                 RequestUtils requestUtils) throws ForbiddenException, NotFoundException {
+        var resource = getResource(ticket.getResourceIdentifier());
+        if (userInstitutionIsTicketOwner(ticket, requestUtils)
+            && newOwnerAffiliationIsOneOfCuratingInstitutions(request, resource)
+            && userIsAuthorized(requestUtils, ticket)) {
+            ticket.updateCuratingInstitution(request.ownerAffiliation(), request.responsibilityArea())
+                .persistUpdate(ticketService);
+        } else {
+            throw new ForbiddenException();
+        }
+    }
+
+    private Resource getResource(SortableIdentifier resourceIdentifier) throws NotFoundException {
+        return resourceService.getResourceByIdentifier(resourceIdentifier);
+    }
+
+    private static boolean newOwnerAffiliationIsOneOfCuratingInstitutions(UpdateTicketOwnershipRequest request, Resource resource) {
+        return resource.getCuratingInstitutions()
+                   .stream()
+                   .anyMatch(curatingInstitution -> request.ownerAffiliation().equals(curatingInstitution.id()));
+    }
+
+    private static boolean userInstitutionIsTicketOwner(TicketEntry ticket, RequestUtils requestUtils) {
+        return ticket.getOwnerAffiliation().equals(requestUtils.topLevelCristinOrgId());
+    }
+
+    private void handleUpdateTicketRequest(TicketEntry ticket, UpdateTicketRequest request,
+                                           RequestUtils requestUtils) throws ApiGatewayException {
+        if (hasEffectiveChanges(ticket, request)) {
+            updateTicket(request, requestUtils, ticket);
+        }
+    }
+
     @Override
-    protected Integer getSuccessStatusCode(UpdateTicketRequest input, Void output) {
+    protected Integer getSuccessStatusCode(TicketRequest input, Void output) {
         return HTTP_ACCEPTED;
     }
 
     private void throwExceptionIfUnauthorized(RequestUtils requestUtils, TicketEntry ticket)
         throws ForbiddenException {
         if (!userIsAuthorized(requestUtils, ticket)) {
+            logger.error(NOT_AUTHORIZED_MESSAGE,
+                         requestUtils.username(),
+                         ticket.getIdentifier(),
+                         ticket.getResourceIdentifier());
             throw new ForbiddenException();
         }
     }
 
     private static boolean statusHasBeenUpdated(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
-        return nonNull(ticketRequest.getStatus()) && !ticketRequest.getStatus().equals(ticket.getStatus());
+        return nonNull(ticketRequest.status()) && !ticketRequest.status().equals(ticket.getStatus());
     }
 
     private static boolean assigneeHasBeenUpdated(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
@@ -124,16 +170,12 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private static boolean assigneesAreDifferent(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
-        return !ticketRequest.getAssignee().equals(ticket.getAssignee());
+        return !ticketRequest.assignee().equals(ticket.getAssignee());
     }
 
     private boolean userIsAuthorized(RequestUtils requestUtils, TicketEntry ticket) {
         return requestUtils.isAuthorizedToManage(ticket)
-               && isUserFromSameCustomerAsTicket(requestUtils, ticket);
-    }
-
-    private static boolean isUserFromSameCustomerAsTicket(RequestUtils requestUtils, TicketEntry ticket) {
-        return requestUtils.customerId().equals(ticket.getCustomerId());
+               && ticket.hasSameOwnerAffiliationAs(requestUtils.toUserInstance());
     }
 
     private static boolean assigneeDoesNotExist(TicketEntry ticket) {
@@ -141,7 +183,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private static boolean assigneeIsEmptyString(UpdateTicketRequest ticketRequest) {
-        return StringUtils.EMPTY_STRING.equals(ticketRequest.getAssignee().getValue());
+        return StringUtils.EMPTY_STRING.equals(ticketRequest.assignee().getValue());
     }
 
     private static boolean existingAssigneeIsEmpty(TicketEntry ticket) {
@@ -149,7 +191,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private static boolean incomingAssigneeIsPresent(UpdateTicketRequest ticketRequest) {
-        return nonNull(ticketRequest.getAssignee());
+        return nonNull(ticketRequest.assignee());
     }
 
     private static boolean userIsTicketAssignee(TicketEntry ticketEntry, String userName) {
@@ -163,6 +205,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             updateStatus(ticketRequest, requestUtils, ticket);
         }
         if (incomingUpdateIsAssignee(ticket, ticketRequest)) {
+            logger.info(TICKET_ASSIGNEE_UPDATE_MESSAGE, requestUtils.username(), ticketRequest.assignee(),
+                        ticket.getResourceIdentifier());
             updateAssignee(ticketRequest, requestUtils, ticket);
         }
         if (incomingUpdateIsViewedStatus(ticketRequest)) {
@@ -176,7 +220,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         if (assigneeIsEmptyString(ticketRequest)) {
             ticketService.updateTicketAssignee(ticket, null);
         } else {
-            ticketService.updateTicketAssignee(ticket, ticketRequest.getAssignee());
+            ticketService.updateTicketAssignee(ticket, ticketRequest.assignee());
         }
     }
 
@@ -186,42 +230,63 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         if (ticket instanceof DoiRequest) {
             doiTicketSideEffects(ticketRequest, requestUtils);
         }
-        if (ticket instanceof PublishingRequestCase publishingRequestCase) {
-            publishingRequestSideEffects(publishingRequestCase, ticketRequest);
+        if (ticket instanceof FilesApprovalEntry filesApprovalEntry) {
+            fileApprovalEntrySideEffects(filesApprovalEntry, ticketRequest);
         }
-        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), new Username(requestUtils.username()));
+        var username = requestUtils.username();
+        logger.info(TICKET_STATUS_UPDATE_MESSAGE,
+                    username,
+                    requestUtils.accessRights(),
+                    ticketRequest.status(),
+                    ticket.getResourceIdentifier());
+        ticketService.updateTicketStatus(ticket, ticketRequest.status(), requestUtils.toUserInstance());
     }
 
-    private void publishingRequestSideEffects(PublishingRequestCase ticket,
-                                              UpdateTicketRequest ticketRequest)
-        throws NotFoundException {
-        if (CLOSED.equals(ticketRequest.getStatus())) {
-            updateUnpublishedFilesToUnpublishable(ticket.getResourceIdentifier());
+    private void fileApprovalEntrySideEffects(FilesApprovalEntry ticket,
+                                              UpdateTicketRequest ticketRequest) throws ConflictException {
+
+        if (COMPLETED.equals(ticketRequest.status())) {
+            validateFilesForApproval(ticket);
+            ticket.approveFiles().persistUpdate(ticketService);
         }
     }
 
-    private void updateUnpublishedFilesToUnpublishable(SortableIdentifier publicationIdentifier)
-        throws NotFoundException {
-        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
-        var updatedPublication = publication.copy()
-                                     .withAssociatedArtifacts(updateUnpublishedFiles(publication))
-                                     .build();
-        resourceService.updatePublication(updatedPublication);
+    private void validateFilesForApproval(FilesApprovalEntry ticket) throws ConflictException {
+        if (filesForApprovalAreNotApprovable(ticket)) {
+            var fileIdsMissingMandatoryFields = getFileIdsMissingMandatoryFields(ticket);
+            throw new ConflictException(FILES_MISSING_MANDATORY_FIELDS_MESSAGE
+                                            .formatted(fileIdsMissingMandatoryFields));
+        }
     }
 
-    private List<AssociatedArtifact> updateUnpublishedFiles(Publication publication) {
-        var associatedArtifacts = publication.getAssociatedArtifacts();
-        return associatedArtifacts.stream()
-                   .map(file -> file instanceof UnpublishedFile unpublishedFile
-                                    ? unpublishedFile.toUnpublishableFile()
-                                    : file)
-                   .toList();
+    private static String getFileIdsMissingMandatoryFields(FilesApprovalEntry ticket) {
+        return ticket.getFilesForApproval().stream()
+                   .map(PendingFile.class::cast)
+                   .filter(PendingFile::isNotApprovable)
+                   .map(File.class::cast)
+                   .map(File::getIdentifier)
+                   .map(String::valueOf)
+                   .collect(Collectors.joining(","));
     }
 
-    private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance userInstance)
+    private static boolean filesForApprovalAreNotApprovable(FilesApprovalEntry ticket) {
+        return ticket.getFilesForApproval().stream()
+                   .map(PendingFile.class::cast)
+                   .anyMatch(PendingFile::isNotApprovable);
+    }
+
+    private TicketEntry fetchTicket(RequestUtils requestUtils)
         throws ForbiddenException {
-        return attempt(() -> ticketService.fetchTicketForElevatedUser(userInstance, ticketIdentifier))
-                   .orElseThrow(fail -> new ForbiddenException());
+        return attempt(requestUtils::ticketIdentifier)
+                   .map(ticketService::fetchTicketByIdentifier)
+                   .orElseThrow(fail -> getForbiddenException(requestUtils));
+    }
+
+    private static ForbiddenException getForbiddenException(RequestUtils requestUtils) {
+        var publicationIdentifier = requestUtils.pathParameters().get(PUBLICATION_IDENTIFIER);
+        var ticketIdentifier = requestUtils.pathParameters().get(TICKET_IDENTIFIER);
+        logger.info(UPDATE_FORBIDDEN_MESSAGE, ticketIdentifier, publicationIdentifier, requestUtils.username());
+        return new ForbiddenException();
     }
 
     private void updateTicketViewedBy(UpdateTicketRequest ticketRequest, TicketEntry ticket, RequestUtils requestUtils)
@@ -232,15 +297,15 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             markTicketForAssignee(ticketRequest, ticket);
         } else if (userIsTicketOwner(ticket, requestUtils.username())) {
             markTicketForOwner(ticketRequest, ticket);
-        } else if (requestUtils.hasAccessRight(MANAGE_DOI)) {
+        } else if (requestUtils.isAuthorizedToManage(ticket)) {
             markTicketForCurator(ticketRequest, ticket, requestUtils.username());
         }
     }
 
     private void markTicketForCurator(UpdateTicketRequest ticketRequest, TicketEntry ticket, String userName) {
-        if (ViewStatus.READ.equals(ticketRequest.getViewStatus())) {
+        if (ViewStatus.READ.equals(ticketRequest.viewStatus())) {
             ticket.markReadByUser(new User(userName)).persistUpdate(ticketService);
-        } else if (ViewStatus.UNREAD.equals(ticketRequest.getViewStatus())) {
+        } else if (ViewStatus.UNREAD.equals(ticketRequest.viewStatus())) {
             ticket.markReadByUser(new User(userName)).persistUpdate(ticketService);
         } else {
             throw new UnsupportedOperationException(UNKNOWN_VIEWED_STATUS_MESSAGE);
@@ -253,9 +318,9 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private void markTicketForOwner(UpdateTicketRequest input, TicketEntry ticket) {
-        if (ViewStatus.READ.equals(input.getViewStatus())) {
+        if (ViewStatus.READ.equals(input.viewStatus())) {
             ticket.markReadByOwner().persistUpdate(ticketService);
-        } else if (ViewStatus.UNREAD.equals(input.getViewStatus())) {
+        } else if (ViewStatus.UNREAD.equals(input.viewStatus())) {
             ticket.markUnreadByOwner().persistUpdate(ticketService);
         } else {
             throw new UnsupportedOperationException(UNKNOWN_VIEWED_STATUS_MESSAGE);
@@ -264,9 +329,9 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
 
     private void markTicketForAssignee(UpdateTicketRequest input, TicketEntry ticket) {
 
-        if (ViewStatus.READ.equals(input.getViewStatus())) {
+        if (ViewStatus.READ.equals(input.viewStatus())) {
             ticket.markReadForAssignee().persistUpdate(ticketService);
-        } else if (ViewStatus.UNREAD.equals(input.getViewStatus())) {
+        } else if (ViewStatus.UNREAD.equals(input.viewStatus())) {
             ticket.markUnReadForAssignee().persistUpdate(ticketService);
         } else {
             throw new UnsupportedOperationException(UNKNOWN_VIEWED_STATUS_MESSAGE);
@@ -275,7 +340,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
 
     private void assertThatPublicationIdentifierInPathReferencesCorrectPublication(TicketEntry ticket,
                                                                                    RequestUtils requestUtils)
-        throws ForbiddenException {
+        throws ForbiddenException, NotFoundException {
         var suppliedPublicationIdentifier =
             requestUtils.publicationIdentifier();
         if (!suppliedPublicationIdentifier.equals(ticket.getResourceIdentifier())) {
@@ -284,15 +349,15 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private boolean incomingUpdateIsViewedStatus(UpdateTicketRequest input) {
-        return nonNull(input.getViewStatus());
+        return nonNull(input.viewStatus());
     }
 
     private boolean incomingUpdateIsAssignee(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
-        return nonNull(ticketRequest.getAssignee()) && !ticketRequest.getAssignee().equals(ticket.getAssignee());
+        return nonNull(ticketRequest.assignee()) && !ticketRequest.assignee().equals(ticket.getAssignee());
     }
 
     private boolean incomingUpdateIsStatus(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
-        return nonNull(ticketRequest.getStatus()) && !ticket.getStatus().equals(ticketRequest.getStatus());
+        return nonNull(ticketRequest.status()) && !ticket.getStatus().equals(ticketRequest.status());
     }
 
     private boolean hasEffectiveChanges(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
@@ -302,13 +367,13 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private boolean viewStatusHasBeenUpdated(UpdateTicketRequest ticketRequest) {
-        return nonNull(ticketRequest.getViewStatus());
+        return nonNull(ticketRequest.viewStatus());
     }
 
     private void doiTicketSideEffects(UpdateTicketRequest input, final RequestUtils requestUtils)
         throws NotFoundException, BadMethodException, BadGatewayException {
-        var status = input.getStatus();
-        var publication = getPublication(requestUtils);
+        var status = input.status();
+        var publication = getResource(requestUtils.publicationIdentifier()).toPublication();
         if (TicketStatus.COMPLETED.equals(status)) {
             findableDoiTicketSideEffects(publication);
         }
@@ -348,11 +413,6 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             publication.setDoi(doi);
             resourceService.updatePublication(publication);
         }
-    }
-
-    private Publication getPublication(RequestUtils requestUtils) throws NotFoundException {
-        var publicationIdentifier = requestUtils.publicationIdentifier();
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 
     private void publicationSatisfiesDoiRequirements(Publication publication) throws BadMethodException {

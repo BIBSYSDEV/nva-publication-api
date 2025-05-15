@@ -30,8 +30,8 @@ import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAbstracts;
@@ -40,7 +40,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -82,13 +82,13 @@ class RightsRetentionsApplierTest {
 
     @ParameterizedTest
     @MethodSource("publicationTypeAndForceNull")
-    public void shouldForceNullRightsRetentionIfNotAcademicArticle(
+    void shouldForceNullRightsRetentionIfNotAcademicArticle(
         Class<? extends PublicationInstance<?>> publicationType,
         boolean forceNull) throws BadRequestException, UnauthorizedException {
 
         var publication = PublicationGenerator.randomPublication(
             PublicationInstanceBuilder.randomPublicationInstance(publicationType).getClass());
-        var file = createAcceptedFileWithRrs(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
+        var file = createPendingOpenFileWithAcceptedVersionAndRrs(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
         addFilesToPublication(publication, file);
         var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(
                                                                               RIGHTS_RETENTION_STRATEGY),
@@ -100,9 +100,9 @@ class RightsRetentionsApplierTest {
 
     @ParameterizedTest
     @MethodSource("rrsConfigIsValid")
-    public void shouldThrowBadRequestWhenFileHasInvalidRrs(RightsRetentionStrategy rrs, boolean isValid) {
+    void shouldThrowBadRequestWhenFileHasInvalidRrs(RightsRetentionStrategy rrs, boolean isValid) {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
-        var file = createAcceptedFileWithRrs(rrs);
+        var file = createPendingOpenFileWithAcceptedVersionAndRrs(rrs);
         addFilesToPublication(publication, file);
         var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(
                                                                               rrs.getConfiguredType()),
@@ -118,13 +118,13 @@ class RightsRetentionsApplierTest {
     }
 
     @Test
-    public void shouldNotResetRrsWhenFilesMetadataIsChanged() throws BadRequestException, UnauthorizedException {
+    void shouldNotResetRrsWhenFilesMetadataIsChanged() throws BadRequestException, UnauthorizedException {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
         var fileId = UUID.randomUUID();
-        var originalFile = createAcceptedFileWithRrs(fileId, originalRrs);
-        var updatedFile = createAcceptedFileWithRrs(fileId, originalRrs);
+        var originalFile = createPendingOpenFileWithAcceptedVersionAndRrs(fileId, originalRrs);
+        var updatedFile = createPendingOpenFileWithAcceptedVersionAndRrs(fileId, originalRrs);
 
         var updatedPublication = originalPublication.copy()
                                      .withAssociatedArtifacts(new AssociatedArtifactList(updatedFile))
@@ -143,14 +143,14 @@ class RightsRetentionsApplierTest {
     }
 
     @Test
-    public void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException, UnauthorizedException {
+    void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException, UnauthorizedException {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, overriddenBy);
         var updatedRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
         var fileId = UUID.randomUUID();
-        var originalFile = createAcceptedFileWithRrs(fileId, originalRrs);
-        var updatedFile = createAcceptedFileWithRrs(fileId, updatedRrs);
+        var originalFile = createPendingOpenFileWithAcceptedVersionAndRrs(fileId, originalRrs);
+        var updatedFile = createPendingOpenFileWithAcceptedVersionAndRrs(fileId, updatedRrs);
 
         var updatedPublication = originalPublication.copy()
                                      .withAssociatedArtifacts(new AssociatedArtifactList(updatedFile))
@@ -178,8 +178,8 @@ class RightsRetentionsApplierTest {
     void shouldAlwaysAllowNullRssIfFileIsPublishedVersion(RightsRetentionStrategyConfiguration configuredType) {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
 
-        var publishedFile = createFileWithRrs(UUID.randomUUID(), PUBLISHED_VERSION,
-                                              NullRightsRetentionStrategy.create(configuredType));
+        var publishedFile = createPendingOpenFileWithRrs(UUID.randomUUID(), PUBLISHED_VERSION,
+                                                         NullRightsRetentionStrategy.create(configuredType));
         var updatedPublication = originalPublication.copy()
                                      .withAssociatedArtifacts(new AssociatedArtifactList(publishedFile))
                                      .build();
@@ -202,8 +202,8 @@ class RightsRetentionsApplierTest {
     void shouldAlwaysAllowNullRssIfFileIsNotSet(RightsRetentionStrategyConfiguration configuredType) {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
 
-        var fileWhereVersionIsNotNot = createFileWithRrs(UUID.randomUUID(), null,
-                                                         NullRightsRetentionStrategy.create(configuredType));
+        var fileWhereVersionIsNotNot = createPendingOpenFileWithRrs(UUID.randomUUID(), null,
+                                                                    NullRightsRetentionStrategy.create(configuredType));
         var updatedPublication = originalPublication.copy()
                                      .withAssociatedArtifacts(new AssociatedArtifactList(fileWhereVersionIsNotNot))
                                      .build();
@@ -228,15 +228,15 @@ class RightsRetentionsApplierTest {
         var originalPublication =
             PublicationGenerator.randomPublication(AcademicArticle.class)
                 .copy()
-                .withAssociatedArtifacts(List.of(createFileWithRrs(UUID.randomUUID(), null,
-                                                                   CustomerRightsRetentionStrategy.create(
+                .withAssociatedArtifacts(List.of(createPendingOpenFileWithRrs(UUID.randomUUID(), null,
+                                                                              CustomerRightsRetentionStrategy.create(
                                                                        RIGHTS_RETENTION_STRATEGY))))
                 .build();
         var userName = randomString();
-        var permissionStrategy = mock(PublicationPermissionStrategy.class);
+        var permissionStrategy = mock(PublicationPermissions.class);
         when(permissionStrategy.isPublishingCuratorOnPublication()).thenReturn(true);
-        var fileWithOverridenRrs = createFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION,
-                                                     OverriddenRightsRetentionStrategy.create(
+        var fileWithOverridenRrs = createPendingOpenFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION,
+                                                                OverriddenRightsRetentionStrategy.create(
                                                          OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, userName));
         var updatedPublication = originalPublication.copy()
                                      .withAssociatedArtifacts(new AssociatedArtifactList(fileWithOverridenRrs))
@@ -249,29 +249,21 @@ class RightsRetentionsApplierTest {
         assertDoesNotThrow(applier::handle);
     }
 
-    private static UnpublishedFile createAcceptedFileWithRrs(RightsRetentionStrategy rrs) {
-        return createFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION, rrs);
+    private static PendingOpenFile createPendingOpenFileWithAcceptedVersionAndRrs(RightsRetentionStrategy rrs) {
+        return createPendingOpenFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION, rrs);
     }
 
-    //            case OverriddenRightsRetentionStrategy strategy -> Set.of(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-    //            case NullRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY);
-    //            case CustomerRightsRetentionStrategy strategy -> Set.of(RIGHTS_RETENTION_STRATEGY,
-    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-    //            case FunderRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY,
-    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-
-    private static UnpublishedFile createAcceptedFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
-        return createFileWithRrs(uuid, ACCEPTED_VERSION, rrs);
+    private static PendingOpenFile createPendingOpenFileWithAcceptedVersionAndRrs(UUID uuid, RightsRetentionStrategy rrs) {
+        return createPendingOpenFileWithRrs(uuid, ACCEPTED_VERSION, rrs);
     }
 
-    private static UnpublishedFile createFileWithRrs(UUID uuid, PublisherVersion publishedVersion,
-                                                     RightsRetentionStrategy rrs) {
-        return new UnpublishedFile(uuid,
+    private static PendingOpenFile createPendingOpenFileWithRrs(UUID uuid, PublisherVersion publishedVersion,
+                                                                RightsRetentionStrategy rrs) {
+        return new PendingOpenFile(uuid,
                                    randomString(),
                                    randomString(),
                                    RandomDataGenerator.randomInteger().longValue(),
                                    RandomDataGenerator.randomUri(),
-                                   false,
                                    publishedVersion,
                                    null,
                                    rrs,
@@ -288,12 +280,12 @@ class RightsRetentionsApplierTest {
         publication.setAssociatedArtifacts(new AssociatedArtifactList(files));
     }
 
-    private static class FakePublicationPermissionStrategy extends PublicationPermissionStrategy {
+    private static class FakePublicationPermissionStrategy extends PublicationPermissions {
 
         private final boolean isCurator;
 
         public FakePublicationPermissionStrategy(boolean isCurator) {
-            super(null, null,  null);
+            super(null, null);
             this.isCurator = isCurator;
         }
 

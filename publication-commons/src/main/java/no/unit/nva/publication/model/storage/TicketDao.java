@@ -41,17 +41,16 @@ import nva.commons.core.SingletonCollector;
     @JsonSubTypes.Type(name = PublishingRequestDao.TYPE, value = PublishingRequestDao.class),
     @JsonSubTypes.Type(name = GeneralSupportRequestDao.TYPE, value = GeneralSupportRequestDao.class),
     @JsonSubTypes.Type(name = GeneralSupportRequestDao.LEGACY_TYPE, value = GeneralSupportRequestDao.class),
-    @JsonSubTypes.Type(name = UnpublishRequestDao.TYPE, value = UnpublishRequestDao.class)
+    @JsonSubTypes.Type(name = UnpublishRequestDao.TYPE, value = UnpublishRequestDao.class),
+    @JsonSubTypes.Type(name = FilesApprovalThesisDao.TYPE, value = FilesApprovalThesisDao.class)
 })
 public abstract class TicketDao extends Dao implements JoinWithResource {
     
     public static final String DOUBLE_QUOTES = "\"";
     public static final String EMPTY_STRING = "";
     public static final String TICKETS_INDEXING_TYPE = "Ticket";
-    public static final String ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE =
-        DoiRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
-    public static final String ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE =
-        UnpublishRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
+    public static final String ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE = "b";
+    public static final String ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE = "e";
     private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
 
 
@@ -107,6 +106,11 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                    .withConditionExpression(condition.getConditionExpression())
                    .withExpressionAttributeNames(condition.getExpressionAttributeNames())
                    .withExpressionAttributeValues(condition.getExpressionAttributeValues());
+    }
+
+    public TransactWriteItem toPutTransactionItem(String tableName) {
+        var put = new Put().withItem(this.toDynamoFormat()).withTableName(tableName);
+        return new TransactWriteItem().withPut(put);
     }
     
     public Optional<TicketDao> fetchByResourceIdentifier(AmazonDynamoDB client) {

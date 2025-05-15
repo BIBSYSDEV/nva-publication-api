@@ -24,8 +24,8 @@ import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -52,7 +52,7 @@ class BrageNvaMapperTest {
                              .build();
         var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
 
-        assertThat(file, is(instanceOf(AdministrativeAgreement.class)));
+        assertThat(file, is(instanceOf(HiddenFile.class)));
     }
 
     @Test
@@ -65,7 +65,7 @@ class BrageNvaMapperTest {
                              .build();
         var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
 
-        assertThat(file, is(instanceOf(AdministrativeAgreement.class)));
+        assertThat(file, is(instanceOf(HiddenFile.class)));
     }
 
     @Test
@@ -120,7 +120,8 @@ class BrageNvaMapperTest {
         var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         var actualContributor = publication.getEntityDescription().getContributors().getFirst();
 
-        assertEquals(contributor.getIdentity().getOrcId(), actualContributor.getIdentity().getOrcId());
+        assertEquals(contributor.getIdentity().getOrcId().toString(),
+                     actualContributor.getIdentity().getOrcId());
     }
 
     @Test
@@ -155,6 +156,21 @@ class BrageNvaMapperTest {
         assertEquals(insperaIdentifier, insperaAdditionalIdentifier.value());
     }
 
+    @Test
+    void shouldMapRightsHolderToFileLegalNoteWhenAccessCodeIsNotPresent()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var rightsHolder = randomString();
+        var licenseContentFile = createRandomContentFileWithBundleType(BundleType.ORIGINAL);
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withRightsHolder(rightsHolder)
+                             .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
+                             .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
+                             .build();
+        var file = (File) BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
+
+        assertEquals(rightsHolder, file.getLegalNote());
+    }
+
     private static no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase getAdditionalIdentifier(
         Publication publication, String source) {
         return publication.getAdditionalIdentifiers().stream()
@@ -172,7 +188,7 @@ class BrageNvaMapperTest {
     }
 
     private static Contributor randomContributorWithOrcId() {
-        return new Contributor(new Identity(randomString(), randomString(), randomString()),
+        return new Contributor(new Identity(randomString(), randomString(), randomUri()),
                                "ACTOR",
                                randomString(), List.of());
     }

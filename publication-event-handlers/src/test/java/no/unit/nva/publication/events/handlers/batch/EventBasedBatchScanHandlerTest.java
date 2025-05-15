@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -10,6 +12,8 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -19,19 +23,22 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.LogOrganization;
+import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -41,11 +48,13 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
@@ -54,7 +63,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
-    public static final int LARGE_PAGE = 10;
+    public static final int LARGE_PAGE = 100;
     public static final int ONE_ENTRY_PER_EVENT = 1;
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
     public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
@@ -68,6 +77,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private AmazonDynamoDB dynamoDbClient;
 
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -83,25 +93,27 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateDataEntriesWhenValidRequestIsReceived()
-        throws ApiGatewayException {
-        Publication createdPublication = createPublication(PublicationGenerator.randomPublication());
+        throws ApiGatewayException, JsonProcessingException {
+        Publication createdPublication = createPublication(randomPublication());
         Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
         var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
 
-        assertThat(updatedResource, is(equalTo(initialResource)));
+        assertEquals(JsonUtils.dtoObjectMapper.writeValueAsString(initialResource),
+                     JsonUtils.dtoObjectMapper.writeValueAsString(updatedResource));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
     }
 
     @Test
     void shouldUpdateDataEntriesWithGivenTypeWhenRequestContainsType()
         throws ApiGatewayException {
-        var createdPublication = createPublication(PublicationGenerator.randomPublication());
+        var createdPublication = createPublication(randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
@@ -118,14 +130,14 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         assertThat(updatedTicketDao.getVersion(), is(equalTo(originalTicketDao.getVersion())));
     }
 
-
     @Test
     void shouldUpdateTicketsWhenRequestContainsTicketKeyFieldOnly()
         throws ApiGatewayException {
-        var createdPublication = createPublication(PublicationGenerator.randomPublication());
+        var createdPublication = createPublication(randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
@@ -145,10 +157,11 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateDataEntriesDefaultTypesWhenRequestDoesNotContainType()
         throws ApiGatewayException {
-        var createdPublication = createPublication(PublicationGenerator.randomPublication());
+        var createdPublication = createPublication(randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
@@ -194,7 +207,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
                                     .build();
         handler.handleRequest(eventToInputStream(secondScanRequest), output, context);
 
-        ArgumentCaptor<Map<String, AttributeValue>> startingPointsCapturer = ArgumentCaptor.forClass(Map.class);
+        var startingPointsCapturer = ArgumentCaptor.forClass(Map.class);
         verify(resourceService, atLeastOnce()).scanResources(anyInt(), startingPointsCapturer.capture(), any());
         var scanStartingPointSentToTheService = startingPointsCapturer.getValue();
 
@@ -230,6 +243,32 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
     }
 
+    @Test
+    void shouldConsumeLogEnryWithoutFailing() throws BadRequestException, NotFoundException {
+        var publication = randomPublication();
+        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                                 publication);
+        persistLogEntry(persistedPublication);
+
+        assertDoesNotThrow(() -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context));
+
+    }
+
+    private void persistLogEntry(Publication persistedPublication) throws NotFoundException {
+        Resource.resourceQueryObject(persistedPublication.getIdentifier())
+            .fetch(resourceService)
+            .orElseThrow()
+            .getResourceEvent()
+            .toLogEntry(persistedPublication.getIdentifier(), randomLogUser())
+            .persist(resourceService);
+    }
+
+    private static LogUser randomLogUser() {
+        return new LogUser(randomString(),
+                           randomUri(), randomString(), randomString(), randomString(), randomString(),
+                           new LogOrganization(randomUri(), randomString(), Map.of()));
+    }
+
     private TicketDao fetchTicketDao(SortableIdentifier identifier) throws NotFoundException {
         var queryObject = TicketEntry.createQueryObject(identifier);
         var queryResult = queryObject.fetchByIdentifier(dynamoDbClient, RESOURCES_TABLE_NAME);
@@ -238,12 +277,12 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     private void createRandomResources(int numberOfResources) throws ApiGatewayException {
         for (int i = 0; i < numberOfResources; i++) {
-            createPublication(PublicationGenerator.randomPublication());
+            createPublication(randomPublication());
         }
     }
 
     private Publication createPublication(Publication publication) throws ApiGatewayException {
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
@@ -273,7 +312,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     private ScanDatabaseRequest consumeLatestEmittedEvent() {
         var allRequests = eventBridgeClient.getRequestEntries();
-        var latest = allRequests.remove(allRequests.size() - 1);
+        var latest = allRequests.removeLast();
         return attempt(() -> ScanDatabaseRequest.fromJson(latest.detail())).orElseThrow();
     }
 

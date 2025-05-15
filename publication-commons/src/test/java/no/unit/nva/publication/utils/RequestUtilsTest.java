@@ -1,6 +1,7 @@
 package no.unit.nva.publication.utils;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
@@ -12,6 +13,7 @@ import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -25,14 +27,13 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
@@ -48,12 +49,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class RequestUtilsTest {
 
     private ResourceService resourceService;
-    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         this.resourceService = mock(ResourceService.class);
-        this.uriRetriever = mock(UriRetriever.class);
     }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
@@ -71,17 +70,23 @@ public class RequestUtilsTest {
     }
 
     @Test
-    void shouldThrowIllegalArgumentWhenExtractingMissingPathParamAsIdentifier() throws UnauthorizedException {
+    void shouldThrowNotFoundExceptionWhenExtractingMissingTicketIdentifier() throws UnauthorizedException {
         var requestInfo = mockedRequestInfoWithoutPathParams();
 
-        assertThrows(IllegalArgumentException.class,
-                     () -> RequestUtils.fromRequestInfo(requestInfo).publicationIdentifier());
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NotFoundException.class,
                      () -> RequestUtils.fromRequestInfo(requestInfo).ticketIdentifier());
     }
 
     @Test
-    void shouldReturnIdentifiersFromPathParamsWhenTheyArePresent() throws UnauthorizedException {
+    void shouldThrowNotFoundExceptionWhenExtractingMissingPublicationIdentifier() throws UnauthorizedException {
+        var requestInfo = mockedRequestInfoWithoutPathParams();
+
+        assertThrows(NotFoundException.class,
+                     () -> RequestUtils.fromRequestInfo(requestInfo).publicationIdentifier());
+    }
+
+    @Test
+    void shouldReturnIdentifiersFromPathParamsWhenTheyArePresent() throws UnauthorizedException, NotFoundException {
         var requestUtils = RequestUtils.fromRequestInfo(mockedRequestInfo());
 
         Assertions.assertTrue(nonNull(requestUtils.publicationIdentifier()));
@@ -120,8 +125,9 @@ public class RequestUtilsTest {
         var expectedUserInstance = new UserInstance(requestInfo.getUserName(),
                                                     requestInfo.getCurrentCustomer(),
                                                     requestInfo.getTopLevelOrgCristinId().orElseThrow(),
-                                                    requestInfo.getPersonCristinId(),
-                                                    requestInfo.getAccessRights());
+                                                    requestInfo.getPersonAffiliation(), requestInfo.getPersonCristinId(),
+                                                    requestInfo.getAccessRights(),
+                                                    UserClientType.INTERNAL);
         var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo).toUserInstance();
         Assertions.assertEquals(createdUserInstance, expectedUserInstance);
     }
@@ -134,8 +140,22 @@ public class RequestUtilsTest {
                                   .hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS));
     }
 
+    @Test
+    void shouldReturnNullWhenPersonAffiliationIsMissing() throws UnauthorizedException {
+        var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
+
+        Assertions.assertNull(RequestUtils.fromRequestInfo(requestInfo).personAffiliation());
+    }
+
+    @Test
+    void shouldReturnPersonAffiliationWhenPersonAffiliationIsPresent() throws UnauthorizedException {
+        var requestInfo = mockedRequestInfo();
+
+        assertNotNull(RequestUtils.fromRequestInfo(requestInfo).personAffiliation());
+    }
+
     private static Publication publicationWithOwner(String owner) {
-        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withStatus(PUBLISHED)
                    .withResourceOwner(new ResourceOwner(new Username(owner), randomUri())).build();
     }
@@ -157,6 +177,7 @@ public class RequestUtilsTest {
         when(requestInfo.getAccessRights()).thenReturn(List.of());
         when(requestInfo.getPersonCristinId()).thenReturn(randomUri());
         when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(randomUri()));
+        when(requestInfo.getPersonAffiliation()).thenReturn(randomUri());
         return requestInfo;
     }
 

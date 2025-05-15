@@ -44,6 +44,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +64,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
         importCandidateService = getResourceServiceBuilder(client)
                                      .withTableName(TABLE_NAME)
                                      .build();
-        handler = new UpdateImportStatusHandler(importCandidateService);
+        handler = new UpdateImportStatusHandler(importCandidateService, new Environment());
     }
 
     @Test

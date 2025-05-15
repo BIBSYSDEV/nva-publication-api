@@ -7,10 +7,13 @@ import static no.unit.nva.publication.RequestUtil.FILE_IDENTIFIER;
 import static no.unit.nva.publication.RequestUtil.IMPORT_CANDIDATE_IDENTIFIER;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
+import static no.unit.nva.publication.RequestUtil.getFileEntryIdentifier;
 import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
 import static no.unit.nva.publication.RequestUtil.getIdentifier;
 import static no.unit.nva.publication.RequestUtil.getImportCandidateIdentifier;
 import static no.unit.nva.publication.RequestUtil.getOwner;
+import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,6 +50,7 @@ class RequestUtilTest {
     public static final String INJECT_ISSUER_CLAIM = "iss";
     public static final String INJECT_CLIENT_ID_CLAIM = "client_id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
 
 
     @ParameterizedTest
@@ -54,12 +58,16 @@ class RequestUtilTest {
     void shouldReturnCorrectIdentifierWhenIdentifierIsSet(String pathParameterKey,
                                                           Function<RequestInfo, SortableIdentifier> identifierGetter) {
         var uuid = SortableIdentifier.next();
-        var requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setPathParameters(Map.of(pathParameterKey, uuid.toString()));
 
         var identifier = identifierGetter.apply(requestInfo);
 
         assertEquals(uuid, identifier);
+    }
+
+    private static RequestInfo getRequestInfo() {
+        return attempt(() -> RequestInfo.fromString("{}")).orElseThrow();
     }
 
     private static Stream<Arguments> provideIdentifiersForTesting() {
@@ -78,25 +86,37 @@ class RequestUtilTest {
     @Test
     void canGetFileIdentifierFromRequest() throws ApiGatewayException {
         var uuid = randomUUID();
-        var requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, uuid.toString()));
 
         var identifier = getFileIdentifier(requestInfo);
 
         assertEquals(uuid, identifier);
     }
+
+    @Test
+    void canGetFileEntryIdentifierFromRequest() throws ApiGatewayException {
+        var sortableIdentifier = SortableIdentifier.next();
+        var requestInfo = getRequestInfo();
+        requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, sortableIdentifier.toString()));
+
+        var identifier = getFileEntryIdentifier(requestInfo);
+
+        assertEquals(sortableIdentifier, identifier);
+    }
     
     @Test
     void getIdentifierOnInvalidRequestThrowsException() {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         assertThrows(BadRequestException.class, () -> getIdentifier(requestInfo));
         assertThrows(BadRequestException.class, () -> getImportCandidateIdentifier(requestInfo));
         assertThrows(BadRequestException.class, () -> getFileIdentifier(requestInfo));
+        assertThrows(BadRequestException.class, () -> getFileEntryIdentifier(requestInfo));
     }
     
     @Test
     void canGetOwnerFromRequest() throws Exception {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(INJECT_NVA_USERNAME_CLAIM, VALUE));
         
         String owner = getOwner(requestInfo);
@@ -106,17 +126,18 @@ class RequestUtilTest {
     
     @Test
     void getOwnerThrowsUnauthorizedExceptionWhenOwnerCannotBeRetrieved() {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         assertThrows(UnauthorizedException.class, () -> getOwner(requestInfo));
     }
 
     @Test
     void createExternalUserInstanceReturnsNonNullValue()
         throws NotFoundException, JsonProcessingException, UnauthorizedException {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
             INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
-            INJECT_CLIENT_ID_CLAIM, "clientId"
+            INJECT_CLIENT_ID_CLAIM, "clientId",
+            SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ
         )));
 
         var getExternalClientResponse = mock(GetExternalClientResponse.class);
@@ -130,9 +151,10 @@ class RequestUtilTest {
     @Test
     void createExternalUserInstanceThrowsUnauthorizedWhenClientIdIsMissing()
         throws NotFoundException, JsonProcessingException {
-        RequestInfo requestInfo = new RequestInfo();
+        var requestInfo = getRequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
-            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER
+            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
+            SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ
         )));
 
         var getExternalClientResponse = mock(GetExternalClientResponse.class);
@@ -147,7 +169,7 @@ class RequestUtilTest {
     void createInternalUserInstanceReturnsValidData() throws ApiGatewayException {
 
         var username = RandomDataGenerator.randomString();
-        var customer = RandomDataGenerator.randomUri();
+        var customer = randomUri();
 
         RequestInfo requestInfo = mock(RequestInfo.class);
         when(requestInfo.getCurrentCustomer()).thenReturn(customer);

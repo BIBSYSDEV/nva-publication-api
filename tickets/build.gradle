@@ -40,7 +40,8 @@ test {
     environment "COGNITO_HOST", "https://example.com"
     environment "ALLOWED_ORIGIN", "*"
     environment "TABLE_NAME", "some-table-name"
-    environment "API_HOST", "https://example.com"
+    environment "API_HOST", "localhost"
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
+    environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
 }

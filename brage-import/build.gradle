@@ -1,7 +1,5 @@
 dependencies {
     implementation project(":publication-commons")
-    testImplementation libs.nva.testutils
-    testImplementation project(":publication-model-testing")
     implementation project(":s3-import-commons")
 
     implementation libs.aws.sdk2.s3
@@ -9,8 +7,8 @@ dependencies {
     implementation libs.aws.lambda.events
     implementation libs.aws.sdk.dynamodb
     implementation libs.hamcrest.base
-    implementation libs.nva.testutils
     implementation libs.nva.apigateway
+    implementation libs.nva.clients
 
     implementation libs.bundles.logging
 
@@ -22,11 +20,12 @@ dependencies {
     implementation libs.nva.language
     implementation libs.nva.identifiers
     implementation project(":publication-model")
-    implementation(libs.dynamodDbLocal) {
+    testImplementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
         exclude group: 'com.google.guava', module: 'guava'
     }
+
 
     implementation libs.tika.core
     implementation libs.tika.langdetect.optimaize
@@ -35,9 +34,11 @@ dependencies {
 
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.646'
 
+    testImplementation libs.nva.testutils
     testImplementation libs.cucumber.java
     testImplementation libs.cucumber.junit
     testImplementation libs.cucumber.picocontainer
+    testImplementation project(":publication-model-testing")
     testImplementation project(path: ':publication-testing')
 }
 
@@ -49,4 +50,6 @@ test {
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "AWS_REGION", "eu-west-1"
     environment "API_HOST", "test.nva.aws.unit.no"
+    environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
 }

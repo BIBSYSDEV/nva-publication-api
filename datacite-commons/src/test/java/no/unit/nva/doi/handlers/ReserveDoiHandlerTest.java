@@ -70,7 +70,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     public static final String DOI = "doi";
     public static final String NOT_OWNER = "notOwner";
     public static final String OWNER = "owner";
-    public static final String NOT_FOUND_MESSAGE = "Publication not found: ";
+    public static final String NOT_FOUND_MESSAGE = "Could not find resource ";
     public static final String EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE = "ExpectedResponseMessage";
     public static final String ACCESS_TOKEN_RESPONSE_BODY = """
         { "access_token" : "%s"}
@@ -89,7 +89,8 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        when(environment.readEnv("API_HOST")).thenReturn("localhost");
+        when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
         context = new FakeContext();
         output = new ByteArrayOutputStream();
         resourceService = getResourceServiceBuilder().build();
@@ -216,7 +217,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
 
-        var updatedPublication = resourceService.getPublication(publication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(updatedPublication.getDoi(), is(equalTo(expectedDoi)));
         var response = GatewayResponse.fromOutputStream(output, DoiResponse.class);
         assertEquals(HttpURLConnection.HTTP_CREATED, response.getStatusCode());
@@ -261,9 +262,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         publication.setDoi(null);
         publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
         var userInstance = UserInstance.fromPublication(publication);
-        var publicationIdentifier =
-            Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
+        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
     private Publication createPersistedPublishedPublication() throws ApiGatewayException {
@@ -271,10 +270,9 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         publication.setDoi(null);
         publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
         var userInstance = UserInstance.fromPublication(publication);
-        var publicationIdentifier =
-            Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
-        resourceService.publishPublication(userInstance, publicationIdentifier);
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
+        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
 
     private InputStream generateRequestWithOwner(Publication publication, String owner) throws JsonProcessingException {

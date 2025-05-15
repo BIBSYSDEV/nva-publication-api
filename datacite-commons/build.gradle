@@ -32,7 +32,8 @@ dependencies {
 test {
     environment "TABLE_NAME", "ResourcesTable"
     environment "AWS_REGION", "eu-west-1"
-    environment "API_HOST", "api.localhost.nva.aws.unit.no"
+    environment "API_HOST", "localhost"
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
+    environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
 }

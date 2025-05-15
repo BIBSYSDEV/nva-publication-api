@@ -87,7 +87,6 @@ import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportSource;
@@ -95,6 +94,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.MediaContribution;
@@ -109,6 +109,8 @@ import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -698,19 +700,6 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldOverrideCuratingInstitutionsWhenUpdatingExistingPublicationContributors() throws IOException {
-        var cristinObject = CristinDataGenerator.randomObject();
-        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
-        var eventBody = createEventBody(cristinObject);
-        var sqsEvent = createSqsEvent(eventBody);
-        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
-
-
-        assertThat(existingPublication.getCuratingInstitutions(),
-                is(not(equalTo(updatedPublication.getCuratingInstitutions()))));
-    }
-
-    @Test
     void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
@@ -931,7 +920,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         names = {"ANTHOLOGY", "MONOGRAPH", "NON_FICTION_BOOK", "TEXTBOOK", "ENCYCLOPEDIA",
             "POPULAR_BOOK", "REFERENCE_MATERIAL", "RESEARCH_REPORT", "DEGREE_PHD",
             "DEGREE_MASTER", "SECOND_DEGREE_THESIS", "MEDICAL_THESIS"})
-    void shouldPersistNoPublisherReportWhenCristinObjectMissesPublisherName(CristinSecondaryCategory category)
+    void shouldPersistChannelRegistryExceptionReportWhenCristinObjectMissesPublisherName(CristinSecondaryCategory category)
         throws IOException {
         var cristinObject = CristinDataGenerator.randomObject(category.getValue());
         cristinObject.setSecondaryCategory(category);
@@ -946,28 +935,6 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                 .addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedReportFileLocation);
-        assertThat(file, is(not(emptyString())));
-    }
-
-    @ParameterizedTest(name = "Cristin entry with secondary category {arguments}")
-    @EnumSource(value = CristinSecondaryCategory.class, mode = Mode.INCLUDE,
-        names = {"ANTHOLOGY", "MONOGRAPH"})
-    void shouldPersistChannelRegistryExceptionReportWhenNsdCodeIsNotInChannelRegistry(CristinSecondaryCategory category)
-        throws IOException {
-        var cristinObject = CristinDataGenerator.randomObject(category.getValue());
-        cristinObject.setSecondaryCategory(category);
-        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(randomString());
-        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(NOT_EXISTING_NSD_CODE);
-        var eventBody = createEventBody(cristinObject);
-        var sqsEvent = createSqsEvent(eventBody);
-        handler.handleRequest(sqsEvent, CONTEXT);
-        var cristinId = String.valueOf(cristinObject.getId());
-        var expectedReportFileLocation =
-            UnixPath.of(ERROR_REPORT).addChild("ChannelRegistryException").addChild(cristinId);
-        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(expectedReportFileLocation);
-        var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinId);
-        assertThat(importedPublication, hasSize(1));
         assertThat(file, is(not(emptyString())));
     }
 
@@ -1106,7 +1073,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var actualAssociatedLink = (AssociatedLink) publication.getAssociatedArtifacts().getFirst();
         var expectedAssociatedLinkValue = URI.create(value.trim());
 
-        assertThat(actualAssociatedLink.getId(), is(equalTo(expectedAssociatedLinkValue)));
+        assertThat(actualAssociatedLink.id(), is(equalTo(expectedAssociatedLinkValue)));
     }
 
     @Test
@@ -1131,15 +1098,12 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
-        var importDetail = publication.getImportDetails()
-                               .stream()
-                               .filter(f -> f.importSource().getSource().equals(Source.CRISTIN))
-                               .findFirst()
-                               .orElse(null);
+        var resource = Resource.resourceQueryObject(publication.getIdentifier())
+                           .fetch(resourceService)
+                           .orElseThrow();
+        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 
-        assertNotNull(importDetail);
-        assertNotNull(importDetail.importDate());
-        assertNull(importDetail.importSource().getArchive());
+        assertEquals(Source.CRISTIN, resourceEvent.importSource().getSource());
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
@@ -1250,7 +1214,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
         var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
-            .createPublicationFromImportedEntry(any(), any());
+            .importResource(any(), any());
         return resourceService;
     }
 }

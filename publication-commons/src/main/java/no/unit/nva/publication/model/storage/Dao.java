@@ -40,7 +40,9 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 
 @JsonSubTypes({@JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
-    @JsonSubTypes.Type(TicketDao.class), @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class)})
+    @JsonSubTypes.Type(TicketDao.class), @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
+    @JsonSubTypes.Type(name = FileDao.TYPE, value = FileDao.class),
+    @JsonSubTypes.Type(name = PublicationChannelDao.TYPE, value = PublicationChannelDao.class)})
 public abstract class Dao
     implements DynamoEntry, WithPrimaryKey, DynamoEntryByIdentifier, WithByTypeCustomerStatusIndex {
 
@@ -104,7 +106,7 @@ public abstract class Dao
     }
 
     @Override
-    public final String getPrimaryKeyPartitionKey() {
+    public String getPrimaryKeyPartitionKey() {
         return formatPrimaryPartitionKey(getCustomerId(), getOwner().toString());
     }
 
@@ -116,7 +118,7 @@ public abstract class Dao
 
     @Override
     @JacocoGenerated
-    public final String getPrimaryKeySortKey() {
+    public String getPrimaryKeySortKey() {
         return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, indexingType(), getIdentifier());
     }
 
@@ -141,7 +143,7 @@ public abstract class Dao
     public abstract String indexingType();
 
     @Override
-    public final String getByTypeCustomerStatusPartitionKey() {
+    public String getByTypeCustomerStatusPartitionKey() {
         String publisherId = customerIdentifier();
         Optional<String> publicationStatus = extractStatus();
 
@@ -151,7 +153,7 @@ public abstract class Dao
 
     @Override
     @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
-    public final String getByTypeCustomerStatusSortKey() {
+    public String getByTypeCustomerStatusSortKey() {
         //Codacy complains that identifier is already a String
         SortableIdentifier identifier = getData().getIdentifier();
         return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, this.indexingType(), identifier.toString());
@@ -242,6 +244,8 @@ public abstract class Dao
                                      new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
             case DOI_REQUEST ->
                 Map.entry(keyField.getKeyField(), new AttributeValue("DoiRequest" + KEY_FIELDS_DELIMITER));
+            case FILE_ENTRY ->
+                Map.entry(keyField.getKeyField(), new AttributeValue("File" + KEY_FIELDS_DELIMITER));
         };
     }
 

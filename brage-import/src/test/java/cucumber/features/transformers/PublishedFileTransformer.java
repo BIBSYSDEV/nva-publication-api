@@ -3,13 +3,14 @@ package cucumber.features.transformers;
 import static java.util.Objects.isNull;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.UNKNOWN;
 import io.cucumber.java.DataTableType;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import org.junit.platform.commons.util.StringUtils;
@@ -18,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 public class PublishedFileTransformer {
 
-    public static final boolean ADMINISTRATIVE_AGREEMENT_IS_ALWAYS_FALSE_FOR_PUBLISHED_FILES = false;
     private static final int CURRENTLY_MAX__NUMBER_OF_MAPPED_FIELDS = 8;
     private static final Logger logger = LoggerFactory.getLogger(PublishedFileTransformer.class);
     private static final String WRONG_NUMBER_OF_FIELDS_FOR_CRISTIN_PRESENTATIONAL_WORKS =
@@ -27,7 +27,7 @@ public class PublishedFileTransformer {
     public static final String NULL_AS_STRING = "null";
 
     @DataTableType
-    public static PublishedFile toPublishedFile(Map<String, String> entry) {
+    public static OpenFile toOpenFile(Map<String, String> entry) {
         if (entry.size() > CURRENTLY_MAX__NUMBER_OF_MAPPED_FIELDS) {
             throw new UnsupportedOperationException(WRONG_NUMBER_OF_FIELDS_FOR_CRISTIN_PRESENTATIONAL_WORKS);
         }
@@ -35,13 +35,12 @@ public class PublishedFileTransformer {
             NULL_AS_STRING.equalsIgnoreCase(entry.get("publisherVersion")) || isNull(entry.get("publisherVersion"))
                 ? null
                 : PublisherVersion.valueOf(entry.get("publisherVersion"));
-        return new PublishedFile(
+        return new OpenFile(
             UUID.fromString(entry.get("identifier")),
             entry.get("filename"),
             entry.get("mimeType"),
             Long.parseLong(entry.get("size")),
-            entry.get("license"),
-            ADMINISTRATIVE_AGREEMENT_IS_ALWAYS_FALSE_FOR_PUBLISHED_FILES,
+            Optional.ofNullable(entry.get("license")).map(URI::create).orElse(null),
             publisherVersion,
             parseDate(entry.get("embargoDate")),
             parseRightsRetentionStrategy(entry),

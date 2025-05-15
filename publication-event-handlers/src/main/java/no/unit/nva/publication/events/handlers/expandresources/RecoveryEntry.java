@@ -11,6 +11,7 @@ import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -28,6 +29,7 @@ public final class RecoveryEntry {
     private static final String RECOVERY_QUEUE = "RECOVERY_QUEUE";
     private static final String TYPE = "type";
     private static final String DATA_TYPE_STRING = "String";
+    public static final String FILE = "File";
     private final SortableIdentifier identifier;
     private final String type;
     private final String exception;
@@ -79,6 +81,7 @@ public final class RecoveryEntry {
             case Resource resource -> RESOURCE;
             case TicketEntry ticket -> TICKET;
             case Message message -> MESSAGE;
+            case FileEntry fileEntry -> FILE;
             default -> throw new IllegalStateException("Unexpected value: " + entity);
         };
     }

@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -27,14 +28,18 @@ import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -48,7 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class BrageEntryEventConsumer implements RequestHandler<S3Event, PublicationRepresentation> {
 
     public static final Random RANDOM = new Random(System.currentTimeMillis());
@@ -67,6 +72,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
+    private static final String UIO = "uio";
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
@@ -272,9 +278,24 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
                                                                      Publication existinPublication,
                                                                      PublicationRepresentation representation) {
+
         var importSource = createImportSource(representation);
-        var newImage = resourceService.updatePublicationByImportEntry(publicationForUpdate, importSource);
+        var resource = Resource.fromPublication(publicationForUpdate);
+        var updatedFiles = resource.getFiles();
+        var oldFiles = Resource.fromPublication(existinPublication).getFiles().stream().map(File::getIdentifier).toList();
+        updatedFiles.stream()
+            .filter(not(file -> oldFiles.contains(file.getIdentifier())))
+            .forEach(file -> importFile(representation, file, resource, importSource));
+        resource.updateResourceFromImport(resourceService, importSource);
+        var newImage = resource.fetch(resourceService).orElseThrow().toPublication();
         return new BrageMergingReport(existinPublication, newImage);
+    }
+
+    private void importFile(PublicationRepresentation representation, File file, Resource resource,
+                          ImportSource importSource) {
+        var userInstance = UserInstance.fromPublication(representation.publication());
+        FileEntry.create(file, resource.getIdentifier(), userInstance)
+            .importNew(resourceService, userInstance, importSource);
     }
 
     private Publication updatedPublication(PublicationRepresentation publicationRepresentation,
@@ -326,8 +347,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private PublicationRepresentation handleSavingError(Failure<PublicationRepresentation> fail, S3Event s3Event) {
-        String brageObjectKey = extractObjectKey(s3Event);
-        String errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectKey;
+        var brageObjectKey = extractObjectKey(s3Event);
+        var errorMessage = ERROR_SAVING_BRAGE_IMPORT + brageObjectKey;
         logger.error(errorMessage, fail.getException());
         saveReportToS3(fail, s3Event);
         return null;
@@ -344,6 +365,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return attemptSave;
     }
 
+    @SuppressWarnings("PMD.DoNotUseThreads")
     private void avoidCongestionInDatabase() {
         int sleepTime = spreadWriteRequests();
         try {
@@ -369,10 +391,12 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
-        var updatedPublication =
-            resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication(),
-                                                               createImportSource(publicationRepresentation));
-        return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);
+        var importSource = createImportSource(publicationRepresentation);
+        var publication = publicationRepresentation.publication();
+
+        var resource = Resource.fromPublication(publication).importResource(resourceService, importSource);
+
+        return new PublicationRepresentation(publicationRepresentation.brageRecord(), resource.toPublication());
     }
 
     private ImportSource createImportSource(PublicationRepresentation publicationRepresentation) {

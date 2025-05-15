@@ -2,16 +2,20 @@ package no.unit.nva.publication.service.impl;
 
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
@@ -35,6 +39,10 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,14 +55,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -63,17 +69,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportSource;
@@ -84,24 +89,32 @@ import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.RejectedFile;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ListingResult;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -110,12 +123,22 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.logentry.LogOrganization;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
+import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -130,6 +153,7 @@ import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -156,11 +180,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final URI SOME_ORG = randomUri();
     private static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-    private static final String RESOURCE_LACKS_DATA = "Resource does not have required data to be published:";
-    private static final String FINALIZED_DATE = "finalizedDate";
-    private static final String ASSIGNEE = "assignee";
-    private static final String FINALIZED_BY = "finalizedBy";
-    private static final String OWNER_AFFILIATION = "ownerAffiliation";
     private ResourceService resourceService;
 
     private TicketService ticketService;
@@ -193,23 +212,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldKeepImportedDataCreationDates() throws NotFoundException {
-        var randomInstant = RandomDataGenerator.randomInstant();
-        var inputPublication =
-            randomPublication().copy().withCreatedDate(randomInstant).withCuratingInstitutions(null).build();
-
-        var savedPublicationIdentifier = resourceService.createPublicationWithPredefinedCreationDate(inputPublication)
-                                             .getIdentifier();
-        var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
-
-        // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
-        inputPublication.setIdentifier(savedPublicationIdentifier);
-
-        var possiblyErrorDiff = JAVERS.compare(inputPublication, savedPublication);
-        assertThat(possiblyErrorDiff.prettyPrint(), savedPublication, is(equalTo(inputPublication)));
-    }
-
-    @Test
     void shouldSetImportedEntryCreationModifiedAndPublishedDates() throws NotFoundException {
         var startOfTest = Instant.now();
         var inputPublication = randomPublication().copy()
@@ -238,7 +240,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var userInstance = UserInstance.fromPublication(input);
         var savedResource = Resource.fromPublication(input).persistNew(resourceService, userInstance);
-        var readResource = resourceService.getPublication(savedResource);
+        var readResource = resourceService.getResourceByIdentifier(savedResource.getIdentifier()).toPublication();
         var expectedResource = input.copy()
                                    .withIdentifier(savedResource.getIdentifier())
                                    .withStatus(DRAFT)
@@ -286,15 +288,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourceByIdentifierReturnsNotFoundWhenResourceDoesNotExist() {
         SortableIdentifier nonExistingIdentifier = SortableIdentifier.next();
-        Executable action = () -> resourceService.getPublication(SAMPLE_USER, nonExistingIdentifier);
+        Executable action = () -> resourceService.getPublicationByIdentifier(nonExistingIdentifier);
         assertThrows(NotFoundException.class, action);
     }
 
     @Test
     void getResourceByIdentifierReturnsResourceWhenResourceExists() throws ApiGatewayException {
         Publication sampleResource = createPersistedPublicationWithDoi();
-        UserInstance userInstance = UserInstance.fromPublication(sampleResource);
-        Publication savedResource = resourceService.getPublication(userInstance, sampleResource.getIdentifier());
+        Publication savedResource = resourceService.getPublicationByIdentifier(sampleResource.getIdentifier());
         assertThat(savedResource, is(equalTo(sampleResource)));
     }
 
@@ -307,9 +308,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
 
-        assertThatResourceDoesNotExist(originalResource);
+        assertThatResourceHaveNewOwner(originalResource);
 
-        var newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
+        var newResource = resourceService.getPublicationByIdentifier(originalResource.getIdentifier());
 
         var expectedResource = expectedUpdatedResource(originalResource, newResource, newOwner);
         var diff = JAVERS.compare(expectedResource, newResource);
@@ -324,7 +325,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
 
-        Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
+        Publication newResource = resourceService.getPublicationByIdentifier(originalResource.getIdentifier());
 
         assertThat(newResource.getResourceOwner().getOwner().getValue(), is(equalTo(newOwner.getUsername())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getCustomerId())));
@@ -338,9 +339,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.updateOwner(sampleResource.getIdentifier(), oldOwner, newOwner);
 
-        assertThatResourceDoesNotExist(sampleResource);
+        assertThatResourceHaveNewOwner(sampleResource);
 
-        Publication newResource = resourceService.getPublication(newOwner, sampleResource.getIdentifier());
+        Publication newResource = resourceService.getPublicationByIdentifier(sampleResource.getIdentifier());
 
         assertThat(newResource.getModifiedDate(), is(greaterThan(newResource.getCreatedDate())));
     }
@@ -348,15 +349,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void resourceIsUpdatedWhenResourceUpdateIsReceived() throws ApiGatewayException {
         Publication resource = createPersistedPublicationWithDoi();
-        Publication actualOriginalResource = resourceService.getPublication(resource);
+        Publication actualOriginalResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
         assertThat(actualOriginalResource, is(equalTo(resource)));
 
         Publication resourceUpdate = updateResourceTitle(resource);
         resourceService.updatePublication(resourceUpdate);
-        Publication actualUpdatedResource = resourceService.getPublication(resource);
+        Publication actualUpdatedResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
 
-        assertThat(actualUpdatedResource, is(equalTo(resourceUpdate)));
-        assertThat(actualUpdatedResource, is(not(equalTo(actualOriginalResource))));
+        assertThat(actualUpdatedResource.getEntityDescription().getMainTitle(),
+                   is(equalTo(resourceUpdate.getEntityDescription().getMainTitle())));
     }
 
     @Test
@@ -412,12 +413,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
         var client = mock(AmazonDynamoDB.class);
         var expectedMessage = new RuntimeException("expectedMessage");
-        when(client.getItem(any(GetItemRequest.class))).thenThrow(expectedMessage);
+        when(client.query(any(QueryRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
         var failingResourceService = getResourceServiceBuilder(client).build();
 
-        Executable action = () -> failingResourceService.getPublication(resource);
+        Executable action = () -> failingResourceService.getPublicationByIdentifier(resource.getIdentifier());
         var exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), is(equalTo(expectedMessage.getMessage())));
     }
@@ -425,29 +426,31 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Should return publication by owner when status is {0}")
     @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"DRAFT_FOR_DELETION"})
     void shouldReturnPublicationsForOwnerWithStatus(PublicationStatus status) {
-        var userInstance = UserInstance.create(randomString(), randomUri());
+        var userInstance = randomUserInstance();
         var publication = createPublicationWithStatus(userInstance, status);
-        var actualResources = resourceService.getPublicationsByOwner(userInstance);
+        var actualResources = resourceService.getPublicationSummaryByOwner(userInstance);
         var resourceSet = new HashSet<>(actualResources);
-        assertThat(resourceSet, containsInAnyOrder(publication));
+        assertThat(resourceSet, containsInAnyOrder(PublicationSummary.create(publication)));
     }
 
     @Test
     void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
-        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
-        Set<Publication> userResources = createSamplePublicationsOfSingleOwner(userInstance);
+        UserInstance userInstance = randomUserInstance();
+        Set<PublicationSummary> userResources = createSamplePublicationsOfSingleOwner(userInstance)
+                                                    .stream()
+                                                    .map(PublicationSummary::create)
+                                                    .collect(Collectors.toSet());
 
-        List<Publication> actualResources = resourceService.getPublicationsByOwner(userInstance);
-        HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
+        List<PublicationSummary> actualResources = resourceService.getPublicationSummaryByOwner(userInstance);
+        HashSet<PublicationSummary> actualResourcesSet = new HashSet<>(actualResources);
 
-        assertThat(actualResourcesSet, containsInAnyOrder(userResources.toArray(Publication[]::new)));
+        assertThat(actualResourcesSet, containsInAnyOrder(userResources.toArray(PublicationSummary[]::new)));
     }
 
     @Test
     void getResourcesByCristinIdentifierReturnsAllResourcesWithCristinIdentifier() {
         String cristinIdentifier = randomString();
-        Set<Publication> publicationsWithCristinIdentifier =
-            createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
+        persistSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
         List<Publication> actualPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualPublication);
         assertTrue(actualPublication.containsAll(actualResourcesSet));
@@ -458,7 +461,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws BadRequestException, NotFoundException {
 
         Publication resource = createPersistedPublicationWithDoi();
-        Publication actualOriginalResource = resourceService.getPublication(resource);
+        Publication actualOriginalResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
         assertThat(actualOriginalResource, is(equalTo(resource)));
 
         Set<AdditionalIdentifierBase> multipleTrustedCristinIdentifiers = Set.of(
@@ -469,12 +472,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    @Disabled //TODO: Decide how to manage multiple cristin identifiers that exist in the data
+    @Disabled
+        //TODO: Decide how to manage multiple cristin identifiers that exist in the data
     void combinationOfTrustedAndUntrustedCristinIdentifiersIsNotAllowed()
         throws BadRequestException, NotFoundException {
 
         Publication resource = createPersistedPublicationWithDoi();
-        Publication actualOriginalResource = resourceService.getPublication(resource);
+        Publication actualOriginalResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
         assertThat(actualOriginalResource, is(equalTo(resource)));
 
         Set<AdditionalIdentifierBase> cristinIdentifiers = Set.of(
@@ -488,8 +492,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void getResourcesByOwnerReturnsEmptyListWhenUseHasNoPublications() {
 
-        List<Publication> actualResources = resourceService.getPublicationsByOwner(SAMPLE_USER);
-        HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
+        List<PublicationSummary> actualResources = resourceService.getPublicationSummaryByOwner(SAMPLE_USER);
+        HashSet<PublicationSummary> actualResourcesSet = new HashSet<>(actualResources);
 
         assertThat(actualResourcesSet, is(equalTo(Collections.emptySet())));
     }
@@ -504,7 +508,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var failingResourceService = getResourceServiceBuilder(client).build();
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                                                  () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
+                                                  () -> failingResourceService.getPublicationSummaryByOwner(
+                                                      SAMPLE_USER));
 
         assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
     }
@@ -521,7 +526,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
-                                                    () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
+                                                    () -> failingResourceService.getPublicationSummaryByOwner(
+                                                        SAMPLE_USER));
     }
 
     @Test
@@ -529,56 +535,27 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
         Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
-        GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
-        when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
+        var responseWithInvalidItem = new QueryResult().withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
+        when(mockClient.query(any())).thenReturn(responseWithInvalidItem);
 
         ResourceService failingResourceService = getResourceServiceBuilder(mockClient).build();
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         SortableIdentifier someIdentifier = SortableIdentifier.next();
-        Executable action = () -> failingResourceService.getPublication(SAMPLE_USER, someIdentifier);
+        Executable action = () -> failingResourceService.getPublicationByIdentifier(someIdentifier);
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass, action);
     }
 
     @Test
     void shouldPublishResourceWhenClientRequestsToPublish() throws ApiGatewayException {
-        var resource = createPersistedPublicationWithDoi();
-        var userInstance = UserInstance.fromPublication(resource);
-        resourceService.publishPublication(userInstance, resource.getIdentifier());
-        var actualResource = resourceService.getPublication(resource);
-        var expectedResource = resource.copy()
-                                   .withStatus(PUBLISHED)
-                                   .withModifiedDate(actualResource.getModifiedDate())
-                                   .withPublishedDate(actualResource.getPublishedDate())
-                                   .build();
+        var publication = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.fromPublication(publication);
+        Resource.fromPublication(publication).publish(resourceService, userInstance);
+        var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
-        assertThat(actualResource, is(equalTo(expectedResource)));
-    }
-
-    @Test
-    void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
-        throws ApiGatewayException {
-        Publication resource = createPersistedPublicationWithDoi();
-
-        UserInstance userInstance = UserInstance.fromPublication(resource);
-        PublishPublicationStatusResponse response = resourceService.publishPublication(userInstance,
-                                                                                       resource.getIdentifier());
-
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
-    }
-
-    @Test
-    void publishPublicationReturnsPublicationResponseThatNoActionWasTakenWhenResourceIsAlreadyPublished()
-        throws ApiGatewayException {
-        Publication resource = createPersistedPublicationWithDoi();
-
-        UserInstance userInstance = UserInstance.fromPublication(resource);
-        resourceService.publishPublication(userInstance, resource.getIdentifier());
-        PublishPublicationStatusResponse response = resourceService.publishPublication(userInstance,
-                                                                                       resource.getIdentifier());
-
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NO_CONTENT)));
+        assertEquals(PUBLISHED, publishedPublication.getStatus());
+        assertNotNull(publishedPublication.getPublishedDate());
     }
 
     @Test
@@ -588,8 +565,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertThatResourceCanBeFoundInDraftResources(resourceDaoWithStatusDraft);
 
-        resourceService.publishPublication(UserInstance.fromPublication(resourceWithStatusDraft),
-                                           resourceWithStatusDraft.getIdentifier());
+        Resource.fromPublication(resourceWithStatusDraft)
+            .publish(resourceService, UserInstance.fromPublication(resourceWithStatusDraft));
 
         verifyThatTheResourceWasMovedFromTheDrafts(resourceDaoWithStatusDraft);
 
@@ -608,12 +585,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         sampleResource.getEntityDescription().setMainTitle(null);
         Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
 
-        Executable action = () -> resourceService.publishPublication(UserInstance.fromPublication(sampleResource),
-                                                                     savedResource.getIdentifier());
+        Executable action = () -> Resource.fromPublication(savedResource)
+                                      .publish(resourceService, UserInstance.fromPublication(sampleResource));
 
-        InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
-        String actualMessage = exception.getMessage();
-        assertThat(actualMessage, containsString(RESOURCE_LACKS_DATA));
+        assertThrows(IllegalStateException.class, action);
     }
 
     @Test
@@ -638,21 +613,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldKeepTheResourceInSyncWithTheAssociatedDoiRequestWhenResourceIsPublished() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
-
-        var doiRequest = DoiRequest.fromPublication(publication);
-        doiRequest.persistNewTicket(ticketService);
-        assertThat(doiRequest.getResourceStatus(), is(equalTo(PublicationStatus.DRAFT)));
-
-        var publishedResource = publishResource(publication);
-        assertThat(publishedResource.getStatus(), is(equalTo(PUBLISHED)));
-
-        var actualDoiRequest = (DoiRequest) ticketService.fetchTicket(doiRequest);
-        assertThat(actualDoiRequest.getResourceStatus(), is(equalTo(PUBLISHED)));
-    }
-
-    @Test
     void markPublicationForDeletionThrowsExceptionWhenDeletingPublishedPublication() throws ApiGatewayException {
         Publication resource = createPublishedResource();
         Executable action = () -> resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource),
@@ -665,11 +625,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void markPublicationForDeletionThrowsExceptionWhenDeletingSomeoneElsePublication() throws ApiGatewayException {
         Publication resource = createPublishedResource();
-        var userInstance = UserInstance.create(randomString(), randomUri());
+        var userInstance = randomUserInstance();
         Executable action = () -> resourceService.markPublicationForDeletion(userInstance,
                                                                              resource.getIdentifier());
         BadRequestException exception = assertThrows(BadRequestException.class, action);
-        assertThat(exception.getMessage(), containsString(RESOURCE_NOT_FOUND_MESSAGE));
+        assertThat(exception.getMessage(), containsString(RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE));
         assertThat(exception.getMessage(), containsString(resource.getIdentifier().toString()));
     }
 
@@ -698,7 +658,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                                 resource.getIdentifier());
         assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
 
-        Publication resourceForDeletion = resourceService.getPublication(resource);
+        Publication resourceForDeletion = resourceService.getPublicationByIdentifier(resource.getIdentifier());
         assertThat(resourceForDeletion.getStatus(),
                    Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
     }
@@ -716,34 +676,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         Publication resource = createPersistedPublicationWithDoi();
         resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource), resource.getIdentifier());
-        Publication actualResource = resourceService.getPublication(resource);
+        Publication actualResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
         assertThat(actualResource.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
 
         Executable action = () -> resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource),
                                                                              resource.getIdentifier());
         assertThrows(BadRequestException.class, action);
-    }
-
-    @Test
-    void updateResourceUpdatesAllFieldsInDoiRequest() throws ApiGatewayException {
-        var initialPublication = createPersistedPublicationWithoutDoi();
-        var initialDoiRequest = createDoiRequest(initialPublication);
-        var publicationUpdate = updateAllPublicationFieldsExpectIdentifierStatusAndOwnerInfo(initialPublication);
-        resourceService.updatePublication(publicationUpdate);
-
-        var updatedDoiRequest = (DoiRequest) ticketService.fetchTicket(initialDoiRequest);
-
-        var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(initialPublication, initialDoiRequest,
-                                                                          publicationUpdate, updatedDoiRequest);
-
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
-                                                                                  FINALIZED_BY,
-                                                                                  FINALIZED_DATE)));
-        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
-                                                                                   FINALIZED_BY,
-                                                                                   FINALIZED_DATE)));
-        Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
-        assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }
 
     @Test
@@ -760,11 +698,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void deleteDraftPublicationDeletesDraftResourceWithoutDoi() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
+    void deleteDraftPublicationDeletesDraftResource() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
         assertThatIdentifierEntryHasBeenCreated();
 
-        Executable fetchResourceAction = () -> resourceService.getPublication(publication);
+        Executable fetchResourceAction = () -> resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertDoesNotThrow(fetchResourceAction);
 
         var userInstance = UserInstance.fromPublication(publication);
@@ -775,28 +713,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi() throws BadRequestException {
-        Publication publication = createPersistedPublicationWithDoi();
-        assertThatIdentifierEntryHasBeenCreated();
-        Executable fetchResourceAction = () -> resourceService.getPublication(publication);
-        assertDoesNotThrow(fetchResourceAction);
-
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
-                                                                               publication.getIdentifier());
-        assertThrows(TransactionFailedException.class, deleteAction);
-
-        assertThatTheEntriesHaveNotBeenDeleted();
-    }
-
-    @Test
     void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished() throws ApiGatewayException {
-        Publication publication = createPersistedPublicationWithoutDoi();
-        UserInstance userInstance = UserInstance.fromPublication(publication);
-        resourceService.publishPublication(userInstance, publication.getIdentifier());
+        var publication = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.fromPublication(publication);
+        Resource.fromPublication(publication).publish(resourceService, userInstance);
         assertThatIdentifierEntryHasBeenCreated();
 
-        Executable fetchResourceAction = () -> resourceService.getPublication(publication);
+        Executable fetchResourceAction = () -> resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertDoesNotThrow(fetchResourceAction);
 
         Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
@@ -808,10 +731,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest() throws ApiGatewayException {
-        Publication publication = createPersistedPublicationWithoutDoi();
+        var publication = createPersistedPublicationWithoutDoi();
         createDoiRequest(publication);
 
-        UserInstance userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
 
         assertThatAllEntriesHaveBeenDeleted();
@@ -838,7 +761,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithAssociatedLink(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
         var userInstance = UserInstance.fromPublication(publication);
@@ -852,7 +775,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var identifiersFromSecondScan = secondListingResult.getDatabaseEntries()
                                             .stream()
                                             .map(Entity::getIdentifier)
-                                            .collect(Collectors.toList());
+                                            .toList();
 
         var expectedIdentifiers = new ArrayList<>(
             List.of(publication.getIdentifier(), ticket.getIdentifier(), sampleMessage.getIdentifier()));
@@ -867,10 +790,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var samplePublication = createUnpublishablePublication();
         var userInstance = UserInstance.fromPublication(samplePublication);
-        var exception = assertThrows(InvalidPublicationException.class,
-                                     () -> resourceService.publishPublication(userInstance,
-                                                                              samplePublication.getIdentifier()));
-        assertThat(exception.getMessage(), containsString(RESOURCE_LACKS_DATA));
+
+        assertThrows(IllegalStateException.class, () -> Resource.fromPublication(samplePublication)
+                                                            .publish(resourceService, userInstance));
     }
 
     @Test
@@ -879,9 +801,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var persistedDraft = Resource.fromPublication(publication)
                                  .persistNew(resourceService, UserInstance.fromPublication(publication));
 
-        resourceService.publishPublication(UserInstance.fromPublication(persistedDraft),
-                                           persistedDraft.getIdentifier());
-        var persistedPublished = resourceService.getPublication(persistedDraft);
+        Resource.fromPublication(persistedDraft)
+            .publish(resourceService, UserInstance.fromPublication(persistedDraft));
+        var persistedPublished = resourceService.getPublicationByIdentifier(persistedDraft.getIdentifier());
         assertThat(persistedPublished.getStatus(), is(equalTo(PUBLISHED)));
         assertThat(persistedPublished.getAssociatedArtifacts(), everyItem(is(instanceOf(AssociatedLink.class))));
     }
@@ -923,13 +845,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
     @Test
     void shouldNotUpdatePublicationCuratingInstitutionsWhenContributorsAreUnchanged() throws ApiGatewayException {
-        var resource = createPersistedPublicationWithoutDoi();
+        var publication = randomPublication();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
@@ -937,14 +859,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .withId(orgId)
                               .build();
 
-        resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        resource.setCuratingInstitutions(Set.of(topLevelId));
-        var publishedResource = publishResource(createPersistedPublicationWithoutDoi(resource));
-
-        var updatedResource = resourceService.updatePublication(publishedResource);
+        publication.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
+        publication.setAssociatedArtifacts(AssociatedArtifactList.empty());
+        var resource = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                        UserInstance.fromPublication(publication));
+        var updatedResource = resourceService.updatePublication(resource);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -963,10 +886,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
         persistedImportCandidate.getEntityDescription()
             .setContributors(List.of(randomContributor(List.of(affiliation))));
+        persistedImportCandidate.setAssociatedArtifacts(AssociatedArtifactList.empty());
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -982,14 +906,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
 
         importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        importCandidate.setCuratingInstitutions(Set.of(topLevelId));
+        importCandidate.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
 
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
+        persistedImportCandidate.setAssociatedArtifacts(AssociatedArtifactList.empty());
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -1013,7 +938,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedResource = resourceService.updatePublication(publication);
 
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -1025,15 +950,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
             persistedImportCandidate.getIdentifier());
         assertThat(persistedImportCandidate.getImportStatus(), is(equalTo(fetchedImportCandidate.getImportStatus())));
         assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
-    }
-
-    @Test
-    void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
-        var publication = randomImportCandidate();
-        var persistedPublication = resourceService.autoImportPublicationFromScopus(publication);
-        var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        assertThat(persistedPublication, is(equalTo(fetchedPublication)));
-        assertThat(fetchedPublication.getStatus(), is(equalTo(PUBLISHED)));
     }
 
     @Test
@@ -1051,7 +967,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publication.setPublicationNotes(List.of(new PublicationNote(randomString())));
         var result = Resource.fromPublication(publication).persistNew(resourceService,
                                                                       UserInstance.fromPublication(publication));
-        var storedPublication = resourceService.getPublication(result);
+        var storedPublication = resourceService.getPublicationByIdentifier(result.getIdentifier());
         assertThat(storedPublication.getPublicationNotes(), is(equalTo(publication.getPublicationNotes())));
     }
 
@@ -1060,14 +976,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var failingClient = new FailingDynamoClient(this.client);
         resourceService = getResourceServiceBuilder(failingClient).build();
 
-        var userInstance = UserInstance.create(randomString(), randomUri());
+        var userInstance = randomUserInstance();
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
         // correctness of this test rely on number of publications generated above does not exceed
         // ResourceService.MAX_SIZE_OF_BATCH_REQUEST
         var resources = userResources.stream()
                             .map(Resource::fromPublication)
                             .map(Entity.class::cast)
-                            .collect(Collectors.toList());
+                            .toList();
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
@@ -1099,63 +1015,61 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowBadRequestWhenUnpublishingNotPublishedPublication() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
-        assertThrows(BadRequestException.class, () -> resourceService.unpublishPublication(publication));
+        var userInstance = UserInstance.fromPublication(publication);
+        assertThrows(BadRequestException.class, () -> resourceService.unpublishPublication(publication, userInstance));
     }
 
     @Test
     void shouldSetPublicationStatusToUnpublishedWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
-        resourceService.unpublishPublication(publication);
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(UNPUBLISHED)));
-    }
-
-    @Test
-    void shouldCreateAPendingUnpublishingRequestTicketWhenUnpublishingPublication() throws ApiGatewayException {
-        var publication = createPublishedResource();
-        resourceService.unpublishPublication(publication);
-        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        assertThat(tickets, hasSize(1));
-        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
-                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+        var userInstance = UserInstance.fromPublication(publication);
+        resourceService.unpublishPublication(publication, userInstance);
+        assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
+                   is(equalTo(UNPUBLISHED)));
     }
 
     @Test
     void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
-        var pendingGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
-        var pendingDoiRequestTicket = DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
+        GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
+        DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
         var closedGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication)
-                .persistNewTicket(ticketService)
-                .close(new Username(randomString()));
+            GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService)
+                .close(randomUserInstance());
         ticketService.updateTicket(closedGeneralSupportTicket);
-        var publishingRequestTicket = PublishingRequestCase.createOpeningCaseObject(publication);
+        var publishingRequestTicket = PublishingRequestCase.create(resource, userInstance,
+                                                                   PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
         publishingRequestTicket.persistNewTicket(ticketService);
-        resourceService.unpublishPublication(publication);
+        resourceService.unpublishPublication(publication, userInstance);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        assertThat(tickets, hasSize(5));
+        assertThat(tickets, hasSize(4));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.CLOSED))))));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
         assertThat(tickets, hasItem(allOf(instanceOf(DoiRequest.class),
                                           hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
-        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
-                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
         assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class),
                                           hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(UNPUBLISHED)));
+        assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
+                   is(equalTo(UNPUBLISHED)));
+    }
+
+    private static UserInstance randomUserInstance() {
+        return UserInstance.create(randomString(), randomUri());
     }
 
     @ParameterizedTest
-    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"NEW", "DRAFT_FOR_DELETION"})
+    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"NEW", "DRAFT_FOR_DELETION", "DELETED"})
     void shouldAllowPublish(PublicationStatus status) throws ApiGatewayException {
         var publication = randomPublication().copy().withStatus(status).build();
         resourceService.insertPreexistingPublication(publication);
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PUBLISHED)));
+        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
+        assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
+                   is(equalTo(PUBLISHED)));
     }
 
     @ParameterizedTest
@@ -1164,9 +1078,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldNotAllowPublish(PublicationStatus status) {
         var publication = randomPublication().copy().withStatus(status).build();
         resourceService.insertPreexistingPublication(publication);
-        assertThrows(UnsupportedPublicationStatusTransition.class,
-                     () -> resourceService.publishPublication(UserInstance.fromPublication(publication),
-                                                              publication.getIdentifier()));
+        assertThrows(IllegalStateException.class,
+                     () -> Resource.fromPublication(publication)
+                               .publish(resourceService, UserInstance.fromPublication(publication)));
     }
 
     @Test
@@ -1179,11 +1093,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldDeleteUnpublishedPublication() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        resourceService.unpublishPublication(resourceService.getPublication(publication));
-        resourceService.deletePublication(resourceService.getPublication(publication));
+        var userInstance = UserInstance.fromPublication(publication);
+        Resource.fromPublication(publication).publish(resourceService, userInstance);
+        resourceService.unpublishPublication(resourceService.getPublicationByIdentifier(publication.getIdentifier()),
+                                             userInstance);
+        resourceService.terminateResource(resourceService.getResourceByIdentifier(publication.getIdentifier()),
+                                          userInstance);
 
-        var deletedPublication = resourceService.getPublication(publication);
+        var deletedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(deletedPublication.getStatus(), is(equalTo(PublicationStatus.DELETED)));
     }
 
@@ -1192,7 +1109,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         var version = Resource.fromPublication(publication).toDao().getVersion();
         resourceService.refresh(publication.getIdentifier());
-        var updatedPublication = resourceService.getPublication(publication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var updatesVersion = Resource.fromPublication(updatedPublication).toDao().getVersion();
 
         assertThat(updatesVersion, is(not(equalTo(version))));
@@ -1209,10 +1126,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowBadRequestWhenAttemptingToDeletePublishedPublication() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var userInstance = UserInstance.fromPublication(publication);
+        Resource.fromPublication(publication).publish(resourceService, userInstance);
 
         assertThrows(BadRequestException.class,
-                     () -> resourceService.deletePublication(resourceService.getPublication(publication)));
+                     () -> resourceService.terminateResource(
+                         resourceService.getResourceByIdentifier(publication.getIdentifier()),
+                         userInstance));
     }
 
     @Test
@@ -1220,11 +1140,613 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         publication.setDoi(randomDoi());
         var updatedPublication = resourceService.updatePublicationByImportEntry(publication,
-                                                                   ImportSource.fromSource(Source.CRISTIN));
+                                                                                ImportSource.fromSource(
+                                                                                    Source.CRISTIN));
 
         assertThat(updatedPublication.getImportDetails().size(), is(equalTo(1)));
         assertThat(updatedPublication.getImportDetails().getFirst().importSource().getSource(),
                    is(equalTo(Source.CRISTIN)));
+    }
+
+    @Test
+    void shouldImportResourceCreatedEventWhenCreatingNewPublication() throws ApiGatewayException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+
+        var resource = resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
+
+        assertNotNull(resource.getResourceEvent());
+    }
+
+    @Test
+    void shouldFetchResource() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+
+        var resource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                           .fetch(resourceService);
+
+        assertEquals(peristedPublication, resource.orElseThrow().toPublication());
+    }
+
+    @Test
+    void shouldRepublishResourceAndSetResourceEvent() throws ApiGatewayException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+
+        Resource.fromPublication(peristedPublication).publish(resourceService, userInstance);
+        resourceService.unpublishPublication(peristedPublication, userInstance);
+        Resource.resourceQueryObject(peristedPublication.getIdentifier())
+            .fetch(resourceService)
+            .orElseThrow()
+            .republish(resourceService, userInstance);
+
+        var republishedResource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                                      .fetch(resourceService).orElseThrow();
+
+        assertEquals(PUBLISHED, republishedResource.getStatus());
+        assertInstanceOf(RepublishedResourceEvent.class, republishedResource.getResourceEvent());
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenRepublishingNotPublishedPublication() throws ApiGatewayException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+
+        assertThrows(IllegalStateException.class,
+                     () -> Resource.resourceQueryObject(peristedPublication.getIdentifier())
+                               .fetch(resourceService)
+                               .orElseThrow()
+                               .republish(resourceService, userInstance));
+    }
+
+    @Test
+    void shouldNotPublishAlreadyPublishedPublication() throws ApiGatewayException {
+        resourceService = mock(ResourceService.class);
+        var publishedPublication = randomPublication().copy().withStatus(PUBLISHED).build();
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publishedPublication));
+        Resource.resourceQueryObject(publishedPublication.getIdentifier()).publish(resourceService,
+                                                                                   UserInstance.fromPublication(
+                                                                                       publishedPublication));
+
+        verify(resourceService, never()).updateResource(any(), any());
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenPublishingNotPublishableResource()
+        throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var peristedPublication = Resource.fromPublication(publication)
+                                      .persistNew(resourceService, userInstance);
+        var resource = Resource.fromPublication(peristedPublication).fetch(resourceService).orElseThrow();
+        resource.setStatus(DRAFT_FOR_DELETION);
+        resourceService.updateResource(resource, userInstance);
+
+        assertThrows(IllegalStateException.class,
+                     () -> Resource.resourceQueryObject(
+                         peristedPublication.getIdentifier()).publish(resourceService, userInstance));
+    }
+
+    @Test
+    void shouldSetAllTicketsToNotApplicableWhenMarkingDraftPublicationAsDraftForDeletion() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithoutDoi();
+        var ticket = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
+                         .withOwnerAffiliation(randomUri())
+                         .withOwner(randomString())
+                         .persistNewTicket(ticketService);
+        resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
+                                                   publication.getIdentifier());
+
+        assertEquals(TicketStatus.NOT_APPLICABLE, ticket.fetch(ticketService).getStatus());
+    }
+
+    @Test
+    void shouldThrowBadRequestExceptionWhenMarkingNotExistingPublicationAsDraftForDeletion() {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        Executable action = () -> resourceService.markPublicationForDeletion(userInstance, publication.getIdentifier());
+        assertThrows(BadRequestException.class, action);
+    }
+
+    @Test
+    void shouldPersistFileEntry() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        var persistedFile = fileEntry.fetch(resourceService);
+
+        assertEquals(persistedFile.orElseThrow().getFile(), file);
+    }
+
+    @Test
+    void shouldHardDeleteFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+        fileEntry.delete(resourceService);
+
+        assertEquals(Optional.empty(), fileEntry.fetch(resourceService));
+    }
+
+    @Test
+    void shouldSoftDeleteFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+        fileEntry.softDelete(resourceService, new User(randomString()));
+
+        assertInstanceOf(FileDeletedEvent.class, fileEntry.fetch(resourceService).orElseThrow().getFileEvent());
+    }
+
+    @Test
+    void shouldUpdateFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomHiddenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        var updatedFile = file.copy().withLicense(randomUri()).buildHiddenFile();
+        fileEntry.update(updatedFile, userInstance, resourceService);
+
+        assertEquals(updatedFile, fileEntry.fetch(resourceService).orElseThrow().getFile());
+    }
+
+    @Test
+    void shouldFetchPublicationFromFile() throws BadRequestException, NotFoundException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        persistedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+
+        assertEquals(persistedPublication, fileEntry.toPublication(resourceService));
+    }
+
+    @Test
+    void shouldCreateQueryObjectThatCanBeFetched() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+        var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        var fetchedQueryObject = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
+                                     .fetch(resourceService)
+                                     .orElseThrow();
+
+        assertEquals(persistedFileEntry, fetchedQueryObject);
+    }
+
+    @Test
+    void shouldFetchResourceWithFiles() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService);
+
+        assertTrue(resource.orElseThrow().getAssociatedArtifacts().contains(file));
+    }
+
+    @Test
+    void shouldRejectPersistedFileAndSetFileEventWithFileTypeThatHasBeenRejected() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        fileEntry.reject(resourceService, new User(randomString()));
+
+        var rejectedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        var fileEvent = (FileRejectedEvent) rejectedFileEntry.getFileEvent();
+        assertEquals(file.getArtifactType(), fileEvent.rejectedFileType());
+        assertInstanceOf(RejectedFile.class, rejectedFileEntry.getFile());
+    }
+
+    @Test
+    void shouldApprovePersistedFile() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        fileEntry.approve(resourceService, new User(randomString()));
+
+        var rejectedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        assertInstanceOf(OpenFile.class, rejectedFileEntry.getFile());
+    }
+
+    @Test
+    void shouldFetchResourceWithNewFilesWhenEnvironmentVariableShouldUseNewFileIsSet() throws BadRequestException {
+        var resourceService = getResourceServiceBuilder(client)
+                                  .build();
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingOpenFile();
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        FileEntry.create(file, resourceIdentifier, userInstance).persist(resourceService);
+
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+
+        assertTrue(resource.getAssociatedArtifacts().contains(file));
+    }
+
+    @Test
+    void shouldApproveApprovedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
+        var resourceService = getResourceServiceBuilder().build();
+
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingInternalFile();
+        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
+
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createWithFilesForApproval(
+                                                                Resource.fromPublication(publication),
+                                                                userInstance,
+                                                                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                                                                Set.of(file))
+                                                            .persistNewTicket(ticketService);
+
+        publishingRequest.approveFiles().persistUpdate(ticketService);
+        publishingRequest.setFinalizedBy(new Username(randomString()));
+        publishingRequest.publishApprovedFiles(resourceService);
+
+        assertInstanceOf(InternalFile.class,
+                         FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier())
+                             .fetch(resourceService)
+                             .orElseThrow()
+                             .getFile());
+    }
+
+    @Test
+    void shouldApproveApprovedFilesWhenFilesAreInAssociatedArtifacts() throws ApiGatewayException {
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
+                Resource.fromPublication(publication), userInstance,
+                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                Set.of(file))
+                                                            .persistNewTicket(ticketService);
+        publishingRequest.approveFiles().close(randomUserInstance()).persistUpdate(ticketService);
+        publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
+
+        publishingRequest.publishApprovedFiles(resourceService);
+
+        var associatedArtifact = Resource.fromPublication(publication)
+                                     .fetch(resourceService).orElseThrow().getAssociatedArtifacts().getFirst();
+        assertInstanceOf(InternalFile.class, associatedArtifact);
+    }
+
+    @Test
+    void shouldRejectRejectedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
+        var resourceService = getResourceServiceBuilder().build();
+
+        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var file = randomPendingInternalFile();
+        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
+
+        var publishingRequest =
+            (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
+                    Resource.fromPublication(publication),
+                    UserInstance.create(randomString(), randomUri()),
+                    PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                    Set.of(file))
+                                        .persistNewTicket(ticketService);
+
+        publishingRequest.setFinalizedBy(new Username(randomString()));
+        publishingRequest.rejectRejectedFiles(resourceService);
+
+        assertInstanceOf(RejectedFile.class,
+                         FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier())
+                             .fetch(resourceService)
+                             .orElseThrow()
+                             .getFile());
+    }
+
+    @Test
+    void shouldRejectRejectedFilesWhenFilesAreInAssociatedArtifacts() throws ApiGatewayException {
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
+                                                            .createWithFilesForApproval(
+                                                                Resource.fromPublication(publication),
+                                                                userInstance,
+                                                                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
+                                                                Set.of(file)).persistNewTicket(ticketService);
+        publishingRequest.close(randomUserInstance()).persistUpdate(ticketService);
+        publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
+        publishingRequest.rejectRejectedFiles(resourceService);
+
+        var associatedArtifact = Resource.fromPublication(publication)
+                                     .fetch(resourceService).orElseThrow().getAssociatedArtifacts().getFirst();
+
+        assertInstanceOf(RejectedFile.class, associatedArtifact);
+    }
+
+    @Test
+    void resourceShouldContainFileEntries() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                        userInstance);
+
+        var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var resourceWithFileEntry = Resource.resourceQueryObject(resource.getIdentifier())
+                                        .fetch(resourceService)
+                                        .orElseThrow();
+
+        assertTrue(resourceWithFileEntry.getFileEntries().contains(fileEntry));
+        assertNotNull(resourceWithFileEntry.getFileEntry(fileEntry.getIdentifier()));
+    }
+
+    @Test
+    void shouldImportResourceAndSetImportedResourceEventWhenImportingPublication() {
+        var publication = randomPublication();
+        var resource = Resource.fromPublication(publication)
+                           .importResource(resourceService, ImportSource.fromSource(Source.SCOPUS));
+
+        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
+
+        assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
+    }
+
+    @Test
+    void shouldUpdateResourceFromImportAndSetMergedResourceEventWhenUpdatingExistingPublication()
+        throws BadRequestException, NotFoundException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, userInstance);
+        resource.setDoi(randomDoi());
+        Resource.fromPublication(resource)
+            .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
+        var updatedResource = resourceService.getResourceByIdentifier(resource.getIdentifier());
+
+        var resourceEvent = (MergedResourceEvent) updatedResource.getResourceEvent();
+
+        assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
+    }
+
+    @Test
+    void shouldSetFileTypeRetractedEventWhenRetractingFinalizedFile() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var openFile = randomOpenFile();
+        var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var pendingFile = openFile.copy().buildPendingInternalFile();
+
+        fileEntry.fetch(resourceService).orElseThrow()
+            .update(pendingFile, userInstance, resourceService);
+
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        assertInstanceOf(FileRetractedEvent.class, updatedFileEntry.getFileEvent());
+    }
+
+    @Test
+    void shouldSetFileTypeHiddenEventWhenUpdatingFileToHidden() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var openFile = randomOpenFile();
+        var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var hiddenFile = openFile.copy().buildHiddenFile();
+
+        fileEntry.fetch(resourceService).orElseThrow()
+            .update(hiddenFile, userInstance, resourceService);
+
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        assertInstanceOf(FileHiddenEvent.class, updatedFileEntry.getFileEvent());
+    }
+
+    @Test
+    void shouldUpdateResource() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var doi = randomUri();
+        persistedPublication.setDoi(doi);
+        var updatedResource = Resource.fromPublication(persistedPublication).update(resourceService, userInstance);
+
+        assertEquals(doi, updatedResource.getDoi());
+    }
+
+    @Test
+    void shouldSetFileImportedEventWhenFileIsBeingImported() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var openFile = randomOpenFile();
+        var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
+        fileEntry.importNew(resourceService, userInstance, ImportSource.fromBrageArchive("ntnu"));
+
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        assertInstanceOf(FileImportedEvent.class, updatedFileEntry.getFileEvent());
+    }
+
+    @Test
+    void updateResourceMethodShouldRefreshTickets() throws ApiGatewayException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var ticket = createDoiRequest(publication);
+        publication.setDoi(randomUri());
+        Resource.fromPublication(publication).update(resourceService, userInstance);
+
+        var refreshedTicket = ticket.fetch(ticketService);
+
+        assertNotEquals(ticket.getModifiedDate(), refreshedTicket.getModifiedDate());
+    }
+
+    @Test
+    void shouldUpdateFileVersionOnlyWhenRefreshing() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var openFile = randomOpenFile();
+        var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+
+        var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        var persistedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                                                 .withKey(fileEntry.toDao().primaryKey()));
+        var persistedDao = Optional.ofNullable(persistedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
+
+        resourceService.refreshFile(fileEntry.getIdentifier());
+
+        var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        var refreshedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                                                 .withKey(fileEntry.toDao().primaryKey()));
+        var refreshedDao = Optional.ofNullable(refreshedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
+
+        assertEquals(persistedFileEntry, refreshedFileEntry);
+        assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
+    }
+
+    @Test
+    void scanResourcesShouldScanFileEntries() throws BadRequestException {
+        createPersistedPublicationWithDoi();
+        var entries = resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(),
+                                                    Collections.emptyList());
+
+        assertTrue(entries.getDatabaseEntries().stream().anyMatch(FileEntry.class::isInstance));
+    }
+
+    @Test
+    void scanResourcesShouldNotFailScanningLogEntries() {
+        var userInstance = UserInstance.create(randomString(), randomUri());
+        resourceService.persistLogEntry(CreatedResourceEvent.create(userInstance, Instant.now())
+                                            .toLogEntry(SortableIdentifier.next(), new LogOrganization(randomUri(),
+                                                                                                       randomString(),
+                                                                                                       Map.of())));
+        assertDoesNotThrow(() -> resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(),
+                                                               Collections.emptyList()));
+    }
+
+    @Test
+    void shouldNotUpdatePublicationInDatabaseWhenNoEffectiveChange() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var updatedResource = Resource.fromPublication(publication).update(resourceService, userInstance);
+
+        assertEquals(publication, updatedResource.toPublication());
+    }
+
+    @Test
+    void shouldUpdatePublicationInDatabaseWhenThereAreEffectiveChange() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        publication.setDoi(randomUri());
+        var updatedResource = Resource.fromPublication(publication).update(resourceService, userInstance);
+
+        assertNotEquals(publication, updatedResource.toPublication());
+    }
+
+    @Test
+    void shouldFetchPublicationForFileApprovalThesis() throws BadRequestException {
+        var publication = randomPublication(DegreeBachelor.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var fileApprovalThesis = FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
+                                                                              userInstance,
+                                                                              PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+
+        var fetchedPublication = fileApprovalThesis.toPublication(resourceService);
+
+        assertEquals(publication, fetchedPublication);
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
@@ -1242,14 +1764,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return new Username(randomString());
     }
 
-    private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
-        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
-        return Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
-                   .map(publication -> injectOwner(userInstance, publication))
-                   .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
-                   .map(attempt(res -> createPersistedPublicationWithDoi(resourceService, res)))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toSet());
+    private void persistSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {
+        UserInstance userInstance = randomUserInstance();
+        Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
+            .map(publication -> injectOwner(userInstance, publication))
+            .map(publication -> injectCristinIdentifier(cristinIdentifier, publication))
+            .forEach(res -> attempt(() -> createPersistedPublicationWithDoi(resourceService, res)));
     }
 
     private Publication injectCristinIdentifier(String cristinIdentifier, Publication publication) {
@@ -1280,7 +1800,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withFundings(List.of())
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
+                   .withAssociatedArtifacts(List.of(randomOpenFile()))
                    .withEntityDescription(randomEntityDescription(JournalArticle.class))
                    .build();
     }
@@ -1290,7 +1810,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var contributions = IntStream
                                 .rangeClosed(1, amount)
                                 .mapToObj(i -> randomContributor())
-                                .collect(Collectors.toList());
+                                .toList();
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -1302,7 +1822,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var contributions = IntStream
                                 .rangeClosed(1, amount)
                                 .mapToObj(i -> randomContributor(List.of()))
-                                .collect(Collectors.toList());
+                                .toList();
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -1337,7 +1857,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication(JournalArticle.class).copy().withDoi(null).build();
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
@@ -1355,7 +1875,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPersistedPublicationWithDoi() throws BadRequestException {
-        return createPersistedPublicationWithDoi(resourceService, randomPublication());
+        return createPersistedPublicationWithDoi(resourceService, randomPublication(JournalArticle.class));
     }
 
     private Publication createUnpublishablePublication() throws BadRequestException {
@@ -1385,9 +1905,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return listingResult;
     }
 
-    private Publication publishResource(Publication resource) throws ApiGatewayException {
-        resourceService.publishPublication(UserInstance.fromPublication(resource), resource.getIdentifier());
-        return resourceService.getPublication(resource);
+    private Publication publishResource(Publication publication) throws ApiGatewayException {
+        Resource.fromPublication(publication)
+            .publish(resourceService, UserInstance.fromPublication(publication));
+        return resourceService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
     private void assertThatIdentifierEntryHasBeenCreated() {
@@ -1396,7 +1917,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private void assertThatResourceAndIdentifierEntryExist() {
         ScanResult result = client.scan(new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
-        assertThat(result.getCount(), is(equalTo(2)));
+        assertThat(result.getCount(), is(doesNotHaveEmptyValues()));
     }
 
     private void assertThatTheEntriesHaveNotBeenDeleted() {
@@ -1408,35 +1929,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(result.getCount(), is(equalTo(0)));
     }
 
-    private DoiRequest expectedDoiRequestAfterPublicationUpdate(Publication initialPublication,
-                                                                DoiRequest initialDoiRequest,
-                                                                Publication publicationUpdate,
-                                                                DoiRequest updatedDoiRequest) {
-
-        return DoiRequest.builder()
-                   .withOwner(new User(initialPublication.getResourceOwner().getOwner().getValue()))
-                   .withCustomerId(initialPublication.getPublisher().getId())
-                   .withIdentifier(initialDoiRequest.getIdentifier())
-                   .withCreatedDate(initialDoiRequest.getCreatedDate())
-                   .withModifiedDate(updatedDoiRequest.getModifiedDate())
-                   .withStatus(TicketStatus.PENDING)
-                   .withResourceStatus(publicationUpdate.getStatus())
-                   .withResourceIdentifier(publicationUpdate.getIdentifier())
-                   .withViewedBy(initialDoiRequest.getViewedBy())
-                   .build();
-    }
-
-    private Publication updateAllPublicationFieldsExpectIdentifierStatusAndOwnerInfo(Publication existingPublication) {
-        return randomPublication().copy()
-                   .withIdentifier(existingPublication.getIdentifier())
-                   .withPublisher(existingPublication.getPublisher())
-                   .withResourceOwner(existingPublication.getResourceOwner())
-                   .withStatus(existingPublication.getStatus())
-                   .build();
-    }
-
-    private DoiRequest createDoiRequest(Publication resource) throws ApiGatewayException {
-        return (DoiRequest) DoiRequest.fromPublication(resource).persistNewTicket(ticketService);
+    private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
+        return (DoiRequest) DoiRequest.create(Resource.fromPublication(publication),
+                                              UserInstance.fromPublication(publication))
+                                .persistNewTicket(ticketService);
     }
 
     private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {
@@ -1482,7 +1978,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication createPublishedResource() throws ApiGatewayException {
         Publication resource = createPersistedPublicationWithoutDoi();
         publishResource(resource);
-        return resourceService.getPublication(resource);
+        return resourceService.getPublicationByIdentifier(resource.getIdentifier());
     }
 
     private void assertThatJsonProcessingErrorIsPropagatedUp(Class<JsonProcessingException> expectedExceptionClass,
@@ -1549,8 +2045,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
             fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
     }
 
-    private void assertThatResourceDoesNotExist(Publication sampleResource) {
-        assertThrows(NotFoundException.class, () -> resourceService.getPublication(sampleResource));
+    private void assertThatResourceHaveNewOwner(Publication sampleResource) {
+        try {
+            assertThat(resourceService.getPublicationByIdentifier(sampleResource.getIdentifier())
+                           .getResourceOwner()
+                           .getOwner(),
+                       is(not(equalTo(sampleResource.getResourceOwner().getOwner()))));
+        } catch (NotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private UserInstance someOtherUser() {

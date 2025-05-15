@@ -97,7 +97,8 @@
     "cristinIdentifier": "222.0.0.0",
     "identifiers": {
       "test": "b3d72c51-c4f2-4aa1-a15a-e9cc9b1f5e1e",
-      "dev": "702c4fbe-d51a-4d20-aec8-50beb813ff36"
+      "dev": "702c4fbe-d51a-4d20-aec8-50beb813ff36",
+      "e2e": "702c4fbe-d51a-4d20-aec8-50beb813ff36"
     },
     "shortName": "USN"
   },
@@ -189,7 +190,8 @@
     "cristinIdentifier": "7428.0.0.0",
     "identifiers": {
       "test": "b11f0a40-ac27-42b9-ba94-f4952e3d5a5a",
-      "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5"
+      "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5",
+      "prod": "eb732391-19ec-4d9f-9cb3-a77c8876a18f"
     },
     "shortName": "FFI"
   },
@@ -435,7 +437,7 @@
       "test": "d102baef-5861-43e2-bb21-42a1f6479aef",
       "dev": "ff6fd53f-30ff-4c47-955e-f201fe5d9e0c"
     },
-    "shortName": "T\u00d8I"
+    "shortName": "TØI"
   },
   {
     "name": "kristiania",
@@ -578,9 +580,19 @@
     "cristinIdentifier": "192.0.0.0",
     "identifiers": {
       "test": "b8977f51-28bd-41b5-bb19-71c577be7c28",
-      "dev": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
+      "dev": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1",
+      "e2e": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
     },
     "shortName": "NMBU"
+  },
+  {
+    "name": "bibsys",
+    "username": "bibsys@5991.0.0.0",
+    "cristinIdentifier": "5991.0.0.0",
+    "identifiers": {
+      "e2e": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
+    },
+    "shortName": "BIBSYS"
   },
   {
     "name": "sihf",

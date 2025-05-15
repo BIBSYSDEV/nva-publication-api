@@ -1,13 +1,15 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry.FILE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,6 +23,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.handlers.recovery.RecoveryBatchScanHandler;
 import no.unit.nva.publication.events.handlers.recovery.RecoveryEventRequest;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -29,7 +32,6 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
@@ -47,9 +49,9 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private FakeSqsClient queueClient;
-    private FakeEventBridgeClient eventBridgeClient;
     private RecoveryBatchScanHandler recoveryBatchScanHandler;
 
+    @Override
     @BeforeEach
     public void init() {
         super.init();
@@ -58,9 +60,8 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         ticketService = getTicketService();
         messageService = getMessageService();
         queueClient = new FakeSqsClient();
-        eventBridgeClient = new FakeEventBridgeClient();
         recoveryBatchScanHandler = new RecoveryBatchScanHandler(resourceService, ticketService, messageService,
-                                                                queueClient, eventBridgeClient);
+                                                                queueClient);
     }
 
     @Test
@@ -69,9 +70,9 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var publication = persistedPublication();
         var resourceVersion = Resource.fromPublication(publication).toDao().getVersion();
         putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
-        var refreshedPublication = resourceService.getPublication(publication);
+        var refreshedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var resourceVersionAfterRefresh = Resource.fromPublication(refreshedPublication).toDao().getVersion();
 
         assertThat(resourceVersionAfterRefresh, is(not(equalTo(resourceVersion))));
@@ -83,10 +84,11 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var publication = persistedPublication();
         var ticket =
             GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+                .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .persistNewTicket(ticketService);
         var ticketVersion = ticket.toDao().getVersion();
         putMessageOnRecoveryQueue(ticket.getIdentifier(), "Ticket");
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
         var refreshedTicket = ticketService.fetchTicket(ticket);
         var resourceVersionAfterRefresh = refreshedTicket.toDao().getVersion();
@@ -100,11 +102,12 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var publication = persistedPublication();
         var ticket =
             GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+                .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var messageVersion = message.toDao().getVersion();
         putMessageOnRecoveryQueue(message.getIdentifier(), "Message");
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
         var refreshedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
         var resourceVersionAfterRefresh = refreshedMessage.toDao().getVersion();
@@ -113,35 +116,46 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdateResourceVersionByReadingQueueMessageContainingFileEntryIdentifier()
+        throws JsonProcessingException {
+        var publication = persistedPublication();
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
+                                         UserInstance.fromPublication(publication));
+        fileEntry.persist(resourceService);
+        putMessageOnRecoveryQueue(fileEntry.getIdentifier(), FILE);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
+
+        var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        assertThat(refreshedFileEntry.toDao().getVersion(),
+                   is(not(equalTo(fileEntry.toDao().getVersion()))));
+    }
+
+    @Test
     void shouldRemoveMessageFromQueueAfterItHasBeenRefreshed() throws JsonProcessingException {
         var publication = persistedPublication();
         putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
         assertTrue(queueClient.getDeliveredMessages().isEmpty());
     }
 
     @Test
-    void shouldEmitNewEventWhenThereAreMoreEntriesOnRecoverQueue() throws JsonProcessingException {
-        persistPublicationsAndPutMessagesOnQueue(1);
-
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
-        var emittedEvents = eventBridgeClient.getRequestEntries();
-
-        assertFalse(emittedEvents.isEmpty());
+    void shouldReadNumberOfMessagesRequested() throws JsonProcessingException {
+        var numberOfMessages = 5;
+        var publications = IntStream.range(0, numberOfMessages)
+                               .mapToObj(i -> persistedPublication())
+                               .toList();
+        publications.forEach(publication -> putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource"));
+        var messagesCount = 2;
+        recoveryBatchScanHandler.handleRequest(createEvent(messagesCount), outputStream, CONTEXT);
+        assertEquals(numberOfMessages - messagesCount, queueClient.getDeliveredMessages().size());
     }
 
-    @Test
-    void shouldNotEmitNewEventWhenNoMessagesOnQueue() throws JsonProcessingException {
-        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
-        var emittedEvents = eventBridgeClient.getRequestEntries();
-
-        assertTrue(emittedEvents.isEmpty());
-    }
-
-    private static InputStream createEvent() throws JsonProcessingException {
+    private static InputStream createEvent(Integer messagesCount) throws JsonProcessingException {
         var event = new AwsEventBridgeEvent<RecoveryEventRequest>();
         event.setId(randomString());
+        event.setDetail(new RecoveryEventRequest(messagesCount));
         var jsonString = JsonUtils.dtoObjectMapper.writeValueAsString(event);
         return IoUtils.stringToStream(jsonString);
     }
@@ -150,13 +164,6 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
     private static MessageAttributeValue messageAttribute(String value) {
         return MessageAttributeValue.builder().stringValue(value).dataType("String").build();
-    }
-
-    private void persistPublicationsAndPutMessagesOnQueue(int numberOfPublications) {
-        IntStream.range(0, numberOfPublications)
-            .boxed()
-            .map(i -> persistedPublication())
-            .forEach(publication -> putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource"));
     }
 
     private void putMessageOnRecoveryQueue(SortableIdentifier identifier, String type) {

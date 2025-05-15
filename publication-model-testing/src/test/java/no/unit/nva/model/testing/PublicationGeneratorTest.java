@@ -27,7 +27,7 @@ class PublicationGeneratorTest {
     public static final Set<String> FIELDS_EXPECTED_TO_BE_NULL =
         Set.of(".doiRequest", ".entityDescription.reference.publicationContext.revision", ".importDetails");
     public static final Pattern EXPECTED_PUBLICATION_CHANNELS_URI =
-        Pattern.compile("https://.*?nva\\.aws\\.unit\\.no/publication-channels/.*");
+        Pattern.compile("https://.*?nva\\.aws\\.unit\\.no/publication-channels-v2/.*");
 
     public static Stream<Class<?>> publicationInstanceProvider() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();

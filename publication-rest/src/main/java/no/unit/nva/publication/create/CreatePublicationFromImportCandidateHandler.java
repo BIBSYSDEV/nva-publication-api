@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Objects;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Organization.Builder;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -18,6 +20,8 @@ import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.create.pia.PiaClient;
 import no.unit.nva.publication.exception.NotAuthorizedException;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
@@ -59,12 +63,12 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
-        this(ImportCandidateHandlerConfigs.getDefaultsConfigs());
+        this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment());
     }
 
     public CreatePublicationFromImportCandidateHandler(
-        ImportCandidateHandlerConfigs configs) {
-        super(ImportCandidate.class);
+        ImportCandidateHandlerConfigs configs, Environment environment) {
+        super(ImportCandidate.class, environment);
         this.candidateService = configs.importCandidateService();
         this.publicationService = configs.publicationService();
         this.ss3Client = configs.s3Client();
@@ -126,15 +130,17 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                                                   nvaPublicationUri));
     }
 
-    private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate input,
+    private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate importCandidate,
                                                                             RequestInfo requestInfo)
         throws NotFoundException, UnauthorizedException {
-        var rawImportCandidate = candidateService.getImportCandidateByIdentifier(input.getIdentifier());
-        var inputWithOwner = injectOrganizationAndOwner(requestInfo, input, rawImportCandidate);
-        var nvaPublication = publicationService.autoImportPublicationFromScopus(inputWithOwner);
-        copyArtifacts(nvaPublication, rawImportCandidate);
-        updatePiaContributors(input, rawImportCandidate);
-        return nvaPublication;
+        var rawImportCandidate = candidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+        var inputWithOwner = injectOrganizationAndOwner(requestInfo, importCandidate, rawImportCandidate);
+        var publication = Resource.fromImportCandidate(inputWithOwner)
+                              .importResource(publicationService, ImportSource.fromSource(Source.SCOPUS))
+                              .toPublication();
+        copyArtifacts(publication, rawImportCandidate);
+        updatePiaContributors(importCandidate, rawImportCandidate);
+        return publication;
     }
 
     private void updatePiaContributors(ImportCandidate input, ImportCandidate rawImportCandidate) {
@@ -184,7 +190,8 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private boolean wasKeptByImporter(File file, Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(File.class::isInstance)
-                   .anyMatch(publicationFile -> isSameFile((File) publicationFile, file));
+                   .map(File.class::cast)
+                   .anyMatch(publicationFile -> isSameFile(publicationFile, file));
     }
 
     private boolean isSameFile(File a, File b) {
@@ -204,7 +211,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                        ImportCandidate userInput,
                                                        ImportCandidate databaseVersion)
         throws UnauthorizedException {
-        var organization = new Builder().withId(requestInfo.getCurrentCustomer()).build();
+        var userInstance = UserInstance.fromRequestInfo(requestInfo);
         return databaseVersion.copyImportCandidate()
                    .withEntityDescription(userInput.getEntityDescription())
                    .withAssociatedArtifacts(userInput.getAssociatedArtifacts())
@@ -216,8 +223,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                    .withRightsHolder(userInput.getRightsHolder())
                    .withHandle(userInput.getHandle())
                    .withLink(userInput.getLink())
-                   .withPublisher(organization)
-                   .withResourceOwner(new ResourceOwner(new Username(requestInfo.getUserName()), organization.getId()))
+                   .withPublisher(Organization.fromUri(userInstance.getCustomerId()))
+                   .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()),
+                                                        userInstance.getTopLevelOrgCristinId()))
                    .build();
     }
 

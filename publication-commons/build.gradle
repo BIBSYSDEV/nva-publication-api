@@ -1,3 +1,7 @@
+plugins {
+    id 'java-test-fixtures'
+}
+
 dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-model")
@@ -31,10 +35,19 @@ dependencies {
 
     implementation libs.bundles.logging
 
+    testImplementation libs.cucumber.java
+    testImplementation libs.cucumber.junit
+    testImplementation libs.cucumber.picocontainer
+
     testImplementation project(":tickets-test")
     testImplementation libs.bundles.testing
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
+
+
+    testFixturesImplementation project(":publication-model")
+    testFixturesImplementation libs.nva.testutils
+    testFixturesImplementation libs.nva.apigateway
 }
 
 test {
@@ -45,4 +58,5 @@ test {
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
     environment "TABLE_NAME", "table"
+    environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
 }

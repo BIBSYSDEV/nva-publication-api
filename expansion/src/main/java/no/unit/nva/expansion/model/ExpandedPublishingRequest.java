@@ -1,12 +1,8 @@
 package no.unit.nva.expansion.model;
 
 import static nva.commons.core.attempt.Try.attempt;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.net.URI;
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
@@ -15,7 +11,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -27,15 +22,7 @@ import nva.commons.core.JacocoGenerated;
 public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public static final String TYPE = "PublishingRequest";
-    public static final String STATUS_FIELD = "status";
 
-    @JsonProperty("organizationIds")
-    private Set<URI> organizationIds;
-    @JsonProperty(STATUS_FIELD)
-    private ExpandedTicketStatus status;
-    private URI customerId;
-    private Instant modifiedDate;
-    private Instant createdDate;
     private PublishingWorkflow workflow;
     private Set<File> approvedFiles;
     private Set<File> filesForApproval;
@@ -74,15 +61,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         return extractIdentifier(getId());
     }
 
-    @Override
-    public ExpandedTicketStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ExpandedTicketStatus status) {
-        this.status = status;
-    }
-
     public Set<File> getFilesForApproval() {
         return filesForApproval;
     }
@@ -97,30 +75,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public void setApprovedFiles(Set<File> approvedFiles) {
         this.approvedFiles = approvedFiles;
-    }
-
-    public Instant getCreatedDate() {
-        return this.createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public Instant getModifiedDate() {
-        return this.modifiedDate;
-    }
-
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    public URI getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
     }
 
     public PublishingWorkflow getWorkflow() {
@@ -144,7 +98,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
                                                            ExpandedPerson owner,
                                                            ExpandedPerson assignee,
                                                            ExpandedPerson finalizedBy,
-                                                           Set<ExpandedPerson> viewedBy) throws NotFoundException {
+                                                           Set<ExpandedPerson> viewedBy) {
         var publicationSummary = PublicationSummary.create(publication);
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
@@ -160,25 +114,9 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setFinalizedBy(finalizedBy);
         entry.setOwner(owner);
         entry.setAssignee(assignee);
-        entry.setApprovedFiles(extractApprovedFiles(publication, dataEntry.getApprovedFiles()));
-        entry.setFilesForApproval(extractFilesForApproval(publication, dataEntry.getFilesForApproval()));
+        entry.setApprovedFiles(dataEntry.getApprovedFiles());
+        entry.setFilesForApproval(dataEntry.getFilesForApproval());
         return entry;
-    }
-
-    private static Set<File> extractFilesForApproval(Publication publication, Set<FileForApproval> filesForApproval) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .filter(file -> filesForApproval.contains(FileForApproval.fromFile(file)))
-                   .collect(Collectors.toSet());
-    }
-
-    private static Set<File> extractApprovedFiles(Publication publication, Set<UUID> approvedFiles) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .filter(file -> approvedFiles.contains(file.getIdentifier()))
-                   .collect(Collectors.toSet());
     }
 
     private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,

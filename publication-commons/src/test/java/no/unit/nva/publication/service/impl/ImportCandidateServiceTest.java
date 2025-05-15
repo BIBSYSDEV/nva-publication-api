@@ -1,15 +1,20 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.importcandidate.CandidateStatus.IMPORTED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Set;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
@@ -80,7 +85,24 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         var updatedImportCandidate = update(importCandidate);
         resourceService.updateImportCandidate(updatedImportCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        assertThat(fetchedImportCandidate, is(equalTo(updatedImportCandidate)));
+
+        assertEquals(fetchedImportCandidate,
+                     updatedImportCandidate.copyImportCandidate().withModifiedDate(fetchedImportCandidate.getModifiedDate()).build());
+    }
+
+    @Test
+    void shouldOverwriteFilesWhenUpdatingExistingNotImportedImportCandidate() throws BadRequestException,
+                                                                                 NotFoundException {
+        var file = randomOpenFile();
+        var importCandidate = randomImportCandidate().copyImportCandidate().withAssociatedArtifacts(List.of(file)).build();
+        var existingImportCandidate = resourceService.persistImportCandidate(importCandidate);
+        var newFile = randomOpenFile();
+        var updatedImportCandidate = existingImportCandidate.copyImportCandidate().withAssociatedArtifacts(List.of(newFile)).build();
+        resourceService.updateImportCandidate(updatedImportCandidate);
+        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
+
+        assertThat(fetchedImportCandidate.getAssociatedArtifacts(),
+                   not(containsInAnyOrder(existingImportCandidate.getAssociatedArtifacts())));
     }
 
     @Test
@@ -91,6 +113,12 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
                                                                               randomUri()));
         var updatedImportCandidate = update(importCandidate);
         assertThrows(BadRequestException.class, () -> resourceService.updateImportCandidate(updatedImportCandidate));
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenUpdatingStatusForNotExistingImportCandidate() {
+        assertThrows(NotFoundException.class,
+                     () -> resourceService.updateImportStatus(SortableIdentifier.next(), null));
     }
 
     @Test

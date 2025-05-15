@@ -2,7 +2,8 @@ dependencies {
     implementation project(":publication-doi-commons")
     implementation project(":expansion")
     implementation project(":publication-commons")
-    implementation project(":tickets-test")
+    implementation project(":publication-log")
+    testImplementation project(":tickets-test")
 
     implementation project(":publication-model")
 
@@ -13,8 +14,7 @@ dependencies {
     implementation libs.nva.secrets
     implementation libs.nva.apigateway
     implementation libs.nva.auth
-    implementation libs.nva.testutils // used in CreatePublishedPublicationsHandler
-
+    implementation libs.nva.clients
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
@@ -64,12 +64,14 @@ test {
     environment "AWS_REGION", "AWS_REGION"
     environment "TABLE_NAME", "ResourcesTable"
     environment "AWS_REGION", "eu-west-1"
-    environment "ID_NAMESPACE", "https://www.example.org/publication"
+    environment "ID_NAMESPACE", "https://localhost/publication"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "BACKEND_CLIENT_SECRET_NAME", "secret"
-    environment "DOMAIN_NAME", "api.test.nva.aws.unit.no"
+    environment "DOMAIN_NAME", "localhost"
     environment "OUTPUT_EVENT_TOPIC", "someEvent"
-    environment "API_HOST", "api.test.nva.aws.unit.no"
+    environment "API_HOST", "localhost"
     environment "ALLOWED_ORIGIN", "*"
     environment "RECOVERY_QUEUE", "queue"
+    environment "CRISTIN_UNITS_S3_URI", "s3://cristin-units"
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "persistedStorage"
 }

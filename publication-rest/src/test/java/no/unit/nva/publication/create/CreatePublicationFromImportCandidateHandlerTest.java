@@ -27,8 +27,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -65,7 +64,7 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.funding.FundingBuilder;
@@ -74,10 +73,12 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.create.pia.PiaClientConfig;
 import no.unit.nva.publication.create.pia.PiaUpdateRequest;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -87,6 +88,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.secrets.SecretsReader;
 import org.apache.hc.core5.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -139,7 +141,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     publicationService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
         mockPostAuidWriting();
     }
 
@@ -178,7 +180,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldCopyAssociatedResourceFiles() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
-        var artifactId = ((File) importCandidate.getAssociatedArtifacts().stream().findFirst().get()).getIdentifier()
+        var artifactId = ((File) importCandidate.getAssociatedArtifacts().stream().findFirst().orElseThrow()).getIdentifier()
                              .toString();
 
         handler.handleRequest(request, output, context);
@@ -204,8 +206,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     publicationService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs);
-        when(publicationService.autoImportPublicationFromScopus(any())).thenThrow(
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
+        when(publicationService.importResource(any(), any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
@@ -234,7 +236,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     s3Client,
                                                     piaClientConfig
         );
-        handler = new CreatePublicationFromImportCandidateHandler(configs);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenThrow(new TransactionFailedException(new Exception()));
 
@@ -279,7 +281,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     publicationService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenCallRealMethod()
             .thenThrow(new NotFoundException(""));
@@ -380,7 +382,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void publishedDateShoulBeSetToTimeWhenPublicationEntersDatabase() throws NotFoundException,
+    void publishedDateShouldBeSetToTimeWhenPublicationEntersDatabase() throws NotFoundException,
                                                                              IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
@@ -454,22 +456,18 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldAddImportDetailWhenCreatingPublicationFromImportingCandidate() throws IOException, NotFoundException {
+    void shouldSetResourceEventWhenCreatingPublicationFromImportingCandidate() throws IOException, NotFoundException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+                              .fetch(publicationService)
+                              .orElseThrow();
 
-        var importDetail = publication.getImportDetails()
-                               .stream()
-                               .filter(f -> f.importSource().getSource().equals(Source.SCOPUS))
-                               .findFirst()
-                               .orElse(null);
+        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 
-        assertNotNull(importDetail);
-        assertNotNull(importDetail.importDate());
-        assertNull(importDetail.importSource().getArchive());
+        assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
@@ -552,13 +550,12 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .build();
     }
 
-    private PublishedFile randomFile() {
-        return new PublishedFile(UUID.randomUUID(),
+    private OpenFile randomFile() {
+        return new OpenFile(UUID.randomUUID(),
                                  randomString(),
                                  "pdf",
                                  12312L,
                                  null,
-                                 false,
                                  PublisherVersion.ACCEPTED_VERSION,
                                  null,
                                  null,
@@ -627,6 +624,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withBody(importCandidate)
                    .withCurrentCustomer(user.getCustomerId())
                    .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_IMPORT)
+                   .withTopLevelCristinOrgId(randomUri())
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -656,7 +655,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                         .withIdentifier(UUID.randomUUID())
                                                         .withLicense(URI.create("https://hei"))
                                                         .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
-                                                        .buildPublishedFile()))
+                                                        .buildOpenFile()))
                    .build();
     }
 

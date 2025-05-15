@@ -94,6 +94,7 @@ public class BragePatchEventConsumer implements RequestHandler<SQSEvent, Void> {
         return new S3Driver(s3Client, BRAGE_MIGRATION_REPORT_BUCKET).getFile(s3Path);
     }
 
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private void processMessage(SQSMessage sqsMessage) {
         var partOfReport = parseBody(sqsMessage);
         try {

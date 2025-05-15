@@ -8,17 +8,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
 public final class SearchService {
 
-    public static final String SIZE_VALUE = "100";
-    public static final String SIZE_QUERY_PARAM = "size";
     public static final String SEARCH = "search";
     public static final String RESOURCES = "resources";
     private static final String API_HOST = new Environment().readEnv("API_HOST");
@@ -34,7 +32,7 @@ public final class SearchService {
         return new SearchService(uriRetriever, resourceService);
     }
 
-    public List<Publication> searchPublicationsByParam(Map<String, String> searchParams) {
+    public List<Resource> searchPublicationsByParam(Map<String, String> searchParams) {
         var uri = searchUriFromSearchParams(searchParams);
         var response = uriRetriever.fetchResponse(uri);
         return response.statusCode() == 200 ? processResponse(response) : throwException(response);
@@ -48,11 +46,11 @@ public final class SearchService {
                    .getUri();
     }
 
-    private List<Publication> throwException(HttpResponse<String> response) {
+    private List<Resource> throwException(HttpResponse<String> response) {
         throw new SearchServiceException(response);
     }
 
-    private List<Publication> processResponse(HttpResponse<String> response) {
+    private List<Resource> processResponse(HttpResponse<String> response) {
         return getResourcesWithId(response).stream()
                    .map(ResourceWithId::getIdentifier)
                    .map(this::fetchPublication)
@@ -61,8 +59,8 @@ public final class SearchService {
                    .toList();
     }
 
-    private Optional<Publication> fetchPublication(SortableIdentifier identifier) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(identifier)).toOptional();
+    private Optional<Resource> fetchPublication(SortableIdentifier identifier) {
+        return Resource.resourceQueryObject(identifier).fetch(resourceService);
     }
 
     private List<ResourceWithId> getResourcesWithId(HttpResponse<String> response) {

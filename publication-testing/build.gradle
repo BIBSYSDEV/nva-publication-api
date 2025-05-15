@@ -8,6 +8,7 @@ dependencies {
     implementation libs.nva.identifiers
     implementation libs.nva.s3
     implementation libs.nva.language
+    implementation libs.nva.clients
 
     compileOnly libs.nva.apigateway
 

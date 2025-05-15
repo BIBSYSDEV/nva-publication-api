@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
@@ -29,7 +28,7 @@ import static java.util.Objects.nonNull;
 
 @JsonTypeName("Publication")
 public class UpdatePublicationRequest
-    implements PublicationRequest, WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
+    implements PublicationRequest, WithIdentifier, WithMetadata, WithContext {
 
     public static final String WRONG_PUBLICATION_UPDATE_ERROR = "Trying to update a publication with different "
                                                                 + "identifier:";
@@ -115,13 +114,11 @@ public class UpdatePublicationRequest
         this.subjects = subjects;
     }
 
-    @Override
     @JacocoGenerated
     public AssociatedArtifactList getAssociatedArtifacts() {
         return associatedArtifacts;
     }
 
-    @Override
     @JacocoGenerated
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;

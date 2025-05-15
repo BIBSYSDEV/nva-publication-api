@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -18,6 +21,7 @@ import no.unit.nva.publication.ticket.TicketHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class ListTicketsForPublicationHandler extends TicketHandler<Void, TicketCollection> {
@@ -28,11 +32,12 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
 
     @JacocoGenerated
     public ListTicketsForPublicationHandler() {
-        this(ResourceService.defaultService(), TicketService.defaultService());
+        this(ResourceService.defaultService(), TicketService.defaultService(), new Environment());
     }
 
-    public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService) {
-        super(Void.class);
+    public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService,
+                                            Environment environment) {
+        super(Void.class, environment);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
     }
@@ -58,26 +63,39 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
 
     private List<TicketDto> fetchTickets(SortableIdentifier publicationIdentifier,
                                          UserInstance userInstance) throws ApiGatewayException {
-        var tickets = fetchTickets(userInstance, publicationIdentifier);
+        var resource = resourceService.getResourceByIdentifier(publicationIdentifier);
+        var tickets = fetchTickets(userInstance, resource)
+                          .filter(ticketEntry -> hasAccessToTicket(ticketEntry, userInstance));
 
-        return tickets.map(this::createDto).toList();
+
+        return tickets.map(ticketEntry -> createDto(ticketEntry, resource)).toList();
     }
 
-    private Stream<TicketEntry> fetchTickets(UserInstance userInstance, SortableIdentifier publicationIdentifier)
+    private boolean hasAccessToTicket(TicketEntry ticketEntry, UserInstance userInstance) {
+        if (ticketEntry instanceof GeneralSupportRequest) {
+            return ticketEntry.hasSameOwnerAffiliationAs(userInstance);
+        } else {
+            return ticketEntry.hasSameOwnerAffiliationAs(userInstance)
+                   || !TicketStatus.PENDING.equals(ticketEntry.getStatus());
+        }
+    }
+
+    private Stream<TicketEntry> fetchTickets(UserInstance userInstance, Resource resource)
         throws ApiGatewayException {
-        return Optional.ofNullable(resourceService.getResourceByIdentifier(publicationIdentifier))
-                   .filter(resource -> isAllowedToListTickets(userInstance, resource))
+        return Optional.ofNullable(resource)
+                   .filter(ticketResource -> isAllowedToListTickets(userInstance, ticketResource))
                    .map(resourceService::fetchAllTicketsForResource)
                    .orElseThrow(ForbiddenException::new);
     }
 
     private boolean isAllowedToListTickets(UserInstance userInstance, Resource resource) {
-        return PublicationPermissionStrategy.create(resource.toPublication(), userInstance, resourceService)
+        return PublicationPermissions.create(resource, userInstance)
                    .allowsAction(PublicationOperation.UPDATE);
     }
 
-    private TicketDto createDto(TicketEntry ticket) {
+    private TicketDto createDto(TicketEntry ticket, Resource resource) {
         var messages = ticket.fetchMessages(ticketService);
-        return TicketDto.fromTicket(ticket, messages);
+        var curatingInstitutions = resource.getCuratingInstitutions().stream().map(CuratingInstitution::id).toList();
+        return TicketDto.fromTicket(ticket, messages, curatingInstitutions);
     }
 }

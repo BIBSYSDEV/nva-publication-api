@@ -2,17 +2,28 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.toChannelClaimUri;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -22,6 +33,8 @@ import com.google.common.collect.Lists;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -30,35 +43,41 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.CounterDao;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.KeyField;
+import no.unit.nva.publication.model.storage.LogEntryDao;
+import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
@@ -74,23 +93,20 @@ import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
+@SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals", "PMD.CouplingBetweenObjects"})
 public class ResourceService extends ServiceWithTransactions {
 
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String RESOURCE_REFRESHED_MESSAGE = "Resource has been refreshed successfully: {}";
-    public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
-    public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
-    public static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: ";
-    public static final String ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE = "Only published "
-                                                                                              + "publications can be "
-                                                                                              + "unpublished";
+    public static final String ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE =
+        "Only published " + "publications can be " + "unpublished";
     public static final String DELETE_PUBLICATION_ERROR_MESSAGE = "Only unpublished publication can be deleted";
     public static final String RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE = "Resource to refresh is not found: {}";
+    private static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: {}";
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
@@ -100,29 +116,29 @@ public class ResourceService extends ServiceWithTransactions {
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
+    private final IdentityServiceClient identityService;
     private final CounterService counterService;
 
-    protected ResourceService(AmazonDynamoDB dynamoDBClient,
-                              String tableName,
-                              Clock clock,
-                              Supplier<SortableIdentifier> identifierSupplier,
-                              UriRetriever uriRetriever) {
+    protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
+                              Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
+                              IdentityServiceClient identityService) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
         this.uriRetriever = uriRetriever;
+        this.identityService = identityService;
         this.counterService = new CristinIdentifierCounterService(dynamoDBClient);
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
-                                                               readResourceService, uriRetriever);
+                                                               readResourceService, uriRetriever, identityService);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
     @JacocoGenerated
     public static ResourceService defaultService() {
-        return builder().build();
+        return builder().withIdentityService(IdentityServiceClient.prepare()).build();
     }
 
     /**
@@ -149,28 +165,13 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
+        newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
         setStatusOnNewPublication(userInstance, inputData, newResource);
-        return insertResource(newResource);
+        return insertResource(newResource).toPublication();
     }
 
-    @JacocoGenerated
-    public void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource)
-        throws BadRequestException {
-        var status = userInstance.isExternalClient() ? Optional.ofNullable(fromPublication.getStatus())
-                                                           .orElse(PublicationStatus.DRAFT) : PublicationStatus.DRAFT;
-
-        if (status == PUBLISHED && !fromPublication.isPublishable()) {
-            throw new BadRequestException(NOT_PUBLISHABLE);
-        }
-
-        toResource.setStatus(status);
-    }
-
-    public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
-        Resource newResource = Resource.fromPublication(inputData);
-        newResource.setIdentifier(identifierSupplier.get());
-        newResource.setCreatedDate(inputData.getCreatedDate());
-        return insertResource(newResource);
+    public Resource importResource(Resource resource, ImportSource importSource) {
+        return insertImportedResource(resource, importSource);
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
@@ -184,7 +185,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setCreatedDate(now);
         newResource.setModifiedDate(now);
         newResource.setStatus(PUBLISHED);
-        return insertResource(newResource);
+        return insertResource(newResource).toPublication();
     }
 
     public Publication updatePublicationByImportEntry(Publication publication, ImportSource importSource) {
@@ -198,12 +199,12 @@ public class ResourceService extends ServiceWithTransactions {
     /**
      * Persists importCandidate with updated database metadata fields.
      *
-     * @param inputData importCandidate from external source
+     * @param importCandidate importCandidate from external source
      * @return updated importCandidate that has been sent to persistence
      */
-    public ImportCandidate persistImportCandidate(ImportCandidate inputData) {
+    public ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
         var now = clockForTimestamps.instant();
-        Resource newResource = Resource.fromImportCandidate(inputData);
+        var newResource = Resource.fromImportCandidate(importCandidate);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(now);
         newResource.setCreatedDate(now);
@@ -215,7 +216,7 @@ public class ResourceService extends ServiceWithTransactions {
     @Deprecated(forRemoval = true)
     public Publication insertPreexistingPublication(Publication publication) {
         Resource resource = Resource.fromPublication(publication);
-        return insertResource(resource);
+        return insertResource(resource).toPublication();
     }
 
     public Publication markPublicationForDeletion(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -223,40 +224,24 @@ public class ResourceService extends ServiceWithTransactions {
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier)).toPublication();
     }
 
-    public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
-                                                               SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        return updateResourceService.publishPublication(userInstance, resourceIdentifier);
+    public void refreshFile(SortableIdentifier identifier) {
+        FileEntry.queryObject(identifier).fetch(this).orElseThrow().toDao().updateExistingEntry(client);
     }
 
-    public Publication autoImportPublicationFromScopus(ImportCandidate inputData) {
-        var publication = inputData.toPublication();
-        Instant currentTime = clockForTimestamps.instant();
-        publication.addImportDetail(ImportDetail.fromSource(Source.SCOPUS, currentTime));
-        var userInstance = UserInstance.fromPublication(publication);
-        Resource newResource = Resource.fromPublication(publication);
-        newResource.setIdentifier(identifierSupplier.get());
-        newResource.setResourceOwner(createResourceOwner(userInstance));
-        newResource.setPublisher(createOrganization(userInstance));
-        newResource.setCreatedDate(currentTime);
-        newResource.setModifiedDate(currentTime);
-        newResource.setPublishedDate(currentTime);
-        newResource.setStatus(PUBLISHED);
-        return insertResource(newResource);
-    }
-
+    // TODO: Should we delete all tickets for delete draft publication?
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
-        List<Dao> daos = readResourceService.fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance,
-                                                                                              resourceIdentifier);
+        var daos = readResourceService.fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance,
+                                                                                        resourceIdentifier);
+        var deleteFilesTransactions = deleteResourceFilesTransaction(resourceIdentifier);
 
-        List<TransactWriteItem> transactionItems = transactionItemsForDraftPublicationDeletion(daos);
+        var transactionItems = transactionItemsForDraftPublicationDeletion(daos);
+        transactionItems.addAll(deleteFilesTransactions);
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
 
-    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
+    public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
     }
 
@@ -275,28 +260,27 @@ public class ResourceService extends ServiceWithTransactions {
         writeToDynamoInBatches(writeRequests);
     }
 
-    public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        return readResourceService.getPublication(userInstance, resourceIdentifier);
-    }
-
-    public Publication getPublication(Publication sampleResource) throws NotFoundException {
-        return readResourceService.getPublication(sampleResource);
-    }
-
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        return readResourceService.getResourceByIdentifier(identifier);
+        return readResourceService.getResourceByIdentifier(identifier)
+                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE + identifier));
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
-        return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+        return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier)
+                   .stream()
+                   .map(Resource::fromPublication)
+                   .map(Resource::getIdentifier)
+                   .map(readResourceService::getResourceByIdentifier)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(Resource::toPublication)
+                   .toList();
     }
 
-    public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
+    public List<PublicationSummary> getPublicationSummaryByOwner(UserInstance sampleUser) {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
 
-    // TODO rename to getPublicationForUsageWithElevatedRights
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return getResourceByIdentifier(identifier).toPublication();
     }
@@ -312,7 +296,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
         deleteResourceService.deleteImportCandidate(importCandidate);
-        logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE + importCandidate.getIdentifier());
+        logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE, importCandidate.getIdentifier());
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -324,33 +308,44 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updatePublicationButDoNotChangeStatus(resourceUpdate);
     }
 
+    public Resource updateResource(Resource resource, UserInstance userInstance) {
+        return updateResourceService.updateResource(resource, userInstance);
+    }
+
     // update this method according to current needs.
-    //TODO: redesign migration process?
     public Entity migrate(Entity dataEntry) {
-        return dataEntry instanceof Resource ? migrateResource((Resource) dataEntry) : dataEntry;
+        if (dataEntry instanceof Resource resource) {
+            persistPublicationChannelForPublisherWhenDegree(resource);
+        }
+        return dataEntry;
+    }
+
+    private void persistPublicationChannelForPublisherWhenDegree(Resource resource) {
+        resource.getPublisherWhenDegree().ifPresent(publisher -> {
+            var channelClaimId = toChannelClaimUri(publisher.getIdentifier());
+            var channelType = ChannelType.fromChannelId(publisher.getId());
+            var nonClaimedPublicationChannelDao = NonClaimedPublicationChannel
+                                                      .create(channelClaimId, resource.getIdentifier(), channelType)
+                                                      .toDao();
+            var transactionItem = toPutTransactionItem(nonClaimedPublicationChannelDao, tableName);
+            sendTransactionWriteRequest(new TransactWriteItemsRequest().withTransactItems(transactionItem));
+        });
+    }
+
+    public TransactWriteItem toPutTransactionItem(PublicationChannelDao dao, String tableName) {
+        var put = new Put().withItem(dao.toDynamoFormat()).withTableName(tableName);
+        return new TransactWriteItem().withPut(put);
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
-        var dao = (ResourceDao) resource.toDao();
-        return dao.fetchAllTickets(getClient())
-                   .stream()
-                   .map(TicketDao::getData)
-                   .map(TicketEntry.class::cast)
-                   .filter(ResourceService::isNotRemoved);
-    }
-
-    public Stream<TicketEntry> fetchAllTicketsForPublication(UserInstance userInstance,
-                                                             SortableIdentifier publicationIdentifier)
-        throws ApiGatewayException {
-        var resource = readResourceService.getResource(userInstance, publicationIdentifier);
-        return resource.fetchAllTickets(this).filter(ResourceService::isNotRemoved);
+        return readResourceService.fetchAllTicketsForResource(resource);
     }
 
     public void refresh(SortableIdentifier identifier) {
         try {
             updatePublication(getPublicationByIdentifier(identifier));
             logger.info(RESOURCE_REFRESHED_MESSAGE, identifier);
-        } catch (NotFoundException e) {
+        } catch (Exception e) {
             logger.error(RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE, identifier);
         }
     }
@@ -359,29 +354,176 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updateImportCandidate(importCandidate);
     }
 
-    public void unpublishPublication(Publication publication) throws BadRequestException, NotFoundException {
-        var existingPublication = readResourceService.getPublication(publication);
+    public void unpublishPublication(Publication publication, UserInstance userInstance)
+        throws BadRequestException, NotFoundException {
+        var existingPublication = getResourceByIdentifier(publication.getIdentifier()).toPublication();
         if (!PUBLISHED.equals(existingPublication.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
         var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
-        var unpublishRequestTicket = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
-        updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket);
+        updateResourceService.unpublishPublication(publication, allTicketsForResource,
+                                                   userInstance);
     }
 
-    public void deletePublication(Publication publication) throws BadRequestException {
-        if (!UNPUBLISHED.equals(publication.getStatus())) {
+    public void terminateResource(Resource resource, UserInstance userInstance) throws BadRequestException {
+        if (!UNPUBLISHED.equals(resource.getStatus())) {
             throw new BadRequestException(DELETE_PUBLICATION_ERROR_MESSAGE);
         }
-        updateResourceService.deletePublication(publication);
+        updateResourceService.terminateResource(resource, userInstance);
     }
 
-    private static boolean isNotRemoved(TicketEntry ticket) {
-        return !TicketStatus.REMOVED.equals(ticket.getStatus());
+    public void persistLogEntry(LogEntry logEntry) {
+        var dao = LogEntryDao.fromLogEntry(logEntry);
+        var put = new Put().withItem(dao.toDynamoFormat())
+                      .withTableName(tableName)
+                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        var transactWriteItem = new TransactWriteItem().withPut(put);
+        attempt(() -> getClient().transactWriteItems(newTransactWriteItemsRequest(transactWriteItem)));
+    }
+
+    public List<LogEntry> getLogEntriesForResource(Resource resource) {
+        var partitionKeyValue = LogEntryDao.getLogEntriesByResourceIdentifierPartitionKey(resource);
+
+        var queryRequest = new QueryRequest().withTableName(tableName)
+                               .withKeyConditionExpression("PK0 = :value")
+                               .withExpressionAttributeValues(
+                                   Map.of(":value", new AttributeValue().withS(partitionKeyValue)));
+
+        return client.query(queryRequest)
+                   .getItems()
+                   .stream()
+                   .map(LogEntryDao::fromDynamoFormat)
+                   .map(LogEntryDao::data)
+                   .toList();
+    }
+
+    public void persistFile(FileEntry fileEntry) {
+        var dao = fileEntry.toDao().createInsertionTransactionRequest();
+        sendTransactionWriteRequest(dao);
+    }
+
+    public Optional<FileEntry> fetchFile(FileEntry fileEntry) {
+        var primaryKey = fileEntry.toDao().primaryKey();
+        var result = client.getItem(new GetItemRequest().withTableName(tableName).withKey(primaryKey));
+        return Optional.ofNullable(result.getItem()).map(FileDao::fromDynamoFormat).map(FileEntry::fromDao);
+    }
+
+    public void deleteFile(FileEntry fileEntry) {
+        var primaryKey = fileEntry.toDao().primaryKey();
+        client.deleteItem(new DeleteItemRequest().withTableName(tableName).withKey(primaryKey));
+    }
+
+    public void updateFile(FileEntry fileEntry) {
+        fileEntry.toDao().updateExistingEntry(client);
+    }
+
+    public ListingResult<PublicationChannel> fetchAllPublicationChannelsByIdentifier(SortableIdentifier identifier,
+                                                                                     Map<String, AttributeValue> startMarker) {
+        var queryRequest = new QueryRequest().withTableName(tableName)
+                               .withKeyConditionExpression("PK0 = :value")
+                               .withExclusiveStartKey(startMarker)
+                               .withExpressionAttributeValues(
+                                   Map.of(":value", new AttributeValue().withS("PublicationChannel:%s".formatted(identifier))));
+
+        var result = client.query(queryRequest);
+        var values = getPublicationChannels(result);
+        var isTruncated = nonNull(result.getLastEvaluatedKey()) && !result.getLastEvaluatedKey().isEmpty();
+        return new ListingResult<>(values, result.getLastEvaluatedKey(), isTruncated);
+    }
+
+    public void batchUpdateChannels(List<PublicationChannel> publicationChannels) {
+        var writeRequests = publicationChannels.stream()
+                                .map(PublicationChannel::toDao)
+                                .map(PublicationChannelDao::toDynamoFormat)
+                                .map(item -> new PutRequest().withItem(item))
+                                .map(WriteRequest::new)
+                                .toList();
+        Lists.partition(writeRequests, 25)
+            .stream()
+            .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
+            .forEach(this::writeBatchToDynamo);
+    }
+
+    private static List<PublicationChannel> getPublicationChannels(QueryResult result) {
+        return result.getItems().stream().map(value -> parseAttributeValuesMap(value, Dao.class))
+                   .filter(PublicationChannelDao.class::isInstance)
+                   .map(PublicationChannelDao.class::cast)
+                   .map(PublicationChannelDao::getData)
+                   .map(PublicationChannel.class::cast)
+                   .toList();
+    }
+
+    private Resource insertImportedResource(Resource resource, ImportSource importSource) {
+        if (resource.getCuratingInstitutions().isEmpty()) {
+            setCuratingInstitutions(resource);
+        }
+
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var fileTransactionWriteItems = resource.getFiles()
+                                            .stream()
+                                            .map(
+                                                file -> FileEntry.createFromImportSource(file, resource.getIdentifier(),
+                                                                                         userInstance, importSource))
+                                            .map(FileEntry::toDao)
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
+                                            .toList();
+
+        var transactions = new ArrayList<>(fileTransactionWriteItems);
+        transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
+        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
+
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
+
+        return resource;
+    }
+
+    private Collection<? extends TransactWriteItem> createPublicationChannelsTransaction(Resource resource) {
+        var transactWriteItems = new ArrayList<TransactWriteItem>();
+
+        resource.getPublisherWhenDegree().ifPresent(publisher -> {
+            var publicationChannelDao = createPublicationChannelDao(identityService, resource, publisher);
+            transactWriteItems.add(publicationChannelDao.toPutNewTransactionItem(tableName));
+        });
+
+        return transactWriteItems;
+    }
+
+    // TODO: Should we fetch files here?
+    private List<TransactWriteItem> deleteResourceFilesTransaction(SortableIdentifier identifier) {
+        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
+        var queryRequest = new QueryRequest().withTableName(tableName)
+                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                               .withKeyConditionExpression("#PK3 = :value")
+                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
+                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+
+        return client.query(queryRequest)
+                   .getItems()
+                   .stream()
+                   .map(map -> parseAttributeValuesMap(map, Dao.class))
+                   .filter(FileDao.class::isInstance)
+                   .map(FileDao.class::cast)
+                   .map(dao -> dao.toDeleteTransactionItem(tableName))
+                   .toList();
+    }
+
+    @JacocoGenerated
+    private void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource)
+        throws BadRequestException {
+        var status = userInstance.isExternalClient() ? Optional.ofNullable(fromPublication.getStatus())
+                                                           .orElse(PublicationStatus.DRAFT) : PublicationStatus.DRAFT;
+
+        if (status == PUBLISHED && !fromPublication.isPublishable()) {
+            throw new BadRequestException(NOT_PUBLISHABLE);
+        }
+
+        toResource.setStatus(status);
     }
 
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
-        return dataEntries.stream().map(attempt(this::migrate)).map(Try::orElseThrow).collect(Collectors.toList());
+        return dataEntries.stream().map(attempt(this::migrate)).map(Try::orElseThrow).toList();
     }
 
     private Organization createOrganization(UserInstance userInstance) {
@@ -394,11 +536,6 @@ public class ResourceService extends ServiceWithTransactions {
 
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {
         return nonNull(scanResult.getLastEvaluatedKey()) && !scanResult.getLastEvaluatedKey().isEmpty();
-    }
-
-    // change this method depending on the current migration needs.
-    private Resource migrateResource(Resource dataEntry) {
-        return dataEntry;
     }
 
     private void writeToDynamoInBatches(List<WriteRequest> writeRequests) {
@@ -458,21 +595,54 @@ public class ResourceService extends ServiceWithTransactions {
     private List<Entity> extractDatabaseEntries(ScanResult response) {
         return response.getItems()
                    .stream()
+                   .filter(ResourceService::isNotLogEntry)
                    .map(value -> parseAttributeValuesMap(value, Dao.class))
                    .map(Dao::getData)
-                   .map(Entity.class::cast)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
-    private Publication insertResource(Resource newResource) {
-        if (newResource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(newResource);
-        }
-        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(putRequest);
+    private static boolean isNotLogEntry(Map<String, AttributeValue> map) {
+        return !map.get("SK0").getS().contains("LogEntry");
+    }
 
-        return newResource.toPublication();
+    private static void injectSyntheticCristinIdentifier(Resource resource,
+                                                             AdditionalIdentifierBase syntheticCristinIdentifier) {
+        var additionalIdentifiers = new HashSet<>(resource.getAdditionalIdentifiers());
+        additionalIdentifiers.add(syntheticCristinIdentifier);
+        resource.setAdditionalIdentifiers(additionalIdentifiers);
+    }
+
+    private Resource insertResource(Resource resource) {
+        var transactions = new ArrayList<TransactWriteItem>();
+
+        if (resource.getCuratingInstitutions().isEmpty()) {
+            setCuratingInstitutions(resource);
+        }
+
+        if (resource.getCristinIdentifier().isEmpty()) {
+            var counterEntry = CounterDao.fetch(counterService).increment();
+            var syntheticCristinIdentifier = CristinIdentifier.fromCounter(counterEntry.value());
+            injectSyntheticCristinIdentifier(resource, syntheticCristinIdentifier);
+            transactions.add(counterEntry.toPutTransactionWriteItem());
+        }
+
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+        var fileTransactionWriteItems = resource.getFiles()
+                                            .stream()
+                                            .map(file -> FileEntry.create(file, resource.getIdentifier(), userInstance))
+                                            .map(FileEntry::toDao)
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
+                                            .toList();
+
+        transactions.addAll(fileTransactionWriteItems);
+        transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
+        transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
+        transactions.addAll(createPublicationChannelsTransaction(resource));
+
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
+
+        return resource;
     }
 
     private void setCuratingInstitutions(Resource newResource) {
@@ -482,8 +652,21 @@ public class ResourceService extends ServiceWithTransactions {
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendTransactionWriteRequest(putRequest);
+
+        var fileTransactionWriteItems = newResource.getFiles()
+                                            .stream()
+                                            .map(file -> FileEntry.create(file, newResource.getIdentifier(),
+                                                                          UserInstance.fromPublication(
+                                                                              newResource.toPublication())))
+                                            .map(FileEntry::toDao)
+                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
+                                            .toList();
+
+        var transactions = new ArrayList<TransactWriteItem>();
+        transactions.addAll(Arrays.stream(transactionItems).toList());
+        transactions.addAll(fileTransactionWriteItems);
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
 
         return newResource.toImportCandidate();
     }
@@ -501,29 +684,6 @@ public class ResourceService extends ServiceWithTransactions {
         transactionItems.addAll(deleteResourceTransactionItems(daos));
         transactionItems.addAll(deleteDoiRequestTransactionItems(daos));
         return transactionItems;
-    }
-
-    private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        if (resource.getCristinIdentifier().isPresent()) {
-            TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
-            TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-            return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
-        } else {
-            var counterEntry = CounterDao.fetch(counterService).increment();
-            var syntheticCristinIdentifier = CristinIdentifier.fromCounter(counterEntry.value());
-            var resourceWithCristinIdentifier = injectSyntheticCristinIdentifier(resource, syntheticCristinIdentifier);
-            var increasedCounter = counterEntry.toPutTransactionWriteItem();
-            TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resourceWithCristinIdentifier), tableName);
-            TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-            return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry, increasedCounter};
-        }
-    }
-
-    private static Resource injectSyntheticCristinIdentifier(Resource resource,
-                                                             AdditionalIdentifierBase syntheticCristinIdentifier) {
-        var additionalIdentifiers = new HashSet<>(resource.getAdditionalIdentifiers());
-        additionalIdentifiers.add(syntheticCristinIdentifier);
-        return resource.copy().withAdditionalIdentifiers(additionalIdentifiers).build();
     }
 
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
@@ -554,13 +714,12 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
-        Map<String, String> expressionAttributeNames = Map.of("#status", STATUS_FIELD_IN_RESOURCE, "#doi",
-                                                              DOI_FIELD_IN_RESOURCE);
+        Map<String, String> expressionAttributeNames = Map.of("#status", STATUS_FIELD_IN_RESOURCE);
         Map<String, AttributeValue> expressionAttributeValues = Map.of(":publishedStatus",
-                                                                       new AttributeValue(PUBLISHED.getValue()));
+                                                                       new AttributeValue(DRAFT.getValue()));
 
         deleteResource.getDelete()
-            .withConditionExpression("#status <> :publishedStatus AND attribute_not_exists(#doi)")
+            .withConditionExpression("#status = :publishedStatus")
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues);
     }

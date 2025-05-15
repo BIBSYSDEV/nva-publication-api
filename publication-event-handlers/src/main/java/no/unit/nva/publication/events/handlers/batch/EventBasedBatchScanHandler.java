@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
     public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
-
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
@@ -38,7 +37,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     @Override
     protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
                                 Context context) {
-        logger.info("Query starting point:" + input.getStartMarker());
+        logger.info("Query starting point: {}", input.getStartMarker());
         var result = resourceService.scanResources(input.getPageSize(), input.getStartMarker(), input.getTypes());
         resourceService.refreshResources(result.getDatabaseEntries());
         if (result.isTruncated()) {

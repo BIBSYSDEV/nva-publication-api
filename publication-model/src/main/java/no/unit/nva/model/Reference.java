@@ -18,9 +18,9 @@ public class Reference {
     }
 
     private Reference(Builder builder) {
-        setPublicationContext(builder.publicationContext);
-        setDoi(builder.doi);
-        setPublicationInstance(builder.publicationInstance);
+        this.publicationContext = builder.publicationContext;
+        this.doi = builder.doi;
+        this.publicationInstance = builder.publicationInstance;
     }
 
     public PublicationContext getPublicationContext() {

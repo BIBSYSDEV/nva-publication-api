@@ -17,6 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
@@ -30,19 +31,19 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
+import no.unit.nva.cristin.patcher.exception.ChildNotAnthologyException;
 import no.unit.nva.cristin.patcher.exception.ChildPatchPublicationInstanceMismatchException;
 import no.unit.nva.cristin.patcher.exception.NotFoundException;
-import no.unit.nva.cristin.patcher.exception.ParentPatchPublicationInstanceMismatchException;
 import no.unit.nva.cristin.patcher.exception.ParentPublicationException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.Encyclopedia;
 import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
@@ -73,7 +74,6 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -129,6 +129,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
             Arguments.of(NonFictionChapter.class, Encyclopedia.class),
             Arguments.of(NonFictionChapter.class, ExhibitionCatalog.class),
             Arguments.of(NonFictionChapter.class, AcademicMonograph.class),
+            Arguments.of(NonFictionChapter.class, ReportResearch.class),
 
             Arguments.of(Introduction.class, BookAnthology.class),
             Arguments.of(Introduction.class, NonFictionMonograph.class),
@@ -138,6 +139,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
             Arguments.of(Introduction.class, AcademicMonograph.class),
             Arguments.of(Introduction.class, ExhibitionCatalog.class),
             Arguments.of(Introduction.class, Encyclopedia.class),
+            Arguments.of(Introduction.class, ReportResearch.class),
 
             Arguments.of(PopularScienceChapter.class, BookAnthology.class),
             Arguments.of(PopularScienceChapter.class, PopularScienceMonograph.class),
@@ -146,6 +148,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
             Arguments.of(PopularScienceChapter.class, ExhibitionCatalog.class),
             Arguments.of(PopularScienceChapter.class, Encyclopedia.class),
             Arguments.of(PopularScienceChapter.class, AcademicMonograph.class),
+            Arguments.of(PopularScienceChapter.class, ReportResearch.class),
 
             Arguments.of(TextbookChapter.class, Textbook.class),
 
@@ -270,27 +273,31 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
 
     @Test
-    void shouldStoreErrorReportWhenParentAndChildPublicationDoesNotMatchWhenUpdatingChild()
+    void shouldUpdateChildAndStoreChildPatchPublicationInstanceMismatchExceptionErrorReportWhenMismatch()
         throws ApiGatewayException, IOException {
-        var bookMonographChild =
-            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
-                                                                                BookMonograph.class);
-        var partOfCristinId = randomString();
-        var bookMonographParent =
-            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId, BookMonograph.class);
-        var partOfEventReference = createPartOfEventReference(bookMonographChild.getIdentifier().toString(),
-                                                              partOfCristinId);
+        var childCristinId = randomString();
+        var child =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(childCristinId,
+                                                                                ChapterInReport.class);
+        var parentCristinId = randomString();
+        var parent =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(parentCristinId, NonFictionMonograph.class);
+        var partOfEventReference = createPartOfEventReference(child.getIdentifier().toString(),
+                                                              parentCristinId);
         var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
         var eventReference = createInputEventForFile(fileUri);
         var sqsEvent = createSqsEvent(eventReference);
         handler.handleRequest(sqsEvent, CONTEXT);
         var exceptionName = ChildPatchPublicationInstanceMismatchException.class.getSimpleName();
-        var actualReport = extractActualReportFromS3Client(eventReference,
-                                                           exceptionName,
-                                                           bookMonographChild.getIdentifier().toString());
-        assertThat(actualReport.getInput().getChildPublication(), is(Matchers.equalTo(bookMonographChild)));
-        assertThat(actualReport.getInput().getPartOf().getParentPublication(),
-                   is(Matchers.equalTo(bookMonographParent)));
+        var actualReport = extractPatchErrorReportFromS3Client(eventReference, exceptionName,
+                                                           childCristinId);
+        var expectedReport = "Child:%s:Parent:%s".formatted("ChapterInReport", "NonFictionMonograph");
+
+        var updatedChild = resourceService.getPublicationsByCristinIdentifier(childCristinId).stream().findFirst().orElseThrow();
+
+        assertThat(updatedChild.getEntityDescription().getReference().getPublicationContext(),
+                   hasProperty("id", is(equalTo(createExpectedPartOfUri(parent.getIdentifier())))));
+        assertEquals(expectedReport, actualReport);
     }
 
     @Test
@@ -322,33 +329,27 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldStoreErrorReportWhenParentAndChildPublicationDoesNotMatchWhenUpdatingParent()
+    void shouldStoreChildNotAnthologyErrorReportWhenParentAndChildPublicationDoesNotMatchAndChildIsNotAnthology()
         throws ApiGatewayException, IOException {
+        var childCristinId = randomString();
         var child =
-            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(), Textbook.class);
-        var partOfCristinId = randomString();
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(childCristinId, Textbook.class);
+        var parentCristinId = randomString();
         final var parent =
-            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId, DegreePhd.class);
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(parentCristinId, DegreePhd.class);
         var partOfEventReference = createPartOfEventReference(child.getIdentifier().toString(),
-                                                              partOfCristinId);
+                                                              parentCristinId);
         var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
         var eventReference = createInputEventForFile(fileUri);
         var sqsEvent = createSqsEvent(eventReference);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var childMismatchExceptionName = ChildPatchPublicationInstanceMismatchException.class.getSimpleName();
-        var childPatchReport = extractActualReportFromS3Client(eventReference,
-                                                               childMismatchExceptionName,
-                                                           child.getIdentifier().toString());
-        var parentMismatchExceptionName = ParentPatchPublicationInstanceMismatchException.class.getSimpleName();
-        var parentPatchReport = extractActualReportFromS3Client(eventReference,
-                                                                parentMismatchExceptionName,
-                                                               child.getIdentifier().toString());
-        assertThat(childPatchReport.getInput().getChildPublication(), is(Matchers.equalTo(child)));
-        assertThat(parentPatchReport.getInput().getChildPublication(), is(Matchers.equalTo(child)));
-        assertThat(childPatchReport.getInput().getPartOf().getParentPublication(),
-                   is(Matchers.equalTo(parent)));
-        assertThat(parentPatchReport.getInput().getPartOf().getParentPublication(),
-                   is(Matchers.equalTo(parent)));
+        var exceptionName = ChildNotAnthologyException.class.getSimpleName();
+        var actualReport = extractPatchErrorReportFromS3Client(eventReference, exceptionName,
+                                                               childCristinId);
+
+        var expectedReport = "Child:%s:Parent:%s".formatted("Textbook", "DegreePhd");
+
+        assertEquals(expectedReport, actualReport);
     }
 
     private static void removePartOfInPublicationContext(Publication publication) {
@@ -373,6 +374,13 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var content = s3DriverReturningErrorFile.getFile(errorFileUri.toS3bucketPath());
         return eventHandlerObjectMapper.readValue(content, new TypeReference<>() {
         });
+    }
+
+    private String extractPatchErrorReportFromS3Client(
+        EventReference eventBody,
+        String exceptionName, String cristinIdentifier) {
+        var s3DriverReturningErrorFile = new S3Driver(s3Client, eventBody.getUri().getHost());
+        return s3DriverReturningErrorFile.getFile(UnixPath.of("PATCH_ERROR_REPORT", exceptionName, cristinIdentifier));
     }
 
     private UriWrapper constructErrorFileUri(EventReference eventBody,
@@ -429,7 +437,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     private Set<AdditionalIdentifierBase> createAdditionalIdentifiersWithCristinId(String cristinId) {
-        return Set.of(new AdditionalIdentifier("Cristin", cristinId));
+        return Set.of(new CristinIdentifier(SourceName.fromCristin("uio"), cristinId));
     }
 
     private UnixPath randomPath() {

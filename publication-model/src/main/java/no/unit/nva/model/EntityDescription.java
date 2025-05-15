@@ -40,18 +40,18 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     }
 
     private EntityDescription(Builder builder) {
-        setMainTitle(builder.mainTitle);
-        setAlternativeTitles(builder.alternativeTitles);
-        setLanguage(builder.language);
-        setPublicationDate(builder.publicationDate);
+        this.mainTitle = builder.mainTitle;
+        this.alternativeTitles = builder.alternativeTitles;
+        this.language = builder.language;
+        this.publicationDate = builder.publicationDate;
         setContributors(builder.contributors);
-        setAbstract(builder.mainLanguageAbstract);
-        setNpiSubjectHeading(builder.npiSubjectHeading);
-        setTags(builder.tags);
-        setDescription(builder.description);
-        setReference(builder.reference);
-        setMetadataSource(builder.metadataSource);
-        setAlternativeAbstracts(builder.alternativeAbstracts);
+        this.mainLanguageAbstract = builder.mainLanguageAbstract;
+        this.npiSubjectHeading = builder.npiSubjectHeading;
+        this.tags = builder.tags;
+        this.description = builder.description;
+        this.reference = builder.reference;
+        this.metadataSource = builder.metadataSource;
+        this.alternativeAbstracts = builder.alternativeAbstracts;
     }
 
 

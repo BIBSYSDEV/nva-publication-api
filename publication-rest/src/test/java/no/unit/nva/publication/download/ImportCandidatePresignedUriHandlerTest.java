@@ -46,6 +46,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -68,7 +69,7 @@ class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
                                      .withTableName("import-candidates-table")
                                      .build();
         s3Presigner = mock(S3Presigner.class);
-        handler = new ImportCandidatePresignedUrlHandler(s3Presigner, importCandidateService);
+        handler = new ImportCandidatePresignedUrlHandler(s3Presigner, importCandidateService, new Environment());
         output = new ByteArrayOutputStream();
     }
 
@@ -120,7 +121,7 @@ class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
         when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenReturn(request);
         return PresignedUri.builder()
                    .withFileIdentifier(file.getIdentifier())
-                   .withUri(presignedUrl.toURI())
+                   .withSignedUri(presignedUrl.toURI())
                    .withExpiration(expires)
                    .build();
     }
@@ -153,7 +154,7 @@ class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
                    .withFundings(List.of(new FundingBuilder().build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Scopus", randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of(File.builder().withIdentifier(randomUUID()).buildPublishedFile()))
+                   .withAssociatedArtifacts(List.of(File.builder().withIdentifier(randomUUID()).buildOpenFile()))
                    .build();
     }
 

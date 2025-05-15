@@ -7,18 +7,21 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
+import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 
-@SuppressWarnings("PMD.TooManyFields")
+@SuppressWarnings({"PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 public final class ResourceBuilder {
 
     private SortableIdentifier identifier;
@@ -31,6 +34,7 @@ public final class ResourceBuilder {
     private Instant indexedDate;
     private URI link;
     private AssociatedArtifactList associatedArtifacts;
+    private List<FileEntry> fileEntries;
     private List<ResearchProject> projects;
     private EntityDescription entityDescription;
     private URI doi;
@@ -42,8 +46,10 @@ public final class ResourceBuilder {
     private ImportStatus importStatus;
     private List<PublicationNoteBase> publicationNotes;
     private URI duplicateOf;
-    private Set<URI> curatingInstitutions;
+    private Set<CuratingInstitution> curatingInstitutions;
     private List<ImportDetail> importDetails;
+    private ResourceEvent resourceEvent;
+    private List<PublicationChannel> publicationChannels;
 
     ResourceBuilder() {
     }
@@ -95,6 +101,11 @@ public final class ResourceBuilder {
 
     public ResourceBuilder withAssociatedArtifactsList(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = new AssociatedArtifactList(associatedArtifacts);
+        return this;
+    }
+
+    public ResourceBuilder withFilesEntries(List<FileEntry> fileEntries) {
+        this.fileEntries = fileEntries;
         return this;
     }
 
@@ -153,13 +164,23 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public ResourceBuilder withCuratingInstitutions(Set<URI> curatingInstitutions) {
+    public ResourceBuilder withCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
         this.curatingInstitutions = curatingInstitutions;
+        return this;
+    }
+
+    public ResourceBuilder withPublicationChannels(List<PublicationChannel> publicationChannels) {
+        this.publicationChannels = publicationChannels;
         return this;
     }
 
     public ResourceBuilder withImportDetails(Collection<ImportDetail> importDetails) {
         this.importDetails = new ArrayList<>(importDetails);
+        return this;
+    }
+
+    public ResourceBuilder withResourceEvent(ResourceEvent resourceEvent) {
+        this.resourceEvent = resourceEvent;
         return this;
     }
 
@@ -175,6 +196,7 @@ public final class ResourceBuilder {
         resource.setIndexedDate(indexedDate);
         resource.setLink(link);
         resource.setAssociatedArtifacts(associatedArtifacts);
+        resource.setFileEntries(fileEntries);
         resource.setProjects(projects);
         resource.setEntityDescription(entityDescription);
         resource.setDoi(doi);
@@ -188,6 +210,8 @@ public final class ResourceBuilder {
         resource.setDuplicateOf(duplicateOf);
         resource.setCuratingInstitutions(curatingInstitutions);
         resource.setImportDetails(importDetails);
+        resource.setResourceEvent(resourceEvent);
+        resource.setPublicationChannels(publicationChannels);
         return resource;
     }
 }

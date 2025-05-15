@@ -23,6 +23,7 @@ nva:ReportBookOfAbstract rdfs:subClassOf schema:Report .
 nva:MediaPodcast rdfs:subClassOf schema:PodcastEpisode .
 nva:BookMonograph rdfs:subClassOf schema:Book .
 nva:AcademicMonograph rdfs:subClassOf schema:Book .
+nva:AcademicCommentary rdfs:subClassOf schema:Book .
 nva:Encyclopedia rdfs:subClassOf schema:Book .
 nva:ExhibitionCatalog rdfs:subClassOf schema:Book .
 nva:NonFictionMonograph rdfs:subClassOf schema:Book .
@@ -34,6 +35,7 @@ nva:FeatureArticle rdfs:subClassOf schema:ScholarlyArticle .
 nva:ReportWorkingPaper rdfs:subClassOf schema:Report .
 nva:ReportPolicy rdfs:subClassOf schema:Report .
 nva:DegreePhd rdfs:subClassOf schema:Thesis .
+nva:ArtisticDegreePhd rdfs:subClassOf schema:Thesis .
 nva:DegreeBachelor rdfs:subClassOf schema:Thesis .
 nva:JournalLeader rdfs:subClassOf schema:ScholarlyArticle .
 nva:MediaInterview rdfs:subClassOf schema:NewsArticle .

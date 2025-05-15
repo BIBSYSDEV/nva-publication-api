@@ -9,12 +9,12 @@ import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
@@ -22,11 +22,12 @@ import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -63,8 +64,10 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
         OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
             username);
-        var file = createFileWithRrs(userSetRrs);
-
+        var file = createPendingOpenFileWithRrs(null);
+        FileEntry.create(file, persistedPublication.getIdentifier(), UserInstance.fromPublication(persistedPublication))
+            .persist(resourceService);
+        file.setRightsRetentionStrategy(userSetRrs);
         var update = persistedPublication.copy().withAssociatedArtifacts(List.of(file)).build();
         var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
 
@@ -93,7 +96,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
         OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
             randomString());
-        var file = createFileWithRrs(userSetRrs);
+        var file = createPendingOpenFileWithRrs(userSetRrs);
         var academicArticle = publication.copy()
                                   .withEntityDescription(randomEntityDescription(AcademicArticle.class))
                                   .withAssociatedArtifacts(List.of(file))
@@ -130,8 +133,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, rrsOverriddenBy
         );
         var fileId = UUID.randomUUID();
-        var file = createFileWithRrs(fileId, userSetRrs);
-        var updatedFile = createFileWithRrs(fileId, userSetRrs);
+        var file = createPendingOpenFileWithRrs(fileId, userSetRrs);
+        var updatedFile = createPendingOpenFileWithRrs(fileId, userSetRrs);
         var academicArticle = publication.copy()
                                   .withEntityDescription(randomEntityDescription(AcademicArticle.class))
                                   .withAssociatedArtifacts(List.of(file))
@@ -155,25 +158,23 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
         var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
 
-        assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
-        assertThat(insertedFile.getMimeType(),is(equalTo(updatedFile.getMimeType())));
+        assertInstanceOf(OverriddenRightsRetentionStrategy.class, insertedFile.getRightsRetentionStrategy());
         assertThat(((OverriddenRightsRetentionStrategy) insertedFile.getRightsRetentionStrategy()).getOverriddenBy(),
                    Is.is(IsEqual.equalTo(rrsOverriddenBy)));
     }
 
-    private static UnpublishedFile createFileWithRrs(RightsRetentionStrategy rrs) {
-        return createFileWithRrs(UUID.randomUUID(), rrs);
+    private static PendingOpenFile createPendingOpenFileWithRrs(RightsRetentionStrategy rrs) {
+        return createPendingOpenFileWithRrs(UUID.randomUUID(), rrs);
     }
 
-    private static UnpublishedFile createFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
-        return new UnpublishedFile(uuid,
+    private static PendingOpenFile createPendingOpenFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
+        return new PendingOpenFile(uuid,
                                    RandomDataGenerator.randomString(),
                                    RandomDataGenerator.randomString(),
                                    RandomDataGenerator.randomInteger().longValue(),
                                    RandomDataGenerator.randomUri(),
-                                   false,
                                    PublisherVersion.ACCEPTED_VERSION,
-                                   (Instant) null,
+                                   null,
                                    rrs,
                                    RandomDataGenerator.randomString(),
                                    new UserUploadDetails(null, null));

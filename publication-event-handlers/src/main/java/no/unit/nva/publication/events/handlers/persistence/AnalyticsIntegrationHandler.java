@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.persistence;
 
-import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -23,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
     
+    private static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
     public static final String EXPECTED_EVENT_TOPIC_ERROR_MESSAGE =
         "The event topic is not the expected. Expected topic is "
         + EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;

@@ -1,6 +1,7 @@
 package no.unit.nva.publication.queue;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -17,13 +18,13 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 @JacocoGenerated
 public final class ResourceQueueClient implements QueueClient {
 
-    public static final int MAXIMUM_NUMBER_OF_MESSAGES = 10;
-    public static final String AWS_REGION = "AWS_REGION";
+    public static final int BATCH_SIZE = 10;
+    private static final String AWS_REGION = "AWS_REGION";
     private static final int MAX_CONNECTIONS = 10_000;
     private static final long IDLE_TIME = 30;
     private static final long TIMEOUT_TIME = 30;
-    public static final String ALL_MESSAGE_ATTRIBUTES = "All";
-    public static final int WAITING_TIME = 20;
+    private static final String ALL_MESSAGE_ATTRIBUTES = "All";
+    private static final int WAITING_TIME = 20;
     private final SqsClient sqsClient;
     private final String queueUrl;
 
@@ -42,26 +43,33 @@ public final class ResourceQueueClient implements QueueClient {
     }
 
     @Override
-    public List<Message> readMessages() {
-        var receiveMessageRequest = ReceiveMessageRequest.builder()
-                                        .queueUrl(queueUrl)
-                                        .waitTimeSeconds(WAITING_TIME)
-                                        .maxNumberOfMessages(MAXIMUM_NUMBER_OF_MESSAGES)
-                                        .messageAttributeNames(ALL_MESSAGE_ATTRIBUTES)
-                                        .build();
-        return sqsClient.receiveMessage(receiveMessageRequest).messages();
+    public List<Message> readMessages(int maximumNumberOfMessages) {
+        var allMessages = new ArrayList<Message>();
+        while (allMessages.size() < maximumNumberOfMessages) {
+            var receiveMessageRequest = createRequest(maximumNumberOfMessages);
+            List<Message> messages = sqsClient.receiveMessage(receiveMessageRequest).messages();
+            if (messages.isEmpty()) {
+                break;
+            }
+            allMessages.addAll(messages);
+        }
+        return allMessages;
     }
 
     @Override
     public void deleteMessages(List<Message> messages) {
-        if (!messages.isEmpty()) {
-            var entriesToDelete = messages.stream().map(ResourceQueueClient::toDeleteMessageRequest).toList();
-            var deleteMessagesBatchRequest = DeleteMessageBatchRequest.builder()
-                                                 .queueUrl(queueUrl)
-                                                 .entries(entriesToDelete)
-                                                 .build();
-            sqsClient.deleteMessageBatch(deleteMessagesBatchRequest);
+        var start = 0;
+        while (start < messages.size()) {
+            var batchToDelete = getBatchToDelete(messages, start).stream()
+                                    .map(ResourceQueueClient::toDeleteMessageRequest)
+                                    .toList();
+            sqsClient.deleteMessageBatch(createDeleteRequest(batchToDelete));
+            start += BATCH_SIZE;
         }
+    }
+
+    private static List<Message> getBatchToDelete(List<Message> messages, int start) {
+        return messages.subList(start, Math.min(start + BATCH_SIZE, messages.size()));
     }
 
     private static SqsClient defaultClient() {
@@ -86,5 +94,18 @@ public final class ResourceQueueClient implements QueueClient {
                    .connectionMaxIdleTime(Duration.ofSeconds(IDLE_TIME))
                    .connectionTimeout(Duration.ofSeconds(TIMEOUT_TIME))
                    .build();
+    }
+
+    private ReceiveMessageRequest createRequest(int maximumNumberOfMessages) {
+        return ReceiveMessageRequest.builder()
+                   .queueUrl(queueUrl)
+                   .waitTimeSeconds(WAITING_TIME)
+                   .maxNumberOfMessages(Math.min(maximumNumberOfMessages, BATCH_SIZE))
+                   .messageAttributeNames(ALL_MESSAGE_ATTRIBUTES)
+                   .build();
+    }
+
+    private DeleteMessageBatchRequest createDeleteRequest(List<DeleteMessageBatchRequestEntry> entriesToDelete) {
+        return DeleteMessageBatchRequest.builder().queueUrl(queueUrl).entries(entriesToDelete).build();
     }
 }

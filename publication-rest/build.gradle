@@ -36,6 +36,8 @@ dependencies {
     implementation libs.aws.sdk2.urlconnectionclient
     implementation libs.bundles.validation
 
+    implementation libs.apache.commons.text
+
     testImplementation project(":publication-testing")
     testImplementation project(":tickets-test")
     testImplementation libs.bundles.testing
@@ -46,6 +48,11 @@ dependencies {
     testImplementation libs.wiremock
     testImplementation(libs.httpcore) {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
+
+    testImplementation(libs.dynamodDbLocal) {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
     compileOnly(libs.aws.sdk.apigateway) {
@@ -62,7 +69,7 @@ test {
     environment "TABLE_NAME", "ResourcesTable"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
-    environment "API_HOST", "https://api-host.example.com"
+    environment "API_HOST", "localhost"
     environment "CUSTOM_DOMAIN_BASE_PATH", "publication"
     environment "DOMAIN_NAME", "example.com"
     environment "IMPORT_CANDIDATES_TABLE_NAME", "import-candidates-table"
@@ -70,4 +77,5 @@ test {
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-persisted-bucket"
     environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "some-candidate-bucket"
     environment "NVA_EVENT_BUS_NAME" , "some-nva-event-bus"
+    environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
 }

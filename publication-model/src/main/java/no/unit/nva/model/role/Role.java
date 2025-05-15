@@ -7,6 +7,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public enum Role {
     ACADEMIC_COORDINATOR("AcademicCoordinator"),
     ACTOR("Actor"),

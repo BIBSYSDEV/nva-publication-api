@@ -12,6 +12,7 @@ import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
+import no.unit.nva.model.instancetypes.book.AcademicCommentary;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.Encyclopedia;
@@ -28,6 +29,7 @@ import no.unit.nva.model.instancetypes.chapter.Introduction;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
 import no.unit.nva.model.instancetypes.chapter.TextbookChapter;
+import no.unit.nva.model.instancetypes.degree.ArtisticDegreePhd;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
@@ -42,6 +44,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.CaseReport;
 import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
+import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
@@ -68,6 +71,7 @@ import no.unit.nva.model.pages.Pages;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
+    @JsonSubTypes.Type(name = "AcademicCommentary", value = AcademicCommentary.class),
     @JsonSubTypes.Type(name = "Architecture", value = Architecture.class),
     @JsonSubTypes.Type(name = "ArtisticDesign", value = ArtisticDesign.class),
     @JsonSubTypes.Type(name = "MovingPicture", value = MovingPicture.class),
@@ -92,6 +96,7 @@ import no.unit.nva.model.pages.Pages;
     @JsonSubTypes.Type(name = "DegreeBachelor", value = DegreeBachelor.class),
     @JsonSubTypes.Type(name = "DegreeMaster", value = DegreeMaster.class),
     @JsonSubTypes.Type(name = "DegreePhd", value = DegreePhd.class),
+    @JsonSubTypes.Type(name = "ArtisticDegreePhd", value = ArtisticDegreePhd.class),
     @JsonSubTypes.Type(name = "DegreeLicentiate", value = DegreeLicentiate.class),
     @JsonSubTypes.Type(name = "ReportBasic", value = ReportBasic.class),
     @JsonSubTypes.Type(name = "ReportPolicy", value = ReportPolicy.class),
@@ -116,6 +121,7 @@ import no.unit.nva.model.pages.Pages;
     @JsonSubTypes.Type(name = "JournalIssue", value = JournalIssue.class),
     @JsonSubTypes.Type(name = "ConferenceAbstract", value = ConferenceAbstract.class),
     @JsonSubTypes.Type(name = "MediaFeatureArticle", value = MediaFeatureArticle.class),
+    @JsonSubTypes.Type(name = "FeatureArticle", value = FeatureArticle.class),
     @JsonSubTypes.Type(name = "MediaBlogPost", value = MediaBlogPost.class),
     @JsonSubTypes.Type(name = "MediaInterview", value = MediaInterview.class),
     @JsonSubTypes.Type(name = "MediaParticipationInRadioOrTv", value = MediaParticipationInRadioOrTv.class),

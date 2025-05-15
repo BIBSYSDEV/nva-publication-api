@@ -24,11 +24,11 @@ public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatusDto
 
     @JacocoGenerated
     public UpdateImportStatusHandler() {
-        this(ResourceService.defaultService(TABLE_NAME));
+        this(ResourceService.defaultService(TABLE_NAME), new Environment());
     }
 
-    public UpdateImportStatusHandler(ResourceService importCandidateService) {
-        super(ImportStatusDto.class);
+    public UpdateImportStatusHandler(ResourceService importCandidateService, Environment environment) {
+        super(ImportStatusDto.class, environment);
         this.importCandidateService = importCandidateService;
     }
 

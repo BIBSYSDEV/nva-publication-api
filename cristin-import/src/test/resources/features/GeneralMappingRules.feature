@@ -329,16 +329,16 @@ Feature: Mappings that hold for all types of Cristin Results
     Then an error is reported.
 
   Scenario: Mapping cristin Funding with NFR should create nva Funding with id set.
-    Given that Cristin Result has a grant with properties finansieringsreferanse "3013" and sourceCode "NFR":
+    Given that Cristin Result has a grant with properties finansieringsreferanse "3013" and sourceCodeEnglish "NFR":
     When the Cristin Result is converted to an NVA Resource
     Then the publication should have a Confirmed Nva funding with identifier equal to "3013" and id equal to "https://api.test.nva.aws.unit.no/verified-funding/nfr/3013"
 
 
   Scenario: When CristinGrants year from and / or year to is present they are mapped.
     Given that Cristin Result has grants:
-      | finansieringslopenr | finansieringskildekode | arstall_fra | arstall_til | finansieringsreferanse |
-      | 619                 | EU                     | 2005        | 2006        | SCP8-GA-2009-233969    |
-      | 3013                | KI                     |             |             | 456                    |
+      | finansieringslopenr | finansieringskildekode | finansieringskildekode_engelsk | arstall_fra | arstall_til | finansieringsreferanse |
+      | 619                 | E                      | EU                             | 2005        | 2006        | SCP8-GA-2009-233969    |
+      | 3013                | K                      | KI                             |             |             | 456                    |
     When the Cristin Result is converted to an NVA Resource
     Then publication should have a nva Fundings:
       | identifier          | activeFrom           | activeTo             | source                                                      | label |
@@ -348,9 +348,9 @@ Feature: Mappings that hold for all types of Cristin Results
 
   Scenario: When CristinGrants should not be url encoded twice
     Given that Cristin Result has grants:
-      | finansieringslopenr | finansieringskildekode | arstall_fra | arstall_til | finansieringsreferanse |
-      | 17157               | MILJØDIR               | 2005        | 2006        | 17011442               |
-      | 10228               | EC/H2020               | 2005        | 2006        | 642080                 |
+      | finansieringslopenr | finansieringskildekode | finansieringskildekode_engelsk | arstall_fra | arstall_til | finansieringsreferanse |
+      | 17157               | MILJØDIR               | MILJØDIR                       | 2005        | 2006        | 17011442               |
+      | 10228               | MILJØDIR               | EC/H2020                       | 2005        | 2006        | 642080                 |
     When the Cristin Result is converted to an NVA Resource
     Then publication should have a nva Fundings:
       | identifier | activeFrom           | activeTo             | source                                                                 | label |
@@ -426,6 +426,14 @@ Feature: Mappings that hold for all types of Cristin Results
       | urltypekode | url                                  |
       | FULLTEKST   | wwww.example.com                     |
       | ARKIV       | https://hdl.handle.net/11250/2977385 |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource should have the archive handle set to "https://hdl.handle.net/11250/2977385"
+
+  Scenario: when brage-archive handle is present and has http scheme
+    Given the Cristin Result has the following varbeid_url present:
+      | urltypekode | url                                  |
+      | FULLTEKST   | wwww.example.com                     |
+      | ARKIV       | http://hdl.handle.net/11250/2977385 |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource should have the archive handle set to "https://hdl.handle.net/11250/2977385"
 

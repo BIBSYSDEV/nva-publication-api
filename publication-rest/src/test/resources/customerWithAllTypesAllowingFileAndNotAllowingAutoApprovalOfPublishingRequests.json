@@ -24,6 +24,7 @@
     "DegreeBachelor",
     "DegreeMaster",
     "DegreePhd",
+    "ArtisticDegreePhd",
     "DegreeLicentiate",
     "ReportBasic",
     "ReportPolicy",
@@ -59,7 +60,9 @@
     "VisualArts",
     "Map",
     "LiteraryArts",
-    "ExhibitionProduction"
+    "ExhibitionProduction",
+    "AcademicCommentary",
+    "FeatureArticle"
   ],
   "publicationWorkflow": "RegistratorPublishesMetadataOnly",
   "rightsRetentionStrategy": {

@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -29,7 +28,6 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -38,12 +36,14 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -56,6 +56,7 @@ import org.junit.jupiter.api.Test;
 
 public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
+    private static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     public static final Context CONTEXT = null;
     private ByteArrayOutputStream output;
     private ExpandImportCandidateHandler handler;
@@ -226,7 +227,9 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
         var dataEntryUpdateEvent =
-            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update", oldImage, newImage);
+            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update",
+                                               Resource.fromImportCandidate(oldImage),
+                                               Resource.fromImportCandidate(newImage));
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         return s3Writer.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }

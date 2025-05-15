@@ -69,7 +69,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
         mockSearchApiResponse(existingParentPublication, 1);
         handler.handleRequest(event, CONTEXT);
 
-        var updatedChild = resourceService.getPublication(partOfReport.getPublication());
+        var updatedChild = resourceService.getPublicationByIdentifier(partOfReport.getPublication().getIdentifier());
         var partOfValue = getPartOfValue(updatedChild);
 
         assertEquals(SortableIdentifier.fromUri(partOfValue), existingParentPublication.getIdentifier());
@@ -85,7 +85,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
         mockSearchApiResponse(existingParentPublication, 1);
         handler.handleRequest(event, CONTEXT);
 
-        var notUpdatedChild = resourceService.getPublication(partOfReport.getPublication());
+        var notUpdatedChild = resourceService.getPublicationByIdentifier(partOfReport.getPublication().getIdentifier());
 
         assertNull(getPartOfValue(notUpdatedChild));
     }
@@ -99,7 +99,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
         mockSearchApiResponse(existingParentPublication, 2);
         handler.handleRequest(event, CONTEXT);
 
-        var notUpdatedChild = resourceService.getPublication(partOfReport.getPublication());
+        var notUpdatedChild = resourceService.getPublicationByIdentifier(partOfReport.getPublication().getIdentifier());
 
         assertNull(getPartOfValue(notUpdatedChild));
     }

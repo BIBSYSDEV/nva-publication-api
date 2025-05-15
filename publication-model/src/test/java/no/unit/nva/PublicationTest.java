@@ -6,11 +6,13 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.NEW;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.file.FileModelTest.buildAdministrativeAgreement;
 import static no.unit.nva.model.file.FileModelTest.buildNonAdministrativeAgreement;
+import static no.unit.nva.model.file.FileModelTest.randomPendingOpenFile;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -32,7 +34,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
@@ -40,18 +41,13 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.InvalidAssociatedArtifactsException;
-import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.model.testing.associatedartifacts.AdministrativeAgreementGenerator;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedLinkGenerator;
-import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
-import no.unit.nva.model.testing.associatedartifacts.UnpublishedFileGenerator;
 import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -59,7 +55,6 @@ import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -85,9 +80,9 @@ public class PublicationTest {
 
         return Stream.of(
             publicationWithOriginalDoi(),
-            publicationWithAdministrativeAgreementAndUnpublishedFile(),
-            publicationWithAdministrativeAgreementAndPublishedFile(),
-            publicationWithAdministrativeAgreementAndLink()
+            publicationWithInternalFileAndPendingOpenFile(),
+            publicationWithInternalFileAndOpenFile(),
+            publicationWithInternalFileAndLink()
         );
     }
 
@@ -188,40 +183,25 @@ public class PublicationTest {
     }
 
     @Test
-    void shouldConvertPublishableArtifactToPublishedUponRequest() {
-        var unpublishedFile = buildNonAdministrativeAgreement().buildUnpublishedFile();
-        var publishedFile = buildNonAdministrativeAgreement().buildPublishedFile();
-        assertThat(unpublishedFile.toPublishedFile(), is(instanceOf(PublishedFile.class)));
-        assertThat(publishedFile.toPublishedFile(), is(instanceOf(PublishedFile.class)));
+    void shouldConvertPendingArtifactToOpenUponRequest() {
+        var pendingOpenFIleFile = buildNonAdministrativeAgreement().buildPendingOpenFile();
+        var openFile = buildNonAdministrativeAgreement().buildOpenFile();
+        assertThat(pendingOpenFIleFile.toOpenFile(), is(instanceOf(OpenFile.class)));
+        assertThat(openFile.toOpenFile(), is(instanceOf(OpenFile.class)));
     }
 
     @Test
-    void shouldConvertPublishableArtifactToUnpublishedUponRequest() {
-        var unpublishedFile = buildNonAdministrativeAgreement().buildUnpublishedFile();
-        var publishedFile = buildNonAdministrativeAgreement().buildPublishedFile();
-        assertThat(unpublishedFile.toUnpublishedFile(), is(instanceOf(UnpublishedFile.class)));
-        assertThat(publishedFile.toUnpublishedFile(), is(instanceOf(UnpublishedFile.class)));
-    }
-
-    @Test
-    void shouldNotConvertUnPublishableArtifactToPublishableArtifacts() {
-        var unpublishableFile = buildAdministrativeAgreement().buildUnpublishableFile();
-        assertThrows(IllegalStateException.class, unpublishableFile::toPublishedFile);
-        assertThrows(IllegalStateException.class, unpublishableFile::toUnpublishedFile);
-        assertThrows(IllegalStateException.class, unpublishableFile::toUnpublishedFile);
+    void shouldConvertOpenArtifactToPendingUponRequest() {
+        var pendingOpenFile = buildNonAdministrativeAgreement().buildPendingOpenFile();
+        var openFile = buildNonAdministrativeAgreement().buildOpenFile();
+        assertThat(pendingOpenFile.toPendingOpenFile(), is(instanceOf(PendingOpenFile.class)));
+        assertThat(openFile.toPendingOpenFile(), is(instanceOf(PendingOpenFile.class)));
     }
 
     // This test is included because of a bizarre error.
     @Test
     void initializingPublicationShouldNotThrowException() {
         assertDoesNotThrow(Publication::new);
-    }
-
-    @Test
-    void shouldThrowExceptionWhenCreatingAssociatedArtifactsWithNullArtifactsAndOtherArtifacts() {
-        Executable executable = () -> new AssociatedArtifactList(randomAssociatedLink(),
-                                                                 new NullAssociatedArtifact());
-        assertThrows(InvalidAssociatedArtifactsException.class, executable);
     }
 
     @ParameterizedTest(name = "Publication can be published when basic data is OK and associated files is OK")
@@ -410,24 +390,24 @@ public class PublicationTest {
         return publication;
     }
 
-    private static Publication publicationWithAdministrativeAgreementAndLink() {
-        var administrativeAgreement = AdministrativeAgreementGenerator.random();
-        var link = AssociatedLinkGenerator.random();
-        return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(administrativeAgreement, link)));
+    private static Publication publicationWithInternalFileAndLink() {
+        var internalFile = randomInternalFile();
+        var link = randomAssociatedLink();
+        return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(internalFile, link)));
     }
 
-    private static Publication publicationWithAdministrativeAgreementAndUnpublishedFile() {
-        var unpublishedFile = UnpublishedFileGenerator.random();
-        var administrativeAgreement = AdministrativeAgreementGenerator.random();
-        return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(administrativeAgreement,
-                                                                                    unpublishedFile)));
+    private static Publication publicationWithInternalFileAndPendingOpenFile() {
+        var pendingOpenFile = randomPendingOpenFile();
+        var internalFile = randomInternalFile();
+        return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(internalFile,
+                                                                                    pendingOpenFile)));
     }
 
-    private static Publication publicationWithAdministrativeAgreementAndPublishedFile() {
-        var publishedFile = PublishedFileGenerator.random();
-        var administrativeAgreement = AdministrativeAgreementGenerator.random();
-        return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(administrativeAgreement,
-                                                                                    publishedFile)));
+    private static Publication publicationWithInternalFileAndOpenFile() {
+        var openFile = randomOpenFile();
+        var internalFile = randomInternalFile();
+        return publicationWithAssociatedArtifact(new AssociatedArtifactList(List.of(internalFile,
+                                                                                    openFile)));
     }
 
     private static Publication publicationWithOriginalDoi() {

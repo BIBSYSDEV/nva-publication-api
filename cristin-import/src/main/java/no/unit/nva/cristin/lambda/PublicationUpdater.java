@@ -28,6 +28,7 @@ import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.JacocoGenerated;
 
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.GodClass"})
 public final class PublicationUpdater {
 
     private PublicationUpdater() {
@@ -121,7 +122,7 @@ public final class PublicationUpdater {
     private static void setIdForExistingContributorWhenMissing(Contributor incomingContributor, List<Contributor> existingContributors) {
         var contributorMissingId = existingContributors.stream()
                     .filter(existingContributor -> haveSameName(incomingContributor, existingContributor))
-                    .filter(existingContributor -> hasNoId(existingContributor))
+                    .filter(PublicationUpdater::hasNoId)
                     .findFirst();
         contributorMissingId.ifPresent(existingContributor -> existingContributor.getIdentity().setId(incomingContributor.getIdentity().getId()));
     }
@@ -281,8 +282,8 @@ public final class PublicationUpdater {
             || shouldBeUpdated(getLabel(existingPlace), getLabel(incomingPlace))
             || shouldBeUpdated(existingEvent.getTime(), incomingEvent.getTime())) {
             return new Event.Builder()
-                       .withLabel(
-                           nonNull(existingEvent.getLabel()) ? existingEvent.getLabel() : incomingEvent.getLabel())
+                       .withName(
+                           nonNull(existingEvent.getName()) ? existingEvent.getName() : incomingEvent.getName())
                        .withAgent(
                            nonNull(existingEvent.getAgent()) ? existingEvent.getAgent() : incomingEvent.getAgent())
                        .withTime(nonNull(existingEvent.getTime()) ? existingEvent.getTime() : incomingEvent.getTime())
@@ -296,7 +297,7 @@ public final class PublicationUpdater {
     }
 
     private static String getLabel(UnconfirmedPlace existingPlace) {
-        return Optional.ofNullable(existingPlace).map(UnconfirmedPlace::getLabel).orElse(null);
+        return Optional.ofNullable(existingPlace).map(UnconfirmedPlace::name).orElse(null);
     }
 
     private static UnconfirmedPlace getPlaceCountry(Event event) {

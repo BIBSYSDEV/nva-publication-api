@@ -1,51 +1,45 @@
 package no.unit.nva.publication.update;
 
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class RepublishUtil {
 
     private final ResourceService resourceService;
     private final TicketService ticketService;
-    private final PublicationPermissionStrategy permissionStrategy;
+    private final PublicationPermissions permissionStrategy;
 
     public RepublishUtil(ResourceService resourceService, TicketService ticketService,
-                         PublicationPermissionStrategy permissionStrategy) {
+                         PublicationPermissions permissionStrategy) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.permissionStrategy = permissionStrategy;
     }
 
     public static RepublishUtil create(ResourceService resourceService, TicketService ticketService,
-                                       PublicationPermissionStrategy permissionStrategy) {
+                                       PublicationPermissions permissionStrategy) {
         return new RepublishUtil(resourceService, ticketService, permissionStrategy);
     }
 
-    public Publication republish(Publication publication, UserInstance userInstance) throws ApiGatewayException {
+    public Resource republish(Resource resource, UserInstance userInstance) throws ApiGatewayException {
         validateRepublishing();
-        var publicationIdentifier = publication.getIdentifier();
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publicationIdentifier);
-        persistCompletedPublishingRequest(publication, userInstance);
-
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
+        resource.republish(resourceService, userInstance);
+        persistCompletedPublishingRequest(resource, userInstance);
+        return resource.fetch(resourceService).orElseThrow(() -> new NotFoundException("Resource not found!"));
     }
 
-    private void persistCompletedPublishingRequest(Publication publication, UserInstance userInstance)
+    private void persistCompletedPublishingRequest(Resource resource, UserInstance userInstance)
         throws ApiGatewayException {
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
-                                                            .createNewTicket(publication,
-                                                                             PublishingRequestCase.class,
-                                                                             SortableIdentifier::next);
-        publishingRequest.persistAutoComplete(ticketService, publication, new Username(userInstance.getUsername()));
+        var publishingRequest = PublishingRequestCase.create(resource, userInstance, null);
+        publishingRequest.persistAutoComplete(ticketService, resource.toPublication(), userInstance);
     }
 
     private void validateRepublishing() throws ForbiddenException {

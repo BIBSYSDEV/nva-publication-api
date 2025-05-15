@@ -1,216 +1,5 @@
 {
-  "@context": {
-    "@vocab": "https://nva.sikt.no/ontology/publication#",
-    "xsd": "http://www.w3.org/2001/XMLSchema#",
-    "DIRHEALTH": "https://nva.sikt.no/ontology/approvals-body#DIRHEALTH",
-    "NMA": "https://nva.sikt.no/ontology/approvals-body#NMA",
-    "NARA": "https://nva.sikt.no/ontology/approvals-body#NARA",
-    "REK": "https://nva.sikt.no/ontology/approvals-body#REK",
-    "ShortFilm": "https://nva.sikt.no/ontology/publication#ShortFilm",
-    "SerialFilmProduction": "https://nva.sikt.no/ontology/publication#SerialFilmProduction",
-    "Film": "https://nva.sikt.no/ontology/publication#Film",
-    "InteractiveFilm": "https://nva.sikt.no/ontology/publication#InteractiveFilm",
-    "AugmentedVirtualRealityFilm": "https://nva.sikt.no/ontology/publication#AugmentedVirtualRealityFilm",
-    "approvedBy": {
-      "@context": {
-        "@vocab": "https://nva.sikt.no/ontology/approvals-body#"
-      },
-      "@type": "@vocab"
-    },
-    "activeFrom": {
-      "@type": "xsd:dateTime"
-    },
-    "activeTo": {
-      "@type": "xsd:dateTime"
-    },
-    "additionalIdentifiers": {
-      "@container": "@set",
-      "@id": "additionalIdentifier"
-    },
-    "affiliations": {
-      "@container": "@set",
-      "@id": "affiliation"
-    },
-    "alternativeTitles": {
-      "@container": "@language",
-      "@id": "alternativeTitle"
-    },
-    "approvals": {
-      "@container": "@set",
-      "@id": "approval"
-    },
-    "approvalStatus": {
-      "@context": {
-        "@vocab": "https://nva.sikt.no/ontology/publication#"
-      },
-      "@type": "@vocab"
-    },
-    "architectureOutput": {
-      "@container": "@set",
-      "@id": "architectureOutput"
-    },
-    "associatedArtifacts": {
-      "@container": "@set",
-      "@id": "associatedArtifact"
-    },
-    "compliesWith": {
-      "@container": "@set",
-      "@id": "compliesWith"
-    },
-    "concertProgramme": {
-      "@container": "@set",
-      "@id": "concertProgramme"
-    },
-    "contributors": {
-      "@container": "@set",
-      "@id": "contributor"
-    },
-    "createdDate": {
-      "@type": "xsd:dateTime"
-    },
-    "countryCode": {
-      "@id": "https://bibsysdev.github.io/src/organization-ontology.ttl#country"
-    },
-    "doi": {
-      "@type": "@id"
-    },
-    "duplicateOf": {
-      "@type": "@id"
-    },
-    "embargoDate": {
-      "@type": "xsd:dateTime"
-    },
-    "from": {
-      "@type": "xsd:dateTime"
-    },
-    "fundings": {
-      "@container": "@set",
-      "@id": "funding"
-    },
-    "handle": {
-      "@type": "@id"
-    },
-    "hasPart": {
-      "@container": "@set",
-      "@id": "hasPart"
-    },
-    "id": "@id",
-    "indexedDate": {
-      "@type": "xsd:dateTime"
-    },
-    "isbnList": {
-      "@container": "@set",
-      "@id": "isbn"
-    },
-    "labels": {
-      "@container": "@language",
-      "@id": "label"
-    },
-    "language": {
-      "@type": "@id"
-    },
-    "link": {
-      "@type": "@id"
-    },
-    "manifestations": {
-      "@container": "@set",
-      "@id": "manifestation"
-    },
-    "metadataSource": {
-      "@type": "@id"
-    },
-    "modifiedDate": {
-      "@type": "xsd:dateTime"
-    },
-    "musicalWorks": {
-      "@container": "@set",
-      "@id": "musicalWork"
-    },
-    "nameType": {
-      "@context": {
-        "@vocab": "https://nva.sikt.no/ontology/publication#"
-      },
-      "@type": "@vocab"
-    },
-    "outputs": {
-      "@container": "@set",
-      "@id": "output"
-    },
-    "ownerAffiliation": {
-      "@type": "@id"
-    },
-    "projects": {
-      "@container": "@set",
-      "@id": "project"
-    },
-    "publishedDate": {
-      "@type": "xsd:dateTime"
-    },
-    "referencedBy": {
-      "@container": "@set",
-      "@id": "referencedBy"
-    },
-    "related": {
-      "@container": "@set",
-      "@id": "related"
-    },
-    "status": {
-      "@context": {
-        "@vocab": "https://nva.sikt.no/ontology/publication#"
-      },
-      "@type": "@vocab"
-    },
-    "subjects": {
-      "@container": "@set",
-      "@id": "subject",
-      "@type": "@id"
-    },
-    "tags": {
-      "@container": "@set",
-      "@id": "tag"
-    },
-    "to": {
-      "@type": "xsd:dateTime"
-    },
-    "trackList": {
-      "@container": "@set",
-      "@id": "trackList"
-    },
-    "type": "@type",
-    "venues": {
-      "@container": "@set",
-      "@id": "venue"
-    },
-    "topLevelOrganizations": {
-      "@container": "@set",
-      "@id": "topLevelOrganization"
-    },
-    "contributorOrganizations": {
-      "@container": "@set",
-      "@id": "contributorOrganization",
-      "@type": "@id"
-    },
-    "nviType": {
-      "@type": "@vocab",
-      "@context": {
-        "@vocab": "https://nva.sikt.no/ontology/publication#"
-      }
-    },
-    "NviCandidate": "https://nva.sikt.no/ontology/publication#NviCandidate",
-    "NonNviCandidate": "https://nva.sikt.no/ontology/publication#NonNviCandidate",
-    "publicationContextUris": {
-      "@container": "@set"
-    },
-    "publicationNotes": {
-      "@id": "publicationNote",
-      "@container": "@set"
-    },
-    "curatingInstitutions": {
-      "@id": "curatingInstitution",
-      "@container": "@set",
-      "@type": "@id"
-    }
-  },
+  "@context": {},
   "@type": "Publication",
   "entityDescription": {
     "@type": "EntityDescription",
@@ -221,21 +10,29 @@
         "@default": "@null"
       },
       "affiliations": {
-        "@explicit": true,
         "@default": "@null",
         "@embed": "@always",
         "type": "Organization",
-        "labels": {
-          "@embed": "@always",
-          "@default": "@null"
+        "hasPart": {
+          "@embed": "@never"
         },
-        "countryCode": {
-          "@embed": "@always",
-          "@default": "@null"
+        "partOf": {
+          "@embed": "@never"
+        }
+      }
+    },
+    "contributorsPreview": {
+      "@type": "Contributor",
+      "@embed": "@always",
+      "affiliations": {
+        "@default": "@null",
+        "@embed": "@always",
+        "type": "Organization",
+        "hasPart": {
+          "@embed": "@never"
         },
-        "name": {
-          "@embed": "@always",
-          "@default": "@null"
+        "partOf": {
+          "@embed": "@never"
         }
       }
     },
@@ -278,5 +75,8 @@
   },
   "contributorOrganization": {
     "@embed": "@never"
+  },
+  "topLevelOrganizations": {
+    "@embed": "@always"
   }
 }

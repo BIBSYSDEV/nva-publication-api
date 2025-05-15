@@ -8,9 +8,11 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,8 @@ import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
+import no.scopus.generated.MetaTp;
+import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
@@ -56,7 +60,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusConverter {
 
     public static final String RESOURCE_OWNER_SIKT = "sikt@20754";
@@ -90,35 +94,25 @@ public class ScopusConverter {
     }
 
     public static String extractContentString(Object content) {
-        if (content instanceof String) {
-            return ((String) content).trim();
-        } else if (content instanceof JAXBElement) {
-            return extractContentString(((JAXBElement<?>) content).getValue());
-        } else if (content instanceof SupTp) {
-            return extractContentString(((SupTp) content).getContent());
-        } else if (content instanceof InfTp) {
-            return extractContentString(((InfTp) content).getContent());
-        } else {
-            return ((ArrayList<?>) content).stream()
-                       .map(ScopusConverter::extractContentString)
-                       .collect(Collectors.joining());
-        }
+        return switch (content) {
+            case String string -> string.trim();
+            case JAXBElement<?> jaxbElement -> extractContentString(jaxbElement.getValue());
+            case SupTp supTp -> extractContentString(supTp.getContent());
+            case InfTp infTp -> extractContentString(infTp.getContent());
+            default -> convertFromArray((ArrayList<?>) content);
+        };
     }
 
     public static String extractContentAndPreserveXmlSupAndInfTags(Object content) {
-        if (content instanceof String) {
-            return ((String) content).trim();
-        } else if (content instanceof JAXBElement) {
-            return extractContentAndPreserveXmlSupAndInfTags(((JAXBElement<?>) content).getValue());
-        } else if (content instanceof SupTp) {
-            return SUP_START + extractContentAndPreserveXmlSupAndInfTags(((SupTp) content).getContent()) + SUP_END;
-        } else if (content instanceof InfTp) {
-            return INF_START + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + INF_END;
-        } else {
-            return ((ArrayList<?>) content).stream()
-                       .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
-                       .collect(Collectors.joining());
-        }
+        return switch (content) {
+            case String string -> string.trim();
+            case JAXBElement<?> jaxbElement -> extractContentAndPreserveXmlSupAndInfTags(jaxbElement.getValue());
+            case SupTp supTp -> SUP_START + extractContentAndPreserveXmlSupAndInfTags(supTp.getContent()) + SUP_END;
+            case InfTp infTp -> INF_START + extractContentAndPreserveXmlSupAndInfTags(infTp.getContent()) + INF_END;
+            default -> ((ArrayList<?>) content).stream()
+                           .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+                           .collect(Collectors.joining());
+        };
     }
 
     public ImportCandidate generateImportCandidate() {
@@ -133,6 +127,12 @@ public class ScopusConverter {
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
                    .build();
+    }
+
+    private static String convertFromArray(ArrayList<?> content) {
+        return content.stream()
+                   .map(ScopusConverter::extractContentString)
+                   .collect(Collectors.joining());
     }
 
     private static URI constructOwnerAffiliation() {
@@ -188,10 +188,36 @@ public class ScopusConverter {
     }
 
     private PublicationDate extractPublicationDate() {
-        var publicationDate = getDateSortTp();
-        return new PublicationDate.Builder().withDay(publicationDate.getDay())
-                   .withMonth(publicationDate.getMonth())
-                   .withYear(publicationDate.getYear())
+        return getPublicationDateFromOaAccessEffectiveDate()
+                   .orElseGet(this::getPublicationDateFromDateSort);
+    }
+
+    private PublicationDate getPublicationDateFromDateSort() {
+        var dateSort = getDateSortTp();
+        return new PublicationDate.Builder()
+                   .withDay(dateSort.getDay())
+                   .withMonth(dateSort.getMonth())
+                   .withYear(dateSort.getYear())
+                   .build();
+    }
+
+    private Optional<PublicationDate> getPublicationDateFromOaAccessEffectiveDate() {
+        return Optional.of(docTp.getMeta())
+                   .map(MetaTp::getOpenAccess)
+                   .map(OpenAccessType::getOaAccessEffectiveDate)
+                   .map(this::toPublicationDate);
+    }
+
+    private PublicationDate toPublicationDate(String value) {
+        var localDate = attempt(() -> LocalDate.parse(value)).toOptional();
+        return localDate.map(ScopusConverter::toPublicationDate).orElse(null);
+    }
+
+    private static PublicationDate toPublicationDate(LocalDate date) {
+        return new PublicationDate.Builder()
+                   .withYear(String.valueOf(date.getYear()))
+                   .withMonth(String.valueOf(date.getMonthValue()))
+                   .withDay(String.valueOf(date.getDayOfMonth()))
                    .build();
     }
 
@@ -210,8 +236,8 @@ public class ScopusConverter {
 
     private String trim(String string) {
         return Optional.ofNullable(string)
-                   .map(s -> s.replaceAll("\\n\\r", StringUtils.SPACE))
-                   .map(s -> s.replaceAll(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
+                   .map(s -> s.replace("\\n\\r", StringUtils.SPACE))
+                   .map(s -> s.replace(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
                    .orElse(null);
     }
 
@@ -231,12 +257,13 @@ public class ScopusConverter {
     }
 
     private Optional<AbstractTp> getMainAbstract() {
-        return nonNull(getAbstracts()) ? getAbstracts().stream().filter(this::isOriginalAbstract).findFirst()
-                   : Optional.empty();
+        return getAbstracts().isEmpty()
+                   ? Optional.empty()
+                   : getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
     }
 
     private List<AbstractTp> getAbstracts() {
-        return nonNull(extractHead().getAbstracts()) ? extractHead().getAbstracts().getAbstract() : null;
+        return nonNull(extractHead().getAbstracts()) ? extractHead().getAbstracts().getAbstract() : emptyList();
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
@@ -251,7 +278,7 @@ public class ScopusConverter {
         return authorKeywordsTp.getAuthorKeyword()
                    .stream()
                    .map(this::extractConcatenatedKeywordString)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {

@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -18,7 +19,6 @@ import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -27,11 +27,13 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.DeleteImportCandidateEvent;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.s3.S3Driver;
@@ -65,6 +67,13 @@ public class DeleteImportCandidateEventHandlerTest {
         assertThat(oldImage.getIdentifier(), is(equalTo(response.getIdentifier())));
     }
 
+    @Test
+    void shouldTrowExceptionWhenBlobToDeleteIsEmpty() throws IOException {
+        var request = emulateEventEmittedByImportCandidateUpdateHandler(null, null);
+
+        assertThrows(IllegalStateException.class, () -> handler.handleRequest(request, output, CONTEXT));
+    }
+
     private InputStream emulateEventEmittedByImportCandidateUpdateHandler(ImportCandidate oldImage,
                                                                           ImportCandidate newImage)
         throws IOException {
@@ -75,7 +84,9 @@ public class DeleteImportCandidateEventHandlerTest {
 
     private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
         var dataEntryUpdateEvent =
-            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update", oldImage, newImage);
+            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update",
+                                               Resource.fromImportCandidate(oldImage),
+                                               Resource.fromImportCandidate(newImage));
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         var s3Writer = new S3Driver(s3Client, EVENTS_BUCKET);
         return s3Writer.insertFile(filePath, dataEntryUpdateEvent.toJsonString());

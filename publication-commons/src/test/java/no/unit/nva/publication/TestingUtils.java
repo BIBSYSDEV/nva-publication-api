@@ -10,7 +10,9 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -34,7 +36,7 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static Publication randomPublicationWithoutDoi() {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication(DegreeBachelor.class).copy().withDoi(null).build();
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         return publication;
     }
@@ -51,10 +53,11 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static GeneralSupportRequest createGeneralSupportRequest(Publication publication) {
-        return (GeneralSupportRequest) TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class);
+        return GeneralSupportRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
     }
 
     public static UnpublishRequest createUnpublishRequest(Publication publication) {
-        return (UnpublishRequest) TicketEntry.requestNewTicket(publication, UnpublishRequest.class);
+        return (UnpublishRequest) TicketEntry.requestNewTicket(publication, UnpublishRequest.class)
+                                      .withOwner(UserInstance.fromPublication(publication).getUsername());
     }
 }

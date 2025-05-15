@@ -15,6 +15,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -22,7 +23,12 @@ public class GetMessageHandler extends ApiGatewayHandler<Void, Void> {
     
     @JacocoGenerated
     public GetMessageHandler() {
-        super(Void.class);
+        this(new Environment());
+    }
+
+    @JacocoGenerated
+    public GetMessageHandler(Environment environment) {
+        super(Void.class, environment);
     }
 
     @Override

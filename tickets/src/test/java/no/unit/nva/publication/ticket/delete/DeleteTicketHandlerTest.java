@@ -14,13 +14,12 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static software.amazon.awssdk.http.HttpStatusCode.FORBIDDEN;
 import static software.amazon.awssdk.http.HttpStatusCode.NOT_FOUND;
-import static software.amazon.awssdk.http.HttpStatusCode.UNAUTHORIZED;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -39,6 +38,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +56,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         this.ticketService = getTicketService();
         this.resourceService = getResourceServiceBuilder().build();
-        this.handler = new DeleteTicketHandler(ticketService);
+        this.handler = new DeleteTicketHandler(ticketService, new Environment());
     }
 
     @Test
@@ -69,14 +69,14 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnUnauthorizedWhenAttemptingToDeleteTicketUserDoesNotOwn() throws IOException, ApiGatewayException {
+    void shouldReturnForbiddenWhenAttemptingToDeleteTicketUserDoesNotOwn() throws IOException, ApiGatewayException {
         var publication = createPublication();
         var ticket = createTicket(publication);
         var request = deleteRequest(publication.getIdentifier(), ticket.getIdentifier());
 
         handler.handleRequest(request, output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(UNAUTHORIZED)));
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(FORBIDDEN)));
     }
 
     @Test
@@ -86,7 +86,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
         var request = deleteRequestForUser(publication.getIdentifier(), ticket.getIdentifier(),
                                            ticket.getOwner());
 
-        new DeleteTicketHandler(ticketServiceThrowingException()).handleRequest(request, output, CONTEXT);
+        new DeleteTicketHandler(ticketServiceThrowingException(), new Environment()).handleRequest(request, output, CONTEXT);
 
         assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
     }
@@ -120,6 +120,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
 
     private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
         return TicketEntry.createNewTicket(publication, PublishingRequestCase.class, SortableIdentifier::next)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername())
                    .persistNewTicket(ticketService);
     }
 

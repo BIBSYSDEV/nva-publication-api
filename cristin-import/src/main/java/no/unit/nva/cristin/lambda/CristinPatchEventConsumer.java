@@ -10,7 +10,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import java.time.Clock;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.patcher.CristinPatcher;
@@ -71,10 +70,16 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, Void>
     protected ParentAndChild processChild(EventReference input) {
         var eventBody = readEventBody(input);
         return attempt(() -> retrieveChildAndParentPublications(eventBody))
-            .map(CristinPatcher::updateChildPublication)
+            .map(parentAndChild -> updateChild(input, parentAndChild))
             .map(value -> persistChangesInChild(value, input))
             .orElseThrow(fail -> saveErrorReport(fail, input, eventBody));
 
+    }
+
+    private ParentAndChild updateChild(EventReference input, ParentAndChild parentAndChild) {
+        var bucketName = input.getUri().getHost();
+        var s3Driver = new S3Driver(s3Client, bucketName);
+        return new CristinPatcher(s3Driver).updateChildPublication(parentAndChild);
     }
 
     protected ParentAndChild processParent(EventReference input) {

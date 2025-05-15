@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import no.unit.nva.WithAssociatedArtifact;
+import java.util.UUID;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithInternal;
 import no.unit.nva.WithMetadata;
@@ -31,6 +31,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.config.ResourcesBuildConfig;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.model.funding.Funding;
@@ -39,9 +41,9 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class Publication
-    implements WithIdentifier, WithInternal, WithAssociatedArtifact, WithMetadata, WithCopy<Publication.Builder> {
+    implements WithIdentifier, WithInternal, WithMetadata, WithCopy<Publication.Builder> {
 
     public static final Map<PublicationStatus, List<PublicationStatus>> validStatusTransitionsMap = Map.of(
         PublicationStatus.NEW, List.of(PublicationStatus.DRAFT),
@@ -75,7 +77,7 @@ public class Publication
     private URI duplicateOf;
 
     private List<PublicationNoteBase> publicationNotes;
-    private Set<URI> curatingInstitutions;
+    private Set<CuratingInstitution> curatingInstitutions;
     private List<ImportDetail> importDetails;
 
     public Publication() {
@@ -277,14 +279,12 @@ public class Publication
         this.publicationNotes = publicationNotes;
     }
 
-    @Override
     public AssociatedArtifactList getAssociatedArtifacts() {
         return nonNull(associatedArtifacts)
                    ? associatedArtifacts
                    : AssociatedArtifactList.empty();
     }
 
-    @Override
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
     }
@@ -344,10 +344,9 @@ public class Publication
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Publication)) {
+        if (!(o instanceof Publication that)) {
             return false;
         }
-        Publication that = (Publication) o;
         boolean firstHalf = Objects.equals(getIdentifier(), that.getIdentifier())
                             && getStatus() == that.getStatus()
                             && Objects.equals(getResourceOwner(), that.getResourceOwner())
@@ -360,7 +359,7 @@ public class Publication
                              && Objects.equals(getDoi(), that.getDoi())
                              && Objects.equals(getLink(), that.getLink())
                              && Objects.equals(getEntityDescription(), that.getEntityDescription())
-                             && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
+                             && new HashSet<>(getAssociatedArtifacts()).containsAll(that.getAssociatedArtifacts())
                              && Objects.equals(getProjects(), that.getProjects())
                              && Objects.equals(getFundings(), that.getFundings())
                              && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
@@ -376,12 +375,6 @@ public class Publication
     @Override
     public String toString() {
         return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(this)).orElseThrow();
-    }
-
-    @JsonIgnore
-    @Deprecated
-    public String getJsonLdContext() {
-        return stringFromResources(Path.of("publicationContextDeprecated.json"));
     }
 
     @JsonIgnore
@@ -403,11 +396,11 @@ public class Publication
         return FindableDoiRequirementsValidator.meetsFindableDoiRequirements(this);
     }
 
-    public Set<URI> getCuratingInstitutions() {
+    public Set<CuratingInstitution> getCuratingInstitutions() {
         return nonNull(curatingInstitutions) ? curatingInstitutions : Collections.emptySet();
     }
 
-    public void setCuratingInstitutions(Set<URI> curatingInstitutions) {
+    public void setCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
         this.curatingInstitutions = curatingInstitutions;
     }
 
@@ -436,6 +429,20 @@ public class Publication
         }
 
         importDetails.add(importDetail);
+    }
+
+    public Optional<File> getFile(UUID fileIdentifier) {
+        return getAssociatedArtifacts().stream()
+            .filter(File.class::isInstance)
+            .map(File.class::cast)
+            .filter(element -> fileIdentifier.equals(element.getIdentifier()))
+            .findFirst();
+    }
+
+    public long getPendingOpenFileCount() {
+        return getAssociatedArtifacts().stream()
+                   .filter(PendingOpenFile.class::isInstance)
+                   .count();
     }
 
     private void verifyStatusTransition(PublicationStatus nextStatus)
@@ -562,7 +569,7 @@ public class Publication
             return this;
         }
 
-        public Builder withCuratingInstitutions(Set<URI> curatingInstitutions) {
+        public Builder withCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
             publication.setCuratingInstitutions(curatingInstitutions);
             return this;
         }

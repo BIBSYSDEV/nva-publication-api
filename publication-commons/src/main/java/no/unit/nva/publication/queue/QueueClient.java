@@ -8,7 +8,7 @@ public interface QueueClient {
 
     void sendMessage(SendMessageRequest sendMessageRequest);
 
-    List<Message> readMessages();
+    List<Message> readMessages(int maximumNumberOfMessages);
 
     void deleteMessages(List<Message> messages);
 }

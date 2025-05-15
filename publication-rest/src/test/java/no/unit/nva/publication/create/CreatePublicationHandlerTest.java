@@ -1,12 +1,12 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomSuccessfulCustomerResponse;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
-import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
@@ -27,7 +27,6 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -41,7 +40,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.google.common.collect.Lists;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,12 +47,13 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -66,17 +65,13 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
-import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
@@ -87,7 +82,6 @@ import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.core.IsEqual;
 import org.javers.core.Javers;
@@ -114,6 +108,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final Integer HTTP_STATUS_UNPROCESSABLE_CONTENT = 422;
+    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
+    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
     private final Context context = new FakeContext();
     private String testUserName;
     private CreatePublicationHandler handler;
@@ -143,6 +139,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         lenient().when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
+        when(environmentMock.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
         lenient().when(environmentMock.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
 
         var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
@@ -182,19 +179,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private static Class<?>[] protectedDegreeInstanceTypeClassesProvider() {
-        return PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES;
-    }
-
-    @Test
-    void shouldAcceptUnpublishableFileType() throws IOException {
-        var serialized = IoUtils.stringFromResources(Path.of("publication_with_unpublishable_file.json"));
-        var deserialized = attempt(() -> dtoObjectMapper.readValue(serialized, Publication.class)).orElseThrow();
-        var publishingRequest = CreatePublicationRequest.fromPublication(deserialized);
-        var inputStream = createPublicationRequest(publishingRequest);
-        handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
-        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+        return PROTECTED_DEGREE_INSTANCE_TYPES;
     }
 
     @Test
@@ -203,9 +188,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
 
@@ -215,9 +200,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
     }
 
@@ -228,9 +213,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(publicationResponse.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
     }
 
@@ -246,9 +231,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = requestFromExternalClient(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(publicationResponse.getStatus(), is(equalTo(status)));
     }
 
@@ -272,9 +257,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = requestFromExternalClient(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
 
         var expectedOwner = getExternalClientResponse.getActingUser();
         var expectedOwnerAffiliation = getExternalClientResponse.getCristinUrgUri();
@@ -288,17 +273,20 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldSaveAllSuppliedInformationOfPublicationRequestExceptForInternalInformationDecidedByService()
         throws Exception {
-        var publicationWithoutFiles = samplePublication.copy().withAssociatedArtifacts(List.of()).build();
-        var request = CreatePublicationRequest.fromPublication(publicationWithoutFiles);
+        var publicationWithoutFilesAndCuratingInstitutions = samplePublication.copy()
+                                                                 .withAssociatedArtifacts(List.of())
+                                                                 .withCuratingInstitutions(Set.of())
+                                                                 .build();
+        var request = CreatePublicationRequest.fromPublication(publicationWithoutFilesAndCuratingInstitutions);
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
 
-        var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var actualPublicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
 
         var expectedPublicationResponse =
-            constructResponseSettingFieldsThatAreNotCopiedByTheRequest(publicationWithoutFiles,
+            constructResponseSettingFieldsThatAreNotCopiedByTheRequest(publicationWithoutFilesAndCuratingInstitutions,
                                                                        actualPublicationResponse);
 
         var diff = JAVERS.compare(expectedPublicationResponse, actualPublicationResponse);
@@ -333,6 +321,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldPersistDegreePublicationWhenUserIsExternalClient(Class<?> protectedDegreeInstanceClass)
         throws IOException {
         var thesisPublication = samplePublication.copy()
+                                    .withAssociatedArtifacts(List.of())
                                     .withEntityDescription(publishableEntityDescription(protectedDegreeInstanceClass))
                                     .build();
         var event = requestFromExternalClient(CreatePublicationRequest.fromPublication(thesisPublication));
@@ -347,16 +336,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
-    }
-
-    @Test
-    void shouldThrowBadRequestExceptionWhenAssociatedArtifactsIsBad() throws IOException {
-        var event = createPublicationRequestEventWithInvalidAssociatedArtifacts();
-        handler.handleRequest(event, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
-        var body = response.getBodyObject(Problem.class);
-        assertThat(body.getDetail(), containsString("AssociatedArtifact"));
     }
 
     @ParameterizedTest
@@ -420,35 +399,18 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration() throws IOException {
-        final var event = prepareRequestWithFileForTypeWhereNotAllowed();
-        WireMock.reset();
-
-        stubSuccessfulTokenResponse();
-        stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
-
-        handler.handleRequest(event, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
-
-        var body = response.getBodyObject(Problem.class);
-        assertThat(body.getDetail(), containsString("Files not allowed for instance type"));
-    }
-
-    @Test
-    void shouldReturnBadRequestIfProvidedWithOneOrMoreFilesHasNullRightsRetentionSetButCustomerHasAOveridableConfig()
+    void shouldReturnBadRequestIfProvidedWithOneOrMoreFilesHasNullRightsRetentionSetButCustomerHasAOverridableConfig()
         throws IOException {
 
         WireMock.reset();
         stubSuccessfulTokenResponse();
         stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(customerId);
 
-        var file = new UnpublishedFile(UUID.randomUUID(),
+        var file = new PendingOpenFile(UUID.randomUUID(),
                                        RandomDataGenerator.randomString(),
                                        RandomDataGenerator.randomString(),
                                        RandomDataGenerator.randomInteger().longValue(),
                                        RandomDataGenerator.randomUri(),
-                                       false,
                                        PublisherVersion.ACCEPTED_VERSION,
                                        (Instant) null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
@@ -459,10 +421,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         file.setRightsRetentionStrategy(NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
 
-        var associatedArtifactsInPublication = new AssociatedArtifactList(file);
-
         var request = createEmptyPublicationRequest();
-        request.setAssociatedArtifacts(associatedArtifactsInPublication);
+        request.setAssociatedArtifacts(new AssociatedArtifactList(file));
         request.setEntityDescription(publishableEntityDescription(AcademicArticle.class));
 
         var inputStream = createPublicationRequest(request);
@@ -474,53 +434,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnFileWithOverriddenByRrsIfConfiguredOnCustomerAndSetOnFile() throws IOException {
-
-        WireMock.reset();
-        stubSuccessfulTokenResponse();
-        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(customerId);
-
-        var file = new UnpublishedFile(UUID.randomUUID(),
-                                       RandomDataGenerator.randomString(),
-                                       RandomDataGenerator.randomString(),
-                                       RandomDataGenerator.randomInteger().longValue(),
-                                       RandomDataGenerator.randomUri(),
-                                       false,
-                                       PublisherVersion.ACCEPTED_VERSION,
-                                       (Instant) null,
-                                       RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                       RandomDataGenerator.randomString(),
-                                       new UserUploadDetails(null, null));
-        // Waiting for datamodel changes as
-        // Generator sets publisherAuth to true
-
-        file.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(null, testUserName)); //
-        // configuredType null as it
-        // should not be used
-
-        var associatedArtifactsInPublication = new AssociatedArtifactList(file);
-
-        var request = createEmptyPublicationRequest();
-        request.setAssociatedArtifacts(associatedArtifactsInPublication);
-        request.setEntityDescription(publishableEntityDescription(AcademicArticle.class));
-
-        var inputStream = createPublicationRequest(request);
-
-        handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
-        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
-        var actualFile = (File)
-                             Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator())
-                                 .getFirst();
-        assertInstanceOf(OverriddenRightsRetentionStrategy.class, actualFile.getRightsRetentionStrategy());
-        assertThat(((OverriddenRightsRetentionStrategy) actualFile.getRightsRetentionStrategy()).getOverriddenBy(),
-                   is(equalTo(testUserName)));
-    }
-
-    @Test
     void shouldAllowNullRightsHolder() throws IOException {
         var request = createEmptyPublicationRequest();
 
@@ -528,7 +441,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
@@ -542,7 +455,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
@@ -555,7 +468,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
@@ -568,7 +481,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
@@ -581,7 +494,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
@@ -594,7 +507,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
@@ -689,7 +602,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         var expectedPublication = setAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication,
                                                                                    actualPublicationResponse);
-        return PublicationResponse.fromPublication(expectedPublication);
+        return PublicationResponseElevatedUser.fromPublication(expectedPublication);
     }
 
     private Publication setAllFieldsThatAreNotCopiedFromTheCreateRequest(
@@ -771,6 +684,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
                    .build();
     }
 
@@ -779,6 +693,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
                    .build();
     }
 

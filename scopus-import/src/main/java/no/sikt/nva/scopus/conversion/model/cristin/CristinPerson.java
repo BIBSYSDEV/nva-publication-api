@@ -24,6 +24,7 @@ import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 
+@SuppressWarnings("PMD.BooleanGetMethodName")
 @JacocoGenerated
 @JsonPropertyOrder({CONTEXT, ID, TYPE, IDENTIFIERS, NAMES, CONTACT_DETAILS, IMAGE, AFFILIATIONS})
 public class CristinPerson implements JsonSerializable {

@@ -1,9 +1,12 @@
 package no.unit.nva.model.testing;
 
 import static java.util.function.Predicate.not;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstanceType;
 import static no.unit.nva.model.testing.RandomCurrencyUtil.randomCurrency;
+import static no.unit.nva.model.testing.RandomUtils.randomBackendUri;
 import static no.unit.nva.model.testing.RandomUtils.randomLabels;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -15,16 +18,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Approval;
 import no.unit.nva.model.ApprovalStatus;
 import no.unit.nva.model.ApprovalsBody;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
@@ -35,17 +39,24 @@ import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.funding.MonetaryAmount;
-import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JacocoGenerated
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public final class PublicationGenerator {
 
     private static final BaseFaker FAKER = new BaseFaker();
@@ -70,8 +81,11 @@ public final class PublicationGenerator {
     }
 
     public static URI randomUri() {
-        String uriString = "https://www.example.org/" + UUID.randomUUID();
-        return URI.create(uriString);
+        return randomUri("https://www.example.org/");
+    }
+
+    public static URI randomUri(String namespace) {
+        return URI.create(namespace + UUID.randomUUID());
     }
 
     public static Publication randomPublication() {
@@ -80,6 +94,14 @@ public final class PublicationGenerator {
 
     public static Publication randomPublication(Class<?> publicationInstanceClass) {
         return buildRandomPublicationFromInstance(publicationInstanceClass);
+    }
+
+    public static Publication randomNonDegreePublication() {
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
+    }
+
+    public static Publication randomDegreePublication() {
+        return fromInstanceClasses(PROTECTED_DEGREE_INSTANCE_TYPES);
     }
 
     public static Publication fromInstanceClasses(Class<?>... targetClasses) {
@@ -132,10 +154,9 @@ public final class PublicationGenerator {
 
     public static Funding randomConfirmedFunding() {
         var activeFrom = randomInstant();
-
         return new FundingBuilder()
-                   .withId(randomUri())
-                   .withSource(randomUri())
+                   .withId(randomUriWithPath("verified-funding"))
+                   .withSource(randomUriWithPath("funding-sources"))
                    .withIdentifier(randomString())
                    .withLabels(randomLabels())
                    .withFundingAmount(randomMonetaryAmount())
@@ -144,11 +165,18 @@ public final class PublicationGenerator {
                    .build();
     }
 
+    private static URI randomUriWithPath(String path) {
+        return UriWrapper.fromHost("example.org")
+                   .addChild(path)
+                   .addChild(UUID.randomUUID().toString())
+                   .getUri();
+    }
+
     public static Funding randomUnconfirmedFunding() {
         var activeFrom = randomInstant();
 
         return new FundingBuilder()
-                   .withSource(randomUri())
+                   .withSource(randomUriWithPath("funding-sources"))
                    .withIdentifier(randomString())
                    .withLabels(randomLabels())
                    .withFundingAmount(randomMonetaryAmount())
@@ -161,14 +189,14 @@ public final class PublicationGenerator {
         var monetaryAmount = new MonetaryAmount();
 
         monetaryAmount.setCurrency(randomCurrency());
-        monetaryAmount.setAmount(randomInteger().longValue());
+        monetaryAmount.setAmount(randomInteger());
 
         return monetaryAmount;
     }
 
     public static ResearchProject randomResearchProject() {
         return new ResearchProject.Builder()
-                   .withId(randomUri())
+                   .withId(randomUriWithPath("project"))
                    .withName(randomString())
                    .withApprovals(randomApprovals())
                    .build();
@@ -212,11 +240,30 @@ public final class PublicationGenerator {
 
     public static Organization randomOrganization() {
         return new Organization.Builder()
-                   .withId(randomUri())
+                   .withId(randomBackendUri("customer"))
+                   .build();
+    }
+
+    public static Contributor randomContributorWithId(URI id) {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(Role.OTHER))
+                   .withIdentity(new Identity.Builder().withId(id).build())
+                   .build();
+    }
+
+    public static Contributor randomContributorWithIdAndAffiliation(URI contributorId, URI affiliationId) {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(Role.OTHER))
+                   .withIdentity(new Identity.Builder().withId(contributorId).build())
+                   .withAffiliations(List.of(new Organization.Builder().withId(affiliationId).build()))
                    .build();
     }
 
     private static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
+        var entityDescription = randomEntityDescription(publicationInstanceClass);
+
+        var curatingInstitutions = extractCuratingInstitutions(entityDescription);
+
         return new Builder()
                    .withIdentifier(SortableIdentifier.next())
                    .withRightsHolder(randomString())
@@ -234,12 +281,25 @@ public final class PublicationGenerator {
                    .withHandle(randomUri())
                    .withDoi(randomDoi())
                    .withCreatedDate(randomInstant())
-                   .withEntityDescription(randomEntityDescription(publicationInstanceClass))
-                   .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
+                   .withEntityDescription(entityDescription)
+                   .withAssociatedArtifacts(randomAssociatedArtifacts())
                    .withPublicationNotes(List.of(randomPublicationNote(), randomUnpublishingNote()))
                    .withDuplicateOf(randomUri())
-                   .withCuratingInstitutions(Set.of(randomUri()))
+                   .withCuratingInstitutions(curatingInstitutions)
                    .build();
+    }
+
+    private static Set<CuratingInstitution> extractCuratingInstitutions(EntityDescription entityDescription) {
+        return entityDescription.getContributors().stream()
+                   .flatMap(PublicationGenerator::createCuratingInstitutionsFromContributor)
+                   .collect(Collectors.toSet());
+    }
+
+    private static Stream<CuratingInstitution> createCuratingInstitutionsFromContributor(Contributor contributor) {
+        return contributor.getAffiliations().stream()
+                   .map(Organization.class::cast)
+                   .map(affiliation ->
+                            new CuratingInstitution(affiliation.getId(), Set.of(contributor.getIdentity().getId())));
     }
 
     private static Set<AdditionalIdentifierBase> randomAdditionalIdentifiers() {

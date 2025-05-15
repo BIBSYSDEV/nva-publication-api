@@ -17,15 +17,13 @@ import java.net.URI;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
@@ -202,10 +200,10 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     private List<AssociatedArtifact> randomFileWithLicense(URI license) {
-        return List.of(File.builder().withLicense(license).withIdentifier(randomUUID()).buildPublishedFile(),
-                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildUnpublishableFile(),
-                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildUnpublishedFile(),
-                       new AssociatedLink(randomUri(), randomString(), randomString()));
+        return List.of(File.builder().withLicense(license).withIdentifier(randomUUID()).buildOpenFile(),
+                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildInternalFile(),
+                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildPendingInternalFile(),
+                       new AssociatedLink(randomUri(), randomString(), randomString(), RelationType.SAME_AS));
     }
 
     private List<Publication> createMultiplePublicationsWithPublisher(URI publisherId) {

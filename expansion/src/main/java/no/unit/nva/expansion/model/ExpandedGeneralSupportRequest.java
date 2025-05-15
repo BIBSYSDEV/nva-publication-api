@@ -1,10 +1,7 @@
 package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.net.URI;
-import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
@@ -22,12 +19,6 @@ import nva.commons.core.paths.UriWrapper;
 public class ExpandedGeneralSupportRequest extends ExpandedTicket {
 
     public static final String TYPE = "GeneralSupportCase";
-
-    private Instant modifiedDate;
-    private Set<URI> organizationIds;
-    private Instant createdDate;
-    private URI customerId;
-    private ExpandedTicketStatus status;
 
     public static ExpandedDataEntry createEntry(GeneralSupportRequest dataEntry, ResourceService resourceService,
                                                 ResourceExpansionService resourceExpansionService,
@@ -50,42 +41,9 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         return entry;
     }
 
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return new SortableIdentifier(UriWrapper.fromUri(getId()).getLastPathElement());
-    }
-
-    @Override
-    public ExpandedTicketStatus getStatus() {
-        return this.status;
-    }
-
-    public void setStatus(ExpandedTicketStatus status) {
-        this.status = status;
-    }
-
-    public URI getCustomerId() {
-        return this.customerId;
-    }
-
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
-    }
-
-    public Instant getCreatedDate() {
-        return this.createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
     }
 
     private static List<ExpandedMessage> expandMessages(List<Message> messages,

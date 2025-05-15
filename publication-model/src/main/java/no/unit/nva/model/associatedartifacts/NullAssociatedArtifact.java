@@ -34,4 +34,14 @@ public class NullAssociatedArtifact implements AssociatedArtifact {
         }
         return o instanceof NullAssociatedArtifact;
     }
+
+    @Override
+    public String getArtifactType() {
+        return TYPE_NAME;
+    }
+
+    @Override
+    public AssociatedArtifactDto toDto() {
+        return new NullAssociatedArtifactDto();
+    }
 }

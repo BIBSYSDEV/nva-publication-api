@@ -5,8 +5,7 @@ import lombok.Getter;
 @Getter
 public enum PublicationChannel {
 
-    JOURNAL("journal"),
-    SERIES("series"),
+    SERIAL_PUBLICATION("serial-publication"),
     PUBLISHER("publisher");
 
     private final String value;

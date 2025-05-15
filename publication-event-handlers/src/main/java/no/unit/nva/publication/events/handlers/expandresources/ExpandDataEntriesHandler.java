@@ -2,13 +2,16 @@ package no.unit.nva.publication.events.handlers.expandresources;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
+import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +24,7 @@ import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -31,7 +35,6 @@ import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -40,42 +43,48 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
-    public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource:";
-    public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
-    public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
-    public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
-    public static final Environment ENVIRONMENT = new Environment();
-    public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
-    public static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
+    private static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource: {}";
+    private static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
+    private static final String EMPTY_EVENT_TOPIC = "Event.Empty";
+    private static final Environment ENVIRONMENT = new Environment();
+    private static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
+    private static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
                                                                                             PUBLISHED_METADATA,
-                                                                                            UNPUBLISHED, DELETED);
-    public static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
-    public static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
+                                                                                            UNPUBLISHED, DELETED,
+                                                                                             DRAFT);
+    private static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    private static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
-    public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
+    private static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
+    private static final String EXPANSION_FAILED_MESSAGE = "Error expanding entity %s with identifier %s";
     private final QueueClient sqsClient;
-    private final S3Driver s3Driver;
+    private final S3Driver s3DriverEventsBucket;
+    private final S3Driver s3DriverPersistedResourcesBucket;
     private final ResourceExpansionService resourceExpansionService;
 
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
         this(ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
-             new S3Driver(EVENTS_BUCKET),
+             new S3Driver(EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET),
              defaultResourceExpansionService());
     }
 
     public ExpandDataEntriesHandler(QueueClient sqsClient, S3Client s3Client,
                                     ResourceExpansionService resourceExpansionService) {
-        this(sqsClient, new S3Driver(s3Client, EVENTS_BUCKET), resourceExpansionService);
+        this(sqsClient, new S3Driver(s3Client, EVENTS_BUCKET), new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET),
+             resourceExpansionService);
     }
 
-    private ExpandDataEntriesHandler(QueueClient sqsClient, S3Driver s3Driver,
+    private ExpandDataEntriesHandler(QueueClient sqsClient, S3Driver s3DriverEventsBucket,
+                                     S3Driver s3DriverPersistedResourcesBucket,
                                      ResourceExpansionService resourceExpansionService) {
         super(EventReference.class);
         this.sqsClient = sqsClient;
-        this.s3Driver = s3Driver;
+        this.s3DriverEventsBucket = s3DriverEventsBucket;
+        this.s3DriverPersistedResourcesBucket = s3DriverPersistedResourcesBucket;
         this.resourceExpansionService = resourceExpansionService;
     }
 
@@ -125,10 +134,31 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private EventReference createEnrichedEventReference(Entity newData) {
-        return enrich(newData)
-                   .map(this::insertEnrichEventBodyToS3)
-                   .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
-                   .orElseThrow();
+        return attempt(() -> resourceExpansionService.expandEntry(newData, true))
+                   .map(PersistedDocument::createIndexDocument)
+                   .map(this::writeToPersistedResources)
+                   .map(uri -> new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri))
+                   .orElseThrow(failure -> throwError(failure, newData));
+    }
+
+    private URI writeToPersistedResources(PersistedDocument indexDocument) throws IOException {
+        var filePath = createFilePath(indexDocument);
+        return s3DriverPersistedResourcesBucket.insertFile(filePath, indexDocument.toJsonString());
+    }
+
+    private UnixPath createFilePath(PersistedDocument indexDocument) {
+        return UnixPath.of(createPathBasedOnIndexName(indexDocument))
+                   .addChild(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString() + GZIP_ENDING);
+    }
+
+    private String createPathBasedOnIndexName(PersistedDocument indexDocument) {
+        return indexDocument.getConsumptionAttributes().getIndex();
+    }
+
+    private ExpandedDataEntryException throwError(Failure<EventReference> failure, Entity newData) {
+        logger.error(ERROR_EXPANDING_RESOURCE_WARNING, newData.getIdentifier());
+        return new ExpandedDataEntryException(EXPANSION_FAILED_MESSAGE.formatted(newData.getType(), newData.getIdentifier()),
+                                      failure.getException());
     }
 
     private Optional<PublicationStatus> getPublicationStatus(Entity entity) {
@@ -140,7 +170,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private DataEntryUpdateEvent readBlobFromS3(EventReference input) {
-        var blobString = s3Driver.readEvent(input.getUri());
+        var blobString = s3DriverEventsBucket.readEvent(input.getUri());
         return DataEntryUpdateEvent.fromJson(blobString);
     }
 
@@ -155,8 +185,8 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
         var publicationStatus = getPublicationStatus(entry);
         if (publicationStatus.isPresent()) {
             return PUBLICATION_STATUS_TO_BE_ENRICHED.contains(publicationStatus.get());
-        } else if (entry instanceof DoiRequest) {
-            return isDoiRequestReadyForEvaluation((DoiRequest) entry);
+        } else if (entry instanceof DoiRequest doiRequest) {
+            return isDoiRequestReadyForEvaluation(doiRequest);
         } else {
             return true;
         }
@@ -164,23 +194,5 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
 
     private boolean isDoiRequestReadyForEvaluation(DoiRequest doiRequest) {
         return PUBLISHED.equals(doiRequest.getResourceStatus());
-    }
-
-    private URI insertEnrichEventBodyToS3(String string) {
-        return attempt(() -> s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), string)).orElseThrow();
-    }
-
-    private Optional<String> enrich(Entity newData) {
-        return attempt(() -> createExpandedResourceUpdate(newData))
-                   .toOptional(fail -> logError(fail, newData));
-    }
-
-    private String createExpandedResourceUpdate(Entity input) throws JsonProcessingException, NotFoundException {
-        return resourceExpansionService.expandEntry(input).toJsonString();
-    }
-
-    private void logError(Failure<?> fail, Entity input) {
-        Exception exception = fail.getException();
-        logger.warn(ERROR_EXPANDING_RESOURCE_WARNING + input.getIdentifier(), exception);
     }
 }

@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.delete;
 
 import static no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent.SCOPUS_IDENTIFIER;
 import static no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer.NO_IMPORT_CANDIDATE_FOUND;
-import static no.unit.nva.publication.service.impl.ResourceService.IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -21,8 +20,6 @@ import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -31,6 +28,8 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -81,7 +80,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         handler.handleRequest(event, output, CONTEXT);
         assertThrows(NotFoundException.class,
                      () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
-        assertThat(appender.getMessages(), containsString(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE));
+        assertThat(appender.getMessages(), containsString("Import candidate has been deleted:"));
     }
 
     @Test

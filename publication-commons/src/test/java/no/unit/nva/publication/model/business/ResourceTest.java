@@ -1,23 +1,31 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
+import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
+import org.javers.core.metamodel.clazz.EntityDefinitionBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -30,8 +38,18 @@ public class ResourceTest {
     public static final String IMPORT_STATUS = "importStatus";
     public static final String IMPORT_DETAILS = "importDetails";
     public static final String REVISION = "entityDescription.reference.publicationContext.revision";
-    public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS);
-    private final Javers javers = JaversBuilder.javers().build();
+    public static final String RESOURCE_EVENT = "resourceEvent";
+    public static final String FILES_FIELD = "files";
+    public static final String FILE_ENTRIES_FIELD = "fileEntries";
+    protected static final String PUBLICATION_CHANNELS = "publicationChannels";
+    public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS, RESOURCE_EVENT,
+                                                              FILES_FIELD, FILE_ENTRIES_FIELD, PUBLICATION_CHANNELS);
+    private final Javers javers = JaversBuilder.javers()
+                                      .registerEntity(EntityDefinitionBuilder.entityDefinition(Resource.class)
+                                                          .withIdPropertyName("identifier")
+                                                          .withIgnoredProperties(FILES_FIELD)
+                                                          .build())
+                                      .build();
     private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
 
     @ParameterizedTest(name = "builder contains all fields: {0}")
@@ -79,7 +97,7 @@ public class ResourceTest {
     @ParameterizedTest(name = "from dto to dao and back without loss for type {0}")
     @MethodSource("publicationInstanceProvider")
     void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
-        var expected = PublicationGenerator.randomPublication(publicationInstanceType);
+        var expected = randomPublication(publicationInstanceType);
         assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD, REVISION, IMPORT_DETAILS)));
 
         var transformed = Resource.fromPublication(expected).toPublication();
@@ -116,11 +134,30 @@ public class ResourceTest {
         assertThat(resource.getOwner(), is(equalTo(SOME_OWNER)));
     }
 
+    @Test
+    void shouldReturnTrueWhenResourceIsPresent() {
+        var resource = Resource.resourceQueryObject(SortableIdentifier.next());
+        resource.setResourceEvent(
+            new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next()));
+
+        assertTrue(resource.hasResourceEvent());
+    }
+
+    @Test
+    void shouldReturnFileByIdentifier() {
+        var file = randomOpenFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
+
+        var fileByIdentifier = Resource.fromPublication(publication).getFileByIdentifier(file.getIdentifier());
+
+        assertEquals(file, fileByIdentifier.orElseThrow());
+    }
+
     private static Stream<Class<?>> publicationInstanceProvider() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
 
     private Resource sampleResource(Class<?> publicationInstanceType) {
-        return Resource.fromPublication(PublicationGenerator.randomPublication(publicationInstanceType));
+        return Resource.fromPublication(randomPublication(publicationInstanceType));
     }
 }

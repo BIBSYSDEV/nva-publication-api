@@ -47,42 +47,42 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     public static final String TYPE = "ImportCandidateSummary";
     private static final Logger logger = LoggerFactory.getLogger(ExpandedImportCandidate.class);
-    public static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String PUBLICATION = "publication";
-    public static final String ID_FIELD = "id";
-    public static final String ADDITIONAL_IDENTIFIERS_FIELD = "additionalIdentifiers";
-    public static final String DOI_FIELD = "doi";
-    public static final String MAIN_TITLE_FIELD = "mainTitle";
-    public static final String PUBLISHER_FIELD = "publisher";
-    public static final String JOURNAL_FIELD = "journal";
-    public static final String VERIFIED_CONTRIBUTORS_NUMBER_FIELD = "totalVerifiedContributors";
-    public static final String CONTRIBUTORS_NUMBER_FIELD = "totalContributors";
-    public static final String ORGANIZATIONS_FIELD = "organizations";
-    public static final String IMPORT_STATUS_FIELD = "importStatus";
-    public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
-    public static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
-    public static final String CREATED_DATE_FIELD = "createdDate";
-    public static final String CONTRIBUTORS_FIELD = "contributors";
-    public static final String IMPORT_CANDIDATE = "import-candidate";
-    public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
-    public static final String COLLABORATION_TYPE_FIELD = "collaborationType";
-    public static final String PRINT_ISSN_FIELD = "printIssn";
-    public static final String ONLINE_ISSN_FIELD = "onlineIssn";
+    private static final String API_HOST = new Environment().readEnv("API_HOST");
+    private static final String PUBLICATION = "publication";
+    private static final String ID_FIELD = "id";
+    private static final String ADDITIONAL_IDENTIFIERS_FIELD = "additionalIdentifiers";
+    private static final String DOI_FIELD = "doi";
+    private static final String MAIN_TITLE_FIELD = "mainTitle";
+    private static final String PUBLISHER_FIELD = "publisher";
+    private static final String JOURNAL_FIELD = "journal";
+    private static final String VERIFIED_CONTRIBUTORS_NUMBER_FIELD = "totalVerifiedContributors";
+    private static final String CONTRIBUTORS_NUMBER_FIELD = "totalContributors";
+    private static final String ORGANIZATIONS_FIELD = "organizations";
+    private static final String IMPORT_STATUS_FIELD = "importStatus";
+    private static final String PUBLICATION_YEAR_FIELD = "publicationYear";
+    private static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
+    private static final String CREATED_DATE_FIELD = "createdDate";
+    private static final String CONTRIBUTORS_FIELD = "contributors";
+    private static final String IMPORT_CANDIDATE = "import-candidate";
+    private static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
+    private static final String COLLABORATION_TYPE_FIELD = "collaborationType";
+    private static final String PRINT_ISSN_FIELD = "printIssn";
+    private static final String ONLINE_ISSN_FIELD = "onlineIssn";
     private static final String CONTENT_TYPE = "application/json";
-    public static final String CRISTIN = "cristin";
-    public static final String ORGANIZATION = "organization";
-    public static final String DEPTH = "depth";
-    public static final String TOP = "top";
-    public static final String CUSTOMER = "customer";
-    public static final String CRISTIN_ID = "cristinId";
-    public static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
-    public static final String HAS_FILE_FIELD = "filesStatus";
+    private static final String CUSTOMER = "customer";
+    private static final String CRISTIN_ID = "cristinId";
+    private static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
+    private static final String HAS_FILE_FIELD = "filesStatus";
+    private static final String CRISTIN = "cristin";
+    private static final String ORGANIZATION = "organization";
+    private static final String DEPTH = "depth";
+    private static final String TOP = "top";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -325,7 +325,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private static String extractOnlineIssn(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
                    .map(Reference::getPublicationContext)
-                   .filter(publicationContext -> publicationContext instanceof UnconfirmedJournal)
+                   .filter(UnconfirmedJournal.class::isInstance)
                    .map(UnconfirmedJournal.class::cast)
                    .map(UnconfirmedJournal::getOnlineIssn)
                    .orElse(null);
@@ -334,7 +334,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private static String extractPrintIssn(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
                    .map(Reference::getPublicationContext)
-                   .filter(publicationContext -> publicationContext instanceof UnconfirmedJournal)
+                   .filter(UnconfirmedJournal.class::isInstance)
                    .map(UnconfirmedJournal.class::cast)
                    .map(UnconfirmedJournal::getPrintIssn)
                    .orElse(null);
@@ -517,6 +517,18 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .map(CristinOrganization::getTopLevelOrg);
     }
 
+    private static String getCristinIdentifier(URI id) {
+        return UriWrapper.fromUri(id).getLastPathElement();
+    }
+
+    private static URI toCristinOrgUri(String cristinId) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(CRISTIN)
+                   .addChild(ORGANIZATION)
+                   .addQueryParameter(DEPTH, TOP)
+                   .addChild(cristinId).getUri();
+    }
+
     private static Optional<HttpResponse<String>> fetchCustomer(RawContentRetriever uriRetriever, URI uri) {
         return uriRetriever.fetchResponse(uri, CONTENT_TYPE);
     }
@@ -534,18 +546,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static Optional<String> fetch(URI uri, RawContentRetriever uriRetriever) {
         return uriRetriever.getRawContent(uri, CONTENT_TYPE);
-    }
-
-    private static String getCristinIdentifier(URI id) {
-        return UriWrapper.fromUri(id).getLastPathElement();
-    }
-
-    private static URI toCristinOrgUri(String cristinId) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(CRISTIN)
-                   .addChild(ORGANIZATION)
-                   .addQueryParameter(DEPTH, TOP)
-                   .addChild(cristinId).getUri();
     }
 
     public static final class Builder {
