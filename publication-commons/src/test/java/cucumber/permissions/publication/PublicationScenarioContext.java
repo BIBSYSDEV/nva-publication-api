@@ -50,6 +50,12 @@ public class PublicationScenarioContext {
     private Set<PermissionsRole> roles = new HashSet<>();
     private boolean isDegree;
     private boolean hasClaimedPublisher;
+    private List<String> DEGREE_SCOPE = List.of("DegreeLicentiate",
+                                                "DegreeBachelor",
+                                                "DegreeMaster",
+                                                "DegreePhd",
+                                                "ArtisticDegreePhd",
+                                                "OtherStudentWork");
 
     public void setOperation(PublicationOperation operation) {
         this.operation = operation;
@@ -119,7 +125,7 @@ public class PublicationScenarioContext {
     private PublicationChannel randomClaimedChannel(SortableIdentifier resourceIdentifier, URI organizationId) {
         return new ClaimedPublicationChannel(randomUri(), randomUri(), organizationId,
                                              new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY,
-                                                            List.of()), ChannelType.PUBLISHER,
+                                                            DEGREE_SCOPE), ChannelType.PUBLISHER,
                                              SortableIdentifier.next(), resourceIdentifier, Instant.now(), Instant.now());
     }
 

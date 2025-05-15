@@ -7,7 +7,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
 import static no.unit.nva.publication.permissions.PermissionsTestUtils.setContributor;
-import static no.unit.nva.publication.permissions.PermissionsTestUtils.setPublicationChannel;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.setPublicationChannelOutsideOfScope;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.setPublicationChannelWithinScope;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Set;
@@ -217,7 +218,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                         .build();
 
         var resource = Resource.fromPublication(publicationWithStatus);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
@@ -240,7 +241,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
 
@@ -265,7 +266,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor), identityServiceClient);
 
@@ -290,7 +291,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
                                                                      identityServiceClient);
@@ -315,7 +316,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -342,7 +343,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                                         .build();
 
         var resource = Resource.fromPublication(publicationWithStatus);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
@@ -365,7 +366,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithoutOpenOrInternalFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
 
@@ -390,7 +391,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor), identityServiceClient);
 
@@ -415,7 +416,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
                                                                      identityServiceClient);
@@ -440,7 +441,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -463,7 +464,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, EVERYONE);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, EVERYONE);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
@@ -486,7 +487,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, EVERYONE);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, EVERYONE);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
 
@@ -510,7 +511,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, EVERYONE);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, EVERYONE);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor), identityServiceClient);
 
@@ -534,7 +535,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, EVERYONE);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, EVERYONE);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
                                                                      identityServiceClient);
@@ -559,7 +560,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, EVERYONE);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, EVERYONE);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -585,7 +586,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, EVERYONE);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, EVERYONE);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
                                                                      identityServiceClient);
@@ -608,7 +609,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
@@ -631,7 +632,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
 
@@ -655,7 +656,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, contributor);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor), identityServiceClient);
 
@@ -679,7 +680,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
                                                                      identityServiceClient);
@@ -704,7 +705,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -730,7 +731,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
                                                                      identityServiceClient);
@@ -753,7 +754,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(
             toRequestInfo(nonCuratingInstitution.contributor()),
@@ -777,7 +778,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, nonCuratingInstitution, EVERYONE, EVERYONE);
+        setPublicationChannelWithinScope(resource, nonCuratingInstitution, EVERYONE, EVERYONE);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
                                                                      identityServiceClient);
@@ -802,7 +803,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                               .build();
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.editor()),
                                                                      identityServiceClient);
@@ -827,7 +828,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
                               .build();
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.editor()),
                                                                      identityServiceClient);
@@ -887,7 +888,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
         var publication = createNonDegreePublicationWithOpenFile(registrator);
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, institution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator),
                                                                      identityServiceClient);
@@ -925,7 +926,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
         setContributor(publication, contributor);
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, institution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(contributor),
                                                                      identityServiceClient);
@@ -961,7 +962,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
         var publication = createNonDegreePublicationWithOpenFile(registrator);
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, institution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator),
                                                                      identityServiceClient);
@@ -1001,7 +1002,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.contributor()),
                                                                      identityServiceClient);
@@ -1041,7 +1042,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -1083,7 +1084,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
         setContributor(publication, curatingInstitution.contributor());
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, owningInstitution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(nonCuratingInstitution.curator()),
                                                                      identityServiceClient);
@@ -1099,7 +1100,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithoutOpenFiles(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, institution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = createExternalUser(resource);
         Assertions.assertTrue(PublicationPermissions
@@ -1114,9 +1115,65 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         var publication = createNonDegreePublicationWithOpenFile(registrator);
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, institution, OWNER_ONLY, OWNER_ONLY);
+        setPublicationChannelWithinScope(resource, institution, OWNER_ONLY, OWNER_ONLY);
 
         var userInstance = createExternalUser(resource);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPDATE));
+    }
+
+    @Test
+    void shouldAllowRegistratorWhenChannelIsClaimedByAnotherInstitutionWithEditingPolicyOwnerOnlyButOutsideOfScope()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannelOutsideOfScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                   .create(resource, userInstance)
+                                   .allowsAction(PublicationOperation.UPDATE));
+    }
+
+    @Test
+    void shouldAllowCuratorWhenChannelIsClaimedByAnotherInstitutionWithEditingPolicyOwnerOnlyButOutsideOfScope()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var curator = owningInstitution.curator();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannelOutsideOfScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curator), identityServiceClient);
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(PublicationOperation.UPDATE));
+    }
+
+    @Test
+    void shouldAllowEditorWhenChannelIsClaimedByAnotherInstitutionWithEditingPolicyOwnerOnlyButOutsideOfScope()
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var registrator = owningInstitution.registrator();
+        var editor = owningInstitution.editor();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+
+        var publication = createNonDegreePublicationWithOpenFile(registrator);
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannelOutsideOfScope(resource, nonCuratingInstitution, OWNER_ONLY, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(editor), identityServiceClient);
         Assertions.assertTrue(PublicationPermissions
                                   .create(resource, userInstance)
                                   .allowsAction(PublicationOperation.UPDATE));

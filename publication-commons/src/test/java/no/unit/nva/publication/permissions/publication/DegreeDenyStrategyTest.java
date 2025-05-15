@@ -7,7 +7,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
 import static no.unit.nva.publication.permissions.PermissionsTestUtils.setContributor;
-import static no.unit.nva.publication.permissions.PermissionsTestUtils.setPublicationChannel;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.setPublicationChannelWithDegreeScope;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
@@ -464,7 +464,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         registrator.topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
 
@@ -489,7 +489,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         registrator.topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.curator()),
                                                                      identityServiceClient);
@@ -515,7 +515,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         registrator.topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.thesisCurator()),
                                                                      identityServiceClient);
@@ -549,7 +549,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                            Set.of(curatingInstitution.contributor().cristinId()))));
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -578,7 +578,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         setContributor(publication, curatingInstitution.contributor());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.thesisCurator()),
                                                                      identityServiceClient);
@@ -604,7 +604,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.registrator()),
                                                                      identityServiceClient);
@@ -630,7 +630,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.curator()),
                                                                      identityServiceClient);
@@ -656,7 +656,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, anotherInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(owningInstitution.thesisCurator()),
                                                                      identityServiceClient);
@@ -683,7 +683,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.curator()),
                                                                      identityServiceClient);
@@ -710,7 +710,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(curatingInstitution.thesisCurator()),
                                                                      identityServiceClient);
@@ -739,7 +739,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(anotherInstitution.curator()),
                                                                      identityServiceClient);
@@ -768,7 +768,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                                                         owningInstitution.registrator().topLevelCristinId());
 
         var resource = Resource.fromPublication(publication);
-        setPublicationChannel(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
+        setPublicationChannelWithDegreeScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(anotherInstitution.thesisCurator()),
                                                                      identityServiceClient);
