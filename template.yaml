@@ -1915,7 +1915,7 @@ Resources:
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           RECOVERY_QUEUE: !Ref RecoveryQueue
-          SHOULD_IGNORE_BATCH_SCAN: 'true'
+          SHOULD_IGNORE_BATCH_SCAN: 'false'
       Events:
         FanoutSource:
           Type: DynamoDB
