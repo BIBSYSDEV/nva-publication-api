@@ -17,10 +17,14 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.model.testing.PublicationGenerator.randomFundings;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomSuccessfulCustomerResponse;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
@@ -76,6 +80,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -1958,6 +1963,37 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
+    @Test
+    void shouldUpdatedFieldsFromPartialUpdateOnlyWhenRequestBodyIsPartialUpdate()
+        throws BadRequestException, IOException, NotFoundException {
+        var existingFile = randomPendingInternalFile();
+        var publication = randomPublication(JournalArticle.class);
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(existingFile)));
+        publication.setPublisher(Organization.fromUri(customerId));
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        Resource.fromPublication(publication).publish(resourceService, userInstance);
+
+
+        var updatedFile = existingFile.toPendingOpenFile();
+        var updatedProjects = randomProjects();
+        var updatedFundings = randomFundings();
+        var partialUpdateRequest = new PartialUpdatePublicationRequest(publication.getIdentifier(), updatedFundings,
+                                                                       updatedProjects,
+                                                                    new AssociatedArtifactList(updatedFile));
+        stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+        var input = request(userInstance, partialUpdateRequest, publication.getIdentifier());
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+
+        assertEquals(publication.getEntityDescription(), updatedPublication.getEntityDescription());
+
+        assertNotEquals(publication.getFundings(), updatedPublication.getFundings());
+        assertNotEquals(publication.getAssociatedArtifacts(), updatedPublication.getAssociatedArtifacts());
+        assertNotEquals(publication.getProjects(), updatedPublication.getProjects());
+    }
+
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication,
@@ -2371,6 +2407,20 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     protected InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
                                                      Publication publicationUpdate) throws JsonProcessingException {
         return ownerUpdatesOwnPublication(publicationIdentifier, publicationUpdate, null);
+    }
+
+    private InputStream request(UserInstance userInstance, PublicationRequest publicationRequest,
+                                SortableIdentifier publicationIdentifier)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
+        return new HandlerRequestBuilder<PublicationRequest>(restApiMapper)
+                          .withUserName(userInstance.getUsername())
+                          .withCurrentCustomer(userInstance.getCustomerId())
+                          .withBody(publicationRequest)
+                          .withTopLevelCristinOrgId(userInstance.getTopLevelOrgCristinId())
+                          .withPersonCristinId(Optional.ofNullable(userInstance.getPersonCristinId()).orElse(randomUri()))
+                          .withPathParameters(pathParameters)
+                          .build();
     }
 
     private InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,

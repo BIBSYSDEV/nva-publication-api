@@ -11,18 +11,11 @@ import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersiste
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import java.net.URI;
-import java.util.Arrays;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import no.unit.nva.clients.ChannelClaimDto;
-import no.unit.nva.clients.ChannelClaimDto.ChannelClaim;
-import no.unit.nva.clients.ChannelClaimDto.ChannelClaim.ChannelConstraint;
-import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
-import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -35,6 +28,10 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.Constraint;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -51,14 +48,12 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
 
     private TicketService ticketService;
     private ResourceService resourceService;
-    private IdentityServiceClient identityServiceClient;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
         super.init();
         ticketService = getTicketService();
         resourceService = getResourceServiceBuilder().build();
-        identityServiceClient = mock(IdentityServiceClient.class);
     }
 
     @DisplayName("When user removes unpublished files from a publication" +
@@ -75,7 +70,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                                             .withAssociatedArtifacts(List.of())
                                                             .withStatus(PublicationStatus.PUBLISHED)
                                                             .build();
-        publishingRequestResolver(publication).resolve(publication, publicationUpdateRemovingUnpublishedFiles);
+        publishingRequestResolver(publication).resolve(Resource.fromPublication(publication),
+                                                       Resource.fromPublication(publicationUpdateRemovingUnpublishedFiles));
 
         var publishingRequest = getFileApprovalEntry(publication);
 
@@ -98,8 +94,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                                             .withAssociatedArtifacts(List.of(openFile))
                                                             .withStatus(PublicationStatus.PUBLISHED)
                                                             .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                                publicationUpdateRemovingUnpublishedFiles);
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+                                                                Resource.fromPublication(publicationUpdateRemovingUnpublishedFiles));
 
         var publishingRequest = getFileApprovalEntry(persistedPublication);
 
@@ -128,8 +124,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var updatedPublication = persistedPublication.copy()
             .withAssociatedArtifacts(List.of(updatedFile))
             .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                               updatedPublication);
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+                                                               Resource.fromPublication(updatedPublication));
 
         var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
 
@@ -150,8 +146,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var updatedPublication = persistedPublication.copy()
                                      .withAssociatedArtifacts(List.of(randomPendingOpenFile1, randomPendingInternalFile2))
                                      .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                                updatedPublication);
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+                                                                Resource.fromPublication(updatedPublication));
 
         var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
 
@@ -173,8 +169,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var updatedPublication = persistedPublication.copy()
                                      .withAssociatedArtifacts(List.of(randomPendingOpenFile1, hiddenFile))
                                      .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                                updatedPublication);
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+                                                                Resource.fromPublication(updatedPublication));
 
         var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
 
@@ -195,8 +191,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         var updatedPublication = persistedPublication.copy()
                                      .withAssociatedArtifacts(List.of(hiddenFile))
                                      .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                                updatedPublication);
+        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+                                                                Resource.fromPublication(updatedPublication));
 
         var publishingRequest = getFileApprovalEntry(persistedPublication);
 
@@ -209,88 +205,92 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     void shouldPersistFilesApprovalThesisWhenUpdatingFileToPendingWhenDegreeAndChannelClaimedByUserInstitution()
         throws ApiGatewayException {
         var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType);
+        var resource = Resource.fromPublication(randomPublication(instanceType));
         var uploadedFile = randomUploadedFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(uploadedFile)));
-        var persistedPublication = persistPublication(publication);
+        resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(uploadedFile)));
+        var persistedResource = Resource.fromPublication(persistPublication(resource.toPublication()));
 
         var pendingFile = uploadedFile.copy().buildPendingOpenFile();
-        var updatedPublication = persistedPublication.copy()
-                                     .withAssociatedArtifacts(List.of(pendingFile))
+        var updatedResource = persistedResource.copy()
+                                     .withAssociatedArtifactsList(new AssociatedArtifactList(List.of(pendingFile)))
                                      .build();
-        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaimDto(
-            publication.getPublisher().getId(), publication.getResourceOwner().getOwnerAffiliation(),
-           instanceType.getSimpleName()
-        ));
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                                updatedPublication);
+        updatedResource.setPublicationChannels(List.of(claimedPublicationChannel(
+            instanceType, resource.getResourceOwner().getOwnerAffiliation())));
+        publishingRequestResolver(persistedResource.toPublication()).resolve(resourceService.getResourceByIdentifier(persistedResource.getIdentifier()),
+                                                                updatedResource);
 
-        var fileApprovalEntry = getFileApprovalEntry(persistedPublication);
+        var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
 
         assertEquals(PENDING, fileApprovalEntry.getStatus());
         assertTrue(fileApprovalEntry.getFilesForApproval().contains(pendingFile));
-        assertEquals(UserInstance.fromPublication(publication).getTopLevelOrgCristinId(),
+        assertEquals(UserInstance.fromPublication(resource.toPublication()).getTopLevelOrgCristinId(),
                      fileApprovalEntry.getOwnerAffiliation());
     }
 
+    private static ClaimedPublicationChannel claimedPublicationChannel(Class<DegreeBachelor> instanceType,
+                                                                       URI organizationId) {
+        return new ClaimedPublicationChannel(randomUri(), randomUri(),
+                                             organizationId,
+                                             constraintWithScope(instanceType), ChannelType.PUBLISHER,
+                                             SortableIdentifier.next(),
+                                             SortableIdentifier.next(), Instant.now(),
+                                             Instant.now());
+    }
+
+    private static Constraint constraintWithScope(Class<DegreeBachelor> instanceType) {
+        return new Constraint(ChannelPolicy.EVERYONE,
+                              ChannelPolicy.OWNER_ONLY,
+                              List.of(instanceType.getSimpleName())
+        );
+    }
+
     @Test
-    void shouldPersistFilesApprovalThesisWhenUpdatingFileToPendingWhenDegreeAndChannelClaimedByNotUserInstitution()
+    void shouldPersistFilesApprovalThesisWhenUpdatingFileToPendingWhenDegreeAndChannelClaimedWithinTheScopeByNotUserInstitution()
         throws ApiGatewayException {
         var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType);
+        var resource = Resource.fromPublication(randomPublication(instanceType));
         var uploadedFile = randomUploadedFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(uploadedFile)));
-        var persistedPublication = persistPublication(publication);
+        resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(uploadedFile)));
+        var persistedResource = Resource.fromPublication(persistPublication(resource.toPublication()));
 
         var pendingFile = uploadedFile.copy().buildPendingOpenFile();
-        var updatedPublication = persistedPublication.copy()
-                                     .withAssociatedArtifacts(List.of(pendingFile))
+        var updatedResource = persistedResource.copy()
+                                     .withAssociatedArtifactsList(new AssociatedArtifactList(List.of(pendingFile)))
                                      .build();
-        var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
-        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaimDto(
-            randomUri(), ownerAffiliation,
-            instanceType.getSimpleName()
-        ));
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                                updatedPublication);
+        var claimedChannel = claimedPublicationChannel(instanceType, randomUri());
+        updatedResource.setPublicationChannels(List.of(claimedChannel));
+        publishingRequestResolver(persistedResource.toPublication()).resolve(resourceService.getResourceByIdentifier(persistedResource.getIdentifier()),
+                                                                updatedResource);
 
-        var fileApprovalEntry = getFileApprovalEntry(persistedPublication);
+        var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
 
         assertEquals(PENDING, fileApprovalEntry.getStatus());
         assertTrue(fileApprovalEntry.getFilesForApproval().contains(pendingFile));
-        assertEquals(ownerAffiliation, fileApprovalEntry.getOwnerAffiliation());
+        assertEquals(claimedChannel.getOrganizationId(), fileApprovalEntry.getOwnerAffiliation());
     }
 
     @Test
     void shouldApprovePendingFilesApprovalThesisWhenUserRemovesTheOnlyPendingFileFromPublicationAndTicketIsOwnedByClaimedInstitution()
         throws ApiGatewayException {
         var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType);
+        var resource = Resource.fromPublication(randomPublication(instanceType));
         var pendingOpenFile = randomPendingOpenFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
-        var persistedPublication = persistPublication(publication);
+        resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
+        var persistedResource = Resource.fromPublication(persistPublication(resource.toPublication()));
         var channelClaimOwner = randomUri();
-        persistFilesApprovalContainingExistingPendingFiles(persistedPublication, channelClaimOwner);
-        var updatedPublication = persistedPublication.copy()
-                                     .withAssociatedArtifacts(List.of())
+        persistFilesApprovalContainingExistingPendingFiles(persistedResource.toPublication(), channelClaimOwner);
+        var updatedResource = persistedResource.copy()
+                                     .withAssociatedArtifactsList(AssociatedArtifactList.empty())
                                      .build();
-        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaimDto(
-            randomUri(), channelClaimOwner,
-            instanceType.getSimpleName()
-        ));
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier()),
-                                                                updatedPublication);
+        updatedResource.setPublicationChannels(List.of(claimedPublicationChannel(instanceType,
+                                                                                 resource.getResourceOwner()
+                                                                                     .getOwnerAffiliation())));
+        publishingRequestResolver(persistedResource.toPublication()).resolve(resourceService.getResourceByIdentifier(persistedResource.getIdentifier()),
+                                                                updatedResource);
 
-        var fileApprovalEntry = getFileApprovalEntry(persistedPublication);
+        var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
 
         assertEquals(COMPLETED, fileApprovalEntry.getStatus());
-    }
-
-    private ChannelClaimDto channelClaimDto(URI customerId, URI organizationId, String... scope) {
-        return new ChannelClaimDto(randomUri(), new CustomerSummaryDto(customerId, organizationId),
-                                   new ChannelClaim(randomUri(), new ChannelConstraint(
-                                       "Everyone", "Everyone", Arrays.asList(scope)
-                                   )));
     }
 
     private Publication persistPublication(Publication publication) throws ApiGatewayException {
@@ -306,8 +306,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     }
 
     private PublishingRequestResolver publishingRequestResolver(Publication publication) {
-        return new PublishingRequestResolver(resourceService, ticketService,
-                                             identityServiceClient, UserInstance.fromPublication(publication),
+        return new PublishingRequestResolver(resourceService, ticketService, UserInstance.fromPublication(publication),
                                              customerNotAllowingPublishingFiles());
     }
 

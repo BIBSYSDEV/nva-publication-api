@@ -331,7 +331,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("ticketEntryProvider")
-    void shouldNotAllowContributorToCreateTicketForDegreePublication(Class<? extends TicketEntry> ticketType)
+    void shouldAllowContributorToCreateTicketForDegreePublication(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
         var requestBody = constructDto(ticketType);
@@ -343,7 +343,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(request, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
     }
 
     @ParameterizedTest

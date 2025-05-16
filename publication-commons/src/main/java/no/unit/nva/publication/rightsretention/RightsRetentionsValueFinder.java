@@ -7,7 +7,6 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.FunderRightsRetentionStrategy;
@@ -20,6 +19,7 @@ import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -43,24 +43,24 @@ public class RightsRetentionsValueFinder {
         this.username = username;
     }
 
-    public RightsRetentionStrategy getRightsRetentionStrategy(File file, Publication publication)
+    public RightsRetentionStrategy getRightsRetentionStrategy(File file, Resource resource)
         throws BadRequestException, UnauthorizedException {
         var fileRightsRetention = file.getRightsRetentionStrategy();
 
-        return rrsIsIrrelevant(file, publication)
+        return rrsIsIrrelevant(file, resource)
                    ? NullRightsRetentionStrategy.create(configuredRightsRetention)
                    : getRrsForUnPublishedFile(file, fileRightsRetention);
     }
 
-    private boolean rrsIsIrrelevant(File file, Publication publication) {
+    private boolean rrsIsIrrelevant(File file, Resource resource) {
         return !PublisherVersion.ACCEPTED_VERSION.equals(file.getPublisherVersion())
                || file instanceof InternalFile
-               || !isAcademicArticle(publication);
+               || !isAcademicArticle(resource);
     }
 
-    private static boolean isAcademicArticle(Publication publication) {
-        return Optional.ofNullable(publication)
-                   .map(Publication::getEntityDescription)
+    private static boolean isAcademicArticle(Resource resource) {
+        return Optional.ofNullable(resource)
+                   .map(Resource::getEntityDescription)
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationInstance)
                    .map(instance -> instance instanceof AcademicArticle)

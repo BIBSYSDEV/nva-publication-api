@@ -1,14 +1,11 @@
 package no.unit.nva.publication.update;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
-import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,6 +20,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.PublicationResponseFactory;
@@ -70,9 +68,6 @@ public class UpdatePublicationHandler
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
-    public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
-    public static final String DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI =
-        "The duplicateOf field must be a valid publication API URI";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -145,11 +140,11 @@ public class UpdatePublicationHandler
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissions.create(existingResource, userInstance);
         var updatedPublication = switch (input) {
-            case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
-                                                                                identifierInPath,
-                                                                                existingResource,
-                                                                                permissionStrategy,
-                                                                                userInstance);
+            case UpdateRequest request -> updatePublication(request,
+                                                                  identifierInPath,
+                                                                  existingResource,
+                                                                  permissionStrategy,
+                                                                  userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
@@ -165,6 +160,30 @@ public class UpdatePublicationHandler
         };
 
         return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
+    }
+
+    private Resource updatePublication(UpdateRequest input, SortableIdentifier identifierInPath,
+                                       Resource existingResource, PublicationPermissions permissionStrategy,
+                                       UserInstance userInstance) throws ApiGatewayException {
+        input.authorize(permissionStrategy);
+        validateRequest(identifierInPath, input);
+
+        var resourceUpdate = input.generateUpdate(existingResource);
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, resourceUpdate.getPublisher().getId());
+        authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input.getAssociatedArtifacts()));
+
+        var updatedFiles = resourceUpdate.getFiles();
+        if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, existingResource,
+                                                                                   resourceUpdate, userInstance))) {
+            throw new ForbiddenException();
+        }
+
+        setRrsOnFiles(resourceUpdate, existingResource, customer, userInstance.getUsername(), permissionStrategy);
+
+        new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
+            .resolve(existingResource, resourceUpdate);
+
+        return resourceUpdate.update(resourceService, userInstance);
     }
 
     private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
@@ -196,7 +215,7 @@ public class UpdatePublicationHandler
                                              PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
         throws ApiGatewayException {
-        validateUnpublishRequest(unpublishPublicationRequest);
+        unpublishPublicationRequest.validate(apiHost);
         permissionStrategy.authorize(UNPUBLISH);
 
         var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest,
@@ -207,20 +226,6 @@ public class UpdatePublicationHandler
                                .orElseThrow();
         updateNvaDoi(updatedResource);
         return updatedResource;
-    }
-
-    private void validateUnpublishRequest(UnpublishPublicationRequest unpublishPublicationRequest)
-        throws BadRequestException {
-        if (isNull(unpublishPublicationRequest.getComment())) {
-            throw new BadRequestException(UNPUBLISH_REQUEST_REQUIRES_A_COMMENT);
-        }
-
-        var duplicateUri = unpublishPublicationRequest.getDuplicateOf();
-
-        if (duplicateUri.isPresent()) {
-            duplicateUri.filter(uri -> isValid(uri, apiHost))
-                 .orElseThrow(() -> new BadRequestException(DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI));
-        }
     }
 
     private void updateNvaDoi(Resource resource) {
@@ -262,37 +267,6 @@ public class UpdatePublicationHandler
                    .build();
     }
 
-    private Resource updateMetadata(UpdatePublicationRequest input,
-                                       SortableIdentifier identifierInPath,
-                                       Resource existingResource,
-                                       PublicationPermissions permissionStrategy,
-                                       UserInstance userInstance)
-        throws ApiGatewayException {
-        validateRequest(identifierInPath, input);
-
-        var existingPublication = existingResource.toPublication();
-        var publicationUpdate = input.generatePublicationUpdate(existingPublication);
-
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
-
-        permissionStrategy.authorize(UPDATE);
-        authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input));
-
-        var updatedResource = Resource.fromPublication(publicationUpdate);
-        var updatedFiles = updatedResource.getFiles();
-        if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, existingResource,
-                                                                                   updatedResource,
-                                                                                   userInstance))) {
-            throw new ForbiddenException();
-        }
-        setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
-
-        new PublishingRequestResolver(resourceService, ticketService, identityServiceClient, userInstance, customer)
-            .resolve(existingPublication, publicationUpdate);
-
-        return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
-    }
-
     private static boolean canUpdateFileToPendingOpenFile(File file, Customer customer, Resource existingResource,
                                                           Resource updatedResource, UserInstance userInstance) {
         var existingFile = existingResource.getFileByIdentifier(file.getIdentifier());
@@ -321,8 +295,8 @@ public class UpdatePublicationHandler
     }
 
     private static List<FileEntry> getExistingFilesToUpdate(Resource existingPublication,
-                                                            UpdatePublicationRequest input) {
-        var inputFiles = input.getAssociatedArtifacts().stream()
+                                                            AssociatedArtifactList associatedArtifacts) {
+        var inputFiles = associatedArtifacts.stream()
                              .filter(File.class::isInstance)
                              .map(File.class::cast).toList();
         var existingFiles = existingPublication.getFileEntries();
@@ -332,10 +306,10 @@ public class UpdatePublicationHandler
                                 .toList();
     }
 
-    private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
+    private void setRrsOnFiles(Resource updatedResource, Resource existingResource, Customer customer,
                                String actingUser, PublicationPermissions permissionStrategy)
         throws BadRequestException, UnauthorizedException {
-        RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingPublication, publicationUpdate,
+        RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingResource, updatedResource,
                                                                 customer.getRightsRetentionStrategy(), actingUser,
                                                                 permissionStrategy).handle();
 
@@ -369,6 +343,7 @@ public class UpdatePublicationHandler
     protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponse output) {
         return switch (input) {
             case UpdatePublicationRequest ignored -> HttpStatus.SC_OK;
+            case PartialUpdatePublicationRequest ignored -> HttpStatus.SC_OK;
             case UnpublishPublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
             case DeletePublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
             case RepublishPublicationRequest ignored -> HttpStatus.SC_OK;
@@ -377,11 +352,11 @@ public class UpdatePublicationHandler
     }
 
     private boolean identifiersDoNotMatch(SortableIdentifier identifierInPath,
-                                          UpdatePublicationRequest input) {
+                                          UpdateRequest input) {
         return !identifierInPath.equals(input.getIdentifier());
     }
 
-    private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)
+    private void validateRequest(SortableIdentifier identifierInPath, UpdateRequest input)
         throws BadRequestException {
         if (identifiersDoNotMatch(identifierInPath, input)) {
             throw new BadRequestException(IDENTIFIER_MISMATCH_ERROR_MESSAGE);

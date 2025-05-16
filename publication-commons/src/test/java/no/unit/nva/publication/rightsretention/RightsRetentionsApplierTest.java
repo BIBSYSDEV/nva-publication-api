@@ -40,6 +40,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -90,7 +91,8 @@ class RightsRetentionsApplierTest {
             PublicationInstanceBuilder.randomPublicationInstance(publicationType).getClass());
         var file = createPendingOpenFileWithAcceptedVersionAndRrs(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
         addFilesToPublication(publication, file);
-        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(
+        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(Resource.fromPublication(publication),
+                                                                          getServerConfiguredRrs(
                                                                               RIGHTS_RETENTION_STRATEGY),
                                                                           randomString());
         applier.handle();
@@ -104,7 +106,8 @@ class RightsRetentionsApplierTest {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var file = createPendingOpenFileWithAcceptedVersionAndRrs(rrs);
         addFilesToPublication(publication, file);
-        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(
+        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(Resource.fromPublication(publication),
+                                                                          getServerConfiguredRrs(
                                                                               rrs.getConfiguredType()),
                                                                           randomString());
 
@@ -133,7 +136,8 @@ class RightsRetentionsApplierTest {
         addFilesToPublication(originalPublication, originalFile);
         var isCurator = false;
         var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
-        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+        var applier = rrsApplierForUpdatedPublication(Resource.fromPublication(originalPublication),
+                                                      Resource.fromPublication(updatedPublication),
                                                       getServerConfiguredRrs(
                                                           NULL_RIGHTS_RETENTION_STRATEGY),
                                                       randomString(), permissionStrategy);
@@ -159,7 +163,8 @@ class RightsRetentionsApplierTest {
         addFilesToPublication(originalPublication, originalFile);
         var isCurator = false;
         var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
-        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+        var applier = rrsApplierForUpdatedPublication(Resource.fromPublication(originalPublication),
+                                                      Resource.fromPublication(updatedPublication),
                                                       getServerConfiguredRrs(
                                                           NULL_RIGHTS_RETENTION_STRATEGY),
                                                       randomString(),
@@ -185,7 +190,8 @@ class RightsRetentionsApplierTest {
                                      .build();
         var isCurator = false;
         var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
-        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+        var applier = rrsApplierForUpdatedPublication(Resource.fromPublication(originalPublication),
+                                                      Resource.fromPublication(updatedPublication),
                                                       getServerConfiguredRrs(
                                                           configuredType),
                                                       randomString(),
@@ -210,7 +216,8 @@ class RightsRetentionsApplierTest {
 
         var isCurator = false;
         var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
-        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+        var applier = rrsApplierForUpdatedPublication(Resource.fromPublication(originalPublication),
+                                                      Resource.fromPublication(updatedPublication),
                                                       getServerConfiguredRrs(
                                                           configuredType),
                                                       randomString(),
@@ -242,7 +249,8 @@ class RightsRetentionsApplierTest {
                                      .withAssociatedArtifacts(new AssociatedArtifactList(fileWithOverridenRrs))
                                      .build();
 
-        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+        var applier = rrsApplierForUpdatedPublication(Resource.fromPublication(originalPublication),
+                                                      Resource.fromPublication(updatedPublication),
                                                       getServerConfiguredRrs(
                                                           configuredType),
                                                       randomString(), permissionStrategy);
