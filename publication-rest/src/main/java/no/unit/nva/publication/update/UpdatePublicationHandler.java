@@ -3,6 +3,7 @@ package no.unit.nva.publication.update;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
+import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
@@ -23,6 +24,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.PublicationResponseFactory;
@@ -145,6 +147,11 @@ public class UpdatePublicationHandler
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissions.create(existingResource, userInstance);
         var updatedPublication = switch (input) {
+            case PartialUpdatePublicationRequest partialUpdate -> partialUpdate(partialUpdate,
+                                                                                existingResource,
+                                                                                permissionStrategy,
+                                                                                userInstance);
+
             case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
                                                                                 identifierInPath,
                                                                                 existingResource,
@@ -165,6 +172,35 @@ public class UpdatePublicationHandler
         };
 
         return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
+    }
+
+    private Resource partialUpdate(PartialUpdatePublicationRequest request, Resource resource,
+                                   PublicationPermissions permissions, UserInstance userInstance)
+        throws ApiGatewayException {
+
+        permissions.authorize(PARTIAL_UPDATE);
+        authorizeFileEntries(resource, userInstance, getExistingFilesToUpdate(resource, request.associatedArtifacts()));
+
+        var updatedResource = resource.copy()
+                                  .withAssociatedArtifactsList(request.associatedArtifacts())
+                                  .withFundings(request.fundings())
+                                  .withProjects(request.projects())
+                                  .build();
+
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, resource.getPublisher().getId());
+        var updatedFiles = updatedResource.getFiles();
+        if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, resource,
+                                                                                   updatedResource,
+                                                                                   userInstance))) {
+            throw new ForbiddenException();
+        }
+        var updatedPublication = updatedResource.toPublication();
+        setRrsOnFiles(updatedPublication, resource.toPublication(), customer, userInstance.getUsername(), permissions);
+
+        new PublishingRequestResolver(resourceService, ticketService, identityServiceClient, userInstance, customer)
+            .resolve(resource.toPublication(), updatedPublication);
+
+        return Resource.fromPublication(updatedPublication).update(resourceService, userInstance);
     }
 
     private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
@@ -276,7 +312,7 @@ public class UpdatePublicationHandler
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
 
         permissionStrategy.authorize(UPDATE);
-        authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input));
+        authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input.getAssociatedArtifacts()));
 
         var updatedResource = Resource.fromPublication(publicationUpdate);
         var updatedFiles = updatedResource.getFiles();
@@ -321,8 +357,8 @@ public class UpdatePublicationHandler
     }
 
     private static List<FileEntry> getExistingFilesToUpdate(Resource existingPublication,
-                                                            UpdatePublicationRequest input) {
-        var inputFiles = input.getAssociatedArtifacts().stream()
+                                                            AssociatedArtifactList associatedArtifacts) {
+        var inputFiles = associatedArtifacts.stream()
                              .filter(File.class::isInstance)
                              .map(File.class::cast).toList();
         var existingFiles = existingPublication.getFileEntries();
