@@ -7,8 +7,8 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -20,6 +20,7 @@ public final class SearchService {
     public static final String SEARCH = "search";
     public static final String RESOURCES = "resources";
     private static final String API_HOST = new Environment().readEnv("API_HOST");
+    private static final String CONTENT_TYPE_JSON = "application/json";
     private final UriRetriever uriRetriever;
     private final ResourceService resourceService;
 
@@ -34,7 +35,7 @@ public final class SearchService {
 
     public List<Resource> searchPublicationsByParam(Map<String, String> searchParams) {
         var uri = searchUriFromSearchParams(searchParams);
-        var response = uriRetriever.fetchResponse(uri);
+        var response = uriRetriever.fetchResponse(uri, CONTENT_TYPE_JSON).orElseThrow();
         return response.statusCode() == 200 ? processResponse(response) : throwException(response);
     }
 

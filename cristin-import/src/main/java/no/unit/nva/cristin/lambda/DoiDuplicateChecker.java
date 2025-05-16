@@ -3,10 +3,10 @@ package no.unit.nva.cristin.lambda;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.mapper.SearchResource2Response;
 import no.unit.nva.cristin.mapper.nva.exceptions.DuplicateDoiException;
-import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.paths.UriWrapper;
 
 public class DoiDuplicateChecker {

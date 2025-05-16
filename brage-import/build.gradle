@@ -9,6 +9,7 @@ dependencies {
     implementation libs.hamcrest.base
     implementation libs.nva.apigateway
     implementation libs.nva.clients
+    implementation libs.nva.auth
 
     implementation libs.bundles.logging
 

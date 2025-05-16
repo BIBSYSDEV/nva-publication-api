@@ -21,13 +21,10 @@ import org.slf4j.LoggerFactory;
 public class JavaHttpClientCustomerApiClient implements CustomerApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaHttpClientCustomerApiClient.class);
 
-    private final HttpClient httpClient;
-    private final CognitoCredentials cognitoCredentials;
+    private final AuthorizedBackendClient authorizedBackendClient;
 
-    public JavaHttpClientCustomerApiClient(final HttpClient httpClient,
-                                           final CognitoCredentials cognitoCredentials) {
-        this.httpClient = httpClient;
-        this.cognitoCredentials = cognitoCredentials;
+    public JavaHttpClientCustomerApiClient(final AuthorizedBackendClient authorizedBackendClient) {
+        this.authorizedBackendClient = authorizedBackendClient;
     }
 
     @JacocoGenerated
@@ -38,13 +35,13 @@ public class JavaHttpClientCustomerApiClient implements CustomerApiClient {
         var credentials = secretsReader.fetchClassSecret(secret, BackendClientCredentials.class);
         var cognitoServerUri = URI.create(environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
         var cognitoCredentials = new CognitoCredentials(credentials::getId, credentials::getSecret, cognitoServerUri);
-        return new JavaHttpClientCustomerApiClient(HttpClient.newHttpClient(), cognitoCredentials);
+        var authorizedBackendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(HttpClient.newHttpClient()
+            , cognitoCredentials);
+        return new JavaHttpClientCustomerApiClient(authorizedBackendClient);
     }
 
     @Override
     public Customer fetch(URI customerId) {
-        var authorizedBackendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient,
-                                                                                            cognitoCredentials);
         var requestBuilder = createGetRequest(customerId);
         var response = executeRequest(customerId, authorizedBackendClient, requestBuilder);
 

@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -64,7 +64,7 @@ public class TicketService extends ServiceWithTransactions {
 
     @JacocoGenerated
     public static TicketService defaultService() {
-        return new TicketService(DEFAULT_DYNAMODB_CLIENT, UriRetriever.defaultUriRetriever());
+        return new TicketService(DEFAULT_DYNAMODB_CLIENT, new UriRetriever());
     }
 
     //TODO make the method protected or package private and use TicketEntry#persist instead.

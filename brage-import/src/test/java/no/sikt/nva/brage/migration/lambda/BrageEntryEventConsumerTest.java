@@ -2403,7 +2403,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(statusCode);
         when(response.body()).thenReturn(searchResourceApiResponse.toString());
-        when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
+        when(this.uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
     }
 
     private void mockMultipleHitSearchApiResponse(List<SortableIdentifier> identifiers) {
@@ -2418,7 +2418,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(HttpStatus.SC_OK);
         when(response.body()).thenReturn(searchResourceApiResponse.toString());
-        when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
+        when(this.uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
     }
 
     private void mockSearchPublicationByIsbnResponse(SortableIdentifier identifier, String isbn) {

@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 public class FindExistingPublicationServiceImpl implements FindExistingPublicationService {

@@ -14,7 +14,6 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
-import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.ACCEPT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -111,6 +110,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     public static final String SOME_CANDIDATE_BUCKET = "some-candidate-bucket";
     public static final String IMPORT_CANDIDATES_TABLE = "import-candidates-table";
     public static final String PUBLICATIONS_TABLE = "publications-table";
+    public static final String ACCEPT = "Accept";
     private ByteArrayOutputStream output;
     private Context context;
     private ResourceService importCandidateService;

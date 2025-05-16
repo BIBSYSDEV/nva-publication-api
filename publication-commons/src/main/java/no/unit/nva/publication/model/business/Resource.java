@@ -270,33 +270,24 @@ public class Resource implements Entity {
                    .findFirst();
     }
 
-    public Optional<ClaimedPublicationChannel> getPrioritizedClaimedPublicationChannel() {
-        return Optional.ofNullable(getClaimedPublicationChannel(PUBLISHER))
-                   .orElse(getClaimedPublicationChannel(SERIAL_PUBLICATION));
+    public Optional<ClaimedPublicationChannel> getPrioritizedClaimedPublicationChannelWithinScope() {
+        return Optional.ofNullable(getClaimedPublicationChannelWithinScope(PUBLISHER))
+                   .orElse(getClaimedPublicationChannelWithinScope(SERIAL_PUBLICATION));
     }
 
-    public Optional<ClaimedPublicationChannel> getClaimedPublicationChannel(ChannelType channelType) {
+    public Optional<ClaimedPublicationChannel> getClaimedPublicationChannelWithinScope(ChannelType channelType) {
         return getPublicationChannels().stream()
-                   .filter(publicationChannel -> channelType.equals(publicationChannel.getChannelType()))
-                   .findFirst()
                    .filter(ClaimedPublicationChannel.class::isInstance)
-                   .map(ClaimedPublicationChannel.class::cast);
+                   .map(ClaimedPublicationChannel.class::cast)
+                   .filter(this::isWithingChannelClaimScope)
+                   .filter(publicationChannel -> channelType.equals(publicationChannel.getChannelType()))
+                   .findFirst();
     }
 
-    public boolean isPartOfClaimedChannelScope() {
-        var claimedChannel = getPrioritizedClaimedPublicationChannel();
-        if (claimedChannel.isEmpty()) {
-            return false;
-        }
-
-        var instanceType = getInstanceType();
-        if (instanceType.isEmpty()) {
-            return false;
-        }
-
-        var scope = claimedChannel.get().getConstraint().scope();
-
-        return scope.contains(instanceType.get());
+    private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {
+        return getInstanceType()
+                   .map(claimedPublicationChannel::instanceTypeIsWithinScope)
+                   .orElse(false);
     }
 
     @JsonIgnore

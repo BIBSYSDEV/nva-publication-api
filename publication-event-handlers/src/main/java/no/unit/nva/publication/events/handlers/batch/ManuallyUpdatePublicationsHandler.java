@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.SearchService;
 import nva.commons.core.JacocoGenerated;
@@ -18,7 +18,7 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
     @JacocoGenerated
     public ManuallyUpdatePublicationsHandler() {
         this.resourceService = ResourceService.defaultService();
-        this.searchService = SearchService.create(UriRetriever.defaultUriRetriever(), resourceService);
+        this.searchService = SearchService.create(new UriRetriever(), resourceService);
     }
 
     public ManuallyUpdatePublicationsHandler(SearchService searchService, ResourceService resourceService) {

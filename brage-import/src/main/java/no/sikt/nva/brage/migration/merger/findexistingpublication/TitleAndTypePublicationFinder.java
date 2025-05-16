@@ -10,6 +10,7 @@ import no.sikt.nva.brage.migration.lambda.MergeSource;
 import no.sikt.nva.brage.migration.lambda.PublicationComparator;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -17,7 +18,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -33,6 +33,7 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private static final String RESOURCES = "resources";
     private static final String SEARCH = "search";
     private static final String EVENT = "Event";
+    private static final String CONTENT_TYPE_JSON = "application/json";
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
@@ -101,7 +102,7 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     }
 
     private Optional<String> fetchResponse(URI uri) {
-        var response = uriRetriever.fetchResponse(uri);
+        var response = uriRetriever.fetchResponse(uri, CONTENT_TYPE_JSON).orElseThrow();
         if (isNotHttpOk(response)) {
             logger.info("Search-api responded with statusCode: {} for request: {}", response.statusCode(), uri);
             return Optional.empty();
