@@ -231,13 +231,13 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
                                                                        URI organizationId) {
         return new ClaimedPublicationChannel(randomUri(), randomUri(),
                                              organizationId,
-                                             constraintWithinScope(instanceType), ChannelType.PUBLISHER,
+                                             constraintWithScope(instanceType), ChannelType.PUBLISHER,
                                              SortableIdentifier.next(),
                                              SortableIdentifier.next(), Instant.now(),
                                              Instant.now());
     }
 
-    private static Constraint constraintWithinScope(Class<DegreeBachelor> instanceType) {
+    private static Constraint constraintWithScope(Class<DegreeBachelor> instanceType) {
         return new Constraint(ChannelPolicy.EVERYONE,
                               ChannelPolicy.OWNER_ONLY,
                               List.of(instanceType.getSimpleName())

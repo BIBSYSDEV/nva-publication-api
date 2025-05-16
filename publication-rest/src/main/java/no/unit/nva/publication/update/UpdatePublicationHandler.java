@@ -1,13 +1,11 @@
 package no.unit.nva.publication.update;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -70,9 +68,6 @@ public class UpdatePublicationHandler
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
-    public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
-    public static final String DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI =
-        "The duplicateOf field must be a valid publication API URI";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -220,7 +215,7 @@ public class UpdatePublicationHandler
                                              PublicationPermissions permissionStrategy,
                                              UserInstance userInstance)
         throws ApiGatewayException {
-        validateUnpublishRequest(unpublishPublicationRequest);
+        unpublishPublicationRequest.validate(apiHost);
         permissionStrategy.authorize(UNPUBLISH);
 
         var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest,
@@ -231,20 +226,6 @@ public class UpdatePublicationHandler
                                .orElseThrow();
         updateNvaDoi(updatedResource);
         return updatedResource;
-    }
-
-    private void validateUnpublishRequest(UnpublishPublicationRequest unpublishPublicationRequest)
-        throws BadRequestException {
-        if (isNull(unpublishPublicationRequest.getComment())) {
-            throw new BadRequestException(UNPUBLISH_REQUEST_REQUIRES_A_COMMENT);
-        }
-
-        var duplicateUri = unpublishPublicationRequest.getDuplicateOf();
-
-        if (duplicateUri.isPresent()) {
-            duplicateUri.filter(uri -> isValid(uri, apiHost))
-                 .orElseThrow(() -> new BadRequestException(DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI));
-        }
     }
 
     private void updateNvaDoi(Resource resource) {
