@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -13,6 +14,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.time.Instant;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.NvaCustomerConnection;
@@ -64,18 +66,17 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     private final ResourceService resourceService;
     private final ScopusUpdater scopusUpdater;
     private final ScopusFileConverter scopusFileConverter;
+    private static final AtomicReference<AuthorizedBackendUriRetriever> authorizedBackendUriRetriever =
+        new AtomicReference<>();
 
     @JacocoGenerated
     public ScopusHandler() {
         this(S3Driver.defaultS3Client().build(), defaultPiaConnection(), defaultCristinConnection(),
-             new PublicationChannelConnection(new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                                                                                BACKEND_CLIENT_SECRET_NAME)),
-             new NvaCustomerConnection(new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                                                                         BACKEND_CLIENT_SECRET_NAME)),
+             new PublicationChannelConnection(getAuthorizedBackendUriRetriever()),
+             new NvaCustomerConnection(getAuthorizedBackendUriRetriever()),
              ResourceService.defaultService(),
              new ScopusUpdater(ResourceService.defaultService(),
-                               new AuthorizedBackendUriRetriever(
-                                   BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
+                               getAuthorizedBackendUriRetriever()),
              new ScopusFileConverter(defaultHttpClientWithRedirect(),
                                      S3Driver.defaultS3Client().build(),
                                      new TikaUtils()));
@@ -119,6 +120,21 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     @JacocoGenerated
     private static CristinConnection defaultCristinConnection() {
         return new CristinConnection();
+    }
+
+    @JacocoGenerated
+    private static AuthorizedBackendUriRetriever getAuthorizedBackendUriRetriever() {
+        authorizedBackendUriRetriever.updateAndGet(ScopusHandler::getAuthorizedBackendUriRetriever);
+        return authorizedBackendUriRetriever.get();
+    }
+
+    @JacocoGenerated
+    private static AuthorizedBackendUriRetriever getAuthorizedBackendUriRetriever(
+        AuthorizedBackendUriRetriever existing) {
+        if (isNull(existing)) {
+            return new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME);
+        }
+        return existing;
     }
 
     private static ImportResult<String> generateReportFromContent(Failure<ImportCandidate> fail, String content) {
