@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +52,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -115,6 +117,7 @@ public class ResourceService extends ServiceWithTransactions {
     private final DeleteResourceService deleteResourceService;
     private final RawContentRetriever uriRetriever;
     private final ChannelClaimClient channelClaimClient;
+    private final CounterService counterService;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
                               Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
@@ -124,6 +127,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
         this.uriRetriever = uriRetriever;
+        this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
         this.channelClaimClient = channelClaimClient;
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
@@ -454,6 +458,11 @@ public class ResourceService extends ServiceWithTransactions {
             setCuratingInstitutions(resource);
         }
 
+        if (resource.getCristinIdentifier().isEmpty()) {
+            var counterEntry = counterService.next();
+            injectSyntheticCristinIdentifier(resource, counterEntry.value());
+        }
+
         var userInstance = UserInstance.fromPublication(resource.toPublication());
         var fileTransactionWriteItems = resource.getFiles()
                                             .stream()
@@ -600,9 +609,23 @@ public class ResourceService extends ServiceWithTransactions {
         return !map.get("SK0").getS().contains("LogEntry");
     }
 
+    private static void injectSyntheticCristinIdentifier(Resource resource,
+                                                         int counterValue) {
+        var additionalIdentifiers = new HashSet<>(resource.getAdditionalIdentifiers());
+        additionalIdentifiers.add(CristinIdentifier.fromCounter(counterValue));
+        resource.setAdditionalIdentifiers(additionalIdentifiers);
+    }
+
     private Resource insertResource(Resource resource) {
+        var transactions = new ArrayList<TransactWriteItem>();
+
         if (resource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(resource);
+        }
+
+        if (resource.getCristinIdentifier().isEmpty()) {
+            var counterEntry = counterService.next();
+            injectSyntheticCristinIdentifier(resource, counterEntry.value());
         }
 
         var userInstance = UserInstance.fromPublication(resource.toPublication());
@@ -613,7 +636,7 @@ public class ResourceService extends ServiceWithTransactions {
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();
 
-        var transactions = new ArrayList<>(fileTransactionWriteItems);
+        transactions.addAll(fileTransactionWriteItems);
         transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
         transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
         transactions.addAll(createPublicationChannelsTransaction(resource));

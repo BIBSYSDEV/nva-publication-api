@@ -4,8 +4,12 @@ import static java.net.HttpURLConnection.HTTP_CREATED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
@@ -27,6 +31,9 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -120,7 +127,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
-        assertThat(updatedPublication.getAdditionalIdentifiers().size(), is(equalTo(1)));
+        assertThat(updatedPublication.getAdditionalIdentifiers().size(), is(equalTo(2)));
     }
 
     private SQSEvent emulateSqsWrappedEvent(Publication oldImage, Publication newImage) throws IOException {
@@ -162,16 +169,17 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         names = {"PUBLISHED", "PUBLISHED_METADATA"})
     void shouldNotCreateHandlesForPublicationIfLegacyHandleAlreadyExist(PublicationStatus status)
         throws IOException, BadRequestException, NotFoundException {
+        var handle = new AdditionalIdentifier(HANDLE_BASE_PATH, "https://test.handle.net/123/456");
+        var cristinId = new CristinIdentifier(SourceName.fromCristin("nva"), "123456");
         var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(
-            Set.of(new AdditionalIdentifier(HANDLE_BASE_PATH, "https://test.handle.net/123/456")));
-        var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
+            Set.of(handle, cristinId));
         var newImage = oldImage.copy().withStatus(status).build();
 
         var request = emulateSqsWrappedEvent(oldImage, newImage);
         handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
-        assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
+        assertThat(updatedPublication.getAdditionalIdentifiers(), hasItems(handle, cristinId));
     }
 
     @ParameterizedTest
@@ -182,14 +190,14 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
     void shouldNotCreateHandlesForUnpublishedPublication(PublicationStatus status)
         throws IOException, BadRequestException, NotFoundException {
         var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
-        var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
         var request = emulateSqsWrappedEvent(oldImage, newImage);
         handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
-        assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
+        assertThat(updatedPublication.getAdditionalIdentifiers(), not(contains(instanceOf(AdditionalIdentifier.class))));
+        assertThat(updatedPublication.getAdditionalIdentifiers(), not(contains(instanceOf(HandleIdentifier.class))));
     }
 
     @Test

@@ -41,6 +41,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
@@ -812,6 +813,16 @@ public class Resource implements Entity {
      *
      * @return the hashcode.
      */
+
+    public Optional<CristinIdentifier> getCristinIdentifier() {
+        return Optional.ofNullable(additionalIdentifiers)
+                       .orElse(Collections.emptySet())
+                       .stream()
+                       .filter(CristinIdentifier.class::isInstance)
+                       .map(CristinIdentifier.class::cast)
+                       .findFirst();
+    }
+
     @JacocoGenerated
     @Override
     public int hashCode() {
