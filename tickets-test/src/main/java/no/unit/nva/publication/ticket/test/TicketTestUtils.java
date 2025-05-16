@@ -184,6 +184,7 @@ public final class TicketTestUtils {
     public static Publication createPersistedDegreePublication(
             PublicationStatus status, ResourceService resourceService) throws ApiGatewayException {
         var publication = randomPublication(DegreePhd.class);
+        publication.setStatus(status);
         publication
                 .getEntityDescription()
                 .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
