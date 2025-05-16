@@ -1978,7 +1978,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var updatedFile = existingFile.toPendingOpenFile();
         var updatedProjects = randomProjects();
         var updatedFundings = randomFundings();
-        var partialUpdateRequest = new PartialUpdatePublicationRequest(updatedFundings, updatedProjects,
+        var partialUpdateRequest = new PartialUpdatePublicationRequest(publication.getIdentifier(), updatedFundings,
+                                                                       updatedProjects,
                                                                     new AssociatedArtifactList(updatedFile));
         stubCustomerResponseAcceptingFilesForAllTypes(customerId);
         var input = request(userInstance, partialUpdateRequest, publication.getIdentifier());

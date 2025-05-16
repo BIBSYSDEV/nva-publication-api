@@ -15,7 +15,6 @@ import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.ValidatingApiGatewayHandler;
@@ -103,15 +102,16 @@ public class CreatePublicationHandler
         if (isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(input, requestInfo)) {
             throw new ForbiddenException();
         }
-        var newPublication = Optional.ofNullable(input)
+        var newResource = Optional.ofNullable(input)
                                  .map(CreatePublicationRequest::toPublication)
-                                 .orElseGet(Publication::new);
+                                 .map(Resource::fromPublication)
+                                 .orElseGet(Resource::new);
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
 
-        RightsRetentionsApplier.rrsApplierForNewPublication(newPublication, customer.getRightsRetentionStrategy(),
+        RightsRetentionsApplier.rrsApplierForNewPublication(newResource, customer.getRightsRetentionStrategy(),
                                                             customerAwareUserContext.username()).handle();
-        var createdPublication = Resource.fromPublication(newPublication)
+        var createdPublication = newResource
                                      .persistNew(publicationService, customerAwareUserContext.userInstance());
         setLocationHeader(createdPublication.getIdentifier());
 

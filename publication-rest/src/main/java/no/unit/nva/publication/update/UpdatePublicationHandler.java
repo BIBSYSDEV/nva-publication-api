@@ -181,26 +181,21 @@ public class UpdatePublicationHandler
         permissions.authorize(PARTIAL_UPDATE);
         authorizeFileEntries(resource, userInstance, getExistingFilesToUpdate(resource, request.associatedArtifacts()));
 
-        var updatedResource = resource.copy()
-                                  .withAssociatedArtifactsList(request.associatedArtifacts())
-                                  .withFundings(request.fundings())
-                                  .withProjects(request.projects())
-                                  .build();
+        var updatedResource = request.generateUpdate(resource);
 
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, resource.getPublisher().getId());
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, resource.getCustomerId());
         var updatedFiles = updatedResource.getFiles();
         if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, resource,
                                                                                    updatedResource,
                                                                                    userInstance))) {
             throw new ForbiddenException();
         }
-        var updatedPublication = updatedResource.toPublication();
-        setRrsOnFiles(updatedPublication, resource.toPublication(), customer, userInstance.getUsername(), permissions);
+        setRrsOnFiles(updatedResource, resource, customer, userInstance.getUsername(), permissions);
 
-        new PublishingRequestResolver(resourceService, ticketService, identityServiceClient, userInstance, customer)
-            .resolve(resource.toPublication(), updatedPublication);
+        new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
+            .resolve(resource, updatedResource);
 
-        return Resource.fromPublication(updatedPublication).update(resourceService, userInstance);
+        return updatedResource.update(resourceService, userInstance);
     }
 
     private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
@@ -306,27 +301,25 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
 
-        var existingPublication = existingResource.toPublication();
-        var publicationUpdate = input.generatePublicationUpdate(existingPublication);
+        var resourceUpdate = input.generatePublicationUpdate(existingResource);
 
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, resourceUpdate.getPublisher().getId());
 
         permissionStrategy.authorize(UPDATE);
         authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input.getAssociatedArtifacts()));
 
-        var updatedResource = Resource.fromPublication(publicationUpdate);
-        var updatedFiles = updatedResource.getFiles();
+        var updatedFiles = resourceUpdate.getFiles();
         if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, existingResource,
-                                                                                   updatedResource,
+                                                                                   resourceUpdate,
                                                                                    userInstance))) {
             throw new ForbiddenException();
         }
-        setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
+        setRrsOnFiles(resourceUpdate, existingResource, customer, userInstance.getUsername(), permissionStrategy);
 
-        new PublishingRequestResolver(resourceService, ticketService, identityServiceClient, userInstance, customer)
-            .resolve(existingPublication, publicationUpdate);
+        new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
+            .resolve(existingResource, resourceUpdate);
 
-        return Resource.fromPublication(publicationUpdate).update(resourceService, userInstance);
+        return resourceUpdate.update(resourceService, userInstance);
     }
 
     private static boolean canUpdateFileToPendingOpenFile(File file, Customer customer, Resource existingResource,
@@ -368,10 +361,10 @@ public class UpdatePublicationHandler
                                 .toList();
     }
 
-    private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
+    private void setRrsOnFiles(Resource updatedResource, Resource existingResource, Customer customer,
                                String actingUser, PublicationPermissions permissionStrategy)
         throws BadRequestException, UnauthorizedException {
-        RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingPublication, publicationUpdate,
+        RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingResource, updatedResource,
                                                                 customer.getRightsRetentionStrategy(), actingUser,
                                                                 permissionStrategy).handle();
 
@@ -405,6 +398,7 @@ public class UpdatePublicationHandler
     protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponse output) {
         return switch (input) {
             case UpdatePublicationRequest ignored -> HttpStatus.SC_OK;
+            case PartialUpdatePublicationRequest ignored -> HttpStatus.SC_OK;
             case UnpublishPublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
             case DeletePublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
             case RepublishPublicationRequest ignored -> HttpStatus.SC_OK;

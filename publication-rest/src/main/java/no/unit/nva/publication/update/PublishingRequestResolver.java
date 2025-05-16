@@ -5,25 +5,14 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createWithFilesForApproval;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.lookUp;
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.clients.ChannelClaimDto;
-import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
-import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Degree;
-import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -33,40 +22,30 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
-import nva.commons.core.paths.UriWrapper;
 
 public final class PublishingRequestResolver {
 
-    private static final String CUSTOMER = "customer";
-    private static final String CHANNEL_CLAIM = "channel-claim";
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
-
     private final TicketService ticketService;
     private final ResourceService resourceService;
-    private final IdentityServiceClient identityServiceClient;
     private final UserInstance userInstance;
     private final Customer customer;
 
     public PublishingRequestResolver(
         ResourceService resourceService,
         TicketService ticketService,
-        IdentityServiceClient identityServiceClient,
         UserInstance userInstance,
         Customer customer) {
         this.ticketService = ticketService;
         this.resourceService = resourceService;
-        this.identityServiceClient = identityServiceClient;
         this.userInstance = userInstance;
         this.customer = customer;
     }
 
-    public void resolve(Publication oldImage, Publication newImage) throws ApiGatewayException {
+    public void resolve(Resource oldImage, Resource newImage) throws ApiGatewayException {
         if (isAlreadyPublished(oldImage)) {
             handlePublishingRequest(oldImage, newImage);
         }
@@ -78,17 +57,15 @@ public final class PublishingRequestResolver {
                    .equals(customer.getPublicationWorkflow());
     }
 
-    private static Stream<File> getPendingFiles(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(PendingFile.class::isInstance)
-                   .map(File.class::cast);
+    private static Stream<File> getPendingFiles(Resource resource) {
+        return resource.getFiles().stream().filter(PendingFile.class::isInstance);
     }
 
     private static boolean isPending(TicketEntry ticketEntry) {
         return TicketStatus.PENDING.equals(ticketEntry.getStatus());
     }
 
-    private void handlePublishingRequest(Publication oldImage, Publication newImage) throws ApiGatewayException {
+    private void handlePublishingRequest(Resource oldImage, Resource newImage) throws ApiGatewayException {
         var filesApprovalEntries = fetchPendingFileApprovalEntryForUserInstitutionOrWithFilesForApprovalWhenDegree(oldImage);
         if (filesApprovalEntries.isEmpty()) {
             createPublishingRequestOnFileUpdate(oldImage, newImage);
@@ -102,33 +79,33 @@ public final class PublishingRequestResolver {
     }
 
     private void autoCompletePendingPublishingRequestsIfNeeded(
-        Publication publication, List<FilesApprovalEntry> filesApprovalEntries) {
+        Resource resource, List<FilesApprovalEntry> filesApprovalEntries) {
         filesApprovalEntries.forEach(
-            ticket -> ticket.complete(publication, userInstance).persistUpdate(ticketService));
+            ticket -> ticket.complete(resource.toPublication(), userInstance).persistUpdate(ticketService));
     }
 
-    private boolean thereAreNoPendingFiles(Publication publicationUpdate) {
-        return publicationUpdate.getAssociatedArtifacts().stream()
+    private boolean thereAreNoPendingFiles(Resource resource) {
+        return resource.getAssociatedArtifacts().stream()
                    .noneMatch(PendingFile.class::isInstance);
     }
 
     private List<FilesApprovalEntry> fetchPendingFileApprovalEntryForUserInstitutionOrWithFilesForApprovalWhenDegree(
-        Publication publication) {
+        Resource resource) {
         return resourceService
-                   .fetchAllTicketsForResource(Resource.fromPublication(publication))
+                   .fetchAllTicketsForResource(resource)
                    .filter(FilesApprovalEntry.class::isInstance)
                    .map(FilesApprovalEntry.class::cast)
-                   .filter(ticketEntry -> shouldIncludeEntry(publication, ticketEntry, userInstance))
+                   .filter(ticketEntry -> shouldIncludeEntry(resource, ticketEntry, userInstance))
                    .filter(PublishingRequestResolver::isPending)
                    .toList();
     }
 
-    private boolean shouldIncludeEntry(Publication publication, FilesApprovalEntry ticketEntry, UserInstance userInstance) {
-        return Resource.fromPublication(publication).isDegree() && !ticketEntry.getFilesForApproval().isEmpty()
+    private boolean shouldIncludeEntry(Resource resource, FilesApprovalEntry ticketEntry, UserInstance userInstance) {
+        return resource.isDegree() && !ticketEntry.getFilesForApproval().isEmpty()
                || ticketEntry.hasSameOwnerAffiliationAs(userInstance);
     }
 
-    private void createPublishingRequestOnFileUpdate(Publication oldImage, Publication newImage)
+    private void createPublishingRequestOnFileUpdate(Resource oldImage, Resource newImage)
         throws ApiGatewayException {
         if (containsNewPublishableFiles(oldImage, newImage)) {
             persistPendingPublishingRequest(oldImage, newImage);
@@ -136,37 +113,33 @@ public final class PublishingRequestResolver {
     }
 
     private TicketEntry persistPublishingRequest(
-        Publication newImage, PublishingRequestCase publishingRequest)
+        Resource newImage, PublishingRequestCase publishingRequest)
         throws ApiGatewayException {
         return customerAllowsPublishingMetadataAndFiles()
                    ? publishingRequest
                          .approveFiles()
-                         .persistAutoComplete(ticketService, newImage, userInstance)
+                         .persistAutoComplete(ticketService, newImage.toPublication(), userInstance)
                    : publishingRequest.persistNewTicket(ticketService);
     }
 
-    private void persistPendingPublishingRequest(Publication oldImage, Publication newImage)
+    private void persistPendingPublishingRequest(Resource oldImage, Resource newImage)
         throws ApiGatewayException {
         var files = getNewPendingFiles(oldImage, newImage).collect(Collectors.toSet());
-        var resource = Resource.fromPublication(newImage);
         var workflow = lookUp(customer.getPublicationWorkflow());
 
-        if (resource.isDegree()) {
-            handleDegree(resource, workflow, files);
+        if (newImage.isDegree()) {
+            handleDegree(newImage, workflow, files);
         } else {
-            var publishingRequest = createWithFilesForApproval(resource, userInstance, workflow, files);
+            var publishingRequest = createWithFilesForApproval(newImage, userInstance, workflow, files);
             attempt(() -> persistPublishingRequest(newImage, publishingRequest));
         }
     }
 
     private void handleDegree(Resource resource, PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
-        var publisher = getPublisher(resource);
-        if (publisher.isPresent()) {
-            var channelClaim = getChannelClaim(publisher.get());
-            if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
-                persistFilesApprovalThesis(channelClaim.get(), resource, workflow, files);
-                return;
-            }
+        var channelClaim = resource.getPrioritizedClaimedPublicationChannelWithinScope();
+        if (channelClaim.isPresent() && !channelClaim.get().getOrganizationId().equals(userInstance.getTopLevelOrgCristinId())) {
+            persistFilesApprovalThesis(channelClaim.get(), resource, workflow, files);
+            return;
         }
         persistFilesApprovalThesisForUserInstitution(resource, workflow, files);
     }
@@ -177,69 +150,28 @@ public final class PublishingRequestResolver {
             .persistNewTicket(ticketService);
     }
 
-    private void persistFilesApprovalThesis(ChannelClaimDto channelClaim, Resource resource,
+    private void persistFilesApprovalThesis(ClaimedPublicationChannel channelClaim, Resource resource,
                                             PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
-        var organizationId = channelClaim.claimedBy().organizationId();
+        var organizationId = channelClaim.getOrganizationId();
         FilesApprovalThesis.create(resource, userInstance, organizationId, workflow)
             .withFilesForApproval(files)
             .persistNewTicket(ticketService);
     }
 
-    private boolean isClaimedByUserOrganization(ChannelClaimDto channelClaim, UserInstance userInstance) {
-        return Optional.ofNullable(channelClaim)
-                   .map(ChannelClaimDto::claimedBy)
-                   .map(CustomerSummaryDto::id)
-                   .map(id -> hasTheSameCustomer(userInstance, id))
-                   .orElse(true);
-    }
-
-    private static Boolean hasTheSameCustomer(UserInstance userInstance, URI id) {
-        return Optional.ofNullable(userInstance).map(UserInstance::getCustomerId).map(id::equals).orElse(false);
-    }
-
-    private Optional<ChannelClaimDto> getChannelClaim(Publisher publisher) throws BadGatewayException {
-        try {
-            return Optional.of(identityServiceClient.getChannelClaim(createChannelClaimUri(publisher)));
-        } catch (NotFoundException exception) {
-            return Optional.empty();
-        } catch (Exception e) {
-            throw new BadGatewayException("Could not fetch channel owner!");
-        }
-    }
-
-    private URI createChannelClaimUri(Publisher publisher) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(CUSTOMER)
-                   .addChild(CHANNEL_CLAIM)
-                   .addChild(publisher.getIdentifier().toString())
-                   .getUri();
-    }
-
-    private static Optional<Publisher> getPublisher(Resource resource) {
-        return Optional.ofNullable(resource.getEntityDescription())
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationContext)
-                   .filter(Degree.class::isInstance)
-                   .map(Degree.class::cast)
-                   .map(Book::getPublisher)
-                   .filter(Publisher.class::isInstance)
-                   .map(Publisher.class::cast);
-    }
-
-    private boolean containsNewPublishableFiles(Publication oldImage, Publication newImage) {
+    private boolean containsNewPublishableFiles(Resource oldImage, Resource newImage) {
         return getNewPendingFiles(oldImage, newImage).findAny().isPresent();
     }
 
     private void updateFilesForApproval(
-        Publication oldImage,
-        Publication newImage,
+        Resource oldImage,
+        Resource newImage,
         List<FilesApprovalEntry> filesApprovalEntries) {
         filesApprovalEntries.forEach(
             filesApprovalEntry ->
                 updatePublishingRequest(oldImage, newImage, filesApprovalEntry));
     }
 
-    private Stream<File> prepareFilesForApproval(Publication oldImage, Publication newImage,
+    private Stream<File> prepareFilesForApproval(Resource oldImage, Resource newImage,
                                                  FilesApprovalEntry filesApprovalEntry) {
         // get updated files on the ticket
         var updatedTicketFiles = getUpdatedTicketFiles(filesApprovalEntry, newImage);
@@ -251,17 +183,17 @@ public final class PublishingRequestResolver {
         return files.stream();
     }
 
-    private static Set<File> getUpdatedTicketFiles(FilesApprovalEntry filesApprovalEntry, Publication newImage) {
+    private static Set<File> getUpdatedTicketFiles(FilesApprovalEntry filesApprovalEntry, Resource newImage) {
         return filesApprovalEntry.getFilesForApproval()
                    .stream()
-                   .map(fileForApproval -> newImage.getFile(fileForApproval.getIdentifier()).orElse(null))
+                   .map(fileForApproval -> newImage.getFileByIdentifier(fileForApproval.getIdentifier()).orElse(null))
                    .filter(
                        Objects::nonNull)
                    .filter(PendingFile.class::isInstance)
                    .collect(Collectors.toSet());
     }
 
-    private Stream<File> getNewPendingFiles(Publication oldImage, Publication newImage) {
+    private Stream<File> getNewPendingFiles(Resource oldImage, Resource newImage) {
         var existingPendingFiles = getPendingFiles(oldImage).toList();
         var newPendingFiles = new ArrayList<>(getPendingFiles(newImage).toList());
         newPendingFiles.removeIf(
@@ -270,14 +202,14 @@ public final class PublishingRequestResolver {
         return newPendingFiles.stream();
     }
 
-    private void updatePublishingRequest(Publication oldImage, Publication newImage,
+    private void updatePublishingRequest(Resource oldImage, Resource newImage,
                                          FilesApprovalEntry filesApprovalEntry) {
         var files = prepareFilesForApproval(oldImage, newImage, filesApprovalEntry).collect(Collectors.toSet());
         if (customerAllowsPublishingMetadataAndFiles()) {
             filesApprovalEntry
                 .withFilesForApproval(files)
                 .approveFiles()
-                .complete(newImage, userInstance)
+                .complete(newImage.toPublication(), userInstance)
                 .persistUpdate(ticketService);
         } else {
             filesApprovalEntry
@@ -286,8 +218,8 @@ public final class PublishingRequestResolver {
         }
     }
 
-    private boolean isAlreadyPublished(Publication existingPublication) {
-        var status = existingPublication.getStatus();
+    private boolean isAlreadyPublished(Resource resource) {
+        var status = resource.getStatus();
         return PUBLISHED.equals(status) || PUBLISHED_METADATA.equals(status);
     }
 }

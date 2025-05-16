@@ -1,30 +1,28 @@
 package no.unit.nva.publication.update;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.URI;
-import java.util.List;
-import java.util.Objects;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 @JsonTypeName("Publication")
 public class UpdatePublicationRequest
@@ -43,14 +41,14 @@ public class UpdatePublicationRequest
     private String rightsHolder;
     private List<ImportDetail> importDetails;
 
-    public Publication generatePublicationUpdate(Publication existingPublication) throws ForbiddenException {
-        if (!this.identifier.equals(existingPublication.getIdentifier())) {
+    public Resource generatePublicationUpdate(Resource existingResource) throws ForbiddenException {
+        if (!this.identifier.equals(existingResource.getIdentifier())) {
             throw new IllegalArgumentException(
-                WRONG_PUBLICATION_UPDATE_ERROR + existingPublication.getIdentifier());
+                WRONG_PUBLICATION_UPDATE_ERROR + existingResource.getIdentifier());
         }
-        return validateNonNulls(existingPublication.copy()
+        return validateNonNulls(existingResource.copy()
                                     .withEntityDescription(this.entityDescription)
-                                    .withAssociatedArtifacts(this.associatedArtifacts)
+                                    .withAssociatedArtifactsList(this.associatedArtifacts)
                                     .withProjects(this.projects)
                                     .withSubjects(this.subjects)
                                     .withFundings(this.fundings)
@@ -58,12 +56,12 @@ public class UpdatePublicationRequest
                                     .build());
     }
 
-    private Publication validateNonNulls(Publication publication)
+    private Resource validateNonNulls(Resource resource)
         throws ForbiddenException {
-        if (isNull(publication.getEntityDescription())) {
+        if (isNull(resource.getEntityDescription())) {
             throw new ForbiddenException();
         }
-        return publication;
+        return resource;
     }
 
     @JacocoGenerated
