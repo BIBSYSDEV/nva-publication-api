@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -130,7 +131,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     @JacocoGenerated
     private static AuthorizedBackendUriRetriever getAuthorizedBackendUriRetriever(
         AuthorizedBackendUriRetriever existing) {
-        if (existing == null) {
+        if (isNull(existing)) {
             return new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME);
         }
         return existing;
