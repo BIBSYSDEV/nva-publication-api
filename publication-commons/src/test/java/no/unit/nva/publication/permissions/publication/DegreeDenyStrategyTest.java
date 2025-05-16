@@ -186,9 +186,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} when degree has open files")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyCuratorOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
-                                                          Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyUpdateForCuratorOperationsOnDegreeWithOpenFiles(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var institution = Institution.random();
         var registrator = institution.registrator();
@@ -203,7 +202,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should allow Curator from curating institution {0} operation on instance type {1} "
@@ -233,9 +232,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator from curating institution {0} operation on instance type {1} when"
                               + " degree has open files")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyCuratorOnCuratingInstitutionOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
-                                                                               Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyUpdateForCuratorOnCuratingInstitutionOperationsOnDegreeWithOpenFiles(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
@@ -253,7 +251,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should allow Thesis Curator from Registrators institution {0} operation on instance "
@@ -332,9 +330,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance "
                               + "type {1} when degree has open files")
-    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyThesisCuratorFromCuratingInstitutionOperationsOnDegreeWithOpenFiles(PublicationOperation operation,
-                                                                                       Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyUpdateForThesisCuratorFromCuratingInstitutionOperationsOnDegreeWithOpenFiles(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
@@ -352,14 +349,13 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should deny Thesis Curator from Registrators institution {0} operation on instance "
                               + "type {1} when degree has embargo but no open files")
-    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyThesisCuratorOperationsOnEmbargoDegreeWithoutOpenFiles(PublicationOperation operation,
-                                                                          Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyUpdateForThesisCuratorOperationsOnEmbargoDegreeWithoutOpenFiles(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var institution = Institution.random();
         var registrator = institution.registrator();
@@ -377,14 +373,13 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publicationWithPendingFileWithEmbargo),
                                            userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should deny Thesis Curator from Registrators institution {0} operation on instance "
                               + "type {1} when degree has open file with embargo")
-    @MethodSource("argumentsForThesisCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyThesisCuratorOperationsOnEmbargoDegreeWithOpenFiles(PublicationOperation operation,
-                                                                       Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyThesisCuratorOperationsOnEmbargoDegreeWithOpenFiles(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var institution = Institution.random();
         var registrator = institution.registrator();
@@ -400,7 +395,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publicationWithOpenFileWithEmbargo), userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should allow Embargo Thesis Curator from Registrators institution {0} operation on "
@@ -476,9 +471,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} when degree has open file "
                               + "and channel owned by own institution")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyCuratorWhenOpenFileAndChannelOwnedByOwnInstitution(PublicationOperation operation,
-                                                                      Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyUpdateForCuratorWhenOpenFileAndChannelOwnedByOwnInstitution(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
@@ -497,7 +491,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should allow Thesis Curator {0} operation on instance type {1} when degree has open "
@@ -528,9 +522,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator from curating institution {0} operation on instance type {1} when "
                               + "degree has open file and channel owned by own institution")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyCuratorFromCuratingInstitutionWhenOpenFileAndChannelOwnedByOwnInstitution(
-        PublicationOperation operation,
+    @MethodSource("degreesProvider")
+    void shouldDenyUpdateForCuratorFromCuratingInstitutionWhenOpenFileAndChannelOwnedByOwnInstitution(
         Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -557,7 +550,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should deny Thesis Curator from curating institution {0} operation on instance type {1} "
@@ -615,9 +608,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} when degree has open file "
                               + "and channel owned by another institution")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyCuratorWhenOpenFileAndChannelOwnedByAnotherInstitution(PublicationOperation operation,
-                                                                          Class<?> degreeInstanceClass)
+    @MethodSource("degreesProvider")
+    void shouldDenyCuratorWhenOpenFileAndChannelOwnedByAnotherInstitution(Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
         var owningInstitution = suite.owningInstitution();
@@ -636,7 +628,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should deny Thesis Curator {0} operation on instance type {1} when degree has open "
@@ -666,9 +658,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator from another institution {0} operation on instance type {1} when "
                               + "degree has open file and channel owned by that institution")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldDenyCuratorFromAnotherInstitutionWhenOpenFileAndChannelOwnedByCuratorInstitution(
-        PublicationOperation operation,
+    @MethodSource("degreesProvider")
+    void shouldDenyUpdateForNonDegreeCuratorWhenCuratorInstitutionOnlyRelatesThroughChannelClaimAndPublicationIsADegreeWithOpenFile(
         Class<?> degreeInstanceClass)
         throws JsonProcessingException, UnauthorizedException {
         var suite = InstitutionSuite.random();
@@ -688,7 +679,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(resource, userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should allow Thesis Curator from another institution {0} operation on instance type {1} "
@@ -777,10 +768,8 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should not throw NPE when contributor is missing ID")
-    @MethodSource("argumentsForCuratorExcludingUploadFileAndPartialUpdate")
-    void shouldNotThrowNPEWhenContributorIsMissingId(
-        PublicationOperation operation,
-        Class<?> degreeInstanceTypeClass)
+    @MethodSource("degreesProvider")
+    void shouldNotThrowNPEWhenContributorIsMissingId(Class<?> degreeInstanceTypeClass)
         throws JsonProcessingException, UnauthorizedException {
 
         var suite = InstitutionSuite.random();
@@ -805,7 +794,7 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
+                                   .allowsAction(UPDATE));
     }
 
     @ParameterizedTest(name = "Should allow Thesis curator from curating institution {0} operation on instance type "

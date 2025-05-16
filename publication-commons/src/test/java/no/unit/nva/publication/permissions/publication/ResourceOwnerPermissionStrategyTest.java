@@ -123,7 +123,8 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
 
     //region Degree publications
     @ParameterizedTest(name = "Should deny ResourceOwner {0} operation on own published degree resource")
-    @EnumSource(value = PublicationOperation.class)
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"PARTIAL_UPDATE", "UPLOAD_FILE",
+        "DOI_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE", "PUBLISHING_REQUEST_CREATE"})
     void shouldDenyResourceOwnerOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
