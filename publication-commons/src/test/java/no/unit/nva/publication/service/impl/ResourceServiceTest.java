@@ -1747,6 +1747,33 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertEquals(publication, fetchedPublication);
     }
 
+    @Test
+    void shouldCreateSyntheticCristinIdentifierIfMissing() throws NotFoundException {
+
+        var entities = Set.of(randomPublication()).stream()
+                           .map(Resource::fromPublication)
+                           .map(this::persistAsImportedResource)
+                           .map(this::clearAdditionalIdentifiers)
+                           .map(Entity.class::cast)
+                           .toList();
+
+        resourceService.refreshResources(entities);
+
+        var updatedPublication = resourceService.getResourceByIdentifier(entities.getFirst().getIdentifier());
+
+        var expectedIdentifier = new CristinIdentifier(SourceName.nva(), "10000000");
+        assertThat(updatedPublication.getAdditionalIdentifiers(), containsInAnyOrder(expectedIdentifier));
+    }
+
+    private Resource clearAdditionalIdentifiers(Resource resource) {
+        return resource.copy().withAdditionalIdentifiers(Collections.emptySet()).build();
+    }
+
+    private Resource persistAsImportedResource(Resource resource) {
+        return attempt(
+            () -> resource.importResource(resourceService, ImportSource.fromSource(Source.BRAGE))).orElseThrow();
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }
