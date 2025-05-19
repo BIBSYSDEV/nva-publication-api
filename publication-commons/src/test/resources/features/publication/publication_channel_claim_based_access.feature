@@ -1,9 +1,9 @@
-Feature: Update permissions - user not from the same organization as publisher
+Feature: Permissions given claimed publisher
   As a system user
   I want publication permission to be enforced based on publication, user role and channel claim
   So that only authorized users can perform operation
 
-  Scenario Outline: Verify partial-update and update permissions when
+  Scenario Outline: Verify operation when
   user is not from the same organization as claimed publisher
     Given a "published" publication
     And publication is a degree
@@ -33,27 +33,46 @@ Feature: Update permissions - user not from the same organization as publisher
       | Degree file curator               | update         | Not Allowed |
       | Related external client           | update         | Allowed     |
 
+      | Everyone else                     | unpublish      | Not Allowed |
+      | External client                   | unpublish      | Not Allowed |
+      | Publication owner                 | unpublish      | Not Allowed |
+      | Contributor                       | unpublish      | Not Allowed |
+      | File, support, doi or nvi curator | unpublish      | Not Allowed |
+      | Editor                            | unpublish      | Not Allowed |
+      | Degree file curator               | unpublish      | Not Allowed |
+      | Related external client           | unpublish      | Allowed     |
 
-  Scenario Outline: Verify update permissions when
+
+  Scenario Outline: Verify permission when
   user is from the same organization as claimed publisher
     Given a "published" publication
     And publication is a degree
     And publication has claimed publisher
     And publisher is claimed by organization
     When the user have the role "<UserRole>"
-    And the user is from the same organization
+    And the user is from the same organization as claimed publisher
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 
     Examples:
       | UserRole                          | Operation | Outcome     |
+
       | Everyone else                     | update    | Not Allowed |
       | External client                   | update    | Not Allowed |
       | Publication owner                 | update    | Not Allowed |
       | Contributor                       | update    | Not Allowed |
       | File, support, doi or nvi curator | update    | Not Allowed |
-      | Editor                            | update    | Not Allowed |
+      | Editor                            | update    | Allowed     |
       | Degree file curator               | update    | Allowed     |
       | Related external client           | update    | Allowed     |
+
+      | Everyone else                     | unpublish | Not Allowed |
+      | External client                   | unpublish | Not Allowed |
+      | Publication owner                 | unpublish | Not Allowed |
+      | Contributor                       | unpublish | Not Allowed |
+      | File, support, doi or nvi curator | unpublish | Not Allowed |
+      | Editor                            | unpublish | Allowed     |
+      | Degree file curator               | unpublish | Allowed     |
+      | Related external client           | unpublish | Allowed     |
 
 

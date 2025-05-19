@@ -979,14 +979,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
     }
 
-    private static Stream<Arguments> argumentsForCuratorExcludingUploadFileAndPartialUpdate() {
-        final var operations = Set.of(UPDATE,
-                                      PublicationOperation.UPDATE_FILES,
-                                      PublicationOperation.UNPUBLISH);
-
-        return generateAllCombinationsOfOperationsAndInstanceClasses(operations);
-    }
-
     private static Stream<Arguments> argumentsForThesisCurator() {
         final var operations = Set.of(UPDATE,
                                       PublicationOperation.UPDATE_FILES,

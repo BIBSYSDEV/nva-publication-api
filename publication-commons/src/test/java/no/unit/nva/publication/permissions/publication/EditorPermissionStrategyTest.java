@@ -92,7 +92,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should deny Editor {0} operation on degree resources with no matching resource owner "
                               + "affiliation or curating institution")
     @EnumSource(value = PublicationOperation.class,  mode = Mode.EXCLUDE, names = "PARTIAL_UPDATE")
-    void shouldDenyNotRelatedEditorOnDegree(PublicationOperation operation)
+    void shouldAllowNotRelatedEditorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
         var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
                                                 randomUri(), randomUri());

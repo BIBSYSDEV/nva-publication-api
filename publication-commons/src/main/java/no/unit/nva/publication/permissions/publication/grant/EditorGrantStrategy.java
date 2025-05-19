@@ -20,8 +20,7 @@ public final class EditorGrantStrategy extends PublicationStrategyBase implement
         }
         return switch (permission) {
             case UPDATE, PARTIAL_UPDATE -> true;
-            case UNPUBLISH ->
-                userRelatesToPublication() && isPublished();
+            case UNPUBLISH -> userRelatesToPublication() && isPublished();
             case REPUBLISH, TERMINATE ->
                 userRelatesToPublication() && isUnpublished();
             case DOI_REQUEST_CREATE,

@@ -67,8 +67,8 @@ public class PublicationAccessFeatures {
         scenarioContext.setPublisherOrganization(ORGANIZATION);
     }
 
-    @And("the user is from the same organization")
-    public void theUserIsFromTheSameOrganization() {
+    @And("the user is from the same organization as claimed publisher")
+    public void theUserIsFromTheSameOrganizationAsClaimedPublisher() {
         scenarioContext.setUserOrganization(ORGANIZATION);
     }
 }
