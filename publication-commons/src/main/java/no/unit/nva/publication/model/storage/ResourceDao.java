@@ -49,6 +49,7 @@ public class ResourceDao extends Dao
     implements JoinWithResource, JsonSerializable, DynamoEntryByIdentifier {
     
     public static final String CRISTIN_SOURCE = "Cristin";
+    private static final String NVA_SOURCE = "nva";
     public static final String TYPE = "Resource";
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
     private static final String STATUS_FIELD = "status";
@@ -245,11 +246,15 @@ public class ResourceDao extends Dao
     }
 
     private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
-        return nonNull(identifier) && identifier instanceof CristinIdentifier && isCristinSource(identifier);
+        return nonNull(identifier) && identifier instanceof CristinIdentifier && (isCristinSource(identifier) || isNvaSource(identifier));
     }
 
     private static boolean isCristinSource(AdditionalIdentifierBase identifier) {
         return identifier.sourceName().toLowerCase(Locale.ROOT).contains(CRISTIN_SOURCE.toLowerCase(Locale.ROOT));
+    }
+
+    private static boolean isNvaSource(AdditionalIdentifierBase identifier) {
+        return identifier.sourceName().toLowerCase(Locale.ROOT).contains(NVA_SOURCE);
     }
 
     //TODO: All AdditionalIdentifiers with Cristin source should be migrated to CristinIdentifier's
