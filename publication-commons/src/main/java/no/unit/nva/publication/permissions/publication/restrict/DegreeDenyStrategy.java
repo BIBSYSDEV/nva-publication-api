@@ -26,9 +26,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
             return PASS;
         }
 
-        return isDeniedOperation(operation)
-               && isProtectedDegreeInstanceType()
-               && handleUpdate();
+        return isDeniedOperation(operation) && isProtectedDegreeInstanceType() && handleDegree();
     }
 
     private boolean isRelatedEditor() {
@@ -39,7 +37,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         return UPDATE.equals(operation) || UNPUBLISH.equals(operation);
     }
 
-    private boolean handleUpdate() {
+    private boolean handleDegree() {
         if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) { // SKAL FJERNES
             return DENY;
         }                                                                                           // SKAL FJERNES
@@ -51,7 +49,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private boolean approvedFileStrategy() {
-        if (!hasAccessRight(MANAGE_DEGREE)) { // Allow editor to unpublish all degrees.
+        if (!hasAccessRight(MANAGE_DEGREE)) {
             return DENY;
         }
         if (resource.getPrioritizedClaimedPublicationChannelWithinScope().isEmpty()) {
