@@ -101,7 +101,7 @@ public final class PublishingRequestResolver {
     }
 
     private boolean shouldIncludeEntry(Resource resource, FilesApprovalEntry ticketEntry, UserInstance userInstance) {
-        return resource.isDegree() && !ticketEntry.getFilesForApproval().isEmpty()
+        return resource.getPrioritizedClaimedPublicationChannelWithinScope().isPresent() && !ticketEntry.getFilesForApproval().isEmpty()
                || ticketEntry.hasSameOwnerAffiliationAs(userInstance);
     }
 

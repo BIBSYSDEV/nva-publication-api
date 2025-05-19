@@ -11,6 +11,9 @@ import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersiste
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -22,6 +25,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.commons.customer.Customer;
+import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -272,20 +276,23 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     @Test
     void shouldApprovePendingFilesApprovalThesisWhenUserRemovesTheOnlyPendingFileFromPublicationAndTicketIsOwnedByClaimedInstitution()
         throws ApiGatewayException {
+
         var instanceType = DegreeBachelor.class;
         var resource = Resource.fromPublication(randomPublication(instanceType));
+        var claimedChannel = claimedPublicationChannel(instanceType,
+                                                                 resource.getResourceOwner()
+                                                                     .getOwnerAffiliation());
+        resource.setPublicationChannels(List.of(claimedChannel));
         var pendingOpenFile = randomPendingOpenFile();
         resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
-        var persistedResource = Resource.fromPublication(persistPublication(resource.toPublication()));
+        resource.setStatus(PublicationStatus.PUBLISHED);
+        var persistedResource = super.persistResource(resource);
         var channelClaimOwner = randomUri();
         persistFilesApprovalContainingExistingPendingFiles(persistedResource.toPublication(), channelClaimOwner);
         var updatedResource = persistedResource.copy()
                                      .withAssociatedArtifactsList(AssociatedArtifactList.empty())
                                      .build();
-        updatedResource.setPublicationChannels(List.of(claimedPublicationChannel(instanceType,
-                                                                                 resource.getResourceOwner()
-                                                                                     .getOwnerAffiliation())));
-        publishingRequestResolver(persistedResource.toPublication()).resolve(resourceService.getResourceByIdentifier(persistedResource.getIdentifier()),
+        publishingRequestResolver(persistedResource.toPublication()).resolve(resource,
                                                                 updatedResource);
 
         var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
