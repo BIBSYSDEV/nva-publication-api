@@ -27,13 +27,17 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
+import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.ResourceServiceBuilder;
@@ -78,6 +82,17 @@ public class ResourcesLocalTest extends TestDataSource {
         var secondTableRequest = createTableRequest(secondTable);
         client.createTable(firstTableRequest);
         client.createTable(secondTableRequest);
+    }
+
+    protected Resource persistResource(Resource resource) {
+        client.transactWriteItems(new TransactWriteItemsRequest()
+                                      .withTransactItems(new TransactWriteItem()
+                                                             .withPut(new Put()
+                                                                          .withItem(resource.toDao().toDynamoFormat())
+                                                                          .withTableName(RESOURCES_TABLE_NAME))));
+        resource.getPublicationChannels()
+            .forEach(channel -> client.transactWriteItems(channel.toDao().createInsertionTransactionRequest()));
+        return resource;
     }
 
     @AfterEach
