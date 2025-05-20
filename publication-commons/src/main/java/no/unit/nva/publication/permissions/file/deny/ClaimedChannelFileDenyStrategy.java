@@ -25,9 +25,13 @@ public class ClaimedChannelFileDenyStrategy extends FileStrategyBase implements 
     }
 
     private boolean isDeniedOperation(FileOperation permission) {
-        return resourceIsDegree() && fileHasEmbargo()
+        return resourceIsDegreeWithEmbargo()
                    ? isWriteOrDeleteOrDownload(permission)
                    : isWriteOrDelete(permission);
+    }
+
+    private boolean resourceIsDegreeWithEmbargo() {
+        return resourceIsDegree() && fileHasEmbargo();
     }
 
     private boolean isDeniedUserByClaimedChannelWithinScope() {
