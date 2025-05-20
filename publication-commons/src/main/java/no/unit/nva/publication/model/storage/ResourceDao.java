@@ -193,7 +193,9 @@ public class ResourceDao extends Dao
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
     public String getResourceByCristinIdentifierPartitionKey() {
         return extractCristinIdentifier().isEmpty() ? null
-                   : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + extractCristinIdentifier();
+                   : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX
+                     + KEY_FIELDS_DELIMITER
+                     + extractCristinIdentifier().orElseThrow();
     }
 
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
@@ -224,7 +226,7 @@ public class ResourceDao extends Dao
     }
 
     private <T extends AdditionalIdentifierBase> Optional<String> getAdditionalIdentifier(Class<T> identifierType,
-                                                                                                  String source) {
+                                                                                          String source) {
         return getResource().getAdditionalIdentifiers().stream().filter(identifierType::isInstance)
                    .map(identifierType::cast)
                    .filter(identifier -> identifier.sourceName()
