@@ -2,17 +2,17 @@ package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.junit.Assert.assertEquals;
-import java.io.IOException;
+import static org.junit.Assert.assertThrows;
 import no.unit.nva.publication.model.business.Resource;
 import org.junit.jupiter.api.Test;
 
 class DataCompressorTest {
 
     @Test
-    void shouldNotLooseAnyDateWhenCompressingAndUncompressing() throws IOException {
+    void shouldNotLooseAnyDateWhenCompressingAndUncompressing() {
         var publication = randomPublication();
-        var pubalitionDao = new ResourceDao(Resource.fromPublication(publication));
-        var compressedPublicationDao = DataCompressor.compressDaoData(pubalitionDao);
+        var publicationDao = new ResourceDao(Resource.fromPublication(publication));
+        var compressedPublicationDao = DataCompressor.compressDaoData(publicationDao);
         var decompressPublicationDao = DataCompressor.decompressDao(compressedPublicationDao, ResourceDao.class);
         var publicationFromDao = decompressPublicationDao.getResource().toPublication();
 
@@ -20,4 +20,9 @@ class DataCompressorTest {
     }
 
 
+    @Test
+    void failedJsonSerializationShouldThrowException() {
+        var badDao = new ResourceDao();
+        assertThrows(IllegalArgumentException.class, () -> DataCompressor.compressDaoData(badDao));
+    }
 }
