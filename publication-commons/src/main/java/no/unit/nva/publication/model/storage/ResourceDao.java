@@ -229,11 +229,15 @@ public class ResourceDao extends Dao
                                                                                           String source) {
         return getResource().getAdditionalIdentifiers().stream().filter(identifierType::isInstance)
                    .map(identifierType::cast)
-                   .filter(identifier -> identifier.sourceName()
-                                             .toLowerCase(Locale.ROOT)
-                                             .contains(source.toLowerCase(Locale.ROOT)))
+                   .filter(identifier -> containsIgnoringCase(identifier.sourceName(), source))
                    .map(AdditionalIdentifierBase::value)
                    .findFirst();
+    }
+
+    private static boolean containsIgnoringCase(String input, String search) {
+        return input
+                   .toLowerCase(Locale.ROOT)
+                   .contains(search.toLowerCase(Locale.ROOT));
     }
 
     @JsonIgnore
