@@ -17,17 +17,16 @@ public class DegreeWriteDeleteDenyStrategy extends FileStrategyBase implements F
 
     @Override
     public boolean deniesAction(FileOperation permission) {
+        if (currentUserIsFileOwner() && !fileIsFinalized()) {
+            return false;
+        }
+
         return resourceIsDegree() && !fileHasEmbargo() && isWriteOrDelete(permission) && isDeniedUser();
     }
 
     private boolean isDeniedUser() {
         return !(currentUserIsDegreeFileCuratorForGivenFile()
-                 || currentUserIsFileOwnerAndFileIsNotFinalized()
                  || currentUserIsDegreeEmbargoFileCuratorForGivenFile()
                  || isExternalClientWithRelation());
-    }
-
-    private boolean currentUserIsFileOwnerAndFileIsNotFinalized() {
-        return currentUserIsFileOwner() && !fileIsFinalized();
     }
 }

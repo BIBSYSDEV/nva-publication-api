@@ -1,14 +1,9 @@
 package no.unit.nva.publication.permissions.file.deny;
 
-import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
-import java.util.Optional;
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
 import no.unit.nva.publication.permissions.file.FileDenyStrategy;
 import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
@@ -20,30 +15,26 @@ public class ClaimedChannelFileDenyStrategy extends FileStrategyBase implements 
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        return isWriteOrDelete(permission)
-               && (file.getFile() instanceof OpenFile || file.getFile() instanceof InternalFile)
+        if (currentUserIsFileOwner() && !fileIsFinalized()) {
+            return false;
+        }
+
+        return isDeniedOperation(permission)
                && !isExternalClientWithRelation()
-               && hasClaimedPublisher()
-               && isDeniedUser();
+               && isDeniedUserByClaimedChannelWithinScope();
     }
 
-    private boolean isDeniedUser() {
-        return getClaimedPublisher()
-                    .map(ClaimedPublicationChannel::getOrganizationId)
-                    .map(id -> !userInstance.getTopLevelOrgCristinId().equals(id))
-                    .orElse(false);
+    private boolean isDeniedOperation(FileOperation permission) {
+        return (resourceIsDegree() && fileHasEmbargo())
+                   ? isWriteOrDeleteOrDownload(permission)
+                   : isWriteOrDelete(permission);
     }
 
-    private boolean hasClaimedPublisher() {
-        return getClaimedPublisher().isPresent();
+    private boolean isDeniedUserByClaimedChannelWithinScope() {
+        return hasClaimedPublicationChannel() && !userBelongsToPublicationChannelOwner();
     }
 
-    private Optional<ClaimedPublicationChannel> getClaimedPublisher() {
-        return resource.getPublicationChannels()
-                   .stream()
-                   .filter(ClaimedPublicationChannel.class::isInstance)
-                   .map(ClaimedPublicationChannel.class::cast)
-                   .filter(channel -> PUBLISHER.equals(channel.getChannelType()))
-                   .findFirst();
+    private boolean hasClaimedPublicationChannel() {
+        return resource.getPrioritizedClaimedPublicationChannelWithinScope().isPresent();
     }
 }

@@ -2,7 +2,6 @@ package no.unit.nva.publication.permissions.publication.restrict;
 
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
-import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -30,9 +29,6 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private boolean handleUpdate() {
-        if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) { // SKAL FJERNES
-            return DENY;
-        }                                                                                           // SKAL FJERNES
         if (hasApprovedFiles()) {
             return approvedFileStrategy();
         } else {

@@ -13,7 +13,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.Resource;
@@ -89,17 +88,6 @@ public class PublicationStrategyBase {
         }
 
         return userInstance.getTopLevelOrgCristinId().equals(resource.getResourceOwner().getOwnerAffiliation());
-    }
-
-    protected boolean isProtectedDegreeInstanceTypeWithEmbargo() {
-        return isProtectedDegreeInstanceType() && resource.getAssociatedArtifacts().stream()
-                                                      .filter(File.class::isInstance)
-                                                      .map(File.class::cast)
-                                                      .anyMatch(this::hasEmbargo);
-    }
-
-    private boolean hasEmbargo(File file) {
-        return file.hasActiveEmbargo();
     }
 
     protected boolean isVerifiedContributor(Contributor contributor) {

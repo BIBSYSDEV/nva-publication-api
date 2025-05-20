@@ -1,15 +1,18 @@
 package no.unit.nva.publication.permissions.file;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIdentifier;
-import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.EVERYONE;
+import static no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy.OWNER_ONLY;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.getAccessRightsForRegistrator;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.setContributor;
+import static no.unit.nva.publication.permissions.PermissionsTestUtils.setPublicationChannelWithinScope;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
@@ -20,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -31,8 +32,8 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
-import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
+import no.unit.nva.publication.permissions.PermissionsTestUtils.Institution;
+import no.unit.nva.publication.permissions.PermissionsTestUtils.InstitutionSuite;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,7 +62,7 @@ class FilePermissionTest {
     void shouldThrowUnauthorizedExceptionWhenAuthorizingWriteAsRandomUserAndNoHitOnStrategies() {
         var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildPendingInternalFile());
 
-        assertThrows(UnauthorizedException.class, () -> permissions.authorize(FileOperation.WRITE_METADATA));
+        assertThrows(UnauthorizedException.class, () -> permissions.authorize(WRITE_METADATA));
     }
 
     @Test
@@ -73,12 +74,12 @@ class FilePermissionTest {
 
     @ParameterizedTest
     @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowFileCuratorOnFileForResourceWithClaimedPublisherOwnedByCuratorOrganization(FileOperation fileOperation) {
-        var institutionId = getInstitutionId();
-        var claimedPublisher = createClaimedPublisher(institutionId);
+    void shouldAllowFileCuratorOnFileForResourceWithClaimedPublisherOwnedByCuratorOrganization(
+        FileOperation fileOperation) {
+        var curatingInstitution = Institution.random();
         var resource = randomResource();
-        resource.setPublicationChannels(List.of(claimedPublisher));
-        var userInstance = fileCuratorUserInstance(institutionId);
+        setPublicationChannelWithinScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
+        var userInstance = fileCuratorUserInstance(curatingInstitution.getTopLevelCristinId());
         var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
         assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
@@ -86,13 +87,16 @@ class FilePermissionTest {
 
     @ParameterizedTest
     @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowExternalClientOnFileForResourceWithClaimedPublisherWhenClientRelatesToPublication(FileOperation fileOperation) {
-        var institutionId = getInstitutionId();
-        var claimedPublisher = createClaimedPublisher(institutionId);
+    void shouldAllowExternalClientOnFileForResourceWithClaimedPublisherWhenClientRelatesToPublication(
+        FileOperation fileOperation) {
+        var institution = Institution.random();
+
         var publication = randomPublication(DegreeBachelor.class);
         var resource = Resource.fromPublication(publication);
-        resource.setPublicationChannels(List.of(claimedPublisher));
-        var userInstance = UserInstance.createExternalUser(publication.getResourceOwner(), publication.getPublisher().getId());
+        setPublicationChannelWithinScope(resource, institution, EVERYONE, OWNER_ONLY);
+
+        var userInstance = UserInstance.createExternalUser(publication.getResourceOwner(),
+                                                           publication.getPublisher().getId());
         var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
         assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
@@ -100,11 +104,16 @@ class FilePermissionTest {
 
     @ParameterizedTest
     @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldDenyFileCuratorOnOpenFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
-        var claimedPublisher = createClaimedPublisher(randomUri());
+    void shouldDenyFileCuratorOnOpenFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(
+        FileOperation fileOperation) {
+        var institutionSuite = InstitutionSuite.random();
+        var owningInstitution = institutionSuite.owningInstitution();
+        var curatingInstitution = institutionSuite.curatingInstitution();
+
         var resource = randomResource();
-        resource.setPublicationChannels(List.of(claimedPublisher));
-        var userInstance = fileCuratorUserInstance(randomUri());
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+
+        var userInstance = fileCuratorUserInstance(curatingInstitution.getTopLevelCristinId());
         var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
         assertFalse(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
@@ -112,11 +121,18 @@ class FilePermissionTest {
 
     @ParameterizedTest
     @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowRelatedUserOnNonOpenFileForNonDegreeWithClaimedPublisherNotOwnedByCuratorInstitution(FileOperation fileOperation) {
-        var claimedPublisher = createClaimedPublisher(randomUri());
-        var resource = Resource.fromPublication(randomNonDegreePublication());
-        resource.setPublicationChannels(List.of(claimedPublisher));
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
+    void shouldAllowRelatedUserOnNonOpenFileForNonDegreeWithClaimedPublisherNotOwnedByCuratorInstitution(
+        FileOperation fileOperation) {
+        var institutionSuite = InstitutionSuite.random();
+        var owningInstitution = institutionSuite.owningInstitution();
+        var curatingInstitution = institutionSuite.curatingInstitution();
+
+        var publication = randomNonDegreePublication();
+        setContributor(publication, curatingInstitution.contributor());
+        var resource = Resource.fromPublication(publication);
+        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+
+        var userInstance = registratorUserInstance(curatingInstitution);
         var fileEntry = FileEntry.create(randomPendingOpenFile(), resource.getIdentifier(), userInstance);
 
         assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
@@ -128,15 +144,10 @@ class FilePermissionTest {
                                    institutionId);
     }
 
-    private static URI getInstitutionId() {
-        return randomUri();
-    }
-
-    private ClaimedPublicationChannel createClaimedPublisher(URI institutionId) {
-        var channel = mock(ClaimedPublicationChannel.class);
-        when(channel.getOrganizationId()).thenReturn(institutionId);
-        when(channel.getChannelType()).thenReturn(ChannelType.PUBLISHER);
-        return channel;
+    private static UserInstance registratorUserInstance(Institution institution) {
+        return UserInstance.create(randomString(), institution.getCustomerId(), randomUri(),
+                                   getAccessRightsForRegistrator(),
+                                   institution.getTopLevelCristinId());
     }
 
     private static Resource randomResource() {
