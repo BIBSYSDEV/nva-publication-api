@@ -218,8 +218,8 @@ public class ResourceDao extends Dao
 
     public Optional<String> extractCristinIdentifier() {
         return getAdditionalIdentifier(CristinIdentifier.class, CRISTIN_SOURCE)
-                   .or(() -> getAdditionalIdentifier(CristinIdentifier.class, BRAGE_SOURCE))
                    .or(() -> getAdditionalIdentifier(AdditionalIdentifier.class, CRISTIN_SOURCE))
+                   .or(() -> getAdditionalIdentifier(CristinIdentifier.class, BRAGE_SOURCE))
                    .or(() -> getAdditionalIdentifier(CristinIdentifier.class, NVA_SOURCE));
     }
 
