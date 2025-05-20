@@ -1,7 +1,9 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
+import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -18,17 +20,23 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     @Override
-    public boolean deniesAction(PublicationOperation permission) {
-        if (isUsersDraft() || userInstance.isExternalClient() || userInstance.isBackendClient()) {
+    public boolean deniesAction(PublicationOperation operation) {
+        if (isUsersDraft() || userInstance.isExternalClient() || userInstance.isBackendClient() || isRelatedEditor()) {
             return PASS;
         }
 
-        return UPDATE.equals(permission)
-            && isProtectedDegreeInstanceType()
-            && handleUpdate();
+        return isDeniedOperation(operation) && isProtectedDegreeInstanceType() && handleDegree();
     }
 
-    private boolean handleUpdate() {
+    private boolean isRelatedEditor() {
+        return userInstance.getAccessRights().contains(MANAGE_RESOURCES_ALL) && userRelatesToPublication();
+    }
+
+    private static boolean isDeniedOperation(PublicationOperation operation) {
+        return UPDATE.equals(operation) || UNPUBLISH.equals(operation);
+    }
+
+    private boolean handleDegree() {
         if (hasApprovedFiles()) {
             return approvedFileStrategy();
         } else {
@@ -37,7 +45,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private boolean approvedFileStrategy() {
-        if (!hasAccessRight(MANAGE_DEGREE)) { // Allow editor to unpublish all degrees.
+        if (!hasAccessRight(MANAGE_DEGREE)) {
             return DENY;
         }
         if (resource.getPrioritizedClaimedPublicationChannelWithinScope().isEmpty()) {

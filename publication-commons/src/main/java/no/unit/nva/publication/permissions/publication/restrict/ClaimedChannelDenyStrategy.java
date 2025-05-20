@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permissions.publication.restrict;
 
+import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
@@ -15,14 +16,18 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
     }
 
     @Override
-    public boolean deniesAction(PublicationOperation permission) {
+    public boolean deniesAction(PublicationOperation operation) {
         if (isUsersDraft() || userInstance.isExternalClient() || userInstance.isBackendClient()) {
             return false;
         }
-        return UPDATE.equals(permission)
+        return isDeniedOperation(operation)
                && isPublished()
                && hasApprovedFiles()
                && isDeniedUserByClaimedChannelWithinScope();
+    }
+
+    private static boolean isDeniedOperation(PublicationOperation operation) {
+        return UPDATE.equals(operation) || UNPUBLISH.equals(operation);
     }
 
     private boolean isDeniedUserByClaimedChannelWithinScope() {
