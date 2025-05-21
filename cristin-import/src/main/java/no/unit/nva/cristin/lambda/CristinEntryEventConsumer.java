@@ -277,11 +277,11 @@ public class CristinEntryEventConsumer
 
     private void persistCristinIdentifierInFileNamedWithPublicationIdentifier(
         PublicationRepresentations publicationRepresentations) {
-        var cristinIdentifier = publicationRepresentations.getCristinIdentifier();
+        var publicationIdentifier = publicationRepresentations.getNvaPublicationIdentifier();
         var fileUri = constructSuccessFileUri(publicationRepresentations);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(),
-                                          cristinIdentifier)).orElseThrow();
+                                              new IdentifierReport(publicationIdentifier).toJsonString())).orElseThrow();
     }
 
     private UriWrapper constructPartOfFileUri(PublicationRepresentations publicationRepresentations) {
@@ -297,7 +297,7 @@ public class CristinEntryEventConsumer
     }
 
     private UriWrapper constructSuccessFileUri(PublicationRepresentations publicationRepresentations) {
-        var publicationIdentifier = publicationRepresentations.getNvaPublicationIdentifier();
+        var cristinIdentifier = publicationRepresentations.getCristinIdentifier();
         var eventBodyFileUri = publicationRepresentations.getOriginalEventFileUri();
         var timestamp = publicationRepresentations.getOriginalTimeStamp();
         var fileUri = UriWrapper.fromUri(eventBodyFileUri);
@@ -305,7 +305,7 @@ public class CristinEntryEventConsumer
         return bucket
                    .addChild(SUCCESS_FOLDER)
                    .addChild(timestampToString(timestamp))
-                   .addChild(publicationIdentifier);
+                   .addChild(cristinIdentifier);
     }
 
     private UriWrapper constructUpdateFileUri(PublicationRepresentations publicationRepresentations) {
