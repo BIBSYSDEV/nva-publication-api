@@ -2,6 +2,7 @@ package no.unit.nva.publication.permissions.file;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.DELETE;
+import static no.unit.nva.model.FileOperation.DOWNLOAD;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
@@ -47,8 +48,8 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsFileCuratorForGivenFile() {
-        return currentUserIsFileCurator() &&
-               (haveTopLevelRelationForCurrentFile() || userIsAffiliatedWithChannelClaimeeOrganization());
+        return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) &&
+               (haveTopLevelRelationForCurrentFile() || userBelongsToPublicationChannelOwner());
     }
 
     protected boolean currentUserIsFileCurator() {
@@ -84,15 +85,19 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsDegreeEmbargoFileCuratorForGivenFile() {
-        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && userRelatesToPublication();
+        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && (haveTopLevelRelationForCurrentFile() || userBelongsToPublicationChannelOwner());
     }
 
     protected boolean currentUserIsDegreeFileCuratorForGivenFile() {
-        return hasAccessRight(MANAGE_DEGREE) && haveTopLevelRelationForCurrentFile();
+        return hasAccessRight(MANAGE_DEGREE) && (haveTopLevelRelationForCurrentFile() || userBelongsToPublicationChannelOwner());
     }
 
     protected boolean isWriteOrDelete(FileOperation permission) {
         return permission.equals(WRITE_METADATA) || permission.equals(DELETE);
+    }
+
+    protected boolean isWriteOrDeleteOrDownload(FileOperation permission) {
+        return permission.equals(WRITE_METADATA) || permission.equals(DELETE) || permission.equals(DOWNLOAD);
     }
 
     private boolean haveTopLevelRelationForCurrentFile() {
@@ -119,16 +124,18 @@ public class FileStrategyBase {
 
     private boolean userRelatesToPublication() {
         return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution() ||
-               userIsAffiliatedWithChannelClaimeeOrganization();
+               userBelongsToPublicationChannelOwner();
     }
 
-    private boolean userIsAffiliatedWithChannelClaimeeOrganization() {
-        return resource.getPublicationChannels()
-                   .stream()
-                   .filter(ClaimedPublicationChannel.class::isInstance)
-                   .map(ClaimedPublicationChannel.class::cast)
+    protected boolean userBelongsToPublicationChannelOwner() {
+        if (Optional.ofNullable(userInstance).map(UserInstance::getTopLevelOrgCristinId).isEmpty()) {
+            return false;
+        }
+
+        return resource.getPrioritizedClaimedPublicationChannelWithinScope()
                    .map(ClaimedPublicationChannel::getOrganizationId)
-                   .anyMatch(userInstance.getTopLevelOrgCristinId()::equals);
+                   .map(userInstance.getTopLevelOrgCristinId()::equals)
+                   .orElse(false);
     }
 
     private boolean userIsFromSameInstitutionAsPublicationOwner() {

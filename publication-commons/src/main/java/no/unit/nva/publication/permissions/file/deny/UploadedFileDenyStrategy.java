@@ -11,22 +11,33 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 public class UploadedFileDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
 
     public UploadedFileDenyStrategy(FileEntry file,
-                                       UserInstance userInstance,
-                                       Resource resource) {
+                                    UserInstance userInstance,
+                                    Resource resource) {
         super(file, userInstance, resource);
     }
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        return fileTypeUndefined() && isDeniedUser();
+        if (!fileTypeIsUploadedFile()) {
+            return false;
+        }
+
+        if (currentUserIsFileOwner()) {
+            return false;
+        }
+
+        if (resourceIsDegree() && isWriteOrDelete(permission)) {
+            return !currentUserIsDegreeFileCuratorForGivenFile();
+        }
+
+        return isDeniedUser();
     }
 
     private boolean isDeniedUser() {
-        return !currentUserIsFileCuratorForGivenFile() && !currentUserIsFileOwner();
+        return !(currentUserIsFileCuratorForGivenFile() || currentUserIsDegreeFileCuratorForGivenFile());
     }
 
-    private boolean fileTypeUndefined() {
+    private boolean fileTypeIsUploadedFile() {
         return file.getFile() instanceof UploadedFile;
     }
-
 }

@@ -16,10 +16,20 @@ public final class HiddenFileDenyStrategy extends FileStrategyBase implements Fi
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        if (currentUserIsFileCuratorForGivenFile()) {
-            return false;//allow curator to access hidden files
+        if (!fileIsHidden()) {
+            return false;
         }
 
+        if (resourceIsDegree()) {
+            return fileHasEmbargo()
+                       ? !currentUserIsDegreeEmbargoFileCuratorForGivenFile()
+                       : !currentUserIsDegreeFileCuratorForGivenFile();
+        }
+
+        return !currentUserIsFileCuratorForGivenFile();
+    }
+
+    private boolean fileIsHidden() {
         return file.getFile() instanceof HiddenFile;
     }
 }

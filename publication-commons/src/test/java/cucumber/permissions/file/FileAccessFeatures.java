@@ -62,6 +62,22 @@ public class FileAccessFeatures {
 
         var actual = filePermissions.allowsAction(scenarioContext.getFileOperation());
 
-        assertThat(actual, is(equalTo(expected)));
+        assertThat("%s is %s to perform %s on %s".formatted(
+                       scenarioContext.getRoles().stream().map(PermissionsRole::getValue).toList(),
+                       outcome,
+                       scenarioContext.getFileOperation(),
+                       scenarioContext.getFileType().getSimpleName()),
+                   actual,
+                   is(equalTo(expected)));
+    }
+
+    @And("publication has claimed publisher")
+    public void publicationHasClaimedPublisher() {
+        scenarioContext.setHasClaimedPublisher(true);
+    }
+
+    @And("the user belongs to the organization that claimed the publisher")
+    public void userBelongsToTheOrganizationThatClaimedThePublisher() {
+        scenarioContext.setUserBelongsToOrganizationThatClaimedPublisher(true);
     }
 }

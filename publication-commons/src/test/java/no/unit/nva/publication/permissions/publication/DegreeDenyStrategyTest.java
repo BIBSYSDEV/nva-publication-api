@@ -1,6 +1,5 @@
 package no.unit.nva.publication.permissions.publication;
 
-import static java.util.UUID.randomUUID;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
@@ -12,7 +11,6 @@ import static no.unit.nva.publication.permissions.PermissionsTestUtils.setPublic
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -22,20 +20,13 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.Institution;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.InstitutionSuite;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.User;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -350,98 +341,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissions
                                    .create(Resource.fromPublication(publication), userInstance)
                                    .allowsAction(UPDATE));
-    }
-
-    @ParameterizedTest(name = "Should deny Thesis Curator from Registrators institution {0} operation on instance "
-                              + "type {1} when degree has embargo but no open files")
-    @MethodSource("degreesProvider")
-    void shouldDenyUpdateForThesisCuratorOperationsOnEmbargoDegreeWithoutOpenFiles(Class<?> degreeInstanceClass)
-        throws JsonProcessingException, UnauthorizedException {
-        var institution = Institution.random();
-        var registrator = institution.registrator();
-        var thesisCurator = institution.thesisCurator();
-
-        var publicationWithPendingFileWithEmbargo =
-            createPublication(degreeInstanceClass, registrator.name(), registrator.customer(),
-                              registrator.topLevelCristinId()).copy()
-                .withAssociatedArtifacts(List.of(randomPendingOpenFileWithEmbargo()))
-                .build();
-
-        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(thesisCurator),
-                                                                     identityServiceClient);
-
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publicationWithPendingFileWithEmbargo),
-                                           userInstance)
-                                   .allowsAction(UPDATE));
-    }
-
-    @ParameterizedTest(name = "Should deny Thesis Curator from Registrators institution {0} operation on instance "
-                              + "type {1} when degree has open file with embargo")
-    @MethodSource("degreesProvider")
-    void shouldDenyThesisCuratorOperationsOnEmbargoDegreeWithOpenFiles(Class<?> degreeInstanceClass)
-        throws JsonProcessingException, UnauthorizedException {
-        var institution = Institution.random();
-        var registrator = institution.registrator();
-        var thesisCurator = institution.thesisCurator();
-
-        var publicationWithOpenFileWithEmbargo =
-            createPublication(degreeInstanceClass, registrator.name(), registrator.customer(),
-                              registrator.topLevelCristinId()).copy()
-                .withAssociatedArtifacts(List.of(randomOpenFileWithEmbargo())).build();
-
-        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(thesisCurator),
-                                                                     identityServiceClient);
-
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publicationWithOpenFileWithEmbargo), userInstance)
-                                   .allowsAction(UPDATE));
-    }
-
-    @ParameterizedTest(name = "Should allow Embargo Thesis Curator from Registrators institution {0} operation on "
-                              + "instance type {1} when degree has embargo but no open files")
-    @MethodSource("argumentsForThesisCurator")
-    void shouldAllowEmbargoThesisCuratorOperationsOnEmbargoDegreeWithoutOpenFiles(PublicationOperation operation,
-                                                                                  Class<?> degreeInstanceClass)
-        throws JsonProcessingException, UnauthorizedException {
-        var institution = Institution.random();
-        var registrator = institution.registrator();
-        var embargoThesisCurator = institution.embargoThesisCurator();
-
-        var publicationWithPendingFileWithEmbargo =
-            createPublication(degreeInstanceClass, registrator.name(), registrator.customer(),
-                              registrator.topLevelCristinId()).copy()
-                .withAssociatedArtifacts(List.of(randomPendingOpenFileWithEmbargo())).build();
-
-        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(embargoThesisCurator),
-                                                                     identityServiceClient);
-
-        Assertions.assertTrue(PublicationPermissions
-                                  .create(Resource.fromPublication(publicationWithPendingFileWithEmbargo), userInstance)
-                                  .allowsAction(operation));
-    }
-
-    @ParameterizedTest(name = "Should allow Embargo Thesis Curator from Registrators institution {0} operation on "
-                              + "instance type {1} when degree has open file with embargo")
-    @MethodSource("argumentsForThesisCurator")
-    void shouldAllowEmbargoThesisCuratorOperationsOnEmbargoDegreeWithOpenFiles(PublicationOperation operation,
-                                                                               Class<?> degreeInstanceClass)
-        throws JsonProcessingException, UnauthorizedException {
-        var institution = Institution.random();
-        var registrator = institution.registrator();
-        var embargoThesisCurator = institution.embargoThesisCurator();
-
-        var publicationWithOpenFileWithEmbargo =
-            createPublication(degreeInstanceClass, registrator.name(), registrator.customer(),
-                              registrator.topLevelCristinId()).copy()
-                .withAssociatedArtifacts(List.of(randomOpenFileWithEmbargo())).build();
-
-        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(embargoThesisCurator),
-                                                                     identityServiceClient);
-
-        Assertions.assertTrue(PublicationPermissions
-                                  .create(Resource.fromPublication(publicationWithOpenFileWithEmbargo), userInstance)
-                                  .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should deny Registrator {0} operation on instance type {1} when degree has open file "
@@ -1023,28 +922,6 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
                    .withIdentity(new Identity.Builder().build())
                    .withRole(new RoleType(role))
                    .build();
-    }
-
-    private static OpenFile randomOpenFileWithEmbargo() {
-        return new OpenFile(randomUUID(), RandomDataGenerator.randomString(),
-                            RandomDataGenerator.randomString(), RandomDataGenerator.randomInteger().longValue(),
-                            RandomDataGenerator.randomUri(), PublisherVersion.PUBLISHED_VERSION,
-                            Instant.now().plusSeconds(60 * 60 * 24),
-                            RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                            RandomDataGenerator.randomString(), RandomDataGenerator.randomInstant(),
-                            new UserUploadDetails(new Username(RandomDataGenerator.randomString()),
-                                                  RandomDataGenerator.randomInstant()));
-    }
-
-    private static PendingOpenFile randomPendingOpenFileWithEmbargo() {
-        return new PendingOpenFile(randomUUID(), RandomDataGenerator.randomString(),
-                                   RandomDataGenerator.randomString(), RandomDataGenerator.randomInteger().longValue(),
-                                   RandomDataGenerator.randomUri(), PublisherVersion.PUBLISHED_VERSION,
-                                   Instant.now().plusSeconds(60 * 60 * 24),
-                                   RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                   RandomDataGenerator.randomString(),
-                                   new UserUploadDetails(new Username(RandomDataGenerator.randomString()),
-                                                         RandomDataGenerator.randomInstant()));
     }
 
     private RequestInfo toRequestInfo(User user) throws JsonProcessingException {
