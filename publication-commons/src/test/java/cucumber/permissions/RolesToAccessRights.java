@@ -22,7 +22,8 @@ public final class RolesToAccessRights {
         FILE_CURATOR_DEGREE, Set.of(AccessRight.MANAGE_DEGREE, AccessRight.MANAGE_RESOURCES_STANDARD),
         FILE_CURATOR_FOR_GIVEN_FILE, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_RESOURCE_FILES),
         ANY_CURATOR_TYPE, Set.of(AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_DOI, AccessRight.SUPPORT,
-                                 AccessRight.MANAGE_NVI, AccessRight.MANAGE_PUBLISHING_REQUESTS), EDITOR,
+                                 AccessRight.MANAGE_NVI, AccessRight.MANAGE_PUBLISHING_REQUESTS, AccessRight.MANAGE_RESOURCE_FILES),
+        EDITOR,
         Set.of(AccessRight.MANAGE_RESOURCES_ALL, AccessRight.MANAGE_OWN_AFFILIATION,
                AccessRight.MANAGE_CHANNEL_CLAIMS));
 
