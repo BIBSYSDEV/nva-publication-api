@@ -176,6 +176,7 @@ public class CristinEntryEventConsumer
 
     private Publication getPublication(PublicationRepresentations publicationRepresentations) {
         if (publicationRepresentations.updateHasEffectiveChanges()) {
+            logger.info("Updating existing publication with cristin identifier: " + publicationRepresentations.getCristinIdentifier());
             return update(publicationRepresentations);
         } else {
             persistNviReportIfNeeded(publicationRepresentations);
@@ -360,6 +361,7 @@ public class CristinEntryEventConsumer
         var publicationWithIdentifier =
             persistInDatabase(publicationRepresentations.getIncomingPublication()).orElseThrow();
         publicationRepresentations.setIncomingPublication(publicationWithIdentifier);
+        logger.info("Persisting publication with cristin identifier: " + publicationRepresentations.getCristinIdentifier());
         return publicationRepresentations;
     }
 
