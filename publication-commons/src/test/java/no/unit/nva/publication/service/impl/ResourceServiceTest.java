@@ -455,21 +455,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void itIsNotPossibleToPersistMultipleTrustedCristinIdentifiersWhenUpdatedPublication()
-        throws BadRequestException, NotFoundException {
-
-        Publication resource = createPersistedPublicationWithDoi();
-        Publication actualOriginalResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
-        assertThat(actualOriginalResource, is(equalTo(resource)));
-
-        Set<AdditionalIdentifierBase> multipleTrustedCristinIdentifiers = Set.of(
-            new AdditionalIdentifier("Cristin", randomString()),
-            new AdditionalIdentifier("Cristin", randomString()));
-        var updatedResource = resource.copy().withAdditionalIdentifiers(multipleTrustedCristinIdentifiers).build();
-        assertThrows(IllegalArgumentException.class, () -> resourceService.updatePublication(updatedResource));
-    }
-
-    @Test
     @Disabled
         //TODO: Decide how to manage multiple cristin identifiers that exist in the data
     void combinationOfTrustedAndUntrustedCristinIdentifiersIsNotAllowed()

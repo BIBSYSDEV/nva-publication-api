@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.ImportDetail;
@@ -41,20 +42,21 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.SingletonCollector;
 
 @JsonTypeName(ResourceDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao
     implements JoinWithResource, JsonSerializable, DynamoEntryByIdentifier {
-    
+
     public static final String CRISTIN_SOURCE = "Cristin";
+    private static final String NVA_SOURCE = "nva";
     public static final String TYPE = "Resource";
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
     private static final String STATUS_FIELD = "status";
     private static final String MODIFIED_DATA_FIELD = "modifiedDate";
     private static final String DOI_FIELD = "doi";
     private static final String IMPORT_DETAILS_FIELD = "importDetails";
+    private static final String BRAGE_SOURCE = "brage";
 
     @JsonProperty(STATUS_FIELD)
     private PublicationStatus status;
@@ -65,11 +67,11 @@ public class ResourceDao extends Dao
     private URI doi;
     @JsonProperty(IMPORT_DETAILS_FIELD)
     private List<ImportDetail> importDetails;
-    
+
     public ResourceDao() {
         this(new Resource());
     }
-    
+
     public ResourceDao(Resource resource) {
         super(resource);
         setIdentifier(resource.getIdentifier());
@@ -78,7 +80,7 @@ public class ResourceDao extends Dao
         this.doi = resource.getDoi();
         this.importDetails = resource.getImportDetails();
     }
-    
+
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         Resource resource = Resource.emptyResource(
             userInstance.getUser(),
@@ -86,46 +88,46 @@ public class ResourceDao extends Dao
             resourceIdentifier);
         return new ResourceDao(resource);
     }
-    
+
     public static String constructPrimaryPartitionKey(URI customerId, String owner) {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
-            orgUriToOrgIdentifier(customerId), owner);
+                             orgUriToOrgIdentifier(customerId), owner);
     }
-    
+
     @JsonIgnore
     public String joinByResourceContainedOrderedType() {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + getData().getType();
     }
-    
+
     @Override
     public String indexingType() {
         return this.getData().getType();
     }
-    
+
     @Override
     public URI getCustomerId() {
         return getResource().getPublisher().getId();
     }
-    
+
     //TODO: cover when refactoring to ticket system is completed
     @JacocoGenerated
     @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
         throw new UnsupportedOperationException();
     }
-    
+
     @JacocoGenerated
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
         throw new UnsupportedOperationException("Not implemented yet.Call the appropriate resource service method");
     }
-    
+
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getData());
     }
-    
+
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -175,7 +177,7 @@ public class ResourceDao extends Dao
     protected User getOwner() {
         return getData().getOwner();
     }
-    
+
     public List<TicketDao> fetchAllTickets(AmazonDynamoDB client) {
         var queryRequest = new QueryRequest()
                                .withTableName(RESOURCES_TABLE_NAME)
@@ -187,25 +189,27 @@ public class ResourceDao extends Dao
                    .map(item -> parseAttributeValuesMap(item, TicketDao.class))
                    .collect(Collectors.toList());
     }
-    
+
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
     public String getResourceByCristinIdentifierPartitionKey() {
         return extractCristinIdentifier().isEmpty() ? null
-                   : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + extractCristinIdentifier();
+                   : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX
+                     + KEY_FIELDS_DELIMITER
+                     + extractCristinIdentifier().orElseThrow();
     }
-    
+
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
     public String getResourceByCristinIdentifierSortKey() {
         return indexingType() + KEY_FIELDS_DELIMITER + getIdentifier();
     }
-    
+
     public QueryRequest createQueryFindByCristinIdentifier() {
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
                    .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
                    .withKeyConditions(createConditionsWithCristinIdentifier());
     }
-    
+
     public Map<String, Condition> createConditionsWithCristinIdentifier() {
         Condition condition = new Condition()
                                   .withComparisonOperator(ComparisonOperator.EQ)
@@ -213,50 +217,42 @@ public class ResourceDao extends Dao
                                       new AttributeValue(getResourceByCristinIdentifierPartitionKey()));
         return Map.of(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, condition);
     }
-    
+
     public Optional<String> extractCristinIdentifier() {
-        String cristinIdentifierValue = Optional.ofNullable(getResource().getAdditionalIdentifiers())
-                                            .stream()
-                                            .flatMap(Collection::stream)
-                                            .filter(this::keyEqualsCristin)
-                                            .map(AdditionalIdentifierBase::value)
-                                            .collect(SingletonCollector.collectOrElse(null));
-        return Optional.ofNullable(cristinIdentifierValue);
+        return getAdditionalIdentifier(CristinIdentifier.class, CRISTIN_SOURCE)
+                   .or(() -> getAdditionalIdentifier(AdditionalIdentifier.class, CRISTIN_SOURCE))
+                   .or(() -> getAdditionalIdentifier(CristinIdentifier.class, BRAGE_SOURCE))
+                   .or(() -> getAdditionalIdentifier(CristinIdentifier.class, NVA_SOURCE));
     }
-    
+
+    private <T extends AdditionalIdentifierBase> Optional<String> getAdditionalIdentifier(Class<T> identifierType,
+                                                                                          String source) {
+        return getResource().getAdditionalIdentifiers().stream().filter(identifierType::isInstance)
+                   .map(identifierType::cast)
+                   .filter(identifier -> containsIgnoringCase(identifier.sourceName(), source))
+                   .map(AdditionalIdentifierBase::value)
+                   .findFirst();
+    }
+
+    private static boolean containsIgnoringCase(String input, String search) {
+        return input
+                   .toLowerCase(Locale.ROOT)
+                   .contains(search.toLowerCase(Locale.ROOT));
+    }
+
     @JsonIgnore
     public Resource getResource() {
         return (Resource) getData();
     }
-    
+
     @Override
     public String joinByResourceOrderedType() {
         return joinByResourceContainedOrderedType();
     }
-    
+
     @Override
     @JsonIgnore
     public SortableIdentifier getResourceIdentifier() {
         return this.getIdentifier();
-    }
-    
-    private boolean keyEqualsCristin(AdditionalIdentifierBase identifier) {
-        return isAdditionalIdentifierWithCristinSource(identifier) || isCristinIdentifier(identifier);
-    }
-
-    private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
-        return nonNull(identifier) && identifier instanceof CristinIdentifier && isCristinSource(identifier);
-    }
-
-    private static boolean isCristinSource(AdditionalIdentifierBase identifier) {
-        return identifier.sourceName().toLowerCase(Locale.ROOT).contains(CRISTIN_SOURCE.toLowerCase(Locale.ROOT));
-    }
-
-    //TODO: All AdditionalIdentifiers with Cristin source should be migrated to CristinIdentifier's
-    private static Boolean isAdditionalIdentifierWithCristinSource(AdditionalIdentifierBase identifier) {
-        return Optional.ofNullable(identifier)
-                   .map(AdditionalIdentifierBase::sourceName)
-                   .map(CRISTIN_SOURCE::equals)
-                   .orElse(false);
     }
 }

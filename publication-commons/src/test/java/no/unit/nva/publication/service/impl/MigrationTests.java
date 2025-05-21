@@ -2,20 +2,16 @@ package no.unit.nva.publication.service.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
-import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -29,35 +25,29 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Degree;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.contexttypes.Report;
-import no.unit.nva.model.instancetypes.book.Textbook;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DataCompressor;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
-import nva.commons.core.paths.UriWrapper;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -191,83 +181,30 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistNonClaimedPublicationChannelWhenDegreeWithPublisher() throws NotFoundException {
-        var channelIdentifier = randomUUID();
-        var publisherId = randomPublisherId(channelIdentifier);
-        var publisher = new Publisher(publisherId);
+    void shouldCreateSyntheticCristinIdentifierIfMissing() throws NotFoundException {
 
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        var publication = randomPublication(DegreeBachelor.class);
-        publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(publisher));
-        publication.setIdentifier(hardCodedIdentifier);
-        updatePublication(publication);
+        var entities = Set.of(randomPublication()).stream()
+                           .map(Resource::fromPublication)
+                           .map(this::persistAsImportedResource)
+                           .map(this::clearAdditionalIdentifiers)
+                           .map(Entity.class::cast)
+                           .toList();
 
-        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
+        resourceService.refreshResources(entities);
 
-        migrateResources();
+        var updatedPublication = resourceService.getResourceByIdentifier(entities.getFirst().getIdentifier());
 
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertFalse(updatedResource.getPublicationChannels().isEmpty());
-
-        var publicationChannel = updatedResource.getPublicationChannels().getFirst();
-        Assertions.assertEquals(channelIdentifier.toString(), publicationChannel.getIdentifier().toString());
+        var expectedIdentifier = new CristinIdentifier(SourceName.nva(), "10000000");
+        assertThat(updatedPublication.getAdditionalIdentifiers(), containsInAnyOrder(expectedIdentifier));
     }
 
-    @Test
-    void shouldNotPersistNonClaimedPublicationChannelWhenDegreeWithoutPublisher() throws NotFoundException {
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        var publication = randomPublication(DegreeBachelor.class);
-        publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(null));
-        publication.setIdentifier(hardCodedIdentifier);
-        updatePublication(publication);
-
-        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
-
-        migrateResources();
-
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(updatedResource.getPublicationChannels().isEmpty());
+    private Resource clearAdditionalIdentifiers(Resource resource) {
+        return resource.copy().withAdditionalIdentifiers(Collections.emptySet()).build();
     }
 
-    @Test
-    void shouldNotPersistNonClaimedPublicationChannelWhenNonDegreeWithPublisher() throws NotFoundException {
-        var publisherId = randomPublisherId(randomUUID());
-        var publisher = new Publisher(publisherId);
-
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        var publication = randomPublication(Textbook.class);
-        publication.getEntityDescription().getReference().setPublicationContext(reportWithPublisher(publisher));
-        publication.setIdentifier(hardCodedIdentifier);
-        updatePublication(publication);
-
-        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
-
-        migrateResources();
-
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(updatedResource.getPublicationChannels().isEmpty());
-    }
-
-    private static Degree degreeWithPublisher(Publisher publisher) {
-        return attempt(() ->  new Degree(null, null, null, publisher, List.of(), null))
-                   .orElseThrow();
-    }
-
-    private static Report reportWithPublisher(Publisher publisher) {
-        return attempt(() ->  new Report(null, null, null, publisher, List.of()))
-                   .orElseThrow();
-    }
-
-    private static URI randomPublisherId(UUID channelIdentifier) {
-        return UriWrapper.fromUri(randomUri())
-                   .addChild("publication-channel-v2")
-                   .addChild("publisher")
-                   .addChild(channelIdentifier.toString())
-                   .addChild(randomInteger().toString())
-                   .getUri();
+    private Resource persistAsImportedResource(Resource resource) {
+        return attempt(
+            () -> resource.importResource(resourceService, ImportSource.fromSource(Source.BRAGE))).orElseThrow();
     }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {

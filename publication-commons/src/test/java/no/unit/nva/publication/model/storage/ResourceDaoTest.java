@@ -19,6 +19,8 @@ import java.net.URI;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -83,6 +85,18 @@ class ResourceDaoTest extends ResourcesLocalTest {
         ResourceDao daoWithoutCristinId = createResourceDaoWithoutCristinIdentifier();
         assertThat(daoWithoutCristinId.getResourceByCristinIdentifierPartitionKey(),
                    is(equalTo(null)));
+    }
+
+    @Test
+    void getResourceByCristinIdentifierPartitionKeyShouldDoCorrectSerialization() {
+        ResourceDao daoWithCristinId = new ResourceDao(sampleResourceDao()
+                                                              .getResource()
+                                                              .copy()
+                                                              .withAdditionalIdentifiers(Set.of(new CristinIdentifier(
+                                                                  SourceName.nva(), "1234567")))
+                                                              .build());
+        assertThat(daoWithCristinId.getResourceByCristinIdentifierPartitionKey(),
+                   is(equalTo("CristinIdentifier" + KEY_FIELDS_DELIMITER + "1234567")));
     }
 
     @Test
