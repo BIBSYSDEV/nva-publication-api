@@ -101,6 +101,7 @@ public class CristinEntryEventConsumer
         return event.getRecords()
                    .stream()
                    .map(this::processMessage)
+                   .filter(Optional::isPresent)
                    .flatMap(Optional::stream)
                    .collect(Collectors.toList());
     }
@@ -132,8 +133,15 @@ public class CristinEntryEventConsumer
 
     private Optional<Publication> processMessage(SQSMessage message) {
         logger.info("received message: " + message.getBody());
-        return attempt(() -> getEventReferenceFromBody(message.getBody())).map(this::processEvent)
-                   .toOptional();
+        return attempt(() -> getEventReferenceFromBody(message.getBody()))
+                   .map(this::processEvent)
+                   .map(Optional::of)
+                   .orElse(failure -> logException(failure.getException()));
+    }
+
+    private static Optional<Publication> logException(Exception exception) {
+        logger.error("Could not process message {}", exception.getMessage());
+        return Optional.empty();
     }
 
     private Publication processEvent(EventReference eventReference) {
@@ -326,7 +334,11 @@ public class CristinEntryEventConsumer
     }
 
     private CristinObject parseCristinObject(FileContentsEvent<JsonNode> eventBody) {
-        CristinObject cristinObject = jsonNodeToCristinObject(eventBody);
+        var cristinObject = jsonNodeToCristinObject(eventBody);
+        logger.info("Processing cristin object with id: " + Optional.ofNullable(cristinObject)
+                                                                .map(CristinObject::getId)
+                                                                .map(Object::toString)
+                                                                .orElse(eventBody.toJsonString()));
         cristinObject.hardcodePublicationOwner(SIKT_OWNER);
         return cristinObject;
     }
