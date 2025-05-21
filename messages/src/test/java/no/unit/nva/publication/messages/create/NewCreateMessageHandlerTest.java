@@ -29,6 +29,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -174,7 +175,9 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                                                                         AccessRight... accessRights)
         throws ApiGatewayException, IOException {
 
-        var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
+        var publication = FilesApprovalThesis.class.equals(ticketType)
+                              ? TicketTestUtils.createPersistedDegreePublication(publicationStatus, resourceService)
+                              : TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
                                       publication.getResourceOwner().getOwnerAffiliation(), null, null,
