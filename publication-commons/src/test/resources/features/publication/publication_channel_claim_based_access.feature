@@ -55,24 +55,33 @@ Feature: Permissions given claimed publisher
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                          | Operation | Outcome     |
+      | UserRole                          | Operation     | Outcome     |
 
-      | Everyone else                     | update    | Not Allowed |
-      | External client                   | update    | Not Allowed |
-      | Publication owner                 | update    | Not Allowed |
-      | Contributor                       | update    | Not Allowed |
-      | File, support, doi or nvi curator | update    | Not Allowed |
-      | Editor                            | update    | Allowed     |
-      | Degree file curator               | update    | Allowed     |
-      | Related external client           | update    | Allowed     |
+      | Everyone else                     | update        | Not Allowed |
+      | External client                   | update        | Not Allowed |
+      | Publication owner                 | update        | Not Allowed |
+      | Contributor                       | update        | Not Allowed |
+      | File, support, doi or nvi curator | update        | Not Allowed |
+      | Editor                            | update        | Allowed     |
+      | Degree file curator               | update        | Allowed     |
+      | Related external client           | update        | Allowed     |
 
-      | Everyone else                     | unpublish | Not Allowed |
-      | External client                   | unpublish | Not Allowed |
-      | Publication owner                 | unpublish | Not Allowed |
-      | Contributor                       | unpublish | Not Allowed |
-      | File, support, doi or nvi curator | unpublish | Not Allowed |
-      | Editor                            | unpublish | Allowed     |
-      | Degree file curator               | unpublish | Allowed     |
-      | Related external client           | unpublish | Allowed     |
+      | Everyone else                     | unpublish     | Not Allowed |
+      | External client                   | unpublish     | Not Allowed |
+      | Publication owner                 | unpublish     | Not Allowed |
+      | Contributor                       | unpublish     | Not Allowed |
+      | File, support, doi or nvi curator | unpublish     | Not Allowed |
+      | Editor                            | unpublish     | Allowed     |
+      | Degree file curator               | unpublish     | Allowed     |
+      | Related external client           | unpublish     | Allowed     |
+
+      | Everyone else                     | approve-files | Not Allowed |
+      | External client                   | approve-files | Not Allowed |
+      | Publication owner                 | approve-files | Not Allowed |
+      | Contributor                       | approve-files | Not Allowed |
+      | File, support, doi or nvi curator | approve-files | Not Allowed |
+      | Editor                            | approve-files | Not Allowed |
+      | Degree file curator               | approve-files | Allowed     |
+      | Related external client           | approve-files | Not Allowed |
 
 
