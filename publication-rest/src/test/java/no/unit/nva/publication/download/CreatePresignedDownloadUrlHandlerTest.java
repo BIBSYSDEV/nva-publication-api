@@ -276,7 +276,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         throws IOException {
         var publication = buildPublication(DRAFT, file);
         var handler = getCreatePresignedDownloadUrlHandler();
-        var topLevelCristinUnitId = publication.getCuratingInstitutions().stream().findFirst().get().id();
+        var topLevelCristinUnitId = publication.getResourceOwner().getOwnerAffiliation();
         handler.handleRequest(
             createRequestWithAccessRight(user,
                                          topLevelCristinUnitId,
@@ -385,9 +385,8 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     private static Stream<Arguments> userFileTypeSupplier() {
         return Stream.of(
-            // TODO: Remove? File owner cannot download degree+embargo file anymore
-//            Arguments.of(Named.of("Owner with embargoed file", OWNER_USER_ID),
-//                         fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
+            Arguments.of(Named.of("Owner with embargoed file", OWNER_USER_ID),
+                         pendingOpenFileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(Named.of("Owner with unembargoed file", OWNER_USER_ID),
                          fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(Named.of("Owner with unpublishable file", OWNER_USER_ID),
@@ -395,8 +394,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
             Arguments.of(Named.of("Owner with unpublishable file", OWNER_USER_ID),
                          fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
             Arguments.of(Named.of("Owner with unpublished file", OWNER_USER_ID), fileWithTypeUnpublished()),
-            // TODO: Fix? Curator has to be part of file owner affiliation
-//            Arguments.of(Named.of("Curator with embargoed file", CURATOR), fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
+            Arguments.of(Named.of("Curator with embargoed file", CURATOR), fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(Named.of("Curator with unembargoed file", CURATOR),
                          fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(Named.of("Curator with unpublishable file", CURATOR),
@@ -448,6 +446,16 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                    .withMimeType(APPLICATION_PDF)
                    .withEmbargoDate(embargo)
                    .buildOpenFile();
+    }
+
+    private static File pendingOpenFileWithEmbargo(UUID fileIdentifier) {
+        var embargo = Instant.now().plus(Duration.ofDays(3L));
+        return randomPendingOpenFile()
+                   .copy()
+                   .withIdentifier(fileIdentifier)
+                   .withMimeType(APPLICATION_PDF)
+                   .withEmbargoDate(embargo)
+                   .buildPendingOpenFile();
     }
 
     private static File fileWithoutEmbargo(String mimeType, UUID fileIdentifier) {

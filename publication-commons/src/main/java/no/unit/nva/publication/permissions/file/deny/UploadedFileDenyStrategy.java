@@ -18,7 +18,11 @@ public class UploadedFileDenyStrategy extends FileStrategyBase implements FileDe
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        if (!fileTypeUndefined() || currentUserIsFileOwner()) {
+        if (!fileTypeIsUploadedFile()) {
+            return false;
+        }
+
+        if (currentUserIsFileOwner()) {
             return false;
         }
 
@@ -33,7 +37,7 @@ public class UploadedFileDenyStrategy extends FileStrategyBase implements FileDe
         return !(currentUserIsFileCuratorForGivenFile() || currentUserIsDegreeFileCuratorForGivenFile());
     }
 
-    private boolean fileTypeUndefined() {
+    private boolean fileTypeIsUploadedFile() {
         return file.getFile() instanceof UploadedFile;
     }
 }
