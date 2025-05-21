@@ -29,6 +29,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -175,6 +176,32 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
 
         var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
+                                      publication.getResourceOwner().getOwnerAffiliation(), null, null,
+                                      null, UserClientType.INTERNAL);
+        var expectedText = randomString();
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
+                                                             accessRights);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertThatResponseContainsCorrectInformation(response, ticket);
+        var expectedSender = sender.getUser();
+        assertThatMessageContainsTextAndCorrectCorrespondentInfo(expectedText, ticket, expectedSender);
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProviderForFilesApproval")
+    void shouldCreateMessageWhenCuratorHasValidAccessRightForTicketTypesForFilesApproval(PublicationStatus publicationStatus,
+                                                                        Class<? extends TicketEntry> ticketType,
+                                                                        AccessRight... accessRights)
+        throws ApiGatewayException, IOException {
+
+        var publication = FilesApprovalThesis.class.equals(ticketType)
+                              ? TicketTestUtils.createPersistedDegreePublication(publicationStatus, resourceService)
+                              : TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
                                       publication.getResourceOwner().getOwnerAffiliation(), null, null,

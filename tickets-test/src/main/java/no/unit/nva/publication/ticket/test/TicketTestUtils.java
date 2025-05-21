@@ -13,6 +13,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
@@ -50,6 +51,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -99,8 +101,14 @@ public final class TicketTestUtils {
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
         return Stream.of(
                 Arguments.of(PUBLISHED, DoiRequest.class, new AccessRight[]{MANAGE_DOI, MANAGE_RESOURCES_STANDARD}),
-                Arguments.of(DRAFT, GeneralSupportRequest.class,
-                             new AccessRight[]{SUPPORT, MANAGE_RESOURCES_STANDARD}));
+                Arguments.of(DRAFT, GeneralSupportRequest.class, new AccessRight[]{SUPPORT,
+                    MANAGE_RESOURCES_STANDARD}));
+    }
+
+    public static Stream<Arguments> ticketTypeAndAccessRightProviderForFilesApproval() {
+        return Stream.of(
+            Arguments.of(DRAFT, PublishingRequestCase.class, new AccessRight[]{SUPPORT, MANAGE_RESOURCES_STANDARD}),
+            Arguments.of(DRAFT, FilesApprovalThesis.class, new AccessRight[]{SUPPORT, MANAGE_RESOURCES_STANDARD}));
     }
 
     public static Stream<Arguments> invalidAccessRightForTicketTypeProvider() {
