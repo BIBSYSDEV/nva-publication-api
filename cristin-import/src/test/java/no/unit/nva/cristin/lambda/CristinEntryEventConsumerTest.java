@@ -262,14 +262,16 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
         var actualPublication = publications.getFirst();
-        var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
 
         var expectedTimestamp = eventBody.getTimestamp();
         var expectedErrorFileLocation = SUCCESS_FOLDER
                                             .addChild(timestampToString(expectedTimestamp))
-                                            .addChild(expectedFileNameStoredInS3);
+                                            .addChild(cristinObject.getId().toString());
+        var file = s3Driver.getFile(expectedErrorFileLocation);
 
-        assertDoesNotThrow(() -> s3Driver.getFile(expectedErrorFileLocation));
+        var report = JsonUtils.dtoObjectMapper.readValue(file, IdentifierReport.class);
+
+        assertEquals(actualPublication.getIdentifier().toString(), report.identifier());
     }
 
     @Test
