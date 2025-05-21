@@ -1106,6 +1106,16 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertEquals(Source.CRISTIN, resourceEvent.importSource().getSource());
     }
 
+    @Test
+    void shouldLogErrorMessageWhenFailingWhenProceedingMessage() {
+        var logAppender = LogUtils.getTestingAppenderForRootLogger();
+        var event = new SQSEvent();
+        event.setRecords(List.of(new SQSMessage()));
+        handler.handleRequest(event, CONTEXT);
+
+        assertTrue(logAppender.getMessages().contains("Could not process message"));
+    }
+
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
         return new FileContentsEvent<>(randomString(), EVENT_SUBTOPIC, randomUri(), Instant.now(),
                                        cristinObject);
