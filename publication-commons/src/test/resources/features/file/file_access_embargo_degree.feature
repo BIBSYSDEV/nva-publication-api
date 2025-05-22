@@ -116,18 +116,18 @@ Feature: File permissions for embargo and degree files
       | Degree+Embargo | Everyone else                        | write-metadata | Not Allowed |
       | Degree+Embargo | Everyone else                        | delete         | Not Allowed |
 
-      | Degree         | External client                      | read-metadata  | Allowed     |
-      | Degree         | External client                      | download       | Allowed     |
-      | Degree         | External client                      | write-metadata | Allowed     |
-      | Degree         | External client                      | delete         | Allowed     |
-      | Embargo        | External client                      | read-metadata  | Allowed     |
-      | Embargo        | External client                      | download       | Allowed     |
-      | Embargo        | External client                      | write-metadata | Allowed     |
-      | Embargo        | External client                      | delete         | Allowed     |
-      | Degree+Embargo | External client                      | read-metadata  | Allowed     |
-      | Degree+Embargo | External client                      | download       | Allowed     |
-      | Degree+Embargo | External client                      | write-metadata | Allowed     |
-      | Degree+Embargo | External client                      | delete         | Allowed     |
+      | Degree         | Related external client                      | read-metadata  | Allowed     |
+      | Degree         | Related external client                      | download       | Allowed     |
+      | Degree         | Related external client                      | write-metadata | Allowed     |
+      | Degree         | Related external client                      | delete         | Allowed     |
+      | Embargo        | Related external client                      | read-metadata  | Allowed     |
+      | Embargo        | Related external client                      | download       | Allowed     |
+      | Embargo        | Related external client                      | write-metadata | Allowed     |
+      | Embargo        | Related external client                      | delete         | Allowed     |
+      | Degree+Embargo | Related external client                      | read-metadata  | Allowed     |
+      | Degree+Embargo | Related external client                      | download       | Allowed     |
+      | Degree+Embargo | Related external client                      | write-metadata | Allowed     |
+      | Degree+Embargo | Related external client                      | delete         | Allowed     |
 
   Scenario Outline: Verify Degree+Embargo file operation permissions when user is not from same organization as publication channel owner
     Given a file of type "<FileType>" with property "Degree+Embargo"
@@ -307,26 +307,26 @@ Feature: File permissions for embargo and degree files
       | HiddenFile          | Everyone else                        | write-metadata | Not Allowed |
       | HiddenFile          | Everyone else                        | delete         | Not Allowed |
 
-      | PendingOpenFile     | External client                      | read-metadata  | Not Allowed |
-      | PendingOpenFile     | External client                      | download       | Not Allowed |
-      | PendingOpenFile     | External client                      | write-metadata | Not Allowed |
-      | PendingOpenFile     | External client                      | delete         | Not Allowed |
-      | PendingInternalFile | External client                      | read-metadata  | Not Allowed |
-      | PendingInternalFile | External client                      | download       | Not Allowed |
-      | PendingInternalFile | External client                      | write-metadata | Not Allowed |
-      | PendingInternalFile | External client                      | delete         | Not Allowed |
-      | OpenFile            | External client                      | read-metadata  | Allowed     |
-      | OpenFile            | External client                      | download       | Allowed     |
-      | OpenFile            | External client                      | write-metadata | Allowed     |
-      | OpenFile            | External client                      | delete         | Allowed     |
-      | InternalFile        | External client                      | read-metadata  | Allowed     |
-      | InternalFile        | External client                      | download       | Allowed     |
-      | InternalFile        | External client                      | write-metadata | Allowed     |
-      | InternalFile        | External client                      | delete         | Allowed     |
-      | HiddenFile          | External client                      | read-metadata  | Not Allowed |
-      | HiddenFile          | External client                      | download       | Not Allowed |
-      | HiddenFile          | External client                      | write-metadata | Not Allowed |
-      | HiddenFile          | External client                      | delete         | Not Allowed |
+      | PendingOpenFile     | Related external client                      | read-metadata  | Not Allowed |
+      | PendingOpenFile     | Related external client                      | download       | Not Allowed |
+      | PendingOpenFile     | Related external client                      | write-metadata | Not Allowed |
+      | PendingOpenFile     | Related external client                      | delete         | Not Allowed |
+      | PendingInternalFile | Related external client                      | read-metadata  | Not Allowed |
+      | PendingInternalFile | Related external client                      | download       | Not Allowed |
+      | PendingInternalFile | Related external client                      | write-metadata | Not Allowed |
+      | PendingInternalFile | Related external client                      | delete         | Not Allowed |
+      | OpenFile            | Related external client                      | read-metadata  | Allowed     |
+      | OpenFile            | Related external client                      | download       | Allowed     |
+      | OpenFile            | Related external client                      | write-metadata | Allowed     |
+      | OpenFile            | Related external client                      | delete         | Allowed     |
+      | InternalFile        | Related external client                      | read-metadata  | Allowed     |
+      | InternalFile        | Related external client                      | download       | Allowed     |
+      | InternalFile        | Related external client                      | write-metadata | Allowed     |
+      | InternalFile        | Related external client                      | delete         | Allowed     |
+      | HiddenFile          | Related external client                      | read-metadata  | Not Allowed |
+      | HiddenFile          | Related external client                      | download       | Not Allowed |
+      | HiddenFile          | Related external client                      | write-metadata | Not Allowed |
+      | HiddenFile          | Related external client                      | delete         | Not Allowed |
 
   Scenario Outline: Verify Degree+Embargo file operation permissions when user is from the same organization as publication channel owner
     Given a file of type "<FileType>" with property "Degree+Embargo"
@@ -528,23 +528,23 @@ Feature: File permissions for embargo and degree files
       | HiddenFile          | Everyone else                        | write-metadata | Not Allowed |
       | HiddenFile          | Everyone else                        | delete         | Not Allowed |
 
-      | PendingOpenFile     | External client                      | read-metadata  | Not Allowed |
-      | PendingOpenFile     | External client                      | download       | Not Allowed |
-      | PendingOpenFile     | External client                      | write-metadata | Not Allowed |
-      | PendingOpenFile     | External client                      | delete         | Not Allowed |
-      | PendingInternalFile | External client                      | read-metadata  | Not Allowed |
-      | PendingInternalFile | External client                      | download       | Not Allowed |
-      | PendingInternalFile | External client                      | write-metadata | Not Allowed |
-      | PendingInternalFile | External client                      | delete         | Not Allowed |
-      | OpenFile            | External client                      | read-metadata  | Allowed     |
-      | OpenFile            | External client                      | download       | Allowed     |
-      | OpenFile            | External client                      | write-metadata | Allowed     |
-      | OpenFile            | External client                      | delete         | Allowed     |
-      | InternalFile        | External client                      | read-metadata  | Allowed     |
-      | InternalFile        | External client                      | download       | Allowed     |
-      | InternalFile        | External client                      | write-metadata | Allowed     |
-      | InternalFile        | External client                      | delete         | Allowed     |
-      | HiddenFile          | External client                      | read-metadata  | Not Allowed |
-      | HiddenFile          | External client                      | download       | Not Allowed |
-      | HiddenFile          | External client                      | write-metadata | Not Allowed |
-      | HiddenFile          | External client                      | delete         | Not Allowed |
+      | PendingOpenFile     | Related external client                      | read-metadata  | Not Allowed |
+      | PendingOpenFile     | Related external client                      | download       | Not Allowed |
+      | PendingOpenFile     | Related external client                      | write-metadata | Not Allowed |
+      | PendingOpenFile     | Related external client                      | delete         | Not Allowed |
+      | PendingInternalFile | Related external client                      | read-metadata  | Not Allowed |
+      | PendingInternalFile | Related external client                      | download       | Not Allowed |
+      | PendingInternalFile | Related external client                      | write-metadata | Not Allowed |
+      | PendingInternalFile | Related external client                      | delete         | Not Allowed |
+      | OpenFile            | Related external client                      | read-metadata  | Allowed     |
+      | OpenFile            | Related external client                      | download       | Allowed     |
+      | OpenFile            | Related external client                      | write-metadata | Allowed     |
+      | OpenFile            | Related external client                      | delete         | Allowed     |
+      | InternalFile        | Related external client                      | read-metadata  | Allowed     |
+      | InternalFile        | Related external client                      | download       | Allowed     |
+      | InternalFile        | Related external client                      | write-metadata | Allowed     |
+      | InternalFile        | Related external client                      | delete         | Allowed     |
+      | HiddenFile          | Related external client                      | read-metadata  | Not Allowed |
+      | HiddenFile          | Related external client                      | download       | Not Allowed |
+      | HiddenFile          | Related external client                      | write-metadata | Not Allowed |
+      | HiddenFile          | Related external client                      | delete         | Not Allowed |

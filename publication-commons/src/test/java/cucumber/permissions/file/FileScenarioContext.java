@@ -1,12 +1,12 @@
 package cucumber.permissions.file;
 
-import static cucumber.permissions.PermissionsRole.EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE_EMBARGO;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
 import static cucumber.permissions.PermissionsRole.OTHER_CONTRIBUTORS;
 import static cucumber.permissions.PermissionsRole.PUBLICATION_OWNER;
+import static cucumber.permissions.PermissionsRole.RELATED_EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.UNAUTHENTICATED;
 import static cucumber.permissions.RolesToAccessRights.roleToAccessRightsMap;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -97,7 +97,7 @@ public final class FileScenarioContext {
         var access = getAccessRights(roles);
 
         var isUnauthenticated = roles.contains(UNAUTHENTICATED) || roles.isEmpty();
-        var isExternalClient = roles.contains(EXTERNAL_CLIENT);
+        var isExternalClient = roles.contains(RELATED_EXTERNAL_CLIENT);
         var user = getUserInstance(access, isUnauthenticated, isExternalClient);
         var curatorTopLevelOrgCristinId = getCuratorTopLevelOrgCristinId(user, roles);
         var publicationTopLevel = fileBelongsToSameOrg && nonNull(user)

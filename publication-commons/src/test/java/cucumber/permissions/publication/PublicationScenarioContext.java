@@ -27,6 +27,8 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.Owner;
@@ -56,6 +58,8 @@ public class PublicationScenarioContext {
                                                 "DegreePhd",
                                                 "ArtisticDegreePhd",
                                                 "OtherStudentWork");
+    private boolean isImported = true;
+    private boolean isMetadataOnly = false;
 
     public void setOperation(PublicationOperation operation) {
         this.operation = operation;
@@ -70,15 +74,15 @@ public class PublicationScenarioContext {
     }
 
     public PublicationPermissions getPublicationPermissions() {
+        var randomResource =
+            Resource.fromPublication(isDegree ? randomDegreePublication() : randomNonDegreePublication());
+
         var topLevelOrgCristinId = nonNull(userOrganization) ? userOrganization : randomUri();
         var customerId = randomUri();
 
         var access = getAccessRights(roles);
 
-        var user =
-            roles.contains(RELATED_EXTERNAL_CLIENT) ?
-                UserInstance.createExternalUser(new ResourceOwner(new Username(randomString()), randomUri()), customerId)
-                : UserInstance.create(randomString(), customerId, randomUri(), access.stream().toList(), topLevelOrgCristinId);
+        var user = getUserInstance(customerId, access, topLevelOrgCristinId);
 
         var currentUserIsContributor = roles.contains(PermissionsRole.OTHER_CONTRIBUTORS);
         var contributors = getContributors(user, currentUserIsContributor);
@@ -89,8 +93,13 @@ public class PublicationScenarioContext {
         var currentUserIsPublicationOwner = roles.contains(PermissionsRole.PUBLICATION_OWNER);
         var owner = getOwner(user, topLevelOrgCristinId, currentUserIsPublicationOwner);
 
-        var randomResource =
-            Resource.fromPublication(isDegree ? randomDegreePublication() : randomNonDegreePublication());
+
+        var additionalIdentifiers = new HashSet<>(randomResource.getAdditionalIdentifiers());
+        if (isImported) {
+            additionalIdentifiers.add(new AdditionalIdentifier("inspera", randomString()));
+        }
+
+        var associatedArtifacts = isMetadataOnly ? AssociatedArtifactList.empty() : randomResource.getAssociatedArtifacts();
 
         var resource =
             randomResource.copy()
@@ -102,9 +111,21 @@ public class PublicationScenarioContext {
                 .withEntityDescription(randomResource.getEntityDescription().copy()
                                            .withContributors(contributors)
                                            .build())
+                .withAdditionalIdentifiers(additionalIdentifiers)
+                .withAssociatedArtifactsList(associatedArtifacts)
                 .build();
 
         return new PublicationPermissions(resource, user);
+    }
+
+    private UserInstance getUserInstance(URI customerId, HashSet<AccessRight> access, URI topLevelOrgCristinId) {
+        if (roles.contains(RELATED_EXTERNAL_CLIENT)) {
+            return UserInstance.createExternalUser(new ResourceOwner(new Username(randomString()), randomUri()),
+                                                   customerId);
+        }
+
+        return UserInstance.create(randomString(), customerId, randomUri(), access.stream().toList(),
+                                         topLevelOrgCristinId);
     }
 
     public void setPublisherOrganization(URI organization) {
@@ -113,6 +134,14 @@ public class PublicationScenarioContext {
 
     public void setUserOrganization(URI organization) {
         this.userOrganization = organization;
+    }
+
+    public void setIsImported(boolean isImported) {
+        this.isImported = isImported;
+    }
+
+    public void setIsMetadataOnly(boolean isMetadataOnly) {
+        this.isMetadataOnly = isMetadataOnly;
     }
 
     private List<PublicationChannel> generatePublicationChannels(Resource randomResource) {

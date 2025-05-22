@@ -10,6 +10,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.net.URI;
+import java.util.Arrays;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 
@@ -25,6 +26,22 @@ public class PublicationAccessFeatures {
     @Given("a {string} publication")
     public void aPublication(String publicationStatus) {
         scenarioContext.setPublicationStatus(PublicationStatus.lookup(publicationStatus));
+    }
+
+    @Given("a {string} publication with {string} property")
+    public void aPublicationWithProperties(String publicationStatus, String properties) {
+        scenarioContext.setPublicationStatus(PublicationStatus.lookup(publicationStatus));
+        var propertyList = Arrays.stream(properties.split(",")).map(String::toLowerCase).toList();
+
+        if (propertyList.contains("degree")) {
+            scenarioContext.setIsDegree(true);
+        }
+        if (propertyList.contains("imported")) {
+            scenarioContext.setIsImported(true);
+        }
+        if (propertyList.contains("metadataonly")) {
+            scenarioContext.setIsMetadataOnly(true);
+        }
     }
 
     @When("the user have the role {string}")

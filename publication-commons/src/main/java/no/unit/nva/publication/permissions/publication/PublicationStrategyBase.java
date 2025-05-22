@@ -8,11 +8,14 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.file.File.ACCEPTED_FILE_TYPES;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.Resource;
@@ -24,6 +27,7 @@ import org.slf4j.LoggerFactory;
 public class PublicationStrategyBase {
 
     public static final Logger logger = LoggerFactory.getLogger(PublicationStrategyBase.class);
+    private static final Set<String> IMPORT_IDENTIFIER_SOURCES = Set.of("inspera", "wiseflow");
 
     protected final Resource resource;
     protected final UserInstance userInstance;
@@ -50,7 +54,8 @@ public class PublicationStrategyBase {
     }
 
     protected boolean userRelatesToPublication() {
-        return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() || userBelongsToPublicationChannelOwner();
+        return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()
+               || userBelongsToPublicationChannelOwner();
     }
 
     protected boolean userBelongsToPublicationChannelOwner() {
@@ -83,7 +88,8 @@ public class PublicationStrategyBase {
     }
 
     protected boolean userIsFromSameInstitutionAsPublicationOwner() {
-        if (isNull(userInstance) || isNull(userInstance.getTopLevelOrgCristinId()) || isNull(resource.getResourceOwner())) {
+        if (isNull(userInstance) || isNull(userInstance.getTopLevelOrgCristinId()) || isNull(
+            resource.getResourceOwner())) {
             return false;
         }
 
@@ -99,6 +105,14 @@ public class PublicationStrategyBase {
                    .stream()
                    .anyMatch(artifact -> ACCEPTED_FILE_TYPES
                                              .contains(artifact.getClass()));
+    }
+
+    protected boolean isImportedPublication() {
+        return resource.getAdditionalIdentifiers().stream()
+                   .filter(AdditionalIdentifier.class::isInstance)
+                   .anyMatch(
+                       identifier -> IMPORT_IDENTIFIER_SOURCES.contains(
+                           identifier.sourceName().toLowerCase(Locale.ROOT)));
     }
 
     protected boolean isOwner() {
