@@ -1,8 +1,8 @@
 package no.unit.nva.publication.messages.create;
 
+import static no.unit.nva.model.PublicationOperation.APPROVE_FILES;
 import static no.unit.nva.model.PublicationOperation.DOI_REQUEST_CREATE;
 import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
-import static no.unit.nva.model.PublicationOperation.PUBLISHING_REQUEST_CREATE;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -10,10 +10,10 @@ import java.util.Map;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.messages.model.NewMessageDto;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -80,7 +80,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
                                                                      TicketEntry ticketDto) {
         return switch (ticketDto) {
             case DoiRequest ignored -> permissionStrategy.allowsAction(DOI_REQUEST_CREATE);
-            case PublishingRequestCase ignored -> permissionStrategy.allowsAction(PUBLISHING_REQUEST_CREATE);
+            case FilesApprovalEntry ignored -> permissionStrategy.allowsAction(APPROVE_FILES);
             case GeneralSupportRequest ignored -> permissionStrategy.allowsAction(PARTIAL_UPDATE);
             case null, default -> false;
         };

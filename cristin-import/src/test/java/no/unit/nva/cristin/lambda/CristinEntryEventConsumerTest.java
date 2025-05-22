@@ -10,7 +10,9 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDE
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.CHAPTER;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.EVENT;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.INFORMATION_MATERIAL;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.JOURNAL;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.BRIEFS;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CONFERENCE_LECTURE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.FEATURE_ARTICLE;
@@ -85,6 +87,7 @@ import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.DuplicateDoiException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnmappedBriefsException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
@@ -1116,6 +1119,22 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler.handleRequest(event, CONTEXT);
 
         assertTrue(logAppender.getMessages().contains("Could not process message"));
+    }
+
+
+    @Test
+    void shouldPersisUnmappedBriefsExceptionWhenMappingBriefsForUnsupportedCustomer() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(INFORMATION_MATERIAL, BRIEFS);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+
+        var expectedExceptionName = UnmappedBriefsException.class.getSimpleName();
+
+        var actualReport =
+            extractActualReportFromS3Client(eventBody, expectedExceptionName);
+
+        assertThat(actualReport, is(not(nullValue())));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
