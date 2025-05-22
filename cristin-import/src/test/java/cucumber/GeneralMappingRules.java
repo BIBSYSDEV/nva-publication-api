@@ -695,9 +695,4 @@ public class GeneralMappingRules {
         assertThat(contributors, hasSize(1));
         return contributors.get(0);
     }
-
-    @Then("the NVA resource is imported")
-    public void theNVAResourceIsImported() {
-        assertTrue(scenarioContext.mappingIsSuccessful());
-    }
 }
