@@ -1,7 +1,7 @@
 package no.unit.nva.publication.messages.create;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
@@ -85,7 +85,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var request = createNewMessageRequestForResourceOwner(publication, ticket, user, randomString());
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @ParameterizedTest
@@ -101,7 +101,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @ParameterizedTest
@@ -118,7 +118,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @ParameterizedTest
