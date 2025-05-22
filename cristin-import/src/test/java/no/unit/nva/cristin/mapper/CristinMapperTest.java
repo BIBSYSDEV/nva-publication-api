@@ -21,7 +21,6 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import java.net.URI;
 import java.nio.file.Path;
@@ -427,15 +426,11 @@ class CristinMapperTest extends AbstractCristinImportTest {
                 .withPublicationOwner(randomString())
                 .withContributors(List.of(contributorWithMissingName))
                 .build();
-        var error = assertThrows(MissingFieldsException.class,
-                                 () -> mapToPublication(cristinObjectWithContributorsWithoutRole));
-        assertThat(error.getMessage(), containsString("entityDescription.contributors.identity.name"));
-    }
+        var mappedContributor = mapToPublication(cristinObjectWithContributorsWithoutRole).getEntityDescription()
+                              .getContributors()
+                              .getFirst();
 
-    @Test
-    void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {
-        //re-use the test for the author's name
-        mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
+        assertNull(mappedContributor.getIdentity().getName());
     }
 
     @Test

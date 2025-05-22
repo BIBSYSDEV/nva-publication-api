@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
@@ -274,8 +275,10 @@ public class CristinMapper extends CristinMappingModule {
                 DoesNotHaveEmptyValues.checkForEmptyFields(publication, IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS);
             }
         } catch (Exception error) {
-            String message = error.getMessage();
-            throw new MissingFieldsException(message);
+            ErrorReport.exceptionName(MissingFieldsException.name())
+                .withBody(error.getMessage())
+                .withCristinId(cristinObject.getId())
+                .persist(s3Client);
         }
     }
 
