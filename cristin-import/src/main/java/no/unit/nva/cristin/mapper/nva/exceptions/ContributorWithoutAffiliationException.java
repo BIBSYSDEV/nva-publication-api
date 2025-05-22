@@ -1,11 +1,12 @@
 package no.unit.nva.cristin.mapper.nva.exceptions;
 
-public class ContributorWithoutAffiliationException extends RuntimeException {
+public final class ContributorWithoutAffiliationException extends RuntimeException {
 
-    public static final String ERROR_MESSAGE =
-        "The contributor has no affiliation. All contributors must have affiliations.";
+    private ContributorWithoutAffiliationException() {
+        super();
+    }
 
-    public ContributorWithoutAffiliationException() {
-        super(ERROR_MESSAGE);
+    public static String name() {
+        return ContributorWithoutAffiliationException.class.getSimpleName();
     }
 }

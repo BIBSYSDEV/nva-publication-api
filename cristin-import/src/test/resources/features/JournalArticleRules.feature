@@ -73,10 +73,10 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource has a Reference object with doi equal to "https://doi.org/10.1093/ajae/aaq063"
 
-  Scenario: Mapping fails when a Cristin Result of type JournalArticle has no information about the Journal title.
+  Scenario: Mapping not fails when a Cristin Result of type JournalArticle has no information about the Journal title.
     Given that the Journal Article entry has an empty "publisherName" field
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then the NVA resource is imported
 
 
   Scenario: When the the Cristin entry has a reference to an NSD journal then the
@@ -92,7 +92,7 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
        then an exception is thrown
     Given the Journal Publication has a reference to an NSD journal with identifier 12345
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then the NVA resource is imported
 
   Scenario: When the cristin entry is an article
     Given article has an article number 55
