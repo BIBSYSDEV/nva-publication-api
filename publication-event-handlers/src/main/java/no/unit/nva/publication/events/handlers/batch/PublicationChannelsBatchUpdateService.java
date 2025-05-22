@@ -39,7 +39,7 @@ public class PublicationChannelsBatchUpdateService {
         logger.info(PUBLICATIONS_UPDATED_MESSAGE,
                     String.join(", ", updatedChannels.stream()
                         .map(PublicationChannel::getResourceIdentifier)
-                        .map("%s, "::formatted)
+                        .map(SortableIdentifier::toString)
                         .collect(Collectors.toSet())));
     }
 
