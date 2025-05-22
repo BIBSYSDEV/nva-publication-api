@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PERSON_PATH;
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,6 +44,7 @@ public class CristinContributor implements Comparable<CristinContributor> {
     public static final String NAME_DELIMITER = ", ";
     public static final String MISSING_ROLE_ERROR = "Affiliation without Role";
     public static final String CONTRIBUTOR_MISSING_ROLE = "Contributor missing role";
+    public static final String CONTRIBUTOR_MISSING_AFFILIATIONS = "Contributor without affiliations";
     @JsonProperty("personlopenr")
     private Integer identifier;
     @JsonProperty("fornavn")
@@ -74,10 +77,14 @@ public class CristinContributor implements Comparable<CristinContributor> {
 
         return new Contributor.Builder().withIdentity(identity)
                    .withCorrespondingAuthor(false)
-                   .withAffiliations(extractAffiliations())
+                   .withAffiliations(extractAffiliations(cristinIdentifier, s3Client))
                    .withRole(extractRoles(cristinIdentifier, s3Client))
                    .withSequence(contributorOrder)
                    .build();
+    }
+
+    public List<CristinContributorsAffiliation> getAffiliations() {
+        return nonNull(affiliations) ? affiliations : Collections.emptyList();
     }
 
     public void setContributorOrder(Integer orderNumber) {
@@ -126,7 +133,7 @@ public class CristinContributor implements Comparable<CristinContributor> {
     }
 
     private List<CristinContributorRole> getRolesFromAffiliations() {
-        return affiliations.stream()
+        return getAffiliations().stream()
                    .map(CristinContributorsAffiliation::getRoles)
                    .filter(Objects::nonNull)
                    .flatMap(Collection::stream)
@@ -141,9 +148,13 @@ public class CristinContributor implements Comparable<CristinContributor> {
         return new RoleType(Role.OTHER);
     }
 
-    private List<Corporation> extractAffiliations() {
+    private List<Corporation> extractAffiliations(Integer cristinIdentifier, S3Client s3Client) {
         if (isNull(affiliations) || affiliations.isEmpty()) {
-            throw new ContributorWithoutAffiliationException();
+            ErrorReport.exceptionName(ContributorWithoutAffiliationException.name())
+                .withBody(CONTRIBUTOR_MISSING_AFFILIATIONS)
+                .withCristinId(cristinIdentifier)
+                .persist(s3Client);
+            return Collections.emptyList();
         }
         return affiliations.stream()
                    .filter(CristinContributorsAffiliation::isKnownAffiliation)

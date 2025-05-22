@@ -59,7 +59,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.time.Period;
 import no.unit.nva.model.time.Time;
-import nva.commons.core.SingletonCollector;
 import nva.commons.doi.DoiConverter;
 import nva.commons.doi.DoiValidator;
 import nva.commons.doi.InvalidDoiException;
@@ -254,9 +253,10 @@ public class ReferenceBuilder extends CristinMappingModule {
 
     private URI extractDoi() {
         var doi = Stream.of(getBookOrReportPart(), getBookOrReportDoi(), getJournalDOi())
-                   .filter(Objects::nonNull)
-                   .distinct()
-                   .collect(SingletonCollector.collectOrElse(null));
+                      .filter(Objects::nonNull)
+                      .distinct()
+                      .findFirst()
+                      .orElse(null);
         try {
             return doiConverter.toUri(doi);
         } catch (Exception e) {

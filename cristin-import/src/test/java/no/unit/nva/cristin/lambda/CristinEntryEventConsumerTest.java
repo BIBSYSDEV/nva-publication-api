@@ -500,7 +500,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void handlerThrowContributorWithoutAffiliationExceptionWhenTheCristinObjectHasContributorWithoutAffiliation()
+    void handlerPersistsContributorWithoutAffiliationErrorReportWhenTheCristinObjectHasContributorWithoutAffiliation()
         throws IOException {
         var cristinObjectWithoutAffiliations =
             CristinDataGenerator.objectWithContributorsWithoutAffiliation();
@@ -508,16 +508,14 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
 
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedExceptionName = ContributorWithoutAffiliationException.class.getSimpleName();
-
-        var expectedFilePath = constructExpectedErrorFilePaths(eventBody,
-                                                               expectedExceptionName);
-
+        var cristinId = cristinObjectWithoutAffiliations.get("id").toString();
+        var errorReportLocation =
+            UnixPath.of(ERROR_REPORT).addChild(ContributorWithoutAffiliationException.name()).addChild(cristinId);
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(expectedFilePath);
+        var file = s3Driver.getFile(errorReportLocation);
 
-        assertThat(file, is(not(emptyString())));
-        assertThat(file, containsString(expectedExceptionName));
+        assertThat(file, is(not(nullValue())));
+        assertFalse(resourceService.getPublicationsByCristinIdentifier(cristinId).isEmpty());
     }
 
     @Test

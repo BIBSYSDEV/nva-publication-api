@@ -669,6 +669,11 @@ public class GeneralMappingRules {
                                                                       .build()));
     }
 
+    @Then("the NVA resource is imported")
+    public void theNVAResourceIsImported() {
+        assertTrue(scenarioContext.mappingIsSuccessful());
+    }
+
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
                                                     List<CristinContributor> contributors) {
         for (int contributorsIndex = 0; contributorsIndex < contributors.size(); contributorsIndex++) {

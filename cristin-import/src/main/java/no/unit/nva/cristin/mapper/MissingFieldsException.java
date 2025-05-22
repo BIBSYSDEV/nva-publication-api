@@ -1,8 +1,12 @@
 package no.unit.nva.cristin.mapper;
 
-public class MissingFieldsException extends RuntimeException {
+public final class MissingFieldsException extends RuntimeException {
 
-    public MissingFieldsException(String message) {
-        super(message);
+    private MissingFieldsException() {
+        super();
+    }
+
+    public static String name() {
+        return MissingFieldsException.class.getSimpleName();
     }
 }

@@ -168,14 +168,6 @@ Feature: Mappings that hold for all types of Cristin Results
     Then  the NVA contributor has no affiliation
     And the NVA Contributor has the role "EDITOR"
 
-  Scenario: Contributors missing affiliations caues errors during mapping
-    Given that the Cristin Result has the Contributors with names and sequence:
-      | Given Name | Family Name | Ordinal Number |
-      | FirstGiven | FirstFamily | 1              |
-    And the contributor is missing affiliation
-    When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
-
   Scenario: unverified cristin contributors does not get their contributor identifiers mapped to NVA
     Given a cristin result with a single contributor that is not verified
     When the Cristin Result is converted to an NVA Resource
@@ -326,7 +318,7 @@ Feature: Mappings that hold for all types of Cristin Results
   Scenario: Mapping reports error when Cristin Contributor has no name
     Given that the Cristin Result has a Contributor with no family and no given name
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then the NVA resource is imported
 
   Scenario: Mapping cristin Funding with NFR should create nva Funding with id set.
     Given that Cristin Result has a grant with properties finansieringsreferanse "3013" and sourceCodeEnglish "NFR":
