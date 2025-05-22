@@ -13,6 +13,7 @@ import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.PublishingChannelEntryResolver;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.exceptions.NoPublisherException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnconfirmedPublisherException;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.NullPublisher;
@@ -27,6 +28,7 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     public static final String CUSTOM_VOLUME_SERIES_DELIMITER = ";";
     private static final String EMPTY_STRING = null;
     public static final String MISSING_PUBLISHER = "Missing publisher";
+    public static final String UNCONFIRMED_PUBLISHER = "Unconfirmed publisher";
 
     public NvaBookLikeBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper,
                               S3Client s3Client) {
@@ -92,7 +94,15 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
 
     private PublishingHouse createUnconfirmedPublisher() {
         var publisherName = extractUnconfirmedPublisherName();
-        return nonNull(publisherName) ? new UnconfirmedPublisher(publisherName) : new NullPublisher();
+        return nonNull(publisherName) ? createUnconfirmedPublisher(publisherName) : new NullPublisher();
+    }
+
+    private UnconfirmedPublisher createUnconfirmedPublisher(String publisherName) {
+        ErrorReport.exceptionName(UnconfirmedPublisherException.name())
+            .withBody(UNCONFIRMED_PUBLISHER)
+            .withCristinId(cristinObject.getId())
+            .persist(s3Client);
+        return new UnconfirmedPublisher(publisherName);
     }
 
     private String extractUnconfirmedPublisherName() {

@@ -11,6 +11,7 @@ import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.PublishingChannelEntryResolver;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnconfirmedSeriesException;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
@@ -18,6 +19,8 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookSeriesBuilder extends CristinMappingModule {
+
+    protected static final String UNCONFIRMED_SERIES = "Unconfirmed series";
 
     public NvaBookSeriesBuilder(CristinObject cristinObject,
                                 ChannelRegistryMapper channelRegistryMapper,
@@ -42,7 +45,12 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
         var issn = bookSeries.getIssn();
         var issnOnline = bookSeries.getIssnOnline();
         try {
-            return new UnconfirmedSeries(bookSeries.getJournalTitle(), issn, issnOnline);
+            var unconfirmedSeries = new UnconfirmedSeries(bookSeries.getJournalTitle(), issn, issnOnline);
+            ErrorReport.exceptionName(UnconfirmedSeriesException.name())
+                .withCristinId(cristinObject.getId())
+                .withBody(UNCONFIRMED_SERIES)
+                .persist(s3Client);
+            return unconfirmedSeries;
         } catch (InvalidIssnException e) {
             ErrorReport.exceptionName(e.getClass().getSimpleName())
                 .withCristinId(cristinObject.getId())
