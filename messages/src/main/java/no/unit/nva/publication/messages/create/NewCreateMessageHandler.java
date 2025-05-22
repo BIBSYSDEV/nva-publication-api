@@ -1,8 +1,8 @@
 package no.unit.nva.publication.messages.create;
 
-import static no.unit.nva.model.PublicationOperation.APPROVE_FILES;
 import static no.unit.nva.model.PublicationOperation.DOI_REQUEST_CREATE;
 import static no.unit.nva.model.PublicationOperation.PARTIAL_UPDATE;
+import static no.unit.nva.model.PublicationOperation.PUBLISHING_REQUEST_CREATE;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -26,7 +26,6 @@ import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -76,14 +75,15 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return HttpURLConnection.HTTP_CREATED;
     }
 
-    private static boolean userHasPermissionToCreateMessageForTicket(PublicationPermissions permissionStrategy,
-                                                                     TicketEntry ticketDto) {
-        return switch (ticketDto) {
-            case DoiRequest ignored -> permissionStrategy.allowsAction(DOI_REQUEST_CREATE);
-            case FilesApprovalEntry ignored -> permissionStrategy.allowsAction(APPROVE_FILES);
-            case GeneralSupportRequest ignored -> permissionStrategy.allowsAction(PARTIAL_UPDATE);
-            case null, default -> false;
-        };
+    private static void userHasPermissionToCreateMessageForTicket(PublicationPermissions permissionStrategy,
+                                                                     TicketEntry ticketDto)
+        throws UnauthorizedException {
+        switch (ticketDto) {
+            case DoiRequest ignored -> permissionStrategy.authorize(DOI_REQUEST_CREATE);
+            case FilesApprovalEntry ignored -> permissionStrategy.authorize(PUBLISHING_REQUEST_CREATE);
+            case GeneralSupportRequest ignored -> permissionStrategy.authorize(PARTIAL_UPDATE);
+            default -> throw new IllegalStateException("Unexpected value: " + ticketDto);
+        }
     }
 
     private static String createLocationHeader(Message message) {
@@ -102,10 +102,8 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     }
 
     private void isAuthorizedToManageTicket(PublicationPermissions permissions, TicketEntry ticket)
-        throws ForbiddenException {
-        if (!userHasPermissionToCreateMessageForTicket(permissions, ticket)) {
-            throw new ForbiddenException();
-        }
+        throws UnauthorizedException {
+        userHasPermissionToCreateMessageForTicket(permissions, ticket);
     }
 
     private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestUtils requestUtils) {

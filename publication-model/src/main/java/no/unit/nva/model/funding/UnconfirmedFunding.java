@@ -3,16 +3,15 @@ package no.unit.nva.model.funding;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class UnconfirmedFunding implements Funding {
+
     private final URI source;
     private final String identifier;
     private final Map<String, String> labels;
@@ -21,8 +20,7 @@ public class UnconfirmedFunding implements Funding {
     private final Instant activeTo;
 
     @JsonCreator
-    protected UnconfirmedFunding(@JsonProperty("source") URI source,
-                                 @JsonProperty("identifier") String identifier,
+    protected UnconfirmedFunding(@JsonProperty("source") URI source, @JsonProperty("identifier") String identifier,
                                  @JsonProperty("labels") Map<String, String> labels,
                                  @JsonProperty("fundingAmount") MonetaryAmount fundingAmount,
                                  @JsonProperty("activeFrom") Instant activeFrom,
@@ -67,26 +65,21 @@ public class UnconfirmedFunding implements Funding {
 
     @JacocoGenerated
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        UnconfirmedFunding unconfirmedFunding = (UnconfirmedFunding) o;
-        return source.equals(unconfirmedFunding.source)
-                && Objects.equals(identifier, unconfirmedFunding.identifier)
-                && Objects.equals(labels, unconfirmedFunding.labels)
-                && Objects.equals(fundingAmount, unconfirmedFunding.fundingAmount)
-                && Objects.equals(activeFrom, unconfirmedFunding.activeFrom)
-                && Objects.equals(activeTo, unconfirmedFunding.activeTo);
+    public int hashCode() {
+        return Objects.hash(getSource(), getIdentifier(), getLabels(), getFundingAmount(), getActiveFrom(),
+                            getActiveTo());
     }
 
     @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(source, identifier, labels, fundingAmount, activeFrom, activeTo);
+    public boolean equals(Object o) {
+        if (!(o instanceof UnconfirmedFunding that)) {
+            return false;
+        }
+        return Objects.equals(getSource(), that.getSource()) && Objects.equals(getIdentifier(), that.getIdentifier()) &&
+               Objects.equals(getLabels(), that.getLabels()) &&
+               Objects.equals(getFundingAmount(), that.getFundingAmount()) &&
+               Objects.equals(getActiveFrom(), that.getActiveFrom()) &&
+               Objects.equals(getActiveTo(), that.getActiveTo());
     }
-
 }
