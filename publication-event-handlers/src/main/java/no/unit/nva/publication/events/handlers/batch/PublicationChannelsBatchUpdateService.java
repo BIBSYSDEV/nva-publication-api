@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.batch;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.handlers.batch.ChannelUpdateEvent.PublicationChannelSummary;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -36,7 +37,10 @@ public class PublicationChannelsBatchUpdateService {
         logger.info(UPDATED_PUBLICATION_CHANNELS_MESSAGE, updatedChannels.size(), identifier);
 
         logger.info(PUBLICATIONS_UPDATED_MESSAGE,
-                    updatedChannels.stream().map(PublicationChannel::getResourceIdentifier).map(("%s, ")::formatted));
+                    String.join(", ", updatedChannels.stream()
+                        .map(PublicationChannel::getResourceIdentifier)
+                        .map("%s, "::formatted)
+                        .collect(Collectors.toSet())));
     }
 
     private static ClaimedPublicationChannel updateClaimedChannel(PublicationChannelSummary summary,
