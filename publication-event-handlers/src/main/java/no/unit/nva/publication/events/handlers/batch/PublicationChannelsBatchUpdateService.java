@@ -3,7 +3,6 @@ package no.unit.nva.publication.events.handlers.batch;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.handlers.batch.ChannelUpdateEvent.PublicationChannelSummary;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -18,7 +17,6 @@ public class PublicationChannelsBatchUpdateService {
     private static final Logger logger = LoggerFactory.getLogger(PublicationChannelsBatchUpdateService.class);
     private static final String UPDATED_PUBLICATION_CHANNELS_MESSAGE = "Updated {} publications with channel {}";
     private static final String FOUND_PUBLICATIONS_WITH_CHANNEL_MESSAGE = "Found {} publications with channel {}";
-    private static final String PUBLICATIONS_UPDATED_MESSAGE = "Publications updated: {}";
     private final ResourceService resourceService;
 
     public PublicationChannelsBatchUpdateService(ResourceService resourceService) {
@@ -35,12 +33,6 @@ public class PublicationChannelsBatchUpdateService {
         resourceService.batchUpdateChannels(updatedChannels);
 
         logger.info(UPDATED_PUBLICATION_CHANNELS_MESSAGE, updatedChannels.size(), identifier);
-
-        logger.info(PUBLICATIONS_UPDATED_MESSAGE,
-                    String.join(", ", updatedChannels.stream()
-                        .map(PublicationChannel::getResourceIdentifier)
-                        .map(SortableIdentifier::toString)
-                        .collect(Collectors.toSet())));
     }
 
     private static ClaimedPublicationChannel updateClaimedChannel(PublicationChannelSummary summary,
