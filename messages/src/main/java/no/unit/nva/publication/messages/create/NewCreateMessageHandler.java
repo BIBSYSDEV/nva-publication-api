@@ -7,7 +7,6 @@ import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.util.Map;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.messages.model.NewMessageDto;
 import no.unit.nva.publication.model.FilesApprovalEntry;
@@ -59,9 +58,9 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
-        var publication = resourceService.getPublicationByIdentifier(requestUtils.publicationIdentifier());
+        var resource = resourceService.getResourceByIdentifier(requestUtils.publicationIdentifier());
         var ticket = ticketService.fetchTicketByIdentifier(requestUtils.ticketIdentifier());
-        var permissions = fetchPermissions(requestInfo, publication);
+        var permissions = fetchPermissions(requestInfo, resource);
         isAuthorizedToManageTicket(permissions, ticket);
         updateStatusToPendingWhenCompletedGeneralSupportRequest(ticket);
         injectAssigneeWhenUnassignedTicket(ticket, requestUtils);
@@ -96,9 +95,9 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         }
     }
 
-    private PublicationPermissions fetchPermissions(RequestInfo requestInfo, Publication publication)
+    private PublicationPermissions fetchPermissions(RequestInfo requestInfo, Resource resource)
         throws UnauthorizedException {
-        return PublicationPermissions.create(Resource.fromPublication(publication), UserInstance.fromRequestInfo(requestInfo));
+        return PublicationPermissions.create(resource, UserInstance.fromRequestInfo(requestInfo));
     }
 
     private void isAuthorizedToManageTicket(PublicationPermissions permissions, TicketEntry ticket)
