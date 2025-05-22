@@ -11,6 +11,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isBriefs;
 import static no.unit.nva.cristin.mapper.nva.ReferenceBuilder.NIFU_CUSTOMER_NAME;
 import java.util.Objects;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnmappedBriefsException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -58,11 +59,18 @@ public class PublicationInstanceBuilderImpl {
             throw new UnsupportedMainCategoryException();
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
             throw new UnsupportedSecondaryCategoryException();
+        } else if (isBriefsThatShouldNotBeMapped(cristinObject)) {
+            throw new UnmappedBriefsException();
+        } else {
+            throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
         }
-        throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
 
     private boolean isBriefsThatShouldBeMapped(CristinObject cristinObject) {
         return isBriefs(cristinObject) && NIFU_CUSTOMER_NAME.equals(cristinObject.getOwnerCodeCreated());
+    }
+
+    public boolean isBriefsThatShouldNotBeMapped(CristinObject cristinObject) {
+        return isBriefs(cristinObject) && !NIFU_CUSTOMER_NAME.equals(cristinObject.getOwnerCodeCreated());
     }
 }

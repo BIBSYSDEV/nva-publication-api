@@ -4,7 +4,6 @@ import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
@@ -56,15 +55,15 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
+        var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
 
-        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
 
-        if (publication.getStatus() == PublicationStatus.DRAFT) {
-            PublicationPermissions.create(Resource.fromPublication(publication), userInstance).authorize(DELETE);
-            resourceService.deleteDraftPublication(userInstance, publicationIdentifier);
+        if (resource.getStatus() == PublicationStatus.DRAFT) {
+            PublicationPermissions.create(resource, userInstance).authorize(DELETE);
+            resourceService.deleteDraftPublication(userInstance, resourceIdentifier);
         } else {
-            unsupportedPublicationForDeletion(publication);
+            unsupportedPublicationForDeletion(resource);
         }
 
         return null;
@@ -75,8 +74,8 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         return HttpStatus.SC_ACCEPTED;
     }
 
-    private static void unsupportedPublicationForDeletion(Publication publication) throws BadRequestException {
+    private static void unsupportedPublicationForDeletion(Resource resource) throws BadRequestException {
         throw new BadRequestException(
-            String.format("Publication status %s is not supported for deletion", publication.getStatus()));
+            String.format("Publication status %s is not supported for deletion", resource.getStatus()));
     }
 }

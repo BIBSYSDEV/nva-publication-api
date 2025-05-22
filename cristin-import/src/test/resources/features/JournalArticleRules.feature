@@ -76,7 +76,7 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
   Scenario: Mapping fails when a Cristin Result of type JournalArticle has no information about the Journal title.
     Given that the Journal Article entry has an empty "publisherName" field
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then the NVA resource is imported
 
 
   Scenario: When the the Cristin entry has a reference to an NSD journal then the

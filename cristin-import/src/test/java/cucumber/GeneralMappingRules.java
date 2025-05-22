@@ -17,6 +17,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
@@ -688,5 +689,10 @@ public class GeneralMappingRules {
         var contributors = scenarioContext.getNvaEntry().getEntityDescription().getContributors();
         assertThat(contributors, hasSize(1));
         return contributors.get(0);
+    }
+
+    @Then("the NVA resource is imported")
+    public void theNVAResourceIsImported() {
+        assertTrue(scenarioContext.mappingIsSuccessful());
     }
 }
