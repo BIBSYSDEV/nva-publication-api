@@ -8,10 +8,12 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.BOOK;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.CHAPTER;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.EVENT;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.INFORMATION_MATERIAL;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.JOURNAL;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.ANTHOLOGY;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.BRIEFS;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CONFERENCE_LECTURE;
@@ -39,7 +41,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -88,6 +89,9 @@ import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.DuplicateDoiException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnconfirmedJournalException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnconfirmedPublisherException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnconfirmedSeriesException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnmappedBriefsException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
@@ -859,9 +863,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
         var cristinIdentifier = String.valueOf(cristinObject.getId());
-        var reportLocation =  UnixPath.of("ERROR_REPORT").addChild("InvalidIsrcException").addChild(cristinIdentifier);
-        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(reportLocation);
+        var file = getErrorReport(cristinIdentifier, "InvalidIsrcException");
         var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
 
         assertThat(importedPublication, hasSize(1));
@@ -876,10 +878,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
         var cristinIdentifier = String.valueOf(cristinObject.getId());
-        var reportLocation =
-            UnixPath.of("ERROR_REPORT").addChild("InvalidIsmnException").addChild(cristinIdentifier);
-        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(reportLocation);
+        var file = getErrorReport(cristinIdentifier, "InvalidIsmnException");
         var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
 
         assertThat(importedPublication, hasSize(1));
@@ -950,10 +949,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
         var cristinIdentifier = String.valueOf(cristinObject.getId());
-        var expectedErrorFileLocation =
-            UnixPath.of("ERROR_REPORT").addChild("InvalidDoiException").addChild(cristinIdentifier);
-        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(expectedErrorFileLocation);
+        var file = getErrorReport(cristinIdentifier, "InvalidDoiException");
         var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
 
         assertThat(importedPublication, hasSize(1));
@@ -1120,9 +1116,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertTrue(logAppender.getMessages().contains("Could not process message"));
     }
 
-
     @Test
-    void shouldPersisUnmappedBriefsExceptionWhenMappingBriefsForUnsupportedCustomer() throws IOException {
+    void shouldPersistUnmappedBriefsExceptionWhenMappingBriefsForUnsupportedCustomer() throws IOException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(INFORMATION_MATERIAL, BRIEFS);
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
@@ -1134,6 +1129,57 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
             extractActualReportFromS3Client(eventBody, expectedExceptionName);
 
         assertThat(actualReport, is(not(nullValue())));
+    }
+
+    @Test
+    void shouldPersistUnconfirmedJournalExceptionWhenMappingToPublicationWithUnconfirmedJournal() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(JOURNAL, JOURNAL_ARTICLE);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+
+        var cristinIdentifier = cristinObject.getId().toString();
+        var report = getErrorReport(cristinIdentifier, UnconfirmedJournalException.name());
+
+        assertThat(report, is(not(nullValue())));
+        assertFalse(resourceService.getPublicationsByCristinIdentifier(cristinIdentifier).isEmpty());
+    }
+
+    @Test
+    void shouldPersistUnconfirmedSeriesExceptionWhenMappingToPublicationWithUnconfirmedSeries() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(BOOK, ANTHOLOGY);
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+
+        var cristinIdentifier = cristinObject.getId().toString();
+        var report = getErrorReport(cristinIdentifier, UnconfirmedSeriesException.name());
+
+        assertThat(report, is(not(nullValue())));
+        assertFalse(resourceService.getPublicationsByCristinIdentifier(cristinIdentifier).isEmpty());
+    }
+
+    @Test
+    void shouldPersistUnconfirmedBookExceptionWhenMappingToPublicationWithUnconfirmedPublisher() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(BOOK, ANTHOLOGY);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+
+        var cristinIdentifier = cristinObject.getId().toString();
+        var report = getErrorReport(cristinIdentifier, UnconfirmedPublisherException.name());
+
+        assertThat(report, is(not(nullValue())));
+        assertFalse(resourceService.getPublicationsByCristinIdentifier(cristinIdentifier).isEmpty());
+    }
+
+    private String getErrorReport(String cristinIdentifier, String exceptionName) {
+        var reportLocation =
+            UnixPath.of("ERROR_REPORT").addChild(exceptionName).addChild(cristinIdentifier);
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        return s3Driver.getFile(reportLocation);
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {

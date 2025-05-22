@@ -7,15 +7,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnconfirmedJournalException;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class PeriodicalBuilder extends CristinMappingModule {
 
+    private static final String UNCONFIRMED_JOURNAL = "Unconfirmed journal";
     private final CristinObject cristinObject;
 
     public PeriodicalBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper,
@@ -33,8 +37,16 @@ public class PeriodicalBuilder extends CristinMappingModule {
     }
 
     private Periodical createUnconfirmedJournal() {
-        return attempt(() -> new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline()))
+        return attempt(this::createUnconfirmedJournalAndPersistErrorReport)
                    .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
+    }
+
+    private UnconfirmedJournal createUnconfirmedJournalAndPersistErrorReport() throws InvalidIssnException {
+        ErrorReport.exceptionName(UnconfirmedJournalException.name())
+            .withBody(UNCONFIRMED_JOURNAL)
+            .withCristinId(cristinObject.getId())
+            .persist(s3Client);
+        return new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline());
     }
 
     private Periodical createJournal() {
