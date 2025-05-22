@@ -15,7 +15,8 @@ import org.slf4j.LoggerFactory;
 public class PublicationChannelsBatchUpdateService {
 
     private static final Logger logger = LoggerFactory.getLogger(PublicationChannelsBatchUpdateService.class);
-    protected static final String UPDATED_PUBLICATION_CHANNELS_MESSAGE = "Updated {} publications with channel {}";
+    private static final String UPDATED_PUBLICATION_CHANNELS_MESSAGE = "Updated {} publications with channel {}";
+    private static final String FOUND_PUBLICATIONS_WITH_CHANNEL_MESSAGE = "Found {} publications with channel {}";
     private final ResourceService resourceService;
 
     public PublicationChannelsBatchUpdateService(ResourceService resourceService) {
@@ -25,6 +26,8 @@ public class PublicationChannelsBatchUpdateService {
     public void updateChannels(ChannelUpdateEvent event) {
         var identifier = event.getChannelIdentifier();
         var publicationChannels = listAllPublicationChannelsWithIdentifier(identifier);
+
+        logger.info(FOUND_PUBLICATIONS_WITH_CHANNEL_MESSAGE, publicationChannels.size(), identifier);
 
         var updatedChannels = publicationChannels.stream().map(channel -> update(channel, event)).toList();
         resourceService.batchUpdateChannels(updatedChannels);
