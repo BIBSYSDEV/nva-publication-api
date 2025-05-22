@@ -4,7 +4,6 @@ import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
