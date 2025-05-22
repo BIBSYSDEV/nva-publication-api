@@ -493,7 +493,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void handlerPersistContributorWithoutAffiliationErrorReportWhenTheCristinObjectHasContributorWithoutAffiliation()
+    void handlerPersistsContributorWithoutAffiliationErrorReportWhenTheCristinObjectHasContributorWithoutAffiliation()
         throws IOException {
         var cristinObjectWithoutAffiliations =
             CristinDataGenerator.objectWithContributorsWithoutAffiliation();
