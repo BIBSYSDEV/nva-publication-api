@@ -1,4 +1,3 @@
-@debug
 Feature: File metadata write and file delete permissions
   As a system user
   I want file metadata write (editing and deletion) to have clear permissions
@@ -25,7 +24,7 @@ Feature: File metadata write and file delete permissions
       | UploadedFile        | File curators for other contributors   | Not Allowed |
       | UploadedFile        | File curator by publication owner at X | Allowed     |
       | UploadedFile        | Everyone else                          | Not Allowed |
-      | UploadedFile        | External client                        | Not Allowed |
+      | UploadedFile        | Related external client                | Not Allowed |
       | PendingOpenFile     | Publication owner at X                 | Allowed     |
       | PendingOpenFile     | Contributor at X                       | Not Allowed |
       | PendingOpenFile     | Other contributors                     | Not Allowed |
@@ -33,7 +32,7 @@ Feature: File metadata write and file delete permissions
       | PendingOpenFile     | File curators for other contributors   | Not Allowed |
       | PendingOpenFile     | File curator by publication owner at X | Allowed     |
       | PendingOpenFile     | Everyone else                          | Not Allowed |
-      | PendingOpenFile     | External client                        | Not Allowed |
+      | PendingOpenFile     | Related external client                | Not Allowed |
       | PendingInternalFile | Publication owner at X                 | Allowed     |
       | PendingInternalFile | Contributor at X                       | Not Allowed |
       | PendingInternalFile | Other contributors                     | Not Allowed |
@@ -41,7 +40,7 @@ Feature: File metadata write and file delete permissions
       | PendingInternalFile | File curators for other contributors   | Not Allowed |
       | PendingInternalFile | File curator by publication owner at X | Allowed     |
       | PendingInternalFile | Everyone else                          | Not Allowed |
-      | PendingInternalFile | External client                        | Not Allowed |
+      | PendingInternalFile | Related external client                | Not Allowed |
       | OpenFile            | Publication owner at X                 | Not Allowed |
       | OpenFile            | Contributor at X                       | Not Allowed |
       | OpenFile            | Other contributors                     | Not Allowed |
@@ -49,7 +48,7 @@ Feature: File metadata write and file delete permissions
       | OpenFile            | File curators for other contributors   | Not Allowed |
       | OpenFile            | File curator by publication owner at X | Allowed     |
       | OpenFile            | Everyone else                          | Not Allowed |
-      | OpenFile            | External client                        | Allowed     |
+      | OpenFile            | Related external client                | Allowed     |
       | InternalFile        | Publication owner at X                 | Not Allowed |
       | InternalFile        | Contributor at X                       | Not Allowed |
       | InternalFile        | Other contributors                     | Not Allowed |
@@ -57,7 +56,7 @@ Feature: File metadata write and file delete permissions
       | InternalFile        | File curators for other contributors   | Not Allowed |
       | InternalFile        | File curator by publication owner at X | Allowed     |
       | InternalFile        | Everyone else                          | Not Allowed |
-      | InternalFile        | External client                        | Allowed     |
+      | InternalFile        | Related external client                | Allowed     |
       | HiddenFile          | Publication owner at X                 | Not Allowed |
       | HiddenFile          | Contributor at X                       | Not Allowed |
       | HiddenFile          | Other contributors                     | Not Allowed |
@@ -65,4 +64,4 @@ Feature: File metadata write and file delete permissions
       | HiddenFile          | File curators for other contributors   | Not Allowed |
       | HiddenFile          | File curator by publication owner at X | Allowed     |
       | HiddenFile          | Everyone else                          | Not Allowed |
-      | HiddenFile          | External client                        | Not Allowed |
+      | HiddenFile          | Related external client                | Not Allowed |

@@ -37,7 +37,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private boolean handleDegree() {
-        if (hasApprovedFiles()) {
+        if (hasApprovedFiles() || isImportedPublication()) {
             return approvedFileStrategy();
         } else {
             return nonApprovedFileStrategy();
