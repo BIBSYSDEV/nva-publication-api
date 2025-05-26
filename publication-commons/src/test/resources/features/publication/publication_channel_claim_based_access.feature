@@ -43,13 +43,15 @@ Feature: Permissions given claimed publisher
       | Related external client           | unpublish      | Allowed     |
 
 
-  Scenario Outline: Verify update operation when user is not from the same organization as claimed
+  Scenario Outline: Verify update operation when user is from the same organization as claimed
   publisher and publication has no approved files
     Given a "published" publication
     And publication has no approved files
     And publication is a degree
     And publication has claimed publisher
+    And publisher is claimed by organization
     When the user have the role "<UserRole>"
+    And the user is from the same organization as claimed publisher
     And the user attempts to "update"
     Then the action outcome is "<Outcome>"
 
