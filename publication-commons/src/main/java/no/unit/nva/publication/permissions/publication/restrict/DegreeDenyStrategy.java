@@ -55,7 +55,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private boolean nonApprovedFileStrategy() {
-        if (!userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()) {
+        if (!userRelatesToPublication()) {
             return DENY;
         }
         return PASS;
