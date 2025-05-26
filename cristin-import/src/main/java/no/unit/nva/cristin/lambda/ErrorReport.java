@@ -25,7 +25,7 @@ public final class ErrorReport {
     }
 
     public ErrorReport withBody(String body) {
-        return copy().withBody(body).build();
+        return copy().withBody(new CristinReport(body).toJsonString()).build();
     }
 
     public void persist(S3Client s3Client) {

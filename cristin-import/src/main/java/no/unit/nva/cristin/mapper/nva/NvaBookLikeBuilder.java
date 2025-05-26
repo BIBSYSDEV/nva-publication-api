@@ -99,7 +99,7 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
 
     private UnconfirmedPublisher createUnconfirmedPublisher(String publisherName) {
         ErrorReport.exceptionName(UnconfirmedPublisherException.name())
-            .withBody(UNCONFIRMED_PUBLISHER)
+            .withBody(publisherName)
             .withCristinId(cristinObject.getId())
             .persist(s3Client);
         return new UnconfirmedPublisher(publisherName);
