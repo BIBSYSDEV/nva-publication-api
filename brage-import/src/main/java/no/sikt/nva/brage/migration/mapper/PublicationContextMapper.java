@@ -25,6 +25,7 @@ import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Course;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
@@ -71,7 +72,7 @@ public final class PublicationContextMapper {
     }
 
     @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
-    public static PublicationContext buildPublicationContext(Record brageRecord)
+    public static PublicationContext buildPublicationContext(Record brageRecord, URI organizationId)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         if (shouldBeMappedToBook(brageRecord)) {
             return buildPublicationContextWhenBook(brageRecord);
@@ -98,7 +99,7 @@ public final class PublicationContextMapper {
             return new Anthology();
         }
         if (isEvent(brageRecord)) {
-            return buildPublicationContextWhenEvent();
+            return buildPublicationContextWhenEvent(brageRecord, organizationId);
         }
         if (isArtistic(brageRecord)) {
             return new Artistic();
@@ -282,8 +283,11 @@ public final class PublicationContextMapper {
         return NvaType.REPORT.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static PublicationContext buildPublicationContextWhenEvent() {
-        return new Event.Builder().build();
+    private static PublicationContext buildPublicationContextWhenEvent(Record brageRecord, URI organizationId) {
+        return new Event.Builder()
+                   .withName(extractMainTitle(brageRecord))
+                   .withAgent(Organization.fromUri(organizationId))
+                   .build();
     }
 
     private static boolean isUnconfirmedScientificArticle(Record brageRecord) {
@@ -300,6 +304,12 @@ public final class PublicationContextMapper {
             var issn = !issnList.isEmpty() ? issnList.getFirst() : null;
             return new UnconfirmedJournal(extractJournalTitle(brageRecord), issn, null);
         }
+    }
+
+    private static String extractMainTitle(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription())
+                   .map(no.sikt.nva.brage.migration.record.EntityDescription::getMainTitle)
+                   .orElse(null);
     }
 
     private static List<String> extractIssnList(Record brageRecord) {

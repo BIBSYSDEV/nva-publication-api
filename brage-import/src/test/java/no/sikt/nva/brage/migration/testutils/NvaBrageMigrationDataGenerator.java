@@ -231,7 +231,8 @@ public class NvaBrageMigrationDataGenerator {
 
     public static class Builder {
 
-        public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
+        public static final URI RESOURCE_OWNER_URI = URI.create(
+            "https://test.nva.aws.unit.no/cristin/organization/194.0.0.0");
         public ResourceOwner resourceOwner;
         private boolean noContributors;
         private URI handle;
