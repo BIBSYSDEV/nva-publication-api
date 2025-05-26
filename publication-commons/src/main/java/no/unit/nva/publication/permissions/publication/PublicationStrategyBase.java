@@ -107,7 +107,7 @@ public class PublicationStrategyBase {
                                              .contains(artifact.getClass()));
     }
 
-    protected boolean isImportedPublication() {
+    protected boolean isImportedStudentThesis() {
         return resource.getAdditionalIdentifiers().stream()
                    .filter(AdditionalIdentifier.class::isInstance)
                    .anyMatch(
