@@ -5,7 +5,7 @@ import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
-import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.getPublisherIdentifier;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.getPublisherIdentifierWhenDegree;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -124,15 +124,15 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public List<TransactWriteItem> updatePublicationChannelsForPublisherWhenDegree(Resource resource,
-                                                                                Resource persistedResource) {
+                                                                                   Resource persistedResource) {
         var transactWriteItems = new ArrayList<TransactWriteItem>();
 
-        var oldPublisherIdentifier = getPublisherIdentifier(persistedResource);
-        var newPublisherIdentifier = getPublisherIdentifier(resource);
+        var oldPublisherIdentifier = getPublisherIdentifierWhenDegree(persistedResource);
+        var newPublisherIdentifier = getPublisherIdentifierWhenDegree(resource);
 
         if (!Objects.equals(oldPublisherIdentifier, newPublisherIdentifier)) {
-            oldPublisherIdentifier.ifPresent(id -> removePublicationChannel(persistedResource, id, transactWriteItems));
-            newPublisherIdentifier.ifPresent(id -> addPublicationChannel(resource, transactWriteItems));
+            oldPublisherIdentifier.ifPresent(identifier -> removePublicationChannel(persistedResource, identifier, transactWriteItems));
+            newPublisherIdentifier.ifPresent(identifier -> addPublicationChannel(resource, transactWriteItems));
         }
 
         return transactWriteItems;
