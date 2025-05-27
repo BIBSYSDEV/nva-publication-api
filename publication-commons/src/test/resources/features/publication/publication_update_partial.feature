@@ -78,8 +78,8 @@ Feature: Publication update permissions
       | Degree file curator     | MetadataOnly,Degree,Imported | update         | Allowed     |
       | Everyone else           | MetadataOnly,Degree,Imported | update         | Not Allowed |
       | Related external client | MetadataOnly,Degree,Imported | update         | Allowed     |
-      | Publication owner       | MetadataOnly,Degree          | update         | Not Allowed |
-      | Contributor             | MetadataOnly,Degree          | update         | Not Allowed |
+      | Publication owner       | MetadataOnly,Degree          | update         | Allowed     |
+      | Contributor             | MetadataOnly,Degree          | update         | Allowed     |
       | Degree file curator     | MetadataOnly,Degree          | update         | Allowed     |
       | Everyone else           | MetadataOnly,Degree          | update         | Not Allowed |
       | Related external client | MetadataOnly,Degree          | update         | Allowed     |

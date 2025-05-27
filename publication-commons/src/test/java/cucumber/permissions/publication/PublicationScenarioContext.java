@@ -58,7 +58,7 @@ public class PublicationScenarioContext {
                                                 "DegreePhd",
                                                 "ArtisticDegreePhd",
                                                 "OtherStudentWork");
-    private boolean isImported = true;
+    private boolean isImported = false;
     private boolean isMetadataOnly = false;
 
     public void setOperation(PublicationOperation operation) {

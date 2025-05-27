@@ -88,4 +88,9 @@ public class PublicationAccessFeatures {
     public void theUserIsFromTheSameOrganizationAsClaimedPublisher() {
         scenarioContext.setUserOrganization(ORGANIZATION);
     }
+
+    @And("publication has no approved files")
+    public void publicationHasNoApprovedFiles() {
+        scenarioContext.setIsMetadataOnly(true);
+    }
 }
