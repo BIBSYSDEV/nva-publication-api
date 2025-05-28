@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class PeriodicalBuilder extends CristinMappingModule {
 
-    private static final String UNCONFIRMED_JOURNAL = "Unconfirmed journal";
     private final CristinObject cristinObject;
 
     public PeriodicalBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper,
@@ -42,11 +41,12 @@ public class PeriodicalBuilder extends CristinMappingModule {
     }
 
     private UnconfirmedJournal createUnconfirmedJournalAndPersistErrorReport() throws InvalidIssnException {
+        var title = extractPublisherTitle();
         ErrorReport.exceptionName(UnconfirmedJournalException.name())
-            .withBody(UNCONFIRMED_JOURNAL)
+            .withBody(title)
             .withCristinId(cristinObject.getId())
             .persist(s3Client);
-        return new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline());
+        return new UnconfirmedJournal(title, extractIssn(), extractIssnOnline());
     }
 
     private Periodical createJournal() {
