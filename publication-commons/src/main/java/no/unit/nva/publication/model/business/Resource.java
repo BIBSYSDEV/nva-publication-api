@@ -266,8 +266,7 @@ public class Resource implements Entity {
     public Optional<PublicationChannel> getPublicationChannelByIdentifier(SortableIdentifier identifier) {
         return getPublicationChannels()
                    .stream()
-                   .filter(publicationChannel -> identifier.toString()
-                                                     .equalsIgnoreCase(publicationChannel.getIdentifier().toString()))
+                   .filter(publicationChannel -> identifier.equals(publicationChannel.getIdentifier()))
                    .findFirst();
     }
 

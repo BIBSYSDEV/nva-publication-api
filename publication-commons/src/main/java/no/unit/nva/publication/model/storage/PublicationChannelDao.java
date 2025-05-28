@@ -52,7 +52,9 @@ public class PublicationChannelDao extends Dao implements DynamoEntryByIdentifie
     }
 
     public static PublicationChannelDao fromPublicationChannel(PublicationChannel publicationChannel) {
-        return new PublicationChannelDao(publicationChannel.getIdentifier(), publicationChannel.getResourceIdentifier(),
+        var lowerCaseIdentifier = publicationChannel.getIdentifier().toString().toLowerCase();
+        return new PublicationChannelDao(new SortableIdentifier(lowerCaseIdentifier),
+                                         publicationChannel.getResourceIdentifier(),
                                          publicationChannel);
     }
 
