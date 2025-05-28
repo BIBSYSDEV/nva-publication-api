@@ -751,6 +751,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         assertThat(expandedTicket, instanceOf(ExpandedUnpublishRequest.class));
     }
+
     // TODO: Handle redirects where id's received back in response matches with the requested resource
     @Test
     void shouldThrowExpansionExceptionWhenFetchingPublicationChannelReturnsRedirect()
