@@ -26,7 +26,7 @@ jsonassert = { strictly = '1.5.3'}
 junit = { strictly = '5.12.2' }
 log4j = { strictly = '2.24.3' }
 mockito = { strictly = '5.15.2' }
-nva = { strictly = '2.2.5' }
+nva = { strictly = '2.2.6' }
 nva-language = { strictly = '1.2.0' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
 reflections = { strictly = '0.10.2' }
