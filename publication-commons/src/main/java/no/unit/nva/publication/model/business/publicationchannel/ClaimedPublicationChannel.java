@@ -23,7 +23,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeName(ClaimedPublicationChannel.TYPE)
 public final class ClaimedPublicationChannel implements PublicationChannel, JsonSerializable {
 
-    static final String TYPE = "ClaimedPublicationChannel";
+    public static final String TYPE = "ClaimedPublicationChannel";
 
     private final URI id;
     private final URI customerId;
