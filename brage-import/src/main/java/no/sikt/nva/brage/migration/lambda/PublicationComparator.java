@@ -9,7 +9,9 @@ import java.util.stream.Stream;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
@@ -49,8 +51,16 @@ public final class PublicationComparator {
             return existingPublicationInstance instanceof Lecture
                 || existingPublicationContext.equals(incomingPublicationContext);
         } else {
+            if (isJournal(incomingPublicationContext)) {
+                return isJournal(existingPublicationContext);
+            }
             return existingPublicationContext.equals(incomingPublicationContext);
         }
+    }
+
+    private static boolean isJournal(Class<? extends PublicationContext> incomingPublicationContext) {
+        return incomingPublicationContext.equals(Journal.class) ||
+               incomingPublicationContext.equals(UnconfirmedJournal.class);
     }
 
     private static boolean typesAreMissing(Publication incomingPublication) {
