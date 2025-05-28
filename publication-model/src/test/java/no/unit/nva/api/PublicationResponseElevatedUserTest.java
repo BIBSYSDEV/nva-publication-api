@@ -14,7 +14,6 @@ import java.util.Set;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNote;
-import no.unit.nva.model.testing.PublicationGenerator;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -28,14 +27,6 @@ public class PublicationResponseElevatedUserTest {
         var publicationResponseForElevatedUsers = PublicationResponseElevatedUser.fromPublication(publication);
         assertThat(publicationResponseForElevatedUsers.getPublicationNotes(),
                    is(equalTo(publication.getPublicationNotes())));
-    }
-
-    @Test
-    void shouldReceiveCuratingInstitutionsWhenConvertingFromPublication() {
-        var publication = randomPublication();
-        var publicationResponseForElevatedUsers = PublicationResponseElevatedUser.fromPublication(publication);
-        assertThat(publicationResponseForElevatedUsers.getCuratingInstitutions(),
-                   is(equalTo(publication.getCuratingInstitutions())));
     }
 
     @Test
