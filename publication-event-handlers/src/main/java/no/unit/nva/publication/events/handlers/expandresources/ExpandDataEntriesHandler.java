@@ -8,6 +8,10 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
+import static no.unit.nva.publication.queue.RecoveryEntry.FILE;
+import static no.unit.nva.publication.queue.RecoveryEntry.MESSAGE;
+import static no.unit.nva.publication.queue.RecoveryEntry.RESOURCE;
+import static no.unit.nva.publication.queue.RecoveryEntry.TICKET;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -29,8 +33,12 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.queue.QueueClient;
+import no.unit.nva.publication.queue.RecoveryEntry;
 import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -109,7 +117,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
         var authorizedUriRetriever = new AuthorizedBackendUriRetriever(ENVIRONMENT.readEnv(BACKEND_CLIENT_AUTH_URL),
                                                                        ENVIRONMENT.readEnv(BACKEND_CLIENT_SECRET_NAME));
         return new ResourceExpansionServiceImpl(defaultResourceService(), TicketService.defaultService(),
-                                                authorizedUriRetriever, uriRetriever);
+                                                authorizedUriRetriever, uriRetriever, ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE));
     }
 
     @JacocoGenerated
@@ -119,12 +127,22 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
 
     private EventReference persistRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent blobObject) {
         var identifier = getIdentifier(blobObject);
-        RecoveryEntry.fromDataEntryUpdateEvent(blobObject)
-            .withIdentifier(identifier)
+        RecoveryEntry.create(findType(blobObject), identifier)
             .withException(failure.getException())
             .persist(sqsClient);
         logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
         return null;
+    }
+
+    private static String findType(DataEntryUpdateEvent dataEntryUpdateEvent) {
+        var entity = Optional.ofNullable(dataEntryUpdateEvent.getOldData()).orElseGet(dataEntryUpdateEvent::getNewData);
+        return switch (entity) {
+            case Resource resource -> RESOURCE;
+            case TicketEntry ticket -> TICKET;
+            case Message message -> MESSAGE;
+            case FileEntry fileEntry -> FILE;
+            default -> throw new IllegalStateException("Unexpected value: " + entity);
+        };
     }
 
     private EventReference processDataEntryUpdateEvent(DataEntryUpdateEvent blobObject) {

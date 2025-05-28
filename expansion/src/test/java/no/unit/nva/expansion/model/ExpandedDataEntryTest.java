@@ -82,6 +82,8 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate.Builder;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.queue.QueueClient;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -115,6 +117,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private FakeUriRetriever uriRetriever;
+    private FakeSqsClient sqsClient;
 
     public static Stream<Named<Class<?>>> entryTypes() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
@@ -138,15 +141,16 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.messageService = getMessageService();
         this.ticketService = getTicketService();
         this.uriRetriever = FakeUriRetriever.newInstance();
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever
-            , uriRetriever);
+        this.sqsClient = new FakeSqsClient();
+        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever,
+                                                                         uriRetriever, sqsClient);
     }
 
     @ParameterizedTest()
     @MethodSource("importCandidateContextTypeProvider")
     void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
 
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
@@ -157,7 +161,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var publication = randomPublicationWithoutDoi(DegreePhd.class);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                 UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(persistedPublication, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(persistedPublication, uriRetriever, resourceService, false);
         var filesApprovalThesis =
             (FilesApprovalThesis) FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(persistedPublication),
                                                              UserInstance.fromPublication(persistedPublication),
@@ -172,7 +176,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     void shouldExpandImportCandidateCristinOrgWhenAffiliatedWithNvaCustomer() {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         importCandidate.getEntityDescription().getContributors().stream()
             .map(Contributor::getAffiliations)
                 .flatMap(i -> i.stream()
@@ -210,7 +214,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     void shouldLogErrorWhenResponseFromChannelRegistryIsNotOk() {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         var channelUri =
             ((Publisher)((Book) importCandidate.getEntityDescription().getReference().getPublicationContext())
                             .getPublisher()).getId();
@@ -223,7 +227,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     void shouldLogErrorWhenResponseFromChannelRegistryResponseIsNonsense() {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         var channelUri =
             ((Publisher)((Book) importCandidate.getEntityDescription().getReference().getPublicationContext())
                             .getPublisher()).getId();
@@ -247,7 +251,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     private void overrideStandardResponseWithNotFoundFromChannelRegistry(ImportCandidate importCandidate,
                                                                          URI journalId) {
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         uriRetriever.registerResponse(journalId, SC_NOT_FOUND, MediaType.ANY_APPLICATION_TYPE, "");
     }
 
@@ -256,7 +260,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
         var importCandidate = randomImportCandidate(journalContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         assertThat(expandedImportCandidate.getJournal().name(), is(notNullValue()));
@@ -268,7 +272,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var publisher = new Publisher(publisherId);
         var bookContext = new Book(null, null, publisher, null, null);
         var importCandidate = randomImportCandidate(bookContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         assertThat(expandedImportCandidate.getPublisher().name(), is(notNullValue()));
@@ -302,7 +306,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var publisher = new Publisher(publisherId);
         var bookContext = new Book(null, null, publisher, null, null);
         var importCandidate = randomImportCandidate(bookContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
 
@@ -315,7 +319,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
         var importCandidate = randomImportCandidate(journalContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         overrideDefaultFakeResponseToReturnNonsensicalResponse(importCandidate);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
@@ -360,9 +364,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var fakeUriRetriever = FakeUriRetriever.newInstance();
         var resource = Resource.fromPublication(publication).persistNew(resourceService,
                                                              UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, resource);
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
         var json = objectMapper.readTree(expandedResource.toJsonString());
         assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
@@ -371,7 +375,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("publicationInstanceProvider")
     void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
         var publication = createPublishedPublicationWithoutDoi(instanceType);
-        FakeUriResponse.setupFakeForType(publication, uriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, uriRetriever, resourceService, false);
         var doiRequest = createDoiRequest(publication);
         var expandedResource = ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService,
                                                               ticketService);
@@ -483,7 +487,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                                         RawContentRetriever uriRetriever)
             throws ApiGatewayException, JsonProcessingException {
             var publication = createPublication(resourceService);
-            FakeUriResponse.setupFakeForType(publication, (FakeUriRetriever) uriRetriever, resourceService);
+            FakeUriResponse.setupFakeForType(publication, (FakeUriRetriever) uriRetriever, resourceService, false);
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
@@ -577,7 +581,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             Publication publication,
             RawContentRetriever uriRetriever) {
             ExpandedResource expandedResource =
-                attempt(() -> fromPublication(uriRetriever, resourceService, publication)).orElseThrow();
+                attempt(() -> fromPublication(uriRetriever, resourceService, sqsClient, publication)).orElseThrow();
             return new ExpandedDataEntryWithAssociatedPublication(expandedResource);
         }
 

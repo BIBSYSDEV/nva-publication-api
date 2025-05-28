@@ -18,7 +18,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
@@ -27,10 +26,10 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
-import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -51,8 +50,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
-    public static final int FILENAME_WIHOUT_FILE_ENDING = 0;
-    public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
+    public static final int FILENAME_WITHOUT_FILE_ENDING = 0;
+    public static final String FILENAME_AND_FILE_ENDING_SEPARATOR = "\\.";
     public static final String JSONLD_CONTEXT = "@context";
     public static final ObjectMapper DTO_OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
 
@@ -64,10 +63,6 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private final Context context = new FakeContext();
 
     private TicketService ticketService;
-
-    private static List<Class<?>> listPublicationInstanceTypes() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes();
-    }
 
     @BeforeEach()
     public void init() {
@@ -119,14 +114,14 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     }
 
     private String extractPublicationIdentifier(EventReference inputEvent) {
-        return splitFilenameFromFileEnding(inputEvent)[FILENAME_WIHOUT_FILE_ENDING];
+        return splitFilenameFromFileEnding(inputEvent)[FILENAME_WITHOUT_FILE_ENDING];
     }
 
     private String[] splitFilenameFromFileEnding(EventReference inputEvent) {
         return UriWrapper.fromUri(inputEvent.getUri())
                    .toS3bucketPath()
                    .getLastPathElement()
-                   .split(FILENAME_AND_FILE_ENDING_SEPRATOR);
+                   .split(FILENAME_AND_FILE_ENDING_SEPARATOR);
     }
 
     private EventReference generateEventForExpandedPublication(Class<?> type) throws IOException {
@@ -148,14 +143,14 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
         Publication samplePublication = insertSamplePublication();
         var fakeUriRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(samplePublication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(samplePublication, fakeUriRetriever, resourceService, false);
         var userInstance = UserInstance.fromPublication(samplePublication);
         var doiRequest = DoiRequest.create(Resource.fromPublication(samplePublication), userInstance);
         doiRequest.fetchMessages(ticketService);
         ResourceExpansionService resourceExpansionService = new ResourceExpansionServiceImpl(resourceService,
                                                                                              ticketService,
                                                                                              fakeUriRetriever,
-                                                                                             fakeUriRetriever);
+                                                                                             fakeUriRetriever, new FakeSqsClient());
         return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
     }
 
@@ -168,8 +163,9 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private URI expandPublicationAndSaveToS3(Publication publication) throws IOException {
         var fakeUrlRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(publication, fakeUrlRetriever, resourceService);
-        var expandedPublication = ExpandedResource.fromPublication(fakeUrlRetriever, resourceService, publication);
+        FakeUriResponse.setupFakeForType(publication, fakeUrlRetriever, resourceService, false);
+        var expandedPublication = ExpandedResource.fromPublication(fakeUrlRetriever, resourceService, new FakeSqsClient(),
+                                                                   publication);
         var resourceJson = DTO_OBJECT_MAPPER.writeValueAsString(expandedPublication);
         var randomPath = formatPublicationFilename(expandedPublication);
         return s3Driver.insertFile(randomPath, resourceJson);

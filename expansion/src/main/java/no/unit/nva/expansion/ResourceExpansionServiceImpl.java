@@ -22,6 +22,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.utils.RdfUtils;
@@ -55,15 +56,18 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private final TicketService ticketService;
     private final RawContentRetriever authorizedUriRetriever;
     private final RawContentRetriever uriRetriever;
+    private final QueueClient queueClient;
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService,
                                         RawContentRetriever authorizedUriRetriever,
-                                        RawContentRetriever uriRetriever) {
+                                        RawContentRetriever uriRetriever,
+                                        QueueClient queueClient) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.authorizedUriRetriever = authorizedUriRetriever;
         this.uriRetriever = uriRetriever;
+        this.queueClient = queueClient;
     }
 
     @Override
@@ -73,6 +77,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
             var expandedResource = ExpandedResource.fromPublication(uriRetriever,
                                                                     resourceService,
+                                                                    queueClient,
                                                                     resource.fetch(resourceService).orElseThrow().toPublication());
             var resourceWithContextUri = useUriContext
                                              ? replaceInlineContextWithUriContext(expandedResource)
