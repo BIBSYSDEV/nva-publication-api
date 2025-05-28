@@ -142,6 +142,23 @@ class PublicationComparatorTest {
                                                      publicationWithUnconfirmedJournal));
     }
 
+    @Test
+    void shouldReturnTrueWhenMergingJournalWithUnconfirmedJournalWithJournalWithConfirmedJournal() throws InvalidIssnException {
+        var confirmedJournal = new Journal(randomUri());
+        var unconfirmedJournal = new UnconfirmedJournal(randomString(), null, null);
+
+        var publication = randomPublication(JournalArticle.class);
+
+        var publicationWithConfirmedJournal = publication.copy().build();
+        publicationWithConfirmedJournal.getEntityDescription().getReference().setPublicationContext(confirmedJournal);
+
+        var publicationWithUnconfirmedJournal = publication.copy().build();
+        publicationWithUnconfirmedJournal.getEntityDescription().getReference().setPublicationContext(unconfirmedJournal);
+
+        assertTrue(publicationsMatch(publicationWithUnconfirmedJournal,
+                                     publicationWithConfirmedJournal));
+    }
+
     private static Contributor contributorWithLastName(String lastName) {
         return new Contributor.Builder()
                    .withIdentity(identityWithLastName(lastName))
