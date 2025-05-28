@@ -1,21 +1,9 @@
-package no.unit.nva.publication.events.handlers.expandresources;
+package no.unit.nva.publication.queue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
-import java.util.Optional;
-import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.expansion.model.ExpandedMessage;
-import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.queue.QueueClient;
 import nva.commons.core.Environment;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
@@ -25,11 +13,11 @@ public final class RecoveryEntry {
     public static final String RESOURCE = "Resource";
     public static final String TICKET = "Ticket";
     public static final String MESSAGE = "Message";
+    public static final String FILE = "File";
     private static final String ID = "id";
     private static final String RECOVERY_QUEUE = "RECOVERY_QUEUE";
     private static final String TYPE = "type";
     private static final String DATA_TYPE_STRING = "String";
-    public static final String FILE = "File";
     private final SortableIdentifier identifier;
     private final String type;
     private final String exception;
@@ -40,23 +28,8 @@ public final class RecoveryEntry {
         this.exception = exception;
     }
 
-    public static RecoveryEntry fromExpandedDataEntry(ExpandedDataEntry expandedDataEntry) {
-        var type = findType(expandedDataEntry);
-        return builder().withType(type).build();
-    }
-
-    public static RecoveryEntry fromDataEntryUpdateEvent(DataEntryUpdateEvent event) {
-        var entity = getEntity(event);
-        var type = findType(entity);
-        return builder().withType(type).build();
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public RecoveryEntry withIdentifier(SortableIdentifier identifier) {
-        return this.copy().withIdentifier(identifier).build();
+    public static RecoveryEntry create(String type, SortableIdentifier identifier) {
+        return builder().withType(type).withIdentifier(identifier).build();
     }
 
     public void persist(QueueClient queueClient) {
@@ -65,29 +38,6 @@ public final class RecoveryEntry {
 
     public RecoveryEntry withException(Exception exception) {
         return this.copy().withException(getStackTrace(exception)).build();
-    }
-
-    private static String findType(ExpandedDataEntry expandedDataEntry) {
-        return switch (expandedDataEntry) {
-            case ExpandedResource resource -> RESOURCE;
-            case ExpandedTicket ticket -> TICKET;
-            case ExpandedMessage message -> MESSAGE;
-            default -> throw new IllegalStateException("Unexpected value: " + expandedDataEntry);
-        };
-    }
-
-    private static String findType(Entity entity) {
-        return switch (entity) {
-            case Resource resource -> RESOURCE;
-            case TicketEntry ticket -> TICKET;
-            case Message message -> MESSAGE;
-            case FileEntry fileEntry -> FILE;
-            default -> throw new IllegalStateException("Unexpected value: " + entity);
-        };
-    }
-
-    private static Entity getEntity(DataEntryUpdateEvent dataEntryUpdateEvent) {
-        return Optional.ofNullable(dataEntryUpdateEvent.getOldData()).orElseGet(dataEntryUpdateEvent::getNewData);
     }
 
     private static Builder builder() {

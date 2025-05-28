@@ -4,6 +4,10 @@ import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDir
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toEntity;
+import static no.unit.nva.publication.queue.RecoveryEntry.FILE;
+import static no.unit.nva.publication.queue.RecoveryEntry.MESSAGE;
+import static no.unit.nva.publication.queue.RecoveryEntry.RESOURCE;
+import static no.unit.nva.publication.queue.RecoveryEntry.TICKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -23,9 +27,13 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.queue.QueueClient;
+import no.unit.nva.publication.queue.RecoveryEntry;
 import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
@@ -95,12 +103,22 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
 
     private EventReference processRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent event) {
         var identifier = getIdentifier(event);
-        RecoveryEntry.fromDataEntryUpdateEvent(event)
-            .withIdentifier(identifier)
-            .withException(failure.getException())
-            .persist(sqsClient);
+        RecoveryEntry.create(findType(event), identifier)
+                         .withException(failure.getException())
+                             .persist(sqsClient);
         logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
         return null;
+    }
+
+    private static String findType(DataEntryUpdateEvent dataEntryUpdateEvent) {
+        var entity = Optional.ofNullable(dataEntryUpdateEvent.getOldData()).orElseGet(dataEntryUpdateEvent::getNewData);
+        return switch (entity) {
+            case Resource resource -> RESOURCE;
+            case TicketEntry ticket -> TICKET;
+            case Message message -> MESSAGE;
+            case FileEntry fileEntry -> FILE;
+            default -> throw new IllegalStateException("Unexpected value: " + entity);
+        };
     }
 
     private EventReference sendEvent(DataEntryUpdateEvent blob, Context context) {

@@ -35,6 +35,9 @@ import no.unit.nva.expansion.model.nvi.NviCandidateResponse;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.queue.QueueClient;
+import no.unit.nva.publication.queue.RecoveryEntry;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -74,10 +77,13 @@ public class IndexDocumentWrapperLinkedData {
     private static final String REPORT_STATUS = "report-status";
     private final RawContentRetriever uriRetriever;
     private final ResourceService resourceService;
+    private final QueueClient queueClient;
 
-    public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever, ResourceService resourceService) {
+    public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever, ResourceService resourceService,
+                                          QueueClient queueClient) {
         this.uriRetriever = uriRetriever;
         this.resourceService = resourceService;
+        this.queueClient = queueClient;
     }
 
     public String toFramedJsonLd(JsonNode indexDocument) {
@@ -103,7 +109,7 @@ public class IndexDocumentWrapperLinkedData {
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
-        inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
+        inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument), indexDocument));
         inputStreams.addAll(fetchFundingSourcesAddingContext(indexDocument));
         inputStreams.removeIf(Objects::isNull);
         return inputStreams;
@@ -114,7 +120,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private JsonNode fetchNviStatus(JsonNode indexDocument) {
-        var publicationId = indexDocument.get(ID).asText();
+        var publicationId = getId(indexDocument);
         try {
             return fetchNviCandidate(publicationId)
                        .map(this::processNviCandidateResponse)
@@ -123,6 +129,10 @@ public class IndexDocumentWrapperLinkedData {
             logger.error(EXCEPTION, e.toString());
             throw ExpansionException.withMessage(String.format(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationId));
         }
+    }
+
+    private static String getId(JsonNode indexDocument) {
+        return indexDocument.get(ID).asText();
     }
 
     private JsonNode processNviCandidateResponse(HttpResponse<String> response) {
@@ -202,20 +212,24 @@ public class IndexDocumentWrapperLinkedData {
         return !jsonNode.has(CONTEXT);
     }
 
-    private Collection<? extends InputStream> fetchAll(Collection<URI> uris) {
+    private Collection<? extends InputStream> fetchAll(Collection<URI> uris, JsonNode indexDocument) {
         return uris.stream()
                    .filter(Objects::nonNull)
                    .map(this::fetch)
-                   .map(this::processResponse)
+                   .map(response -> processResponse(response, indexDocument))
                    .toList();
     }
 
-    private InputStream processResponse(HttpResponse<String> response) {
+    private InputStream processResponse(HttpResponse<String> response, JsonNode indexDocument) {
         if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             var body = response.body();
             return stringToStream(removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(body));
         } else if (response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY) {
+            var identifier = new SortableIdentifier(indexDocument.get("identifier").asText());
             logger.info("Request for publication channel <{}> returned 404", response.uri());
+            RecoveryEntry.create(RecoveryEntry.RESOURCE, identifier)
+                .withException(new Exception(response.toString()))
+                .persist(queueClient);
             return null;
         }
         throw new RuntimeException("Unexpected response " + response);

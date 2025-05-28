@@ -45,6 +45,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -87,10 +88,10 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     public static ExpandedResource fromPublication(RawContentRetriever uriRetriever,
-                                                   ResourceService resourceService, Publication publication)
+                                                   ResourceService resourceService, QueueClient queueClient, Publication publication)
         throws JsonProcessingException {
         var documentWithId = transformToJsonLd(publication);
-        var enrichedJson = enrichJson(uriRetriever, resourceService, documentWithId);
+        var enrichedJson = enrichJson(uriRetriever, resourceService, queueClient, documentWithId);
         var jsonWithAddedFields = addFields(enrichedJson, publication);
         return attempt(() -> objectMapper.treeToValue(jsonWithAddedFields, ExpandedResource.class)).orElseThrow();
     }
@@ -364,8 +365,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return root.at(INSTANCE_TYPE_JSON_PTR).asText();
     }
 
-    private static String enrichJson(RawContentRetriever uriRetriever, ResourceService resourceService, ObjectNode documentWithId) {
-        return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever, resourceService))
+    private static String enrichJson(RawContentRetriever uriRetriever, ResourceService resourceService,
+                                     QueueClient queueClient, ObjectNode documentWithId) {
+        return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever, resourceService, queueClient))
                    .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
                    .orElseThrow();
     }

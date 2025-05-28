@@ -62,13 +62,12 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -87,6 +86,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -132,6 +132,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private MessageService messageService;
     private TicketService ticketService;
     private FakeUriRetriever fakeUriRetriever;
+    private FakeSqsClient sqsClient;
 
     public static Stream<Named<Class<?>>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -152,7 +153,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnExpandedTicketContainingTheOrganizationOfTheOwnersResponsibilityAreaAsIs(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.setResponsibilityArea(PublicationGenerator.randomUri());
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -167,7 +168,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.setResponsibilityArea(PublicationGenerator.randomUri());
         ticket.setFinalizedBy(new Username(randomString()));
@@ -188,7 +189,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                       PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket, false);
@@ -209,7 +210,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                           PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
 
@@ -231,7 +232,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                       .build();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         Resource resourceUpdate = Resource.fromPublication(resource);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate, false);
@@ -250,7 +251,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                       .build();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var resourceUpdate = Resource.fromPublication(resource);
         var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate, false);
@@ -271,7 +272,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                               .build();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var resourceUpdate = Resource.fromPublication(resource);
         var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate, false);
         var license = indexDoc.asJsonNode().get("associatedArtifacts").get(0).get("license");
@@ -300,7 +301,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                       .build();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var indexDoc = (ExpandedResource) expansionService.expandEntry(Resource.fromPublication(resource), true);
         assertThat(indexDoc.getAllFields().get("@context"),
@@ -310,7 +311,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldIncludedOnlyMessagesAssociatedToExpandedTicket() throws ApiGatewayException, JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var owner = UserInstance.fromPublication(publication);
 
         var ticketToBeExpanded = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
@@ -330,7 +331,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandAssociatedTicketAndNotTheMessageItselfWhenNewMessageArrivesForExpansion()
         throws ApiGatewayException, JsonProcessingException {
         var publication = persistDraftPublicationWithoutDoi();
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var owner = UserInstance.fromPublication(publication);
 
         var generalSupportRequest = GeneralSupportRequest.create(Resource.fromPublication(publication),
@@ -353,7 +354,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException, JsonProcessingException {
 
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
 
@@ -376,7 +377,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                 PublicationStatus status)
         throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.setResponsibilityArea(PublicationGenerator.randomUri());
@@ -394,7 +395,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), null, null,
                                             UserClientType.EXTERNAL);
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, userInstance, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -410,10 +411,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                      PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var publicationOwnerAffiliationId = publication.getResourceOwner().getOwnerAffiliation();
         var expectedIdentifier = UriWrapper.fromUri(publicationOwnerAffiliationId).getLastPathElement();
@@ -440,7 +441,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandTicketOwner(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
 
@@ -457,7 +458,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandAssigneeWhenPresent(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = ticketWithAssignee(ticketType, publication);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
         expansionService = mockedExpansionService();
@@ -500,7 +501,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -515,7 +516,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                         PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -531,7 +532,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                                            PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -547,7 +548,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                            PublicationStatus status)
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -576,7 +577,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = objectMapper.readValue(publicationJsonString, Publication.class);
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var resourceUpdate = Resource.fromPublication(resource);
 
         expansionService = mockedExpansionService();
@@ -598,7 +599,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                               .build();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var resourceUpdate = Resource.fromPublication(resource);
 
         expansionService = mockedExpansionService();
@@ -614,7 +615,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.randomPublication(instanceType);
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         expansionService = mockedExpansionService();
         var expandedResource = (ExpandedResource) expansionService.expandEntry(Resource.fromPublication(resource),
                                                                                false);
@@ -631,7 +632,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = getPublicationWithSamePersonInDifferentContributorRoles(id);
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var resourceUpdate = Resource.fromPublication(resource);
 
         expansionService = mockedExpansionService();
@@ -647,7 +648,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandApprovedFilesForPublishingRequest()
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(PUBLISHED, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = createCompletedTicketAndPublishFiles(publication);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
         var expandedTicket = (ExpandedPublishingRequest) expansionService.expandEntry(ticket, false);
@@ -667,7 +668,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldExpandFilesForApprovalForPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(PUBLISHED, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
         var expandedTicket = (ExpandedPublishingRequest) expansionService.expandEntry(ticket, false);
@@ -688,7 +689,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandPublicationWithNviStatusWhenPublicationIsReportedNviCandidate()
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var resourceUpdate = Resource.fromPublication(publication);
         var expansionService = expansionServiceReturningNviCandidate(publication, nviCandidateResponse(), 200);
         var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate, false).toJsonString();
@@ -703,7 +704,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldNotAddNviStatusToPublicationWhenNotFoundResponseFromNvi()
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var resourceUpdate = Resource.fromPublication(publication);
         var expansionService = expansionServiceReturningNviCandidate(publication, nviCandidateResponse(), 404);
         var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate, false).toJsonString();
@@ -716,7 +717,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void doiShouldBeExpandedAsUriWhenMultipleDoiOccurrencesInPublication()
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PUBLISHED, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var doi = publication.getEntityDescription().getReference().getDoi();
         publication.getAssociatedArtifacts().add(new AssociatedLink(doi, randomString(), randomString(), RelationType.SAME_AS));
         var publicationWithIdenticalDoiValues = resourceService.updatePublication(publication);
@@ -742,25 +743,37 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldExpandUnpublishRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         resourceService.unpublishPublication(publication, UserInstance.fromPublication(publication));
         var ticket = TicketTestUtils.createPersistedTicket(publication, UnpublishRequest.class, ticketService);
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var expandedTicket = expansionService.expandEntry(ticket, false);
 
         assertThat(expandedTicket, instanceOf(ExpandedUnpublishRequest.class));
     }
 
+    @Test
+    void shouldThrowExpansionExceptionWhenFetchingPublicationChannelReturnsRedirect()
+        throws ApiGatewayException {
+        var publication = randomPublication(JournalArticle.class);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                             UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, true);
+
+        assertThrows(RuntimeException.class, () -> expansionService.expandEntry(Resource.fromPublication(persistedPublication),
+                                                                          false));
+    }
+
     private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,
                                                                                String responseBody, int statusCode) {
 
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         FakeUriResponse.setUpNviResponse(fakeUriRetriever, statusCode, publication, responseBody);
 
         return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
                                                             new TicketService(client, fakeUriRetriever),
                                                             fakeUriRetriever,
-                                                            fakeUriRetriever);
+                                                            fakeUriRetriever, sqsClient);
     }
 
     private String nviCandidateResponse() {
@@ -781,15 +794,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticket.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication)).approveFiles()
             .publishApprovedFiles(resourceService);
         return ticket;
-    }
-
-
-    private static List<AssociatedArtifact> convertPendingFilesToAccepted(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(PendingFile.class::isInstance)
-                   .map(PendingFile.class::cast)
-                   .map(PendingFile::approve)
-                   .collect(Collectors.toList());
     }
 
     private static List<Contributor> extractContributors(ExpandedResource expandedResource)
@@ -923,7 +927,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private Entity findEntity(String type) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(PUBLISHED, USER, resourceService);
         publication.setEntityDescription(new EntityDescription());
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
@@ -944,7 +948,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private ResourceExpansionService mockedExpansionService() {
-        return new ResourceExpansionServiceImpl(resourceService, ticketService, fakeUriRetriever, fakeUriRetriever);
+        return new ResourceExpansionServiceImpl(resourceService, ticketService, fakeUriRetriever, fakeUriRetriever, sqsClient);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -973,10 +977,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         messageService = getMessageService();
         ticketService = getTicketService();
         fakeUriRetriever = FakeUriRetriever.newInstance();
+        sqsClient = new FakeSqsClient();
         expansionService = new ResourceExpansionServiceImpl(resourceService,
                                                             ticketService,
                                                             fakeUriRetriever,
-                                                            fakeUriRetriever);
+                                                            fakeUriRetriever, sqsClient);
     }
 
     private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {
