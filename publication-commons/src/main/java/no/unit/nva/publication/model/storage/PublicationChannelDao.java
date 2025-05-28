@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.util.Locale;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -52,7 +53,7 @@ public class PublicationChannelDao extends Dao implements DynamoEntryByIdentifie
     }
 
     public static PublicationChannelDao fromPublicationChannel(PublicationChannel publicationChannel) {
-        var lowerCaseIdentifier = publicationChannel.getIdentifier().toString().toLowerCase();
+        var lowerCaseIdentifier = publicationChannel.getIdentifier().toString().toLowerCase(Locale.ROOT);
         return new PublicationChannelDao(new SortableIdentifier(lowerCaseIdentifier),
                                          publicationChannel.getResourceIdentifier(),
                                          publicationChannel);
