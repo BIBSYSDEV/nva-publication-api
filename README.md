@@ -11,6 +11,7 @@ This is an AWS serverless application.
 ## Deployment dependencies
 
 This application is deployed in AWS via CodePipeline. 
+
 Build/deploy pipelines are defined in [nva-infrastructure](https://github.com/BIBSYSDEV/NVA-infrastructure). 
 Some services depend on services from [nva-common-resources](https://github.com/BIBSYSDEV/nva-common-resources) and [nva-identity-service](https://github.com/BIBSYSDEV/nva-identity-service).
 
