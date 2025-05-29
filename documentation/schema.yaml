@@ -278,6 +278,13 @@ AssociatedLink:
         type: string
       description:
         type: string
+      relation:
+        type: string
+        enum:
+        - metadataSource
+        - sameAs
+        - dataset
+        - mention
       type:
         type: string
 AudioVisualPublication:
@@ -1042,6 +1049,24 @@ ExhibitionProductionSubtype:
     description:
       type: string
       writeOnly: true
+FeatureArticle:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: "#/components/schemas/PublicationInstancePages"
+  - type: object
+    properties:
+      volume:
+        type: string
+      issue:
+        type: string
+      articleNumber:
+        type: string
+      pages:
+        $ref: "#/components/schemas/Range"
+      type:
+        type: string
 File:
   required:
   - type
@@ -1097,6 +1122,8 @@ Funding:
   - type
   type: object
   properties:
+    identifier:
+      type: string
     labels:
       type: object
       additionalProperties:
@@ -1104,16 +1131,14 @@ Funding:
     source:
       type: string
       format: uri
-    fundingAmount:
-      $ref: "#/components/schemas/MonetaryAmount"
     activeFrom:
       type: string
       format: date-time
     activeTo:
       type: string
       format: date-time
-    identifier:
-      type: string
+    fundingAmount:
+      $ref: "#/components/schemas/MonetaryAmount"
     type:
       type: string
 GeographicalContent:
@@ -2287,6 +2312,9 @@ Publication:
       type: array
       items:
         $ref: "#/components/schemas/ImportDetail"
+    pendingOpenFileCount:
+      type: integer
+      format: int64
     modelVersion:
       type: string
     type:
@@ -2833,6 +2861,16 @@ UploadDetails:
   properties:
     type:
       type: string
+UploadedFile:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: "#/components/schemas/File"
+  - type: object
+    properties:
+      type:
+        type: string
 UserUploadDetails:
   required:
   - type
