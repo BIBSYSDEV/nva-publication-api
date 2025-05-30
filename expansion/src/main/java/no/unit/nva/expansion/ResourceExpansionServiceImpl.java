@@ -101,7 +101,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry ticketEntry) {
             var organizationId = Optional.ofNullable(ticketEntry.getReceivingOrganizationDetails())
-                                     .map(ReceivingOrganizationDetails::resolveOrganizationBySpecificity)
+                                     .map(this::resolveOrganizationBySpecificity)
                                      .orElse(getAffiliationFromResourceOwner(ticketEntry));
 
             var organizationIdentifier = Optional.ofNullable(organizationId)
@@ -119,6 +119,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             return new ExpandedOrganization(organizationId, organizationIdentifier, partOf);
         }
         return null;
+    }
+
+    private URI resolveOrganizationBySpecificity(ReceivingOrganizationDetails receivingOrganizationDetails) {
+        return Optional.ofNullable(receivingOrganizationDetails.subOrganizationId())
+                   .orElse(receivingOrganizationDetails.topLevelOrganizationId());
     }
 
     private URI getAffiliationFromResourceOwner(TicketEntry ticketEntry) throws NotFoundException {

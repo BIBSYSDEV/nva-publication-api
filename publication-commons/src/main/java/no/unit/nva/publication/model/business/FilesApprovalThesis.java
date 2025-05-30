@@ -4,6 +4,7 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -117,11 +118,14 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
 
     private static FilesApprovalThesis createFileApproval(Resource resource, UserInstance userInstance,
                                                           URI organizationId, PublishingWorkflow workflow) {
+        var now = Clock.systemDefaultZone().instant();
         var fileApproval = new FilesApprovalThesis();
         fileApproval.setIdentifier(SortableIdentifier.next());
         fileApproval.setCustomerId(resource.getCustomerId());
         fileApproval.setStatus(TicketStatus.PENDING);
         fileApproval.setViewedBy(Collections.emptySet());
+        fileApproval.setCreatedDate(now);
+        fileApproval.setModifiedDate(now);
         fileApproval.setResourceIdentifier(resource.getIdentifier());
         fileApproval.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         fileApproval.setResponsibilityArea(userInstance.getPersonAffiliation());
@@ -134,11 +138,14 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
     }
 
     private static FilesApprovalThesis createFileApproval(Resource resource, UserInstance userInstance, PublishingWorkflow workflow) {
+        var now = Clock.systemDefaultZone().instant();
         var fileApproval = new FilesApprovalThesis();
         fileApproval.setIdentifier(SortableIdentifier.next());
         fileApproval.setCustomerId(resource.getCustomerId());
         fileApproval.setStatus(TicketStatus.PENDING);
         fileApproval.setViewedBy(Collections.emptySet());
+        fileApproval.setCreatedDate(now);
+        fileApproval.setModifiedDate(now);
         fileApproval.setResourceIdentifier(resource.getIdentifier());
         fileApproval.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         fileApproval.setResponsibilityArea(userInstance.getPersonAffiliation());
