@@ -1901,6 +1901,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - DatabaseAccessLambdaManagedPolicy
+      - DynamoDbStreamsAccessPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -1929,6 +1930,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - DatabaseAccessLambdaManagedPolicy
+      - DynamoDbStreamsAccessPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.ImportCandidateDynamoDbStreamToEventBridgeHandler::handleRequest
