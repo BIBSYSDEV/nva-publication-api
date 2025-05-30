@@ -50,6 +50,7 @@ public abstract class TicketEntry implements Entity {
     public static final String REMOVE_NON_PENDING_TICKET_MESSAGE =
         "Cannot remove a ticket that has any other status than %s";
     protected static final String RESPONSIBILITY_AREA_FIELD = "responsibilityArea";
+    private static final String RECEIVING_ORGANIZATION_DETAILS = "receivingOrganizationDetails";
 
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -77,6 +78,8 @@ public abstract class TicketEntry implements Entity {
     private URI ownerAffiliation;
     @JsonProperty(RESPONSIBILITY_AREA_FIELD)
     private URI responsibilityArea;
+    @JsonProperty(RECEIVING_ORGANIZATION_DETAILS)
+    private ReceivingOrganizationDetails receivingOrganizationDetails;
 
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -266,6 +269,19 @@ public abstract class TicketEntry implements Entity {
         this.ownerAffiliation = ownerAffiliation;
     }
 
+    public ReceivingOrganizationDetails getReceivingOrganizationDetails() {
+        return receivingOrganizationDetails;
+    }
+
+    public void setReceivingOrganizationDetails(ReceivingOrganizationDetails receivingOrganizationDetails) {
+        this.receivingOrganizationDetails = receivingOrganizationDetails;
+    }
+
+    public TicketEntry updateReceivingOrganizationDetails(URI ownerAffiliation, URI responsibilityArea) {
+        setReceivingOrganizationDetails(new ReceivingOrganizationDetails(ownerAffiliation, responsibilityArea));
+        return this;
+    }
+
     public void persistUpdate(TicketService ticketService) {
         ticketService.updateTicket(this);
     }
@@ -273,12 +289,6 @@ public abstract class TicketEntry implements Entity {
     public abstract void validateCreationRequirements(Publication publication) throws ConflictException;
 
     public abstract void validateCompletionRequirements(Publication publication);
-
-    public TicketEntry updateCuratingInstitution(URI ownerAffiliation, URI responsibilityArea) {
-        this.setOwnerAffiliation(ownerAffiliation);
-        this.setResponsibilityArea(responsibilityArea);
-        return this;
-    }
 
     public TicketEntry complete(Publication publication, UserInstance userInstance) {
         var updated = this.copy();
@@ -434,6 +444,11 @@ public abstract class TicketEntry implements Entity {
         return Optional.ofNullable(this.getOwnerAffiliation())
                    .map(value -> value.equals(userInstance.getTopLevelOrgCristinId()))
                    .orElse(false);
+    }
+
+    protected static ReceivingOrganizationDetails createDefaultReceivingOrganizationDetails(UserInstance userInstance) {
+        return new ReceivingOrganizationDetails(userInstance.getTopLevelOrgCristinId(),
+                                                userInstance.getPersonAffiliation());
     }
 
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(

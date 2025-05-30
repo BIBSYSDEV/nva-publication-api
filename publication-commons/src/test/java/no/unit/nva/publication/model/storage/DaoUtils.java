@@ -25,7 +25,9 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -54,12 +56,14 @@ public final class DaoUtils extends TestDataSource {
         DoiRequestDao doiRequestDao = doiRequestDao();
         MessageDao messageDao = sampleMessageDao();
         PublishingRequestDao approvePublicationRequestDao = sampleApprovePublishingRequestDao();
-        return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
+        FilesApprovalThesisDao filesApprovalThesisDao = sampleFilesApprovalThesisDao();
+        return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao, filesApprovalThesisDao);
     }
 
     public static DoiRequestDao doiRequestDao() {
         var publication = randomPublicationEligibleForDoiRequest();
-        var doiRequest = DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
+        var doiRequest = DoiRequest.create(Resource.fromPublication(publication),
+                                           UserInstance.fromPublication(publication));
         return new DoiRequestDao(doiRequest);
     }
 
@@ -81,6 +85,15 @@ public final class DaoUtils extends TestDataSource {
     static PutItemRequest toPutItemRequest(Dao resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
                    .withItem(resource.toDynamoFormat());
+    }
+
+    private static FilesApprovalThesisDao sampleFilesApprovalThesisDao() {
+        var publication = randomDegreePublication();
+        var filesApprovalThesis = FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
+                                                                                  UserInstance.fromPublication(
+                                                                                      publication),
+                                                                                  PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        return (FilesApprovalThesisDao) filesApprovalThesis.toDao();
     }
 
     private static Publication randomPublicationEligibleForDoiRequest() {

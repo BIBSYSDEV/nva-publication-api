@@ -1,6 +1,5 @@
 package no.unit.nva.expansion;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,6 +18,7 @@ import no.unit.nva.expansion.model.cristin.CristinPerson;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
@@ -100,11 +100,9 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry ticketEntry) {
-
-            var organizationId = nonNull(ticketEntry.getResponsibilityArea())
-                                      ? ticketEntry.getResponsibilityArea()
-                                      : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
-                                          .getResourceOwner().getOwnerAffiliation();
+            var organizationId = Optional.ofNullable(ticketEntry.getReceivingOrganizationDetails())
+                                     .map(this::resolveOrganizationBySpecificity)
+                                     .orElse(getAffiliationFromResourceOwner(ticketEntry));
 
             var organizationIdentifier = Optional.ofNullable(organizationId)
                                              .map(UriWrapper::fromUri)
@@ -121,6 +119,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             return new ExpandedOrganization(organizationId, organizationIdentifier, partOf);
         }
         return null;
+    }
+
+    private URI resolveOrganizationBySpecificity(ReceivingOrganizationDetails receivingOrganizationDetails) {
+        return Optional.ofNullable(receivingOrganizationDetails.subOrganizationId())
+                   .orElse(receivingOrganizationDetails.topLevelOrganizationId());
+    }
+
+    private URI getAffiliationFromResourceOwner(TicketEntry ticketEntry) throws NotFoundException {
+        return resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
+                   .getResourceOwner().getOwnerAffiliation();
     }
 
     @Override

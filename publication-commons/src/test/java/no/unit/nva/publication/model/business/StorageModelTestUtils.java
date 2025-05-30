@@ -17,6 +17,10 @@ public final class StorageModelTestUtils {
 
     public static PublishingRequestCase randomPublishingRequest(Publication publication) {
 
+        var ownerAffiliation = randomUri();
+        var responsibilityArea = randomUri();
+        var receivingOrganizationDetails = new ReceivingOrganizationDetails(ownerAffiliation, responsibilityArea);
+
         var userInstance = UserInstance.fromPublication(publication);
         var sample = new PublishingRequestCase();
         sample.setOwner(userInstance.getUser());
@@ -29,7 +33,9 @@ public final class StorageModelTestUtils {
         sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
         sample.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         sample.setAssignee(new Username(randomString()));
-        sample.setOwnerAffiliation(randomUri());
+        sample.setOwnerAffiliation(ownerAffiliation);
+        sample.setReceivingOrganizationDetails(receivingOrganizationDetails);
+        sample.setResponsibilityArea(responsibilityArea);
         sample.setFinalizedBy(new Username(randomString()));
         sample.setFinalizedDate(Instant.now());
         return sample;

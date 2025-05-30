@@ -155,10 +155,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.setResponsibilityArea(PublicationGenerator.randomUri());
+        var randomReceivingOrganizationId = PublicationGenerator.randomUri();
+        ticket.updateReceivingOrganizationDetails(randomReceivingOrganizationId, randomReceivingOrganizationId);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket, false);
-        assertThat(expandedTicket.getOrganization().id(), is(equalTo(ticket.getResponsibilityArea())));
+        assertThat(expandedTicket.getOrganization().id(), is(equalTo(ticket.getReceivingOrganizationDetails().subOrganizationId())));
     }
 
     @ParameterizedTest
@@ -380,10 +381,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.setResponsibilityArea(PublicationGenerator.randomUri());
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
 
-        var expectedOrgId = ticket.getResponsibilityArea();
+        var expectedOrgId = ticket.getReceivingOrganizationDetails().subOrganizationId();
         var actualAffiliation  = expansionService.getOrganization(ticket).id();
         assertThat(actualAffiliation, is(equalTo(expectedOrgId)));
     }

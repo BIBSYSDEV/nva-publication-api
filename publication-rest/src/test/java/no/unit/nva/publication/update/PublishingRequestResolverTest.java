@@ -270,7 +270,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
 
         assertEquals(PENDING, fileApprovalEntry.getStatus());
         assertTrue(fileApprovalEntry.getFilesForApproval().contains(pendingFile));
-        assertEquals(claimedChannel.getOrganizationId(), fileApprovalEntry.getOwnerAffiliation());
+        assertEquals(claimedChannel.getOrganizationId(), fileApprovalEntry.getReceivingOrganizationDetails().topLevelOrganizationId());
+        assertEquals(claimedChannel.getOrganizationId(), fileApprovalEntry.getReceivingOrganizationDetails().subOrganizationId());
     }
 
     @Test
