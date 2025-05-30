@@ -41,6 +41,7 @@ public class GeneralSupportRequest extends TicketEntry {
         generalSupportRequest.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         generalSupportRequest.setResponsibilityArea(userInstance.getPersonAffiliation());
         generalSupportRequest.setOwner(userInstance.getUser());
+        generalSupportRequest.setReceivingOrganizationDetails(createDefaultReceivingOrganizationDetails(userInstance));
         return generalSupportRequest;
     }
 
@@ -86,6 +87,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setFinalizedBy(this.getFinalizedBy());
         copy.setFinalizedDate(this.getFinalizedDate());
         copy.setResponsibilityArea(this.getResponsibilityArea());
+        copy.setReceivingOrganizationDetails(this.getReceivingOrganizationDetails());
         return copy;
     }
 

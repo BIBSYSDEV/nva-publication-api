@@ -4,6 +4,7 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -74,6 +75,7 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         copy.setWorkflow(this.getWorkflow());
         copy.setAssignee(this.getAssignee());
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
+        copy.setReceivingOrganizationDetails(this.getReceivingOrganizationDetails());
         copy.setApprovedFiles(this.getApprovedFiles().isEmpty() ? Set.of() : this.getApprovedFiles());
         copy.setFilesForApproval(this.getFilesForApproval().isEmpty() ? Set.of() : this.getFilesForApproval());
         copy.setFinalizedBy(this.getFinalizedBy());
@@ -121,13 +123,16 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         fileApproval.setCustomerId(resource.getCustomerId());
         fileApproval.setStatus(TicketStatus.PENDING);
         fileApproval.setViewedBy(Collections.emptySet());
+        fileApproval.setCreatedDate(Instant.now());
+        fileApproval.setModifiedDate(Instant.now());
         fileApproval.setResourceIdentifier(resource.getIdentifier());
-        fileApproval.setOwnerAffiliation(organizationId);
-        fileApproval.setResponsibilityArea(organizationId);
+        fileApproval.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
+        fileApproval.setResponsibilityArea(userInstance.getPersonAffiliation());
         fileApproval.setOwner(userInstance.getUser());
         fileApproval.setFilesForApproval(resource.getPendingFiles());
         fileApproval.setWorkflow(workflow);
         fileApproval.validateCreationRequirements(resource.toPublication());
+        fileApproval.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(organizationId, organizationId));
         return fileApproval;
     }
 
@@ -137,6 +142,8 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         fileApproval.setCustomerId(resource.getCustomerId());
         fileApproval.setStatus(TicketStatus.PENDING);
         fileApproval.setViewedBy(Collections.emptySet());
+        fileApproval.setCreatedDate(Instant.now());
+        fileApproval.setModifiedDate(Instant.now());
         fileApproval.setResourceIdentifier(resource.getIdentifier());
         fileApproval.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         fileApproval.setResponsibilityArea(userInstance.getPersonAffiliation());
@@ -144,6 +151,7 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         fileApproval.setFilesForApproval(resource.getPendingFiles());
         fileApproval.setWorkflow(workflow);
         fileApproval.validateCreationRequirements(resource.toPublication());
+        fileApproval.setReceivingOrganizationDetails(createDefaultReceivingOrganizationDetails(userInstance));
         return fileApproval;
     }
 }

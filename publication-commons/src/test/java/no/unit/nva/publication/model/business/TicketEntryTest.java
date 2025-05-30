@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -199,17 +198,17 @@ class TicketEntryTest {
     }
 
     @Test
-    void shouldUpdateTicketCuratingInstitution() {
+    void shouldUpdateTicketReceivingOrganizationDetails() {
         var resource = Resource.fromPublication(randomPublication());
         var userInstance = randomUserInstance();
         var ticket = GeneralSupportRequest.create(resource, userInstance);
 
         var responsibilityArea = randomUri();
         var ownerAffiliation = randomUri();
-        ticket.updateCuratingInstitution(ownerAffiliation, responsibilityArea);
-        
-        assertEquals(responsibilityArea, ticket.getResponsibilityArea());
-        assertEquals(ownerAffiliation, ticket.getOwnerAffiliation());
+        ticket.updateReceivingOrganizationDetails(ownerAffiliation, responsibilityArea);
+
+        assertEquals(responsibilityArea, ticket.getReceivingOrganizationDetails().subOrganizationId());
+        assertEquals(ownerAffiliation, ticket.getReceivingOrganizationDetails().topLevelOrganizationId());
     }
 
     private static UserInstance randomUserInstance() {

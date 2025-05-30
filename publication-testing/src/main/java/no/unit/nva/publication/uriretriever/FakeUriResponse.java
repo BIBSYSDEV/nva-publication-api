@@ -86,7 +86,7 @@ public final class FakeUriResponse {
     }
 
     public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
-        var responsibilityArea = ticket.getResponsibilityArea();
+        var responsibilityArea = ticket.getReceivingOrganizationDetails().subOrganizationId();
         fakeUriRetriever.registerResponse(responsibilityArea, SC_OK, APPLICATION_JSON_LD,
                                           createCristinOrganizationResponse(responsibilityArea));
         fakeUriRetriever.registerResponse(ticket.getCustomerId(), SC_OK, APPLICATION_JSON_LD,

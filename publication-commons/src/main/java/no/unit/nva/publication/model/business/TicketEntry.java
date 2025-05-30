@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.business;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
@@ -278,6 +277,11 @@ public abstract class TicketEntry implements Entity {
         this.receivingOrganizationDetails = receivingOrganizationDetails;
     }
 
+    public TicketEntry updateReceivingOrganizationDetails(URI ownerAffiliation, URI responsibilityArea) {
+        setReceivingOrganizationDetails(new ReceivingOrganizationDetails(ownerAffiliation, responsibilityArea));
+        return this;
+    }
+
     public void persistUpdate(TicketService ticketService) {
         ticketService.updateTicket(this);
     }
@@ -285,11 +289,6 @@ public abstract class TicketEntry implements Entity {
     public abstract void validateCreationRequirements(Publication publication) throws ConflictException;
 
     public abstract void validateCompletionRequirements(Publication publication);
-
-    public TicketEntry updateCuratingInstitution(URI ownerAffiliation, URI responsibilityArea) {
-        this.receivingOrganizationDetails = new ReceivingOrganizationDetails(ownerAffiliation, responsibilityArea);
-        return this;
-    }
 
     public TicketEntry complete(Publication publication, UserInstance userInstance) {
         var updated = this.copy();
@@ -445,6 +444,11 @@ public abstract class TicketEntry implements Entity {
         return Optional.ofNullable(this.getOwnerAffiliation())
                    .map(value -> value.equals(userInstance.getTopLevelOrgCristinId()))
                    .orElse(false);
+    }
+
+    protected static ReceivingOrganizationDetails createDefaultReceivingOrganizationDetails(UserInstance userInstance) {
+        return new ReceivingOrganizationDetails(userInstance.getTopLevelOrgCristinId(),
+                                                userInstance.getPersonAffiliation());
     }
 
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(

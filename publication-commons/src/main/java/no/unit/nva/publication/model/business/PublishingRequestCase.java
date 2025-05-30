@@ -86,6 +86,7 @@ public class PublishingRequestCase extends FilesApprovalEntry {
         copy.setFinalizedBy(this.getFinalizedBy());
         copy.setFinalizedDate(this.getFinalizedDate());
         copy.setResponsibilityArea(this.getResponsibilityArea());
+        copy.setReceivingOrganizationDetails(this.getReceivingOrganizationDetails());
         return copy;
     }
 
@@ -148,6 +149,7 @@ public class PublishingRequestCase extends FilesApprovalEntry {
         publishingRequestCase.setOwner(userInstance.getUser());
         publishingRequestCase.setFilesForApproval(resource.getPendingFiles());
         publishingRequestCase.setWorkflow(workflow);
+        publishingRequestCase.setReceivingOrganizationDetails(createDefaultReceivingOrganizationDetails(userInstance));
         return publishingRequestCase;
     }
 

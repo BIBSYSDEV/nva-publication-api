@@ -64,31 +64,14 @@ public class DoiRequest extends TicketEntry {
         doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, now));
         doiRequest.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         doiRequest.setResponsibilityArea(userInstance.getPersonAffiliation());
+        doiRequest.setReceivingOrganizationDetails(createDefaultReceivingOrganizationDetails(userInstance));
         doiRequest.setOwner(userInstance.getUser());
         return doiRequest;
-    }
-
-    private static DoiRequest extractDataFromResource(DoiRequest doiRequest, Resource resource) {
-        var copy = doiRequest.copy();
-        copy.setResourceIdentifier(resource.getIdentifier());
-        copy.setOwner(resource.getResourceOwner().getUser());
-        copy.setCustomerId(resource.getCustomerId());
-        copy.setResourceStatus(resource.getStatus());
-        return copy;
-    }
-
-    private static DoiRequest extractDataFromResource(Resource resource) {
-        return extractDataFromResource(new DoiRequest(), resource);
     }
 
     @Override
     public String getType() {
         return DoiRequest.TYPE;
-    }
-
-    @Override
-    public TicketDao toDao() {
-        return new DoiRequestDao(this);
     }
 
     @Override
@@ -140,9 +123,15 @@ public class DoiRequest extends TicketEntry {
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
                    .withResponsibilityArea(getResponsibilityArea())
+                   .withReceivingOrganizationDetails(getReceivingOrganizationDetails())
                    .withFinalizedBy(getFinalizedBy())
                    .withFinalizedDate(getFinalizedDate())
                    .build();
+    }
+
+    @Override
+    public TicketDao toDao() {
+        return new DoiRequestDao(this);
     }
 
     public TicketEvent getTicketEvent() {
@@ -201,6 +190,19 @@ public class DoiRequest extends TicketEntry {
         return nonNull(getTicketEvent());
     }
 
+    private static DoiRequest extractDataFromResource(DoiRequest doiRequest, Resource resource) {
+        var copy = doiRequest.copy();
+        copy.setResourceIdentifier(resource.getIdentifier());
+        copy.setOwner(resource.getResourceOwner().getUser());
+        copy.setCustomerId(resource.getCustomerId());
+        copy.setResourceStatus(resource.getStatus());
+        return copy;
+    }
+
+    private static DoiRequest extractDataFromResource(Resource resource) {
+        return extractDataFromResource(new DoiRequest(), resource);
+    }
+
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
         return !ACCEPTABLE_PUBLICATION_STATUSES.contains(publication.getStatus());
     }
@@ -239,6 +241,11 @@ public class DoiRequest extends TicketEntry {
 
         public Builder withResponsibilityArea(URI responsibilityArea) {
             doiRequest.setResponsibilityArea(responsibilityArea);
+            return this;
+        }
+
+        public Builder withReceivingOrganizationDetails(ReceivingOrganizationDetails receivingOrganizationDetails) {
+            doiRequest.setReceivingOrganizationDetails(receivingOrganizationDetails);
             return this;
         }
 
