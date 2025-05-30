@@ -4,7 +4,6 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -123,8 +122,6 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         fileApproval.setCustomerId(resource.getCustomerId());
         fileApproval.setStatus(TicketStatus.PENDING);
         fileApproval.setViewedBy(Collections.emptySet());
-        fileApproval.setCreatedDate(Instant.now());
-        fileApproval.setModifiedDate(Instant.now());
         fileApproval.setResourceIdentifier(resource.getIdentifier());
         fileApproval.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         fileApproval.setResponsibilityArea(userInstance.getPersonAffiliation());
@@ -142,8 +139,6 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         fileApproval.setCustomerId(resource.getCustomerId());
         fileApproval.setStatus(TicketStatus.PENDING);
         fileApproval.setViewedBy(Collections.emptySet());
-        fileApproval.setCreatedDate(Instant.now());
-        fileApproval.setModifiedDate(Instant.now());
         fileApproval.setResourceIdentifier(resource.getIdentifier());
         fileApproval.setOwnerAffiliation(userInstance.getTopLevelOrgCristinId());
         fileApproval.setResponsibilityArea(userInstance.getPersonAffiliation());
