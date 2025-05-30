@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
@@ -50,6 +51,7 @@ public abstract class TicketEntry implements Entity {
     public static final String REMOVE_NON_PENDING_TICKET_MESSAGE =
         "Cannot remove a ticket that has any other status than %s";
     protected static final String RESPONSIBILITY_AREA_FIELD = "responsibilityArea";
+    private static final String RECEIVING_ORGANIZATION_DETAILS = "receivingOrganizationDetails";
 
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -77,6 +79,8 @@ public abstract class TicketEntry implements Entity {
     private URI ownerAffiliation;
     @JsonProperty(RESPONSIBILITY_AREA_FIELD)
     private URI responsibilityArea;
+    @JsonProperty(RECEIVING_ORGANIZATION_DETAILS)
+    private ReceivingOrganizationDetails receivingOrganizationDetails;
 
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
@@ -266,6 +270,14 @@ public abstract class TicketEntry implements Entity {
         this.ownerAffiliation = ownerAffiliation;
     }
 
+    public ReceivingOrganizationDetails getReceivingOrganizationDetails() {
+        return receivingOrganizationDetails;
+    }
+
+    public void setReceivingOrganizationDetails(ReceivingOrganizationDetails receivingOrganizationDetails) {
+        this.receivingOrganizationDetails = receivingOrganizationDetails;
+    }
+
     public void persistUpdate(TicketService ticketService) {
         ticketService.updateTicket(this);
     }
@@ -275,8 +287,7 @@ public abstract class TicketEntry implements Entity {
     public abstract void validateCompletionRequirements(Publication publication);
 
     public TicketEntry updateCuratingInstitution(URI ownerAffiliation, URI responsibilityArea) {
-        this.setOwnerAffiliation(ownerAffiliation);
-        this.setResponsibilityArea(responsibilityArea);
+        this.receivingOrganizationDetails = new ReceivingOrganizationDetails(ownerAffiliation, responsibilityArea);
         return this;
     }
 
