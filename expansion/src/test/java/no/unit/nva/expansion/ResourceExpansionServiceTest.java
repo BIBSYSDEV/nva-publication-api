@@ -156,7 +156,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var randomReceivingOrganizationId = PublicationGenerator.randomUri();
-        ticket.updateReceivingOrganizationDetails(randomReceivingOrganizationId, randomReceivingOrganizationId);
+        ticket.withReceivingOrganizationDetails(randomReceivingOrganizationId, randomReceivingOrganizationId);
         FakeUriResponse.setupFakeForType(ticket, fakeUriRetriever);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket, false);
         assertThat(expandedTicket.getOrganization().id(), is(equalTo(ticket.getReceivingOrganizationDetails().subOrganizationId())));
