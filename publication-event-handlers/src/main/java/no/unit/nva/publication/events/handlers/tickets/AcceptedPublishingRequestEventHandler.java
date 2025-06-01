@@ -93,16 +93,16 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
     }
 
-    private static Optional<URI> getOldReceiverTopLevel(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
+    private static Optional<URI> getOldReceiverTopLevel(DataEntryUpdateEvent event) {
+        return Optional.of(event)
                    .map(DataEntryUpdateEvent::getOldData)
                    .map(TicketEntry.class::cast)
                    .map(TicketEntry::getReceivingOrganizationDetails)
                    .map(ReceivingOrganizationDetails::topLevelOrganizationId);
     }
 
-    private static Optional<URI> getNewReceiverTopLevel(DataEntryUpdateEvent updateEvent) {
-        return Optional.of(updateEvent)
+    private static Optional<URI> getNewReceiverTopLevel(DataEntryUpdateEvent event) {
+        return Optional.of(event)
                    .map(DataEntryUpdateEvent::getNewData)
                    .map(TicketEntry.class::cast)
                    .map(TicketEntry::getReceivingOrganizationDetails)
