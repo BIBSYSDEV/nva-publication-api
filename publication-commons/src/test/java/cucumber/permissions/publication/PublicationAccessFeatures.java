@@ -93,4 +93,9 @@ public class PublicationAccessFeatures {
     public void publicationHasNoApprovedFiles() {
         scenarioContext.setIsMetadataOnly(true);
     }
+
+    @And("publication is an imported student thesis")
+    public void publicationIsAnImportedStudentThesis() {
+        scenarioContext.setIsImported(true);
+    }
 }

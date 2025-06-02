@@ -218,8 +218,8 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
         var ticket = (FilesApprovalThesis) resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).findFirst().orElseThrow();
 
-        assertEquals(ticket.getOwnerAffiliation(), channelClaimOwner);
-        assertEquals(ticket.getResponsibilityArea(), channelClaimOwner);
+        assertEquals(ticket.getReceivingOrganizationDetails().topLevelOrganizationId(), channelClaimOwner);
+        assertEquals(ticket.getReceivingOrganizationDetails().subOrganizationId(), channelClaimOwner);
     }
 
     private URI getPublisherChannelClaimId(Publication publication) {

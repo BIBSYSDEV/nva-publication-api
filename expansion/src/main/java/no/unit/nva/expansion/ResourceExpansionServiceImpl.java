@@ -1,6 +1,5 @@
 package no.unit.nva.expansion;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,9 +18,11 @@ import no.unit.nva.expansion.model.cristin.CristinPerson;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.utils.RdfUtils;
@@ -55,15 +56,18 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private final TicketService ticketService;
     private final RawContentRetriever authorizedUriRetriever;
     private final RawContentRetriever uriRetriever;
+    private final QueueClient queueClient;
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService,
                                         RawContentRetriever authorizedUriRetriever,
-                                        RawContentRetriever uriRetriever) {
+                                        RawContentRetriever uriRetriever,
+                                        QueueClient queueClient) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.authorizedUriRetriever = authorizedUriRetriever;
         this.uriRetriever = uriRetriever;
+        this.queueClient = queueClient;
     }
 
     @Override
@@ -73,6 +77,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
             var expandedResource = ExpandedResource.fromPublication(uriRetriever,
                                                                     resourceService,
+                                                                    queueClient,
                                                                     resource.fetch(resourceService).orElseThrow().toPublication());
             var resourceWithContextUri = useUriContext
                                              ? replaceInlineContextWithUriContext(expandedResource)
@@ -95,11 +100,9 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry ticketEntry) {
-
-            var organizationId = nonNull(ticketEntry.getResponsibilityArea())
-                                      ? ticketEntry.getResponsibilityArea()
-                                      : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
-                                          .getResourceOwner().getOwnerAffiliation();
+            var organizationId = Optional.ofNullable(ticketEntry.getReceivingOrganizationDetails())
+                                     .map(this::resolveOrganizationBySpecificity)
+                                     .orElse(getAffiliationFromResourceOwner(ticketEntry));
 
             var organizationIdentifier = Optional.ofNullable(organizationId)
                                              .map(UriWrapper::fromUri)
@@ -116,6 +119,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             return new ExpandedOrganization(organizationId, organizationIdentifier, partOf);
         }
         return null;
+    }
+
+    private URI resolveOrganizationBySpecificity(ReceivingOrganizationDetails receivingOrganizationDetails) {
+        return Optional.ofNullable(receivingOrganizationDetails.subOrganizationId())
+                   .orElse(receivingOrganizationDetails.topLevelOrganizationId());
+    }
+
+    private URI getAffiliationFromResourceOwner(TicketEntry ticketEntry) throws NotFoundException {
+        return resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
+                   .getResourceOwner().getOwnerAffiliation();
     }
 
     @Override

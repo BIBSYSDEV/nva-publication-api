@@ -45,10 +45,11 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
         var issn = bookSeries.getIssn();
         var issnOnline = bookSeries.getIssnOnline();
         try {
-            var unconfirmedSeries = new UnconfirmedSeries(bookSeries.getJournalTitle(), issn, issnOnline);
+            var journalTitle = bookSeries.getJournalTitle();
+            var unconfirmedSeries = new UnconfirmedSeries(journalTitle, issn, issnOnline);
             ErrorReport.exceptionName(UnconfirmedSeriesException.name())
                 .withCristinId(cristinObject.getId())
-                .withBody(UNCONFIRMED_SERIES)
+                .withBody(journalTitle)
                 .persist(s3Client);
             return unconfirmedSeries;
         } catch (InvalidIssnException e) {

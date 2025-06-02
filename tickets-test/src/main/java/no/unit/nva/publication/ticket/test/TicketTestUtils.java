@@ -54,6 +54,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -359,9 +360,11 @@ public final class TicketTestUtils {
             Class<? extends TicketEntry> ticketType,
             TicketService ticketService)
             throws ApiGatewayException {
+        var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
         return TicketEntry.requestNewTicket(publication, ticketType)
-                .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                .withOwnerAffiliation(ownerAffiliation)
                 .withOwner(UserInstance.fromPublication(publication).getUsername())
+                .updateReceivingOrganizationDetails(ownerAffiliation, ownerAffiliation)
                 .persistNewTicket(ticketService);
     }
 

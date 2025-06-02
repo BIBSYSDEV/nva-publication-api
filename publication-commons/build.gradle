@@ -59,4 +59,5 @@ test {
     environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
     environment "TABLE_NAME", "table"
     environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
+    environment "RECOVERY_QUEUE", "queue"
 }

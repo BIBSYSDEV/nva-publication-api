@@ -2,7 +2,7 @@ package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
-import static no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry.FILE;
+import static no.unit.nva.publication.queue.RecoveryEntry.FILE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;

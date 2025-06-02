@@ -1,6 +1,8 @@
 package no.sikt.nva.brage.migration.lambda;
 
+import static no.sikt.nva.brage.migration.lambda.PublicationComparator.publicationsMatch;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,10 +14,13 @@ import no.unit.nva.model.Identity.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.pages.MonographPages;
 import org.junit.jupiter.api.Test;
@@ -33,7 +38,7 @@ class PublicationComparatorTest {
         var incomingConferenceReport = existingLecture.copy()
                                            .withEntityDescription(createConferenceReport(existingLecture))
                                            .build();
-        assertTrue(PublicationComparator.publicationsMatch(existingLecture, incomingConferenceReport));
+        assertTrue(publicationsMatch(existingLecture, incomingConferenceReport));
     }
 
     @Test
@@ -44,7 +49,7 @@ class PublicationComparatorTest {
         var incomingConferenceReport = existingLecture.copy()
                                            .withEntityDescription(createConferenceReport(existingLecture))
                                            .build();
-        assertTrue(PublicationComparator.publicationsMatch(existingLecture, incomingConferenceReport));
+        assertTrue(publicationsMatch(existingLecture, incomingConferenceReport));
     }
 
     @Test
@@ -54,7 +59,7 @@ class PublicationComparatorTest {
         var incomingConferenceReport = existingPublication.copy()
                                            .withEntityDescription(addEmptyReference(existingPublication))
                                            .build();
-        assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingConferenceReport));
+        assertTrue(publicationsMatch(existingPublication, incomingConferenceReport));
     }
 
     @Test
@@ -64,7 +69,7 @@ class PublicationComparatorTest {
         var incomingConferenceReport = existingPublication.copy()
                                            .withEntityDescription(addEmptyReference(existingPublication))
                                            .build();
-        assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingConferenceReport));
+        assertTrue(publicationsMatch(existingPublication, incomingConferenceReport));
     }
 
     @Test
@@ -77,7 +82,7 @@ class PublicationComparatorTest {
                                            .withEntityDescription(createConferenceReport(existingLecture))
                                            .build();
         incomingConferenceReport.getEntityDescription().setMainTitle(HEADLINE_STYLE);
-        assertTrue(PublicationComparator.publicationsMatch(existingLecture, incomingConferenceReport));
+        assertTrue(publicationsMatch(existingLecture, incomingConferenceReport));
     }
 
     @Test
@@ -91,7 +96,7 @@ class PublicationComparatorTest {
                                                                  .build())
                                           .build();
 
-        assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingPublication));
+        assertTrue(publicationsMatch(existingPublication, incomingPublication));
     }
 
     @Test
@@ -104,7 +109,7 @@ class PublicationComparatorTest {
                                                                  .build())
                                       .build();
 
-        assertFalse(PublicationComparator.publicationsMatch(existingPublication, incomingPublication));
+        assertFalse(publicationsMatch(existingPublication, incomingPublication));
     }
 
     @Test
@@ -117,7 +122,41 @@ class PublicationComparatorTest {
                                                                  .build())
                                       .build();
 
-        assertFalse(PublicationComparator.publicationsMatch(existingPublication, incomingPublication));
+        assertFalse(publicationsMatch(existingPublication, incomingPublication));
+    }
+
+    @Test
+    void shouldReturnTrueWhenMergingJournalWithConfirmedJournalWithJournalWithUnconfirmedJournal() throws InvalidIssnException {
+        var confirmedJournal = new Journal(randomUri());
+        var unconfirmedJournal = new UnconfirmedJournal(randomString(), null, null);
+
+        var publication = randomPublication(JournalArticle.class);
+
+        var publicationWithConfirmedJournal = publication.copy().build();
+        publicationWithConfirmedJournal.getEntityDescription().getReference().setPublicationContext(confirmedJournal);
+
+        var publicationWithUnconfirmedJournal = publication.copy().build();
+        publicationWithUnconfirmedJournal.getEntityDescription().getReference().setPublicationContext(unconfirmedJournal);
+
+        assertTrue(publicationsMatch(publicationWithConfirmedJournal,
+                                                     publicationWithUnconfirmedJournal));
+    }
+
+    @Test
+    void shouldReturnTrueWhenMergingJournalWithUnconfirmedJournalWithJournalWithConfirmedJournal() throws InvalidIssnException {
+        var confirmedJournal = new Journal(randomUri());
+        var unconfirmedJournal = new UnconfirmedJournal(randomString(), null, null);
+
+        var publication = randomPublication(JournalArticle.class);
+
+        var publicationWithConfirmedJournal = publication.copy().build();
+        publicationWithConfirmedJournal.getEntityDescription().getReference().setPublicationContext(confirmedJournal);
+
+        var publicationWithUnconfirmedJournal = publication.copy().build();
+        publicationWithUnconfirmedJournal.getEntityDescription().getReference().setPublicationContext(unconfirmedJournal);
+
+        assertTrue(publicationsMatch(publicationWithUnconfirmedJournal,
+                                     publicationWithConfirmedJournal));
     }
 
     private static Contributor contributorWithLastName(String lastName) {

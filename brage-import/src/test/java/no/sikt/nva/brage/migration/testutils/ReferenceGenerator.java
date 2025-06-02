@@ -5,11 +5,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -89,9 +89,9 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import no.unit.nva.model.role.Role;
+import no.unit.nva.model.time.Instant;
 import no.unit.nva.model.time.duration.NullDuration;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 
 public final class ReferenceGenerator {
@@ -212,7 +212,7 @@ public final class ReferenceGenerator {
                            .build();
             }
             if (NvaType.LECTURE.getValue().equals(builder.getType().getNva())) {
-                return new Reference.Builder().withPublishingContext(new Event.Builder().build())
+                return new Reference.Builder().withPublishingContext(generateEvent(builder))
                            .withPublicationInstance(new Lecture())
                            .withDoi(builder.getDoi())
                            .build();
@@ -255,7 +255,7 @@ public final class ReferenceGenerator {
                            .build();
             }
             if (NvaType.CONFERENCE_POSTER.getValue().equals(builder.getType().getNva())) {
-                return new Reference.Builder().withPublishingContext(new Event.Builder().build())
+                return new Reference.Builder().withPublishingContext(generateEvent(builder))
                            .withPublicationInstance(generatePublicationInstanceForConferencePoster())
                            .withDoi(builder.getDoi())
                            .build();
@@ -267,7 +267,7 @@ public final class ReferenceGenerator {
                         .build()).withPublicationInstance(new MediaInterview()).withDoi(builder.getDoi()).build();
             }
             if (NvaType.PRESENTATION_OTHER.getValue().equals(builder.getType().getNva())) {
-                return new Reference.Builder().withPublishingContext(new Event.Builder().build())
+                return new Reference.Builder().withPublishingContext(generateEvent(builder))
                            .withPublicationInstance(new OtherPresentation())
                            .withDoi(builder.getDoi())
                            .build();
@@ -374,7 +374,7 @@ public final class ReferenceGenerator {
             if (NvaType.CONFERENCE_LECTURE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublicationInstance(new ConferenceLecture())
-                           .withPublishingContext(new Event.Builder().build())
+                           .withPublishingContext(generateEvent(builder))
                            .withDoi(builder.getDoi())
                            .build();
             }
@@ -400,7 +400,14 @@ public final class ReferenceGenerator {
         }
     }
 
-    private static @NotNull BookAnthology generateBookAnthology(Builder builder) {
+    private static Event generateEvent(Builder builder) {
+        return new Event.Builder()
+                   .withName(builder.getMainTitle())
+                   .withAgent(Organization.fromUri(builder.getResourceOwner().getOwnerAffiliation()))
+                   .build();
+    }
+
+    private static BookAnthology generateBookAnthology(Builder builder) {
         return new BookAnthology(builder.getMonographPages());
     }
 
@@ -413,7 +420,6 @@ public final class ReferenceGenerator {
         return new ReportBookOfAbstract(generateMonographPages(builder));
     }
 
-    @NotNull
     private static MonographPages generateMonographPages(Builder builder) {
         return new MonographPages.Builder().withPages(builder.getPages().getPages()).withIllustrated(false).build();
     }
@@ -422,7 +428,6 @@ public final class ReferenceGenerator {
         return new ConferencePoster();
     }
 
-    @NotNull
     private static OtherStudentWork generatePublicationInstanceForStudentPaper(Builder builder) {
         return new OtherStudentWork(builder.getMonographPages(), builder.getPublicationDateForPublication());
     }
@@ -436,12 +441,10 @@ public final class ReferenceGenerator {
         return new NonFictionChapter(generateRange(builder));
     }
 
-    @NotNull
     private static ArtisticDesign generatePublicationInstanceForDesignProduct() {
         return new ArtisticDesign(ArtisticDesignSubtype.createOther(null), null, Collections.emptyList());
     }
 
-    @NotNull
     private static Architecture generatePublicationInstanceForArchitecture() {
         return new Architecture(ArchitectureSubtype.createOther(null), null, Collections.emptyList());
     }

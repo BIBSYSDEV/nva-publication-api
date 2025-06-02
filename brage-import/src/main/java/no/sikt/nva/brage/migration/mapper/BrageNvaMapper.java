@@ -97,7 +97,7 @@ public final class BrageNvaMapper {
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var customer = Customer.fromBrageArchiveName(brageRecord.getCustomer().getName());
         validateBrageRecord(brageRecord);
-        var publication = new Publication.Builder().withEntityDescription(extractEntityDescription(brageRecord))
+        var publication = new Publication.Builder().withEntityDescription(extractEntityDescription(brageRecord, customer.toResourceOwner(host).getOwnerAffiliation()))
                               .withPublisher(customer.toPublisher(host))
                               .withResourceOwner(customer.toResourceOwner(host))
                               .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord, customer))
@@ -295,7 +295,7 @@ public final class BrageNvaMapper {
         return file.getLicense().getNvaLicense().getLicense();
     }
 
-    private static EntityDescription extractEntityDescription(Record brageRecord)
+    private static EntityDescription extractEntityDescription(Record brageRecord, URI organizationId)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var abstractList = extractAbstract(brageRecord);
         return new EntityDescription.Builder().withLanguage(extractLanguage(brageRecord))
@@ -305,7 +305,7 @@ public final class BrageNvaMapper {
                    .withPublicationDate(extractDate(brageRecord))
                    .withContributors(extractContributors(brageRecord))
                    .withTags(extractTags(brageRecord))
-                   .withReference(extractReference(brageRecord))
+                   .withReference(extractReference(brageRecord, organizationId))
                    .withMainTitle(extractMainTitle(brageRecord))
                    .withAlternativeTitles(extractAlternativeTitles(brageRecord))
                    .build();
@@ -351,10 +351,10 @@ public final class BrageNvaMapper {
                    .orElse(null);
     }
 
-    private static Reference extractReference(Record brageRecord)
+    private static Reference extractReference(Record brageRecord, URI organizationId)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return new Reference.Builder().withPublishingContext(
-                PublicationContextMapper.buildPublicationContext(brageRecord))
+                PublicationContextMapper.buildPublicationContext(brageRecord, organizationId))
                    .withPublicationInstance(PublicationInstanceMapper.buildPublicationInstance(brageRecord))
                    .withDoi(extractDoi(brageRecord))
                    .build();

@@ -247,8 +247,6 @@ Resources:
       Tags:
         - Key: IncludedInBackup
           Value: 'true'
-        - Key: TemporaryTag
-          Value: 'this_is_a_test_to_trigger_stack_update'
 
   # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
   NvaImportCandidatesTable:
@@ -324,8 +322,6 @@ Resources:
       Tags:
         - Key: IncludedInBackup
           Value: 'true'
-        - Key: TemporaryTag
-          Value: 'this_is_a_test_to_trigger_stack_update'
 
   DownloadUrlShorteningTable:
     Type: AWS::DynamoDB::Table
@@ -572,8 +568,8 @@ Resources:
               - dynamodb:ListStreams
               - dynamodb:GetRecords
             Resource:
-              - !GetAtt NvaResourcesTable.StreamArn
-              - !GetAtt NvaImportCandidatesTable.StreamArn
+              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${NvaResourcesTable}/stream/*'
+              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${NvaImportCandidatesTable}/stream/*'
 
 
   EventsLambdaManagedPolicy:
@@ -1901,6 +1897,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - DatabaseAccessLambdaManagedPolicy
+      - DynamoDbStreamsAccessPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -1929,6 +1926,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - DatabaseAccessLambdaManagedPolicy
+      - DynamoDbStreamsAccessPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.ImportCandidateDynamoDbStreamToEventBridgeHandler::handleRequest

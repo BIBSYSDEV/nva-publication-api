@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.HttpStatus.SC_MOVED_PERMANENTLY;
 import static org.apache.http.HttpStatus.SC_OK;
 import com.google.common.net.MediaType;
 import java.net.URI;
@@ -71,13 +72,12 @@ public final class FakeUriResponse {
      * This setup mutes the anthology identifier to mock the response of the parent publication.
      */
     public static void setupFakeForType(Publication publication, FakeUriRetriever fakeUriRetriever,
-                                        ResourceService resourceService) {
-
+                                        ResourceService resourceService, boolean publicationContextRedirects) {
         fakeContributorResponses(publication, fakeUriRetriever);
         fakeOwnerResponse(fakeUriRetriever, publication.getResourceOwner().getOwnerAffiliation());
         fakePendingNviResponse(fakeUriRetriever, publication);
         fakeFundingResponses(fakeUriRetriever, publication);
-        fakeContextResponses(publication, fakeUriRetriever, resourceService);
+        fakeContextResponses(publication, fakeUriRetriever, resourceService, publicationContextRedirects);
         if (publication instanceof ImportCandidate) {
             createFakeCustomerApiResponse(fakeUriRetriever);
         } else {
@@ -86,7 +86,7 @@ public final class FakeUriResponse {
     }
 
     public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
-        var responsibilityArea = ticket.getResponsibilityArea();
+        var responsibilityArea = ticket.getReceivingOrganizationDetails().subOrganizationId();
         fakeUriRetriever.registerResponse(responsibilityArea, SC_OK, APPLICATION_JSON_LD,
                                           createCristinOrganizationResponse(responsibilityArea));
         fakeUriRetriever.registerResponse(ticket.getCustomerId(), SC_OK, APPLICATION_JSON_LD,
@@ -133,15 +133,17 @@ public final class FakeUriResponse {
     }
 
     private static void fakeContextResponses(Publication publication,
-                                             FakeUriRetriever fakeUriRetriever, ResourceService resourceService) {
+                                             FakeUriRetriever fakeUriRetriever, ResourceService resourceService,
+                                             boolean publicationContextRedirects) {
 
         extractPublicationContext(publication)
             .ifPresent(publicationContext -> selectResponsesToFake(fakeUriRetriever,
-                                                                   resourceService, publicationContext));
+                                                                   resourceService, publicationContext, publicationContextRedirects));
     }
 
     private static void selectResponsesToFake(FakeUriRetriever fakeUriRetriever,
-                                              ResourceService resourceService, PublicationContext publicationContext) {
+                                              ResourceService resourceService, PublicationContext publicationContext,
+                                              boolean publicationContextRedirects) {
         switch (publicationContext) {
             case Anthology anthologyContext -> setupFakeResponsesForAnthology(fakeUriRetriever, resourceService,
                                                                               anthologyContext);
@@ -155,8 +157,12 @@ public final class FakeUriResponse {
                 fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
             }
             case Journal journal -> {
-                URI id = journal.getId();
-                fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createJournal(id));
+                var id = journal.getId();
+                if (publicationContextRedirects) {
+                    fakeUriRetriever.registerResponse(id, SC_MOVED_PERMANENTLY, APPLICATION_JSON_LD, null);
+                } else {
+                    fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createJournal(id));
+                }
             }
             case Report report when report.getPublisher() instanceof Publisher publisher ->
                 setupFakeResponsesForBookTypes(fakeUriRetriever, report, publisher);

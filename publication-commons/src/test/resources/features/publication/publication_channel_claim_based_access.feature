@@ -3,8 +3,8 @@ Feature: Permissions given claimed publisher
   I want publication permission to be enforced based on publication, user role and channel claim
   So that only authorized users can perform operation
 
-  Scenario Outline: Verify operation when
-  user is not from the same organization as claimed publisher
+  Scenario Outline: Verify operation when user is not from the same organization as claimed
+  publisher and publication has approved files
     Given a "published" publication
     And publication is a degree
     And publication has claimed publisher
@@ -65,6 +65,73 @@ Feature: Permissions given claimed publisher
       | File, support, doi or nvi curator | Allowed     |
       | Editor                            | Allowed     |
       | Degree file curator               | Allowed     |
+      | Related external client           | Allowed     |
+
+  Scenario Outline: Verify update operation when user is not from the same organization as claimed
+  publisher and publication has no approved files
+    Given a "published" publication
+    And publication has no approved files
+    And publication is a degree
+    And publication has claimed publisher
+    When the user have the role "<UserRole>"
+    And the user attempts to "update"
+    Then the action outcome is "<Outcome>"
+
+    Examples:
+      | UserRole                          | Outcome     |
+
+      | Everyone else                     | Not Allowed |
+      | External client                   | Not Allowed |
+      | Publication owner                 | Allowed     |
+      | Contributor                       | Allowed     |
+      | File, support, doi or nvi curator | Allowed     |
+      | Editor                            | Allowed     |
+      | Degree file curator               | Allowed     |
+      | Related external client           | Allowed     |
+
+  Scenario Outline: Verify update operation when user is not from the same organization as claimed
+  publisher, publication is an imported student thesis and has no approved files
+    Given a "published" publication
+    And publication has no approved files
+    And publication is a degree
+    And publication has claimed publisher
+    And publication is an imported student thesis
+    When the user have the role "<UserRole>"
+    And the user attempts to "update"
+    Then the action outcome is "<Outcome>"
+
+    Examples:
+      | UserRole                          | Outcome     |
+
+      | Everyone else                     | Not Allowed |
+      | External client                   | Not Allowed |
+      | Publication owner                 | Not Allowed |
+      | Contributor                       | Not Allowed |
+      | File, support, doi or nvi curator | Not Allowed |
+      | Editor                            | Not Allowed |
+      | Degree file curator               | Not Allowed |
+      | Related external client           | Allowed     |
+
+  Scenario Outline: Verify update operation when user is not from the same organization as claimed
+  publisher, publication is an imported student thesis and has approved files
+    Given a "published" publication
+    And publication is a degree
+    And publication has claimed publisher
+    And publication is an imported student thesis
+    When the user have the role "<UserRole>"
+    And the user attempts to "update"
+    Then the action outcome is "<Outcome>"
+
+    Examples:
+      | UserRole                          | Outcome     |
+
+      | Everyone else                     | Not Allowed |
+      | External client                   | Not Allowed |
+      | Publication owner                 | Not Allowed |
+      | Contributor                       | Not Allowed |
+      | File, support, doi or nvi curator | Not Allowed |
+      | Editor                            | Not Allowed |
+      | Degree file curator               | Not Allowed |
       | Related external client           | Allowed     |
 
 
