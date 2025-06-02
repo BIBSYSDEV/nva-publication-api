@@ -1308,6 +1308,27 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdateFileEntryOwnerAffiliation() throws BadRequestException {
+        var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var resourceIdentifier = persistedPublication.getIdentifier();
+
+        var fileEntry = FileEntry.create(randomHiddenFile(), resourceIdentifier, userInstance);
+        fileEntry.persist(resourceService);
+
+        var newOwnerAffiliation = randomUri();
+        var originalModifiedDate = fileEntry.getModifiedDate();
+        fileEntry.updateOwnerAffiliation(resourceService, newOwnerAffiliation);
+
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+
+        assertNotEquals(originalModifiedDate, updatedFileEntry.getModifiedDate());
+        assertEquals(newOwnerAffiliation, updatedFileEntry.getOwnerAffiliation());
+    }
+
+    @Test
     void shouldFetchPublicationFromFile() throws BadRequestException, NotFoundException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);

@@ -42,7 +42,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
     public static final String DO_NOT_USE_THIS_METHOD = "Do not use this method";
     private final SortableIdentifier resourceIdentifier;
     private final User owner;
-    private final URI ownerAffiliation;
+    private URI ownerAffiliation;
     private final URI customerId;
     private final Instant createdDate;
     private Instant modifiedDate;
@@ -251,6 +251,12 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         return this;
     }
 
+    public void updateOwnerAffiliation(ResourceService resourceService, URI ownerAffiliation) {
+        this.ownerAffiliation = ownerAffiliation;
+        this.modifiedDate = Instant.now();
+        resourceService.updateFile(this);
+    }
+
     private boolean pendingFileTypeIsUpdated(File file) {
         return this.file instanceof PendingFile<?,?>
                && file instanceof PendingFile<?,?>
@@ -325,8 +331,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         return fileEvent;
     }
 
-    // TODO: Make method private after we have crafted log entries for files
-    public void setFileEvent(FileEvent fileEvent) {
+    private void setFileEvent(FileEvent fileEvent) {
         this.fileEvent = fileEvent;
     }
 }
