@@ -5,6 +5,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import cucumber.permissions.PermissionsRole;
+import cucumber.permissions.publication.PublicationScenarioContext.ChannelClaimConfig;
+import cucumber.permissions.publication.PublicationScenarioContext.FileConfig;
+import cucumber.permissions.publication.PublicationScenarioContext.PublicationTypeConfig;
+import cucumber.permissions.publication.PublicationScenarioContext.UserInstitutionConfig;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -13,6 +17,7 @@ import java.net.URI;
 import java.util.Arrays;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
 
 public class PublicationAccessFeatures {
 
@@ -23,30 +28,84 @@ public class PublicationAccessFeatures {
         this.scenarioContext = scenarioContext;
     }
 
-    @Given("a {string} publication")
-    public void aPublication(String publicationStatus) {
-        scenarioContext.setPublicationStatus(PublicationStatus.lookup(publicationStatus));
+    @Given("a {string}")
+    public void a(String publication) {
+        if ("publication".equalsIgnoreCase(publication)) {
+            scenarioContext.setPublicationTypeConfig(PublicationTypeConfig.PUBLICATION);
+        } else if ("degree".equalsIgnoreCase(publication)) {
+            scenarioContext.setPublicationTypeConfig(PublicationTypeConfig.DEGREE);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + publication);
+        }
     }
 
-    @Given("a {string} publication with {string} property")
-    public void aPublicationWithProperties(String publicationStatus, String properties) {
-        scenarioContext.setPublicationStatus(PublicationStatus.lookup(publicationStatus));
-        var propertyList = Arrays.stream(properties.split(",")).map(String::toLowerCase).toList();
+    @And("publication has status {string}")
+    public void publicationHasStatus(String status) {
+        scenarioContext.setPublicationStatus(PublicationStatus.lookup(status));
+    }
 
-        if (propertyList.contains("degree")) {
-            scenarioContext.setIsDegree(true);
+    @And("publication has {string} files")
+    public void publicationHasFiles(String fileTypes) {
+        if ("no".equalsIgnoreCase(fileTypes)) {
+            scenarioContext.setFileConfig(FileConfig.NO_FILES);
+        } else if ("no approved".equalsIgnoreCase(fileTypes)) {
+            scenarioContext.setFileConfig(FileConfig.NON_APPROVED_FILES_ONLY);
+        } else if ("approved".equalsIgnoreCase(fileTypes)) {
+            scenarioContext.setFileConfig(FileConfig.APPROVED_FILE);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + fileTypes);
         }
-        if (propertyList.contains("imported")) {
-            scenarioContext.setIsImported(true);
+    }
+
+    @And("publication has publisher claimed by {string}")
+    public void publicationHasPublisherClaimedBy(String claimedBy) {
+        if ("users institution".equalsIgnoreCase(claimedBy)) {
+            scenarioContext.setChannelClaimConfig(ChannelClaimConfig.CLAIMED_BY_USERS_INSTITUTION);
+        } else if ("not users institution".equalsIgnoreCase(claimedBy)) {
+            scenarioContext.setChannelClaimConfig(ChannelClaimConfig.CLAIMED_BY_NOT_USERS_INSTITUTION);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + claimedBy);
         }
-        if (propertyList.contains("metadataonly")) {
-            scenarioContext.setIsMetadataOnly(true);
+    }
+
+    @And("channel claim has {string} policy {string}")
+    public void channelClaimHasPublishingPolicy(String policyType, String policyValue) {
+//        var policy = ChannelPolicy.valueOf(policyValue);
+        var policy = switch (policyValue.toLowerCase()) {
+            case "owneronly" -> ChannelPolicy.OWNER_ONLY;
+            case "everyone" -> ChannelPolicy.EVERYONE;
+            default -> throw new IllegalArgumentException("Non valid input: " + policyValue);
+        };
+        if ("publishing".equalsIgnoreCase(policyType)) {
+            scenarioContext.setChannelClaimPublishingPolicy(policy);
+        } else if ("editing".equalsIgnoreCase(policyType)) {
+            scenarioContext.setChannelClaimEditingPolicy(policy);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + policyType);
         }
+    }
+
+    @And("publication is an imported degree")
+    public void publicationIsAnImportedDegree() {
+        scenarioContext.setIsImportedDegree(true);
     }
 
     @When("the user have the role {string}")
     public void theUserHaveTheRole(String userRole) {
         scenarioContext.setRoles(PermissionsRole.lookup(userRole));
+    }
+
+    @And("the user belongs to {string}")
+    public void theUserBelongTo(String institution) {
+        if ("creating institution".equalsIgnoreCase(institution)) {
+            scenarioContext.setUserInstitutionConfig(UserInstitutionConfig.BELONGS_TO_CREATING_INSTITUTION);
+        } else if ("curating institution".equalsIgnoreCase(institution)) {
+            scenarioContext.setUserInstitutionConfig(UserInstitutionConfig.BELONGS_TO_CURATING_INSTITUTION);
+        } else if ("non curating institution".equalsIgnoreCase(institution)) {
+            scenarioContext.setUserInstitutionConfig(UserInstitutionConfig.BELONGS_TO_NON_CURATING_INSTITUTION);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + institution);
+        }
     }
 
     @And("the user attempts to {string}")
@@ -59,43 +118,13 @@ public class PublicationAccessFeatures {
         var permissions = scenarioContext.getPublicationPermissions();
 
         var expected = outcome.equals("Allowed");
-
         var actual = permissions.allowsAction(scenarioContext.getOperation());
 
-        assertThat( "%s is %s to perform %s".formatted(scenarioContext.getRoles().stream().map(
-                                                           PermissionsRole::getValue).toList(), outcome,
-                                                       scenarioContext.getOperation()),
-                    actual,
-                    is(equalTo(expected)));
-    }
-
-    @And("publication is a degree")
-    public void publicationIsADegree() {
-        scenarioContext.setIsDegree(true);
-    }
-
-    @And("publication has claimed publisher")
-    public void publicationHasClaimedPublisher() {
-        scenarioContext.setHasClaimedPublisher(true);
-    }
-
-    @And("publisher is claimed by organization")
-    public void publisherIsClaimedByOrganization() {
-        scenarioContext.setPublisherOrganization(ORGANIZATION);
-    }
-
-    @And("the user is from the same organization as claimed publisher")
-    public void theUserIsFromTheSameOrganizationAsClaimedPublisher() {
-        scenarioContext.setUserOrganization(ORGANIZATION);
-    }
-
-    @And("publication has no approved files")
-    public void publicationHasNoApprovedFiles() {
-        scenarioContext.setIsMetadataOnly(true);
-    }
-
-    @And("publication is an imported student thesis")
-    public void publicationIsAnImportedStudentThesis() {
-        scenarioContext.setIsImported(true);
+        assertThat("%s is %s to perform %s".formatted(
+                       scenarioContext.getRoles().stream().map(PermissionsRole::getValue).toList(),
+                       outcome,
+                       scenarioContext.getOperation()),
+                   actual,
+                   is(equalTo(expected)));
     }
 }

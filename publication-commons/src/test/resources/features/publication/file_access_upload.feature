@@ -8,30 +8,59 @@ Feature: File upload permissions
 
 
   Scenario Outline: Verify file upload permissions
-    Given a "<PublicationStatus>" publication
+    Given a "publication"
+    And publication has status "<PublicationStatus>"
     When the user have the role "<UserRole>"
     And the user attempts to "upload-file"
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                          | PublicationStatus | Outcome     |
-      | Publication owner                 | draft             | Allowed     |
-      | Contributor                       | draft             | Allowed     |
-      | File, support, doi or nvi curator | draft             | Allowed     |
-      | Everyone else                     | draft             | Not Allowed |
-      | External client                   | draft             | Not Allowed |
-      | Publication owner                 | published         | Allowed     |
-      | Contributor                       | published         | Allowed     |
-      | File, support, doi or nvi curator | published         | Allowed     |
-      | Everyone else                     | published         | Not Allowed |
-      | External client                   | published         | Not Allowed |
-      | Publication owner                 | unpublished       | Allowed     |
-      | Contributor                       | unpublished       | Allowed     |
-      | File, support, doi or nvi curator | unpublished       | Allowed     |
-      | Everyone else                     | unpublished       | Not Allowed |
-      | External client                   | unpublished       | Not Allowed |
-      | Publication owner                 | deleted           | Not Allowed |
-      | Contributor                       | deleted           | Not Allowed |
-      | File, support, doi or nvi curator | deleted           | Not Allowed |
-      | Everyone else                     | deleted           | Not Allowed |
-      | External client                   | deleted           | Not Allowed |
+      | UserRole               | PublicationStatus | Outcome     |
+      | Unauthenticated        | draft             | Not Allowed |
+      | Everyone               | draft             | Not Allowed |
+      | Publication creator    | draft             | Allowed     |
+      | Contributor            | draft             | Allowed     |
+      | Publishing curator     | draft             | Allowed     |
+      | NVI curator            | draft             | Allowed     |
+      | DOI curator            | draft             | Allowed     |
+      | Support curator        | draft             | Allowed     |
+      | Thesis curator         | draft             | Allowed     |
+      | Embargo thesis curator | draft             | Allowed     |
+      | Editor                 | draft             | Not Allowed |
+      | External client        | draft             | Not Allowed |
+
+      | Unauthenticated        | published         | Not Allowed |
+      | Everyone               | published         | Not Allowed |
+      | Publication creator    | published         | Allowed     |
+      | Contributor            | published         | Allowed     |
+      | NVI curator            | published         | Allowed     |
+      | DOI curator            | published         | Allowed     |
+      | Support curator        | published         | Allowed     |
+      | Thesis curator         | published         | Allowed     |
+      | Embargo thesis curator | published         | Allowed     |
+      | Editor                 | published         | Not Allowed |
+      | External client        | published         | Not Allowed |
+
+      | Unauthenticated        | unpublished       | Not Allowed |
+      | Everyone               | unpublished       | Not Allowed |
+      | Publication creator    | unpublished       | Allowed     |
+      | Contributor            | unpublished       | Allowed     |
+      | NVI curator            | unpublished       | Allowed     |
+      | DOI curator            | unpublished       | Allowed     |
+      | Support curator        | unpublished       | Allowed     |
+      | Thesis curator         | unpublished       | Allowed     |
+      | Embargo thesis curator | unpublished       | Allowed     |
+      | Editor                 | unpublished       | Not Allowed |
+      | External client        | unpublished       | Not Allowed |
+
+      | Unauthenticated        | deleted           | Not Allowed |
+      | Everyone               | deleted           | Not Allowed |
+      | Publication creator    | deleted           | Not Allowed |
+      | Contributor            | deleted           | Not Allowed |
+      | NVI curator            | deleted           | Not Allowed |
+      | DOI curator            | deleted           | Not Allowed |
+      | Support curator        | deleted           | Not Allowed |
+      | Thesis curator         | deleted           | Not Allowed |
+      | Embargo thesis curator | deleted           | Not Allowed |
+      | Editor                 | deleted           | Not Allowed |
+      | External client        | deleted           | Not Allowed |
