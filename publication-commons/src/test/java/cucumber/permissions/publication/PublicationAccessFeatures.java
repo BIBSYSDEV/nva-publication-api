@@ -87,6 +87,7 @@ public class PublicationAccessFeatures {
 
     @And("publication is an imported degree")
     public void publicationIsAnImportedDegree() {
+        scenarioContext.setPublicationTypeConfig(PublicationTypeConfig.DEGREE);
         scenarioContext.setIsImportedDegree(true);
     }
 
