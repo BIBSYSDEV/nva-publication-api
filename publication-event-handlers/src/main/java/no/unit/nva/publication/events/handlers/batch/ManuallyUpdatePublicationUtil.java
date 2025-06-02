@@ -34,8 +34,20 @@ public final class ManuallyUpdatePublicationUtil {
 
     private void updateSeriesOrJournal(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
         resources.stream()
+            .filter(resource -> hasSerialPublication(resource, request.oldValue()))
             .map(resource -> updateSeriesOrJournal(resource, request.oldValue(), request.newValue()))
             .forEach(resource -> resourceService.updateResource(resource, UserInstance.fromPublication(resource.toPublication())));
+    }
+
+    private boolean hasSerialPublication(Resource resource, String value) {
+        var publicationContext = resource.getEntityDescription().getReference().getPublicationContext();
+        if (publicationContext instanceof Book book && book.getSeries() instanceof Series series) {
+            return series.getId().toString().contains(value);
+        }
+        if (publicationContext instanceof Journal journal) {
+            return journal.getId().toString().contains(value);
+        }
+        return false;
     }
 
     private Resource updateSeriesOrJournal(Resource resource, String oldValue, String newValue) {
