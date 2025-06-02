@@ -7,6 +7,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -122,10 +123,13 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     private void handleFileOwnershipAffiliationChange(FilesApprovalEntry oldTicket, FilesApprovalEntry updatedTicket) {
         if (shouldUpdateFileOwnershipAffiliation(oldTicket, updatedTicket)) {
-            var receivingOrganization = updatedTicket.getReceivingOrganizationDetails().topLevelOrganizationId();
-            logger.info("Ownership changed for ticket: {}. Updating owner affiliation to: {}",
-                        updatedTicket.getIdentifier(), receivingOrganization);
-            updateFileAffiliations(updatedTicket, receivingOrganization, resourceService);
+            var newReceivingOrganization = updatedTicket.getReceivingOrganizationDetails().topLevelOrganizationId();
+            var oldReceivingOrganization = nonNull(oldTicket) ?
+                                               oldTicket.getReceivingOrganizationDetails().topLevelOrganizationId() :
+                                                                                                                        null;
+            logger.info("Ownership changed for ticket: {}. Updating owner affiliation from {} to: {}",
+                        updatedTicket.getIdentifier(), oldReceivingOrganization, newReceivingOrganization);
+            updateFileAffiliations(updatedTicket, newReceivingOrganization, resourceService);
         }
     }
 
@@ -136,8 +140,8 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         }
 
         var oldReceiverTopLevel = Optional.ofNullable(oldTicket)
-                .map(TicketEntry::getReceivingOrganizationDetails)
-                .map(ReceivingOrganizationDetails::topLevelOrganizationId);
+                                      .map(TicketEntry::getReceivingOrganizationDetails)
+                                      .map(ReceivingOrganizationDetails::topLevelOrganizationId);
 
         var updatedReceiverTopLevel = Optional.of(updatedTicket)
                                           .map(TicketEntry::getReceivingOrganizationDetails)
@@ -150,10 +154,16 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
                                        ResourceService resourceService) {
         ticket.getFilesForApproval().stream()
             .map(PendingFile.class::cast)
-            .forEach(file -> FileEntry.queryObject(file.getIdentifier(), ticket.getResourceIdentifier())
-                                 .fetch(resourceService)
-                                 .ifPresent(
-                                     fileEntry -> fileEntry.updateOwnerAffiliation(resourceService, ownerAffiliation)));
+            .forEach(file -> updateOwnerAffiliation(ticket.getResourceIdentifier(), file.getIdentifier(),
+                                                    ownerAffiliation, resourceService));
+    }
+
+    private static void updateOwnerAffiliation(SortableIdentifier resourceIdentifier, UUID fileIdentifier,
+                                               URI newOwnerAffiliation, ResourceService resourceService) {
+        FileEntry.queryObject(fileIdentifier, resourceIdentifier)
+            .fetch(resourceService)
+            .ifPresent(
+                fileEntry -> fileEntry.updateOwnerAffiliation(resourceService, newOwnerAffiliation));
     }
 
     private void handlePendingPublishingRequest(FilesApprovalEntry entry) {

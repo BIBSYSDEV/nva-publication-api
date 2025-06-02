@@ -32,6 +32,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -452,10 +453,14 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublication =
             resourceService.getResourceByIdentifier(publication.getIdentifier());
 
-        assertThat(updatedPublication.getFileEntry(new SortableIdentifier(fileToPublish.getIdentifier().toString()))
-                       .orElseThrow()
-                       .getOwnerAffiliation(),
+        assertThat(getActualOwnerAffiliation(updatedPublication, fileToPublish),
                    is(equalTo(newOwnerAffiliation)));
+    }
+
+    private static URI getActualOwnerAffiliation(Resource resource, File file) {
+        return resource.getFileEntry(new SortableIdentifier(file.getIdentifier().toString()))
+                   .orElseThrow()
+                   .getOwnerAffiliation();
     }
 
     @Test
@@ -476,9 +481,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublication =
             resourceService.getResourceByIdentifier(publication.getIdentifier());
 
-        assertThat(updatedPublication.getFileEntry(new SortableIdentifier(fileToPublish.getIdentifier().toString()))
-                       .orElseThrow()
-                       .getOwnerAffiliation(),
+        assertThat(getActualOwnerAffiliation(updatedPublication, fileToPublish),
                    is(not(equalTo(publishingRequest.getReceivingOrganizationDetails().topLevelOrganizationId()))));
     }
 
@@ -496,9 +499,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublication =
             resourceService.getResourceByIdentifier(publication.getIdentifier());
 
-        assertThat(updatedPublication.getFileEntry(new SortableIdentifier(file.getIdentifier().toString()))
-                       .orElseThrow()
-                       .getOwnerAffiliation(),
+        assertThat(getActualOwnerAffiliation(updatedPublication, file),
                    is(equalTo(publishingRequest.getReceivingOrganizationDetails().topLevelOrganizationId())));
     }
 
@@ -516,9 +517,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublication =
             resourceService.getResourceByIdentifier(publication.getIdentifier());
 
-        assertThat(updatedPublication.getFileEntry(new SortableIdentifier(file.getIdentifier().toString()))
-                       .orElseThrow()
-                       .getOwnerAffiliation(),
+        assertThat(getActualOwnerAffiliation(updatedPublication, file),
                    is(not(equalTo(publishingRequest.getReceivingOrganizationDetails().topLevelOrganizationId()))));
     }
 
