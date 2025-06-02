@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.batch;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +23,7 @@ import java.util.stream.IntStream;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Revision;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -29,7 +31,12 @@ import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -65,7 +72,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         throws IOException {
         var publisherIdentifier = randomUUID().toString();
         var newPublisherIdentifier = randomUUID().toString();
-        var publisherId = createPublisherIdWithIdentifier(publisherIdentifier);
+        var publisherId = createChannelIdWithIdentifier(publisherIdentifier);
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(publisherId);
         var event = createEvent(ManualUpdateType.PUBLISHER, publisherIdentifier, newPublisherIdentifier);
 
@@ -83,9 +90,50 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdatePublicationJournalIdWhenUpdateTypeIsSerialPublicationAndJournalIdIsProvidedInRequest()
+        throws IOException {
+        var serialPublicationIdentifier = randomUUID().toString();
+        var newSerialPublicationIdentifier = randomUUID().toString();
+        var serialPublicationId = createChannelIdWithIdentifier(serialPublicationIdentifier);
+        var publicationsToUpdate = createMultiplePublicationsWithJournal(serialPublicationId);
+        var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, serialPublicationIdentifier, newSerialPublicationIdentifier);
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var updatedSerialPublication = getSeriesPublicationId(updatedPublication);
+            var expectedSerialPublication = serialPublicationId.toString().replace(serialPublicationIdentifier, newSerialPublicationIdentifier);
+
+            assertEquals(URI.create(expectedSerialPublication), updatedSerialPublication);
+        });
+    }
+
+    @Test
+    void shouldNotUpdatePublicationJournalIdWhenUpdateTypeIsSerialPublicationAndPublicationAndRequestHaveDifferentSerialPublications()
+        throws IOException {
+        var serialPublicationIdToKeep = createChannelIdWithIdentifier(randomUUID().toString());
+        var publicationsToUpdate = createMultiplePublicationsWithJournal(serialPublicationIdToKeep);
+        var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, randomUUID().toString(), randomUUID().toString());
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var updatedSerialPublication = getSeriesPublicationId(updatedPublication);
+
+            assertEquals(serialPublicationIdToKeep, updatedSerialPublication);
+        });
+    }
+
+    @Test
     void shouldNotUpdatePublisherWhenPublisherUpdateAndPublicationAndRequestHaveDifferentPublishers()
         throws IOException {
-        var publisherIdToKeep = createPublisherIdWithIdentifier(randomUUID().toString());
+        var publisherIdToKeep = createChannelIdWithIdentifier(randomUUID().toString());
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(publisherIdToKeep);
         var event = createEvent(ManualUpdateType.PUBLISHER, randomUUID().toString(), randomUUID().toString());
 
@@ -159,9 +207,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
                                                                                    oldValue)).toJsonString());
     }
 
-    private static URI createPublisherIdWithIdentifier(String publisherIdentifier) {
+    private static URI createChannelIdWithIdentifier(String channelIdentifier) {
         return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
-                   .addChild(publisherIdentifier)
+                   .addChild(channelIdentifier)
                    .addChild(randomString())
                    .getUri();
     }
@@ -170,6 +218,15 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var book = (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
         var publisher = (Publisher) book.getPublisher();
         return publisher.getId();
+    }
+
+    private static URI getSeriesPublicationId(Publication publication) {
+        if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Journal journal) {
+            return journal.getId();
+        } else if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Book book) {
+            return ((Series) book.getSeries()).getId();
+        }
+        throw new IllegalStateException();
     }
 
     private static URI createPublicationId(String identifier) {
@@ -211,6 +268,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         return IntStream.range(0, 10).boxed().map(i -> createPublicationWithPublisher(publisherId)).toList();
     }
 
+    private List<Publication> createMultiplePublicationsWithJournal(URI journalId) {
+        return IntStream.range(0, 10).boxed()
+                   .map(i -> attempt(() -> createPublicationWithJournal(journalId)).orElseThrow())
+                   .toList();
+    }
+
     private void mockSearchApiResponseWithPublications(List<Publication> publicationList) {
         var resourcesWithId = convertToResourcesWithId(publicationList);
         var responseBody = new SearchResourceApiResponse(publicationList.size(), resourcesWithId);
@@ -232,5 +295,26 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
             .setPublicationContext(new BookBuilder().withPublisher(new Publisher(publisherId)).build());
         return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                publication)).orElseThrow();
+    }
+
+    private Publication createPublicationWithJournal(URI serialPublicationId) throws InvalidUnconfirmedSeriesException {
+        if (randomBoolean()) {
+            var publication = randomPublication(JournalArticle.class);
+            var publicationContext = new Journal(serialPublicationId);
+            publication.getEntityDescription()
+                .getReference()
+                .setPublicationContext(publicationContext);
+            return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                                   publication)).orElseThrow();
+        } else {
+            var publication = randomPublication(AcademicMonograph.class);
+            var publicationContext = new Book(new Series(serialPublicationId), randomString(), randomString(),
+                                               null, List.of(), Revision.UNREVISED);
+            publication.getEntityDescription()
+                .getReference()
+                .setPublicationContext(publicationContext);
+            return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                                   publication)).orElseThrow();
+        }
     }
 }

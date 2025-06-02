@@ -254,6 +254,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void s() {
+        var s = new UriRetriever().getRawContent(URI.create("https://api.nva.unit" +
+                                                            ".no/publication-channels-v2/publisher/41FCC36C-799E-4027" +
+                                                            "-B002-822B69DB6379/2007"), "application/json");
+        var ss = "";
+    }
+
+    @Test
     void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
         throws BadRequestException {
         final Publication sampleResource = randomPublication();

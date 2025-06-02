@@ -4,7 +4,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -25,8 +27,31 @@ public final class ManuallyUpdatePublicationUtil {
     public void update(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
         switch (request.type()) {
             case PUBLISHER -> updatePublisher(resources, request);
+            case SERIAL_PUBLICATION -> updateSeriesOrJournal(resources, request);
             case LICENSE -> updateLicense(resources, request);
         }
+    }
+
+    private void updateSeriesOrJournal(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
+        resources.stream()
+            .map(resource -> updateSeriesOrJournal(resource, request.oldValue(), request.newValue()))
+            .forEach(resource -> resourceService.updateResource(resource, UserInstance.fromPublication(resource.toPublication())));
+    }
+
+    private Resource updateSeriesOrJournal(Resource resource, String oldValue, String newValue) {
+        var publicationContext = resource.getEntityDescription().getReference().getPublicationContext();
+        if (publicationContext instanceof Book book && book.getSeries() instanceof Series series) {
+            var newSeries = new Series(URI.create(series.getId().toString().replace(oldValue, newValue)));
+            var newPublicationContext = book.copy().withSeries(newSeries).build();
+            resource.getEntityDescription().getReference().setPublicationContext(newPublicationContext);
+            return resource;
+        }
+        if (publicationContext instanceof Journal journal) {
+            var newJournal = new Journal(URI.create(journal.getId().toString().replace(oldValue, newValue)));
+            resource.getEntityDescription().getReference().setPublicationContext(newJournal);
+            return resource;
+        }
+        return resource;
     }
 
     private static Resource update(Resource resource, String oldPublisher, String newPublisher) {
