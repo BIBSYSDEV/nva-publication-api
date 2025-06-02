@@ -277,7 +277,7 @@ public abstract class TicketEntry implements Entity {
         this.receivingOrganizationDetails = receivingOrganizationDetails;
     }
 
-    public TicketEntry updateReceivingOrganizationDetails(URI ownerAffiliation, URI responsibilityArea) {
+    public TicketEntry withReceivingOrganizationDetails(URI ownerAffiliation, URI responsibilityArea) {
         setReceivingOrganizationDetails(new ReceivingOrganizationDetails(ownerAffiliation, responsibilityArea));
         return this;
     }
@@ -428,7 +428,7 @@ public abstract class TicketEntry implements Entity {
         return this;
     }
 
-    public TicketEntry updateAssignee(Publication publication, Username assignee) {
+    public TicketEntry updateAssignee(Username assignee) {
         var updated = this.copy();
         updated.setAssignee(assignee);
         updated.setModifiedDate(Instant.now());

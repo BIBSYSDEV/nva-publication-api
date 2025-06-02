@@ -205,7 +205,7 @@ class TicketEntryTest {
 
         var responsibilityArea = randomUri();
         var ownerAffiliation = randomUri();
-        ticket.updateReceivingOrganizationDetails(ownerAffiliation, responsibilityArea);
+        ticket.withReceivingOrganizationDetails(ownerAffiliation, responsibilityArea);
 
         assertEquals(responsibilityArea, ticket.getReceivingOrganizationDetails().subOrganizationId());
         assertEquals(ownerAffiliation, ticket.getReceivingOrganizationDetails().topLevelOrganizationId());

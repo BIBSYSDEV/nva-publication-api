@@ -354,7 +354,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         ticketService.updateTicket(ticket);
 
         var user = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var addAssigneeTicket = ticket.updateAssignee(publication, new Username(assignee.getUsername()));
+        var addAssigneeTicket = ticket.updateAssignee(new Username(assignee.getUsername()));
 
         var request = authorizedUserAssigneesTicket(publication, addAssigneeTicket, user);
         handler.handleRequest(request, output, CONTEXT);
@@ -370,7 +370,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var user = UserInstance.fromTicket(ticket);
-        var addAssigneeTicket = ticket.updateAssignee(publication, new Username(user.getUsername()));
+        var addAssigneeTicket = ticket.updateAssignee(new Username(user.getUsername()));
         var request = createAssigneeTicketHttpRequest(addAssigneeTicket, addAssigneeTicket.getCustomerId());
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -385,7 +385,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         ticket.setAssignee(new Username(USER_INSTANCE.getUsername()));
         ticketService.updateTicket(ticket);
         var newAssignee = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var updatedTicket = ticket.updateAssignee(publication, new Username(newAssignee.getUsername()));
+        var updatedTicket = ticket.updateAssignee(new Username(newAssignee.getUsername()));
         var request = authorizedUserAssigneesTicket(publication, updatedTicket, newAssignee);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -399,7 +399,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         ticket.setAssignee(new Username(USER_INSTANCE.getUsername()));
         ticketService.updateTicket(ticket);
         var newAssignee = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var ticketWithNoAssignee = ticket.updateAssignee(publication, new Username(""));
+        var ticketWithNoAssignee = ticket.updateAssignee(new Username(""));
         var request = authorizedUserAssigneesTicket(publication, ticketWithNoAssignee, newAssignee);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);

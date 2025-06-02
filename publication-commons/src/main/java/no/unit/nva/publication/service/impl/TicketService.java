@@ -161,9 +161,8 @@ public class TicketService extends ServiceWithTransactions {
     }
 
     public TicketEntry updateTicketAssignee(TicketEntry ticketEntry, Username assignee) throws ApiGatewayException {
-        var publication = resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
         var existingTicket = fetchTicketByIdentifier(ticketEntry.getIdentifier());
-        var updatedAssignee = existingTicket.updateAssignee(publication, assignee);
+        var updatedAssignee = existingTicket.updateAssignee(assignee);
 
         var dao = updatedAssignee.toDao();
         var putItemRequest = dao.createPutItemRequest();

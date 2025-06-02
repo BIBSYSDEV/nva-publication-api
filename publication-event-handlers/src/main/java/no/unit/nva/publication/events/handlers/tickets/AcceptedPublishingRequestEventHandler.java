@@ -1,10 +1,13 @@
 package no.unit.nva.publication.events.handlers.tickets;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
 import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -12,13 +15,17 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -62,21 +69,21 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
-        var ticketUpdate = parseInput(eventBlob);
-        if (hasEffectiveChanges(eventBlob)) {
-            handleChanges(ticketUpdate);
+        var dataEntryUpdateEvent = DataEntryUpdateEvent.fromJson(eventBlob);
+        var updatedTicket = parseNewInput(dataEntryUpdateEvent);
+        var oldTicket = parseOldInput(dataEntryUpdateEvent);
+
+        if (hasStatusChange(dataEntryUpdateEvent)) {
+            handleStatusChanges(updatedTicket);
+        }
+        if (hasReceiverChange(dataEntryUpdateEvent)) {
+            handleFileOwnershipAffiliationChange(oldTicket, updatedTicket);
         }
         return null;
     }
 
     private static boolean hasDoi(Resource resource) {
         return nonNull(resource.getDoi());
-    }
-
-    private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
-        var newStatus = getNewStatus(updateEvent);
-        var oldStatus = getOldStatus(updateEvent);
-        return oldStatus.equals(newStatus);
     }
 
     private static Optional<String> getOldStatus(DataEntryUpdateEvent updateEvent) {
@@ -87,15 +94,76 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return Optional.of(updateEvent).map(DataEntryUpdateEvent::getNewData).map(Entity::getStatusString);
     }
 
-    private void handleChanges(FilesApprovalEntry filesApprovalEntry) {
-        switch (filesApprovalEntry.getStatus()) {
-            case PENDING -> handlePendingPublishingRequest(filesApprovalEntry);
-            case COMPLETED -> handleCompletedPublishingRequest(filesApprovalEntry);
-            case CLOSED -> handleClosedPublishingRequest(filesApprovalEntry);
+    private static Optional<URI> getOldReceiverTopLevel(DataEntryUpdateEvent event) {
+        return Optional.of(event)
+                   .map(DataEntryUpdateEvent::getOldData)
+                   .map(TicketEntry.class::cast)
+                   .map(TicketEntry::getReceivingOrganizationDetails)
+                   .map(ReceivingOrganizationDetails::topLevelOrganizationId);
+    }
+
+    private static Optional<URI> getNewReceiverTopLevel(DataEntryUpdateEvent event) {
+        return Optional.of(event)
+                   .map(DataEntryUpdateEvent::getNewData)
+                   .map(TicketEntry.class::cast)
+                   .map(TicketEntry::getReceivingOrganizationDetails)
+                   .map(ReceivingOrganizationDetails::topLevelOrganizationId);
+    }
+
+    private void handleStatusChanges(FilesApprovalEntry updatedTicket) {
+        switch (updatedTicket.getStatus()) {
+            case PENDING -> handlePendingPublishingRequest(updatedTicket);
+            case COMPLETED -> handleCompletedPublishingRequest(updatedTicket);
+            case CLOSED -> handleClosedPublishingRequest(updatedTicket);
             default -> {
                 // Ignore other non-final statuses
             }
         }
+    }
+
+    private void handleFileOwnershipAffiliationChange(FilesApprovalEntry oldTicket, FilesApprovalEntry updatedTicket) {
+        if (shouldUpdateFileOwnershipAffiliation(oldTicket, updatedTicket)) {
+            var newReceivingOrganization = updatedTicket.getReceivingOrganizationDetails().topLevelOrganizationId();
+            var oldReceivingOrganization = nonNull(oldTicket) ?
+                                               oldTicket.getReceivingOrganizationDetails().topLevelOrganizationId() :
+                                                                                                                        null;
+            logger.info("Ownership changed for ticket: {}. Updating owner affiliation from {} to: {}",
+                        updatedTicket.getIdentifier(), oldReceivingOrganization, newReceivingOrganization);
+            updateFileAffiliations(updatedTicket, newReceivingOrganization, resourceService);
+        }
+    }
+
+    private static boolean shouldUpdateFileOwnershipAffiliation(FilesApprovalEntry oldTicket,
+                                                                FilesApprovalEntry updatedTicket) {
+        if (isNull(updatedTicket)) {
+            return false;
+        }
+
+        var oldReceiverTopLevel = Optional.ofNullable(oldTicket)
+                                      .map(TicketEntry::getReceivingOrganizationDetails)
+                                      .map(ReceivingOrganizationDetails::topLevelOrganizationId);
+
+        var updatedReceiverTopLevel = Optional.of(updatedTicket)
+                                          .map(TicketEntry::getReceivingOrganizationDetails)
+                                          .map(ReceivingOrganizationDetails::topLevelOrganizationId);
+
+        return !oldReceiverTopLevel.equals(updatedReceiverTopLevel);
+    }
+
+    public void updateFileAffiliations(FilesApprovalEntry ticket, URI ownerAffiliation,
+                                       ResourceService resourceService) {
+        ticket.getFilesForApproval().stream()
+            .map(PendingFile.class::cast)
+            .forEach(file -> updateOwnerAffiliation(ticket.getResourceIdentifier(), file.getIdentifier(),
+                                                    ownerAffiliation, resourceService));
+    }
+
+    private static void updateOwnerAffiliation(SortableIdentifier resourceIdentifier, UUID fileIdentifier,
+                                               URI newOwnerAffiliation, ResourceService resourceService) {
+        FileEntry.queryObject(fileIdentifier, resourceIdentifier)
+            .fetch(resourceService)
+            .ifPresent(
+                fileEntry -> fileEntry.updateOwnerAffiliation(resourceService, newOwnerAffiliation));
     }
 
     private void handlePendingPublishingRequest(FilesApprovalEntry entry) {
@@ -120,8 +188,18 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         publishingRequestCase.rejectRejectedFiles(resourceService);
     }
 
-    private boolean hasEffectiveChanges(String eventBlob) {
-        return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
+    private boolean hasStatusChange(DataEntryUpdateEvent dataEntryUpdateEvent) {
+        var newStatus = getNewStatus(dataEntryUpdateEvent);
+        var oldStatus = getOldStatus(dataEntryUpdateEvent);
+
+        return newStatus.isPresent() && !newStatus.equals(oldStatus);
+    }
+
+    private static boolean hasReceiverChange(DataEntryUpdateEvent updateEvent) {
+        var newReceiver = getNewReceiverTopLevel(updateEvent);
+        var oldReceiver = getOldReceiverTopLevel(updateEvent);
+
+        return newReceiver.isPresent() && !newReceiver.equals(oldReceiver);
     }
 
     private void handleCompletedPublishingRequest(FilesApprovalEntry entry) {
@@ -196,8 +274,11 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
                                                              DoiRequest.class);
     }
 
-    private FilesApprovalEntry parseInput(String eventBlob) {
-        var entryUpdate = DataEntryUpdateEvent.fromJson(eventBlob);
-        return (FilesApprovalEntry) entryUpdate.getNewData();
+    private FilesApprovalEntry parseNewInput(DataEntryUpdateEvent dataEntryUpdateEvent) {
+        return (FilesApprovalEntry) dataEntryUpdateEvent.getNewData();
+    }
+
+    private FilesApprovalEntry parseOldInput(DataEntryUpdateEvent dataEntryUpdateEvent) {
+        return (FilesApprovalEntry) dataEntryUpdateEvent.getOldData();
     }
 }
