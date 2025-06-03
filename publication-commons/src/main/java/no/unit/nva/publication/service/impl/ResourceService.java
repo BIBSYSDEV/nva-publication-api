@@ -61,7 +61,6 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
-import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -314,19 +313,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry) {
-        if (dataEntry instanceof Resource resource) {
-            mutateResourceIfMissingCristinIdentifier(resource);
-        } else if (dataEntry instanceof TicketEntry ticketEntry) {
-            mutateTicketIfReceivingOrganizationDetailsMissing(ticketEntry);
-        }
         return dataEntry;
-    }
-
-    private static void mutateTicketIfReceivingOrganizationDetailsMissing(TicketEntry ticketEntry) {
-        if (isNull(ticketEntry.getReceivingOrganizationDetails())) {
-            var receivingOrganizationDetails = new ReceivingOrganizationDetails(ticketEntry.getOwnerAffiliation(), ticketEntry.getResponsibilityArea());
-            ticketEntry.setReceivingOrganizationDetails(receivingOrganizationDetails);
-        }
     }
 
     private void mutateResourceIfMissingCristinIdentifier(Resource resource) {
