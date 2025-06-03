@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -64,6 +65,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.ticket.TicketPermissions;
 import no.unit.nva.publication.ticket.DoiRequestDto;
 import no.unit.nva.publication.ticket.TicketAndPublicationStatusProvider;
 import no.unit.nva.publication.ticket.TicketConfig;
@@ -568,8 +570,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
         var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
-                                      .map(File::getIdentifier)
-                                      .collect(Collectors.toSet());
+                                .map(File::getIdentifier)
+                                .collect(Collectors.toSet());
         assertThat(approvedFiles, hasItem(approvedFile.getIdentifier()));
     }
 
@@ -624,8 +626,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
         var approvedFiles = completedPublishingRequest.getApprovedFiles().stream()
-                               .map(File::getIdentifier)
-                               .toList();
+                                .map(File::getIdentifier)
+                                .toList();
         assertThat(approvedFiles, hasItem(approvedFile.getIdentifier()));
         assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
     }
@@ -672,7 +674,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var fileWithoutLicense = pendingFileWithoutLicense();
         var publication =
             randomPublication().copy().withAssociatedArtifacts(List.of(fileWithoutLicense)).build();
-        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                                     publication);
         var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(persistedPublication);
         var closedTicket = ticket.complete(persistedPublication, USER_INSTANCE);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
@@ -692,7 +695,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication =
             randomPublication().copy().withAssociatedArtifacts(
                 List.of(pendingFileWithoutLicense(), randomPendingOpenFile())).build();
-        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                                     publication);
         var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(persistedPublication);
         var closedTicket = ticket.complete(persistedPublication, USER_INSTANCE);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
@@ -707,13 +711,17 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldUpdateTicketOwnershipToOneOfCuratingInstitutionsWhenUserInstitutionOwnsTicket() throws ApiGatewayException, IOException {
+    void shouldUpdateTicketOwnershipToOneOfCuratingInstitutionsWhenUserInstitutionOwnsTicket()
+        throws ApiGatewayException, IOException {
         var curatingInstitution = randomUri();
         var publication =
-            randomPublication().copy().withCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of()))).build();
+            randomPublication().copy()
+                .withCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of())))
+                .build();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = resourceService.createPublication(userInstance, publication);
-        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance).persistNewTicket(ticketService);
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
+                         .persistNewTicket(ticketService);
         var httpRequest = createUpdateTicketOwnershipRequest(ticket, curatingInstitution, SUPPORT);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
@@ -723,11 +731,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldReturnForbiddenWhenUpdatingTicketOwnershipToNotOneOfCuratingInstitutions() throws ApiGatewayException, IOException {
+    void shouldReturnForbiddenWhenUpdatingTicketOwnershipToNotOneOfCuratingInstitutions()
+        throws ApiGatewayException, IOException {
         var publication = randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = resourceService.createPublication(userInstance, publication);
-        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance).persistNewTicket(ticketService);
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
+                         .persistNewTicket(ticketService);
         var httpRequest = createUpdateTicketOwnershipRequest(ticket, randomUri(), SUPPORT);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
@@ -737,13 +747,17 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldReturnForbiddenWhenUpdatingTicketOwnershipAndUserInstitutionDoesNotOwnTicket() throws ApiGatewayException, IOException {
+    void shouldReturnForbiddenWhenUpdatingTicketOwnershipAndUserInstitutionDoesNotOwnTicket()
+        throws ApiGatewayException, IOException {
         var curatingInstitution = randomUri();
         var publication =
-            randomPublication().copy().withCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of()))).build();
+            randomPublication().copy()
+                .withCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of())))
+                .build();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = resourceService.createPublication(userInstance, publication);
-        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance).persistNewTicket(ticketService);
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
+                         .persistNewTicket(ticketService);
         var httpRequest = createUpdateTicketOwnershipRequestWithRandomInstitution(ticket, curatingInstitution, SUPPORT);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
@@ -753,8 +767,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream createUpdateTicketOwnershipRequestWithRandomInstitution(TicketEntry ticket,
-                                                                             URI newOwnerAffiliation,
-                                                            AccessRight accessRight)
+                                                                                URI newOwnerAffiliation,
+                                                                                AccessRight accessRight)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketOwnershipRequest>(JsonUtils.dtoObjectMapper).withBody(
                 new UpdateTicketOwnershipRequest(newOwnerAffiliation, newOwnerAffiliation))
@@ -767,7 +781,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private InputStream createUpdateTicketOwnershipRequest(TicketEntry ticket, URI newOwnerAffiliation, AccessRight accessRight)
+    private InputStream createUpdateTicketOwnershipRequest(TicketEntry ticket, URI newOwnerAffiliation,
+                                                           AccessRight accessRight)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketOwnershipRequest>(JsonUtils.dtoObjectMapper).withBody(
                 new UpdateTicketOwnershipRequest(newOwnerAffiliation, newOwnerAffiliation))
@@ -880,7 +895,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private InputStream createAssigneeTicketHttpRequest(TicketEntry ticket, URI customer)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket,
-                                                                                                             Collections.emptyList(), Collections.emptyList()))
+                                                                                                             Collections.emptyList(),
+                                                                                                             Collections.emptyList(),
+                                                                                                             mock(
+                                                                                                                 TicketPermissions.class)))
                    .withCurrentCustomer(customer)
                    .withUserName(USER_INSTANCE.getUsername())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
@@ -913,9 +931,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private TicketEntry persistFilesApprovalThesisContainingExistingPendingOpenFiles(Publication publication)
         throws ApiGatewayException {
         return FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
-                                                                                 UserInstance.fromPublication(publication),
-                                                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-                                      .persistNewTicket(ticketService);
+                                                            UserInstance.fromPublication(publication),
+                                                            PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                   .persistNewTicket(ticketService);
     }
 
     private Set<File> getPendingFiles(Publication publication) {
@@ -928,7 +946,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, URI customer, AccessRight... accessRights)
         throws JsonProcessingException {
         var publication = ticket.toPublication(resourceService);
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket, Collections.emptyList(), Collections.emptyList()))
+        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(
+                TicketDto.fromTicket(ticket, Collections.emptyList(), Collections.emptyList(),
+                                     mock(TicketPermissions.class)))
                    .withAccessRights(customer, accessRights)
                    .withCurrentCustomer(customer)
                    .withUserName(USER_INSTANCE.getUsername())

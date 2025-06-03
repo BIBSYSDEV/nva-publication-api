@@ -9,6 +9,9 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.publication.PublicationPermissions;
+import no.unit.nva.publication.permissions.ticket.TicketPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -26,7 +29,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     private static final String TICKET_NOT_FOUND = "Ticket not found";
     private final TicketService ticketService;
     private final ResourceService resourceService;
-    
+
     @JacocoGenerated
     public GetTicketHandler() {
         this(TicketService.defaultService(), ResourceService.defaultService(), new Environment());
@@ -60,7 +63,14 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
         var resource = resourceService.getResourceByIdentifier(ticket.getResourceIdentifier());
         validateRequest(requestUtils.publicationIdentifier(), ticket);
         var messages = ticket.fetchMessages(ticketService);
-        return TicketDto.fromTicket(ticket, messages, getCuratingInstitutionsIdList(resource));
+        var userInstance = UserInstance.fromRequestInfo(requestInfo);
+
+        var ticketPermissions = TicketPermissions.create(ticket,
+                                 requestUtils.toUserInstance(),
+                                 resource,
+                                 PublicationPermissions.create(resource, userInstance));
+
+        return TicketDto.fromTicket(ticket, messages, getCuratingInstitutionsIdList(resource), ticketPermissions);
     }
 
     private static List<URI> getCuratingInstitutionsIdList(Resource resource) {

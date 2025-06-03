@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.TicketOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -55,7 +56,8 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(FILES_FOR_APPROVAL) Set<File> filesForApproval,
                                 @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                                 @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate,
-                                @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions) {
+                                @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions,
+                                @JsonProperty(ALLOWED_OPERATIONS_FIELD) Set<TicketOperation> allowedOperations) {
         super(identifier,
               status,
               messages,
@@ -65,7 +67,7 @@ public class PublishingRequestDto extends TicketDto {
               owner,
               ownerAffiliation,
               finalizedBy,
-              finalizedDate, createdDate, modifiedDate, availableInstitutions);
+              finalizedDate, createdDate, modifiedDate, availableInstitutions, allowedOperations);
         this.workflow = workflow;
         this.approvedFiles = approvedFiles;
         this.filesForApproval = filesForApproval;
@@ -87,6 +89,7 @@ public class PublishingRequestDto extends TicketDto {
                                         Collections.emptySet(),
                                         null,
                                         null,
+                                        Collections.emptySet(),
                                         Collections.emptySet());
     }
 
@@ -107,13 +110,18 @@ public class PublishingRequestDto extends TicketDto {
         return PublishingRequestCase.class;
     }
 
+    @JacocoGenerated
+    private Set<TicketOperation> getAllowedOperations() {
+        return allowedOperations;
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
                             getPublicationIdentifier(), getId(), getMessages(), getAssignee(), getOwner(),
                             getOwnerAffiliation(), getWorkflow(), getApprovedFiles(), getFilesForApproval(),
-                            getFinalizedBy(), getFinalizedDate());
+                            getFinalizedBy(), getFinalizedDate(), getAllowedOperations());
     }
 
     @Override
@@ -139,6 +147,7 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getApprovedFiles(), that.getApprovedFiles())
                && Objects.equals(getFilesForApproval(), that.getFilesForApproval())
                && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
-               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
+               && Objects.equals(getFinalizedDate(), that.getFinalizedDate())
+               && Objects.equals(getAllowedOperations(), that.getAllowedOperations());
     }
 }

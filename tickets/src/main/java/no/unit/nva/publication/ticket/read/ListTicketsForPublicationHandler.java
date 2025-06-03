@@ -14,6 +14,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
+import no.unit.nva.publication.permissions.ticket.TicketPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -64,11 +65,16 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     private List<TicketDto> fetchTickets(SortableIdentifier publicationIdentifier,
                                          UserInstance userInstance) throws ApiGatewayException {
         var resource = resourceService.getResourceByIdentifier(publicationIdentifier);
-        var tickets = fetchTickets(userInstance, resource)
+        var publicationPermissions = PublicationPermissions.create(resource, userInstance);
+        var tickets = fetchTickets(resource, publicationPermissions)
                           .filter(ticketEntry -> hasAccessToTicket(ticketEntry, userInstance));
 
 
-        return tickets.map(ticketEntry -> createDto(ticketEntry, resource)).toList();
+        return tickets.map(ticketEntry -> createDto(ticketEntry, resource, TicketPermissions.create(ticketEntry,
+                                                                                                    userInstance,
+                                                                                                    resource,
+                                                                                                    publicationPermissions)))
+                   .toList();
     }
 
     private boolean hasAccessToTicket(TicketEntry ticketEntry, UserInstance userInstance) {
@@ -83,22 +89,22 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         }
     }
 
-    private Stream<TicketEntry> fetchTickets(UserInstance userInstance, Resource resource)
+    private Stream<TicketEntry> fetchTickets(Resource resource,
+                                             PublicationPermissions publicationPermissions)
         throws ApiGatewayException {
         return Optional.ofNullable(resource)
-                   .filter(ticketResource -> isAllowedToListTickets(userInstance, ticketResource))
+                   .filter(ticketResource -> isAllowedToListTickets(publicationPermissions))
                    .map(resourceService::fetchAllTicketsForResource)
                    .orElseThrow(ForbiddenException::new);
     }
 
-    private boolean isAllowedToListTickets(UserInstance userInstance, Resource resource) {
-        return PublicationPermissions.create(resource, userInstance)
-                   .allowsAction(PublicationOperation.PARTIAL_UPDATE);
+    private boolean isAllowedToListTickets(PublicationPermissions publicationPermissions) {
+        return publicationPermissions.allowsAction(PublicationOperation.PARTIAL_UPDATE);
     }
 
-    private TicketDto createDto(TicketEntry ticket, Resource resource) {
+    private TicketDto createDto(TicketEntry ticket, Resource resource, TicketPermissions ticketPermissions) {
         var messages = ticket.fetchMessages(ticketService);
         var curatingInstitutions = resource.getCuratingInstitutions().stream().map(CuratingInstitution::id).toList();
-        return TicketDto.fromTicket(ticket, messages, curatingInstitutions);
+        return TicketDto.fromTicket(ticket, messages, curatingInstitutions, ticketPermissions);
     }
 }

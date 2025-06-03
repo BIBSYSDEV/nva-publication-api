@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.TicketOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -37,7 +38,8 @@ public class DoiRequestDto extends TicketDto {
                          @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                          @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                          @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate,
-                         @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions) {
+                         @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions,
+                         @JsonProperty(ALLOWED_OPERATIONS_FIELD) Set<TicketOperation> allowedOperations) {
         super(identifier,
               status,
               messages,
@@ -50,7 +52,7 @@ public class DoiRequestDto extends TicketDto {
               finalizedDate,
               createdDate,
               modifiedDate,
-              availableInstitutions);
+              availableInstitutions, allowedOperations);
     }
 
     public static TicketDto empty() {
@@ -66,6 +68,7 @@ public class DoiRequestDto extends TicketDto {
                                  null,
                                  null,
                                  null,
+                                 Collections.emptySet(),
                                  Collections.emptySet());
     }
 
