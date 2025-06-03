@@ -8,6 +8,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -18,8 +19,6 @@ import java.util.List;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.contexttypes.Degree;
-import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -28,7 +27,6 @@ import no.unit.nva.publication.external.services.ChannelClaimDto.ChannelClaim;
 import no.unit.nva.publication.external.services.ChannelClaimDto.ChannelClaim.ChannelConstraint;
 import no.unit.nva.publication.external.services.ChannelClaimDto.CustomerSummaryDto;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -129,21 +127,121 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
                                                           publication.getIdentifier());
         handler.handleRequest(request, output, context);
 
-        pendingTicket = ticketService.fetchTicket(pendingTicket);
-        assertThat("pending ticket should have updates in receivingOrganization.topLevelOrganizationId",
-                   pendingTicket.getReceivingOrganizationDetails().topLevelOrganizationId(),
-                   is(equalTo(claimingOrganizationId)));
-        assertThat("pending ticket should have updates in receivingOrganization.subOrganizationId",
-                   pendingTicket.getReceivingOrganizationDetails().subOrganizationId(),
-                   is(equalTo(claimingOrganizationId)));
-        assertThat("", pendingTicket.getReceivingOrganizationDetails().influencingChannelClaim(),
-                   is(equalTo(channelClaimIdentifier)));
+        var pendingTicketAfter = (FilesApprovalThesis) ticketService.fetchTicket(pendingTicket);
+        assertTicketHasOrganizationDetails(pendingTicketAfter,
+                                           claimingOrganizationId,
+                                           claimingOrganizationId,
+                                           channelClaimIdentifier);
 
-        completedTicket = ticketService.fetchTicket(completedTicket);
-        assertThat(completedTicket.getReceivingOrganizationDetails().topLevelOrganizationId(),
-                   is(equalTo(completedTicket.getOwnerAffiliation())));
-        assertThat(completedTicket.getReceivingOrganizationDetails().subOrganizationId(),
-                   is(equalTo(completedTicket.getResponsibilityArea())));
+        var completedTicketAfter = (FilesApprovalThesis) ticketService.fetchTicket(completedTicket);
+        assertTicketHasOrganizationDetails(completedTicketAfter,
+                                           completedTicketAfter.getOwnerAffiliation(),
+                                           completedTicketAfter.getResponsibilityArea());
+    }
+
+    @Test
+    void shouldUpdatePendingTicketsWhenChannelClaimIsRemovedAndTicketIsStillUnderInfluence() throws ApiGatewayException,
+                                                                                                    IOException {
+        var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
+        var userTopLevelOrganizationId = randomUri();
+        var userAffiliationOrganizationId = randomUri();
+        var channelClaimIdentifier = SortableIdentifier.next();
+        var claimingCustomerId = randomUri();
+        var claimingOrganizationId = randomUri();
+
+        var pendingTicket =
+            pendingFilesApprovalThesis(publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
+                .applyPublicationChannelClaim(claimingOrganizationId, channelClaimIdentifier)
+                .persistNewTicket(ticketService);
+        var completedTicket =
+            pendingFilesApprovalThesis(publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
+                .complete(publication, USER_INSTANCE)
+                .persistNewTicket(ticketService);
+
+        var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
+
+        var request = claimedPublicationChannelRemovedEvent(channelClaimIdentifier,
+                                                            claimingCustomerId,
+                                                            claimingOrganizationId,
+                                                            publication.getIdentifier());
+        handler.handleRequest(request, output, context);
+
+        var pendingTicketAfter = (FilesApprovalThesis) ticketService.fetchTicket(pendingTicket);
+        assertTicketHasOrganizationDetails(pendingTicketAfter,
+                                           userTopLevelOrganizationId,
+                                           userAffiliationOrganizationId);
+
+        var completedTicketAfter = (FilesApprovalThesis) ticketService.fetchTicket(completedTicket);
+        assertTicketHasOrganizationDetails(completedTicketAfter,
+                                           completedTicketAfter.getOwnerAffiliation(),
+                                           completedTicketAfter.getResponsibilityArea());
+    }
+
+    @Test
+    void shouldNotUpdatePendingTicketsWhenChannelClaimIsRemovedAndTicketIsUnderInfluenceByDifferentChannelClaim()
+        throws ApiGatewayException,
+               IOException {
+        var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
+        var userTopLevelOrganizationId = randomUri();
+        var userAffiliationOrganizationId = randomUri();
+
+        var differentChannelClaimIdentifier = SortableIdentifier.next();
+        var differentClaimingOrganizationId = randomUri();
+
+        var pendingTicket =
+            pendingFilesApprovalThesis(publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
+                .applyPublicationChannelClaim(differentClaimingOrganizationId, differentChannelClaimIdentifier)
+                .persistNewTicket(ticketService);
+        var completedTicket =
+            pendingFilesApprovalThesis(publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
+                .complete(publication, USER_INSTANCE)
+                .persistNewTicket(ticketService);
+
+        var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
+
+        var channelClaimIdentifier = SortableIdentifier.next();
+        var claimingCustomerId = randomUri();
+        var claimingOrganizationId = randomUri();
+
+        var request = claimedPublicationChannelRemovedEvent(channelClaimIdentifier,
+                                                            claimingCustomerId,
+                                                            claimingOrganizationId,
+                                                            publication.getIdentifier());
+        handler.handleRequest(request, output, context);
+
+        var pendingTicketAfter = (FilesApprovalThesis) ticketService.fetchTicket(pendingTicket);
+        assertTicketHasOrganizationDetails(pendingTicketAfter,
+                                           differentClaimingOrganizationId,
+                                           differentClaimingOrganizationId,
+                                           differentChannelClaimIdentifier);
+
+        var completedTicketAfter = (FilesApprovalThesis) ticketService.fetchTicket(completedTicket);
+        assertTicketHasOrganizationDetails(completedTicketAfter,
+                                           completedTicketAfter.getOwnerAffiliation(),
+                                           completedTicketAfter.getResponsibilityArea());
+    }
+
+    private void assertTicketHasOrganizationDetails(FilesApprovalThesis ticket,
+                                                    URI topLevelOrganizationId,
+                                                    URI subOrganizationId,
+                                                    SortableIdentifier channelClaimIdentifier) {
+        assertThat(ticket.getReceivingOrganizationDetails().topLevelOrganizationId(),
+                   is(equalTo(topLevelOrganizationId)));
+        assertThat(ticket.getReceivingOrganizationDetails().subOrganizationId(),
+                   is(equalTo(subOrganizationId)));
+        assertThat(ticket.getReceivingOrganizationDetails().influencingChannelClaim(),
+                   is(equalTo(channelClaimIdentifier)));
+    }
+
+    private void assertTicketHasOrganizationDetails(FilesApprovalThesis ticket,
+                                                    URI topLevelOrganizationId,
+                                                    URI subOrganizationId) {
+        assertThat(ticket.getReceivingOrganizationDetails().topLevelOrganizationId(),
+                   is(equalTo(topLevelOrganizationId)));
+        assertThat(ticket.getReceivingOrganizationDetails().subOrganizationId(),
+                   is(equalTo(subOrganizationId)));
+        assertThat(ticket.getReceivingOrganizationDetails().influencingChannelClaim(),
+                   is(nullValue()));
     }
 
     private FilesApprovalThesis pendingFilesApprovalThesis(Publication publication,
@@ -181,10 +279,11 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
         return validEvent(blobUri);
     }
 
-    private InputStream claimedPublicationChannelAddedEvent(SortableIdentifier channelClaimIdentifier,
-                                                            URI customerId,
-                                                            URI organizationId,
-                                                            SortableIdentifier resourceIdentifier) throws IOException {
+    private InputStream claimedPublicationChannelRemovedEvent(SortableIdentifier channelClaimIdentifier,
+                                                              URI customerId,
+                                                              URI organizationId,
+                                                              SortableIdentifier resourceIdentifier)
+        throws IOException {
 
         var channelClaimId = UriWrapper.fromUri(randomUri()).addChild(channelClaimIdentifier.toString()).getUri();
         var claimedBy = new CustomerSummaryDto(customerId, organizationId);
@@ -194,6 +293,31 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
                                                                                                   "Everyone",
                                                                                                   List.of(
                                                                                                       STUDENT_THESIS_INSTANCE_TYPES))));
+        var eventBody = eventBody(
+            ClaimedPublicationChannel.create(channelClaimDto, resourceIdentifier, PUBLISHER),
+            null
+        );
+        var blobUri = s3Driver.insertEvent(UnixPath.of(randomString()), eventBody);
+
+        return validEvent(blobUri);
+    }
+
+    private InputStream claimedPublicationChannelAddedEvent(SortableIdentifier channelClaimIdentifier,
+                                                            URI customerId,
+                                                            URI organizationId,
+                                                            SortableIdentifier resourceIdentifier) throws IOException {
+
+        var channelClaimId = UriWrapper.fromUri(randomUri()).addChild(channelClaimIdentifier.toString()).getUri();
+        var claimedBy = new CustomerSummaryDto(customerId, organizationId);
+        var channelClaim = new ChannelClaim(randomUri(),
+                                            new ChannelConstraint(
+                                                "OwnerOnly",
+                                                "Everyone",
+                                                List.of(
+                                                    STUDENT_THESIS_INSTANCE_TYPES)));
+        var channelClaimDto = new ChannelClaimDto(channelClaimId,
+                                                  claimedBy,
+                                                  channelClaim);
         var eventBody = eventBody(
             null,
             ClaimedPublicationChannel.create(channelClaimDto, resourceIdentifier, PUBLISHER)

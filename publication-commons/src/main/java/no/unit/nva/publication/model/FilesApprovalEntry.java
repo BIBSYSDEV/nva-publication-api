@@ -5,6 +5,7 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.APPROVED_FILES_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.FILES_FOR_APPROVAL_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -57,8 +58,22 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
     public FilesApprovalEntry applyPublicationChannelClaim(URI organizationId,
                                                            SortableIdentifier channelClaimIdentifier) {
-        this.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(organizationId, organizationId, channelClaimIdentifier));
+        this.setReceivingOrganizationDetails(
+            new ReceivingOrganizationDetails(organizationId, organizationId, channelClaimIdentifier));
         return this;
+    }
+
+    public FilesApprovalEntry clearPublicationChannelClaim(SortableIdentifier channelClaimIdentifier) {
+        if (isUnderClaimedChannelInfluence(channelClaimIdentifier)) {
+            this.setReceivingOrganizationDetails(
+                new ReceivingOrganizationDetails(getOwnerAffiliation(), getResponsibilityArea()));
+        }
+        return this;
+    }
+
+    @JsonIgnore
+    public boolean isUnderClaimedChannelInfluence(SortableIdentifier channelClaimIdentifier) {
+        return channelClaimIdentifier.equals(getReceivingOrganizationDetails().influencingChannelClaim());
     }
 
     protected FilesApprovalEntry completeAndApproveFiles(Resource resource, UserInstance userInstance) {
