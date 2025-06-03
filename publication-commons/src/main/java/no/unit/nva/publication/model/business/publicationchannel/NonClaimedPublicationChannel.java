@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.publicationchannel;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -31,6 +32,7 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
     private final Instant createdDate;
     private final Instant modifiedDate;
 
+    @JsonCreator
     public NonClaimedPublicationChannel(
         @JsonProperty(ID_FIELD) URI id,
         @JsonProperty(CHANNEL_TYPE_FIELD) ChannelType channelType,

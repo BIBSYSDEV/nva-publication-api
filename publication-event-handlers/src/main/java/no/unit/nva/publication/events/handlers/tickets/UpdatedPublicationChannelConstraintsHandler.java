@@ -17,7 +17,6 @@ import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
-import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -58,11 +57,7 @@ public class UpdatedPublicationChannelConstraintsHandler
 
         var oldData = (PublicationChannel) entryUpdate.getOldData();
         var newData = (PublicationChannel) entryUpdate.getNewData();
-        if (isNull(oldData)
-            && nonNull(newData)
-            && NonClaimedPublicationChannel.TYPE.equals(newData.getType())) {
-            // do nothing
-        } else if (isNull(oldData) && nonNull(newData) && ClaimedPublicationChannel.TYPE.equals(newData.getType())) {
+        if (isNull(oldData) && nonNull(newData) && ClaimedPublicationChannel.TYPE.equals(newData.getType())) {
             var channelConstraint = (ClaimedPublicationChannel) newData;
             var resource =
                 Resource.resourceQueryObject(channelConstraint.getResourceIdentifier())
@@ -73,7 +68,8 @@ public class UpdatedPublicationChannelConstraintsHandler
                 .filter(ticketEntry -> ticketEntry instanceof FilesApprovalEntry)
                 .map(FilesApprovalEntry.class::cast)
                 .map(filesApprovalEntry ->
-                             filesApprovalEntry.applyPublicationChannelClaim(channelConstraint.getOrganizationId()))
+                             filesApprovalEntry.applyPublicationChannelClaim(channelConstraint.getOrganizationId(),
+                                                                             channelConstraint.getIdentifier()))
                 .forEach(ticketService::updateTicket);
         }
         return null;

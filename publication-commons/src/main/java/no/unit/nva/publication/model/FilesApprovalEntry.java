@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -54,8 +55,9 @@ public abstract class FilesApprovalEntry extends TicketEntry {
         return completed;
     }
 
-    public FilesApprovalEntry applyPublicationChannelClaim(URI organizationId) {
-        this.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(organizationId, organizationId));
+    public FilesApprovalEntry applyPublicationChannelClaim(URI organizationId,
+                                                           SortableIdentifier channelClaimIdentifier) {
+        this.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(organizationId, organizationId, channelClaimIdentifier));
         return this;
     }
 

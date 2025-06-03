@@ -119,10 +119,12 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
 
         var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
 
+        var channelClaimIdentifier = SortableIdentifier.next();
         var claimingCustomerId = randomUri();
         var claimingOrganizationId = randomUri();
 
-        var request = claimedPublicationChannelAddedEvent(claimingCustomerId,
+        var request = claimedPublicationChannelAddedEvent(channelClaimIdentifier,
+                                                          claimingCustomerId,
                                                           claimingOrganizationId,
                                                           publication.getIdentifier());
         handler.handleRequest(request, output, context);
@@ -134,6 +136,8 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
         assertThat("pending ticket should have updates in receivingOrganization.subOrganizationId",
                    pendingTicket.getReceivingOrganizationDetails().subOrganizationId(),
                    is(equalTo(claimingOrganizationId)));
+        assertThat("", pendingTicket.getReceivingOrganizationDetails().influencingChannelClaim(),
+                   is(equalTo(channelClaimIdentifier)));
 
         completedTicket = ticketService.fetchTicket(completedTicket);
         assertThat(completedTicket.getReceivingOrganizationDetails().topLevelOrganizationId(),
@@ -155,9 +159,9 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
                                             personId,
                                             accessRights,
                                             UserClientType.INTERNAL);
-        return FilesApprovalThesis.create(Resource.fromPublication(publication), userInstance,
-                                          userInstance.getTopLevelOrgCristinId(),
-                                          REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        return FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
+                                                            userInstance,
+                                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
     }
 
     private InputStream eventNotAvailableFromS3() {
@@ -177,11 +181,12 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
         return validEvent(blobUri);
     }
 
-    private InputStream claimedPublicationChannelAddedEvent(URI customerId,
+    private InputStream claimedPublicationChannelAddedEvent(SortableIdentifier channelClaimIdentifier,
+                                                            URI customerId,
                                                             URI organizationId,
                                                             SortableIdentifier resourceIdentifier) throws IOException {
 
-        var channelClaimId = UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
+        var channelClaimId = UriWrapper.fromUri(randomUri()).addChild(channelClaimIdentifier.toString()).getUri();
         var claimedBy = new CustomerSummaryDto(customerId, organizationId);
         var channelClaimDto = new ChannelClaimDto(channelClaimId, claimedBy, new ChannelClaim(randomUri(),
                                                                                               new ChannelConstraint(
