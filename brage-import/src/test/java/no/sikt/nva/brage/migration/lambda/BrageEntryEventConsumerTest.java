@@ -1134,15 +1134,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var generator = new NvaBrageMigrationDataGenerator.Builder()
                             .withMainTitle(title)
                             .withContributor(brageContributor)
-                            .withJournalId("1234")
+                            .withJournalId("12345")
                             .withPublicationDate(new PublicationDate("2023",
                                                                      new PublicationDateNva.Builder()
                                                                          .withYear("2023")
                                                                          .build()))
                             .withType(new Type(List.of(), "JournalArticle")).build();
 
-        mockSingleHitSearchApiResponseByTitleAndTypes(existingPublication.getIdentifier(), 200, title,
-                                                      "UnconfirmedJournal", "Journal");
+        mockSingleHitSearchApiResponseByTitleAndTypes(existingPublication.getIdentifier(), 200, title, "Journal",
+                                                      "UnconfirmedJournal");
 
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
@@ -1153,8 +1153,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldMergeUnconfirmedJournalWithAJournalWhenFetchedByTitleFinder() throws IOException,
-                                                                                    nva.commons.apigateway.exceptions.NotFoundException,
-                                                                                    InvalidIssnException {
+                                                                                    nva.commons.apigateway.exceptions.NotFoundException {
         var publication = randomPublication(JournalArticle.class);
         publication.getEntityDescription().getReference().setPublicationContext(new Journal(randomUri()));
         publication.getEntityDescription().getReference().setDoi(null);
