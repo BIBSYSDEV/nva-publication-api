@@ -203,6 +203,7 @@ public final class ClaimedPublicationChannel implements PublicationChannel, Json
     }
 
     public NonClaimedPublicationChannel toNonClaimedChannel() {
-        return new NonClaimedPublicationChannel(id, channelType, identifier, resourceIdentifier, createdDate, Instant.now());
+        return new NonClaimedPublicationChannel(id, channelType, identifier, resourceIdentifier, createdDate,
+                                                Instant.now());
     }
 }

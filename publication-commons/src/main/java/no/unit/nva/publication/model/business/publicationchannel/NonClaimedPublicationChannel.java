@@ -32,12 +32,12 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
     private final Instant modifiedDate;
 
     public NonClaimedPublicationChannel(
-            @JsonProperty(ID_FIELD) URI id,
-            @JsonProperty(CHANNEL_TYPE_FIELD) ChannelType channelType,
-            @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-            @JsonProperty(RESOURCE_IDENTIFIER_FIELD) SortableIdentifier resourceIdentifier,
-            @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
-            @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate) {
+        @JsonProperty(ID_FIELD) URI id,
+        @JsonProperty(CHANNEL_TYPE_FIELD) ChannelType channelType,
+        @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
+        @JsonProperty(RESOURCE_IDENTIFIER_FIELD) SortableIdentifier resourceIdentifier,
+        @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
+        @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate) {
         this.id = id;
         this.channelType = channelType;
         this.identifier = identifier;
@@ -47,23 +47,23 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
     }
 
     public static NonClaimedPublicationChannel create(
-            URI channelClaimId, SortableIdentifier resourceIdentifier, ChannelType channelType) {
+        URI channelClaimId, SortableIdentifier resourceIdentifier, ChannelType channelType) {
         var identifier =
-                new SortableIdentifier(UriWrapper.fromUri(channelClaimId).getLastPathElement());
+            new SortableIdentifier(UriWrapper.fromUri(channelClaimId).getLastPathElement());
         return new NonClaimedPublicationChannel(
-                channelClaimId, channelType, identifier, resourceIdentifier, Instant.now(), Instant.now());
+            channelClaimId, channelType, identifier, resourceIdentifier, Instant.now(), Instant.now());
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(
-                getId(),
-                getChannelType(),
-                getIdentifier(),
-                getResourceIdentifier(),
-                getCreatedDate(),
-                getModifiedDate());
+            getId(),
+            getChannelType(),
+            getIdentifier(),
+            getResourceIdentifier(),
+            getCreatedDate(),
+            getModifiedDate());
     }
 
     @JacocoGenerated
@@ -73,11 +73,11 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
             return false;
         }
         return Objects.equals(getId(), that.getId())
-                && getChannelType() == that.getChannelType()
-                && Objects.equals(getIdentifier(), that.getIdentifier())
-                && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-                && Objects.equals(getCreatedDate(), that.getCreatedDate())
-                && Objects.equals(getModifiedDate(), that.getModifiedDate());
+               && getChannelType() == that.getChannelType()
+               && Objects.equals(getIdentifier(), that.getIdentifier())
+               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getModifiedDate(), that.getModifiedDate());
     }
 
     @JacocoGenerated
@@ -171,16 +171,16 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
     }
 
     public ClaimedPublicationChannel toClaimedChannel(
-            URI customerId, URI organizationId, Constraint constraint) {
+        URI customerId, URI organizationId, Constraint constraint) {
         return new ClaimedPublicationChannel(
-                id,
-                customerId,
-                organizationId,
-                constraint,
-                channelType,
-                identifier,
-                resourceIdentifier,
-                createdDate,
-                Instant.now());
+            id,
+            customerId,
+            organizationId,
+            constraint,
+            channelType,
+            identifier,
+            resourceIdentifier,
+            createdDate,
+            Instant.now());
     }
 }

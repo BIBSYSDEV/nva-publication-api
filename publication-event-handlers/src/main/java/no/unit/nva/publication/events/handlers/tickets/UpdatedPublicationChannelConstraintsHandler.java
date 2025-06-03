@@ -13,6 +13,7 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.FilesApprovalEntry;
+import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -70,32 +71,17 @@ public class UpdatedPublicationChannelConstraintsHandler
             resourceService.fetchAllTicketsForResource(resource)
                 .filter(TicketEntry::isPending)
                 .filter(ticketEntry -> ticketEntry instanceof FilesApprovalEntry)
-                .forEach(ticket -> updateTicket(ticket, channelConstraint.getOrganizationId()));
-        } else if (nonNull(oldData) && nonNull(newData)) {
-            if (NonClaimedPublicationChannel.TYPE.equals(oldData.getType()) && ClaimedPublicationChannel.TYPE.equals(
-                newData.getType())) {
-                var channelConstraint = (ClaimedPublicationChannel) newData;
-                var resource = Resource.resourceQueryObject(channelConstraint.getResourceIdentifier());
-                resourceService.fetchAllTicketsForResource(resource)
-                    .filter(TicketEntry::isPending)
-                    .filter(ticketEntry -> ticketEntry instanceof FilesApprovalEntry)
-                    .forEach(ticket -> updateTicket(ticket, channelConstraint.getOrganizationId()));
-            } else if (ClaimedPublicationChannel.TYPE.equals(oldData.getType())
-                       && NonClaimedPublicationChannel.TYPE.equals(newData.getType())) {
-                var channelConstraint = (ClaimedPublicationChannel) newData;
-                var resource = Resource.resourceQueryObject(channelConstraint.getResourceIdentifier());
-                resourceService.fetchAllTicketsForResource(resource)
-                    .filter(TicketEntry::isPending)
-                    .filter(ticketEntry -> ticketEntry instanceof FilesApprovalEntry)
-                    .forEach(ticket -> updateTicket(ticket, channelConstraint.getOrganizationId()));
-            }
+                .map(FilesApprovalEntry.class::cast)
+                .map(filesApprovalEntry ->
+                             filesApprovalEntry.applyPublicationChannelClaim(channelConstraint.getOrganizationId()))
+                .forEach(ticketService::updateTicket);
         }
         return null;
     }
 
-    private void updateTicket(TicketEntry ticket, URI ownerAffiliation) {
+    private void updateTicket(TicketEntry ticket, URI channelOwnerOrganizationId) {
         var copy = ticket.copy();
-        copy.setOwnerAffiliation(ownerAffiliation);
+        copy.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(channelOwnerOrganizationId, channelOwnerOrganizationId));
         ticketService.updateTicket(copy);
     }
 }

@@ -5,19 +5,18 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -30,11 +29,7 @@ import no.unit.nva.publication.external.services.ChannelClaimDto.ChannelClaim.Ch
 import no.unit.nva.publication.external.services.ChannelClaimDto.CustomerSummaryDto;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -48,13 +43,16 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
  * Updates pending file approving tickets organizational affiliation based on changes to the publication channel
@@ -62,6 +60,7 @@ import software.amazon.awssdk.services.s3.S3Client;
  */
 public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLocalTest {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(UpdatedPublicationChannelConstraintsHandlerTest.class);
     private static final UserInstance USER_INSTANCE = UserInstance.create(randomString(),
                                                                           PublicationGenerator.randomUri());
     private static final String NOT_RELEVANT = "notRelevant";
@@ -95,7 +94,7 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
     void shouldThrowExceptionWhenEventReferenceIsNotAvailableOnS3() {
         var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
 
-        assertThrows(RuntimeException.class, () -> handler.handleRequest(eventNotAvailableFromS3(), output, context));
+        assertThrows(NoSuchKeyException.class, () -> handler.handleRequest(eventNotAvailableFromS3(), output, context));
     }
 
     @Test
@@ -106,55 +105,59 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
     }
 
     @Test
-    void shouldUpdatePendingTicketsWhenChannelIsClaimed() throws ApiGatewayException {
+    void shouldUpdatePendingTicketsWhenChannelIsClaimed() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
-        var pendingFilesApprovalThesis = pendingFilesApprovalThesis(publication).persistNewTicket(ticketService);
-        var completedFilesApprovalThesis = pendingFilesApprovalThesis(publication).
-                                               complete(publication, USER_INSTANCE)
-                                               .persistNewTicket(ticketService);
-        var resourceIdentifier = publication.getIdentifier();
-        var channelClaimId =
-            ((Publisher) ((Degree) publication.getEntityDescription()
-                                          .getReference()
-                                          .getPublicationContext()).getPublisher()).getId();
-
-        when(channelClaimClient.fetchChannelClaim(eq(channelClaimId))).thenThrow(new NotFoundException("Not found!"));
+        var userTopLevelOrganizationId = randomUri();
+        var userAffiliationOrganizationId = randomUri();
+        var pendingTicket =
+            pendingFilesApprovalThesis(publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
+                .persistNewTicket(ticketService);
+        var completedTicket =
+            pendingFilesApprovalThesis(publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
+                .complete(publication, USER_INSTANCE)
+                .persistNewTicket(ticketService);
 
         var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
 
         var claimingCustomerId = randomUri();
         var claimingOrganizationId = randomUri();
-        assertDoesNotThrow(
-            () -> handler.handleRequest(claimedPublicationChannelAddedEvent(claimingCustomerId,
-                                                                            claimingOrganizationId,
-                                                                            publication.getIdentifier()),
-                                        output, context));
+
+        var request = claimedPublicationChannelAddedEvent(claimingCustomerId,
+                                                          claimingOrganizationId,
+                                                          publication.getIdentifier());
+        handler.handleRequest(request, output, context);
+
+        pendingTicket = ticketService.fetchTicket(pendingTicket);
+        assertThat("pending ticket should have updates in receivingOrganization.topLevelOrganizationId",
+                   pendingTicket.getReceivingOrganizationDetails().topLevelOrganizationId(),
+                   is(equalTo(claimingOrganizationId)));
+        assertThat("pending ticket should have updates in receivingOrganization.subOrganizationId",
+                   pendingTicket.getReceivingOrganizationDetails().subOrganizationId(),
+                   is(equalTo(claimingOrganizationId)));
+
+        completedTicket = ticketService.fetchTicket(completedTicket);
+        assertThat(completedTicket.getReceivingOrganizationDetails().topLevelOrganizationId(),
+                   is(equalTo(completedTicket.getOwnerAffiliation())));
+        assertThat(completedTicket.getReceivingOrganizationDetails().subOrganizationId(),
+                   is(equalTo(completedTicket.getResponsibilityArea())));
     }
 
-    private PublishingRequestCase pendingFilesApprovalThesis(Publication publication) {
-        var userInstance = new UserInstance(randomString(), PublicationGenerator.randomUri(),
-                                            PublicationGenerator.randomUri(), PublicationGenerator.randomUri(),
-                                            PublicationGenerator.randomUri(),
-                                            List.of(), UserClientType.INTERNAL);
-        return PublishingRequestCase.create(Resource.fromPublication(publication), userInstance,
-                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
-    }
+    private FilesApprovalThesis pendingFilesApprovalThesis(Publication publication,
+                                                           URI topLevelOrganizationId,
+                                                           URI userAffiliationOrganizationId) {
+        var username = publication.getResourceOwner().getOwner().getValue();
+        var customerId = publication.getPublisher().getId();
 
-    private Stream<TicketEntry> onePendingAndOneCompletedFileApprovalEntry(SortableIdentifier resourceIdentifier,
-                                                                           URI customerId,
-                                                                           URI organizationId) {
-        var pending = FilesApprovalThesis.create(Resource.resourceQueryObject(resourceIdentifier),
-                                                 UserInstance.create(new User("me@myOrg"), customerId),
-                                                 organizationId,
-                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        pending.setStatus(TicketStatus.PENDING);
-        var completed = FilesApprovalThesis.create(Resource.resourceQueryObject(resourceIdentifier),
-                                                   UserInstance.create(new User("me@myOrg"), customerId),
-                                                   organizationId,
-                                                   PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        completed.setStatus(TicketStatus.COMPLETED);
-
-        return Stream.of(pending, completed);
+        var personId = PublicationGenerator.randomUri();
+        var accessRights = Collections.<AccessRight>emptyList();
+        var userInstance = new UserInstance(username, customerId,
+                                            topLevelOrganizationId, userAffiliationOrganizationId,
+                                            personId,
+                                            accessRights,
+                                            UserClientType.INTERNAL);
+        return FilesApprovalThesis.create(Resource.fromPublication(publication), userInstance,
+                                          userInstance.getTopLevelOrgCristinId(),
+                                          REGISTRATOR_PUBLISHES_METADATA_ONLY);
     }
 
     private InputStream eventNotAvailableFromS3() {

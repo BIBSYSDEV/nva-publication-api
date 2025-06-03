@@ -8,6 +8,7 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKF
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,6 +21,7 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
@@ -52,6 +54,16 @@ public abstract class FilesApprovalEntry extends TicketEntry {
         return completed;
     }
 
+    public FilesApprovalEntry applyPublicationChannelClaim(URI organizationId) {
+        this.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(organizationId, organizationId));
+        return this;
+    }
+
+    public void undoPublicationChannelClaim() {
+        this.setReceivingOrganizationDetails(
+            new ReceivingOrganizationDetails(getOwnerAffiliation(), getResponsibilityArea()));
+    }
+
     protected FilesApprovalEntry completeAndApproveFiles(Resource resource, UserInstance userInstance) {
         this.setAssignee(new Username(userInstance.getUsername()));
         this.approveFiles();
@@ -59,7 +71,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
     }
 
     public TicketEntry persistAutoComplete(TicketService ticketService, Publication publication,
-                                                     UserInstance userInstance) throws ApiGatewayException {
+                                           UserInstance userInstance) throws ApiGatewayException {
         return this.complete(publication, userInstance).persistNewTicket(ticketService);
     }
 
@@ -115,7 +127,6 @@ public abstract class FilesApprovalEntry extends TicketEntry {
     protected void emptyFilesForApproval() {
         this.setFilesForApproval(Set.of());
     }
-
 
     public FilesApprovalEntry approveFiles() {
         this.approvedFiles = getFilesForApproval().stream().map(this::toApprovedFile).collect(Collectors.toSet());
