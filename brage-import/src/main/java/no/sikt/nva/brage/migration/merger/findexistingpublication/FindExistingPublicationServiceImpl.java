@@ -39,12 +39,13 @@ public class FindExistingPublicationServiceImpl implements FindExistingPublicati
                                                                    apiHost,
                                                                    duplicatePublicationReporter);
 
+
         List<Supplier<Optional<PublicationForUpdate>>> updatePublicationSuppliers = List.of(
-            () -> handleFinder.findExistingPublication(publicationRepresentation),
             () -> cristinIdentifierFinder.findExistingPublication(publicationRepresentation),
+            () -> handleFinder.findExistingPublication(publicationRepresentation),
             () -> doiFinder.findExistingPublication(publicationRepresentation),
-            () -> isbnFinder.findExistingPublication(publicationRepresentation),
-            () -> titleAndTypeFinder.findExistingPublication(publicationRepresentation));
+            () -> titleAndTypeFinder.findExistingPublication(publicationRepresentation),
+            () -> isbnFinder.findExistingPublication(publicationRepresentation));
 
         return updatePublicationSuppliers.stream()
                    .map(Supplier::get)

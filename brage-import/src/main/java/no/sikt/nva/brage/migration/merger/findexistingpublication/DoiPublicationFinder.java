@@ -45,7 +45,7 @@ public class DoiPublicationFinder implements FindExistingPublicationService {
 
         var publicationsByDoi = searchApiFinder.fetchPublicationsByParam(DOI, doi.toString()).stream()
                                     .filter(item ->
-                                                PublicationComparator.publicationsMatch(item,
+                                                PublicationComparator.publicationsMatchIgnoringType(item,
                                                                                         publicationRepresentation
                                                                                             .publication()))
                                     .toList();
