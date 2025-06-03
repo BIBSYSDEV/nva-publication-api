@@ -4,6 +4,7 @@ import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -209,8 +210,10 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     private static URI createChannelIdWithIdentifier(String channelIdentifier) {
         return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+                   .addChild("publication-channels-v2")
+                   .addChild("publisher")
                    .addChild(channelIdentifier)
-                   .addChild(randomString())
+                   .addChild(randomInteger().toString())
                    .getUri();
     }
 
