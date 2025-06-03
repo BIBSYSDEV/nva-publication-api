@@ -11,7 +11,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.net.URI;
 import java.util.Arrays;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.TicketOperation;
 
@@ -57,7 +56,7 @@ public class TicketAccessFeatures {
 
     @Then("the action outcome is {string}")
     public void theActionOutcomeIs(String outcome) {
-        var permissions = scenarioContext.getPublicationPermissions();
+        var permissions = scenarioContext.getTicketPermissions();
 
         var expected = outcome.equals("Allowed");
 

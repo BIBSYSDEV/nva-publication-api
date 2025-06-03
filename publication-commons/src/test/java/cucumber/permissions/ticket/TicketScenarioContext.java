@@ -29,7 +29,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.TicketOperation;
@@ -84,7 +83,7 @@ public class TicketScenarioContext {
         this.publicationStatus = status;
     }
 
-    public TicketPermissions getPublicationPermissions() {
+    public TicketPermissions getTicketPermissions() {
         var randomResource =
             Resource.fromPublication(isDegree ? randomDegreePublication() : randomNonDegreePublication());
 
