@@ -5,7 +5,15 @@ phases:
     runtime-versions:
       java: corretto21
     commands:
-      - pip3 install aws-sam-cli -U
+      - echo "Checking if AWS SAM CLI is installed"
+      - |
+        if command -v sam >/dev/null 2>&1; then
+          echo "AWS SAM CLI is already installed";
+          sam --version;
+        else
+          echo "AWS SAM CLI is not installed, installing now";
+          pip3 install aws-sam-cli
+        fi
   build:
     commands:
       - sam build
