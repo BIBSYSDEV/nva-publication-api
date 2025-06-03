@@ -1,12 +1,15 @@
 package no.unit.nva.publication.model.business.publicationchannel;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -20,7 +23,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeName(NonClaimedPublicationChannel.TYPE)
 public final class NonClaimedPublicationChannel implements PublicationChannel, JsonSerializable {
 
-    static final String TYPE = "NonClaimedPublicationChannel";
+    public static final String TYPE = "NonClaimedPublicationChannel";
 
     private final URI id;
     private final ChannelType channelType;
@@ -29,12 +32,14 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
     private final Instant createdDate;
     private final Instant modifiedDate;
 
-    public NonClaimedPublicationChannel(@JsonProperty(ID_FIELD) URI id,
-                                        @JsonProperty(CHANNEL_TYPE_FIELD) ChannelType channelType,
-                                        @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                                        @JsonProperty(RESOURCE_IDENTIFIER_FIELD) SortableIdentifier resourceIdentifier,
-                                        @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
-                                        @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate) {
+    @JsonCreator
+    public NonClaimedPublicationChannel(
+        @JsonProperty(ID_FIELD) URI id,
+        @JsonProperty(CHANNEL_TYPE_FIELD) ChannelType channelType,
+        @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
+        @JsonProperty(RESOURCE_IDENTIFIER_FIELD) SortableIdentifier resourceIdentifier,
+        @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
+        @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate) {
         this.id = id;
         this.channelType = channelType;
         this.identifier = identifier;
@@ -43,18 +48,24 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
         this.modifiedDate = modifiedDate;
     }
 
-    public static NonClaimedPublicationChannel create(URI channelClaimId, SortableIdentifier resourceIdentifier,
-                                                      ChannelType channelType) {
-        var identifier = new SortableIdentifier(UriWrapper.fromUri(channelClaimId).getLastPathElement());
-        return new NonClaimedPublicationChannel(channelClaimId, channelType, identifier,
-                                                resourceIdentifier, Instant.now(), Instant.now());
+    public static NonClaimedPublicationChannel create(
+        URI channelClaimId, SortableIdentifier resourceIdentifier, ChannelType channelType) {
+        var identifier =
+            new SortableIdentifier(UriWrapper.fromUri(channelClaimId).getLastPathElement());
+        return new NonClaimedPublicationChannel(
+            channelClaimId, channelType, identifier, resourceIdentifier, Instant.now(), Instant.now());
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getChannelType(), getIdentifier(), getResourceIdentifier(), getCreatedDate(),
-                            getModifiedDate());
+        return Objects.hash(
+            getId(),
+            getChannelType(),
+            getIdentifier(),
+            getResourceIdentifier(),
+            getCreatedDate(),
+            getModifiedDate());
     }
 
     @JacocoGenerated
@@ -63,11 +74,12 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
         if (!(o instanceof NonClaimedPublicationChannel that)) {
             return false;
         }
-        return Objects.equals(getId(), that.getId()) && getChannelType() == that.getChannelType() &&
-               Objects.equals(getIdentifier(), that.getIdentifier()) &&
-               Objects.equals(getResourceIdentifier(), that.getResourceIdentifier()) &&
-               Objects.equals(getCreatedDate(), that.getCreatedDate()) &&
-               Objects.equals(getModifiedDate(), that.getModifiedDate());
+        return Objects.equals(getId(), that.getId())
+               && getChannelType() == that.getChannelType()
+               && Objects.equals(getIdentifier(), that.getIdentifier())
+               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getModifiedDate(), that.getModifiedDate());
     }
 
     @JacocoGenerated
@@ -160,8 +172,17 @@ public final class NonClaimedPublicationChannel implements PublicationChannel, J
         return null;
     }
 
-    public ClaimedPublicationChannel toClaimedChannel(URI customerId, URI organizationId, Constraint constraint) {
-        return new ClaimedPublicationChannel(id, customerId, organizationId, constraint, channelType, identifier,
-                                             resourceIdentifier, createdDate, Instant.now());
+    public ClaimedPublicationChannel toClaimedChannel(
+        URI customerId, URI organizationId, Constraint constraint) {
+        return new ClaimedPublicationChannel(
+            id,
+            customerId,
+            organizationId,
+            constraint,
+            channelType,
+            identifier,
+            resourceIdentifier,
+            createdDate,
+            Instant.now());
     }
 }

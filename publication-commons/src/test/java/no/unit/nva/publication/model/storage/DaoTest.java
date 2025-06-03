@@ -68,6 +68,11 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.Constraint;
+import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -387,9 +392,25 @@ class DaoTest extends ResourcesLocalTest {
             return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         } else if (FileEntry.class.equals(entityType)) {
             return createRandomFileEntry();
+        } else if (ClaimedPublicationChannel.class.equals(entityType)) {
+            return createRandomClaimedPublicationChannel();
+        } else if (NonClaimedPublicationChannel.class.equals(entityType)) {
+            return createRandomNonClaimedPublicationChannel();
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private ClaimedPublicationChannel createRandomClaimedPublicationChannel() {
+        var randomConstraint = new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY, List.of());
+        return new ClaimedPublicationChannel(randomUri(), randomUri(), randomUri(), randomConstraint,
+                                             ChannelType.PUBLISHER, SortableIdentifier.next(),
+                                             SortableIdentifier.next(), Instant.now(), Instant.now());
+    }
+
+    private NonClaimedPublicationChannel createRandomNonClaimedPublicationChannel() {
+        return new NonClaimedPublicationChannel(randomUri(), ChannelType.PUBLISHER, SortableIdentifier.next(),
+                                                SortableIdentifier.next(), Instant.now(), Instant.now());
     }
 
     private FileEntry createRandomFileEntry() {

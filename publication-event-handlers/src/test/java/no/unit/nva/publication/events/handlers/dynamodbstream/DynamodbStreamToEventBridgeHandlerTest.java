@@ -133,16 +133,6 @@ class DynamodbStreamToEventBridgeHandlerTest {
         assertTrue(persistedEvents.isEmpty());
     }
 
-    @Test
-    void shouldNotEmitEventWhenPublicationChannel() {
-        var event = randomEventWithSingleDynamoRecord(OperationType.MODIFY, randomPublicationChannel(), null);
-        handler.handleRequest(event, context);
-        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
-        var persistedEvents = s3Driver.getFiles(UnixPath.ROOT_PATH);
-
-        assertTrue(persistedEvents.isEmpty());
-    }
-
     private Entity randomPublicationChannel() {
         return NonClaimedPublicationChannel.create(randomUri(), SortableIdentifier.next(), ChannelType.SERIAL_PUBLICATION);
     }
