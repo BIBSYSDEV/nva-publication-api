@@ -32,6 +32,7 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.queue.RecoveryEntry;
 import no.unit.nva.publication.queue.ResourceQueueClient;

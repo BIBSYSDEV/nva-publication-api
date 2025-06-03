@@ -2836,7 +2836,7 @@ Resources:
         - !Ref SlackSnsArn
 
   UpdatedPublicationChannelConstraintsHandler:
-    DependsOn: EventsLambdaManagedPolicy
+    DependsOn: DatabaseAccessLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers

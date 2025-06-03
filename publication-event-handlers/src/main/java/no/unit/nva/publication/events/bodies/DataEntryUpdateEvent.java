@@ -124,8 +124,6 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         }
         if (extractDataEntryType() instanceof FileEntry) {
             return hasNewImage();
-        } else if (extractDataEntryType() instanceof PublicationChannel) {
-            return false;
         } else {
             return nonNull(oldData) || nonNull(newData);
         }
