@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.TicketOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -29,6 +30,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.ViewedBy;
+import no.unit.nva.publication.permissions.ticket.TicketPermissions;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -53,6 +55,7 @@ public abstract class TicketDto implements JsonSerializable {
     protected static final String IDENTIFIER_FIELD = "identifier";
     protected static final String ID_FIELD = "id";
     protected static final String AVAILABLE_INSTITUTIONS_FIELD = "availableInstitutions";
+    public static final String ALLOWED_OPERATIONS_FIELD = "allowedOperations";
 
     @JsonProperty(IDENTIFIER_FIELD)
     private final SortableIdentifier identifier;
@@ -80,11 +83,14 @@ public abstract class TicketDto implements JsonSerializable {
     private final Instant finalizedDate;
     @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD)
     private final Set<URI> availableInstitutions;
+    @JsonProperty(ALLOWED_OPERATIONS_FIELD)
+    protected Set<TicketOperation> allowedOperations;
 
     protected TicketDto(SortableIdentifier identifier, TicketDtoStatus status, List<MessageDto> messages,
                         Set<User> viewedBy, Username assignee, SortableIdentifier publicationIdentifier, User owner,
                         URI ownerAffiliation, Username finalizedBy, Instant finalizedDate, Instant createdDate,
-                        Instant modifiedDate, Collection<URI> availableInstitutions) {
+                        Instant modifiedDate, Collection<URI> availableInstitutions,
+                        Set<TicketOperation> allowedOperations) {
         this.identifier = identifier;
         this.status = status;
         this.messages = messages;
@@ -98,10 +104,11 @@ public abstract class TicketDto implements JsonSerializable {
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.availableInstitutions = nonNull(availableInstitutions) ? Set.copyOf(availableInstitutions) : Set.of();
+        this.allowedOperations = nonNull(allowedOperations) ? Set.copyOf(allowedOperations) : Set.of();
     }
 
     public static TicketDto fromTicket(TicketEntry ticket, Collection<Message> messages,
-                                       Collection<URI> availableInstitutions) {
+                                       Collection<URI> availableInstitutions, TicketPermissions ticketPermissions) {
         var messageDtos = messages.stream().map(MessageDto::fromMessage).collect(Collectors.toList());
         return TicketDto.builder()
                    .withCreatedDate(ticket.getCreatedDate())
@@ -117,6 +124,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withFinalizedBy(ticket.getFinalizedBy())
                    .withFinalizedDate(ticket.getFinalizedDate())
                    .withAvailableInstitutions(availableInstitutions)
+                   .withAllowedOperations(ticketPermissions.getAllAllowedActions())
                    .build(ticket);
     }
 
@@ -253,6 +261,7 @@ public abstract class TicketDto implements JsonSerializable {
         private Username finalizedBy;
         private Instant finalizedDate;
         private Collection<URI> availableInstitutions;
+        private Set<TicketOperation> allowedOperations;
 
         private Builder() {
         }
@@ -317,6 +326,11 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
+        public Builder withAllowedOperations(Set<TicketOperation> allowedOperations) {
+            this.allowedOperations = allowedOperations;
+            return this;
+        }
+
         public TicketDto build(TicketEntry ticketEntry) {
             return switch (ticketEntry) {
                 case DoiRequest ignored -> createDoiRequestDto();
@@ -331,13 +345,14 @@ public abstract class TicketDto implements JsonSerializable {
         private UnpublishRequestDto createUnpublishRequestDto() {
             return new UnpublishRequestDto(status, createdDate, modifiedDate, identifier, publicationIdentifier,
                                            messages, viewedBy, assignee, owner, ownerAffiliation, finalizedBy,
-                                           finalizedDate, availableInstitutions);
+                                           finalizedDate, availableInstitutions, allowedOperations);
         }
 
         private GeneralSupportRequestDto createGeneralSupportCaseDto() {
             return new GeneralSupportRequestDto(status, createdDate, modifiedDate, identifier,
                                                 publicationIdentifier, messages, viewedBy, assignee, owner,
-                                                ownerAffiliation, finalizedBy, finalizedDate, availableInstitutions);
+                                                ownerAffiliation, finalizedBy, finalizedDate, availableInstitutions,
+                                                allowedOperations);
         }
 
         public Builder withViewedBy(Set<User> viewedBy) {
@@ -351,7 +366,7 @@ public abstract class TicketDto implements JsonSerializable {
                                             publishingRequestCase.getWorkflow(),
                                             publishingRequestCase.getApprovedFiles(),
                                             publishingRequestCase.getFilesForApproval(),
-                                            finalizedBy, finalizedDate, availableInstitutions);
+                                            finalizedBy, finalizedDate, availableInstitutions, allowedOperations);
         }
 
         private FilesApprovalThesisDto createFilesApprovalThesisDto(FilesApprovalThesis filesApprovalThesis) {
@@ -359,13 +374,13 @@ public abstract class TicketDto implements JsonSerializable {
                                               messages, viewedBy, assignee, owner, ownerAffiliation,
                                               filesApprovalThesis.getWorkflow(), filesApprovalThesis.getApprovedFiles(),
                                               filesApprovalThesis.getFilesForApproval(),
-                                              finalizedBy, finalizedDate, availableInstitutions);
+                                              finalizedBy, finalizedDate, availableInstitutions, allowedOperations);
         }
 
         private DoiRequestDto createDoiRequestDto() {
             return new DoiRequestDto(status, createdDate, modifiedDate, identifier, publicationIdentifier, messages,
                                      viewedBy, assignee, owner, ownerAffiliation, finalizedBy, finalizedDate,
-                                     availableInstitutions);
+                                     availableInstitutions, allowedOperations);
         }
     }
 }

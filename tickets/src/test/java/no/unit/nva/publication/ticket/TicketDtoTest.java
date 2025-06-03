@@ -8,6 +8,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.mock;
 import com.google.common.collect.Sets;
 import java.time.Instant;
 import java.util.Collections;
@@ -24,6 +25,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.ticket.TicketPermissions;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +73,8 @@ class TicketDtoTest extends TicketTestLocal {
         ticket.setOwnerAffiliation(randomUri());
         ticket.setAssignee(new Username(randomString()));
 
-        var dto = TicketDto.fromTicket(ticket, Collections.emptySet(), Collections.emptySet());
+        var dto = TicketDto.fromTicket(ticket, Collections.emptySet(), Collections.emptySet(),
+                                       mock(TicketPermissions.class));
         assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(Sets.union(GENERAL_DTO_FIELDS_TO_IGNORE,
                                                                         PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE)));
     }
@@ -86,7 +89,8 @@ class TicketDtoTest extends TicketTestLocal {
         ticket.setOwnerAffiliation(randomUri());
         ticket.setAssignee(new Username(randomString()));
 
-        var dto = TicketDto.fromTicket(ticket, Collections.emptySet(), Collections.emptySet());
+        var dto = TicketDto.fromTicket(ticket, Collections.emptySet(), Collections.emptySet(),
+                                       mock(TicketPermissions.class));
         assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(Sets.union(GENERAL_DTO_FIELDS_TO_IGNORE,
                                                                         PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE)));
     }

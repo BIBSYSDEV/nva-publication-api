@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.TicketOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -53,7 +54,8 @@ public class FilesApprovalThesisDto extends TicketDto {
                                   @JsonProperty(FILES_FOR_APPROVAL) Set<File> filesForApproval,
                                   @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                                   @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate,
-                                  @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions) {
+                                  @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions,
+                                  @JsonProperty(ALLOWED_OPERATIONS_FIELD) Set<TicketOperation> allowedOperations) {
         super(identifier,
               status,
               messages,
@@ -66,7 +68,7 @@ public class FilesApprovalThesisDto extends TicketDto {
               finalizedDate,
               createdDate,
               modifiedDate,
-              availableInstitutions);
+              availableInstitutions, allowedOperations);
         this.workflow = workflow;
         this.approvedFiles = approvedFiles;
         this.filesForApproval = filesForApproval;

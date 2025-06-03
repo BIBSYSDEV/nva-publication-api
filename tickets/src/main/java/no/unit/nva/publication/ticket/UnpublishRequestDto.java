@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.TicketOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
@@ -37,7 +38,8 @@ public class UnpublishRequestDto extends TicketDto {
                                @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                                @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate,
-                               @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions) {
+                               @JsonProperty(AVAILABLE_INSTITUTIONS_FIELD) Collection<URI> availableInstitutions,
+                               @JsonProperty(ALLOWED_OPERATIONS_FIELD) Set<TicketOperation> allowedOperations) {
         super(identifier,
               status,
               messages,
@@ -50,7 +52,8 @@ public class UnpublishRequestDto extends TicketDto {
               finalizedDate,
               createdDate,
               modifiedDate,
-              availableInstitutions);
+              availableInstitutions,
+              allowedOperations);
 
     }
 

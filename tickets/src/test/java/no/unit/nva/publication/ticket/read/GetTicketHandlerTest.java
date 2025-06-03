@@ -15,6 +15,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permissions.ticket.TicketPermissions;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.ticket.MessageDto;
 import no.unit.nva.publication.ticket.PublishingRequestDto;
@@ -75,7 +77,8 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
         var actualTicketEntry = toTicket(ticketDto);
-        var expected = TicketDto.fromTicket(actualTicketEntry, Collections.emptyList(), Collections.emptyList());
+        var expected = TicketDto.fromTicket(actualTicketEntry, Collections.emptyList(), Collections.emptyList(),
+                                            mock(TicketPermissions.class));
         assertThat(ticketDto, is(equalTo(expected)));
     }
 
@@ -165,7 +168,8 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
         var actualTicketEntry = toTicket(ticketDto);
-        assertThat(ticketDto, is(equalTo(TicketDto.fromTicket(actualTicketEntry, Collections.emptyList(), Collections.emptyList()))));
+        assertThat(ticketDto, is(equalTo(TicketDto.fromTicket(actualTicketEntry, Collections.emptyList(), Collections.emptyList(),
+                                                              mock(TicketPermissions.class)))));
     }
 
     @ParameterizedTest
