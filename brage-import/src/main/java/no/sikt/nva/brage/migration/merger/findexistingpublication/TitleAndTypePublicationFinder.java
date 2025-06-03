@@ -16,6 +16,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.publication.model.ResourceWithId;
@@ -34,6 +36,8 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private static final String SEARCH = "search";
     private static final String EVENT = "Event";
     private static final String CONTENT_TYPE_JSON = "application/json";
+    protected static final String UNCONFIRMED_JOURNAL = "UnconfirmedJournal";
+    protected static final String JOURNAL = "Journal";
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
@@ -134,9 +138,13 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     }
 
     private Optional<QueryParam> getAdditionalQueryParam(Publication publication) {
-        return publication.getEntityDescription().getReference().getPublicationInstance() instanceof ConferenceReport
-            ? Optional.of(new QueryParam(CONTEXT_TYPE, EVENT))
-            : Optional.empty();
+        var context = publication.getEntityDescription().getReference().getPublicationContext();
+        return switch (context) {
+            case ConferenceReport unused -> Optional.of(new QueryParam(CONTEXT_TYPE, EVENT));
+            case Journal unused -> Optional.of(new QueryParam(CONTEXT_TYPE, UNCONFIRMED_JOURNAL));
+            case UnconfirmedJournal unused -> Optional.of(new QueryParam(CONTEXT_TYPE, JOURNAL));
+            default -> Optional.empty();
+        };
     }
 
     private SearchResourceApiResponse toResponse(String response) {

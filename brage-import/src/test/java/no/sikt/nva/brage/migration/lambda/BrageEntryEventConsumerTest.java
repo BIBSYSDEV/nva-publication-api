@@ -140,6 +140,9 @@ import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
@@ -153,6 +156,7 @@ import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
@@ -1040,12 +1044,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotMergeDegreeWithABook() throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
-        var cristinIdentifier = randomString();
+    void shouldNotMergeDegreeWithABookWhenFetchedByTitleSearch() throws IOException,
+                                                       nva.commons.apigateway.exceptions.NotFoundException {
         var publication = randomPublication(DegreeBachelor.class);
         publication.getEntityDescription().getReference().setDoi(null);
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier),
-                                                    new CristinIdentifier(SourceName.nva(), cristinIdentifier)));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
                                                                   .withYear("2022")
                                                                   .build());
@@ -1057,15 +1059,18 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
 
+        String mainTitle = "Dynamic Response of Floating Wind Turbines";
         var generator = new NvaBrageMigrationDataGenerator.Builder()
-                            .withMainTitle("Dynamic Response of Floating Wind Turbines")
+                            .withMainTitle(mainTitle)
                             .withContributor(brageContributor)
-                            .withCristinIdentifier(cristinIdentifier)
                             .withPublicationDate(new PublicationDate("2023",
                                                                      new PublicationDateNva.Builder()
                                                                          .withYear("2023")
                                                                          .build()))
                             .withType(new Type(List.of(), "Book")).build();
+
+        mockSingleHitSearchApiResponseByTitleAndTypes(existingPublication.getIdentifier(), 200, mainTitle, "Book");
+
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
         var notUpdatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
@@ -1073,12 +1078,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotMergeBookWithADegree() throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
+    void shouldMergeBookWithADegreeWhenFetchedByCristinIdentifier() throws IOException,
+                                                       nva.commons.apigateway.exceptions.NotFoundException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(NonFictionMonograph.class);
         publication.getEntityDescription().getReference().setDoi(null);
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier),
-                                                    new CristinIdentifier(SourceName.nva(), cristinIdentifier)));
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
                                                                   .withYear("2022")
                                                                   .build());
@@ -1101,8 +1106,87 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .withType(new Type(List.of(), "DegreeBachelor")).build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var notUpdatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
-        assertThat(notUpdatedPublication, is(equalTo(existingPublication)));
+        var updatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
+
+        assertThat(updatedPublication, is(not(equalTo(existingPublication))));
+    }
+
+    @Test
+    void shouldMergeJournalWithAUnconfirmedJournalWhenFetchedByTitleFinder() throws IOException,
+                                                                                    nva.commons.apigateway.exceptions.NotFoundException,
+                                                                                    InvalidIssnException {
+        var publication = randomPublication(JournalArticle.class);
+        publication.getEntityDescription().getReference().setPublicationContext(new UnconfirmedJournal(randomString()
+            , null, null));
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
+                                                                  .withYear("2022")
+                                                                  .build());
+        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
+        var existingPublication =
+            resourceService.createPublicationFromImportedEntry(publication,
+                                                               ImportSource.fromBrageArchive(randomString()));
+        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
+                                               "ARTIST", null, List.of());
+
+        var title = "Dynamic Response of Floating Wind Turbines";
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withMainTitle(title)
+                            .withContributor(brageContributor)
+                            .withJournalId("12345")
+                            .withPublicationDate(new PublicationDate("2023",
+                                                                     new PublicationDateNva.Builder()
+                                                                         .withYear("2023")
+                                                                         .build()))
+                            .withType(new Type(List.of(), "JournalArticle")).build();
+
+        mockSingleHitSearchApiResponseByTitleAndTypes(existingPublication.getIdentifier(), 200, title, "Journal",
+                                                      "UnconfirmedJournal");
+
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
+
+        assertThat(updatedPublication, is(not(equalTo(existingPublication))));
+    }
+
+    @Test
+    void shouldMergeUnconfirmedJournalWithAJournalWhenFetchedByTitleFinder() throws IOException,
+                                                                                    nva.commons.apigateway.exceptions.NotFoundException {
+        var publication = randomPublication(JournalArticle.class);
+        publication.getEntityDescription().getReference().setPublicationContext(new Journal(randomUri()));
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
+                                                                  .withYear("2022")
+                                                                  .build());
+        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
+        var existingPublication =
+            resourceService.createPublicationFromImportedEntry(publication,
+                                                               ImportSource.fromBrageArchive(randomString()));
+        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
+                                               "ARTIST", null, List.of());
+
+        var title = "Dynamic Response of Floating Wind Turbines";
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withMainTitle(title)
+                            .withContributor(brageContributor)
+                            .withJournalId(null)
+                            .withPublicationDate(new PublicationDate("2023",
+                                                                     new PublicationDateNva.Builder()
+                                                                         .withYear("2023")
+                                                                         .build()))
+                            .withType(new Type(List.of(), "JournalArticle")).build();
+
+        mockSingleHitSearchApiResponseByTitleAndTypes(existingPublication.getIdentifier(), 200, title,
+                                                      "UnconfirmedJournal", "Journal");
+
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
+
+        assertThat(updatedPublication, is(not(equalTo(existingPublication))));
     }
 
     @Test
@@ -2404,6 +2488,27 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         when(response.statusCode()).thenReturn(statusCode);
         when(response.body()).thenReturn(searchResourceApiResponse.toString());
         when(this.uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
+    }
+
+    private void mockSingleHitSearchApiResponseByTitleAndTypes(SortableIdentifier identifier, int statusCode,
+                                                               String title, String... types) {
+        var publicationId = UriWrapper.fromHost(API_HOST)
+                                .addChild("publication")
+                                .addChild(identifier.toString())
+                                .getUri();
+        var searchResourceApiResponse = new SearchResourceApiResponse(1, List.of(new ResourceWithId(publicationId)));
+        var response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(statusCode);
+        when(response.body()).thenReturn(searchResourceApiResponse.toString());
+        var uriWrapper = UriWrapper.fromHost(API_HOST)
+                      .addChild("search")
+                      .addChild("resources")
+                      .addQueryParameter("titleShould", title);
+        for (String type : types) {
+            uriWrapper.addQueryParameter("contextType", type);
+        }
+
+        when(this.uriRetriever.fetchResponse(uriWrapper.getUri(), "application/json")).thenReturn(Optional.of(response));
     }
 
     private void mockMultipleHitSearchApiResponse(List<SortableIdentifier> identifiers) {

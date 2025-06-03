@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.lambda.MergeSource;
+import no.sikt.nva.brage.migration.lambda.PublicationComparator;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.auth.uriretriever.UriRetriever;
@@ -30,7 +31,11 @@ public class HandleFinder implements FindExistingPublicationService {
         var urlEncodedHandle = URLEncoder.encode(handle.toString(), StandardCharsets.UTF_8);
 
         var searchResponseContainingHandlesInRootOfObjectOrInAdditionalIdentifiers =
-            searchApiFinder.fetchPublicationsByParam("handle", urlEncodedHandle);
+            searchApiFinder.fetchPublicationsByParam("handle", urlEncodedHandle).stream()
+                .filter(item -> PublicationComparator
+                                    .publicationsMatchIgnoringType(item,
+                                                                   publicationRepresentation.publication()))
+                .toList();
 
         var publicationsWithHandleInAdditionalIdentifiers =
             searchResponseContainingHandlesInRootOfObjectOrInAdditionalIdentifiers.stream().filter(publication ->

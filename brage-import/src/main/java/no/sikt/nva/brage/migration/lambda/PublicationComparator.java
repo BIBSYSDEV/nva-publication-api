@@ -38,6 +38,15 @@ public final class PublicationComparator {
                          publicationContextTypeMatches).allMatch(Boolean::valueOf);
     }
 
+    public static boolean publicationsMatchIgnoringType(Publication existingPublication, Publication  incomingPublication) {
+        var titlesMatch = titlesMatch(existingPublication, incomingPublication);
+        var atLeastOneContributorMatch = contributorsMatch(existingPublication, incomingPublication);
+        var publicationDatesAreCloseToEachOther = publicationsDateAreClose(existingPublication,
+                                                                           incomingPublication);
+        return Stream.of(titlesMatch, atLeastOneContributorMatch, publicationDatesAreCloseToEachOther)
+                   .allMatch(Boolean::valueOf);
+    }
+
     private static boolean publicationContextTypeMatches(Publication existingPublication,
                                                          Publication incomingPublication) {
         if (typesAreMissing(incomingPublication)) {
