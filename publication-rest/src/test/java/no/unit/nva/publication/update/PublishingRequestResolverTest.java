@@ -11,9 +11,6 @@ import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersiste
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +22,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.commons.customer.Customer;
-import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -289,7 +285,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
         resource.setStatus(PublicationStatus.PUBLISHED);
         var persistedResource = super.persistResource(resource);
         var channelClaimOwner = randomUri();
-        persistFilesApprovalContainingExistingPendingFiles(persistedResource.toPublication(), channelClaimOwner);
+        var channelClaimIdentifier = SortableIdentifier.next();
+        persistFilesApprovalContainingExistingPendingFiles(persistedResource.toPublication(), channelClaimOwner, channelClaimIdentifier);
         var updatedResource = persistedResource.copy()
                                      .withAssociatedArtifactsList(AssociatedArtifactList.empty())
                                      .build();
@@ -327,12 +324,14 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
 
     }
 
-    private void persistFilesApprovalContainingExistingPendingFiles(Publication publication, URI organizationId)
+    private void persistFilesApprovalContainingExistingPendingFiles(Publication publication, URI organizationId,
+                                                                    SortableIdentifier channelClaimIdentifier)
         throws ApiGatewayException {
-        FilesApprovalThesis.create(Resource.fromPublication(publication),
-                                   UserInstance.fromPublication(publication),
-                                   organizationId,
-                                   PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+        FilesApprovalThesis.createForChannelOwningInstitution(Resource.fromPublication(publication),
+                                                              UserInstance.fromPublication(publication),
+                                                              organizationId,
+                                                              channelClaimIdentifier,
+                                                              PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
             .persistNewTicket(ticketService);
     }
 }

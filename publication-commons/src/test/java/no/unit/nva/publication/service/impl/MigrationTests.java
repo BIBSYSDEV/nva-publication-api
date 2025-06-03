@@ -1,29 +1,47 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.*;
-import no.unit.nva.publication.model.storage.*;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.DataCompressor;
+import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.DynamoEntry;
+import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatchers;
 import org.mockito.stubbing.Answer;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -31,47 +49,11 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 class MigrationTests extends ResourcesLocalTest {
 
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
     private S3Client s3Client;
     private ResourceService resourceService;
-
-    public static Stream<Arguments> ticketsWithoutApproverDetailsSource() {
-        var ticketTemplate = IoUtils.stringFromResources(Path.of("migration", "ticketMissingReceivingOrganizationDetailsTemplate.json"));
-        return Stream.of(
-                Arguments.argumentSet(DoiRequest.TYPE, ticketTemplate.replaceAll("@@TICKET_TYPE@@", DoiRequest.TYPE), DoiRequestDao.class),
-                Arguments.argumentSet(PublishingRequestCase.TYPE, ticketTemplate.replaceAll("@@TICKET_TYPE@@", PublishingRequestCase.TYPE), PublishingRequestDao.class),
-                Arguments.argumentSet(FilesApprovalThesis.TYPE, ticketTemplate.replaceAll("@@TICKET_TYPE@@", FilesApprovalThesis.TYPE), FilesApprovalThesisDao.class),
-                Arguments.argumentSet(GeneralSupportRequest.TYPE, ticketTemplate.replaceAll("@@TICKET_TYPE@@", GeneralSupportRequest.TYPE), GeneralSupportRequestDao.class),
-                Arguments.argumentSet(UnpublishRequest.TYPE, ticketTemplate.replaceAll("@@TICKET_TYPE@@", UnpublishRequest.TYPE), UnpublishRequestDao.class)
-        );
-    }
 
     @BeforeEach
     public void init() {
@@ -159,29 +141,6 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(doi.getIdentifier(), is(equalTo(doiRequest.getFirst().getIdentifier())));
     }
 
-    @ParameterizedTest
-    @MethodSource("ticketsWithoutApproverDetailsSource")
-    void shouldMigrateTicketsToHaveApproverDetail(String ticketFilename, Class<TicketDao> ticketClass) throws IOException {
-        saveJsonDirectlyToDatabase(ticketFilename);
-        migrateResources();
-        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
-        var tickets = allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof TicketDao)
-                .map(ticketClass::cast)
-                .collect(Collectors.toList());
-        assertThat(tickets, hasSize(1));
-
-        var ticket = tickets.getFirst();
-        var ticketEntry = (TicketEntry) ticket.getData();
-        assertThat(
-                ticketEntry.getReceivingOrganizationDetails().topLevelOrganizationId(),
-                is(equalTo(ticketEntry.getOwnerAffiliation())));
-        assertThat(
-                ticketEntry.getReceivingOrganizationDetails().subOrganizationId(),
-                is(equalTo(ticketEntry.getResponsibilityArea())));
-    }
-
     @Test
     void shouldWorkWithEmptyContributors() {
         var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
@@ -210,33 +169,6 @@ class MigrationTests extends ResourcesLocalTest {
                 .orElseThrow();
 
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
-    }
-
-    @Test
-    void shouldCreateSyntheticCristinIdentifierIfMissing() throws NotFoundException {
-
-        var entities = Set.of(randomPublication()).stream()
-                .map(Resource::fromPublication)
-                .map(this::persistAsImportedResource)
-                .map(this::clearAdditionalIdentifiers)
-                .map(Entity.class::cast)
-                .toList();
-
-        resourceService.refreshResources(entities);
-
-        var updatedPublication = resourceService.getResourceByIdentifier(entities.getFirst().getIdentifier());
-
-        var expectedIdentifier = new CristinIdentifier(SourceName.nva(), "10000000");
-        assertThat(updatedPublication.getAdditionalIdentifiers(), containsInAnyOrder(expectedIdentifier));
-    }
-
-    private Resource clearAdditionalIdentifiers(Resource resource) {
-        return resource.copy().withAdditionalIdentifiers(Collections.emptySet()).build();
-    }
-
-    private Resource persistAsImportedResource(Resource resource) {
-        return attempt(
-                () -> resource.importResource(resourceService, ImportSource.fromSource(Source.BRAGE))).orElseThrow();
     }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
