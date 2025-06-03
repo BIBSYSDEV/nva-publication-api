@@ -3,7 +3,6 @@ package no.unit.nva.publication.events.handlers.tickets;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -13,7 +12,6 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.FilesApprovalEntry;
-import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -73,11 +71,5 @@ public class UpdatedPublicationChannelConstraintsHandler
                 .forEach(ticketService::updateTicket);
         }
         return null;
-    }
-
-    private void updateTicket(TicketEntry ticket, URI channelOwnerOrganizationId) {
-        var copy = ticket.copy();
-        copy.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(channelOwnerOrganizationId, channelOwnerOrganizationId));
-        ticketService.updateTicket(copy);
     }
 }

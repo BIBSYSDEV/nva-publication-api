@@ -61,11 +61,6 @@ public abstract class FilesApprovalEntry extends TicketEntry {
         return this;
     }
 
-    public void undoPublicationChannelClaim() {
-        this.setReceivingOrganizationDetails(
-            new ReceivingOrganizationDetails(getOwnerAffiliation(), getResponsibilityArea()));
-    }
-
     protected FilesApprovalEntry completeAndApproveFiles(Resource resource, UserInstance userInstance) {
         this.setAssignee(new Username(userInstance.getUsername()));
         this.approveFiles();

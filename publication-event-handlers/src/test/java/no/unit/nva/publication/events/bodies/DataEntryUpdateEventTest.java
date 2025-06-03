@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.bodies;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +27,11 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.Constraint;
+import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import nva.commons.core.Environment;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -91,6 +98,10 @@ public class DataEntryUpdateEventTest {
         throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (type.getSimpleName().equals(FileEntry.class.getSimpleName())) {
             return randomFileEntry();
+        } else if (type.getSimpleName().equals(ClaimedPublicationChannel.class.getSimpleName())) {
+            return randomClaimedPublicationChannel();
+        } else if (type.getSimpleName().equals(NonClaimedPublicationChannel.class.getSimpleName())) {
+            return randomNonClaimedPublicationChannel();
         } else {
             return (Entity) type.getDeclaredConstructor().newInstance();
         }
@@ -99,5 +110,17 @@ public class DataEntryUpdateEventTest {
     private FileEntry randomFileEntry() {
         return FileEntry.create(randomHiddenFile(), SortableIdentifier.next(),
                                 UserInstance.fromPublication(randomPublication()));
+    }
+
+    private ClaimedPublicationChannel randomClaimedPublicationChannel() {
+        var randomConstraint = new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY, List.of());
+        return new ClaimedPublicationChannel(randomUri(), randomUri(), randomUri(), randomConstraint,
+                                             ChannelType.PUBLISHER, SortableIdentifier.next(),
+                                             SortableIdentifier.next(), Instant.now(), Instant.now());
+    }
+
+    private NonClaimedPublicationChannel randomNonClaimedPublicationChannel() {
+        return new NonClaimedPublicationChannel(randomUri(), ChannelType.PUBLISHER, SortableIdentifier.next(),
+                                                SortableIdentifier.next(), Instant.now(), Instant.now());
     }
 }
