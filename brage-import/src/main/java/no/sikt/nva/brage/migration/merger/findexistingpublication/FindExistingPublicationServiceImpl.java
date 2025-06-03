@@ -15,8 +15,7 @@ public class FindExistingPublicationServiceImpl implements FindExistingPublicati
     private final String apiHost;
     private final DuplicatePublicationReporter duplicatePublicationReporter;
 
-    public FindExistingPublicationServiceImpl(ResourceService resourceService,
-                                              UriRetriever uriRetriever,
+    public FindExistingPublicationServiceImpl(ResourceService resourceService, UriRetriever uriRetriever,
                                               String apiHost,
                                               DuplicatePublicationReporter duplicatePublicationReporter) {
         this.resourceService = resourceService;
@@ -25,20 +24,19 @@ public class FindExistingPublicationServiceImpl implements FindExistingPublicati
         this.duplicatePublicationReporter = duplicatePublicationReporter;
     }
 
+    /**
+     * CristinIdentifierFinder, HandleFinder and DoiPublicationFinder do not care about the type of publications to
+     * merge.
+     */
     @Override
     public Optional<PublicationForUpdate> findExistingPublication(PublicationRepresentation publicationRepresentation) {
         var handleFinder = new HandleFinder(resourceService, uriRetriever, apiHost, duplicatePublicationReporter);
         var cristinIdentifierFinder = new CristinIdentifierFinder(resourceService, duplicatePublicationReporter);
         var doiFinder = new DoiPublicationFinder(resourceService, uriRetriever, apiHost, duplicatePublicationReporter);
-        var isbnFinder = new IsbnPublicationFinder(resourceService,
-                                                   uriRetriever,
-                                                   apiHost,
+        var isbnFinder = new IsbnPublicationFinder(resourceService, uriRetriever, apiHost,
                                                    duplicatePublicationReporter);
-        var titleAndTypeFinder = new TitleAndTypePublicationFinder(resourceService,
-                                                                   uriRetriever,
-                                                                   apiHost,
+        var titleAndTypeFinder = new TitleAndTypePublicationFinder(resourceService, uriRetriever, apiHost,
                                                                    duplicatePublicationReporter);
-
 
         List<Supplier<Optional<PublicationForUpdate>>> updatePublicationSuppliers = List.of(
             () -> cristinIdentifierFinder.findExistingPublication(publicationRepresentation),
