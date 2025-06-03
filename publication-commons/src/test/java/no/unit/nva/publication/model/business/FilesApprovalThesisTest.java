@@ -9,6 +9,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -69,6 +70,24 @@ class FilesApprovalThesisTest {
         assertEquals(fileApprovalThesis.getReceivingOrganizationDetails().topLevelOrganizationId(), channelOwner);
         assertEquals(fileApprovalThesis.getReceivingOrganizationDetails().subOrganizationId(), channelOwner);
         assertEquals(fileApprovalThesis.getReceivingOrganizationDetails().influencingChannelClaim(), channelIdentifier);
+    }
+
+    @Test
+    void shouldResetReceivingOrganizationDetailsWhenPublicationChannelClaimIsRemoved() {
+        var resource = randomDegree();
+        var userInstance = UserInstance.create(randomString(), randomUri());
+
+        var channelOwner = randomUri();
+        var channelIdentifier = SortableIdentifier.next();
+
+        var fileApprovalThesis = FilesApprovalThesis.createForUserInstitution(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_AND_FILES)
+                                     .applyPublicationChannelClaim(channelOwner, channelIdentifier);
+
+        fileApprovalThesis.clearPublicationChannelClaim(channelIdentifier);
+
+        assertEquals(fileApprovalThesis.getReceivingOrganizationDetails().topLevelOrganizationId(), userInstance.getTopLevelOrgCristinId());
+        assertEquals(fileApprovalThesis.getReceivingOrganizationDetails().subOrganizationId(), userInstance.getPersonAffiliation());
+        assertNull(fileApprovalThesis.getReceivingOrganizationDetails().influencingChannelClaim());
     }
 
     private static Resource randomDegree() {

@@ -72,7 +72,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
     }
 
     @JsonIgnore
-    public boolean isUnderClaimedChannelInfluence(SortableIdentifier channelClaimIdentifier) {
+    private boolean isUnderClaimedChannelInfluence(SortableIdentifier channelClaimIdentifier) {
         return channelClaimIdentifier.equals(getReceivingOrganizationDetails().influencingChannelClaim());
     }
 
