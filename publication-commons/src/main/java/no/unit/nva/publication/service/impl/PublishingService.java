@@ -8,11 +8,7 @@ import no.unit.nva.clients.ChannelClaimDto.ChannelClaim.ChannelConstraint;
 import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -64,17 +60,6 @@ public class PublishingService {
         }
     }
 
-    private static Optional<Publisher> getPublisherWhenDegree(Resource resource) {
-        return Optional.ofNullable(resource.getEntityDescription())
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationContext)
-                   .filter(Degree.class::isInstance)
-                   .map(Degree.class::cast)
-                   .map(Book::getPublisher)
-                   .filter(Publisher.class::isInstance)
-                   .map(Publisher.class::cast);
-    }
-
     private static void validatePermissions(Resource resource, UserInstance userInstance) throws ForbiddenException {
         var permissionStrategy = PublicationPermissions.create(resource, userInstance);
         if (!permissionStrategy.allowsAction(PublicationOperation.UPDATE)) {
@@ -97,7 +82,7 @@ public class PublishingService {
 
     private void publishResource(UserInstance userInstance, Resource resource)
         throws BadGatewayException, ForbiddenException {
-        var publisher = getPublisherWhenDegree(resource);
+        var publisher = resource.getPublisherWhenDegree();
         if (publisher.isEmpty()) {
             resource.publish(resourceService, userInstance);
         } else {
@@ -131,7 +116,7 @@ public class PublishingService {
 
     private void handleDegreeResource(UserInstance userInstance, Resource resource, PublishingWorkflow workflow)
         throws ApiGatewayException {
-        var publisher = getPublisherWhenDegree(resource);
+        var publisher = resource.getPublisherWhenDegree();
         if (publisher.isPresent()) {
             var channelClaim = getChannelClaim(publisher.get());
             if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {

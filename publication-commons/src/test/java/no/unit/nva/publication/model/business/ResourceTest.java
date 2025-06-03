@@ -19,7 +19,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import org.javers.core.Javers;
@@ -151,6 +156,22 @@ public class ResourceTest {
         var fileByIdentifier = Resource.fromPublication(publication).getFileByIdentifier(file.getIdentifier());
 
         assertEquals(file, fileByIdentifier.orElseThrow());
+    }
+
+    @Test
+    void shouldReturnPublisherWhenInstanceTypeIsSubtypeOfDegreeButContextIsNotDegree() {
+        var publisher = new Publisher(randomUri());
+        var book = new Book(null, null, publisher, null, null);
+        var bachelor = new DegreeBachelor(null, null);
+        var reference = new Reference.Builder().withPublishingContext(book).withPublicationInstance(bachelor).build();
+        var entityDescription = new EntityDescription.Builder().withReference(reference).build();
+        var publication = randomPublication().copy().withEntityDescription(entityDescription).build();
+
+        var resource = Resource.fromPublication(publication);
+        var publisherFromResource = resource.getPublisherWhenDegree();
+
+        assertTrue(publisherFromResource.isPresent());
+        assertEquals(publisher, publisherFromResource.get());
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {
