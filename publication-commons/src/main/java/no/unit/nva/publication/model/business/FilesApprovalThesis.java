@@ -26,9 +26,12 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         super();
     }
 
-    public static FilesApprovalThesis create(Resource resource, UserInstance userInstance, URI organizationId,
-                                             PublishingWorkflow workflow) {
-        var fileApproval = createFileApproval(resource, userInstance, organizationId, workflow);
+    public static FilesApprovalThesis createForChannelOwningInstitution(Resource resource,
+                                                                        UserInstance userInstance,
+                                                                        URI channelOwnerOrganizationId,
+                                                                        SortableIdentifier channelClaimIdentifier,
+                                                                        PublishingWorkflow workflow) {
+        var fileApproval = createFileApproval(resource, userInstance, channelOwnerOrganizationId, channelClaimIdentifier, workflow);
         return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
                    ? (FilesApprovalThesis) fileApproval.completeAndApproveFiles(resource, userInstance)
                    : (FilesApprovalThesis) fileApproval.handleMetadataOnlyWorkflow(resource, userInstance, workflow);
@@ -116,8 +119,11 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
                Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 
-    private static FilesApprovalThesis createFileApproval(Resource resource, UserInstance userInstance,
-                                                          URI organizationId, PublishingWorkflow workflow) {
+    private static FilesApprovalThesis createFileApproval(Resource resource,
+                                                          UserInstance userInstance,
+                                                          URI organizationId,
+                                                          SortableIdentifier channelClaimIdentifier,
+                                                          PublishingWorkflow workflow) {
         var now = Clock.systemDefaultZone().instant();
         var fileApproval = new FilesApprovalThesis();
         fileApproval.setIdentifier(SortableIdentifier.next());
@@ -133,7 +139,8 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
         fileApproval.setFilesForApproval(resource.getPendingFiles());
         fileApproval.setWorkflow(workflow);
         fileApproval.validateCreationRequirements(resource.toPublication());
-        fileApproval.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(organizationId, organizationId));
+        fileApproval.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(organizationId, organizationId,
+                                                                                      channelClaimIdentifier));
         return fileApproval;
     }
 

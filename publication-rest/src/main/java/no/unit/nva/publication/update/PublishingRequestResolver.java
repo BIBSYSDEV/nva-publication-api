@@ -153,7 +153,9 @@ public final class PublishingRequestResolver {
     private void persistFilesApprovalThesis(ClaimedPublicationChannel channelClaim, Resource resource,
                                             PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
         var organizationId = channelClaim.getOrganizationId();
-        FilesApprovalThesis.create(resource, userInstance, organizationId, workflow)
+        var channelClaimIdentifier = channelClaim.getIdentifier();
+        FilesApprovalThesis.createForChannelOwningInstitution(resource, userInstance, organizationId,
+                                                              channelClaimIdentifier, workflow)
             .withFilesForApproval(files)
             .persistNewTicket(ticketService);
     }

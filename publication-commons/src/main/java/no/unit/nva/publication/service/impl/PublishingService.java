@@ -64,7 +64,7 @@ public class PublishingService {
         }
     }
 
-    private static Optional<Publisher> getPublisher(Resource resource) {
+    private static Optional<Publisher> getPublisherWhenDegree(Resource resource) {
         return Optional.ofNullable(resource.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)
@@ -97,7 +97,7 @@ public class PublishingService {
 
     private void publishResource(UserInstance userInstance, Resource resource)
         throws BadGatewayException, ForbiddenException {
-        var publisher = getPublisher(resource);
+        var publisher = getPublisherWhenDegree(resource);
         if (publisher.isEmpty()) {
             resource.publish(resourceService, userInstance);
         } else {
@@ -131,12 +131,15 @@ public class PublishingService {
 
     private void handleDegreeResource(UserInstance userInstance, Resource resource, PublishingWorkflow workflow)
         throws ApiGatewayException {
-        var publisher = getPublisher(resource);
+        var publisher = getPublisherWhenDegree(resource);
         if (publisher.isPresent()) {
             var channelClaim = getChannelClaim(publisher.get());
             if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
                 var organizationId = getOrganizationId(channelClaim.get());
-                FilesApprovalThesis.create(resource, userInstance, organizationId, workflow)
+                var channelClaimIdentifier = getChannelIdentifier(channelClaim.get());
+                FilesApprovalThesis.createForChannelOwningInstitution(resource, userInstance, organizationId,
+                                                                      channelClaimIdentifier,
+                                                                      workflow)
                     .persistNewTicket(ticketService);
                 return;
             }
@@ -173,5 +176,9 @@ public class PublishingService {
     private PublishingWorkflow getCustomerWorkflow(UserInstance userInstance) throws NotFoundException {
         var customer = identityServiceClient.getCustomerById(userInstance.getCustomerId());
         return PublishingWorkflow.lookUp(customer.publicationWorkflow());
+    }
+
+    private SortableIdentifier getChannelIdentifier(ChannelClaimDto channelClaim) {
+        return new SortableIdentifier(UriWrapper.fromUri(channelClaim.id()).getLastPathElement());
     }
 }
