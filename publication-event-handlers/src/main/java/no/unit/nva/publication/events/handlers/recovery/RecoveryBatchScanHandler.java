@@ -75,7 +75,7 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
 
         switch (type) {
             case RecoveryEntry.RESOURCE:
-                resourceService.refresh(identifier);
+                resourceService.refreshResource(identifier);
                 break;
             case RecoveryEntry.TICKET:
                 ticketService.refresh(identifier);
