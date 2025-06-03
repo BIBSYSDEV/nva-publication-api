@@ -84,7 +84,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         if (ticketEntry instanceof GeneralSupportRequest) {
             return ticketEntry.hasSameOwnerAffiliationAs(userInstance);
         } else {
-            return ticketEntry.hasSameOwnerAffiliationAs(userInstance)
+            return ticketEntry.getReceivingOrganizationDetails().topLevelOrganizationId().equals(userInstance.getTopLevelOrgCristinId())
                    || !TicketStatus.PENDING.equals(ticketEntry.getStatus());
         }
     }

@@ -15,6 +15,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -27,8 +28,10 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Organization;
@@ -278,21 +281,19 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldNotListPendingTicketsThatHasOtherOwnerAffiliationThanUserCustomer()
+    void shouldNotListPendingTicketsThatHasOtherReceivingOrganizationThanUserOrganization()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var publication = TicketTestUtils.createPersistedDegreePublication(PublicationStatus.PUBLISHED, resourceService);
         var contributorId = randomUri();
         var contributor = randomContributorWithId(contributorId);
         publication.getEntityDescription().setContributors(List.of(contributor));
         resourceService.updatePublication(publication);
         var userInstance = userInstanceWithTopLevelCristinOrg(randomUri());
         var resource = Resource.fromPublication(publication);
-        DoiRequest.create(resource, UserInstance.fromPublication(publication))
-            .persistNewTicket(ticketService);
-        ;
-        PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
-        GeneralSupportRequest.create(resource, userInstance)
+        URI channelOwnerOrganizationId = randomUri();
+        FilesApprovalThesis.createForChannelOwningInstitution(resource, userInstance, channelOwnerOrganizationId,
+                                                              SortableIdentifier.next(),
+                                                              PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
             .persistNewTicket(ticketService);
 
         var request = userRequestsTickets(publication, contributorId, randomUri());
@@ -373,6 +374,34 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var body = response.getBodyObject(TicketCollection.class);
 
         assertThat(body.getTickets().stream().findFirst().isPresent(), is(true));
+    }
+
+    @Test
+    void shouldListTicketsForUserFromReceivingOrganization()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedDegreePublication(PublicationStatus.PUBLISHED, resourceService);
+        var contributorId = randomUri();
+        var contributor = randomContributorWithId(contributorId);
+        publication.getEntityDescription().setContributors(List.of(contributor));
+        var channelOwnerOrganizationId = randomUri();
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(channelOwnerOrganizationId, Set.of())));
+        resourceService.updatePublication(publication);
+        var userInstance = UserInstance.create(randomString(), randomUri(), randomUri(),
+                                               List.of(AccessRight.MANAGE_RESOURCE_FILES, MANAGE_DEGREE,
+                                                       MANAGE_RESOURCES_STANDARD), channelOwnerOrganizationId);
+        var resource = Resource.fromPublication(publication);
+        FilesApprovalThesis.createForChannelOwningInstitution(resource, userInstance, channelOwnerOrganizationId,
+                                                              SortableIdentifier.next(),
+                                                              PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+            .persistNewTicket(ticketService);
+
+        var request = userRequestsTickets(publication, contributorId, channelOwnerOrganizationId);
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
+        var body = response.getBodyObject(TicketCollection.class);
+
+        assertThat(body.getTickets(), is(not(emptyIterable())));
     }
 
     private TicketEntry createPersistedTicketWithMessage(Class<? extends TicketEntry> ticketType,
