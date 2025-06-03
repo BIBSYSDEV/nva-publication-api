@@ -154,6 +154,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         transactWriteItems.add(insertionAction);
     }
 
+    public void refreshResource(Resource resource) {
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(createPutTransaction(resource));
+        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
+    }
+
     public Resource updateResource(Resource resource, UserInstance userInstance) {
         var persistedResource = fetchExistingResource(resource.toPublication());
 

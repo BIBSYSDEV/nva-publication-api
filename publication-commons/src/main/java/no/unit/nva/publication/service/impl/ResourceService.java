@@ -340,9 +340,10 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.fetchAllTicketsForResource(resource);
     }
 
-    public void refresh(SortableIdentifier identifier) {
+    public void refreshResource(SortableIdentifier identifier) {
         try {
-            updatePublication(getPublicationByIdentifier(identifier));
+            var resource = getResourceByIdentifier(identifier);
+            updateResourceService.refreshResource(resource);
             logger.info(RESOURCE_REFRESHED_MESSAGE, identifier);
         } catch (Exception e) {
             logger.error(RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE, identifier);

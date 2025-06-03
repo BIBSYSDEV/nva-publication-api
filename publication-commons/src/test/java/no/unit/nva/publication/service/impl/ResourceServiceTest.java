@@ -132,6 +132,7 @@ import no.unit.nva.publication.model.business.publicationstate.FileRetractedEven
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
+import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -1091,7 +1092,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldUpdatePublicationVersionWhenRefreshingResource() throws ApiGatewayException {
         var publication = createPublishedResource();
         var version = Resource.fromPublication(publication).toDao().getVersion();
-        resourceService.refresh(publication.getIdentifier());
+        resourceService.refreshResource(publication.getIdentifier());
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         var updatesVersion = Resource.fromPublication(updatedPublication).toDao().getVersion();
 
@@ -1102,7 +1103,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldLogWhenPublicationToRefreshDoesNotExist() {
         var publication = randomPublication();
         var appender = LogUtils.getTestingAppender(ResourceService.class);
-        resourceService.refresh(publication.getIdentifier());
+        resourceService.refreshResource(publication.getIdentifier());
         assertThat(appender.getMessages(), Matchers.containsString("Resource to refresh is not found"));
     }
 
@@ -1751,6 +1752,28 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var fetchedPublication = fileApprovalThesis.toPublication(resourceService);
 
         assertEquals(publication, fetchedPublication);
+    }
+
+    @Test
+    void shouldUpdateOnlyVersionWhenRefreshingResource() throws BadRequestException {
+        var resource = Resource.fromPublication(randomPublication());
+        var publication =resource.persistNew(resourceService, randomUserInstance());
+        var persistedResource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
+        var persistedDao = getDao(persistedResource);
+
+        resourceService.refreshResource(publication.getIdentifier());
+
+        var refreshedResource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
+        var refreshedDao = getDao(persistedResource);
+
+        assertEquals(persistedResource, refreshedResource);
+        assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
+    }
+
+    private Dao getDao(Resource persistedResource) {
+        var getRefreshedResourceResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                           .withKey(persistedResource.toDao().primaryKey()));
+        return parseAttributeValuesMap(getRefreshedResourceResult.getItem(), Dao.class);
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
