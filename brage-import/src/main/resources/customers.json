@@ -118,6 +118,7 @@
     "username": "niva@7464.0.0.0",
     "cristinIdentifier": "7464.0.0.0",
     "identifiers": {
+      "prod": "260129ec-4f4d-42a2-bcc9-d324e029f0dc",
       "test": "a497cf56-1a26-4de3-b2cc-ec20aa54af10",
       "dev": "6c94a30a-d4cf-47d7-8de1-7ed3d145f183"
     },
@@ -128,6 +129,7 @@
     "username": "mf@190.0.0.0",
     "cristinIdentifier": "190.0.0.0",
     "identifiers": {
+      "prod": "31665824-ee77-48e8-b508-a0cdbaeca0f4",
       "test": "577c0a2f-2697-4401-ad94-0a9bf20bdb40",
       "dev": "2287bd5f-7ac9-4ad0-b70f-0ce6575adea3"
     },
@@ -159,6 +161,7 @@
     "username": "fni@7430.0.0.0",
     "cristinIdentifier": "7430.0.0.0",
     "identifiers": {
+      "prod": "d4f65b16-dca9-409b-a6a1-2ff1f1cb6e45",
       "test": "ad4555b9-8615-4802-93b0-fe84fc4d2971",
       "dev": "de17a451-0aec-4beb-a17f-ca6779e4e295"
     },
@@ -169,6 +172,7 @@
     "username": "vegvesen@6056.0.0.0",
     "cristinIdentifier": "6056.0.0.0",
     "identifiers": {
+      "prod": "d4604fb0-ec96-406c-bbf7-7ecf80fbfa69",
       "test": "95100df5-b46b-41c9-a87a-9a2efc58716e",
       "dev": "2c1deeca-c0fc-487e-93c8-9f0cf4fae490"
     },
@@ -200,6 +204,7 @@
     "username": "aho@189.0.0.0",
     "cristinIdentifier": "189.0.0.0",
     "identifiers": {
+      "prod": "c95f4e24-2d79-4135-b9b5-d7ef2bbfb56f",
       "test": "ba0b80e8-ca87-4b8f-bf2a-6d00188ad707",
       "dev": "d6e0ba1c-44fd-49bc-8d79-a45bf1a7b66c"
     },
@@ -230,6 +235,7 @@
     "username": "oda@215.0.0.0",
     "cristinIdentifier": "215.0.0.0",
     "identifiers": {
+      "prod": "60f650d1-43ae-453c-ae1a-d131f0500487",
       "test": "b7c2979e-c56b-4493-84ce-3cfa7bb3ba27",
       "dev": "8db4a8bd-3db5-420b-a2e4-fc17a489aa6d"
     },
@@ -281,6 +287,7 @@
     "username": "nforsk@7446.0.0.0",
     "cristinIdentifier": "7446.0.0.0",
     "identifiers": {
+      "prod": "c3359446-f54d-4755-ad8b-e2403283da84",
       "test": "71fb8ede-c372-4f51-a9ec-de1874badaf7",
       "dev": "5196161e-c952-4b36-9125-3e9746ee338d"
     },
@@ -331,6 +338,7 @@
     "username": "cmi@7416.0.0.0",
     "cristinIdentifier": "7416.0.0.0",
     "identifiers": {
+      "prod": "07f5674d-8f59-4b81-8b24-fa4f3ab35c70",
       "test": "f9a5a7fb-5add-4968-ac10-68e36953cbb9",
       "dev": "aebc37b9-593c-42b6-88bf-0d8a54492a32"
     },
@@ -362,6 +370,7 @@
     "username": "bi@158.0.0.0",
     "cristinIdentifier": "158.0.0.0",
     "identifiers": {
+      "prod": "cabc0883-6ba6-4860-ba6c-90b854b18c60",
       "test": "e9fb0c5d-1589-4d6f-932f-b312e50daa8f",
       "dev": "a49a2deb-f782-4ab1-b2ab-97745bc14b3d"
     },
@@ -372,6 +381,7 @@
     "username": "fdir@5947.0.0.0",
     "cristinIdentifier": "5947.0.0.0",
     "identifiers": {
+      "prod": "2e8f2de9-b6e7-411e-93f4-615b6da4225a",
       "test": "c92c0f86-6a65-484a-ae0e-a045029168b5",
       "dev": "4403a49b-a175-4985-a695-f16c5b87c9ac"
     },
@@ -393,6 +403,7 @@
     "username": "dmmh@253.0.0.0",
     "cristinIdentifier": "253.0.0.0",
     "identifiers": {
+      "prod": "9ebd6346-2a9e-41ca-bdd5-80b95d2f5109",
       "test": "2e4f348c-47a3-4500-94dd-9b4ee4ba63d9",
       "dev": "0edc1e9a-a74b-4169-86ba-f98b92d0115e"
     },
@@ -424,6 +435,7 @@
     "username": "imr@7431.0.0.0",
     "cristinIdentifier": "7431.0.0.0",
     "identifiers": {
+      "prod": "492c03a9-6c9c-48a9-9259-78b945aefef5",
       "test": "f76cf282-43c0-495a-8f4d-532838994bd1",
       "dev": "3e78024a-657d-482c-9496-0f34a376ca78"
     },
@@ -434,6 +446,7 @@
     "username": "toi@7482.0.0.0",
     "cristinIdentifier": "7482.0.0.0",
     "identifiers": {
+      "prod": "1c313c5f-3544-48ba-8c09-5e8cb0bea3be",
       "test": "d102baef-5861-43e2-bb21-42a1f6479aef",
       "dev": "ff6fd53f-30ff-4c47-955e-f201fe5d9e0c"
     },
@@ -558,6 +571,7 @@
     "username": "cicero@7475.0.0.0",
     "cristinIdentifier": "7475.0.0.0",
     "identifiers": {
+      "prod": "efb11f03-33fc-4740-9324-91a5628aaf35",
       "test": "47db88b9-3013-4e53-873c-bb0003074ca3",
       "dev": "d22e1273-5dd0-410f-a0d9-356353683a98"
     },
@@ -629,6 +643,7 @@
     "username": "fhi@7502.0.0.0",
     "cristinIdentifier": "7502.0.0.0",
     "identifiers": {
+      "prod": "edbebb28-cdbf-4070-ab8c-e839317b46f7",
       "test": "94fb0975-499d-42be-b729-1d8327a33a76",
       "dev": "95bfedd6-0a44-4013-8e96-256b0efb7d28"
     },
@@ -670,6 +685,7 @@
     "username": "fafo@7425.0.0.0",
     "cristinIdentifier": "7425.0.0.0",
     "identifiers": {
+      "prod": "d7aea10a-5643-4f8a-8e74-5b1a11ff669c",
       "test": "648a3ed0-f34e-48ff-8db9-092b2f5d5fa2",
       "dev": "eab76eb2-3f15-40af-9056-53946ec8fcde"
     },
@@ -701,6 +717,7 @@
     "username": "fhs@1627.0.0.0",
     "cristinIdentifier": "1627.0.0.0",
     "identifiers": {
+      "prod": "0dbaedb3-4849-4eb6-b272-d6afa689bd0f",
       "test": "ba0b80e8-ca87-4b8f-bf2a-6d00188ad707",
       "dev": "290bb113-cf83-4917-8a07-463b4eca057b"
     },
@@ -762,6 +779,7 @@
     "username": "nifu@7463.0.0.0",
     "cristinIdentifier": "7463.0.0.0",
     "identifiers": {
+      "prod": "b9bbbdc4-380b-4c12-9b7d-5d82deeb2e6a",
       "test": "f09c78fe-0d6a-4e45-be1c-6fede449cda8",
       "dev": "043ad701-d2c5-46be-b991-c58aef97626d"
     },
@@ -793,6 +811,7 @@
     "username": "unis@195.0.0.0",
     "cristinIdentifier": "195.0.0.0",
     "identifiers": {
+      "prod": "256b9785-808b-4c2a-a2d9-fd7a2de8da0c",
       "dev": "ed671c06-964c-46ce-85d5-777c164ac81e",
       "test": "c7fa1f3f-3304-45c7-bbb5-b8873923e7e3"
     },
