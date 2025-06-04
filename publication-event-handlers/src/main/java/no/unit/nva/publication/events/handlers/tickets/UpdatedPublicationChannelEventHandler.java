@@ -30,6 +30,7 @@ public class UpdatedPublicationChannelEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UpdatedPublicationChannelEventHandler.class);
+    private static final String NULL_STRING = "null";
 
     private final S3Driver s3Driver;
     private final TicketService ticketService;
@@ -86,10 +87,10 @@ public class UpdatedPublicationChannelEventHandler
     private String dumpEvent(String action, PublicationChannel oldData, PublicationChannel newData) {
         return String.format("action=%s, oldData=%s/%s, newData=%s/%s",
                              action,
-                             nonNull(oldData) ? oldData.getType() : "null",
-                             nonNull(oldData) ? oldData.getIdentifier() : "null",
-                             nonNull(newData) ? newData.getType() : "null",
-                             nonNull(newData) ? newData.getIdentifier() : "null");
+                             nonNull(oldData) ? oldData.getType() : NULL_STRING,
+                             nonNull(oldData) ? oldData.getIdentifier() : NULL_STRING,
+                             nonNull(newData) ? newData.getType() : NULL_STRING,
+                             nonNull(newData) ? newData.getIdentifier() : NULL_STRING);
     }
 
     private Stream<FilesApprovalEntry> fetchAndFilterTicketsToUpdate(
