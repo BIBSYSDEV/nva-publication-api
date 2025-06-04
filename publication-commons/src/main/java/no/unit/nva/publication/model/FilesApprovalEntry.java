@@ -5,6 +5,7 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.APPROVED_FILES_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.FILES_FOR_APPROVAL_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -32,11 +33,15 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = FilesApprovalThesis.TYPE, value = FilesApprovalThesis.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class)})
 public abstract class FilesApprovalEntry extends TicketEntry {
+
+    private static final Logger logger = LoggerFactory.getLogger(FilesApprovalEntry.class);
 
     @JsonProperty(WORKFLOW)
     private PublishingWorkflow workflow;
@@ -57,8 +62,31 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
     public FilesApprovalEntry applyPublicationChannelClaim(URI organizationId,
                                                            SortableIdentifier channelClaimIdentifier) {
-        this.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(organizationId, organizationId, channelClaimIdentifier));
+        this.setReceivingOrganizationDetails(
+            new ReceivingOrganizationDetails(organizationId, organizationId, channelClaimIdentifier));
+        logger.info("Ticket {} is redirected to {} due to claimed channel {}.",
+                    this.getIdentifier(), organizationId, channelClaimIdentifier);
         return this;
+    }
+
+    public FilesApprovalEntry clearPublicationChannelClaim(SortableIdentifier channelClaimIdentifier) {
+        if (isInfluencedByClaimedChannel(channelClaimIdentifier)) {
+            this.setReceivingOrganizationDetails(
+                new ReceivingOrganizationDetails(getOwnerAffiliation(), getResponsibilityArea()));
+            logger.info("Ticket {} is redirected back to {}/{}.",
+                        this.getIdentifier(), getOwnerAffiliation(), getResponsibilityArea());
+        } else {
+            logger.info("Not redirecting ticket {} back to {}/{} based on {} being deleted as channel claim {} is "
+                        + "now active.",
+                        this.getIdentifier(), getOwnerAffiliation(), getResponsibilityArea(), channelClaimIdentifier,
+                        this.getReceivingOrganizationDetails().influencingChannelClaim());
+        }
+        return this;
+    }
+
+    @JsonIgnore
+    private boolean isInfluencedByClaimedChannel(SortableIdentifier channelClaimIdentifier) {
+        return channelClaimIdentifier.equals(getReceivingOrganizationDetails().influencingChannelClaim());
     }
 
     protected FilesApprovalEntry completeAndApproveFiles(Resource resource, UserInstance userInstance) {

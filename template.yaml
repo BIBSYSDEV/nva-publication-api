@@ -2835,12 +2835,12 @@ Resources:
       AlarmActions:
         - !Ref SlackSnsArn
 
-  UpdatedPublicationChannelConstraintsHandler:
+  UpdatedPublicationChannelEventHandler:
     DependsOn: DatabaseAccessLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.tickets.UpdatedPublicationChannelConstraintsHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.tickets.UpdatedPublicationChannelEventHandler::handleRequest
       Timeout: 200
       Policies:
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
@@ -2858,4 +2858,4 @@ Resources:
               detail:
                 responsePayload:
                   topic:
-                    - PublicationService.PublicationChannelConstraint.Update
+                    - PublicationService.PublicationChannel.Update

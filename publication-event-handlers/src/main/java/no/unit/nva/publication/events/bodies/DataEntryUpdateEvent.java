@@ -44,8 +44,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             "PublicationService.UnpublishRequest.Update";
     public static final String FILE_ENTRY_UPDATE_EVENT_TOPIC = "PublicationService.FileEntry.Update";
     public static final String FILE_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.FileEntry.Delete";
-    public static final String PUBLICATION_CHANNEL_CONSTRAINT_UPDATED_EVENT_TOPIC =
-            "PublicationService.PublicationChannelConstraint.Update";
+    public static final String PUBLICATION_CHANNEL_UPDATED_EVENT_TOPIC =
+            "PublicationService.PublicationChannel.Update";
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
@@ -159,7 +159,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             case FileEntry fileEntry when hasNewImage() -> fileEntry.getFileEvent() instanceof FileDeletedEvent
                     ? FILE_ENTRY_DELETE_EVENT_TOPIC
                     : FILE_ENTRY_UPDATE_EVENT_TOPIC;
-            case PublicationChannel publicationChannel -> PUBLICATION_CHANNEL_CONSTRAINT_UPDATED_EVENT_TOPIC;
+            case PublicationChannel publicationChannel -> PUBLICATION_CHANNEL_UPDATED_EVENT_TOPIC;
             default -> throw new IllegalArgumentException("Unknown entry type: " + type);
         };
     }
