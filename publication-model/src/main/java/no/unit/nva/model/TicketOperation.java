@@ -8,7 +8,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum TicketOperation {
 
-    APPROVE("approve");
+    APPROVE("approve"),
+    TRANSFER("transfer");
 
     public static final String ERROR_MESSAGE_TEMPLATE = "%s not a valid AllowedOperation, expected one of: %s";
     public static final String DELIMITER = ", ";

@@ -113,7 +113,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
     private void updateOwnership(TicketEntry ticket, UpdateTicketOwnershipRequest request,
                                  RequestUtils requestUtils) throws ForbiddenException, NotFoundException {
         var resource = getResource(ticket.getResourceIdentifier());
-        if (userInstitutionIsTicketOwner(ticket, requestUtils)
+        if (userInstitutionIsReceivingOrganization(ticket, requestUtils)
             && newOwnerAffiliationIsOneOfCuratingInstitutions(request, resource)
             && userIsAuthorized(requestUtils, ticket)) {
             ticket.withReceivingOrganizationDetails(request.ownerAffiliation(), request.responsibilityArea())
@@ -127,14 +127,17 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         return resourceService.getResourceByIdentifier(resourceIdentifier);
     }
 
-    private static boolean newOwnerAffiliationIsOneOfCuratingInstitutions(UpdateTicketOwnershipRequest request, Resource resource) {
+    private static boolean newOwnerAffiliationIsOneOfCuratingInstitutions(UpdateTicketOwnershipRequest request,
+                                                                          Resource resource) {
         return resource.getCuratingInstitutions()
                    .stream()
                    .anyMatch(curatingInstitution -> request.ownerAffiliation().equals(curatingInstitution.id()));
     }
 
-    private static boolean userInstitutionIsTicketOwner(TicketEntry ticket, RequestUtils requestUtils) {
-        return ticket.getOwnerAffiliation().equals(requestUtils.topLevelCristinOrgId());
+    private static boolean userInstitutionIsReceivingOrganization(TicketEntry ticket, RequestUtils requestUtils) {
+        return ticket.getReceivingOrganizationDetails()
+                   .topLevelOrganizationId()
+                   .equals(requestUtils.topLevelCristinOrgId());
     }
 
     private void handleUpdateTicketRequest(TicketEntry ticket, UpdateTicketRequest request,
