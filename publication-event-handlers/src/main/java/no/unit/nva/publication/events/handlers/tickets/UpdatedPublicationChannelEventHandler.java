@@ -24,7 +24,7 @@ import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class UpdatedPublicationChannelConstraintsHandler
+public class UpdatedPublicationChannelEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
     private final S3Driver s3Driver;
@@ -32,14 +32,14 @@ public class UpdatedPublicationChannelConstraintsHandler
     private final ResourceService resourceService;
 
     @JacocoGenerated
-    public UpdatedPublicationChannelConstraintsHandler() {
+    public UpdatedPublicationChannelEventHandler() {
         this(
             S3Driver.defaultS3Client().build(),
             new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, new UriRetriever()),
             ResourceService.defaultService());
     }
 
-    public UpdatedPublicationChannelConstraintsHandler(
+    public UpdatedPublicationChannelEventHandler(
         S3Client s3Client, TicketService ticketService, ResourceService resourceService) {
         super(EventReference.class);
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
@@ -58,16 +58,16 @@ public class UpdatedPublicationChannelConstraintsHandler
         var oldData = (PublicationChannel) entryUpdate.getOldData();
         var newData = (PublicationChannel) entryUpdate.getNewData();
         if (claimedChannelAdded(oldData, newData)) {
-            var channelConstraint = (ClaimedPublicationChannel) newData;
-            fetchAndFilterTicketsToUpdate(channelConstraint.getResourceIdentifier())
+            var publicationChannel = (ClaimedPublicationChannel) newData;
+            fetchAndFilterTicketsToUpdate(publicationChannel.getResourceIdentifier())
                 .map(filesApprovalEntry ->
-                         filesApprovalEntry.applyPublicationChannelClaim(channelConstraint.getOrganizationId(),
-                                                                         channelConstraint.getIdentifier()))
+                         filesApprovalEntry.applyPublicationChannelClaim(publicationChannel.getOrganizationId(),
+                                                                         publicationChannel.getIdentifier()))
                 .forEach(ticketService::updateTicket);
         } else if (claimedChannelRemoved(oldData, newData)) {
-            var channelConstraint = (ClaimedPublicationChannel) oldData;
-            fetchAndFilterTicketsToUpdate(channelConstraint.getResourceIdentifier())
-                .map(filesApprovalEntry -> filesApprovalEntry.clearPublicationChannelClaim(channelConstraint.getIdentifier()))
+            var publicationChannel = (ClaimedPublicationChannel) oldData;
+            fetchAndFilterTicketsToUpdate(publicationChannel.getResourceIdentifier())
+                .map(filesApprovalEntry -> filesApprovalEntry.clearPublicationChannelClaim(publicationChannel.getIdentifier()))
                 .forEach(ticketService::updateTicket);
         }
         return null;

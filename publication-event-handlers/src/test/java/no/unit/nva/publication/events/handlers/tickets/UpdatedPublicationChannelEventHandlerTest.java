@@ -47,8 +47,6 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
@@ -56,9 +54,8 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  * Updates pending file approving tickets organizational affiliation based on changes to the publication channel
  * constraints that apply.
  */
-public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLocalTest {
+public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UpdatedPublicationChannelConstraintsHandlerTest.class);
     private static final UserInstance USER_INSTANCE = UserInstance.create(randomString(),
                                                                           PublicationGenerator.randomUri());
     private static final String NOT_RELEVANT = "notRelevant";
@@ -90,14 +87,14 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
 
     @Test
     void shouldThrowExceptionWhenEventReferenceIsNotAvailableOnS3() {
-        var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
+        var handler = new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
 
         assertThrows(NoSuchKeyException.class, () -> handler.handleRequest(eventNotAvailableFromS3(), output, context));
     }
 
     @Test
     void shouldDoNothingWhenNonClaimedPublicationChannelIsAddedOnCreationOfEntity() throws IOException {
-        var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
+        var handler = new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
 
         handler.handleRequest(nonClaimedPublicationChannelAddedEvent(), output, context);
     }
@@ -115,7 +112,7 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
                 .complete(publication, USER_INSTANCE)
                 .persistNewTicket(ticketService);
 
-        var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
+        var handler = new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
 
         var channelClaimIdentifier = SortableIdentifier.next();
         var claimingCustomerId = randomUri();
@@ -158,7 +155,7 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
                 .complete(publication, USER_INSTANCE)
                 .persistNewTicket(ticketService);
 
-        var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
+        var handler = new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
 
         var request = claimedPublicationChannelRemovedEvent(channelClaimIdentifier,
                                                             claimingCustomerId,
@@ -197,7 +194,7 @@ public class UpdatedPublicationChannelConstraintsHandlerTest extends ResourcesLo
                 .complete(publication, USER_INSTANCE)
                 .persistNewTicket(ticketService);
 
-        var handler = new UpdatedPublicationChannelConstraintsHandler(s3Client, ticketService, resourceService);
+        var handler = new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
 
         var channelClaimIdentifier = SortableIdentifier.next();
         var claimingCustomerId = randomUri();

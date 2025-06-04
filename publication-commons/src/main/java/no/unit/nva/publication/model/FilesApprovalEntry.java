@@ -33,11 +33,15 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = FilesApprovalThesis.TYPE, value = FilesApprovalThesis.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class)})
 public abstract class FilesApprovalEntry extends TicketEntry {
+
+    private static final Logger logger = LoggerFactory.getLogger(FilesApprovalEntry.class);
 
     @JsonProperty(WORKFLOW)
     private PublishingWorkflow workflow;
@@ -60,19 +64,28 @@ public abstract class FilesApprovalEntry extends TicketEntry {
                                                            SortableIdentifier channelClaimIdentifier) {
         this.setReceivingOrganizationDetails(
             new ReceivingOrganizationDetails(organizationId, organizationId, channelClaimIdentifier));
+        logger.info("Ticket {} is redirected to {} due to claimed channel {}.",
+                    this.getIdentifier(), organizationId, channelClaimIdentifier);
         return this;
     }
 
     public FilesApprovalEntry clearPublicationChannelClaim(SortableIdentifier channelClaimIdentifier) {
-        if (isUnderClaimedChannelInfluence(channelClaimIdentifier)) {
+        if (isInfluencedByClaimedChannel(channelClaimIdentifier)) {
             this.setReceivingOrganizationDetails(
                 new ReceivingOrganizationDetails(getOwnerAffiliation(), getResponsibilityArea()));
+            logger.info("Ticket {} is redirected back to {}/{}.",
+                        this.getIdentifier(), getOwnerAffiliation(), getResponsibilityArea());
+        } else {
+            logger.info("Not redirecting ticket {} back to {}/{} based on {} being deleted as channel claim {} is "
+                        + "now active.",
+                        this.getIdentifier(), getOwnerAffiliation(), getResponsibilityArea(), channelClaimIdentifier,
+                        this.getReceivingOrganizationDetails().influencingChannelClaim());
         }
         return this;
     }
 
     @JsonIgnore
-    private boolean isUnderClaimedChannelInfluence(SortableIdentifier channelClaimIdentifier) {
+    private boolean isInfluencedByClaimedChannel(SortableIdentifier channelClaimIdentifier) {
         return channelClaimIdentifier.equals(getReceivingOrganizationDetails().influencingChannelClaim());
     }
 
