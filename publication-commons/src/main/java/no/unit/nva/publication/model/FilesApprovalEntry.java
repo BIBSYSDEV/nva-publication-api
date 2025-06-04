@@ -76,10 +76,8 @@ public abstract class FilesApprovalEntry extends TicketEntry {
             logger.info("Ticket {} is redirected back to {}/{}.",
                         this.getIdentifier(), getOwnerAffiliation(), getResponsibilityArea());
         } else {
-            logger.info("Not redirecting ticket {} back to {}/{} based on {} being deleted as channel claim {} is "
-                        + "now active.",
-                        this.getIdentifier(), getOwnerAffiliation(), getResponsibilityArea(), channelClaimIdentifier,
-                        this.getReceivingOrganizationDetails().influencingChannelClaim());
+            logger.info("Not redirecting ticket {} as it is no longer influenced by claimed channel {}.",
+                        this.getIdentifier(), channelClaimIdentifier);
         }
         return this;
     }

@@ -22,10 +22,14 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class UpdatedPublicationChannelEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UpdatedPublicationChannelEventHandler.class);
 
     private final S3Driver s3Driver;
     private final TicketService ticketService;
@@ -64,13 +68,28 @@ public class UpdatedPublicationChannelEventHandler
                          filesApprovalEntry.applyPublicationChannelClaim(publicationChannel.getOrganizationId(),
                                                                          publicationChannel.getIdentifier()))
                 .forEach(ticketService::updateTicket);
+            LOGGER.info("Updated pending tickets based on claimed publication channel.");
         } else if (claimedChannelRemoved(oldData, newData)) {
             var publicationChannel = (ClaimedPublicationChannel) oldData;
             fetchAndFilterTicketsToUpdate(publicationChannel.getResourceIdentifier())
-                .map(filesApprovalEntry -> filesApprovalEntry.clearPublicationChannelClaim(publicationChannel.getIdentifier()))
+                .map(filesApprovalEntry -> filesApprovalEntry.clearPublicationChannelClaim(
+                    publicationChannel.getIdentifier()))
                 .forEach(ticketService::updateTicket);
+            LOGGER.info("Updated pending tickets based on claimed publication channel removal.");
+        } else {
+            var action = entryUpdate.getAction();
+            LOGGER.info("Ignoring event {}", dumpEvent(action, oldData, newData));
         }
         return null;
+    }
+
+    private String dumpEvent(String action, PublicationChannel oldData, PublicationChannel newData) {
+        return String.format("action=%s, oldData=%s/%s, newData=%s/%s",
+                             action,
+                             nonNull(oldData) ? oldData.getType() : "null",
+                             nonNull(oldData) ? oldData.getIdentifier() : "null",
+                             nonNull(newData) ? newData.getType() : "null",
+                             nonNull(newData) ? newData.getIdentifier() : "null");
     }
 
     private Stream<FilesApprovalEntry> fetchAndFilterTicketsToUpdate(
