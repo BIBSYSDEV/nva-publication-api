@@ -137,6 +137,44 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
     }
 
     @Test
+    void shouldUpdatePendingTicketsWhenChannelIsModifiedFromNonClaimedToClaimed() throws ApiGatewayException,
+                                                                                         IOException {
+        var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
+        var userTopLevelOrganizationId = randomUri();
+        var userAffiliationOrganizationId = randomUri();
+        var pendingTicket =
+            pendingFilesApprovalThesis(publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
+                .persistNewTicket(ticketService);
+        var completedTicket =
+            pendingFilesApprovalThesis(publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
+                .complete(publication, USER_INSTANCE)
+                .persistNewTicket(ticketService);
+
+        var handler = new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
+
+        var channelClaimIdentifier = SortableIdentifier.next();
+        var claimingCustomerId = randomUri();
+        var claimingOrganizationId = randomUri();
+
+        var request = nonClaimedToClaimedPublicationChannelEvent(channelClaimIdentifier,
+                                                                 claimingCustomerId,
+                                                                 claimingOrganizationId,
+                                                                 publication.getIdentifier());
+        handler.handleRequest(request, output, context);
+
+        var pendingTicketAfter = (FilesApprovalThesis) ticketService.fetchTicket(pendingTicket);
+        assertTicketHasOrganizationDetails(pendingTicketAfter,
+                                           claimingOrganizationId,
+                                           claimingOrganizationId,
+                                           channelClaimIdentifier);
+
+        var completedTicketAfter = (FilesApprovalThesis) ticketService.fetchTicket(completedTicket);
+        assertTicketHasOrganizationDetails(completedTicketAfter,
+                                           completedTicketAfter.getOwnerAffiliation(),
+                                           completedTicketAfter.getResponsibilityArea());
+    }
+
+    @Test
     void shouldUpdatePendingTicketsWhenChannelClaimIsRemovedAndTicketIsStillUnderInfluence() throws ApiGatewayException,
                                                                                                     IOException {
         var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
@@ -305,6 +343,23 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
                                                             SortableIdentifier resourceIdentifier) throws IOException {
 
         var channelClaimId = UriWrapper.fromUri(randomUri()).addChild(channelClaimIdentifier.toString()).getUri();
+        var claimedPublicationChannel = buildClaimedPublicationChannel(channelClaimId,
+                                                                       customerId,
+                                                                       organizationId,
+                                                                       resourceIdentifier);
+        var eventBody = eventBody(
+            null,
+            claimedPublicationChannel
+        );
+        var blobUri = s3Driver.insertEvent(UnixPath.of(randomString()), eventBody);
+
+        return validEvent(blobUri);
+    }
+
+    private ClaimedPublicationChannel buildClaimedPublicationChannel(URI channelClaimId,
+                                                                     URI customerId,
+                                                                     URI organizationId,
+                                                                     SortableIdentifier resourceIdentifier) {
         var claimedBy = new CustomerSummaryDto(customerId, organizationId);
         var channelClaim = new ChannelClaim(randomUri(),
                                             new ChannelConstraint(
@@ -315,9 +370,23 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
         var channelClaimDto = new ChannelClaimDto(channelClaimId,
                                                   claimedBy,
                                                   channelClaim);
+        return ClaimedPublicationChannel.create(channelClaimDto, resourceIdentifier, PUBLISHER);
+    }
+
+    private InputStream nonClaimedToClaimedPublicationChannelEvent(SortableIdentifier channelClaimIdentifier,
+                                                                   URI customerId,
+                                                                   URI organizationId,
+                                                                   SortableIdentifier resourceIdentifier)
+        throws IOException {
+        var channelClaimId = UriWrapper.fromUri(randomUri()).addChild(channelClaimIdentifier.toString()).getUri();
+        var claimedPublicationChannel = buildClaimedPublicationChannel(channelClaimId,
+                                                                       customerId,
+                                                                       organizationId,
+                                                                       resourceIdentifier);
+
         var eventBody = eventBody(
-            null,
-            ClaimedPublicationChannel.create(channelClaimDto, resourceIdentifier, PUBLISHER)
+            NonClaimedPublicationChannel.create(channelClaimId, resourceIdentifier, PUBLISHER),
+            claimedPublicationChannel
         );
         var blobUri = s3Driver.insertEvent(UnixPath.of(randomString()), eventBody);
 

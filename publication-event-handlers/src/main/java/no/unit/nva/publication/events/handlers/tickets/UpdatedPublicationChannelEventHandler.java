@@ -17,6 +17,7 @@ import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
+import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -62,7 +63,7 @@ public class UpdatedPublicationChannelEventHandler
 
         var oldData = (PublicationChannel) entryUpdate.getOldData();
         var newData = (PublicationChannel) entryUpdate.getNewData();
-        if (claimedChannelAdded(oldData, newData)) {
+        if (claimedChannelAdded(oldData, newData) || (channelNonClaimed(oldData) && channelClaimed(newData))) {
             var publicationChannel = (ClaimedPublicationChannel) newData;
             fetchAndFilterTicketsToUpdate(publicationChannel.getResourceIdentifier())
                 .map(filesApprovalEntry ->
@@ -82,6 +83,14 @@ public class UpdatedPublicationChannelEventHandler
             LOGGER.info("Ignoring event {}", dumpEvent(action, oldData, newData));
         }
         return null;
+    }
+
+    private boolean channelNonClaimed(PublicationChannel channel) {
+        return nonNull(channel) && NonClaimedPublicationChannel.TYPE.equals(channel.getType());
+    }
+
+    private boolean channelClaimed(PublicationChannel channel) {
+        return nonNull(channel) && ClaimedPublicationChannel.TYPE.equals(channel.getType());
     }
 
     private String dumpEvent(String action, PublicationChannel oldData, PublicationChannel newData) {
