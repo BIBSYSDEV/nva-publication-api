@@ -71,7 +71,8 @@ public class UpdatedPublicationChannelEventHandler
                                                                          publicationChannel.getIdentifier()))
                 .forEach(ticketService::updateTicket);
             LOGGER.info("Updated pending tickets based on claimed publication channel.");
-        } else if (claimedChannelRemoved(oldData, newData)) {
+        } else if (claimedChannelRemoved(oldData, newData) || transitionFromClaimedToNonClaimedChannel(oldData,
+                                                                                                       newData)) {
             var publicationChannel = (ClaimedPublicationChannel) oldData;
             fetchAndFilterTicketsToUpdate(publicationChannel.getResourceIdentifier())
                 .map(filesApprovalEntry -> filesApprovalEntry.clearPublicationChannelClaim(
@@ -87,6 +88,10 @@ public class UpdatedPublicationChannelEventHandler
 
     private boolean transitionFromNonClaimedToClaimedChannel(PublicationChannel oldData, PublicationChannel newData) {
         return channelNonClaimed(oldData) && channelClaimed(newData);
+    }
+
+    private boolean transitionFromClaimedToNonClaimedChannel(PublicationChannel oldData, PublicationChannel newData) {
+        return channelClaimed(oldData) && channelNonClaimed(newData);
     }
 
     private boolean channelNonClaimed(PublicationChannel channel) {
