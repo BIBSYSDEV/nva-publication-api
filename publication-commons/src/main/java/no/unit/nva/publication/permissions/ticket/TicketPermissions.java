@@ -34,7 +34,7 @@ public class TicketPermissions {
         this.ticket = ticket;
         this.grantStrategies = Set.of(
             new ApproveTicketGrantStrategy(ticket, userInstance, resource, publicationPermissions),
-            new TransferTicketGrantStrategy(ticket, userInstance, resource, publicationPermissions)
+            new TransferTicketGrantStrategy(ticket, userInstance, resource)
         );
         this.denyStrategies = Set.of(
             new FinalizedTicketDenyStrategy(ticket, userInstance, resource)

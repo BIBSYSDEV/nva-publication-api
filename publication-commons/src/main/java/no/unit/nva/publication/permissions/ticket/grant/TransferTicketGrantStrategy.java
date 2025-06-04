@@ -1,32 +1,31 @@
 package no.unit.nva.publication.permissions.ticket.grant;
 
 import static no.unit.nva.model.TicketOperation.TRANSFER;
-import no.unit.nva.model.PublicationOperation;
+import static no.unit.nva.publication.utils.CuratingInstitutionsExtractor.getCuratingInstitutionsIdList;
 import no.unit.nva.model.TicketOperation;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.permissions.ticket.TicketGrantStrategy;
 import no.unit.nva.publication.permissions.ticket.TicketStrategyBase;
 
 public class TransferTicketGrantStrategy extends TicketStrategyBase implements TicketGrantStrategy {
-    private final PublicationPermissions publicationPermissions;
 
-    public TransferTicketGrantStrategy(TicketEntry ticket, UserInstance userInstance, Resource resource,
-                                      PublicationPermissions publicationPermissions) {
+    public TransferTicketGrantStrategy(TicketEntry ticket, UserInstance userInstance, Resource resource) {
         super(ticket, userInstance, resource);
-        this.publicationPermissions = publicationPermissions;
     }
 
     @Override
     public boolean allowsAction(TicketOperation permission) {
         if (permission.equals(TRANSFER)) {
-            return publicationPermissions.allowsAction(PublicationOperation.APPROVE_FILES)
-                   && userBelongsToReceivingTopLevelOrg();
+            return canManageTicket() && userBelongsToReceivingTopLevelOrg() && hasCuratingInstitutions();
         }
 
         return false;
+    }
+
+    private boolean hasCuratingInstitutions() {
+        return !getCuratingInstitutionsIdList(resource).isEmpty();
     }
 
     private boolean userBelongsToReceivingTopLevelOrg() {
