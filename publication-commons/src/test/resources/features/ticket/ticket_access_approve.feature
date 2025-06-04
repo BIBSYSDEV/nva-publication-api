@@ -25,6 +25,14 @@ Feature: Permissions given claimed publisher
       | Editor                            | approve   | Not Allowed |
       | Degree file curator               | approve   | Allowed     |
       | Related external client           | approve   | Not Allowed |
+      | Everyone else                     | transfer  | Not Allowed |
+      | External client                   | transfer  | Not Allowed |
+      | Publication owner                 | transfer  | Not Allowed |
+      | Contributor                       | transfer  | Not Allowed |
+      | File, support, doi or nvi curator | transfer  | Not Allowed |
+      | Editor                            | transfer  | Not Allowed |
+      | Degree file curator               | transfer  | Allowed     |
+      | Related external client           | transfer  | Not Allowed |
 
   Scenario Outline: Verify permission when
   user is NOT from the same organization as claimed publisher
@@ -47,6 +55,14 @@ Feature: Permissions given claimed publisher
       | Editor                            | approve   | Not Allowed |
       | Degree file curator               | approve   | Not Allowed |
       | Related external client           | approve   | Not Allowed |
+      | Everyone else                     | transfer  | Not Allowed |
+      | External client                   | transfer  | Not Allowed |
+      | Publication owner                 | transfer  | Not Allowed |
+      | Contributor                       | transfer  | Not Allowed |
+      | File, support, doi or nvi curator | transfer  | Not Allowed |
+      | Editor                            | transfer  | Not Allowed |
+      | Degree file curator               | transfer  | Not Allowed |
+      | Related external client           | transfer  | Not Allowed |
 
 
   Scenario Outline: Verify permission when
@@ -67,3 +83,11 @@ Feature: Permissions given claimed publisher
       | Editor                            | approve   | Not Allowed |
       | Degree file curator               | approve   | Not Allowed |
       | Related external client           | approve   | Not Allowed |
+      | Everyone else                     | transfer  | Not Allowed |
+      | External client                   | transfer  | Not Allowed |
+      | Publication owner                 | transfer  | Not Allowed |
+      | Contributor                       | transfer  | Not Allowed |
+      | File, support, doi or nvi curator | transfer  | Allowed     |
+      | Editor                            | transfer  | Not Allowed |
+      | Degree file curator               | transfer  | Not Allowed |
+      | Related external client           | transfer  | Not Allowed |
