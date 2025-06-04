@@ -97,25 +97,23 @@ public class TicketScenarioContext {
         var currentUserIsContributor = roles.contains(PermissionsRole.OTHER_CONTRIBUTORS);
         var contributors = getContributors(user, currentUserIsContributor);
 
-        var currentUserIsFileCurator = roles.contains(FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS) ||
-                                       roles.contains(NON_DEGREE_CURATOR_TYPE) ||
-                                       roles.contains(FILE_CURATOR_DEGREE) ||
-                                       roles.contains(FILE_CURATOR_BY_PUBLICATION_OWNER) ||
-                                       roles.contains(FILE_CURATOR_FOR_GIVEN_FILE) ||
-                                       roles.contains(FILE_CURATOR_DEGREE_EMBARGO);
+        randomResource.setPublicationChannels(generatePublicationChannels(randomResource));
+        var currentUserIsFileCurator = isCurrentUserIsFileCurator(isDegree,
+                                                                  randomResource.getPrioritizedClaimedPublicationChannelWithinScope()
+                                                                      .orElse(null));
 
         var curatingInstitutions = getCuratingInstitutions(currentUserIsFileCurator, user);
 
         var currentUserIsPublicationOwner = roles.contains(PermissionsRole.PUBLICATION_OWNER);
         var owner = getOwner(user, topLevelOrgCristinId, currentUserIsPublicationOwner);
 
-
         var additionalIdentifiers = new HashSet<>(randomResource.getAdditionalIdentifiers());
         if (isImported) {
             additionalIdentifiers.add(new AdditionalIdentifier("inspera", randomString()));
         }
 
-        var associatedArtifacts = isMetadataOnly ? AssociatedArtifactList.empty() : randomResource.getAssociatedArtifacts();
+        var associatedArtifacts =
+            isMetadataOnly ? AssociatedArtifactList.empty() : randomResource.getAssociatedArtifacts();
 
         var resource =
             randomResource.copy()
@@ -123,7 +121,6 @@ public class TicketScenarioContext {
                 .withStatus(publicationStatus)
                 .withResourceOwner(owner)
                 .withCuratingInstitutions(curatingInstitutions)
-                .withPublicationChannels(generatePublicationChannels(randomResource))
                 .withEntityDescription(randomResource.getEntityDescription().copy()
                                            .withContributors(contributors)
                                            .build())
@@ -132,10 +129,33 @@ public class TicketScenarioContext {
                 .build();
 
         var ticket = attempt(() -> TicketEntry.createNewTicket(resource.toPublication(), PublishingRequestCase.class,
-                                                  SortableIdentifier::next)).orElseThrow();
-        ticket.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(user.getTopLevelOrgCristinId(), user.getPersonAffiliation()));
+                                                               SortableIdentifier::next)).orElseThrow();
+        var curatingInstitution = curatingInstitutions.stream().findFirst().orElseThrow().id();
+        ticket.setReceivingOrganizationDetails(new ReceivingOrganizationDetails(curatingInstitution,
+                                                                                randomUri()));
 
         return new TicketPermissions(ticket, user, resource, new PublicationPermissions(resource, user));
+    }
+
+    private boolean isCurrentUserIsFileCurator(boolean isDegree,
+                                               ClaimedPublicationChannel claimedPublicationChannels) {
+        if (!satisfiesPublisherOwnership(claimedPublicationChannels)) {
+            return false;
+        }
+
+        if (isDegree) {
+            return roles.contains(FILE_CURATOR_DEGREE) ||
+                   roles.contains(FILE_CURATOR_DEGREE_EMBARGO);
+        } else {
+            return roles.contains(FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS) ||
+                   roles.contains(NON_DEGREE_CURATOR_TYPE) ||
+                   roles.contains(FILE_CURATOR_BY_PUBLICATION_OWNER) ||
+                   roles.contains(FILE_CURATOR_FOR_GIVEN_FILE);
+        }
+    }
+
+    private boolean satisfiesPublisherOwnership(ClaimedPublicationChannel claimedPublicationChannel) {
+        return !hasClaimedPublisher || claimedPublicationChannel.getOrganizationId().equals(userOrganization);
     }
 
     private UserInstance getUserInstance(URI customerId, HashSet<AccessRight> access, URI topLevelOrgCristinId) {
@@ -145,7 +165,7 @@ public class TicketScenarioContext {
         }
 
         return UserInstance.create(randomString(), customerId, randomUri(), access.stream().toList(),
-                                         topLevelOrgCristinId);
+                                   topLevelOrgCristinId);
     }
 
     public void setPublisherOrganization(URI organization) {
@@ -175,7 +195,8 @@ public class TicketScenarioContext {
         return new ClaimedPublicationChannel(randomUri(), randomUri(), organizationId,
                                              new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY,
                                                             DEGREE_SCOPE), ChannelType.PUBLISHER,
-                                             SortableIdentifier.next(), resourceIdentifier, Instant.now(), Instant.now());
+                                             SortableIdentifier.next(), resourceIdentifier, Instant.now(),
+                                             Instant.now());
     }
 
     public void setIsDegree(boolean isDegree) {
@@ -195,6 +216,8 @@ public class TicketScenarioContext {
         var curatingInstitutions = new HashSet<CuratingInstitution>();
         if (currentUserIsFileCurator) {
             curatingInstitutions.add(new CuratingInstitution(user.getTopLevelOrgCristinId(), Set.of()));
+        } else {
+            curatingInstitutions.add(new CuratingInstitution(randomUri(), Set.of()));
         }
         return curatingInstitutions;
     }

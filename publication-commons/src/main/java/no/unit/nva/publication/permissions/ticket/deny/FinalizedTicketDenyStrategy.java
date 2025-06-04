@@ -2,6 +2,8 @@ package no.unit.nva.publication.permissions.ticket.deny;
 
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
+import static no.unit.nva.publication.model.business.TicketStatus.REMOVED;
 import java.util.List;
 import no.unit.nva.model.TicketOperation;
 import no.unit.nva.publication.model.business.Resource;
@@ -20,6 +22,6 @@ public class FinalizedTicketDenyStrategy extends TicketStrategyBase implements T
 
     @Override
     public boolean deniesAction(TicketOperation permission) {
-        return List.of(CLOSED, COMPLETED).contains(ticket.getStatus());
+        return List.of(CLOSED, COMPLETED, REMOVED, NOT_APPLICABLE).contains(ticket.getStatus());
     }
 }

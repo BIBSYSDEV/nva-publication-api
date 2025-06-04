@@ -1,12 +1,9 @@
 package no.unit.nva.publication.ticket.read;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.publication.utils.CuratingInstitutionsExtractor.getCuratingInstitutionsIdList;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
-import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -71,12 +68,6 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
                                  PublicationPermissions.create(resource, userInstance));
 
         return TicketDto.fromTicket(ticket, messages, getCuratingInstitutionsIdList(resource), ticketPermissions);
-    }
-
-    private static List<URI> getCuratingInstitutionsIdList(Resource resource) {
-        return resource.getCuratingInstitutions().stream()
-                   .map(CuratingInstitution::id)
-                   .toList();
     }
 
     @Override
