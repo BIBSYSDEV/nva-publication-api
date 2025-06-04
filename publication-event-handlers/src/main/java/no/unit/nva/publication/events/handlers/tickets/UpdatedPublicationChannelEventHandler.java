@@ -63,7 +63,7 @@ public class UpdatedPublicationChannelEventHandler
 
         var oldData = (PublicationChannel) entryUpdate.getOldData();
         var newData = (PublicationChannel) entryUpdate.getNewData();
-        if (claimedChannelAdded(oldData, newData) || (channelNonClaimed(oldData) && channelClaimed(newData))) {
+        if (claimedChannelAdded(oldData, newData) || transitionFromNonClaimedToClaimedChannel(oldData, newData)) {
             var publicationChannel = (ClaimedPublicationChannel) newData;
             fetchAndFilterTicketsToUpdate(publicationChannel.getResourceIdentifier())
                 .map(filesApprovalEntry ->
@@ -83,6 +83,10 @@ public class UpdatedPublicationChannelEventHandler
             LOGGER.info("Ignoring event {}", dumpEvent(action, oldData, newData));
         }
         return null;
+    }
+
+    private boolean transitionFromNonClaimedToClaimedChannel(PublicationChannel oldData, PublicationChannel newData) {
+        return channelNonClaimed(oldData) && channelClaimed(newData);
     }
 
     private boolean channelNonClaimed(PublicationChannel channel) {
