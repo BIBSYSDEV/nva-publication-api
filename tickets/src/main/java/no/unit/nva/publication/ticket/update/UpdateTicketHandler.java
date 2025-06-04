@@ -127,7 +127,8 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         return resourceService.getResourceByIdentifier(resourceIdentifier);
     }
 
-    private static boolean newOwnerAffiliationIsOneOfCuratingInstitutions(UpdateTicketOwnershipRequest request, Resource resource) {
+    private static boolean newOwnerAffiliationIsOneOfCuratingInstitutions(UpdateTicketOwnershipRequest request,
+                                                                          Resource resource) {
         return resource.getCuratingInstitutions()
                    .stream()
                    .anyMatch(curatingInstitution -> request.ownerAffiliation().equals(curatingInstitution.id()));
@@ -175,7 +176,9 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
     private boolean userIsAuthorized(RequestUtils requestUtils, TicketEntry ticket) {
         return requestUtils.isAuthorizedToManage(ticket)
-               && ticket.hasSameOwnerAffiliationAs(requestUtils.toUserInstance());
+               && ticket.getReceivingOrganizationDetails()
+                      .topLevelOrganizationId()
+                      .equals(requestUtils.topLevelCristinOrgId());
     }
 
     private static boolean assigneeDoesNotExist(TicketEntry ticket) {
