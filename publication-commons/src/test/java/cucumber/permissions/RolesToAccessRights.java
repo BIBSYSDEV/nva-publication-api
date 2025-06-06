@@ -10,7 +10,6 @@ import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_DEGREE_EMBARGO;
 import static cucumber.permissions.PermissionsRole.FILE_CURATOR_FOR_GIVEN_FILE;
 import static cucumber.permissions.PermissionsRole.INTERNAL_IMPORTER;
-import static cucumber.permissions.PermissionsRole.NON_DEGREE_CURATOR_TYPE;
 import static cucumber.permissions.PermissionsRole.NVI_CURATOR;
 import static cucumber.permissions.PermissionsRole.PUBLISHING_CURATOR;
 import static cucumber.permissions.PermissionsRole.SUPPORT_CURATOR;
@@ -20,7 +19,6 @@ import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_IMPORT;
-import static nva.commons.apigateway.AccessRight.MANAGE_NVI;
 import static nva.commons.apigateway.AccessRight.MANAGE_NVI_CANDIDATES;
 import static nva.commons.apigateway.AccessRight.MANAGE_OWN_AFFILIATION;
 import static nva.commons.apigateway.AccessRight.MANAGE_OWN_RESOURCES;
@@ -60,12 +58,7 @@ public final class RolesToAccessRights {
         Map.entry(FILE_CURATOR_BY_PUBLICATION_OWNER, Set.of(MANAGE_RESOURCES_STANDARD, MANAGE_RESOURCE_FILES)),
         Map.entry(FILE_CURATOR_DEGREE_EMBARGO, Set.of(MANAGE_DEGREE, MANAGE_DEGREE_EMBARGO, MANAGE_RESOURCES_STANDARD)),
         Map.entry(FILE_CURATOR_DEGREE, Set.of(MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD)),
-        Map.entry(FILE_CURATOR_FOR_GIVEN_FILE, Set.of(MANAGE_RESOURCES_STANDARD, MANAGE_RESOURCE_FILES)),
-        Map.entry(NON_DEGREE_CURATOR_TYPE, Set.of(MANAGE_RESOURCES_STANDARD,
-                                                  MANAGE_DOI, SUPPORT,
-                                                  MANAGE_NVI,
-                                                  MANAGE_PUBLISHING_REQUESTS,
-                                                  MANAGE_RESOURCE_FILES))
+        Map.entry(FILE_CURATOR_FOR_GIVEN_FILE, Set.of(MANAGE_RESOURCES_STANDARD, MANAGE_RESOURCE_FILES))
     );
 
     private RolesToAccessRights() {

@@ -1,101 +1,139 @@
 package cucumber.permissions.ticket;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static cucumber.permissions.publication.PublicationScenarioContext.CURATING_INSTITUTION;
+import static cucumber.permissions.publication.PublicationScenarioContext.NON_CURATING_INSTITUTION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import cucumber.permissions.PermissionsRole;
+import cucumber.permissions.enums.ChannelClaimConfig;
+import cucumber.permissions.enums.FileConfig;
+import cucumber.permissions.enums.PublicationTypeConfig;
+import cucumber.permissions.enums.UserInstitutionConfig;
+import cucumber.permissions.publication.PublicationScenarioContext;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.net.URI;
-import java.util.Arrays;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.TicketOperation;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
 
 public class TicketAccessFeatures {
 
-    protected static final URI ORGANIZATION = randomUri();
-    private final TicketScenarioContext scenarioContext;
+    private final PublicationScenarioContext publicationScenarioContext;
+    private final TicketScenarioContext ticketScenarioContext;
 
-    public TicketAccessFeatures(TicketScenarioContext scenarioContext) {
-        this.scenarioContext = scenarioContext;
+    public TicketAccessFeatures(PublicationScenarioContext publicationScenarioContext, TicketScenarioContext ticketScenarioContext) {
+        this.publicationScenarioContext = publicationScenarioContext;
+        this.ticketScenarioContext = ticketScenarioContext;
     }
 
-    @Given("a {string} publication")
-    public void aPublication(String publicationStatus) {
-        scenarioContext.setPublicationStatus(PublicationStatus.lookup(publicationStatus));
+    @Given("a {string}")
+    public void a(String publication) {
+        if ("publication".equalsIgnoreCase(publication)) {
+            publicationScenarioContext.setPublicationTypeConfig(PublicationTypeConfig.PUBLICATION);
+        } else if ("degree".equalsIgnoreCase(publication)) {
+            publicationScenarioContext.setPublicationTypeConfig(PublicationTypeConfig.DEGREE);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + publication);
+        }
     }
 
-    @Given("a {string} publication with {string} property")
-    public void aPublicationWithProperties(String publicationStatus, String properties) {
-        scenarioContext.setPublicationStatus(PublicationStatus.lookup(publicationStatus));
-        var propertyList = Arrays.stream(properties.split(",")).map(String::toLowerCase).toList();
+    @And("publication has status {string}")
+    public void publicationHasStatus(String status) {
+        publicationScenarioContext.setPublicationStatus(PublicationStatus.lookup(status));
+    }
 
-        if (propertyList.contains("degree")) {
-            scenarioContext.setIsDegree(true);
+    @And("publication has {string} files")
+    public void publicationHasFiles(String fileTypes) {
+        if ("no".equalsIgnoreCase(fileTypes)) {
+            publicationScenarioContext.setFileConfig(FileConfig.NO_FILES);
+        } else if ("no approved".equalsIgnoreCase(fileTypes)) {
+            publicationScenarioContext.setFileConfig(FileConfig.NON_APPROVED_FILES_ONLY);
+        } else if ("approved".equalsIgnoreCase(fileTypes)) {
+            publicationScenarioContext.setFileConfig(FileConfig.APPROVED_FILE);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + fileTypes);
         }
-        if (propertyList.contains("imported")) {
-            scenarioContext.setIsImported(true);
+    }
+
+    @And("publication has publisher claimed by {string}")
+    public void publicationHasPublisherClaimedBy(String claimedBy) {
+        if ("users institution".equalsIgnoreCase(claimedBy)) {
+            publicationScenarioContext.setChannelClaimConfig(ChannelClaimConfig.CLAIMED_BY_USERS_INSTITUTION);
+        } else if ("not users institution".equalsIgnoreCase(claimedBy)) {
+            publicationScenarioContext.setChannelClaimConfig(ChannelClaimConfig.CLAIMED_BY_NOT_USERS_INSTITUTION);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + claimedBy);
         }
-        if (propertyList.contains("metadataonly")) {
-            scenarioContext.setIsMetadataOnly(true);
+    }
+
+    @And("channel claim has {string} policy {string}")
+    public void channelClaimHasPublishingPolicy(String policyType, String policyValue) {
+        //        var policy = ChannelPolicy.valueOf(policyValue);
+        var policy = switch (policyValue.toLowerCase()) {
+            case "owneronly" -> ChannelPolicy.OWNER_ONLY;
+            case "everyone" -> ChannelPolicy.EVERYONE;
+            default -> throw new IllegalArgumentException("Non valid input: " + policyValue);
+        };
+        if ("publishing".equalsIgnoreCase(policyType)) {
+            publicationScenarioContext.setChannelClaimPublishingPolicy(policy);
+        } else if ("editing".equalsIgnoreCase(policyType)) {
+            publicationScenarioContext.setChannelClaimEditingPolicy(policy);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + policyType);
         }
     }
 
     @When("the user have the role {string}")
     public void theUserHaveTheRole(String userRole) {
-        scenarioContext.setRoles(PermissionsRole.lookup(userRole));
+        publicationScenarioContext.setRoles(PermissionsRole.lookup(userRole));
+    }
+
+    @And("the user belongs to {string}")
+    public void theUserBelongTo(String institution) {
+        if ("creating institution".equalsIgnoreCase(institution)) {
+            publicationScenarioContext.setUserInstitutionConfig(UserInstitutionConfig.BELONGS_TO_CREATING_INSTITUTION);
+        } else if ("curating institution".equalsIgnoreCase(institution)) {
+            publicationScenarioContext.setUserInstitutionConfig(UserInstitutionConfig.BELONGS_TO_CURATING_INSTITUTION);
+        } else if ("non curating institution".equalsIgnoreCase(institution)) {
+            publicationScenarioContext.setUserInstitutionConfig(UserInstitutionConfig.BELONGS_TO_NON_CURATING_INSTITUTION);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + institution);
+        }
+    }
+
+    @And("the ticket receiver is {string}")
+    public void theTicketReceiverIs(String ticketReceiver) {
+        if ("users institution".equalsIgnoreCase(ticketReceiver)) {
+            ticketScenarioContext.setTicketReceiver(publicationScenarioContext.getUserInstance().getTopLevelOrgCristinId());
+        } else if ("curating institution".equalsIgnoreCase(ticketReceiver)) {
+            ticketScenarioContext.setTicketReceiver(CURATING_INSTITUTION);
+        } else if ("non curating institution".equalsIgnoreCase(ticketReceiver)) {
+            ticketScenarioContext.setTicketReceiver(NON_CURATING_INSTITUTION);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + ticketReceiver);
+        }
     }
 
     @And("the user attempts to {string}")
     public void theUserAttemptsTo(String operation) {
-        scenarioContext.setOperation(TicketOperation.lookup(operation));
+        ticketScenarioContext.setOperation(TicketOperation.lookup(operation));
     }
 
     @Then("the action outcome is {string}")
     public void theActionOutcomeIs(String outcome) {
-        var permissions = scenarioContext.getTicketPermissions();
+        var permissions = ticketScenarioContext.getTicketPermissions();
 
         var expected = outcome.equals("Allowed");
 
-        var actual = permissions.allowsAction(scenarioContext.getOperation());
+        var actual = permissions.allowsAction(ticketScenarioContext.getOperation());
 
-        assertThat( "%s is %s to perform %s".formatted(scenarioContext.getRoles().stream().map(
+        assertThat( "%s is %s to perform %s".formatted(publicationScenarioContext.getRoles().stream().map(
                                                            PermissionsRole::getValue).toList(), outcome,
-                                                       scenarioContext.getOperation()),
+                                                       ticketScenarioContext.getOperation()),
                     actual,
                     is(equalTo(expected)));
-    }
-
-    @And("publication is a degree")
-    public void publicationIsADegree() {
-        scenarioContext.setIsDegree(true);
-    }
-
-    @And("publication has claimed publisher")
-    public void publicationHasClaimedPublisher() {
-        scenarioContext.setHasClaimedPublisher(true);
-    }
-
-    @And("publisher is claimed by organization")
-    public void publisherIsClaimedByOrganization() {
-        scenarioContext.setPublisherOrganization(ORGANIZATION);
-    }
-
-    @And("the user is from the same organization as claimed publisher")
-    public void theUserIsFromTheSameOrganizationAsClaimedPublisher() {
-        scenarioContext.setUserOrganization(ORGANIZATION);
-    }
-
-    @And("publication has no approved files")
-    public void publicationHasNoApprovedFiles() {
-        scenarioContext.setIsMetadataOnly(true);
-    }
-
-    @And("publication is an imported student thesis")
-    public void publicationIsAnImportedStudentThesis() {
-        scenarioContext.setIsImported(true);
     }
 }
