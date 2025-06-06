@@ -135,6 +135,8 @@ import no.unit.nva.publication.model.business.publicationstate.RepublishedResour
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.utils.CustomerList;
+import no.unit.nva.publication.model.utils.CustomerSummary;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
@@ -813,6 +815,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
         when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
             Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
+                                                                                                       topLevelId))));
         var affiliation = (new Organization.Builder()).withId(orgId).build();
         publishedResource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
 
@@ -849,7 +853,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
         when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
             Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
-
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
+                                                                                                       topLevelId))));
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
 
         var affiliation = (new Organization.Builder()).withId(orgId).build();
@@ -869,6 +874,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var importCandidate = randomImportCandidate();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+
 
         var affiliation = (new Organization.Builder()).withId(orgId).build();
 
@@ -896,6 +902,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         final var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
         when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
             Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
+                                                                                                       topLevelId))));
 
         var affiliation = (new Organization.Builder()).withId(orgId).build();
         entityDescription.setContributors(List.of(randomContributor(List.of(affiliation))));
