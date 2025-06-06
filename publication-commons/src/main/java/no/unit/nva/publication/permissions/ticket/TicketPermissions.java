@@ -9,6 +9,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
+import no.unit.nva.publication.permissions.ticket.deny.ClaimedChannelTicketDenyStrategy;
 import no.unit.nva.publication.permissions.ticket.deny.FinalizedTicketDenyStrategy;
 import no.unit.nva.publication.permissions.ticket.grant.ApproveTicketGrantStrategy;
 import no.unit.nva.publication.permissions.ticket.grant.TransferTicketGrantStrategy;
@@ -37,6 +38,7 @@ public class TicketPermissions {
             new TransferTicketGrantStrategy(ticket, userInstance, resource)
         );
         this.denyStrategies = Set.of(
+            new ClaimedChannelTicketDenyStrategy(ticket, userInstance, resource),
             new FinalizedTicketDenyStrategy(ticket, userInstance, resource)
         );
     }

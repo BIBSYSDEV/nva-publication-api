@@ -27,9 +27,9 @@ Feature: Permissions given claimed publisher
       | External client         | transfer  | Not Allowed |
       | Publication owner       | transfer  | Not Allowed |
       | Contributor             | transfer  | Not Allowed |
-      | publishing curator      | transfer  | Not Allowed |
+      | Publishing curator      | transfer  | Not Allowed |
       | Editor                  | transfer  | Not Allowed |
-      | Degree file curator     | transfer  | Allowed     |
+      | Degree file curator     | transfer  | Not Allowed |
       | Related external client | transfer  | Not Allowed |
 
   Scenario Outline: Verify permission when
@@ -105,3 +105,21 @@ Feature: Permissions given claimed publisher
     And the user have the role "publishing curator"
     And the user belongs to "curating institution"
     Then the action outcome is "Not Allowed"
+
+  Scenario Outline: Should deny ticket transfer when channel is claimed
+    Given a "degree"
+    And publication has "<Files>" files
+    And publication has publisher claimed by "<ClaimedBy>"
+    When the user attempts to "transfer"
+    And the user have the role "thesis curator"
+    Then the action outcome is "Not Allowed"
+
+    Examples:
+      | Files       | ClaimedBy             |
+      | No          | not users institution |
+      | No approved | not users institution |
+      | Approved    | not users institution |
+
+      | No          | users institution     |
+      | No approved | users institution     |
+      | Approved    | users institution     |

@@ -73,7 +73,7 @@ public class PublicationScenarioContext {
     private boolean isImportedDegree;
     private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
     private FileConfig fileConfig = FileConfig.NO_FILES;
-    private ChannelClaimConfig channelClaimConfig;
+    private ChannelClaimConfig channelClaimConfig = ChannelClaimConfig.NON_CLAIMED;
     private ChannelPolicy channelClaimPublishingPolicy;
     private ChannelPolicy channelClaimEditingPolicy;
     private Set<PermissionsRole> roles = new HashSet<>();
