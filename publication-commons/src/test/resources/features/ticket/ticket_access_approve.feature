@@ -96,7 +96,7 @@ Feature: Permissions given claimed publisher
     And the user belongs to "non curating institution"
     And the ticket receiver is "users institution"
     When the user attempts to "transfer"
-    When the user have the role "publishing curator"
+    And the user have the role "publishing curator"
     Then the action outcome is "Allowed"
 
   Scenario: Should not give transfer permission when only available curation institution is same as user
