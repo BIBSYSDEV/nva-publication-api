@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
@@ -58,6 +59,7 @@ import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
+import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.publication.utils.DoesNotHaveEmptyValues;
 import nva.commons.core.Environment;
@@ -94,11 +96,16 @@ public class CristinMapper extends CristinMappingModule {
     public static final String SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN = "scopus";
     private final CristinUnitsUtil cristinUnitsUtil;
     private final S3Client s3Client;
+    private final RawContentRetriever uriRetriever;
+    private final CustomerService customerService;
 
-    public CristinMapper(CristinObject cristinObject, CristinUnitsUtil cristinUnitsUtil, S3Client s3Client) {
+    public CristinMapper(CristinObject cristinObject, CristinUnitsUtil cristinUnitsUtil, S3Client s3Client,
+                         RawContentRetriever uriRetriever, CustomerService customerService) {
         super(cristinObject, ChannelRegistryMapper.getInstance(), s3Client);
         this.cristinUnitsUtil = cristinUnitsUtil;
         this.s3Client = s3Client;
+        this.uriRetriever = uriRetriever;
+        this.customerService = customerService;
     }
 
     public static ZoneOffset zoneOffset() {
@@ -127,7 +134,8 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     protected Set<CuratingInstitution> extractCuratingInstitutions(EntityDescription entityDescription) {
-        return CuratingInstitutionsUtil.getCuratingInstitutionsCached(entityDescription, cristinUnitsUtil);
+        return new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsCached(entityDescription,
+                                                                                    cristinUnitsUtil);
     }
 
     private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {
@@ -140,7 +148,7 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private static void addContributorNumberIfMissing(List<CristinContributor> cristinContributors) {
-        if (allContributerNumbersAreNullValues(cristinContributors)) {
+        if (allContributorNumbersAreNullValues(cristinContributors)) {
             addMissingSequenceNumberToAllContributors(cristinContributors);
         } else {
             addMissingSequenceNumbers(cristinContributors);
@@ -162,7 +170,7 @@ public class CristinMapper extends CristinMappingModule {
         }
     }
 
-    private static boolean allContributerNumbersAreNullValues(List<CristinContributor> cristinContributors) {
+    private static boolean allContributorNumbersAreNullValues(List<CristinContributor> cristinContributors) {
         return cristinContributors.stream().map(CristinContributor::getContributorOrder).noneMatch(Objects::nonNull);
     }
 

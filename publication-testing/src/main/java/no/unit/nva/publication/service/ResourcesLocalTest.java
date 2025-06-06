@@ -38,6 +38,7 @@ import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.ResourceServiceBuilder;
@@ -53,6 +54,7 @@ public class ResourcesLocalTest extends TestDataSource {
     protected AmazonDynamoDB client;
     protected UriRetriever uriRetriever;
     protected ChannelClaimClient channelClaimClient;
+    protected CustomerService customerService;
 
     public ResourcesLocalTest() {
         super();
@@ -60,6 +62,7 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public void init() {
         uriRetriever = mock(UriRetriever.class);
+        customerService = mock(CustomerService.class);
         channelClaimClient = mock(ChannelClaimClient.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         CreateTableRequest request = createTableRequest(RESOURCES_TABLE_NAME);
@@ -68,6 +71,7 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public void init(String tableName) {
         uriRetriever = mock(UriRetriever.class);
+        customerService = mock(CustomerService.class);
         channelClaimClient = mock(ChannelClaimClient.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         CreateTableRequest request = createTableRequest(tableName);
@@ -76,6 +80,7 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public void init(String firstTable, String secondTable) {
         uriRetriever = mock(UriRetriever.class);
+        customerService = mock(CustomerService.class);
         channelClaimClient = mock(ChannelClaimClient.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         var firstTableRequest = createTableRequest(firstTable);
@@ -184,7 +189,9 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     public ResourceServiceBuilder getResourceServiceBuilder(AmazonDynamoDB dynamoDbClient) {
-        return ResourceService.builder().withDynamoDbClient(dynamoDbClient).withUriRetriever(uriRetriever).withChannelClaimClient(channelClaimClient);
+        return ResourceService.builder().withDynamoDbClient(dynamoDbClient).withUriRetriever(uriRetriever)
+                   .withCustomerService(customerService)
+                   .withChannelClaimClient(channelClaimClient);
     }
 
     public ResourceServiceBuilder getResourceServiceBuilder() {

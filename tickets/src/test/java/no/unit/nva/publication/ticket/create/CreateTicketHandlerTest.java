@@ -51,6 +51,8 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.utils.CustomerList;
+import no.unit.nva.publication.model.utils.CustomerSummary;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.DoiRequestDto;
@@ -389,6 +391,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         publication.getEntityDescription().setContributors(List.of(randomContributorWithIdAndAffiliation(contributorId, affiliationId)));
         publication.setCuratingInstitutions(Set.of(new CuratingInstitution(affiliationId, Set.of(contributorId))));
         mockCuratingInstitution(affiliationId);
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
+                                                                                                       affiliationId))));
         resourceService.updatePublication(publication);
         var requestBody = constructDto(DoiRequest.class);
 

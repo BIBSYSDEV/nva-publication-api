@@ -1,50 +1,57 @@
 package no.unit.nva.publication.utils;
 
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.mockito.ArgumentMatchers.any;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
+import java.util.List;
+import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
+import no.unit.nva.publication.model.utils.CustomerList;
+import no.unit.nva.publication.model.utils.CustomerService;
+import no.unit.nva.publication.model.utils.CustomerSummary;
 import org.junit.jupiter.api.Test;
 
 class CuratingInstitutionsUtilTest {
 
     @Test
-    void whenVerifiedContributorReturnInstitution() {
+    void shouldReturnCuratingInstitutionForContributorAffiliatedWithCustomer() {
+        var organization = randomUri();
+        var entityDescription = PublicationGenerator.fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
+                                    .getEntityDescription()
+                                    .copy()
+                                    .withContributors(List.of(contributorWithOrganization(organization)))
+                                    .build();
+        var topLevelOrg = randomUri();
         var util = mock(CristinUnitsUtil.class);
-        when(util.getTopLevel(any())).thenReturn(URI.create("https://example.com"));
-        var list =
-            CuratingInstitutionsUtil.getCuratingInstitutionsCached(
-                PublicationGenerator.fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
-                    .getEntityDescription(),
-                util);
+        var customerService = mock(CustomerService.class);
 
-        assertThat(list, is(not(empty())));
+        entityDescription.getContributors().forEach(contributor -> mockTopLevelOrg(contributor, topLevelOrg, util));
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
+                                                                                                       topLevelOrg))));
+
+        var list =
+            new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService).getCuratingInstitutionsCached(entityDescription,
+                                                                                                   util);
+
+        assertEquals(topLevelOrg, list.stream().findFirst().orElseThrow().id());
     }
 
-    @Test
-    void whenNotVerifiedContributorDoNotReturnInstitution() {
-        var util = mock(CristinUnitsUtil.class);
-        when(util.getTopLevel(any())).thenReturn(URI.create("https://example.com"));
-        var entityDescription = PublicationGenerator.fromInstanceClassesExcluding(
-            PROTECTED_DEGREE_INSTANCE_TYPES).getEntityDescription();
+    private Contributor contributorWithOrganization(URI organization) {
+        return new Contributor(null, List.of(Organization.fromUri(organization)), null, 0, true);
+    }
 
-        entityDescription.setContributors(entityDescription.getContributors().stream().map(contributor -> {
-            contributor.getIdentity().setId(null);
-            return contributor;
-        }).toList());
-
-        var list =
-            CuratingInstitutionsUtil.getCuratingInstitutionsCached(
-                entityDescription,
-                util);
-
-        assertThat(list, is(empty()));
+    private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtil util) {
+        contributor.getAffiliations()
+            .stream()
+            .filter(Organization.class::isInstance)
+            .map(Organization.class::cast)
+            .map(Organization::getId)
+            .forEach(id -> when(util.getTopLevel(id)).thenReturn(topLevelOrg));
     }
 }
