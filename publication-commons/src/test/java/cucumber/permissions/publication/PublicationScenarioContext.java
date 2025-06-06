@@ -15,6 +15,10 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import cucumber.permissions.PermissionsRole;
+import cucumber.permissions.enums.ChannelClaimConfig;
+import cucumber.permissions.enums.FileConfig;
+import cucumber.permissions.enums.PublicationTypeConfig;
+import cucumber.permissions.enums.UserInstitutionConfig;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
@@ -52,10 +56,10 @@ import nva.commons.apigateway.AccessRight;
 
 public class PublicationScenarioContext {
 
-    private static final URI CREATING_INSTITUTION = randomUri();
-    private static final URI CURATING_INSTITUTION = randomUri();
-    private static final URI NON_CURATING_INSTITUTION = randomUri();
-    private static final String USER_NAME = randomString();
+    public static final URI CREATING_INSTITUTION = randomUri();
+    public static final URI CURATING_INSTITUTION = randomUri();
+    public static final URI NON_CURATING_INSTITUTION = randomUri();
+    public static final String USER_NAME = randomString();
     private static final URI USER_CRISTIN_ID = randomUri();
     private static final List<String> DEGREE_SCOPE = List.of("DegreeLicentiate",
                                                              "DegreeBachelor",
@@ -167,7 +171,7 @@ public class PublicationScenarioContext {
         return new PublicationPermissions(resource, userInstance);
     }
 
-    private Resource createResource() {
+    public Resource createResource() {
         var publication = PublicationTypeConfig.DEGREE.equals(getPublicationTypeConfig())
                               ? randomDegreePublication()
                               : randomNonDegreePublication();
@@ -186,7 +190,7 @@ public class PublicationScenarioContext {
     }
 
     // TODO: Edit so it is only instantiated once
-    private UserInstance getUserInstance() {
+    public UserInstance getUserInstance() {
         if (roles.contains(UNAUTHENTICATED)) {
             return null;
         }
@@ -313,27 +317,5 @@ public class PublicationScenarioContext {
         return new Constraint(getChannelClaimPublishingPolicy(),
                               getChannelClaimEditingPolicy(),
                               DEGREE_SCOPE);
-    }
-
-    public enum PublicationTypeConfig {
-        PUBLICATION,
-        DEGREE
-    }
-
-    public enum FileConfig {
-        NO_FILES,
-        NON_APPROVED_FILES_ONLY,
-        APPROVED_FILE
-    }
-
-    public enum ChannelClaimConfig {
-        CLAIMED_BY_USERS_INSTITUTION,
-        CLAIMED_BY_NOT_USERS_INSTITUTION
-    }
-
-    public enum UserInstitutionConfig {
-        BELONGS_TO_CREATING_INSTITUTION,
-        BELONGS_TO_CURATING_INSTITUTION,
-        BELONGS_TO_NON_CURATING_INSTITUTION
     }
 }

@@ -25,7 +25,7 @@ public class TransferTicketGrantStrategy extends TicketStrategyBase implements T
     }
 
     private boolean hasCuratingInstitutions() {
-        return !getCuratingInstitutionsIdList(resource).isEmpty();
+        return getCuratingInstitutionsIdList(resource).stream().anyMatch(orgId -> !userInstance.getTopLevelOrgCristinId().equals(orgId));
     }
 
     private boolean userBelongsToReceivingTopLevelOrg() {
