@@ -2738,8 +2738,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber() {
+        var seriesTitle = randomString();
         return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
-                   .withSeriesNumberRecord(new PartOfSeries("NVE Rapport", null))
+                   .withSeriesTitle(seriesTitle)
+                   .withSeriesNumberRecord(new PartOfSeries(seriesTitle, null))
                    .withSeriesNumberPublication(null)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())
@@ -2748,8 +2750,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBook() {
         var seriesNumber = randomString();
+        var seriesTitle = randomString();
         return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
-                   .withSeriesNumberRecord(new PartOfSeries(randomString(), seriesNumber))
+                   .withSeriesTitle(seriesTitle)
+                   .withSeriesNumberRecord(new PartOfSeries(seriesTitle, seriesNumber))
                    .withSeriesNumberPublication(seriesNumber)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())
