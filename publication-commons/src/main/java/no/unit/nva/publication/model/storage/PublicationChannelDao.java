@@ -1,6 +1,5 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.publication.model.storage.LogEntryDao.KEY_PATTERN;
 import static no.unit.nva.publication.model.storage.TicketDao.newPutTransactionItem;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -40,6 +39,7 @@ public class PublicationChannelDao extends Dao implements DynamoEntryByIdentifie
     protected static final String IDENTIFIER = "identifier";
     protected static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
     protected static final String DATA = "data";
+    private static final String KEY_PATTERN = "%s:%s";
     private final SortableIdentifier identifier;
     private final SortableIdentifier resourceIdentifier;
 

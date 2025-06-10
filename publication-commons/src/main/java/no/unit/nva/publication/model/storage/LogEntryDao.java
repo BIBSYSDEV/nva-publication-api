@@ -24,7 +24,7 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
                           LogEntry data) {
 
     public static final String TYPE = "LogEntry";
-    public static final String KEY_PATTERN = "%s:%s";
+    private static final String KEY_PATTERN = "%s:%s";
 
     public static LogEntryDao fromDynamoFormat(Map<String, AttributeValue> map) {
         return attempt(() -> ItemUtils.toItem(map)).map(Item::toJSON)

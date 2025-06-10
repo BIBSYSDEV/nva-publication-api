@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
-import static no.unit.nva.publication.model.storage.LogEntryDao.KEY_PATTERN;
 import static no.unit.nva.publication.model.storage.TicketDao.newPutTransactionItem;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -46,6 +45,8 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
 
     public static final String TYPE = "File";
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
+    private static final String KEY_PATTERN = "%s:%s";
+
     @JsonProperty("identifier")
     private final SortableIdentifier identifier;
     private final SortableIdentifier resourceIdentifier;
@@ -77,6 +78,10 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
         return attempt(() -> ItemUtils.toItem(attributeValueMap)).map(Item::toJSON)
                    .map(json -> dynamoDbObjectMapper.readValue(json, FileDao.class))
                    .orElseThrow();
+    }
+
+    public static String getFileEntriesByResourceIdentifierPartitionKey(Resource resource) {
+        return KEY_PATTERN.formatted(Resource.TYPE, resource.getIdentifier());
     }
 
     @Override
