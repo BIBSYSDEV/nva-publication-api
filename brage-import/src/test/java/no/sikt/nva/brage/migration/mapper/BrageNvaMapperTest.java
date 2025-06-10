@@ -16,6 +16,7 @@ import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Identity;
+import no.sikt.nva.brage.migration.record.PartOfSeries;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
@@ -27,6 +28,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
+import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -169,6 +172,23 @@ class BrageNvaMapperTest {
         var file = (File) BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
 
         assertEquals(rightsHolder, file.getLegalNote());
+    }
+
+    @Test
+    void shouldMapPartOfSeriesToUnconfirmedSeriesWhenDegree()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var publication = new no.sikt.nva.brage.migration.record.Publication();
+        var seriesTitle = randomString();
+        publication.setPartOfSeries(new PartOfSeries(seriesTitle, randomString()));
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+                             .withPublication(publication)
+                             .build();
+        var nvaPublication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+        var publicationContext = (Degree) nvaPublication.getEntityDescription().getReference().getPublicationContext();
+        var series = (UnconfirmedSeries) publicationContext.getSeries();
+
+        assertEquals(seriesTitle, series.getTitle());
     }
 
     private static no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase getAdditionalIdentifier(

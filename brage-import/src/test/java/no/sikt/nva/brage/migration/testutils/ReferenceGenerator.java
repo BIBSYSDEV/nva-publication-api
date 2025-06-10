@@ -89,7 +89,6 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import no.unit.nva.model.role.Role;
-import no.unit.nva.model.time.Instant;
 import no.unit.nva.model.time.duration.NullDuration;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
@@ -497,8 +496,12 @@ public final class ReferenceGenerator {
         return new AcademicMonograph(builder.getMonographPages());
     }
 
-    private static PublicationContext generatePublicationContextForOtherStudentWork(Builder builder) {
-        return new Book.BookBuilder().withIsbnList(Collections.singletonList(builder.getIsbn())).build();
+    private static PublicationContext generatePublicationContextForOtherStudentWork(Builder builder)
+        throws InvalidIssnException {
+        return new Book.BookBuilder()
+                   .withSeries(generateSeries(builder))
+                   .withIsbnList(Collections.singletonList(builder.getIsbn()))
+                   .build();
     }
 
     private static JournalArticle generatePublicationInstanceForJournalArticle(Builder builder) {
@@ -525,8 +528,9 @@ public final class ReferenceGenerator {
                                   .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                   .getUri());
         } else {
-            return new UnconfirmedSeries(builder.getSeriesTitle(), builder.getIssnList().get(0),
-                                         builder.getIssnList().get(1));
+            return new UnconfirmedSeries(builder.getSeriesTitle(),
+                                         builder.getIssnList().getFirst(),
+                                         builder.getIssnList().getLast());
         }
     }
 
@@ -581,9 +585,10 @@ public final class ReferenceGenerator {
         return new ReportResearch(generateMonographPages(builder));
     }
 
-    private static Book generatePublicationContextForBook(Builder builder) {
+    private static Book generatePublicationContextForBook(Builder builder) throws InvalidIssnException {
         return new Book.BookBuilder().withSeriesNumber(builder.getSeriesNumberPublication())
                    .withIsbnList(Collections.singletonList(builder.getIsbn()))
+                   .withSeries(generateSeries(builder))
                    .build();
     }
 
@@ -595,8 +600,9 @@ public final class ReferenceGenerator {
     }
 
     private static Degree generatePublicationContextForDegree(Builder builder)
-        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return new Degree.Builder().withIsbnList(Collections.singletonList(builder.getIsbn()))
+                   .withSeries(generateSeries(builder))
                    .withCourse(new UnconfirmedCourse(builder.getSubjectCode())).build();
     }
 }
