@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class PublishingChannelEntryResolver {
 
+    protected static final String SERIAL_PUBLICATION = "serial-publication";
     private final Integer nsdCode;
     private final int year;
     private final List<String> channelNames;
@@ -110,7 +111,7 @@ public class PublishingChannelEntryResolver {
     }
 
     private URI toSeriesUri(String identifier) {
-        return getNsdProxyUri("series", identifier);
+        return getNsdProxyUri(SERIAL_PUBLICATION, identifier);
     }
 
     private Optional<URI> lookupJournalByNsdCode() {
@@ -131,7 +132,7 @@ public class PublishingChannelEntryResolver {
     }
 
     private URI toJournalUri(String identifier) {
-        return getNsdProxyUri("journal", identifier);
+        return getNsdProxyUri(SERIAL_PUBLICATION, identifier);
     }
 
     private Optional<URI> lookupNsdPublisherProxyUri() {

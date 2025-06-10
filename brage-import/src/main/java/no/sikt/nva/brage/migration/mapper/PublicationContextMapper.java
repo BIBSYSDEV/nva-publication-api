@@ -427,19 +427,19 @@ public final class PublicationContextMapper {
                    .orElse(null);
     }
 
-    @SuppressWarnings("PMD.NullAssignment")
     private static BookSeries extractSeries(Record brageRecord) throws InvalidIssnException {
         return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getSeries)
                    .map(no.sikt.nva.brage.migration.record.Series::getPid)
                    .map(pid -> generateSeries(pid, extractYear(brageRecord)))
-                   .orElse(isSupportedReportType(brageRecord) ? generateUnconfirmedSeries(brageRecord) : null);
+                   .orElse(generateUnconfirmedSeries(brageRecord));
     }
 
     private static BookSeries generateUnconfirmedSeries(Record brageRecord) throws InvalidIssnException {
         var issnList = extractIssnList(brageRecord);
         if (issnList.size() > SIZE_ONE) {
-            return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issnList.get(0), issnList.get(1));
+            return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issnList.getFirst(),
+                                         issnList.getLast());
         } else {
             var issn = !issnList.isEmpty() ? issnList.getFirst() : null;
             return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issn, null);

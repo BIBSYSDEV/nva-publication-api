@@ -18,14 +18,14 @@ public class TransferTicketGrantStrategy extends TicketStrategyBase implements T
     @Override
     public boolean allowsAction(TicketOperation permission) {
         if (permission.equals(TRANSFER)) {
-            return canManageTicket() && userBelongsToReceivingTopLevelOrg() && hasCuratingInstitutions();
+            return canManageTicket() && userBelongsToReceivingTopLevelOrg() && anyValidReceivers();
         }
 
         return false;
     }
 
-    private boolean hasCuratingInstitutions() {
-        return !getCuratingInstitutionsIdList(resource).isEmpty();
+    private boolean anyValidReceivers() {
+        return getCuratingInstitutionsIdList(resource).stream().anyMatch(orgId -> !userInstance.getTopLevelOrgCristinId().equals(orgId));
     }
 
     private boolean userBelongsToReceivingTopLevelOrg() {

@@ -14,9 +14,7 @@ import no.unit.nva.publication.permissions.ticket.TicketStrategyBase;
 
 public class FinalizedTicketDenyStrategy extends TicketStrategyBase implements TicketDenyStrategy {
 
-    public FinalizedTicketDenyStrategy(TicketEntry ticket,
-                                       UserInstance userInstance,
-                                       Resource resource) {
+    public FinalizedTicketDenyStrategy(TicketEntry ticket, UserInstance userInstance, Resource resource) {
         super(ticket, userInstance, resource);
     }
 

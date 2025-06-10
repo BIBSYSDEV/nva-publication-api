@@ -295,7 +295,7 @@ public final class PublicationGenerator {
                    .collect(Collectors.toSet());
     }
 
-    private static Stream<CuratingInstitution> createCuratingInstitutionsFromContributor(Contributor contributor) {
+    public static Stream<CuratingInstitution> createCuratingInstitutionsFromContributor(Contributor contributor) {
         return contributor.getAffiliations().stream()
                    .map(Organization.class::cast)
                    .map(affiliation ->

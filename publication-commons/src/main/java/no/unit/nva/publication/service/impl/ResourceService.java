@@ -77,6 +77,7 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
+import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
@@ -115,10 +116,12 @@ public class ResourceService extends ServiceWithTransactions {
     private final RawContentRetriever uriRetriever;
     private final ChannelClaimClient channelClaimClient;
     private final CounterService counterService;
+    private final CustomerService customerService;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
                               Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
-                              ChannelClaimClient channelClaimClient) {
+                              ChannelClaimClient channelClaimClient,
+                              CustomerService customerService) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
@@ -127,14 +130,19 @@ public class ResourceService extends ServiceWithTransactions {
         this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
         this.channelClaimClient = channelClaimClient;
         this.readResourceService = new ReadResourceService(client, this.tableName);
+        this.customerService = customerService;
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
-                                                               readResourceService, uriRetriever, channelClaimClient);
+                readResourceService, uriRetriever, channelClaimClient, customerService);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
     @JacocoGenerated
     public static ResourceService defaultService() {
-        return builder().withChannelClaimClient(ChannelClaimClient.create(new UriRetriever())).build();
+        var uriRetriever = new UriRetriever();
+        return builder()
+                   .withChannelClaimClient(ChannelClaimClient.create(uriRetriever))
+                   .withCustomerService(new CustomerService(new UriRetriever()))
+                   .build();
     }
 
     /**
@@ -650,7 +658,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     private void setCuratingInstitutions(Resource newResource) {
         newResource.setCuratingInstitutions(
-            CuratingInstitutionsUtil.getCuratingInstitutionsOnline(newResource.toPublication(), uriRetriever));
+                new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsOnline(newResource.toPublication()));
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {

@@ -11,10 +11,8 @@ public enum PermissionsRole {
     FILE_CURATOR_FOR_GIVEN_FILE("file curator at x"),
     FILE_CURATOR_DEGREE_EMBARGO("degree embargo file curator"),
     FILE_CURATOR_DEGREE("degree file curator"),
-    NON_DEGREE_CURATOR_TYPE("file, support, doi or nvi curator"),
     UNAUTHENTICATED("unauthenticated"),
     AUTHENTICATED_BUT_NO_ACCESS("everyone"),
-    CONTRIBUTOR_FOR_GIVEN_FILE("contributor at x"),
     OTHER_CONTRIBUTORS("other contributors", "contributor"),
     NOT_RELATED_EXTERNAL_CLIENT("not related external client",  "external client"),
     RELATED_EXTERNAL_CLIENT("related external client"),
@@ -54,11 +52,15 @@ public enum PermissionsRole {
      * @return set of enums
      */
     public static Set<PermissionsRole> lookup(String search) {
-        return stream(values())
-                   .filter(permissionsRole ->
-                               stream(permissionsRole.values)
-                                   .anyMatch(value -> search.toLowerCase().startsWith(value.toLowerCase()))
-                   )
-                   .collect(Collectors.toSet());
+        var result = stream(values())
+            .filter(permissionsRole ->
+                stream(permissionsRole.values)
+                    .anyMatch(value -> search.toLowerCase().startsWith(value.toLowerCase()))
+            )
+            .collect(Collectors.toSet());
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("No PermissionsRole found for: " + search);
+        }
+        return result;
     }
 }

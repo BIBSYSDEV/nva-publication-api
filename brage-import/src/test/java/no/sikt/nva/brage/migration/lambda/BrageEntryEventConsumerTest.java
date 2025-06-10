@@ -173,6 +173,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -309,6 +310,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of()));
         when(CONTEXT.getRemainingTimeInMillis()).thenReturn(100000);
         this.resourceService = getResourceServiceBuilder(client).build();
         this.s3Client = new ExtendedFakeS3Client();
@@ -2738,8 +2740,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber() {
+        var seriesTitle = randomString();
         return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
-                   .withSeriesNumberRecord(new PartOfSeries("NVE Rapport", null))
+                   .withSeriesTitle(seriesTitle)
+                   .withSeriesNumberRecord(new PartOfSeries(seriesTitle, null))
                    .withSeriesNumberPublication(null)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())
@@ -2748,8 +2752,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBook() {
         var seriesNumber = randomString();
+        var seriesTitle = randomString();
         return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
-                   .withSeriesNumberRecord(new PartOfSeries(randomString(), seriesNumber))
+                   .withSeriesTitle(seriesTitle)
+                   .withSeriesNumberRecord(new PartOfSeries(seriesTitle, seriesNumber))
                    .withSeriesNumberPublication(seriesNumber)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())

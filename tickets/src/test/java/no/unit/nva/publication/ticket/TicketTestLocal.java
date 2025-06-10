@@ -3,6 +3,8 @@ package no.unit.nva.publication.ticket;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.util.List;
@@ -14,6 +16,8 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.utils.CustomerList;
+import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -33,7 +37,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     
     public void init() {
         super.init();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceServiceBuilder().withCustomerService(customerService).build();
         this.ticketService = getTicketService();
         this.output = new ByteArrayOutputStream();
     }
