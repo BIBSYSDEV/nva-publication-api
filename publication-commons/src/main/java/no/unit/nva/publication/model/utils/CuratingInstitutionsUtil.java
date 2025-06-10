@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.utils;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
@@ -20,11 +21,11 @@ import no.unit.nva.publication.utils.CristinUnitsUtil;
 
 public class CuratingInstitutionsUtil {
 
-    private final CustomerList customerList;
+    private static CustomerList customerList = null;
     private final RawContentRetriever uriRetriever;
 
     public CuratingInstitutionsUtil(RawContentRetriever uriRetriever, CustomerService customerService) {
-        this.customerList = customerService.fetchCustomers();
+        customerList = nonNull(customerList) ? customerList : customerService.fetchCustomers();
         this.uriRetriever = uriRetriever;
     }
 

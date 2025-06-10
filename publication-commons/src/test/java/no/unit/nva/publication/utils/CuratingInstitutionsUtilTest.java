@@ -4,6 +4,8 @@ import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
@@ -16,6 +18,8 @@ import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.model.utils.CustomerSummary;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.verification.Only;
+import org.mockito.verification.VerificationMode;
 
 class CuratingInstitutionsUtilTest {
 
@@ -40,6 +44,19 @@ class CuratingInstitutionsUtilTest {
                                                                                                    util);
 
         assertEquals(topLevelOrg, list.stream().findFirst().orElseThrow().id());
+    }
+
+    @Test
+    void shouldFetchCustomerListOnlyOnceWhenInstantiatingCuratingInstitutionUtil() {
+        var customerService = mock(CustomerService.class);
+        when(customerService.fetchCustomers())
+            .thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), randomUri()))));
+
+
+        new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
+        new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
+
+        verify(customerService, times(1)).fetchCustomers();
     }
 
     private Contributor contributorWithOrganization(URI organization) {
