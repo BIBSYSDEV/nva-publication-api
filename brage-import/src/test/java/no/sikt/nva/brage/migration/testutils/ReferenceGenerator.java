@@ -89,7 +89,6 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import no.unit.nva.model.role.Role;
-import no.unit.nva.model.time.Instant;
 import no.unit.nva.model.time.duration.NullDuration;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
@@ -581,10 +580,16 @@ public final class ReferenceGenerator {
         return new ReportResearch(generateMonographPages(builder));
     }
 
-    private static Book generatePublicationContextForBook(Builder builder) {
+    private static Book generatePublicationContextForBook(Builder builder) throws InvalidIssnException {
         return new Book.BookBuilder().withSeriesNumber(builder.getSeriesNumberPublication())
                    .withIsbnList(Collections.singletonList(builder.getIsbn()))
+                   .withSeries(getUnconfirmedSeries(builder))
                    .build();
+    }
+
+    private static UnconfirmedSeries getUnconfirmedSeries(Builder builder) throws InvalidIssnException {
+        return new UnconfirmedSeries(builder.getSeriesTitle(), builder.getIssnList().getFirst(),
+                                     builder.getIssnList().getLast());
     }
 
     private static BookMonograph generatePublicationInstanceForBook(Builder builder) {
@@ -595,8 +600,9 @@ public final class ReferenceGenerator {
     }
 
     private static Degree generatePublicationContextForDegree(Builder builder)
-        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return new Degree.Builder().withIsbnList(Collections.singletonList(builder.getIsbn()))
+                   .withSeries(getUnconfirmedSeries(builder))
                    .withCourse(new UnconfirmedCourse(builder.getSubjectCode())).build();
     }
 }
