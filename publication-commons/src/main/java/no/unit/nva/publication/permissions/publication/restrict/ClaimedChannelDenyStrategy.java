@@ -23,7 +23,7 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase implemen
         }
         return isDeniedOperation(operation)
                && isPublished()
-               && (hasApprovedFiles() || isImportedStudentThesis())
+               && (hasFinalizedFiles() || isImportedStudentThesis())
                && isDeniedUserByClaimedChannelWithinScope();
     }
 

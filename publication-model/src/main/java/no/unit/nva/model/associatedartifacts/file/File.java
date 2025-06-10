@@ -48,11 +48,9 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final String UPLOAD_DETAILS_FIELD = "uploadDetails";
     public static final String MISSING_LICENSE = "This file public and should therefore have a license";
     public static final String LEGAL_NOTE_FIELD = "legalNote";
-    public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
-    public static final Set<Class<? extends File>> INITIAL_FILE_TYPES = Set.of(PendingOpenFile.class,
-                                                                               PendingInternalFile.class,
-                                                                               HiddenFile.class,
-                                                                               UploadedFile.class);
+    public static final Set<Class<? extends File>> APPROVED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
+    public static final Set<Class<? extends File>> FINALIZED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class,
+                                                                                HiddenFile.class);
     @JsonProperty(IDENTIFIER_FIELD)
     private final UUID identifier;
     @JsonProperty(NAME_FIELD)

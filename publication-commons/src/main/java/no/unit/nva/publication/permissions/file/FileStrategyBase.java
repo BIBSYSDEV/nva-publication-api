@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.DELETE;
 import static no.unit.nva.model.FileOperation.DOWNLOAD;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
+import static no.unit.nva.model.associatedartifacts.file.File.FINALIZED_FILE_TYPES;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import java.net.URI;
@@ -14,9 +15,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -71,8 +69,7 @@ public class FileStrategyBase {
     }
 
     protected boolean fileIsFinalized() {
-        return file.getFile() instanceof OpenFile || file.getFile() instanceof InternalFile ||
-               file.getFile() instanceof HiddenFile;
+        return FINALIZED_FILE_TYPES.contains(file.getFile().getClass());
     }
 
     protected boolean isExternalClientWithRelation() {

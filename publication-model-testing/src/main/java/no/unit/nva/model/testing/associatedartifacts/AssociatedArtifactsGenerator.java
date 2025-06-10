@@ -1,13 +1,12 @@
 package no.unit.nva.model.testing.associatedartifacts;
 
-import static no.unit.nva.model.associatedartifacts.file.File.ACCEPTED_FILE_TYPES;
+import static no.unit.nva.model.associatedartifacts.file.File.FINALIZED_FILE_TYPES;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -31,14 +30,30 @@ public final class AssociatedArtifactsGenerator {
     }
 
     public static List<AssociatedArtifact> randomAssociatedArtifacts() {
-        return new AssociatedArtifactList(randomPendingOpenFile(), randomOpenFile(), randomInternalFile(),
-                                          randomAssociatedLink(), randomHiddenFile());
+        return new AssociatedArtifactList(randomPendingOpenFile(), randomOpenFile(), randomPendingInternalFile(),
+                                          randomInternalFile(), randomAssociatedLink(), randomHiddenFile());
     }
 
-    public static List<AssociatedArtifact> randomAssociatedArtifactsExcludingAcceptedFiles() {
-        return randomAssociatedArtifacts()
+    public static List<AssociatedArtifact> randomAssociatedArtifactsIncludingUploadedFileAndRejectedFile() {
+        var artifacts = randomAssociatedArtifacts();
+        artifacts.add(randomUploadedFile());
+        artifacts.add(randomRejectedFile());
+        return artifacts;
+    }
+
+    public static List<AssociatedArtifact> randomNonFinalizedFiles() {
+        return randomAssociatedArtifactsIncludingUploadedFileAndRejectedFile()
                    .stream()
-                   .filter(artifact -> !ACCEPTED_FILE_TYPES.contains(artifact.getClass()))
+                   .filter(File.class::isInstance)
+                   .filter(artifact -> !FINALIZED_FILE_TYPES.contains(artifact.getClass()))
+                   .toList();
+    }
+
+    public static List<AssociatedArtifact> randomFinalizedFiles() {
+        return randomAssociatedArtifactsIncludingUploadedFileAndRejectedFile()
+                   .stream()
+                   .filter(File.class::isInstance)
+                   .filter(artifact -> FINALIZED_FILE_TYPES.contains(artifact.getClass()))
                    .toList();
     }
 
@@ -54,15 +69,12 @@ public final class AssociatedArtifactsGenerator {
         return randomFileBuilder().buildUploadedFile();
     }
 
-    public static File randomOpenFile() {
-        return randomFileBuilder().buildOpenFile();
+    public static File randomRejectedFile() {
+        return randomFileBuilder().buildRejectedFile();
     }
 
-    public static File randomAcceptedFile() {
-        var acceptedFilesTypes = ACCEPTED_FILE_TYPES.stream().toList();
-        var randomIndex = new Random().nextInt(acceptedFilesTypes.size());
-        var acceptedFileType = acceptedFilesTypes.get(randomIndex);
-        return randomFileBuilder().build(acceptedFileType);
+    public static File randomOpenFile() {
+        return randomFileBuilder().buildOpenFile();
     }
 
     public static File randomPendingInternalFile() {

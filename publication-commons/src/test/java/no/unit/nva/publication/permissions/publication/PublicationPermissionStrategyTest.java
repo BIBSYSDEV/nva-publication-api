@@ -8,8 +8,8 @@ import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAcceptedFile;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifactsExcludingAcceptedFiles;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomFinalizedFiles;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomNonFinalizedFiles;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.permissions.PermissionsTestUtils.getAccessRightsForCurator;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
@@ -239,21 +239,21 @@ class PublicationPermissionStrategyTest {
                    .build();
     }
 
-    static Publication createPublicationWithAcceptedFile(Class<?> instanceTypeClass,
-                                                         String resourceOwner,
-                                                         URI customer,
-                                                         URI cristinId) {
+    static Publication createPublicationWithFinalizedFiles(Class<?> instanceTypeClass,
+                                                           String resourceOwner,
+                                                           URI customer,
+                                                           URI cristinId) {
         return createPublication(instanceTypeClass, resourceOwner, customer, cristinId).copy()
-                   .withAssociatedArtifacts(List.of(randomAcceptedFile()))
+                   .withAssociatedArtifacts(randomFinalizedFiles())
                    .build();
     }
 
-    static Publication createPublicationWithoutAcceptedFiles(Class<?> instanceTypeClass,
-                                                             String resourceOwner,
-                                                             URI customer,
-                                                             URI cristinId) {
+    static Publication createPublicationWithoutFinalizedFiles(Class<?> instanceTypeClass,
+                                                              String resourceOwner,
+                                                              URI customer,
+                                                              URI cristinId) {
         return createPublication(instanceTypeClass, resourceOwner, customer, cristinId).copy()
-                   .withAssociatedArtifacts(randomAssociatedArtifactsExcludingAcceptedFiles())
+                   .withAssociatedArtifacts(randomNonFinalizedFiles())
                    .build();
     }
 

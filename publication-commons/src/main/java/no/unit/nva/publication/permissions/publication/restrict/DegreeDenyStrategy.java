@@ -37,14 +37,14 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
     }
 
     private boolean handleDegree() {
-        if (hasApprovedFiles() || isImportedStudentThesis()) {
-            return approvedFileStrategy();
+        if (hasFinalizedFiles() || isImportedStudentThesis()) {
+            return finalizedFilesStrategy();
         } else {
-            return nonApprovedFileStrategy();
+            return nonFinalizedFileStrategy();
         }
     }
 
-    private boolean approvedFileStrategy() {
+    private boolean finalizedFilesStrategy() {
         if (!hasAccessRight(MANAGE_DEGREE)) {
             return DENY;
         }
@@ -54,7 +54,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
         return PASS;
     }
 
-    private boolean nonApprovedFileStrategy() {
+    private boolean nonFinalizedFileStrategy() {
         if (!userRelatesToPublication()) {
             return DENY;
         }
