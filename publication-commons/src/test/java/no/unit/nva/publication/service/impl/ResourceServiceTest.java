@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -96,6 +97,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
@@ -146,6 +148,8 @@ import nva.commons.core.attempt.Try;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.hamcrest.Matchers;
+import org.hamcrest.collection.IsEmptyIterable;
+import org.hamcrest.collection.IsIterableWithSize;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
@@ -958,6 +962,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                           hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
         assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
                    is(equalTo(UNPUBLISHED)));
+    }
+
+    @Test
+    void shouldFetchAllFileEntries() throws ApiGatewayException {
+        var publication = createPublishedResource();
+
+        var fileEntries = Resource.fromPublication(publication).fetchFileEntries(resourceService).toList();
+
+        var fileCount = publication.getAssociatedArtifacts().stream().filter(File.class::isInstance).count();
+        assertThat(fileEntries, iterableWithSize(Long.valueOf(fileCount).intValue()));
     }
 
     @ParameterizedTest
