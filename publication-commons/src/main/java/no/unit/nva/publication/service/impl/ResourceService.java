@@ -138,7 +138,11 @@ public class ResourceService extends ServiceWithTransactions {
 
     @JacocoGenerated
     public static ResourceService defaultService() {
-        return builder().withChannelClaimClient(ChannelClaimClient.create(new UriRetriever())).build();
+        var uriRetriever = new UriRetriever();
+        return builder()
+                   .withChannelClaimClient(ChannelClaimClient.create(uriRetriever))
+                   .withCustomerService(new CustomerService(new UriRetriever()))
+                   .build();
     }
 
     /**
