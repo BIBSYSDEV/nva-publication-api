@@ -14,7 +14,6 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
@@ -30,7 +29,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
-
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -44,7 +42,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -53,8 +50,8 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -80,6 +77,7 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
+import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
@@ -118,10 +116,12 @@ public class ResourceService extends ServiceWithTransactions {
     private final RawContentRetriever uriRetriever;
     private final ChannelClaimClient channelClaimClient;
     private final CounterService counterService;
+    private final CustomerService customerService;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
                               Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
-                              ChannelClaimClient channelClaimClient) {
+                              ChannelClaimClient channelClaimClient,
+                              CustomerService customerService) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
@@ -130,14 +130,19 @@ public class ResourceService extends ServiceWithTransactions {
         this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
         this.channelClaimClient = channelClaimClient;
         this.readResourceService = new ReadResourceService(client, this.tableName);
+        this.customerService = customerService;
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
-                readResourceService, uriRetriever, channelClaimClient);
+                readResourceService, uriRetriever, channelClaimClient, customerService);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
     @JacocoGenerated
     public static ResourceService defaultService() {
-        return builder().withChannelClaimClient(ChannelClaimClient.create(new UriRetriever())).build();
+        var uriRetriever = new UriRetriever();
+        return builder()
+                   .withChannelClaimClient(ChannelClaimClient.create(uriRetriever))
+                   .withCustomerService(new CustomerService(new UriRetriever()))
+                   .build();
     }
 
     /**
@@ -631,7 +636,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     private void setCuratingInstitutions(Resource newResource) {
         newResource.setCuratingInstitutions(
-                CuratingInstitutionsUtil.getCuratingInstitutionsOnline(newResource.toPublication(), uriRetriever));
+                new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsOnline(newResource.toPublication()));
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {

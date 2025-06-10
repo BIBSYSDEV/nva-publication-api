@@ -3,11 +3,13 @@ package no.unit.nva.cristin.mapper.nva;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.mockito.Mockito.mock;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
@@ -35,7 +37,8 @@ public class NvaBookLikeBuilderTest {
 
     private static Publication mapToPublication(CristinObject randomBook) {
         var cristinUnitsUtil = mock(CristinUnitsUtil.class);
-        return new CristinMapper(randomBook, cristinUnitsUtil, mock(S3Client.class)).generatePublication();
+        return new CristinMapper(randomBook, cristinUnitsUtil, mock(S3Client.class), mock(UriRetriever.class),
+                                 mock(CustomerService.class)).generatePublication();
     }
 
     @ParameterizedTest(name = "nvaBookLikeBuilder returns Series that does contain blank String represetations"

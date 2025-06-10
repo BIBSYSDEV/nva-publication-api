@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.mapper.CristinMapper;
@@ -31,6 +32,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
@@ -77,23 +79,29 @@ public class CristinEntryEventConsumer
     private final S3Client s3Client;
     private final DoiDuplicateChecker doiDuplicateChecker;
     private final CristinUnitsUtil cristinUnitsUtil;
+    private final RawContentRetriever uriRetriever;
+    private final CustomerService customerService;
 
     @JacocoGenerated
     public CristinEntryEventConsumer() {
         this(ResourceService.builder().withDynamoDbClient(defaultDynamoDbClient()).build(),
              defaultS3Client(),
              defaultDoiDuplicateChecker(),
-             new CristinUnitsUtil(S3Client.create(), new Environment().readEnv(UNITS_S3_OBJECT_URI_ENV)));
+             new CristinUnitsUtil(S3Client.create(), new Environment().readEnv(UNITS_S3_OBJECT_URI_ENV)),
+             new UriRetriever(), new CustomerService(new UriRetriever()));
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService,
                                         S3Client s3Client,
                                         DoiDuplicateChecker doiDuplicateChecker,
-                                        CristinUnitsUtil cristinUnitsUtil) {
+                                        CristinUnitsUtil cristinUnitsUtil, RawContentRetriever uriRetriever,
+                                        CustomerService customerService) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;
         this.doiDuplicateChecker = doiDuplicateChecker;
         this.cristinUnitsUtil = cristinUnitsUtil;
+        this.uriRetriever = uriRetriever;
+        this.customerService = customerService;
     }
 
     @Override
@@ -256,7 +264,7 @@ public class CristinEntryEventConsumer
     private PublicationRepresentations generatePublicationRepresentations(
         CristinObject cristinObject,
         FileContentsEvent<JsonNode> eventBody) {
-        var publication = new CristinMapper(cristinObject, cristinUnitsUtil, s3Client).generatePublication();
+        var publication = new CristinMapper(cristinObject, cristinUnitsUtil, s3Client, uriRetriever, customerService).generatePublication();
         return new PublicationRepresentations(cristinObject, publication, eventBody);
     }
 

@@ -173,6 +173,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -309,6 +310,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of()));
         when(CONTEXT.getRemainingTimeInMillis()).thenReturn(100000);
         this.resourceService = getResourceServiceBuilder(client).build();
         this.s3Client = new ExtendedFakeS3Client();

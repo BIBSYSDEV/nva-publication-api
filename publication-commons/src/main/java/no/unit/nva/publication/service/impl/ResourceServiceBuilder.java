@@ -10,6 +10,7 @@ import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
+import no.unit.nva.publication.model.utils.CustomerService;
 
 public final class ResourceServiceBuilder {
 
@@ -19,6 +20,7 @@ public final class ResourceServiceBuilder {
     Supplier<SortableIdentifier> identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
     private RawContentRetriever uriRetriever = new UriRetriever();
     private ChannelClaimClient channelClaimClient;
+    private CustomerService customerService;
 
     ResourceServiceBuilder() {
     }
@@ -53,8 +55,14 @@ public final class ResourceServiceBuilder {
         return this;
     }
 
+    public ResourceServiceBuilder withCustomerService(CustomerService customerService) {
+        this.customerService = customerService;
+        return this;
+    }
+
     public ResourceService build() {
-        return new ResourceService(dynamoDbClient, tableName, clock, identifierSupplier, uriRetriever, channelClaimClient);
+        return new ResourceService(dynamoDbClient, tableName, clock, identifierSupplier, uriRetriever,
+                                   channelClaimClient, customerService);
     }
 
 }

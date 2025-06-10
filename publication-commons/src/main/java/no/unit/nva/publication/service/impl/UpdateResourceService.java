@@ -53,6 +53,7 @@ import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
+import no.unit.nva.publication.model.utils.CustomerService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
@@ -69,17 +70,20 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
     private final RawContentRetriever uriRetriever;
+    private final CustomerService customerService;
     private final ChannelClaimClient channelClaimClient;
 
     public UpdateResourceService(AmazonDynamoDB client, String tableName, Clock clockForTimestamps,
                                  ReadResourceService readResourceService, RawContentRetriever uriRetriever,
-                                 ChannelClaimClient channelClaimClient) {
+                                 ChannelClaimClient channelClaimClient,
+                                 CustomerService customerService) {
         super(client);
         this.tableName = tableName;
         this.clockForTimestamps = clockForTimestamps;
         this.readResourceService = readResourceService;
         this.uriRetriever = uriRetriever;
         this.channelClaimClient = channelClaimClient;
+        this.customerService = customerService;
     }
 
     public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
@@ -291,8 +295,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private void updateCuratingInstitutions(Resource resource, Resource persistedResource) {
         if (isContributorsChanged(resource, persistedResource)) {
-            resource.setCuratingInstitutions(CuratingInstitutionsUtil
-                                                 .getCuratingInstitutionsOnline(resource.toPublication(), uriRetriever));
+            resource.setCuratingInstitutions(new CuratingInstitutionsUtil(uriRetriever, customerService)
+                                                 .getCuratingInstitutionsOnline(resource.toPublication()));
         }
     }
 
