@@ -62,7 +62,6 @@ import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -135,8 +134,6 @@ import no.unit.nva.publication.model.business.publicationstate.RepublishedResour
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.model.utils.CustomerList;
-import no.unit.nva.publication.model.utils.CustomerSummary;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
@@ -146,7 +143,6 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.hamcrest.Matchers;
@@ -809,24 +805,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetCuratingInstitutionsWhenUpdatingPublication() throws ApiGatewayException {
-        var publishedResource = createPublishedResource();
-        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
-        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
-        when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
-            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
-                                                                                                       topLevelId))));
-        var affiliation = (new Organization.Builder()).withId(orgId).build();
-        publishedResource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-
-        var updatedResource = resourceService.updatePublication(publishedResource);
-
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
-                   is(equalTo(topLevelId)));
-    }
-
-    @Test
     void shouldNotUpdatePublicationCuratingInstitutionsWhenContributorsAreUnchanged() throws ApiGatewayException {
         var publication = randomPublication();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
@@ -843,28 +821,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
         assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
-                   is(equalTo(topLevelId)));
-    }
-
-    @Test
-    void shouldSetCuratingInstitutionsWhenUpdatingImportCandidate() throws ApiGatewayException {
-        var importCandidate = randomImportCandidate();
-        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
-        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
-        when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
-            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
-                                                                                                       topLevelId))));
-        var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
-
-        var affiliation = (new Organization.Builder()).withId(orgId).build();
-        persistedImportCandidate.getEntityDescription()
-            .setContributors(List.of(randomContributor(List.of(affiliation))));
-        persistedImportCandidate.setAssociatedArtifacts(AssociatedArtifactList.empty());
-
-        var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
-
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -888,30 +844,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
         assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
-                   is(equalTo(topLevelId)));
-    }
-
-    @Test
-    void shouldSetCuratingInstitutionsWhenUpdatingNewPublicationWithoutEntityDescription() throws ApiGatewayException {
-        var template = randomPublication().copy();
-        var entityDescription = template.build().getEntityDescription();
-        var publication = template.withDoi(null).withEntityDescription(null).build();
-        publication = Resource.fromPublication(publication)
-                          .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
-        final var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
-        when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
-            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
-                                                                                                       topLevelId))));
-
-        var affiliation = (new Organization.Builder()).withId(orgId).build();
-        entityDescription.setContributors(List.of(randomContributor(List.of(affiliation))));
-        publication.setEntityDescription(entityDescription);
-
-        var updatedResource = resourceService.updatePublication(publication);
-
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 

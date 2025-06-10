@@ -21,17 +21,17 @@ import no.unit.nva.publication.utils.CristinUnitsUtil;
 
 public class CuratingInstitutionsUtil {
 
-    private static CustomerList customerList = null;
+    private static CustomerList customerList;
     private final RawContentRetriever uriRetriever;
+    private final CustomerService customerService;
 
     public CuratingInstitutionsUtil(RawContentRetriever uriRetriever, CustomerService customerService) {
-        customerList = nonNull(customerList) ? customerList : customerService.fetchCustomers();
+        this.customerService = customerService;
         this.uriRetriever = uriRetriever;
     }
 
     public Set<CuratingInstitution> getCuratingInstitutionsOnline(Publication publication) {
-        return getAffiliatedContributors(publication.getEntityDescription())
-                   .flatMap(this::toCuratingInstitutionOnline)
+        return getAffiliatedContributors(publication.getEntityDescription()).flatMap(this::toCuratingInstitutionOnline)
                    .filter(this::isCustomer)
                    .collect(Collectors.groupingBy(SimpleEntry::getKey,
                                                   Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
@@ -41,16 +41,10 @@ public class CuratingInstitutionsUtil {
                    .collect(Collectors.toSet());
     }
 
-    private boolean isCustomer(SimpleEntry<URI, URI> entry) {
-        return customerList.customers().stream()
-                   .map(CustomerSummary::cristinId)
-                   .anyMatch(cristinId -> Objects.equals(cristinId, entry.getKey()));
-    }
-
     public Set<CuratingInstitution> getCuratingInstitutionsCached(EntityDescription entityDescription,
-                                                                         CristinUnitsUtil cristinUnitsUtil) {
-        return getAffiliatedContributors(entityDescription)
-                   .flatMap(contributor -> toCuratingInstitution(contributor, cristinUnitsUtil))
+                                                                  CristinUnitsUtil cristinUnitsUtil) {
+        return getAffiliatedContributors(entityDescription).flatMap(
+                contributor -> toCuratingInstitution(contributor, cristinUnitsUtil))
                    .filter(this::isCustomer)
                    .collect(Collectors.groupingBy(SimpleEntry::getKey,
                                                   Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
@@ -62,25 +56,17 @@ public class CuratingInstitutionsUtil {
 
     private static Stream<SimpleEntry<URI, URI>> toCuratingInstitution(Contributor contributor,
                                                                        CristinUnitsUtil cristinUnitsUtil) {
-        return getOrganizationIds(contributor)
-                              .map(cristinUnitsUtil::getTopLevel)
-                              .filter(Objects::nonNull)
-                              .map(id -> new SimpleEntry<>(id,
-                                                           Optional.of(contributor)
-                                                               .map(Contributor::getIdentity)
-                                                               .map(Identity::getId)
-                                                               .orElse(null)));
-    }
-
-    private Stream<SimpleEntry<URI, URI>> toCuratingInstitutionOnline(Contributor contributor) {
-        return getOrganizationIds(contributor)
-                   .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
+        return getOrganizationIds(contributor).map(cristinUnitsUtil::getTopLevel)
                    .filter(Objects::nonNull)
-                   .map(topLevelOrgId -> new SimpleEntry<>(topLevelOrgId, contributor.getIdentity().getId()));
+                   .map(id -> new SimpleEntry<>(id, Optional.of(contributor)
+                                                        .map(Contributor::getIdentity)
+                                                        .map(Identity::getId)
+                                                        .orElse(null)));
     }
 
     private static Stream<URI> getOrganizationIds(Contributor contributor) {
-        return contributor.getAffiliations().stream()
+        return contributor.getAffiliations()
+                   .stream()
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId);
@@ -96,5 +82,23 @@ public class CuratingInstitutionsUtil {
 
     private static boolean isAffiliatedContributor(Contributor contributor) {
         return contributor.getAffiliations().stream().anyMatch(Organization.class::isInstance);
+    }
+
+    private CustomerList getCustomerList() {
+        customerList = nonNull(customerList) ? customerList : customerService.fetchCustomers();
+        return customerList;
+    }
+
+    private boolean isCustomer(SimpleEntry<URI, URI> entry) {
+        return getCustomerList().customers()
+                   .stream()
+                   .map(CustomerSummary::cristinId)
+                   .anyMatch(cristinId -> Objects.equals(cristinId, entry.getKey()));
+    }
+
+    private Stream<SimpleEntry<URI, URI>> toCuratingInstitutionOnline(Contributor contributor) {
+        return getOrganizationIds(contributor).map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .filter(Objects::nonNull)
+                   .map(topLevelOrgId -> new SimpleEntry<>(topLevelOrgId, contributor.getIdentity().getId()));
     }
 }
