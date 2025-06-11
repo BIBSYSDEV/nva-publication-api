@@ -14,14 +14,18 @@ import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class ResourceDeletedEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+
     private static final String RESOURCE_STORAGE_BUCKET_NAME_ENV_KEY = "RESOURCE_STORAGE_BUCKET_NAME";
 
     private final S3Driver eventsS3Driver;
     private final S3Driver resourceStorageS3Driver;
     private final ResourceService resourceService;
+    private final Logger logger = LoggerFactory.getLogger(ResourceDeletedEventHandler.class);
 
     @JacocoGenerated
     public ResourceDeletedEventHandler() {
@@ -31,7 +35,8 @@ public class ResourceDeletedEventHandler extends DestinationsEventBridgeEventHan
     public ResourceDeletedEventHandler(Environment environment, S3Client s3Client, ResourceService resourceService) {
         super(EventReference.class);
         this.eventsS3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
-        this.resourceStorageS3Driver = new S3Driver(s3Client, environment.readEnv(RESOURCE_STORAGE_BUCKET_NAME_ENV_KEY));
+        this.resourceStorageS3Driver = new S3Driver(s3Client,
+                                                    environment.readEnv(RESOURCE_STORAGE_BUCKET_NAME_ENV_KEY));
         this.resourceService = resourceService;
     }
 
@@ -52,6 +57,8 @@ public class ResourceDeletedEventHandler extends DestinationsEventBridgeEventHan
 
     private void cascadeDeletion(FileEntry fileEntry) {
         resourceService.deleteFile(fileEntry);
+        logger.info("Deleting file from s3 with key: {} (resourceId: {})", fileEntry.getIdentifier(),
+                    fileEntry.getResourceIdentifier());
         deleteFromS3IfStillPresent(fileEntry.getIdentifier().toString());
     }
 
