@@ -49,7 +49,7 @@ public class ResourceDeletedEventHandler extends DestinationsEventBridgeEventHan
 
         var deletedResource = (Resource) entryUpdate.getOldData();
 
-        deletedResource.getFileEntries()
+        deletedResource.fetchFileEntries(resourceService)
             .forEach(this::cascadeDeletion);
 
         return null;

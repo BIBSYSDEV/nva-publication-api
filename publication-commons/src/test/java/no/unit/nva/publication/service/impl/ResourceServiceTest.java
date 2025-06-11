@@ -968,7 +968,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldFetchAllFileEntries() throws ApiGatewayException {
         var publication = createPublishedResource();
 
-        var fileEntries = Resource.fromPublication(publication).getFileEntries();
+        var fileEntries = Resource.fromPublication(publication).fetchFileEntries(resourceService).toList();
 
         var fileCount = publication.getAssociatedArtifacts().stream().filter(File.class::isInstance).count();
         assertThat(fileEntries, iterableWithSize(Long.valueOf(fileCount).intValue()));
