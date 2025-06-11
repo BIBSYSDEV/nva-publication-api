@@ -5,7 +5,6 @@ Feature: Publication action permissions
 
   Scenario Outline: Verify publication permissions
     Given a "publication"
-    And publication has "no" files
     When the user have the role "<UserRole>"
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
