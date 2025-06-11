@@ -1,7 +1,6 @@
 package no.unit.nva.publication.update;
 
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
@@ -31,15 +30,9 @@ public class RepublishUtil {
 
     public Resource republish(Resource resource, UserInstance userInstance) throws ApiGatewayException {
         validateRepublishing();
-        resource.republish(resourceService, userInstance);
-        persistCompletedPublishingRequest(resource, userInstance);
-        return resource.fetch(resourceService).orElseThrow(() -> new NotFoundException("Resource not found!"));
-    }
+        resource.republish(resourceService, ticketService, userInstance);
 
-    private void persistCompletedPublishingRequest(Resource resource, UserInstance userInstance)
-        throws ApiGatewayException {
-        var publishingRequest = PublishingRequestCase.create(resource, userInstance, null);
-        publishingRequest.persistAutoComplete(ticketService, resource.toPublication(), userInstance);
+        return resource.fetch(resourceService).orElseThrow(() -> new NotFoundException("Resource not found!"));
     }
 
     private void validateRepublishing() throws ForbiddenException {
