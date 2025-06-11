@@ -6,13 +6,15 @@ import static cucumber.permissions.PermissionsRole.NOT_RELATED_EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.RELATED_EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.UNAUTHENTICATED;
 import static cucumber.permissions.RolesToAccessRights.roleToAccessRightsMap;
+import static cucumber.permissions.enums.UserInstitutionConfig.BELONGS_TO_CREATING_INSTITUTION;
+import static cucumber.permissions.enums.UserInstitutionConfig.BELONGS_TO_CURATING_INSTITUTION;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifactsExcludingAcceptedFiles;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomFinalizedFiles;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomNonFinalizedFiles;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import cucumber.permissions.PermissionsRole;
 import cucumber.permissions.enums.ChannelClaimConfig;
@@ -77,7 +79,7 @@ public class PublicationScenarioContext {
     private ChannelPolicy channelClaimPublishingPolicy;
     private ChannelPolicy channelClaimEditingPolicy;
     private Set<PermissionsRole> roles = new HashSet<>();
-    private UserInstitutionConfig userInstitutionConfig = UserInstitutionConfig.BELONGS_TO_CREATING_INSTITUTION;
+    private UserInstitutionConfig userInstitutionConfig = BELONGS_TO_CREATING_INSTITUTION;
     private PublicationOperation operation;
 
     public PublicationTypeConfig getPublicationTypeConfig() {
@@ -200,20 +202,18 @@ public class PublicationScenarioContext {
         }
         if (roles.contains(RELATED_EXTERNAL_CLIENT)) {
             return UserInstance.createExternalUser(
-                new ResourceOwner(new Username(USER_NAME), CREATING_INSTITUTION),
-                CREATING_INSTITUTION);
+                new ResourceOwner(new Username(USER_NAME), CREATING_INSTITUTION), CREATING_INSTITUTION);
         }
         if (roles.contains(NOT_RELATED_EXTERNAL_CLIENT)) {
             return UserInstance.createExternalUser(
-                new ResourceOwner(new Username(USER_NAME), NON_CURATING_INSTITUTION),
-                NON_CURATING_INSTITUTION);
+                new ResourceOwner(new Username(USER_NAME), NON_CURATING_INSTITUTION), NON_CURATING_INSTITUTION);
         }
 
         var accessRights = getAccessRights(getRoles()).stream().toList();
         var userInstitution = switch (getUserInstitutionConfig()) {
-            case UserInstitutionConfig.BELONGS_TO_CREATING_INSTITUTION -> CREATING_INSTITUTION;
-            case UserInstitutionConfig.BELONGS_TO_CURATING_INSTITUTION -> CURATING_INSTITUTION;
-            case UserInstitutionConfig.BELONGS_TO_NON_CURATING_INSTITUTION -> NON_CURATING_INSTITUTION;
+            case BELONGS_TO_CREATING_INSTITUTION -> CREATING_INSTITUTION;
+            case BELONGS_TO_CURATING_INSTITUTION -> CURATING_INSTITUTION;
+            case BELONGS_TO_NON_CURATING_INSTITUTION -> NON_CURATING_INSTITUTION;
         };
         return UserInstance.create(USER_NAME, userInstitution, USER_CRISTIN_ID, accessRights, userInstitution);
     }
@@ -234,7 +234,7 @@ public class PublicationScenarioContext {
 
     private Owner createOwner() {
         var userIsPublicationCreator = getRoles().contains(CREATOR)
-                                       && UserInstitutionConfig.BELONGS_TO_CREATING_INSTITUTION.equals(getUserInstitutionConfig())
+                                       && BELONGS_TO_CREATING_INSTITUTION.equals(getUserInstitutionConfig())
                                        && nonNull(getUserInstance());
         return userIsPublicationCreator
                    ? new Owner(new User(getUserInstance().getUsername()), getUserInstance().getTopLevelOrgCristinId())
@@ -243,7 +243,7 @@ public class PublicationScenarioContext {
 
     private Contributor createContributor() {
         var userIsContributor = getRoles().contains(CREATOR)
-                                && UserInstitutionConfig.BELONGS_TO_CURATING_INSTITUTION.equals(getUserInstitutionConfig())
+                                && BELONGS_TO_CURATING_INSTITUTION.equals(getUserInstitutionConfig())
                                 && nonNull(getUserInstance());
         var identity = userIsContributor
                            ? new Identity.Builder()
@@ -275,8 +275,8 @@ public class PublicationScenarioContext {
     private AssociatedArtifactList createAssociatedArtifacts() {
         return switch (getFileConfig()) {
             case NO_FILES -> AssociatedArtifactList.empty();
-            case NON_APPROVED_FILES_ONLY -> new AssociatedArtifactList(randomAssociatedArtifactsExcludingAcceptedFiles());
-            case APPROVED_FILE -> new AssociatedArtifactList(randomOpenFile());
+            case NON_APPROVED_FILES_ONLY -> new AssociatedArtifactList(randomNonFinalizedFiles());
+            case APPROVED_FILES -> new AssociatedArtifactList(randomFinalizedFiles());
         };
     }
 

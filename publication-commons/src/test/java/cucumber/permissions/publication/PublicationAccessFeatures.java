@@ -50,7 +50,7 @@ public class PublicationAccessFeatures {
         } else if ("no approved".equalsIgnoreCase(fileTypes)) {
             scenarioContext.setFileConfig(FileConfig.NON_APPROVED_FILES_ONLY);
         } else if ("approved".equalsIgnoreCase(fileTypes)) {
-            scenarioContext.setFileConfig(FileConfig.APPROVED_FILE);
+            scenarioContext.setFileConfig(FileConfig.APPROVED_FILES);
         } else {
             throw new IllegalArgumentException("Non valid input: " + fileTypes);
         }

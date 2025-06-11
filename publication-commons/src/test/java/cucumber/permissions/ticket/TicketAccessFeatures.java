@@ -52,7 +52,7 @@ public class TicketAccessFeatures {
         } else if ("no approved".equalsIgnoreCase(fileTypes)) {
             publicationScenarioContext.setFileConfig(FileConfig.NON_APPROVED_FILES_ONLY);
         } else if ("approved".equalsIgnoreCase(fileTypes)) {
-            publicationScenarioContext.setFileConfig(FileConfig.APPROVED_FILE);
+            publicationScenarioContext.setFileConfig(FileConfig.APPROVED_FILES);
         } else {
             throw new IllegalArgumentException("Non valid input: " + fileTypes);
         }
