@@ -47,10 +47,10 @@ public class PublicationAccessFeatures {
     public void publicationHasFiles(String fileTypes) {
         if ("no".equalsIgnoreCase(fileTypes)) {
             scenarioContext.setFileConfig(FileConfig.NO_FILES);
-        } else if ("no approved".equalsIgnoreCase(fileTypes)) {
-            scenarioContext.setFileConfig(FileConfig.NON_APPROVED_FILES_ONLY);
-        } else if ("approved".equalsIgnoreCase(fileTypes)) {
-            scenarioContext.setFileConfig(FileConfig.APPROVED_FILES);
+        } else if ("no finalized".equalsIgnoreCase(fileTypes)) {
+            scenarioContext.setFileConfig(FileConfig.NON_FINALIZED_FILES);
+        } else if ("finalized".equalsIgnoreCase(fileTypes)) {
+            scenarioContext.setFileConfig(FileConfig.FINALIZED_FILES);
         } else {
             throw new IllegalArgumentException("Non valid input: " + fileTypes);
         }

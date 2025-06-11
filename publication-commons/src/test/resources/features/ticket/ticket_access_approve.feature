@@ -115,11 +115,11 @@ Feature: Permissions given claimed publisher
     Then the action outcome is "Not Allowed"
 
     Examples:
-      | Files       | ClaimedBy             |
-      | No          | not users institution |
-      | No approved | not users institution |
-      | Approved    | not users institution |
+      | Files        | ClaimedBy             |
+      | No           | not users institution |
+      | No finalized | not users institution |
+      | Finalized    | not users institution |
 
-      | No          | users institution     |
-      | No approved | users institution     |
-      | Approved    | users institution     |
+      | No           | users institution     |
+      | No finalized | users institution     |
+      | Finalized    | users institution     |

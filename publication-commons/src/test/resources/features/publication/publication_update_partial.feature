@@ -6,7 +6,7 @@ Feature: Publication update permissions
   Scenario Outline: Verify operation when
     Given a "degree"
     And publication is an imported degree
-    And publication has "approved" files
+    And publication has "finalized" files
     And publication has publisher claimed by "users institution"
     When the user have the role "<UserRole>"
     And the user attempts to "<Operation>"
@@ -30,7 +30,7 @@ Feature: Publication update permissions
 
   Scenario Outline: Verify operation when
     Given a "degree"
-    And publication has "approved" files
+    And publication has "finalized" files
     And publication has publisher claimed by "users institution"
     When the user have the role "<UserRole>"
     And the user attempts to "<Operation>"
@@ -54,7 +54,7 @@ Feature: Publication update permissions
 
   Scenario Outline: Verify operation when
     Given a "publication"
-    And publication has "approved" files
+    And publication has "finalized" files
     And publication has publisher claimed by "users institution"
     When the user have the role "<UserRole>"
     And the user attempts to "<Operation>"
