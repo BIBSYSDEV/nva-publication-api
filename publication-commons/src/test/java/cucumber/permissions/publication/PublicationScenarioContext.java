@@ -275,8 +275,8 @@ public class PublicationScenarioContext {
     private AssociatedArtifactList createAssociatedArtifacts() {
         return switch (getFileConfig()) {
             case NO_FILES -> AssociatedArtifactList.empty();
-            case NON_APPROVED_FILES_ONLY -> new AssociatedArtifactList(randomNonFinalizedFiles());
-            case APPROVED_FILES -> new AssociatedArtifactList(randomFinalizedFiles());
+            case NON_FINALIZED_FILES -> new AssociatedArtifactList(randomNonFinalizedFiles());
+            case FINALIZED_FILES -> new AssociatedArtifactList(randomFinalizedFiles());
         };
     }
 

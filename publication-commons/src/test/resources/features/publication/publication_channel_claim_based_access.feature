@@ -4,9 +4,9 @@ Feature: Permissions given claimed publisher
   So that only authorized users can perform operation
 
   Scenario Outline: Verify operation when user is not from the same organization as claimed
-  publisher and publication has approved files
+  publisher and publication has finalized files
     Given a "degree"
-    And publication has "approved" files
+    And publication has "finalized" files
     And publication has publisher claimed by "not users institution"
     And channel claim has "editing" policy "OwnerOnly"
     When the user have the role "<UserRole>"
@@ -59,9 +59,9 @@ Feature: Permissions given claimed publisher
 
 
   Scenario Outline: Verify update operation when user is from the same organization as claimed
-  publisher and publication has no approved files
+  publisher and publication has no finalized files
     Given a "degree"
-    And publication has "no approved" files
+    And publication has "no finalized" files
     And publication has publisher claimed by "users institution"
     And channel claim has "publishing" policy "everyone"
     When the user have the role "<UserRole>"
@@ -85,9 +85,9 @@ Feature: Permissions given claimed publisher
       | Related external client | Allowed     |
 
   Scenario Outline: Verify update operation when user is not from the same organization as claimed
-  publisher and publication has no approved files
+  publisher and publication has no finalized files
     Given a "degree"
-    And publication has "no approved" files
+    And publication has "no finalized" files
     And publication has publisher claimed by "not users institution"
     And channel claim has "publishing" policy "everyone"
     When the user have the role "<UserRole>"
@@ -110,10 +110,10 @@ Feature: Permissions given claimed publisher
       | Related external client | Allowed     |
 
   Scenario Outline: Verify update operation when user is not from the same organization as claimed
-  publisher, publication is an imported student thesis and has no approved files
+  publisher, publication is an imported student thesis and has no finalized files
     Given a "degree"
     And publication is an imported degree
-    And publication has "no approved" files
+    And publication has "no finalized" files
     And publication has publisher claimed by "not users institution"
     And channel claim has "publishing" policy "everyone"
     When the user have the role "<UserRole>"
@@ -136,10 +136,10 @@ Feature: Permissions given claimed publisher
       | Related external client | Allowed     |
 
   Scenario Outline: Verify update operation when user is not from the same organization as claimed
-  publisher, publication is an imported student thesis and has approved files
+  publisher, publication is an imported student thesis and has finalized files
     Given a "degree"
     And publication is an imported degree
-    And publication has "approved" files
+    And publication has "finalized" files
     And publication has publisher claimed by "not users institution"
     And channel claim has "editing" policy "ownerOnly"
     When the user have the role "<UserRole>"
@@ -165,7 +165,7 @@ Feature: Permissions given claimed publisher
   Scenario Outline: Verify permission when
   user is from the same organization as claimed publisher
     Given a "degree"
-    And publication has "approved" files
+    And publication has "finalized" files
     And publication has publisher claimed by "users institution"
     And channel claim has "editing" policy "ownerOnly"
     When the user have the role "<UserRole>"
