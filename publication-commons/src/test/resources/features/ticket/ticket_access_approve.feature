@@ -13,24 +13,28 @@ Feature: Permissions given claimed publisher
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                | Operation | Outcome     |
+      | UserRole                    | Operation | Outcome     |
+      | Unauthenticated             | approve   | Not Allowed |
+      | Authenticated               | approve   | Not Allowed |
+      | Publication creator         | approve   | Not Allowed |
+      | Contributor                 | approve   | Not Allowed |
+      | Publishing curator          | approve   | Not Allowed |
+      | Thesis curator              | approve   | Allowed     |
+      | Embargo thesis curator      | approve   | Allowed     |
+      | Editor                      | approve   | Not Allowed |
+      | Related external client     | approve   | Not Allowed |
+      | Not related external client | approve   | Not Allowed |
 
-      | Everyone else           | approve   | Not Allowed |
-      | External client         | approve   | Not Allowed |
-      | Publication owner       | approve   | Not Allowed |
-      | Contributor             | approve   | Not Allowed |
-      | publishing curator      | approve   | Not Allowed |
-      | Editor                  | approve   | Not Allowed |
-      | Degree file curator     | approve   | Allowed     |
-      | Related external client | approve   | Not Allowed |
-      | Everyone else           | transfer  | Not Allowed |
-      | External client         | transfer  | Not Allowed |
-      | Publication owner       | transfer  | Not Allowed |
-      | Contributor             | transfer  | Not Allowed |
-      | Publishing curator      | transfer  | Not Allowed |
-      | Editor                  | transfer  | Not Allowed |
-      | Degree file curator     | transfer  | Not Allowed |
-      | Related external client | transfer  | Not Allowed |
+      | Unauthenticated             | transfer  | Not Allowed |
+      | Authenticated               | transfer  | Not Allowed |
+      | Publication creator         | transfer  | Not Allowed |
+      | Contributor                 | transfer  | Not Allowed |
+      | Publishing curator          | transfer  | Not Allowed |
+      | Editor                      | transfer  | Not Allowed |
+      | Thesis curator              | transfer  | Not Allowed |
+      | Embargo thesis curator      | transfer  | Not Allowed |
+      | Related external client     | transfer  | Not Allowed |
+      | Not related external client | transfer  | Not Allowed |
 
   Scenario Outline: Verify permission when
   user is NOT from the same organization as claimed publisher
@@ -41,25 +45,28 @@ Feature: Permissions given claimed publisher
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                | Operation | Outcome     |
+      | UserRole                    | Operation | Outcome     |
+      | Unauthenticated             | approve   | Not Allowed |
+      | Authenticated               | approve   | Not Allowed |
+      | Publication owner           | approve   | Not Allowed |
+      | Contributor                 | approve   | Not Allowed |
+      | Publishing curator          | approve   | Not Allowed |
+      | Thesis curator              | approve   | Not Allowed |
+      | Embargo thesis curator      | approve   | Not Allowed |
+      | Editor                      | approve   | Not Allowed |
+      | Related external client     | approve   | Not Allowed |
+      | Not related external client | approve   | Not Allowed |
 
-      | Everyone else           | approve   | Not Allowed |
-      | External client         | approve   | Not Allowed |
-      | Publication owner       | approve   | Not Allowed |
-      | Contributor             | approve   | Not Allowed |
-      | publishing curator      | approve   | Not Allowed |
-      | Editor                  | approve   | Not Allowed |
-      | Degree file curator     | approve   | Not Allowed |
-      | Related external client | approve   | Not Allowed |
-      | Everyone else           | transfer  | Not Allowed |
-      | External client         | transfer  | Not Allowed |
-      | Publication owner       | transfer  | Not Allowed |
-      | Contributor             | transfer  | Not Allowed |
-      | publishing curator      | transfer  | Not Allowed |
-      | Editor                  | transfer  | Not Allowed |
-      | Degree file curator     | transfer  | Not Allowed |
-      | Related external client | transfer  | Not Allowed |
-
+      | Unauthenticated             | transfer  | Not Allowed |
+      | Authenticated               | transfer  | Not Allowed |
+      | Publication owner           | transfer  | Not Allowed |
+      | Contributor                 | transfer  | Not Allowed |
+      | Publishing curator          | transfer  | Not Allowed |
+      | Thesis curator              | transfer  | Not Allowed |
+      | Embargo thesis curator      | transfer  | Not Allowed |
+      | Editor                      | transfer  | Not Allowed |
+      | Related external client     | transfer  | Not Allowed |
+      | Not related external client | transfer  | Not Allowed |
 
   Scenario Outline: Verify permission when
   user is from a contributor organization and publisher is unclaimed
@@ -71,24 +78,28 @@ Feature: Permissions given claimed publisher
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                | Operation | Outcome     |
+      | UserRole                    | Operation | Outcome     |
+      | Unauthenticated             | approve   | Not Allowed |
+      | Authenticated               | approve   | Not Allowed |
+      | Publication owner           | approve   | Not Allowed |
+      | Contributor                 | approve   | Not Allowed |
+      | Publishing curator          | approve   | Allowed     |
+      | Editor                      | approve   | Not Allowed |
+      | Thesis curator              | approve   | Not Allowed |
+      | Embargo thesis curator      | approve   | Not Allowed |
+      | Related external client     | approve   | Not Allowed |
+      | Not related external client | approve   | Not Allowed |
 
-      | Everyone else           | approve   | Not Allowed |
-      | External client         | approve   | Not Allowed |
-      | Publication owner       | approve   | Not Allowed |
-      | Contributor             | approve   | Not Allowed |
-      | publishing curator      | approve   | Allowed     |
-      | Editor                  | approve   | Not Allowed |
-      | Degree file curator     | approve   | Not Allowed |
-      | Related external client | approve   | Not Allowed |
-      | Everyone else           | transfer  | Not Allowed |
-      | External client         | transfer  | Not Allowed |
-      | Publication owner       | transfer  | Not Allowed |
-      | Contributor             | transfer  | Not Allowed |
-      | publishing curator      | transfer  | Allowed     |
-      | Editor                  | transfer  | Not Allowed |
-      | Degree file curator     | transfer  | Not Allowed |
-      | Related external client | transfer  | Not Allowed |
+      | Unauthenticated             | transfer  | Not Allowed |
+      | Authenticated               | transfer  | Not Allowed |
+      | Publication owner           | transfer  | Not Allowed |
+      | Contributor                 | transfer  | Not Allowed |
+      | Publishing curator          | transfer  | Allowed     |
+      | Editor                      | transfer  | Not Allowed |
+      | Thesis curator              | transfer  | Not Allowed |
+      | Embargo thesis curator      | transfer  | Not Allowed |
+      | Related external client     | transfer  | Not Allowed |
+      | Not related external client | transfer  | Not Allowed |
 
 
   Scenario: Verify transfer permission when user have no relations to publication, but owns the ticket

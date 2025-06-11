@@ -6,7 +6,6 @@ Feature: File upload permissions
   Background:
   This will be exposed on publication level, not file level like the other access rights. (in terms of json allowed operations structure).
 
-
   Scenario Outline: Verify file upload permissions
     Given a "publication"
     And publication has status "<PublicationStatus>"
@@ -17,7 +16,7 @@ Feature: File upload permissions
     Examples:
       | UserRole               | PublicationStatus | Outcome     |
       | Unauthenticated        | draft             | Not Allowed |
-      | Everyone               | draft             | Not Allowed |
+      | Authenticated          | draft             | Not Allowed |
       | Publication creator    | draft             | Allowed     |
       | Contributor            | draft             | Allowed     |
       | Publishing curator     | draft             | Allowed     |
@@ -30,7 +29,7 @@ Feature: File upload permissions
       | External client        | draft             | Not Allowed |
 
       | Unauthenticated        | published         | Not Allowed |
-      | Everyone               | published         | Not Allowed |
+      | Authenticated          | published         | Not Allowed |
       | Publication creator    | published         | Allowed     |
       | Contributor            | published         | Allowed     |
       | NVI curator            | published         | Allowed     |
@@ -42,7 +41,7 @@ Feature: File upload permissions
       | External client        | published         | Not Allowed |
 
       | Unauthenticated        | unpublished       | Not Allowed |
-      | Everyone               | unpublished       | Not Allowed |
+      | Authenticated          | unpublished       | Not Allowed |
       | Publication creator    | unpublished       | Allowed     |
       | Contributor            | unpublished       | Allowed     |
       | NVI curator            | unpublished       | Allowed     |
@@ -54,7 +53,7 @@ Feature: File upload permissions
       | External client        | unpublished       | Not Allowed |
 
       | Unauthenticated        | deleted           | Not Allowed |
-      | Everyone               | deleted           | Not Allowed |
+      | Authenticated          | deleted           | Not Allowed |
       | Publication creator    | deleted           | Not Allowed |
       | Contributor            | deleted           | Not Allowed |
       | NVI curator            | deleted           | Not Allowed |

@@ -12,7 +12,7 @@ public enum PermissionsRole {
     FILE_CURATOR_DEGREE_EMBARGO("degree embargo file curator"),
     FILE_CURATOR_DEGREE("degree file curator"),
     UNAUTHENTICATED("unauthenticated"),
-    AUTHENTICATED_BUT_NO_ACCESS("everyone"),
+    AUTHENTICATED_BUT_NO_ACCESS("everyone", "authenticated"),
     OTHER_CONTRIBUTORS("other contributors", "contributor"),
     NOT_RELATED_EXTERNAL_CLIENT("not related external client",  "external client"),
     RELATED_EXTERNAL_CLIENT("related external client"),
@@ -32,7 +32,7 @@ public enum PermissionsRole {
 //    RELATED_EXTERNAL_CLIENT("related external client"),
 //    EDITOR("editor"),
 //    UNAUTHENTICATED("unauthenticated"),
-//    AUTHENTICATED_BUT_NO_ACCESS("everyone");
+//    AUTHENTICATED_BUT_NO_ACCESS("authenticated");
 
     private final String[] values;
 
