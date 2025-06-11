@@ -964,6 +964,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    is(equalTo(UNPUBLISHED)));
     }
 
+    @Test
+    void shouldFetchAllFileEntries() throws ApiGatewayException {
+        var publication = createPublishedResource();
+
+        var fileEntries = Resource.fromPublication(publication).getFileEntries();
+
+        var fileCount = publication.getAssociatedArtifacts().stream().filter(File.class::isInstance).count();
+        assertThat(fileEntries, iterableWithSize(Long.valueOf(fileCount).intValue()));
+    }
+
     @ParameterizedTest
     @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"NEW", "DRAFT_FOR_DELETION", "DELETED"})
     void shouldAllowPublish(PublicationStatus status) throws ApiGatewayException {
