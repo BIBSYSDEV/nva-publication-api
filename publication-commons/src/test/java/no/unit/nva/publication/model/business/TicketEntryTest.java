@@ -9,6 +9,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -198,17 +200,19 @@ class TicketEntryTest {
     }
 
     @Test
-    void shouldUpdateTicketReceivingOrganizationDetails() {
+    void shouldUpdateTicketReceivingOrganizationDetailsAndResetAssignee() {
         var resource = Resource.fromPublication(randomPublication());
         var userInstance = randomUserInstance();
         var ticket = GeneralSupportRequest.create(resource, userInstance);
+        ticket.setAssignee(new Username(randomString()));
 
         var responsibilityArea = randomUri();
         var ownerAffiliation = randomUri();
-        ticket.withReceivingOrganizationDetails(ownerAffiliation, responsibilityArea);
+        ticket.setReceivingOrganizationDetailsAndResetAssignee(ownerAffiliation, responsibilityArea);
 
         assertEquals(responsibilityArea, ticket.getReceivingOrganizationDetails().subOrganizationId());
         assertEquals(ownerAffiliation, ticket.getReceivingOrganizationDetails().topLevelOrganizationId());
+        assertNull(ticket.getAssignee());
     }
 
     private static UserInstance randomUserInstance() {

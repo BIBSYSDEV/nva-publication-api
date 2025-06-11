@@ -277,9 +277,9 @@ public abstract class TicketEntry implements Entity {
         this.receivingOrganizationDetails = receivingOrganizationDetails;
     }
 
-    public TicketEntry withReceivingOrganizationDetails(URI ownerAffiliation, URI responsibilityArea) {
+    public void setReceivingOrganizationDetailsAndResetAssignee(URI ownerAffiliation, URI responsibilityArea) {
         setReceivingOrganizationDetails(new ReceivingOrganizationDetails(ownerAffiliation, responsibilityArea));
-        return this;
+        setAssignee(null);
     }
 
     public void persistUpdate(TicketService ticketService) {
