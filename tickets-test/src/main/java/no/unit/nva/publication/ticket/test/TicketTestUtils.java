@@ -359,11 +359,11 @@ public final class TicketTestUtils {
             TicketService ticketService)
             throws ApiGatewayException {
         var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
-        return TicketEntry.requestNewTicket(publication, ticketType)
-                .withOwnerAffiliation(ownerAffiliation)
-                .withOwner(UserInstance.fromPublication(publication).getUsername())
-                .withReceivingOrganizationDetails(ownerAffiliation, ownerAffiliation)
-                .persistNewTicket(ticketService);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+        ticket.setReceivingOrganizationDetailsAndResetAssignee(ownerAffiliation, ownerAffiliation);
+        return ticket.withOwnerAffiliation(ownerAffiliation)
+                   .withOwner(UserInstance.fromPublication(publication).getUsername())
+                   .persistNewTicket(ticketService);
     }
 
     public static TicketEntry createClosedTicket(

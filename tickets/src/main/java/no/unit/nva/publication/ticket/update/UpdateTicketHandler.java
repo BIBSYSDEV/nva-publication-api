@@ -116,8 +116,9 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         if (userInstitutionIsReceivingOrganization(ticket, requestUtils)
             && newOwnerAffiliationIsOneOfCuratingInstitutions(request, resource)
             && userIsAuthorized(requestUtils, ticket)) {
-            ticket.withReceivingOrganizationDetails(request.ownerAffiliation(), request.responsibilityArea())
-                .persistUpdate(ticketService);
+            ticket.setReceivingOrganizationDetailsAndResetAssignee(request.ownerAffiliation(),
+                                                                   request.responsibilityArea());
+            ticket.persistUpdate(ticketService);
         } else {
             throw new ForbiddenException();
         }
