@@ -43,7 +43,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
-public class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
+class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
 
     private static final String NOT_RELEVANT = "NotRelevant";
     private static final String RESOURCE_STORAGE_BUCKET_NAME = "ResourceStorageBucket";
@@ -57,7 +57,7 @@ public class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
     private final FakeContext fakeContext = new FakeContext();
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         super.init();
         this.output = new ByteArrayOutputStream();
         this.resourceService = getResourceServiceBuilder().build();
