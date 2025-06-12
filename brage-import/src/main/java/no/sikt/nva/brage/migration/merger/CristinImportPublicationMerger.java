@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.merger;
 
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.brage.migration.merger.AssociatedArtifactsMerger.merge;
 import static no.unit.nva.model.role.Role.CREATOR;
 import static no.unit.nva.model.role.Role.SUPERVISOR;
 import java.net.URI;
@@ -36,8 +37,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
@@ -53,15 +52,13 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
 @SuppressWarnings("PMD.CouplingBetweenObjects")
 public class CristinImportPublicationMerger {
 
-    public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
-        = "dummy_handle_unis";
+    public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS = "dummy_handle_unis";
     public static final String PRIORITIZE_MAIN_TITLE = "mainTitle";
     public static final String PRIORITIZE_ALTERNATIVE_TITLES = "alternativeTitles";
     public static final String PRIORITIZE_PUBLICATION_DATE = "publicationDate";
@@ -83,15 +80,28 @@ public class CristinImportPublicationMerger {
     public Publication mergePublications()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return PreMergeValidator.shouldNotMergeMetadata(bragePublicationRepresentation, existingPublication)
-                   ? mergeMinimalPublicationMetadata()
-                   : mergePublicationsMetadata();
+                   ? mergeMinimalPublicationMetadata() : mergePublicationsMetadata();
+    }
+
+    private static Contributor updateCreatorAffiliation(Contributor contributor, Organization organization) {
+        return isCreator(contributor) ? contributor.copy().withAffiliations(List.of(organization)).build()
+                   : contributor;
+    }
+
+    private static boolean isCreator(Contributor contributor) {
+        return CREATOR.equals(contributor.getRole().getType());
+    }
+
+    private static boolean isDublinCore(File file) {
+        return DUBLIN_CORE_XML.equals(file.getName());
     }
 
     private Publication mergeMinimalPublicationMetadata() {
         return existingPublication.copy()
                    .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
                    .withAssociatedArtifacts(addDublinCoreToExistingAssociatedArtifacts())
-                   .withEntityDescription(existingPublication.getEntityDescription().copy()
+                   .withEntityDescription(existingPublication.getEntityDescription()
+                                              .copy()
                                               .withTags(determineTags())
                                               .withPublicationDate(bragePublicationRepresentation.publication()
                                                                        .getEntityDescription()
@@ -114,7 +124,9 @@ public class CristinImportPublicationMerger {
                    .withSubjects(determineSubject())
                    .withRightsHolder(determineRightsHolder())
                    .withEntityDescription(determineEntityDescription())
-                   .withAssociatedArtifacts(determineAssociatedArtifacts())
+                   .withAssociatedArtifacts(merge(existingPublication.getAssociatedArtifacts(),
+                                                  bragePublicationRepresentation.publication()
+                                                      .getAssociatedArtifacts()))
                    .withFundings(determineFundings())
                    .build();
     }
@@ -137,7 +149,8 @@ public class CristinImportPublicationMerger {
 
     private EntityDescription determineEntityDescription()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        return existingPublication.getEntityDescription().copy()
+        return existingPublication.getEntityDescription()
+                   .copy()
                    .withMainTitle(determineMainTitle())
                    .withAlternativeTitles(determineAlternativeTitles())
                    .withContributors(determineContributors())
@@ -151,8 +164,9 @@ public class CristinImportPublicationMerger {
     }
 
     private PublicationDate determinePublicationDate() {
-        return shouldPrioritizeField(PRIORITIZE_PUBLICATION_DATE)
-                   ? bragePublicationRepresentation.publication().getEntityDescription().getPublicationDate()
+        return shouldPrioritizeField(PRIORITIZE_PUBLICATION_DATE) ? bragePublicationRepresentation.publication()
+                                                                        .getEntityDescription()
+                                                                        .getPublicationDate()
                    : existingPublication.getEntityDescription().getPublicationDate();
     }
 
@@ -162,15 +176,19 @@ public class CristinImportPublicationMerger {
 
     private List<String> mergeTags() {
         var tags = new HashSet<>(existingPublication.getEntityDescription().getTags());
-        bragePublicationRepresentation.publication().getEntityDescription().getTags().stream()
+        bragePublicationRepresentation.publication()
+            .getEntityDescription()
+            .getTags()
+            .stream()
             .filter(tag -> tags.stream().filter(Objects::nonNull).noneMatch(exTag -> exTag.equalsIgnoreCase(tag)))
             .forEach(tags::add);
         return tags.stream().filter(Objects::nonNull).toList();
     }
 
     private Map<String, String> determineAlternativeAbstracts() {
-        return shouldPrioritizeAlternativeAbstractsFromBrage()
-                   ? bragePublicationRepresentation.publication().getEntityDescription().getAlternativeAbstracts()
+        return shouldPrioritizeAlternativeAbstractsFromBrage() ? bragePublicationRepresentation.publication()
+                                                                     .getEntityDescription()
+                                                                     .getAlternativeAbstracts()
                    : existingPublication.getEntityDescription().getAlternativeAbstracts();
     }
 
@@ -179,8 +197,9 @@ public class CristinImportPublicationMerger {
     }
 
     private Map<String, String> determineAlternativeTitles() {
-        return shouldPrioritizeAlternativeTitlesFromBrage()
-                   ? bragePublicationRepresentation.publication().getEntityDescription().getAlternativeTitles()
+        return shouldPrioritizeAlternativeTitlesFromBrage() ? bragePublicationRepresentation.publication()
+                                                                  .getEntityDescription()
+                                                                  .getAlternativeTitles()
                    : existingPublication.getEntityDescription().getAlternativeTitles();
     }
 
@@ -193,8 +212,9 @@ public class CristinImportPublicationMerger {
     }
 
     private String determineMainTitle() {
-        return shouldPrioritizeMainTitleFromBrage()
-                   ? bragePublicationRepresentation.publication().getEntityDescription().getMainTitle()
+        return shouldPrioritizeMainTitleFromBrage() ? bragePublicationRepresentation.publication()
+                                                          .getEntityDescription()
+                                                          .getMainTitle()
                    : existingPublication.getEntityDescription().getMainTitle();
     }
 
@@ -229,26 +249,34 @@ public class CristinImportPublicationMerger {
 
     private List<Contributor> extractIncomingSupervisors() {
         return extractSupervisors().stream()
-                              .filter(this::isNotContributorWithAnotherRoleInExistingPublication)
-                              .toList();
+                   .filter(this::isNotContributorWithAnotherRoleInExistingPublication)
+                   .toList();
     }
 
     private boolean isNotContributorWithAnotherRoleInExistingPublication(Contributor contributor) {
         var name = contributor.getIdentity().getName();
-        return existingPublication.getEntityDescription().getContributors().stream()
+        return existingPublication.getEntityDescription()
+                   .getContributors()
+                   .stream()
                    .map(Contributor::getIdentity)
                    .map(Identity::getName)
                    .noneMatch(name::equals);
     }
 
     private List<Contributor> extractSupervisors() {
-        return bragePublicationRepresentation.publication().getEntityDescription().getContributors().stream()
+        return bragePublicationRepresentation.publication()
+                   .getEntityDescription()
+                   .getContributors()
+                   .stream()
                    .filter(contributor -> SUPERVISOR.equals(contributor.getRole().getType()))
                    .toList();
     }
 
     private boolean incomingPublicationHasSupervisor() {
-        return bragePublicationRepresentation.publication().getEntityDescription().getContributors().stream()
+        return bragePublicationRepresentation.publication()
+                   .getEntityDescription()
+                   .getContributors()
+                   .stream()
                    .anyMatch(contributor -> SUPERVISOR.equals(contributor.getRole().getType()));
     }
 
@@ -257,29 +285,22 @@ public class CristinImportPublicationMerger {
     }
 
     private List<Contributor> existingContributorsWithUpdatedAffiliation() {
-        return getBrageAffiliation()
-                   .map(this::updateExistingCreatorWithAffiliation)
+        return getBrageAffiliation().map(this::updateExistingCreatorWithAffiliation)
                    .orElseGet(() -> existingPublication.getEntityDescription().getContributors());
     }
 
     private List<Contributor> updateExistingCreatorWithAffiliation(Organization organization) {
-        return existingPublication.getEntityDescription().getContributors().stream()
+        return existingPublication.getEntityDescription()
+                   .getContributors()
+                   .stream()
                    .map(contributor -> updateCreatorAffiliation(contributor, organization))
                    .toList();
     }
 
-    private static Contributor updateCreatorAffiliation(Contributor contributor, Organization organization) {
-        return isCreator(contributor)
-            ? contributor.copy().withAffiliations(List.of(organization)).build()
-            : contributor;
-    }
-
-    private static boolean isCreator(Contributor contributor) {
-        return CREATOR.equals(contributor.getRole().getType());
-    }
-
     private Optional<Organization> getBrageAffiliation() {
-        return bragePublicationRepresentation.publication().getEntityDescription().getContributors()
+        return bragePublicationRepresentation.publication()
+                   .getEntityDescription()
+                   .getContributors()
                    .stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
@@ -298,8 +319,7 @@ public class CristinImportPublicationMerger {
             return bragePublicationRepresentation.publication().getEntityDescription().getReference();
         }
         var reference = existingPublication.getEntityDescription().getReference();
-        return new Reference.Builder()
-                   .withPublicationInstance(determincePublicationInstance(reference))
+        return new Reference.Builder().withPublicationInstance(determincePublicationInstance(reference))
                    .withPublishingContext(determinePublicationContext(reference))
                    .withDoi(determineDoi(reference))
                    .build();
@@ -311,17 +331,16 @@ public class CristinImportPublicationMerger {
 
     private PublicationInstance<? extends Pages> determincePublicationInstance(Reference reference) {
         var publicationInstance = reference.getPublicationInstance();
-        var newPublicationInstance =
-            bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationInstance();
+        var newPublicationInstance = bragePublicationRepresentation.publication()
+                                         .getEntityDescription()
+                                         .getReference()
+                                         .getPublicationInstance();
         return PublicationInstanceMerger.of(publicationInstance).merge(newPublicationInstance);
     }
 
     private URI determineDoi(Reference reference) {
-        return nonNull(reference.getDoi())
-                   ? reference.getDoi()
-                   : bragePublicationRepresentation.publication().getEntityDescription()
-                         .getReference()
-                         .getDoi();
+        return nonNull(reference.getDoi()) ? reference.getDoi()
+                   : bragePublicationRepresentation.publication().getEntityDescription().getReference().getDoi();
     }
 
     private PublicationContext determinePublicationContext(Reference reference)
@@ -343,21 +362,18 @@ public class CristinImportPublicationMerger {
                 MediaContributionMerger.merge(mediaContribution, publicationContext);
             case ResearchData researchData -> new ResearchDataMerger(record).merge(researchData, publicationContext);
             case GeographicalContent geographicalContent ->
-                new GeographicalContentMerger(record).merge(geographicalContent,
-                                                            publicationContext);
+                new GeographicalContentMerger(record).merge(geographicalContent, publicationContext);
             default -> publicationContext;
         };
     }
 
     private String determineRightsHolder() {
-        return nonNull(existingPublication.getRightsHolder())
-                   ? existingPublication.getRightsHolder()
+        return nonNull(existingPublication.getRightsHolder()) ? existingPublication.getRightsHolder()
                    : bragePublicationRepresentation.publication().getRightsHolder();
     }
 
     private List<URI> determineSubject() {
-        return existingPublication.getSubjects().isEmpty()
-                   ? bragePublicationRepresentation.publication().getSubjects()
+        return existingPublication.getSubjects().isEmpty() ? bragePublicationRepresentation.publication().getSubjects()
                    : existingPublication.getSubjects();
     }
 
@@ -374,65 +390,46 @@ public class CristinImportPublicationMerger {
     }
 
     private boolean bothPublicationsContainCristinIdentifier() {
-        return existingPublication.getAdditionalIdentifiers().stream()
-                   .anyMatch(CristinIdentifier.class::isInstance)
-               && bragePublicationRepresentation.publication().getAdditionalIdentifiers().stream()
-                      .anyMatch(CristinIdentifier.class::isInstance);
+        return existingPublication.getAdditionalIdentifiers().stream().anyMatch(CristinIdentifier.class::isInstance) &&
+               bragePublicationRepresentation.publication()
+                   .getAdditionalIdentifiers()
+                   .stream()
+                   .anyMatch(CristinIdentifier.class::isInstance);
     }
 
     private Set<AdditionalIdentifierBase> getAdditionalIdentifiersExceptCristinIdentifier() {
         return bragePublicationRepresentation.publication()
-                   .getAdditionalIdentifiers().stream()
+                   .getAdditionalIdentifiers()
+                   .stream()
                    .filter(identifier -> !(identifier instanceof CristinIdentifier))
                    .collect(Collectors.toSet());
     }
 
     private void removePossiblyRedundantCristinIdentifier(HashSet<AdditionalIdentifierBase> additionalIdentifiers) {
         var cristinIdentifierOptional = getCristinIdentifier();
-        cristinIdentifierOptional.ifPresent(cristinIdentifier -> removeCristinIdentifierFromBrage(additionalIdentifiers, cristinIdentifier));
+        cristinIdentifierOptional.ifPresent(
+            cristinIdentifier -> removeCristinIdentifierFromBrage(additionalIdentifiers, cristinIdentifier));
     }
 
     private void removeCristinIdentifierFromBrage(HashSet<AdditionalIdentifierBase> additionalIdentifiers,
-                               AdditionalIdentifierBase cristinIdentifier) {
-        additionalIdentifiers.removeIf(additionalIdentifierBase -> cristinIdentifierFromBrageIsIdentical(cristinIdentifier, additionalIdentifierBase));
+                                                  AdditionalIdentifierBase cristinIdentifier) {
+        additionalIdentifiers.removeIf(
+            additionalIdentifierBase -> cristinIdentifierFromBrageIsIdentical(cristinIdentifier,
+                                                                              additionalIdentifierBase));
     }
 
-    private boolean cristinIdentifierFromBrageIsIdentical(AdditionalIdentifierBase cristinIdentifier, AdditionalIdentifierBase additionalIdentifierBase) {
-        return additionalIdentifierBase.value().equals(cristinIdentifier.value()) && !"Cristin".equalsIgnoreCase(additionalIdentifierBase.sourceName());
+    private boolean cristinIdentifierFromBrageIsIdentical(AdditionalIdentifierBase cristinIdentifier,
+                                                          AdditionalIdentifierBase additionalIdentifierBase) {
+        return additionalIdentifierBase.value().equals(cristinIdentifier.value()) &&
+               !"Cristin".equalsIgnoreCase(additionalIdentifierBase.sourceName());
     }
 
     private Optional<AdditionalIdentifierBase> getCristinIdentifier() {
-        return existingPublication
-                        .getAdditionalIdentifiers()
-                        .stream()
-                        .filter(additionalIdentifierBase -> "Cristin".equalsIgnoreCase(additionalIdentifierBase.sourceName()))
-                        .findFirst();
-    }
-
-    private AssociatedArtifactList determineAssociatedArtifacts() {
-        if (existingAssociatedArtifactsAreEmpty()) {
-            return bragePublicationRepresentation.publication().getAssociatedArtifacts();
-        }
-        if (existingPublicationHasNoOpenFiles()) {
-            var mergedAssociatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
-            mergedAssociatedArtifacts.addAll(bragePublicationRepresentation.publication().getAssociatedArtifacts());
-            return new AssociatedArtifactList(mergedAssociatedArtifacts);
-        }
-        if (shouldOverWriteWithBrageArtifacts()) {
-            return keepBrageAssociatedArtifactAndKeepDublinCoreFromExisting();
-        }
-        if (!hasHiddenFile(existingPublication)) {
-            var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
-            var hiddenFiles = extractHiddenFiles(
-                bragePublicationRepresentation.publication());
-            associatedArtifacts.addAll(hiddenFiles);
-            return new AssociatedArtifactList(associatedArtifacts);
-        } else {
-            var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
-            var dublinCores = extractDublinCore(bragePublicationRepresentation.publication().getAssociatedArtifacts());
-            associatedArtifacts.addAll(dublinCores);
-            return new AssociatedArtifactList(associatedArtifacts);
-        }
+        return existingPublication.getAdditionalIdentifiers()
+                   .stream()
+                   .filter(
+                       additionalIdentifierBase -> "Cristin".equalsIgnoreCase(additionalIdentifierBase.sourceName()))
+                   .findFirst();
     }
 
     private List<HiddenFile> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
@@ -441,87 +438,6 @@ public class CristinImportPublicationMerger {
                    .map(HiddenFile.class::cast)
                    .filter(CristinImportPublicationMerger::isDublinCore)
                    .toList();
-    }
-
-    private static boolean isDublinCore(File file) {
-        return DUBLIN_CORE_XML.equals(file.getName());
-    }
-
-    private boolean existingAssociatedArtifactsAreEmpty() {
-        return existingPublication.getAssociatedArtifacts().isEmpty();
-    }
-
-    private boolean existingPublicationHasNoOpenFiles() {
-        return existingPublication.getAssociatedArtifacts()
-                   .stream()
-                   .noneMatch(OpenFile.class::isInstance);
-    }
-
-    private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExisting() {
-        var associatedArtifacts = new ArrayList<>(
-            bragePublicationRepresentation.publication().getAssociatedArtifacts());
-        var dublinCoresFromExisting = extractDublinCore(existingPublication.getAssociatedArtifacts());
-        associatedArtifacts.addAll(dublinCoresFromExisting);
-        return new AssociatedArtifactList(associatedArtifacts);
-    }
-
-    private boolean shouldOverWriteWithBrageArtifacts() {
-        return bragePublicationHasAssociatedArtifacts() && (hasTheSameHandle() || academicArticleRulesApply());
-    }
-
-    private boolean academicArticleRulesApply() {
-        return isAcademicArticle()
-               && noneOfTheExistingFilesArePublishedVersion(extractOpenFiles(existingPublication))
-               && brageFileIsPublishedVersion(extractOpenFiles(bragePublicationRepresentation.publication()));
-    }
-
-    private List<OpenFile> extractOpenFiles(Publication publication) {
-        return publication.getAssociatedArtifacts()
-                   .stream()
-                   .filter(associatedArtifact -> associatedArtifact instanceof File)
-                   .map(associatedArtifact -> (File) associatedArtifact)
-                   .filter(OpenFile.class::isInstance)
-                   .map(OpenFile.class::cast)
-                   .toList();
-    }
-
-    private boolean brageFileIsPublishedVersion(List<OpenFile> files) {
-        return files
-                   .stream()
-                   .map(File::getPublisherVersion)
-                   .anyMatch(PublisherVersion.PUBLISHED_VERSION::equals);
-    }
-
-    private boolean noneOfTheExistingFilesArePublishedVersion(List<OpenFile> files) {
-        return files
-                   .stream()
-                   .map(File::getPublisherVersion)
-                   .noneMatch(PublisherVersion.PUBLISHED_VERSION::equals);
-    }
-
-    private boolean isAcademicArticle() {
-        return existingPublication.getEntityDescription()
-                   .getReference()
-                   .getPublicationInstance() instanceof AcademicArticle;
-    }
-
-    private boolean bragePublicationHasAssociatedArtifacts() {
-        return !bragePublicationRepresentation.publication().getAssociatedArtifacts().isEmpty();
-    }
-
-    private boolean hasTheSameHandle() {
-        return bragePublicationRepresentation.brageRecord().getId().equals(existingPublication.getHandle());
-    }
-
-    private List<AssociatedArtifact> extractHiddenFiles(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(HiddenFile.class::isInstance)
-                   .toList();
-    }
-
-    private boolean hasHiddenFile(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .anyMatch(HiddenFile.class::isInstance);
     }
 
     private String getCorrectDescription() {
