@@ -1,8 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -47,8 +45,8 @@ public class ResourceDeletedEventHandler extends DestinationsEventBridgeEventHan
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
         var eventContent = eventsS3Driver.readEvent(input.getUri());
+        logger.info("Received event: {}", eventContent);
         var entryUpdate = DataEntryUpdateEvent.fromJson(eventContent);
-        logger.info("Received event: {}", attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(entryUpdate)));
         var deletedResource = (Resource) entryUpdate.getOldData();
 
         deletedResource.fetchFileEntries(resourceService)
