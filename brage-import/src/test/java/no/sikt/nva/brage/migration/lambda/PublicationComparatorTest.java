@@ -1,6 +1,8 @@
 package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.lambda.PublicationComparator.publicationsMatch;
+import static no.sikt.nva.brage.migration.lambda.PublicationComparator.publicationsMatchIgnoringTypeAndContributors;
+import static no.unit.nva.model.testing.PublicationContextBuilder.randomPublicationContext;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -19,6 +21,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
@@ -157,6 +160,17 @@ class PublicationComparatorTest {
 
         assertTrue(publicationsMatch(publicationWithUnconfirmedJournal,
                                      publicationWithConfirmedJournal));
+    }
+
+    @Test
+    void shouldReturnTrueWhenComparingTwoEqualPublicationsWithDifferentContributorsAndPublicationContext() {
+        var publication = randomPublication(JournalArticle.class);
+
+        var academicMonograph = publication.copy().build();
+        academicMonograph.getEntityDescription().getReference().setPublicationContext(randomPublicationContext(AcademicMonograph.class));
+        academicMonograph.getEntityDescription().setContributors(List.of(contributorWithLastName(randomString())));
+
+        assertTrue(publicationsMatchIgnoringTypeAndContributors(academicMonograph, publication));
     }
 
     private static Contributor contributorWithLastName(String lastName) {
