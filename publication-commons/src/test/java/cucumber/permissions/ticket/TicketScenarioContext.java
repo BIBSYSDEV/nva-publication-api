@@ -2,6 +2,9 @@ package cucumber.permissions.ticket;
 
 import static cucumber.permissions.publication.PublicationScenarioContext.CURATING_INSTITUTION;
 import static cucumber.permissions.publication.PublicationScenarioContext.NON_CURATING_INSTITUTION;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import cucumber.permissions.enums.PublicationTypeConfig;
 import cucumber.permissions.publication.PublicationScenarioContext;
 import java.net.URI;
@@ -48,19 +51,21 @@ public class TicketScenarioContext {
     }
 
     private TicketEntry getTicketEntry(Resource resource, UserInstance userInstance) {
+        var ticketCreator = nonNull(userInstance) ? userInstance : UserInstance.create(randomString(), randomUri());
+
         if (PublicationTypeConfig.DEGREE.equals(publicationScenarioContext.getPublicationTypeConfig())) {
             return switch(publicationScenarioContext.getChannelClaimConfig()) {
                 case NON_CLAIMED -> FilesApprovalThesis.createForUserInstitution(resource, userInstance, null);
                 case CLAIMED_BY_USERS_INSTITUTION -> FilesApprovalThesis.createForChannelOwningInstitution(
                     resource,
-                    userInstance,
-                    userInstance.getTopLevelOrgCristinId(),
+                    ticketCreator,
+                    ticketCreator.getTopLevelOrgCristinId(),
                     SortableIdentifier.next(),
                     null);
                 case CLAIMED_BY_NOT_USERS_INSTITUTION -> FilesApprovalThesis.createForChannelOwningInstitution(
                     resource,
-                    userInstance,
-                    NON_CURATING_INSTITUTION.equals(userInstance.getTopLevelOrgCristinId())
+                    ticketCreator,
+                    NON_CURATING_INSTITUTION.equals(ticketCreator.getTopLevelOrgCristinId())
                         ? CURATING_INSTITUTION
                         : NON_CURATING_INSTITUTION,
                     SortableIdentifier.next(),
@@ -68,6 +73,6 @@ public class TicketScenarioContext {
             };
         }
 
-        return PublishingRequestCase.create(resource, userInstance, null);
+        return PublishingRequestCase.create(resource, ticketCreator, null);
     }
 }

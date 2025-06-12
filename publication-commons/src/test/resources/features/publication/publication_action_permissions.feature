@@ -5,7 +5,6 @@ Feature: Publication action permissions
 
   Scenario Outline: Verify publication permissions
     Given a "publication"
-    And publication has "no" files
     When the user have the role "<UserRole>"
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
@@ -13,7 +12,7 @@ Feature: Publication action permissions
     Examples:
       | UserRole                    | Operation                 | Outcome     |
       | Unauthenticated             | update                    | Not Allowed |
-      | Everyone                    | update                    | Not Allowed |
+      | Authenticated               | update                    | Not Allowed |
       | Publication creator         | update                    | Allowed     |
       | Contributor                 | update                    | Allowed     |
       | Publishing curator          | update                    | Allowed     |
@@ -27,7 +26,7 @@ Feature: Publication action permissions
       | Not related external client | update                    | Not Allowed |
 
       | Unauthenticated             | partial-update            | Not Allowed |
-      | Everyone                    | partial-update            | Not Allowed |
+      | Authenticated               | partial-update            | Not Allowed |
       | Publication creator         | partial-update            | Allowed     |
       | Contributor                 | partial-update            | Allowed     |
       | Publishing curator          | partial-update            | Allowed     |
@@ -41,7 +40,7 @@ Feature: Publication action permissions
       | Not related external client | partial-update            | Not Allowed |
 
       | Unauthenticated             | update-including-files    | Not Allowed |
-      | Everyone                    | update-including-files    | Not Allowed |
+      | Authenticated               | update-including-files    | Not Allowed |
       | Publication creator         | update-including-files    | Not Allowed |
       | Contributor                 | update-including-files    | Not Allowed |
       | Publishing curator          | update-including-files    | Allowed     |
@@ -55,7 +54,7 @@ Feature: Publication action permissions
       | Not related external client | update-including-files    | Not Allowed |
 
       | Unauthenticated             | read-hidden-files         | Not Allowed |
-      | Everyone                    | read-hidden-files         | Not Allowed |
+      | Authenticated               | read-hidden-files         | Not Allowed |
       | Publication creator         | read-hidden-files         | Not Allowed |
       | Contributor                 | read-hidden-files         | Not Allowed |
       | Publishing curator          | read-hidden-files         | Allowed     |
@@ -69,7 +68,7 @@ Feature: Publication action permissions
       | Not related external client | read-hidden-files         | Not Allowed |
 
       | Unauthenticated             | unpublish                 | Not Allowed |
-      | Everyone                    | unpublish                 | Not Allowed |
+      | Authenticated               | unpublish                 | Not Allowed |
       | Publication creator         | unpublish                 | Allowed     |
       | Contributor                 | unpublish                 | Allowed     |
       | Publishing curator          | unpublish                 | Allowed     |
@@ -84,7 +83,7 @@ Feature: Publication action permissions
 
       # Publication has status PUBLISHED
       | Unauthenticated             | republish                 | Not Allowed |
-      | Everyone                    | republish                 | Not Allowed |
+      | Authenticated               | republish                 | Not Allowed |
       | Publication creator         | republish                 | Not Allowed |
       | Contributor                 | republish                 | Not Allowed |
       | Publishing curator          | republish                 | Not Allowed |
@@ -99,7 +98,7 @@ Feature: Publication action permissions
 
       # Publication has status PUBLISHED
       | Unauthenticated             | delete                    | Not Allowed |
-      | Everyone                    | delete                    | Not Allowed |
+      | Authenticated               | delete                    | Not Allowed |
       | Publication creator         | delete                    | Not Allowed |
       | Contributor                 | delete                    | Not Allowed |
       | Publishing curator          | delete                    | Not Allowed |
@@ -114,7 +113,7 @@ Feature: Publication action permissions
 
       # Publication has status PUBLISHED
       | Unauthenticated             | terminate                 | Not Allowed |
-      | Everyone                    | terminate                 | Not Allowed |
+      | Authenticated               | terminate                 | Not Allowed |
       | Publication creator         | terminate                 | Not Allowed |
       | Contributor                 | terminate                 | Not Allowed |
       | Publishing curator          | terminate                 | Not Allowed |
@@ -128,7 +127,7 @@ Feature: Publication action permissions
       | Not related external client | terminate                 | Not Allowed |
 
       | Unauthenticated             | doi-request-create        | Not Allowed |
-      | Everyone                    | doi-request-create        | Not Allowed |
+      | Authenticated               | doi-request-create        | Not Allowed |
       | Publication creator         | doi-request-create        | Allowed     |
       | Contributor                 | doi-request-create        | Allowed     |
       | Publishing curator          | doi-request-create        | Allowed     |
@@ -142,7 +141,7 @@ Feature: Publication action permissions
       | Not related external client | doi-request-create        | Not Allowed |
 
       | Unauthenticated             | doi-request-approve       | Not Allowed |
-      | Everyone                    | doi-request-approve       | Not Allowed |
+      | Authenticated               | doi-request-approve       | Not Allowed |
       | Publication creator         | doi-request-approve       | Not Allowed |
       | Contributor                 | doi-request-approve       | Not Allowed |
       | Publishing curator          | doi-request-approve       | Not Allowed |
@@ -156,7 +155,7 @@ Feature: Publication action permissions
       | Not related external client | doi-request-approve       | Not Allowed |
 
       | Unauthenticated             | publishing-request-create | Not Allowed |
-      | Everyone                    | publishing-request-create | Not Allowed |
+      | Authenticated               | publishing-request-create | Not Allowed |
       | Publication creator         | publishing-request-create | Allowed     |
       | Contributor                 | publishing-request-create | Allowed     |
       | Publishing curator          | publishing-request-create | Allowed     |
@@ -170,7 +169,7 @@ Feature: Publication action permissions
       | Not related external client | publishing-request-create | Not Allowed |
 
       | Unauthenticated             | approve-files             | Not Allowed |
-      | Everyone                    | approve-files             | Not Allowed |
+      | Authenticated               | approve-files             | Not Allowed |
       | Publication creator         | approve-files             | Not Allowed |
       | Contributor                 | approve-files             | Not Allowed |
       | Publishing curator          | approve-files             | Allowed     |
@@ -184,7 +183,7 @@ Feature: Publication action permissions
       | Not related external client | approve-files             | Not Allowed |
 
       | Unauthenticated             | support-request-create    | Not Allowed |
-      | Everyone                    | support-request-create    | Not Allowed |
+      | Authenticated               | support-request-create    | Not Allowed |
       | Publication creator         | support-request-create    | Allowed     |
       | Contributor                 | support-request-create    | Allowed     |
       | Publishing curator          | support-request-create    | Allowed     |
@@ -198,7 +197,7 @@ Feature: Publication action permissions
       | Not related external client | support-request-create    | Not Allowed |
 
       | Unauthenticated             | support-request-approve   | Not Allowed |
-      | Everyone                    | support-request-approve   | Not Allowed |
+      | Authenticated               | support-request-approve   | Not Allowed |
       | Publication creator         | support-request-approve   | Not Allowed |
       | Contributor                 | support-request-approve   | Not Allowed |
       | Publishing curator          | support-request-approve   | Not Allowed |
@@ -212,7 +211,7 @@ Feature: Publication action permissions
       | Not related external client | support-request-approve   | Not Allowed |
 
       | Unauthenticated             | upload-file               | Not Allowed |
-      | Everyone                    | upload-file               | Not Allowed |
+      | Authenticated               | upload-file               | Not Allowed |
       | Publication creator         | upload-file               | Allowed     |
       | Contributor                 | upload-file               | Allowed     |
       | Publishing curator          | upload-file               | Allowed     |
