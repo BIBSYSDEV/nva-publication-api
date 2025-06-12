@@ -935,7 +935,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication);
-        crateTickets(resource, userInstance);
+        createTickets(resource, userInstance);
         resourceService.unpublishPublication(publication, userInstance);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
         assertThat(tickets, hasSize(5));
@@ -954,12 +954,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetAllNATicketsToPendingWhenRepublishingPublication() throws ApiGatewayException {
+    void shouldSetAllNotApplicableTicketsToPendingWhenRepublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication);
 
-        crateTickets(resource, userInstance);
+        createTickets(resource, userInstance);
 
         resourceService.unpublishPublication(publication, userInstance);
         resource.republish(resourceService, ticketService, userInstance);
@@ -1680,7 +1680,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
     }
 
-    private void crateTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {
+    private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {
         GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
         DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
         var closedGeneralSupportTicket = GeneralSupportRequest.create(resource, userInstance)

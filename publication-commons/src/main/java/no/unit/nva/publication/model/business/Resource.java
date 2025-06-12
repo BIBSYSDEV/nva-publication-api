@@ -473,14 +473,17 @@ public class Resource implements Entity {
     public void republish(ResourceService resourceService, TicketService ticketService, UserInstance userInstance) {
         fetch(resourceService)
             .filter(Resource::isNotPublished)
-            .ifPresent(resource -> {
-                resource.republish(userInstance, resourceService);
-                resourceService.fetchAllTicketsForResource(resource)
-                    .filter(this::shouldRepublishTicket)
-                    .forEach(ticket -> {
-                        ticket.setStatus(PENDING);
-                        ticketService.updateTicket(ticket);
-                    });
+            .ifPresent(resource -> republish(resourceService, ticketService, userInstance, resource));
+    }
+
+    private void republish(ResourceService resourceService, TicketService ticketService, UserInstance userInstance,
+                           Resource resource) {
+        resource.republish(userInstance, resourceService);
+        resourceService.fetchAllTicketsForResource(resource)
+            .filter(this::shouldRepublishTicket)
+            .forEach(ticket -> {
+                ticket.setStatus(PENDING);
+                ticketService.updateTicket(ticket);
             });
     }
 
