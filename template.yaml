@@ -1892,12 +1892,79 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
+  ResourcesDynamodbStreamQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ResourcesDynamodbStreamQueue
+
+  ResourcesDynamodbStreamDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ResourcesDynamodbStreamDLQ
+
+  ResourcesDynamodbStreamPipeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: pipes.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowDynamoDBStreamToSQS
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:ListStreams
+                Resource: !GetAtt NvaResourcesTable.StreamArn
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource:
+                - !GetAtt ResourcesDynamodbStreamQueue.Arn
+                - !GetAtt ResourcesDynamodbStreamDLQ.Arn
+
+  ResourcesDynamodbStreamToQueuePipe:
+    Type: AWS::Pipes::Pipe
+    Properties:
+      Name: ResourcesDynamodbStreamToQueuePipe
+      RoleArn: !GetAtt ResourcesDynamodbStreamPipeRole.Arn
+      Source: !GetAtt NvaResourcesTable.StreamArn
+      SourceParameters:
+        DynamoDBStreamParameters:
+          StartingPosition: TRIM_HORIZON
+      Target: !GetAtt ResourcesDynamodbStreamQueue.Arn
+      DeadLetterConfig:
+        Arn: !GetAtt ResourcesDynamodbStreamDLQ.Arn
+
+  ConsumeResourcesDynamodbStreamQueueManagedPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ConsumeResourcesDynamodbStreamQueueManagedPolicy-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Resource: !GetAtt ResourcesDynamodbStreamQueue.Arn
 
   DynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
     DependsOn:
       - DatabaseAccessLambdaManagedPolicy
-      - DynamoDbStreamsAccessPolicy
+      - ConsumeResourcesDynamodbStreamQueueManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -1913,14 +1980,14 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           RECOVERY_QUEUE: !Ref RecoveryQueue
           SHOULD_IGNORE_BATCH_SCAN: 'false'
-      Events:
-        FanoutSource:
-          Type: DynamoDB
-          Properties:
-            Stream: !GetAtt NvaResourcesTable.StreamArn
-            StartingPosition: TRIM_HORIZON
-            BatchSize: 1
-            Enabled: true
+
+DynamodbStreamEventSourceMapping:
+  Type: AWS::Lambda::EventSourceMapping
+  Properties:
+    EventSourceArn: !GetAtt ResourcesDynamodbStreamQueue.Arn
+    FunctionName: !Ref DynamodbStreamToEventBridgeHandler
+    BatchSize: 1
+    Enabled: true
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function

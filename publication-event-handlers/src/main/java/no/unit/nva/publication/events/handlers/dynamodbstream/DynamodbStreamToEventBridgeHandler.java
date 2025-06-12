@@ -11,8 +11,9 @@ import static no.unit.nva.publication.queue.RecoveryEntry.TICKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -53,7 +54,7 @@ import software.amazon.awssdk.services.s3.S3Client;
  * <p>Notice a DynamoDB stream can only have two streams attached before it can lead into throttling and performance
  * issues with DynamodDB, this is why we have this handler to publish it to EventBridge.
  */
-public class DynamodbStreamToEventBridgeHandler implements RequestHandler<DynamodbEvent, EventReference> {
+public class DynamodbStreamToEventBridgeHandler implements RequestHandler<SQSEvent, EventReference> {
 
     private static final String PROCESSING_EVENT_MESSAGE = "Processing event for identifier: {}";
     private static final String DETAIL_TYPE_NOT_IMPORTANT = "See event topic";
@@ -83,11 +84,11 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     }
 
     @Override
-    public EventReference handleRequest(DynamodbEvent inputEvent, Context context) {
-        var dynamodbStreamRecord = inputEvent.getRecords().getFirst();
-        var dataEntryUpdateEvent = convertToDataEntryUpdateEvent(dynamodbStreamRecord);
+    public EventReference handleRequest(SQSEvent event, Context context) {
+        var record = event.getRecords().getFirst();
+        var dataEntryUpdateEvent = convertToDataEntryUpdateEvent(record);
         return dataEntryUpdateEvent.shouldProcessUpdate(environment) ? sendEvent(dataEntryUpdateEvent, context) :
-                                                                                                          DO_NOT_EMIT_EVENT;
+                                                                                                                    DO_NOT_EMIT_EVENT;
     }
 
     private static SortableIdentifier getIdentifier(DataEntryUpdateEvent blobObject) {
@@ -104,8 +105,8 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     private EventReference processRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent event) {
         var identifier = getIdentifier(event);
         RecoveryEntry.create(findType(event), identifier)
-                         .withException(failure.getException())
-                             .persist(sqsClient);
+            .withException(failure.getException())
+            .persist(sqsClient);
         logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
         return null;
     }
@@ -152,10 +153,12 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
         return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString());
     }
 
-    private DataEntryUpdateEvent convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
-        return new DataEntryUpdateEvent(dynamoDbRecord.getEventName(),
-                                        getEntity(dynamoDbRecord.getDynamodb().getOldImage()),
-                                        getEntity(dynamoDbRecord.getDynamodb().getNewImage()));
+    private DataEntryUpdateEvent convertToDataEntryUpdateEvent(SQSMessage message) {
+        var record = attempt(() -> JsonUtils.dtoObjectMapper.readValue(message.getBody(), DynamodbStreamRecord.class))
+                         .orElseThrow();
+        return new DataEntryUpdateEvent(record.getEventName(),
+                                        getEntity(record.getDynamodb().getOldImage()),
+                                        getEntity(record.getDynamodb().getNewImage()));
     }
 
     private Entity getEntity(Map<String, AttributeValue> image) {
