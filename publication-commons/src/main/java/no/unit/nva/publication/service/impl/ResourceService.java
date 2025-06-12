@@ -132,7 +132,8 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.customerService = customerService;
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
-                readResourceService, uriRetriever, channelClaimClient, customerService);
+                                                               readResourceService, uriRetriever, channelClaimClient,
+                                                               customerService);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
@@ -321,25 +322,28 @@ public class ResourceService extends ServiceWithTransactions {
         return dataEntry;
     }
 
-    public List<FileEntry> fetchFileEntriesForResource(Resource resource) {
+    public Stream<FileEntry> fetchFileEntriesForResource(Resource resource) {
         var partitionKeyValue = FileDao.getFileEntriesByResourceIdentifierPartitionKey(resource);
 
-        var queryRequest = new QueryRequest()
-                               .withTableName(tableName)
-                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-                               .withKeyConditionExpression("PK3 = :resourceIdentifier AND begins_with(SK3, :type)")
-                               .withExpressionAttributeValues(
-                                   Map.of(
-                                       ":resourceIdentifier", new AttributeValue().withS(partitionKeyValue),
-                                       ":type", new AttributeValue().withS(FileDao.TYPE)
-                                   )
-                               );
+        var queryRequest = createQueryForFilesAssociatedWithResource(partitionKeyValue);
         return client.query(queryRequest)
                    .getItems()
                    .stream()
                    .map(FileDao::fromDynamoFormat)
-                   .map(FileDao::getFileEntry)
-                   .toList();
+                   .map(FileDao::getFileEntry);
+    }
+
+    private QueryRequest createQueryForFilesAssociatedWithResource(String partitionKeyValue) {
+        return new QueryRequest()
+                   .withTableName(tableName)
+                   .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                   .withKeyConditionExpression("PK3 = :resourceIdentifier AND begins_with(SK3, :type)")
+                   .withExpressionAttributeValues(
+                       Map.of(
+                           ":resourceIdentifier", new AttributeValue().withS(partitionKeyValue),
+                           ":type", new AttributeValue().withS(FileDao.TYPE)
+                       )
+                   );
     }
 
     private void mutateResourceIfMissingCristinIdentifier(Resource resource) {
@@ -658,7 +662,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     private void setCuratingInstitutions(Resource newResource) {
         newResource.setCuratingInstitutions(
-                new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsOnline(newResource.toPublication()));
+            new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsOnline(
+                newResource.toPublication()));
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {

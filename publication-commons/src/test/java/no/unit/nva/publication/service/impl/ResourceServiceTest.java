@@ -33,7 +33,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -148,8 +147,6 @@ import nva.commons.core.attempt.Try;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.hamcrest.Matchers;
-import org.hamcrest.collection.IsEmptyIterable;
-import org.hamcrest.collection.IsIterableWithSize;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
@@ -835,7 +832,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
-
         var affiliation = (new Organization.Builder()).withId(orgId).build();
 
         importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
@@ -968,10 +964,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldFetchAllFileEntries() throws ApiGatewayException {
         var publication = createPublishedResource();
 
-        var fileEntries = Resource.fromPublication(publication).fetchFileEntries(resourceService).toList();
+        var actualNumberOfFiles = Resource.fromPublication(publication).fetchFileEntries(resourceService).count();
 
-        var fileCount = publication.getAssociatedArtifacts().stream().filter(File.class::isInstance).count();
-        assertThat(fileEntries, iterableWithSize(Long.valueOf(fileCount).intValue()));
+        var expectedNumberOfFiles = publication.getAssociatedArtifacts().stream()
+                                        .filter(File.class::isInstance)
+                                        .count();
+        assertThat(actualNumberOfFiles, is(equalTo(expectedNumberOfFiles)));
     }
 
     @ParameterizedTest

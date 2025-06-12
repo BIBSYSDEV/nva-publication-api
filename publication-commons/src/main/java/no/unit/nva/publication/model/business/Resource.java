@@ -285,7 +285,7 @@ public class Resource implements Entity {
     }
 
     public Stream<FileEntry> fetchFileEntries(ResourceService resourceService) {
-        return resourceService.fetchFileEntriesForResource(this).stream();
+        return resourceService.fetchFileEntriesForResource(this);
     }
 
     private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {
