@@ -17,6 +17,8 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
@@ -32,8 +34,6 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
-import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
@@ -75,7 +75,8 @@ class DynamodbStreamToEventBridgeHandlerTest {
         };
         fakeSqsClient = new FakeSqsClient();
         this.eventBridgeClient = new FakeEventBridgeClient();
-        this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient, fakeSqsClient, new Environment());
+        this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient, fakeSqsClient,
+                                                              new Environment());
     }
 
     @AfterEach
@@ -83,7 +84,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
         failingS3Client.close();
     }
 
-    public static Stream<Arguments> dynamoDbEventProvider() {
+    public static Stream<Arguments> sqsEventProvider() {
         var publication = PublicationGenerator.randomPublication();
         return
             Stream.of(Arguments.of(randomEventWithSingleDynamoRecord(OperationType.REMOVE,
@@ -101,8 +102,8 @@ class DynamodbStreamToEventBridgeHandlerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("dynamoDbEventProvider")
-    void shouldConvertDynamoRecordToDataEntryUpdateEventAndWriteToS3(DynamodbEvent event, String topic) {
+    @MethodSource("sqsEventProvider")
+    void shouldConvertDynamoRecordToDataEntryUpdateEventAndWriteToS3(SQSEvent event, String topic) {
         handler.handleRequest(event, context);
         var expectedDataEntryUpdateEvent = convertToDataEntryUpdateEvent(event.getRecords().getFirst());
         var actualDataEntryUpdateEvent = extractPersistedDataEntryUpdateEvent();
@@ -133,23 +134,21 @@ class DynamodbStreamToEventBridgeHandlerTest {
         assertTrue(persistedEvents.isEmpty());
     }
 
-    private Entity randomPublicationChannel() {
-        return NonClaimedPublicationChannel.create(randomUri(), SortableIdentifier.next(), ChannelType.SERIAL_PUBLICATION);
-    }
-
     private static FileEntry randomFileEntry() {
         return FileEntry.create(randomOpenFile(),
                                 SortableIdentifier.next(), UserInstance.create(randomString(), randomUri()));
     }
 
-    private static DynamodbEvent randomEventWithSingleDynamoRecord(OperationType operationType,
-                                                                   Entity oldImage,
-                                                                   Entity newImage) {
-        var event = new DynamodbEvent();
+    private static SQSEvent randomEventWithSingleDynamoRecord(OperationType operationType,
+                                                              Entity oldImage,
+                                                              Entity newImage) {
+        var event = new SQSEvent();
         var record = randomDynamoRecord(operationType);
         record.getDynamodb().setOldImage(toDynamoDbFormat(oldImage));
         record.getDynamodb().setNewImage(toDynamoDbFormat(newImage));
-        event.setRecords(List.of(record));
+        var sqsMessage = new SQSMessage();
+        sqsMessage.setBody(attempt(() -> dtoObjectMapper.writeValueAsString(record)).orElseThrow());
+        event.setRecords(List.of(sqsMessage));
         return event;
     }
 
@@ -199,10 +198,12 @@ class DynamodbStreamToEventBridgeHandlerTest {
         };
     }
 
-    private DataEntryUpdateEvent convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
-        return new DataEntryUpdateEvent(dynamoDbRecord.getEventName(),
-                                        getEntity(dynamoDbRecord.getDynamodb().getOldImage()),
-                                        getEntity(dynamoDbRecord.getDynamodb().getNewImage()));
+    private DataEntryUpdateEvent convertToDataEntryUpdateEvent(SQSMessage message) {
+        var dynamodbRecord =
+            attempt(() -> dtoObjectMapper.readValue(message.getBody(), DynamodbStreamRecord.class)).orElseThrow();
+        return new DataEntryUpdateEvent(dynamodbRecord.getEventName(),
+                                        getEntity(dynamodbRecord.getDynamodb().getOldImage()),
+                                        getEntity(dynamodbRecord.getDynamodb().getNewImage()));
     }
 
     private Entity getEntity(Map<String, AttributeValue> image) {
