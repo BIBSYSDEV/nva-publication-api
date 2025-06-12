@@ -33,8 +33,8 @@ public class HandleFinder implements FindExistingPublicationService {
         var searchResponseContainingHandlesInRootOfObjectOrInAdditionalIdentifiers =
             searchApiFinder.fetchPublicationsByParam("handle", urlEncodedHandle).stream()
                 .filter(item -> PublicationComparator
-                                    .publicationsMatchIgnoringType(item,
-                                                                   publicationRepresentation.publication()))
+                                    .publicationsMatchIgnoringTypeAndContributors(item,
+                                                                                  publicationRepresentation.publication()))
                 .toList();
 
         var publicationsWithHandleInAdditionalIdentifiers =
