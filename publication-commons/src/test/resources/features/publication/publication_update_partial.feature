@@ -14,18 +14,18 @@ Feature: Publication update permissions
 
     Examples:
       | UserRole                | Operation      | Outcome     |
+      | Authenticated           | partial-update | Not Allowed |
       | Publication creator     | partial-update | Allowed     |
       | Contributor             | partial-update | Allowed     |
       | Thesis curator          | partial-update | Allowed     |
       | Editor                  | partial-update | Allowed     |
-      | Everyone                | partial-update | Not Allowed |
       | Related external client | partial-update | Allowed     |
 
+      | Authenticated           | update         | Not Allowed |
       | Publication creator     | update         | Not Allowed |
       | Contributor             | update         | Not Allowed |
       | Thesis curator          | update         | Allowed     |
       | Editor                  | update         | Allowed     |
-      | Everyone                | update         | Not Allowed |
       | Related external client | update         | Allowed     |
 
   Scenario Outline: Verify operation when
@@ -38,18 +38,18 @@ Feature: Publication update permissions
 
     Examples:
       | UserRole                | Operation      | Outcome     |
+      | Authenticated           | partial-update | Not Allowed |
       | Publication creator     | partial-update | Allowed     |
       | Contributor             | partial-update | Allowed     |
       | Thesis curator          | partial-update | Allowed     |
       | Editor                  | partial-update | Allowed     |
-      | Everyone                | partial-update | Not Allowed |
       | Related external client | partial-update | Allowed     |
 
+      | Authenticated           | update         | Not Allowed |
       | Publication creator     | update         | Not Allowed |
       | Contributor             | update         | Not Allowed |
       | Thesis curator          | update         | Allowed     |
       | Editor                  | update         | Allowed     |
-      | Everyone                | update         | Not Allowed |
       | Related external client | update         | Allowed     |
 
   Scenario Outline: Verify operation when
@@ -62,18 +62,18 @@ Feature: Publication update permissions
 
     Examples:
       | UserRole                | Operation      | Outcome     |
+      | Authenticated           | partial-update | Not Allowed |
       | Publication creator     | partial-update | Allowed     |
       | Contributor             | partial-update | Allowed     |
       | Thesis curator          | partial-update | Allowed     |
       | Editor                  | partial-update | Allowed     |
-      | Everyone                | partial-update | Not Allowed |
       | Related external client | partial-update | Allowed     |
 
+      | Authenticated           | update         | Not Allowed |
       | Publication creator     | update         | Allowed     |
       | Contributor             | update         | Allowed     |
       | Thesis curator          | update         | Allowed     |
       | Editor                  | update         | Allowed     |
-      | Everyone                | update         | Not Allowed |
       | Related external client | update         | Allowed     |
 
   Scenario Outline: Verify operation when
@@ -87,18 +87,18 @@ Feature: Publication update permissions
 
     Examples:
       | UserRole                | Operation      | Outcome     |
+      | Authenticated           | partial-update | Not Allowed |
       | Publication creator     | partial-update | Allowed     |
       | Contributor             | partial-update | Allowed     |
       | Thesis curator          | partial-update | Allowed     |
       | Editor                  | partial-update | Allowed     |
-      | Everyone                | partial-update | Not Allowed |
       | Related external client | partial-update | Allowed     |
 
+      | Authenticated           | update         | Not Allowed |
       | Publication creator     | update         | Not Allowed |
       | Contributor             | update         | Not Allowed |
       | Thesis curator          | update         | Allowed     |
       | Editor                  | update         | Allowed     |
-      | Everyone                | update         | Not Allowed |
       | Related external client | update         | Allowed     |
 
   Scenario Outline: Verify operation when
@@ -111,18 +111,18 @@ Feature: Publication update permissions
 
     Examples:
       | UserRole                | Operation      | Outcome     |
+      | Authenticated           | partial-update | Not Allowed |
       | Publication creator     | partial-update | Allowed     |
       | Contributor             | partial-update | Allowed     |
       | Thesis curator          | partial-update | Allowed     |
       | Editor                  | partial-update | Allowed     |
-      | Everyone                | partial-update | Not Allowed |
       | Related external client | partial-update | Allowed     |
 
+      | Authenticated           | update         | Not Allowed |
       | Publication creator     | update         | Allowed     |
       | Contributor             | update         | Allowed     |
       | Thesis curator          | update         | Allowed     |
       | Editor                  | update         | Allowed     |
-      | Everyone                | update         | Not Allowed |
       | Related external client | update         | Allowed     |
 
   Scenario Outline: Verify operation when
@@ -135,16 +135,16 @@ Feature: Publication update permissions
 
     Examples:
       | UserRole                | Operation      | Outcome     |
+      | Authenticated           | partial-update | Not Allowed |
       | Publication creator     | partial-update | Allowed     |
       | Contributor             | partial-update | Allowed     |
       | Thesis curator          | partial-update | Allowed     |
       | Editor                  | partial-update | Allowed     |
-      | Everyone                | partial-update | Not Allowed |
       | Related external client | partial-update | Allowed     |
 
+      | Authenticated           | update         | Not Allowed |
       | Publication creator     | update         | Allowed     |
       | Contributor             | update         | Allowed     |
       | Thesis curator          | update         | Allowed     |
       | Editor                  | update         | Allowed     |
-      | Everyone                | update         | Not Allowed |
       | Related external client | update         | Allowed     |

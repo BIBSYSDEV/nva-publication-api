@@ -288,6 +288,10 @@ public class Resource implements Entity {
                    .findFirst();
     }
 
+    public Stream<FileEntry> fetchFileEntries(ResourceService resourceService) {
+        return resourceService.fetchFileEntriesForResource(this);
+    }
+
     private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {
         return getInstanceType()
                    .map(claimedPublicationChannel::instanceTypeIsWithinScope)

@@ -444,7 +444,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var newOwnerAffiliation = randomUri();
         var updatedPublishingRequest = publishingRequest.copy();
 
-        updatedPublishingRequest.withReceivingOrganizationDetails(newOwnerAffiliation, newOwnerAffiliation);
+        updatedPublishingRequest.setReceivingOrganizationDetailsAndResetAssignee(newOwnerAffiliation,
+                                                                                 newOwnerAffiliation);
 
         var event = createEvent(publishingRequest, updatedPublishingRequest);
 

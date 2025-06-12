@@ -96,6 +96,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
@@ -831,7 +832,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
-
         var affiliation = (new Organization.Builder()).withId(orgId).build();
 
         importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
@@ -979,6 +979,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                           hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
         assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
                    is(equalTo(PUBLISHED)));
+    }
+
+    @Test
+    void shouldFetchAllFileEntries() throws ApiGatewayException {
+        var publication = createPublishedResource();
+
+        var actualNumberOfFiles = Resource.fromPublication(publication).fetchFileEntries(resourceService).count();
+
+        var expectedNumberOfFiles = publication.getAssociatedArtifacts().stream()
+                                        .filter(File.class::isInstance)
+                                        .count();
+        assertThat(actualNumberOfFiles, is(equalTo(expectedNumberOfFiles)));
     }
 
     @ParameterizedTest

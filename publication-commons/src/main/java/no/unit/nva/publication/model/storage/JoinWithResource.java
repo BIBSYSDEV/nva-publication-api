@@ -125,7 +125,7 @@ public interface JoinWithResource {
         return byResource(TicketDao.ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE,
             TicketDao.ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE);
     }
-    
+
     SortableIdentifier getIdentifier();
     
     /**
