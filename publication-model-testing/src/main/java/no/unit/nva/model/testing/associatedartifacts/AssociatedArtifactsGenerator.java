@@ -77,6 +77,19 @@ public final class AssociatedArtifactsGenerator {
         return randomFileBuilder().buildOpenFile();
     }
 
+    public static File randomOpenFile(PublisherVersion version) {
+        return randomFileBuilder()
+                   .withPublisherVersion(version)
+                   .buildOpenFile();
+    }
+
+    public static File randomOpenFile(PublisherVersion version, String name) {
+        return randomFileBuilder()
+                   .withPublisherVersion(version)
+                   .withName(name)
+                   .buildOpenFile();
+    }
+
     public static File randomPendingInternalFile() {
         return randomFileBuilder().buildPendingInternalFile();
     }
