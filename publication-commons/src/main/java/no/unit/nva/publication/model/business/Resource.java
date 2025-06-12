@@ -7,6 +7,8 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
+import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.SERIAL_PUBLICATION;
 import static nva.commons.core.attempt.Try.attempt;
@@ -51,6 +53,7 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
@@ -68,6 +71,7 @@ import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEv
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
@@ -470,10 +474,28 @@ public class Resource implements Entity {
         return PUBLISHED.equals(this.getStatus());
     }
 
-    public void republish(ResourceService resourceService, UserInstance userInstance) {
+    public void republish(ResourceService resourceService, TicketService ticketService, UserInstance userInstance) {
         fetch(resourceService)
             .filter(Resource::isNotPublished)
-            .ifPresent(resource -> resource.republish(userInstance, resourceService));
+            .ifPresent(resource -> republish(resourceService, ticketService, userInstance, resource));
+    }
+
+    private void republish(ResourceService resourceService, TicketService ticketService, UserInstance userInstance,
+                           Resource resource) {
+        resource.republish(userInstance, resourceService);
+        resourceService.fetchAllTicketsForResource(resource)
+            .filter(this::shouldRepublishTicket)
+            .forEach(ticket -> {
+                ticket.setStatus(PENDING);
+                ticketService.updateTicket(ticket);
+            });
+    }
+
+    private boolean shouldRepublishTicket(TicketEntry ticket) {
+        return (ticket instanceof FilesApprovalEntry
+               || ticket instanceof GeneralSupportRequest
+               || ticket instanceof DoiRequest)
+               && NOT_APPLICABLE.equals(ticket.getStatus());
     }
 
     private void republish(UserInstance userInstance, ResourceService resourceService) {
