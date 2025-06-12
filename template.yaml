@@ -1939,9 +1939,9 @@ Resources:
       SourceParameters:
         DynamoDBStreamParameters:
           StartingPosition: TRIM_HORIZON
+          DeadLetterConfig:
+            Arn: !GetAtt ResourcesDynamodbStreamDLQ.Arn
       Target: !GetAtt ResourcesDynamodbStreamQueue.Arn
-      DeadLetterConfig:
-        Arn: !GetAtt ResourcesDynamodbStreamDLQ.Arn
 
   ConsumeResourcesDynamodbStreamQueueManagedPolicy:
     Type: AWS::IAM::Policy
@@ -1981,13 +1981,13 @@ Resources:
           RECOVERY_QUEUE: !Ref RecoveryQueue
           SHOULD_IGNORE_BATCH_SCAN: 'false'
 
-DynamodbStreamEventSourceMapping:
-  Type: AWS::Lambda::EventSourceMapping
-  Properties:
-    EventSourceArn: !GetAtt ResourcesDynamodbStreamQueue.Arn
-    FunctionName: !Ref DynamodbStreamToEventBridgeHandler
-    BatchSize: 1
-    Enabled: true
+  DynamodbStreamEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt ResourcesDynamodbStreamQueue.Arn
+      FunctionName: !Ref DynamodbStreamToEventBridgeHandler
+      BatchSize: 1
+      Enabled: true
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
