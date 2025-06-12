@@ -6,33 +6,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public enum PermissionsRole {
-    FILE_CURATOR_BY_CONTRIBUTOR_FOR_OTHERS("file curators for other contributors"),
-    FILE_CURATOR_BY_PUBLICATION_OWNER("file curator by publication owner at x"),
-    FILE_CURATOR_FOR_GIVEN_FILE("file curator at x"),
-    FILE_CURATOR_DEGREE_EMBARGO("degree embargo file curator"),
-    FILE_CURATOR_DEGREE("degree file curator"),
     UNAUTHENTICATED("unauthenticated"),
-    AUTHENTICATED_BUT_NO_ACCESS("everyone", "authenticated"),
-    OTHER_CONTRIBUTORS("other contributors", "contributor"),
-    NOT_RELATED_EXTERNAL_CLIENT("not related external client",  "external client"),
-    RELATED_EXTERNAL_CLIENT("related external client"),
-    PUBLICATION_OWNER("publication owner"),
-    EDITOR("editor"),
-
+    AUTHENTICATED_BUT_NO_ACCESS("authenticated"),
     PUBLISHING_CURATOR("publishing curator"),
     NVI_CURATOR("nvi curator"),
     DOI_CURATOR("doi curator"),
     SUPPORT_CURATOR("support curator"),
-    CREATOR("creator", "publication creator", "contributor"),
-//    CONTRIBUTOR("contributor"),
+    CREATOR("creator", "publication creator"),
+    CONTRIBUTOR("contributor"),
     INTERNAL_IMPORTER("internal importer"),
     THESIS_CURATOR("thesis curator"),
-    EMBARGO_THESIS_CURATOR("embargo thesis curator");
-//    NOT_RELATED_EXTERNAL_CLIENT("not related external client"),
-//    RELATED_EXTERNAL_CLIENT("related external client"),
-//    EDITOR("editor"),
-//    UNAUTHENTICATED("unauthenticated"),
-//    AUTHENTICATED_BUT_NO_ACCESS("authenticated");
+    EMBARGO_THESIS_CURATOR("embargo thesis curator"),
+    EDITOR("editor"),
+    RELATED_EXTERNAL_CLIENT("related external client"),
+    NOT_RELATED_EXTERNAL_CLIENT("not related external client");
 
     private final String[] values;
 
@@ -53,10 +40,7 @@ public enum PermissionsRole {
      */
     public static Set<PermissionsRole> lookup(String search) {
         var result = stream(values())
-            .filter(permissionsRole ->
-                stream(permissionsRole.values)
-                    .anyMatch(value -> search.toLowerCase().startsWith(value.toLowerCase()))
-            )
+            .filter(permissionsRole -> stream(permissionsRole.values).anyMatch(search::equalsIgnoreCase))
             .collect(Collectors.toSet());
         if (result.isEmpty()) {
             throw new IllegalArgumentException("No PermissionsRole found for: " + search);

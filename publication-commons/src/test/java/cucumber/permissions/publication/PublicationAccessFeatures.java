@@ -1,26 +1,23 @@
 package cucumber.permissions.publication;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import cucumber.permissions.PermissionsRole;
 import cucumber.permissions.enums.ChannelClaimConfig;
-import cucumber.permissions.enums.FileConfig;
+import cucumber.permissions.enums.PublicationFileConfig;
 import cucumber.permissions.enums.PublicationTypeConfig;
 import cucumber.permissions.enums.UserInstitutionConfig;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.net.URI;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
 
 public class PublicationAccessFeatures {
 
-    protected static final URI ORGANIZATION = randomUri();
     private final PublicationScenarioContext scenarioContext;
 
     public PublicationAccessFeatures(PublicationScenarioContext scenarioContext) {
@@ -46,11 +43,11 @@ public class PublicationAccessFeatures {
     @And("publication has {string} files")
     public void publicationHasFiles(String fileTypes) {
         if ("no".equalsIgnoreCase(fileTypes)) {
-            scenarioContext.setFileConfig(FileConfig.NO_FILES);
+            scenarioContext.setPublicationFileConfig(PublicationFileConfig.NO_FILES);
         } else if ("no finalized".equalsIgnoreCase(fileTypes)) {
-            scenarioContext.setFileConfig(FileConfig.NON_FINALIZED_FILES);
+            scenarioContext.setPublicationFileConfig(PublicationFileConfig.NON_FINALIZED_FILES);
         } else if ("finalized".equalsIgnoreCase(fileTypes)) {
-            scenarioContext.setFileConfig(FileConfig.FINALIZED_FILES);
+            scenarioContext.setPublicationFileConfig(PublicationFileConfig.FINALIZED_FILES);
         } else {
             throw new IllegalArgumentException("Non valid input: " + fileTypes);
         }

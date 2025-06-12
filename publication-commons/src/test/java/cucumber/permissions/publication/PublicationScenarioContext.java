@@ -1,6 +1,7 @@
 package cucumber.permissions.publication;
 
 import static cucumber.permissions.PermissionsRole.AUTHENTICATED_BUT_NO_ACCESS;
+import static cucumber.permissions.PermissionsRole.CONTRIBUTOR;
 import static cucumber.permissions.PermissionsRole.CREATOR;
 import static cucumber.permissions.PermissionsRole.NOT_RELATED_EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.RELATED_EXTERNAL_CLIENT;
@@ -18,11 +19,12 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import cucumber.permissions.PermissionsRole;
 import cucumber.permissions.enums.ChannelClaimConfig;
-import cucumber.permissions.enums.FileConfig;
+import cucumber.permissions.enums.PublicationFileConfig;
 import cucumber.permissions.enums.PublicationTypeConfig;
 import cucumber.permissions.enums.UserInstitutionConfig;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -74,7 +76,7 @@ public class PublicationScenarioContext {
     private PublicationTypeConfig publicationTypeConfig = PublicationTypeConfig.PUBLICATION;
     private boolean isImportedDegree;
     private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
-    private FileConfig fileConfig = FileConfig.NO_FILES;
+    private PublicationFileConfig publicationFileConfig = PublicationFileConfig.NO_FILES;
     private ChannelClaimConfig channelClaimConfig = ChannelClaimConfig.NON_CLAIMED;
     private ChannelPolicy channelClaimPublishingPolicy;
     private ChannelPolicy channelClaimEditingPolicy;
@@ -103,12 +105,12 @@ public class PublicationScenarioContext {
         return publicationStatus;
     }
 
-    public FileConfig getFileConfig() {
-        return fileConfig;
+    public PublicationFileConfig getPublicationFileConfig() {
+        return publicationFileConfig;
     }
 
-    public void setFileConfig(FileConfig fileConfig) {
-        this.fileConfig = fileConfig;
+    public void setPublicationFileConfig(PublicationFileConfig publicationFileConfig) {
+        this.publicationFileConfig = publicationFileConfig;
     }
 
     public void setPublicationStatus(PublicationStatus status) {
@@ -218,9 +220,14 @@ public class PublicationScenarioContext {
         return UserInstance.create(USER_NAME, userInstitution, USER_CRISTIN_ID, accessRights, userInstitution);
     }
 
-    private static HashSet<CuratingInstitution> createCuratingInstitutions() {
+    private HashSet<CuratingInstitution> createCuratingInstitutions() {
         var curatingInstitutions = new HashSet<CuratingInstitution>();
-        curatingInstitutions.add(new CuratingInstitution(CURATING_INSTITUTION, Set.of()));
+        curatingInstitutions.add(new CuratingInstitution(CREATING_INSTITUTION, Set.of()));
+
+        if (BELONGS_TO_CURATING_INSTITUTION.equals(getUserInstitutionConfig())) {
+            curatingInstitutions.add(new CuratingInstitution(CURATING_INSTITUTION, Set.of()));
+        }
+
         return curatingInstitutions;
     }
 
@@ -233,34 +240,35 @@ public class PublicationScenarioContext {
     }
 
     private Owner createOwner() {
-        var userIsPublicationCreator = getRoles().contains(CREATOR)
-                                       && BELONGS_TO_CREATING_INSTITUTION.equals(getUserInstitutionConfig())
-                                       && nonNull(getUserInstance());
+        var userIsPublicationCreator = getRoles().contains(CREATOR) && nonNull(getUserInstance());
         return userIsPublicationCreator
                    ? new Owner(new User(getUserInstance().getUsername()), getUserInstance().getTopLevelOrgCristinId())
                    : new Owner(new User(randomString()), CREATING_INSTITUTION);
     }
 
-    private Contributor createContributor() {
-        var userIsContributor = getRoles().contains(CREATOR)
-                                && BELONGS_TO_CURATING_INSTITUTION.equals(getUserInstitutionConfig())
-                                && nonNull(getUserInstance());
-        var identity = userIsContributor
-                           ? new Identity.Builder()
-                                 .withId(getUserInstance().getPersonCristinId())
-                                 .withName(getUserInstance().getUsername())
-                                 .build()
-                           : new Identity.Builder().withId(randomUri()).withName(randomString()).build();
-        return new Contributor.Builder()
-                   .withAffiliations(List.of(Organization.fromUri(CURATING_INSTITUTION)))
-                   .withIdentity(identity)
-                   .withRole(new RoleType(Role.CREATOR))
-                   .build();
+    private List<Contributor> createContributors() {
+        var contributors = new ArrayList<Contributor>();
+
+        var userIsContributor = getRoles().contains(CONTRIBUTOR) && nonNull(getUserInstance());
+        if (userIsContributor) {
+            var identity = new Identity.Builder()
+                               .withId(getUserInstance().getPersonCristinId())
+                               .withName(getUserInstance().getUsername())
+                               .build();
+            var affiliation = Organization.fromUri(getUserInstance().getTopLevelOrgCristinId());
+            contributors.add(new Contributor.Builder()
+                                 .withAffiliations(List.of(affiliation))
+                                 .withIdentity(identity)
+                                 .withRole(new RoleType(Role.CREATOR))
+                                 .build());
+        }
+
+        return contributors;
     }
 
     private EntityDescription createEntityDescription(Resource resource) {
         return resource.getEntityDescription().copy()
-                   .withContributors(List.of(createContributor()))
+                   .withContributors(createContributors())
                    .build();
     }
 
@@ -273,7 +281,7 @@ public class PublicationScenarioContext {
     }
 
     private AssociatedArtifactList createAssociatedArtifacts() {
-        return switch (getFileConfig()) {
+        return switch (getPublicationFileConfig()) {
             case NO_FILES -> AssociatedArtifactList.empty();
             case NON_FINALIZED_FILES -> new AssociatedArtifactList(randomNonFinalizedFiles());
             case FINALIZED_FILES -> new AssociatedArtifactList(randomFinalizedFiles());
