@@ -96,6 +96,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
@@ -831,7 +832,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
-
         var affiliation = (new Organization.Builder()).withId(orgId).build();
 
         importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
@@ -935,19 +935,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication);
-        GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
-        DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
-        var closedGeneralSupportTicket = GeneralSupportRequest.create(resource, userInstance)
-                                             .persistNewTicket(ticketService)
-                                             .close(randomUserInstance());
-        ticketService.updateTicket(closedGeneralSupportTicket);
-        var publishingRequestTicket = PublishingRequestCase.create(resource, userInstance,
-                                                                   PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
-        publishingRequestTicket.persistNewTicket(ticketService);
+        createTickets(resource, userInstance);
         resourceService.unpublishPublication(publication, userInstance);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        assertThat(tickets, hasSize(4));
+        assertThat(tickets, hasSize(5));
         assertThat(tickets, hasItem(
             allOf(instanceOf(GeneralSupportRequest.class), hasProperty("status", is(equalTo(TicketStatus.CLOSED))))));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
@@ -956,8 +947,50 @@ class ResourceServiceTest extends ResourcesLocalTest {
             allOf(instanceOf(DoiRequest.class), hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
         assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class),
                                           hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
         assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
                    is(equalTo(UNPUBLISHED)));
+    }
+
+    @Test
+    void shouldSetAllNotApplicableTicketsToPendingWhenRepublishingPublication() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
+
+        createTickets(resource, userInstance);
+
+        resourceService.unpublishPublication(publication, userInstance);
+        resource.republish(resourceService, ticketService, userInstance);
+
+
+        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+        assertThat(tickets, hasSize(5));
+        assertThat(tickets, hasItem(
+            allOf(instanceOf(GeneralSupportRequest.class), hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+        assertThat(tickets, hasItem(
+            allOf(instanceOf(DoiRequest.class), hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+        assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
+                   is(equalTo(PUBLISHED)));
+    }
+
+    @Test
+    void shouldFetchAllFileEntries() throws ApiGatewayException {
+        var publication = createPublishedResource();
+
+        var actualNumberOfFiles = Resource.fromPublication(publication).fetchFileEntries(resourceService).count();
+
+        var expectedNumberOfFiles = publication.getAssociatedArtifacts().stream()
+                                        .filter(File.class::isInstance)
+                                        .count();
+        assertThat(actualNumberOfFiles, is(equalTo(expectedNumberOfFiles)));
     }
 
     @ParameterizedTest
@@ -1076,7 +1109,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Resource.resourceQueryObject(peristedPublication.getIdentifier())
             .fetch(resourceService)
             .orElseThrow()
-            .republish(resourceService, userInstance);
+            .republish(resourceService, ticketService, userInstance);
 
         var republishedResource = Resource.resourceQueryObject(peristedPublication.getIdentifier())
                                       .fetch(resourceService)
@@ -1096,7 +1129,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                      () -> Resource.resourceQueryObject(peristedPublication.getIdentifier())
                                .fetch(resourceService)
                                .orElseThrow()
-                               .republish(resourceService, userInstance));
+                               .republish(resourceService, ticketService, userInstance));
     }
 
     @Test
@@ -1657,6 +1690,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertEquals(persistedResource, refreshedResource);
         assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
+    }
+
+    private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {
+        GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
+        DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
+        var closedGeneralSupportTicket = GeneralSupportRequest.create(resource, userInstance)
+                                             .persistNewTicket(ticketService)
+                                             .close(randomUserInstance());
+        ticketService.updateTicket(closedGeneralSupportTicket);
+        var closedPublishingRequestTicket = PublishingRequestCase.create(resource, userInstance,
+                                                                         PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        closedPublishingRequestTicket.setStatus(TicketStatus.COMPLETED);
+        closedPublishingRequestTicket.persistNewTicket(ticketService);
+
+        var pendingPublishingRequestTicket = PublishingRequestCase.create(resource, userInstance,
+                                                                          PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        pendingPublishingRequestTicket.setStatus(TicketStatus.PENDING);
+        pendingPublishingRequestTicket.persistNewTicket(ticketService);
     }
 
     private static UserInstance randomUserInstance() {
