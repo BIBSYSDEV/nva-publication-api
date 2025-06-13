@@ -37,7 +37,7 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
                  DOI_REQUEST_CREATE,
                  PUBLISHING_REQUEST_CREATE,
                  UPLOAD_FILE -> isCurator();
-            case UNPUBLISH -> hasApprovedFiles() ? canApproveFiles() && isPublished() : isCurator();
+            case UNPUBLISH -> isPublished() && (hasApprovedFiles() ? canApproveFiles() : isCurator());
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
             case PUBLISHING_REQUEST_APPROVE,
                  READ_HIDDEN_FILES, APPROVE_FILES -> canApproveFiles();
