@@ -662,7 +662,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldBePossibleToChangePublicationContextAndInstanceType()
+    void shouldBePossibleToChangePublicationInstanceType()
         throws ApiGatewayException, IOException {
         var pages =  new Range.Builder().build();
         var volume = "volume";
@@ -692,12 +692,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var updatedPublication = resourceService.getPublicationByIdentifier(journalArticle.getIdentifier());
 
-        //inject modified date to the input object because modified date is not available before the actual update.
-        updatedPublication.setModifiedDate(updatedPublication.getModifiedDate());
-
         assertThat(getInstanceType(journalArticle), is(not(equalTo(getInstanceType(updatedPublication)))));
         assertThat(getContextType(journalArticle), is(equalTo(getContextType(updatedPublication))));
-        assertThat(updatedPublication, is(equalTo(updatedPublication)));
     }
 
     private static String getContextType(Publication journalArticle) {
