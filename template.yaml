@@ -1968,7 +1968,7 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
-      Timeout: 360
+      Timeout: 30
       Tracing: Active
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
