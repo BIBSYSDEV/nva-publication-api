@@ -86,6 +86,7 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<SQSEve
     @Override
     public EventReference handleRequest(SQSEvent event, Context context) {
         var record = event.getRecords().getFirst();
+        logger.info("Received SQS message: {}", record.getBody());
         var dataEntryUpdateEvent = convertToDataEntryUpdateEvent(record);
         return dataEntryUpdateEvent.shouldProcessUpdate(environment) ? sendEvent(dataEntryUpdateEvent, context) :
                                                                                                                     DO_NOT_EMIT_EVENT;
