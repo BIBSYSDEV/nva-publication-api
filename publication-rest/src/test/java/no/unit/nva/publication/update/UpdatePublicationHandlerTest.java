@@ -664,25 +664,21 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldBePossibleToChangePublicationInstanceType()
         throws ApiGatewayException, IOException {
-        var pages =  new Range.Builder().build();
-        var volume = "volume";
-        var issue = "issue";
-        var articleNumber = "articleNumber";
         var journalArticle = randomPublication(AcademicArticle.class).copy()
                                  .withStatus(DRAFT)
-                                 .withEntityDescription(new EntityDescription.Builder()
-                                                     .withReference(new Reference.Builder()
-                                                                              .withPublishingContext(new Journal(randomUri()))
-                                                                              .withPublicationInstance(new AcademicArticle(pages, volume, issue, articleNumber))
-                                                                              .build())
-                                                     .build())
                                  .withPublisher(Organization.fromUri(customerId))
                                  .build();
         journalArticle = Resource.fromPublication(journalArticle)
-                          .persistNew(resourceService, UserInstance.fromPublication(journalArticle));
+                             .persistNew(resourceService, UserInstance.fromPublication(journalArticle));
 
         var update = resourceService.getPublicationByIdentifier(journalArticle.getIdentifier());
-        update.getEntityDescription().getReference().setPublicationInstance(new AcademicLiteratureReview(pages, volume, issue, articleNumber));
+        var instance = (JournalArticle) journalArticle.getEntityDescription().getReference().getPublicationInstance();
+        update.getEntityDescription()
+            .getReference()
+            .setPublicationInstance(new AcademicLiteratureReview(instance.getPages(),
+                                                                 instance.getVolume(),
+                                                                 instance.getIssue(),
+                                                                 instance.getArticleNumber()));
 
         var event = userUpdatesPublicationAndHasRightToUpdate(update);
         updatePublicationHandler.handleRequest(event, output, context);
