@@ -48,7 +48,7 @@ Feature: Permissions given claimed publisher
       | UserRole                    | Operation | Outcome     |
       | Unauthenticated             | approve   | Not Allowed |
       | Authenticated               | approve   | Not Allowed |
-      | Publication owner           | approve   | Not Allowed |
+      | Publication creator         | approve   | Not Allowed |
       | Contributor                 | approve   | Not Allowed |
       | Publishing curator          | approve   | Not Allowed |
       | Thesis curator              | approve   | Not Allowed |
@@ -59,7 +59,7 @@ Feature: Permissions given claimed publisher
 
       | Unauthenticated             | transfer  | Not Allowed |
       | Authenticated               | transfer  | Not Allowed |
-      | Publication owner           | transfer  | Not Allowed |
+      | Publication creator         | transfer  | Not Allowed |
       | Contributor                 | transfer  | Not Allowed |
       | Publishing curator          | transfer  | Not Allowed |
       | Thesis curator              | transfer  | Not Allowed |
@@ -71,7 +71,7 @@ Feature: Permissions given claimed publisher
   Scenario Outline: Verify permission when
   user is from a contributor organization and publisher is unclaimed
     Given a "publication"
-    And the user belongs to "creating institution"
+    And the user belongs to "curating institution"
     And the ticket receiver is "users institution"
     When the user have the role "<UserRole>"
     And the user attempts to "<Operation>"
@@ -81,7 +81,7 @@ Feature: Permissions given claimed publisher
       | UserRole                    | Operation | Outcome     |
       | Unauthenticated             | approve   | Not Allowed |
       | Authenticated               | approve   | Not Allowed |
-      | Publication owner           | approve   | Not Allowed |
+      | Publication creator         | approve   | Not Allowed |
       | Contributor                 | approve   | Not Allowed |
       | Publishing curator          | approve   | Allowed     |
       | Editor                      | approve   | Not Allowed |
@@ -92,7 +92,7 @@ Feature: Permissions given claimed publisher
 
       | Unauthenticated             | transfer  | Not Allowed |
       | Authenticated               | transfer  | Not Allowed |
-      | Publication owner           | transfer  | Not Allowed |
+      | Publication creator         | transfer  | Not Allowed |
       | Contributor                 | transfer  | Not Allowed |
       | Publishing curator          | transfer  | Allowed     |
       | Editor                      | transfer  | Not Allowed |
@@ -112,7 +112,6 @@ Feature: Permissions given claimed publisher
 
   Scenario: Should not give transfer permission when only available curation institution is same as user
     Given a "publication"
-    And the user belongs to "curating institution"
     When the user have the role "publishing curator"
     And the user attempts to "transfer"
     Then the action outcome is "Not Allowed"

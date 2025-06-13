@@ -7,7 +7,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import cucumber.permissions.PermissionsRole;
 import cucumber.permissions.enums.ChannelClaimConfig;
-import cucumber.permissions.enums.FileConfig;
+import cucumber.permissions.enums.PublicationFileConfig;
 import cucumber.permissions.enums.PublicationTypeConfig;
 import cucumber.permissions.enums.UserInstitutionConfig;
 import cucumber.permissions.publication.PublicationScenarioContext;
@@ -48,11 +48,11 @@ public class TicketAccessFeatures {
     @And("publication has {string} files")
     public void publicationHasFiles(String fileTypes) {
         if ("no".equalsIgnoreCase(fileTypes)) {
-            publicationScenarioContext.setFileConfig(FileConfig.NO_FILES);
+            publicationScenarioContext.setPublicationFileConfig(PublicationFileConfig.NO_FILES);
         } else if ("no finalized".equalsIgnoreCase(fileTypes)) {
-            publicationScenarioContext.setFileConfig(FileConfig.NON_FINALIZED_FILES);
+            publicationScenarioContext.setPublicationFileConfig(PublicationFileConfig.NON_FINALIZED_FILES);
         } else if ("finalized".equalsIgnoreCase(fileTypes)) {
-            publicationScenarioContext.setFileConfig(FileConfig.FINALIZED_FILES);
+            publicationScenarioContext.setPublicationFileConfig(PublicationFileConfig.FINALIZED_FILES);
         } else {
             throw new IllegalArgumentException("Non valid input: " + fileTypes);
         }

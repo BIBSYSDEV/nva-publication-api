@@ -14,48 +14,48 @@ Feature: Permissions given claimed publisher
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                | Operation      | Outcome     |
-      | Unauthenticated         | partial-update | Not Allowed |
-      | Authenticated           | partial-update | Not Allowed |
-      | External client         | partial-update | Not Allowed |
-      | Publication creator     | partial-update | Allowed     |
-      | Contributor             | partial-update | Allowed     |
-      | Publishing curator      | partial-update | Allowed     |
-      | NVI curator             | partial-update | Allowed     |
-      | DOI curator             | partial-update | Allowed     |
-      | Support curator         | partial-update | Allowed     |
-      | Thesis curator          | partial-update | Allowed     |
-      | Embargo thesis curator  | partial-update | Allowed     |
-      | Editor                  | partial-update | Allowed     |
-      | Related external client | partial-update | Allowed     |
+      | UserRole                    | Operation      | Outcome     |
+      | Unauthenticated             | partial-update | Not Allowed |
+      | Authenticated               | partial-update | Not Allowed |
+      | Publication creator         | partial-update | Allowed     |
+      | Contributor                 | partial-update | Allowed     |
+      | Publishing curator          | partial-update | Allowed     |
+      | NVI curator                 | partial-update | Allowed     |
+      | DOI curator                 | partial-update | Allowed     |
+      | Support curator             | partial-update | Allowed     |
+      | Thesis curator              | partial-update | Allowed     |
+      | Embargo thesis curator      | partial-update | Allowed     |
+      | Editor                      | partial-update | Allowed     |
+      | Related external client     | partial-update | Allowed     |
+      | Not related external client | partial-update | Not Allowed |
 
-      | Unauthenticated         | update         | Not Allowed |
-      | Authenticated           | update         | Not Allowed |
-      | External client         | update         | Not Allowed |
-      | Publication creator     | update         | Not Allowed |
-      | Contributor             | update         | Not Allowed |
-      | Publishing curator      | update         | Not Allowed |
-      | NVI curator             | update         | Not Allowed |
-      | DOI curator             | update         | Not Allowed |
-      | Support curator         | update         | Not Allowed |
-      | Thesis curator          | update         | Not Allowed |
-      | Embargo thesis curator  | update         | Not Allowed |
-      | Editor                  | update         | Not Allowed |
-      | Related external client | update         | Allowed     |
+      | Unauthenticated             | update         | Not Allowed |
+      | Authenticated               | update         | Not Allowed |
+      | Publication creator         | update         | Not Allowed |
+      | Contributor                 | update         | Not Allowed |
+      | Publishing curator          | update         | Not Allowed |
+      | NVI curator                 | update         | Not Allowed |
+      | DOI curator                 | update         | Not Allowed |
+      | Support curator             | update         | Not Allowed |
+      | Thesis curator              | update         | Not Allowed |
+      | Embargo thesis curator      | update         | Not Allowed |
+      | Editor                      | update         | Not Allowed |
+      | Related external client     | update         | Allowed     |
+      | Not related external client | update         | Not Allowed |
 
-      | Unauthenticated         | unpublish      | Not Allowed |
-      | Authenticated           | unpublish      | Not Allowed |
-      | External client         | unpublish      | Not Allowed |
-      | Publication creator     | unpublish      | Not Allowed |
-      | Contributor             | unpublish      | Not Allowed |
-      | Publishing curator      | unpublish      | Not Allowed |
-      | NVI curator             | unpublish      | Not Allowed |
-      | DOI curator             | unpublish      | Not Allowed |
-      | Support curator         | unpublish      | Not Allowed |
-      | Thesis curator          | unpublish      | Not Allowed |
-      | Embargo thesis curator  | unpublish      | Not Allowed |
-      | Editor                  | unpublish      | Not Allowed |
-      | Related external client | unpublish      | Allowed     |
+      | Unauthenticated             | unpublish      | Not Allowed |
+      | Authenticated               | unpublish      | Not Allowed |
+      | Publication creator         | unpublish      | Not Allowed |
+      | Contributor                 | unpublish      | Not Allowed |
+      | Publishing curator          | unpublish      | Not Allowed |
+      | NVI curator                 | unpublish      | Not Allowed |
+      | DOI curator                 | unpublish      | Not Allowed |
+      | Support curator             | unpublish      | Not Allowed |
+      | Thesis curator              | unpublish      | Not Allowed |
+      | Embargo thesis curator      | unpublish      | Not Allowed |
+      | Editor                      | unpublish      | Not Allowed |
+      | Related external client     | unpublish      | Allowed     |
+      | Not related external client | unpublish      | Not Allowed |
 
 
   Scenario Outline: Verify update operation when user is from the same organization as claimed
@@ -69,20 +69,20 @@ Feature: Permissions given claimed publisher
     Then the action outcome is "<Outcome>"
 
     Examples:
-      | UserRole                | Outcome     |
-      | Unauthenticated         | Not Allowed |
-      | Authenticated           | Not Allowed |
-      | External client         | Not Allowed |
-      | Publication creator     | Allowed     |
-      | Contributor             | Allowed     |
-      | Publishing curator      | Allowed     |
-      | NVI curator             | Allowed     |
-      | DOI curator             | Allowed     |
-      | Support curator         | Allowed     |
-      | Thesis curator          | Allowed     |
-      | Embargo thesis curator  | Allowed     |
-      | Editor                  | Allowed     |
-      | Related external client | Allowed     |
+      | UserRole                    | Outcome     |
+      | Unauthenticated             | Not Allowed |
+      | Authenticated               | Not Allowed |
+      | Publication creator         | Allowed     |
+      | Contributor                 | Allowed     |
+      | Publishing curator          | Allowed     |
+      | NVI curator                 | Allowed     |
+      | DOI curator                 | Allowed     |
+      | Support curator             | Allowed     |
+      | Thesis curator              | Allowed     |
+      | Embargo thesis curator      | Allowed     |
+      | Editor                      | Allowed     |
+      | Related external client     | Allowed     |
+      | Not related external client | Not Allowed |
 
   Scenario Outline: Verify update operation when user is not from the same organization as claimed
   publisher and publication has no finalized files
@@ -179,7 +179,6 @@ Feature: Permissions given claimed publisher
       | UserRole                    | Operation     | Outcome     |
       | Unauthenticated             | update        | Not Allowed |
       | Authenticated               | update        | Not Allowed |
-      | External client             | update        | Not Allowed |
       | Publication creator         | update        | Not Allowed |
       | Contributor                 | update        | Not Allowed |
       | Publishing curator          | update        | Not Allowed |

@@ -15,10 +15,6 @@ public class DegreeCuratorFileGrantStrategy extends FileStrategyBase implements 
 
     @Override
     public boolean allowsAction(FileOperation permission) {
-        return resourceIsDegree() && isAllowedUser();
-    }
-
-    private boolean isAllowedUser() {
-        return currentUserIsDegreeFileCuratorForGivenFile() || currentUserIsDegreeEmbargoFileCuratorForGivenFile();
+        return resourceIsDegree() && !fileHasEmbargo() && currentUserIsDegreeFileCuratorForGivenFile();
     }
 }
