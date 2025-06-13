@@ -1,8 +1,5 @@
 Feature: Publication action permissions for publication status Draft
 
-  # Should possibly remove rows of roles that should not have access to publication? Or do they
-  # theoretically have access through API? The file is kind of bloated
-
   Scenario Outline: Verify publication permissions
     Given a "publication"
     And publication has status "draft"
@@ -40,20 +37,6 @@ Feature: Publication action permissions for publication status Draft
       | Related external client     | partial-update            | Allowed     |
       | Not related external client | partial-update            | Not Allowed |
 
-      | Unauthenticated             | update-including-files    | Not Allowed |
-      | Authenticated               | update-including-files    | Not Allowed |
-      | Publication creator         | update-including-files    | Not Allowed |
-      | Contributor                 | update-including-files    | Not Allowed |
-      | Publishing curator          | update-including-files    | Allowed     |
-      | NVI curator                 | update-including-files    | Not Allowed |
-      | DOI curator                 | update-including-files    | Not Allowed |
-      | Support curator             | update-including-files    | Not Allowed |
-      | Thesis curator              | update-including-files    | Not Allowed |
-      | Embargo thesis curator      | update-including-files    | Not Allowed |
-      | Editor                      | update-including-files    | Not Allowed |
-      | Related external client     | update-including-files    | Not Allowed |
-      | Not related external client | update-including-files    | Not Allowed |
-
       | Unauthenticated             | read-hidden-files         | Not Allowed |
       | Authenticated               | read-hidden-files         | Not Allowed |
       | Publication creator         | read-hidden-files         | Not Allowed |
@@ -72,12 +55,12 @@ Feature: Publication action permissions for publication status Draft
       | Authenticated               | unpublish                 | Not Allowed |
       | Publication creator         | unpublish                 | Not Allowed |
       | Contributor                 | unpublish                 | Not Allowed |
-      | Publishing curator          | unpublish                 | Allowed     |
-      | NVI curator                 | unpublish                 | Allowed     |
-      | DOI curator                 | unpublish                 | Allowed     |
-      | Support curator             | unpublish                 | Allowed     |
-      | Thesis curator              | unpublish                 | Allowed     |
-      | Embargo thesis curator      | unpublish                 | Allowed     |
+      | Publishing curator          | unpublish                 | Not Allowed |
+      | NVI curator                 | unpublish                 | Not Allowed |
+      | DOI curator                 | unpublish                 | Not Allowed |
+      | Support curator             | unpublish                 | Not Allowed |
+      | Thesis curator              | unpublish                 | Not Allowed |
+      | Embargo thesis curator      | unpublish                 | Not Allowed |
       | Editor                      | unpublish                 | Not Allowed |
       | Related external client     | unpublish                 | Allowed     |
       | Not related external client | unpublish                 | Not Allowed |
