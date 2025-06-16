@@ -165,7 +165,7 @@ Feature: Publication action permissions for degrees with finalized files
       | Editor                  | upload-file               | Not Allowed |
       | Related external client | upload-file               | Allowed     |
 
-  Scenario Outline: Verify publication permissions for degrees when user does not relate to publication
+  Scenario Outline: Verify publication permissions for degrees with finalized files when user does not relate to publication
     Given a "degree"
     And publication has "finalized" files
     And the user have the role "<UserRole>"

@@ -1,4 +1,4 @@
-Feature: Publication action permissions for degrees
+Feature: Publication action permissions for imported degrees
 
   Scenario Outline: Verify publication permissions for imported degrees
     Given a "degree"
@@ -165,9 +165,9 @@ Feature: Publication action permissions for degrees
       | Editor                  | upload-file               | Not Allowed |
       | Related external client | upload-file               | Allowed     |
 
-  Scenario Outline: Verify publication permissions for degrees when user does not relate to publication
+  Scenario Outline: Verify publication permissions for imported degrees when user does not relate to publication
     Given a "degree"
-    And publication has "finalized" files
+    And publication is an imported degree
     And the user have the role "<UserRole>"
     And the user belongs to "non curating institution"
     When the user attempts to "<Operation>"
