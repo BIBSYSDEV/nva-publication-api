@@ -11,7 +11,7 @@ import static no.unit.nva.publication.queue.RecoveryEntry.TICKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
@@ -155,8 +155,10 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<SQSEve
     }
 
     private DataEntryUpdateEvent convertToDataEntryUpdateEvent(SQSMessage message) {
-        var record = attempt(() -> JsonUtils.dtoObjectMapper.readValue(message.getBody(), DynamodbStreamRecord.class))
+        var record = attempt(() -> JsonUtils.dtoObjectMapper.readValue(message.getBody(),
+                                                                       DynamodbEvent.DynamodbStreamRecord.class))
                          .orElseThrow();
+
         return new DataEntryUpdateEvent(record.getEventName(),
                                         getEntity(record.getDynamodb().getOldImage()),
                                         getEntity(record.getDynamodb().getNewImage()));
