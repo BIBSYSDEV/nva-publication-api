@@ -22,6 +22,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -142,6 +143,50 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return transactWriteItems;
     }
 
+    public Resource updateResourceFromImport(Resource resource, UserInstance userInstance) {
+        var persistedResource = fetchExistingResource(resource.toPublication());
+
+        if (resource.hasAffectiveChanges(persistedResource)) {
+            resource.setCreatedDate(persistedResource.getCreatedDate());
+            resource.setModifiedDate(clockForTimestamps.instant());
+
+            updateCuratingInstitutions(resource, persistedResource);
+
+            var transactionItems = new ArrayList<TransactWriteItem>();
+
+            var ticketsTransactions = refreshTicketsTransactions(resource);
+            transactionItems.add(createPutTransaction(resource));
+            transactionItems.addAll(updateFilesFromImportTransactions(resource, userInstance, persistedResource));
+            transactionItems.addAll(ticketsTransactions);
+            transactionItems.addAll(updatePublicationChannelsForPublisherWhenDegree(resource, persistedResource));
+
+            var transactWriteItemsRequest = new TransactWriteItemsRequest()
+                                                .withTransactItems(transactionItems);
+
+            sendTransactionWriteRequest(transactWriteItemsRequest);
+            return resource;
+        }
+        return resource;
+    }
+
+    private Collection<? extends TransactWriteItem> updateFilesFromImportTransactions(Resource resource,
+                                                                                      UserInstance userInstance,
+                                                                                      Resource persistedResource) {
+        return persistedResource.getFileEntries()
+                   .stream()
+                   .map(fileEntry -> updateFileEntryFromImport(fileEntry, resource.toPublication(), userInstance))
+                   .map(FileEntry::toDao)
+                   .map(dao -> dao.toPutTransactionItem(tableName))
+                   .toList();
+    }
+
+    private FileEntry updateFileEntryFromImport(FileEntry fileEntry, Publication publication,
+                                                UserInstance userInstance) {
+        return publication.getFile(fileEntry.getFile().getIdentifier())
+                   .map(file -> fileEntry.updateFromImport(file, userInstance))
+                   .orElse(fileEntry);
+    }
+
     private void removePublicationChannel(Resource persistedResource, UUID publisherIdentifier,
                                           List<TransactWriteItem> transactWriteItems) {
         persistedResource.getPublicationChannelByIdentifier(new SortableIdentifier(publisherIdentifier.toString()))
@@ -174,8 +219,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
             updateCuratingInstitutions(resource, persistedResource);
 
-            sendTransactionWriteRequest(new TransactWriteItemsRequest().withTransactItems(
-                createUpdateResourceTransactionItems(resource, userInstance, persistedResource)));
+            var transactionItems = new ArrayList<TransactWriteItem>();
+
+            var ticketsTransactions = refreshTicketsTransactions(resource);
+            transactionItems.add(createPutTransaction(resource));
+            transactionItems.addAll(updateFilesTransactions(resource, userInstance, persistedResource));
+            transactionItems.addAll(ticketsTransactions);
+            transactionItems.addAll(updatePublicationChannelsForPublisherWhenDegree(resource, persistedResource));
+
+            var transactWriteItemsRequest = new TransactWriteItemsRequest()
+                                                .withTransactItems(transactionItems);
+
+            sendTransactionWriteRequest(transactWriteItemsRequest);
             return resource;
         }
         return resource;
@@ -271,18 +326,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var resource = Resource.fromPublication(publicationUpdate);
         var userInstance = UserInstance.fromPublication(publicationUpdate);
         return updateResource(resource, userInstance).toPublication();
-    }
-
-    private List<TransactWriteItem> createUpdateResourceTransactionItems(Resource resource, UserInstance userInstance,
-                                                                         Resource persistedResource) {
-        var transactionItems = new ArrayList<TransactWriteItem>();
-
-        var ticketsTransactions = refreshTicketsTransactions(resource);
-        transactionItems.add(createPutTransaction(resource));
-        transactionItems.addAll(updateFilesTransactions(resource, userInstance, persistedResource));
-        transactionItems.addAll(ticketsTransactions);
-        transactionItems.addAll(updatePublicationChannelsForPublisherWhenDegree(resource, persistedResource));
-        return transactionItems;
     }
 
     private List<TransactWriteItem> refreshTicketsTransactions(Resource resource) {

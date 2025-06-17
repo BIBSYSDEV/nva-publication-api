@@ -1517,6 +1517,27 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void updatingResourceFromImportShouldAllowUpdatingOpenFileToInternalFile()
+        throws BadRequestException {
+        var openFile = randomOpenFile();
+        var publication = randomPublication()
+                              .copy()
+                              .withAssociatedArtifacts(List.of(openFile))
+                              .build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var internalFile = openFile.toInternalFile();
+        var update = resource.copy()
+                         .withAssociatedArtifacts(List.of(internalFile))
+                         .build();
+
+        var updatedResource = Resource.fromPublication(update)
+                                  .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
+
+        assertInstanceOf(InternalFile.class, updatedResource.getFiles().getFirst());
+    }
+
+    @Test
     void shouldSetFileTypeRetractedEventWhenRetractingFinalizedFile() throws BadRequestException {
         var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
         var userInstance = UserInstance.fromPublication(publication);

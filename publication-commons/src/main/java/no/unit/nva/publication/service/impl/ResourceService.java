@@ -333,6 +333,10 @@ public class ResourceService extends ServiceWithTransactions {
                    .map(FileDao::getFileEntry);
     }
 
+    public Resource updateResourceFromImport(Resource resource, UserInstance userInstance) {
+        return updateResourceService.updateResourceFromImport(resource, userInstance);
+    }
+
     private QueryRequest createQueryForFilesAssociatedWithResource(String partitionKeyValue) {
         return new QueryRequest()
                    .withTableName(tableName)

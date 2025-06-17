@@ -425,10 +425,10 @@ public class Resource implements Entity {
         return resourceService.importResource(this, importSource);
     }
 
-    public void updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
+    public Resource updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
         var userInstance = UserInstance.fromPublication(this.toPublication());
         this.setResourceEvent(MergedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
-        resourceService.updateResource(this, userInstance);
+        return resourceService.updateResourceFromImport(this, userInstance);
     }
 
     public List<LogEntry> fetchLogEntries(ResourceService resourceService) {
