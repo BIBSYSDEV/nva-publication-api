@@ -12,6 +12,7 @@ import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.permissions.ticket.deny.ClaimedChannelTicketDenyStrategy;
 import no.unit.nva.publication.permissions.ticket.deny.FinalizedTicketDenyStrategy;
 import no.unit.nva.publication.permissions.ticket.grant.ApproveTicketGrantStrategy;
+import no.unit.nva.publication.permissions.ticket.grant.ReadTicketGrantStrategy;
 import no.unit.nva.publication.permissions.ticket.grant.TransferTicketGrantStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
@@ -34,8 +35,9 @@ public class TicketPermissions {
         this.userInstance = userInstance;
         this.ticket = ticket;
         this.grantStrategies = Set.of(
-            new ApproveTicketGrantStrategy(ticket, userInstance, resource, publicationPermissions),
-            new TransferTicketGrantStrategy(ticket, userInstance, resource)
+            new ApproveTicketGrantStrategy(ticket, userInstance, resource),
+            new TransferTicketGrantStrategy(ticket, userInstance, resource),
+            new ReadTicketGrantStrategy(ticket, userInstance, resource, publicationPermissions)
         );
         this.denyStrategies = Set.of(
             new ClaimedChannelTicketDenyStrategy(ticket, userInstance, resource),

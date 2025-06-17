@@ -111,7 +111,8 @@ public class PublishingRequestDto extends TicketDto {
     }
 
     @JacocoGenerated
-    private Set<TicketOperation> getAllowedOperations() {
+    @Override
+    public Set<TicketOperation> getAllowedOperations() {
         return allowedOperations;
     }
 
