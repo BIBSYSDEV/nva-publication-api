@@ -7,11 +7,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.permissions.ticket.TicketPermissions;
@@ -21,7 +18,6 @@ import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -66,40 +62,21 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
                                          UserInstance userInstance) throws ApiGatewayException {
         var resource = resourceService.getResourceByIdentifier(publicationIdentifier);
         var publicationPermissions = PublicationPermissions.create(resource, userInstance);
-        var tickets = fetchTickets(resource, publicationPermissions)
-                          .filter(ticketEntry -> hasAccessToTicket(ticketEntry, userInstance));
+        var tickets = fetchTickets(resource);
 
-
-        return tickets.map(ticketEntry -> createDto(ticketEntry, resource, TicketPermissions.create(ticketEntry,
-                                                                                                    userInstance,
-                                                                                                    resource,
-                                                                                                    publicationPermissions)))
+        return tickets.map(ticketEntry ->
+                               createDto(ticketEntry, resource, TicketPermissions.create(ticketEntry,
+                                                                                         userInstance,
+                                                                                         resource,
+                                                                                         publicationPermissions)))
+                   .filter(ticket -> !ticket.getAllowedOperations().isEmpty())
                    .toList();
     }
 
-    private boolean hasAccessToTicket(TicketEntry ticketEntry, UserInstance userInstance) {
-        if (ticketEntry.getOwner().equals(userInstance.getUser())) {
-            return true;
-        }
-        if (ticketEntry instanceof GeneralSupportRequest) {
-            return ticketEntry.hasSameOwnerAffiliationAs(userInstance);
-        } else {
-            return ticketEntry.getReceivingOrganizationDetails().topLevelOrganizationId().equals(userInstance.getTopLevelOrgCristinId())
-                   || !TicketStatus.PENDING.equals(ticketEntry.getStatus());
-        }
-    }
-
-    private Stream<TicketEntry> fetchTickets(Resource resource,
-                                             PublicationPermissions publicationPermissions)
-        throws ApiGatewayException {
+    private Stream<TicketEntry> fetchTickets(Resource resource) {
         return Optional.ofNullable(resource)
-                   .filter(ticketResource -> isAllowedToListTickets(publicationPermissions))
                    .map(resourceService::fetchAllTicketsForResource)
-                   .orElseThrow(ForbiddenException::new);
-    }
-
-    private boolean isAllowedToListTickets(PublicationPermissions publicationPermissions) {
-        return publicationPermissions.allowsAction(PublicationOperation.PARTIAL_UPDATE);
+                   .orElseGet(Stream::empty);
     }
 
     private TicketDto createDto(TicketEntry ticket, Resource resource, TicketPermissions ticketPermissions) {

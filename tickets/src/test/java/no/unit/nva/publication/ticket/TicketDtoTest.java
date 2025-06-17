@@ -38,7 +38,8 @@ class TicketDtoTest extends TicketTestLocal {
     public static final Set<String> GENERAL_DTO_FIELDS_TO_IGNORE = Set.of("messages", "workflow",
                                                                           "availableInstitutions");
     public static final Set<String> PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE = Set.of("approvedFiles",
-                                                                                     "filesForApproval");
+                                                                                     "filesForApproval",
+                                                                                     "allowedOperations");
 
     @BeforeEach
     public void setup() {
