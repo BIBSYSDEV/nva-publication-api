@@ -10,6 +10,7 @@ public enum PublicationOperation {
 
     UPDATE("update"),
     PARTIAL_UPDATE("partial-update"),
+    @Deprecated
     UPDATE_FILES("update-including-files"),
     READ_HIDDEN_FILES("read-hidden-files"),
     UNPUBLISH("unpublish"),
