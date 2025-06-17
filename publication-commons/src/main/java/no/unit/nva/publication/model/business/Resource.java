@@ -239,7 +239,7 @@ public class Resource implements Entity {
     }
 
     @JsonIgnore
-    public boolean hasAffectiveChanges(Resource resource) {
+    public boolean hasEffectiveChanges(Resource resource) {
         return !(Objects.equals(getIdentifier(), resource.getIdentifier())
                  && getStatus() == resource.getStatus()
                  && Objects.equals(getResourceOwner(), resource.getResourceOwner())
