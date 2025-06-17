@@ -18,11 +18,11 @@ public class TransferTicketGrantStrategy extends TicketStrategyBase implements T
 
     @Override
     public boolean allowsAction(TicketOperation permission) {
-        if (permission.equals(TRANSFER) && ticket instanceof FilesApprovalEntry) {
-            return canManagePublishingTicket() && anyValidReceivers();
+        if (!permission.equals(TRANSFER)) {
+            return false;
         }
 
-        return false;
+        return ticket instanceof FilesApprovalEntry && canManagePublishingTicket() && anyValidReceivers();
     }
 
     private boolean anyValidReceivers() {

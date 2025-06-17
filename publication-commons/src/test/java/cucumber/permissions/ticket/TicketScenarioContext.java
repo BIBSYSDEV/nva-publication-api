@@ -61,16 +61,16 @@ public class TicketScenarioContext {
         return ticketType;
     }
 
-    public TicketOperation getOperation() {
-        return operation;
-    }
-
     public void setTicketStatus(TicketStatusConfig ticketStatusConfig) {
         this.ticketStatus = ticketStatusConfig;
     }
 
     public TicketStatusConfig getTicketStatus() {
         return ticketStatus;
+    }
+
+    public TicketOperation getOperation() {
+        return operation;
     }
 
     public void setOperation(TicketOperation operation) {

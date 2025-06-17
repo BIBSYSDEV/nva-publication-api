@@ -19,18 +19,15 @@ public class ApproveTicketGrantStrategy extends TicketStrategyBase implements Ti
 
     @Override
     public boolean allowsAction(TicketOperation permission) {
-        if (permission.equals(APPROVE)) {
-            if (ticket instanceof FilesApprovalEntry) {
-                return canManagePublishingTicket();
-            }
-            if (ticket instanceof DoiRequest) {
-                return canManageDoiTicket();
-            }
-            if (ticket instanceof GeneralSupportRequest) {
-                return canManageSupportTicket();
-            }
+        if (!permission.equals(APPROVE)) {
+            return false;
         }
 
-        return false;
+        return switch (ticket) {
+            case FilesApprovalEntry ignored -> canManagePublishingTicket();
+            case DoiRequest ignored -> canManageDoiTicket();
+            case GeneralSupportRequest ignored -> canManageSupportTicket();
+            default -> false;
+        };
     }
 }
