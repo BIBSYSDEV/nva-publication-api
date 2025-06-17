@@ -89,7 +89,6 @@ public class JournalArticle implements PublicationInstance<Range> {
 
     @Override
     public int hashCode() {
-        var clazz = getClass();
-        return Objects.hash(clazz.getName(), getPages(), getVolume(), getIssue(), getArticleNumber());
+        return Objects.hash(getClass(), getPages(), getVolume(), getIssue(), getArticleNumber());
     }
 }
