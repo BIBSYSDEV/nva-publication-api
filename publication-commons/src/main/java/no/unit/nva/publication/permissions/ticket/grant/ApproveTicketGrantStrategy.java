@@ -1,6 +1,6 @@
 package no.unit.nva.publication.permissions.ticket.grant;
 
-import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.model.PublicationOperation.APPROVE_FILES;
 import static no.unit.nva.model.TicketOperation.APPROVE;
 import no.unit.nva.model.TicketOperation;
 import no.unit.nva.publication.model.FilesApprovalEntry;
@@ -38,6 +38,6 @@ public class ApproveTicketGrantStrategy extends TicketStrategyBase implements Ti
     }
 
     private boolean canManagePublication() {
-        return publicationPermissions.allowsAction(UPDATE);
+        return publicationPermissions.allowsAction(APPROVE_FILES);
     }
 }

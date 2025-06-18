@@ -67,7 +67,7 @@ Feature: Permissions given claimed publisher
       | Not related external client | transfer  | Not Allowed |
 
 
-  Scenario: Verify transfer permission when user have no relations to publication, but owns the ticket
+  Scenario: Verify transfer permission when user have no relations to publication, but user belongs to the receiving institution
     Given a "publication"
     And the user belongs to "non curating institution"
     And the ticket receiver is "users institution"
@@ -75,7 +75,7 @@ Feature: Permissions given claimed publisher
     And the user attempts to "transfer"
     Then the action outcome is "Allowed"
 
-  Scenario: Verify no approve permission when user have no relations to publication, but owns the ticket
+  Scenario: Verify no approve permission when user have no relations to publication, but user belongs to the receiving institution
     Given a "publication"
     And the user belongs to "non curating institution"
     And the ticket receiver is "users institution"
