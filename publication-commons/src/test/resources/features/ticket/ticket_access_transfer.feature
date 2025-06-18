@@ -75,6 +75,14 @@ Feature: Permissions given claimed publisher
     And the user attempts to "transfer"
     Then the action outcome is "Allowed"
 
+  Scenario: Verify no approve permission when user have no relations to publication, but owns the ticket
+    Given a "publication"
+    And the user belongs to "non curating institution"
+    And the ticket receiver is "users institution"
+    When the user have the role "publishing curator"
+    And the user attempts to "approve"
+    Then the action outcome is "Not Allowed"
+
   Scenario: Should not give transfer permission when only available curation institution is same as user
     Given a "publication"
     When the user have the role "publishing curator"
