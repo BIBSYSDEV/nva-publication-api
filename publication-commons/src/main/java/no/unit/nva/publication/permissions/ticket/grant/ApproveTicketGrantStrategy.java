@@ -30,14 +30,14 @@ public class ApproveTicketGrantStrategy extends TicketStrategyBase implements Ti
         }
 
         return switch (ticket) {
-            case FilesApprovalEntry ignored -> canManagePublishingTicket() && canManagePublication();
+            case FilesApprovalEntry ignored -> canManagePublishingTicket() && canApproveFiles();
             case DoiRequest ignored -> canManageDoiTicket();
             case GeneralSupportRequest ignored -> canManageSupportTicket();
             default -> false;
         };
     }
 
-    private boolean canManagePublication() {
+    private boolean canApproveFiles() {
         return publicationPermissions.allowsAction(APPROVE_FILES);
     }
 }
