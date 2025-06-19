@@ -17,10 +17,18 @@ public class ContributorFileGrantStrategy extends FileStrategyBase implements Fi
 
     @Override
     public boolean allowsAction(FileOperation permission) {
+        if (!currentUserIsContributor()) {
+            return false;
+        }
 
         return switch (permission) {
-            case READ_METADATA, DOWNLOAD -> currentUserIsContributor();
+            case READ_METADATA -> true;
+            case DOWNLOAD -> isNotFinalizedEmbargo();
             case WRITE_METADATA, DELETE -> false;
         };
+    }
+
+    private boolean isNotFinalizedEmbargo() {
+        return !(fileIsFinalized() && fileHasEmbargo());
     }
 }
