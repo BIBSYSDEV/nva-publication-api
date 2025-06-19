@@ -110,7 +110,7 @@ Feature: File permissions for embargo and degree files
       | Authenticated               | delete         | Not Allowed |
 
       | Publication creator         | read-metadata  | Allowed     |
-      | Publication creator         | download       | Allowed     |
+      | Publication creator         | download       | Not Allowed |
       | Publication creator         | write-metadata | Not Allowed |
       | Publication creator         | delete         | Not Allowed |
 
