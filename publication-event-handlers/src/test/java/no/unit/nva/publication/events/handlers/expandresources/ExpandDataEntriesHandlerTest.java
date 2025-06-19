@@ -3,6 +3,8 @@ package no.unit.nva.publication.events.handlers.expandresources;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.FILE_ENTRY_DELETED_EVENT_TOPIC;
+import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.FILE_ENTRY_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
@@ -13,6 +15,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +31,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
@@ -43,11 +48,15 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -72,6 +81,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
@@ -108,7 +118,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         fakeUriRetriever = FakeUriRetriever.newInstance();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, ticketService, fakeUriRetriever, fakeUriRetriever, sqsClient);
+            new ResourceExpansionServiceImpl(resourceService, ticketService, fakeUriRetriever, fakeUriRetriever,
+                                             sqsClient);
 
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
@@ -126,7 +137,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var persistedResource = s3Driver.getFile(
             UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
@@ -145,7 +156,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
         assertThat(response, is(equalTo(emptyEvent(response.getTimestamp()))));
@@ -154,7 +165,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldNotProduceAnExpandedDataEntryWhenInputHasNoNewImage() throws IOException {
         var oldImage = createPublicationWithStatus(PUBLISHED);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, DELETED_RESOURCE);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, oldImage,
+                                                                  DELETED_RESOURCE);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
         assertThat(response, is(equalTo(emptyEvent(response.getTimestamp()))));
@@ -166,7 +178,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, oldImage, publication);
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
 
@@ -182,7 +194,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, oldImage, publication);
 
         var sqsClient = new FakeSqsClient();
         expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
@@ -199,7 +211,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var newImage = createPublicationWithStatus(PUBLISHED);
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, null, publication);
 
         var sqsClient = new FakeSqsClient();
         expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
@@ -216,11 +228,12 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var newImage = createPublicationWithStatus(PUBLISHED);
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, null, publication);
 
         var resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, getTicketService(),
-                                             uriRetrieverThrowingException(), uriRetrieverThrowingException(), sqsClient);
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException(),
+                                             sqsClient);
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -238,11 +251,12 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var resource = resourceService.insertPreexistingPublication(publication);
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var ticket = TicketEntry.requestNewTicket(resource, DoiRequest.class);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, null, ticket);
 
         var resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, getTicketService(),
-                                             uriRetrieverThrowingException(), uriRetrieverThrowingException(), sqsClient);
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException(),
+                                             sqsClient);
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -265,11 +279,12 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
                          .withOwner(UserInstance.fromPublication(persistedPublication).getUsername())
                          .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
-        var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, null, message);
 
         var resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, getTicketService(),
-                                             uriRetrieverThrowingException(), uriRetrieverThrowingException(), sqsClient);
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException(),
+                                             sqsClient);
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -292,7 +307,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var newImage = createMinimalisticDraft();
         var publication = resourceService.insertPreexistingPublication(newImage);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
-        var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, null, publication);
 
         expandResourceHandler.handleRequest(request, output, CONTEXT);
 
@@ -327,10 +342,94 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldIgnoreAndNotCreateEnrichmentEventForDoiRequestsOfDraftResources() throws IOException {
         var newImage = doiRequestForDraftResource();
-        var event = emulateEventEmittedByDataEntryUpdateHandler(EMPTY_IMAGE, newImage);
+        var event = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, EMPTY_IMAGE, newImage);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
         var eventReference = parseHandlerResponse();
         assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
+    }
+
+    @Test
+    void shouldExpandResourceOnFileEntryChange() throws IOException {
+        var publication = PublicationGenerator.randomPublication();
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
+
+        var openFile = extractOpenFile(publication);
+        var newImage = fileEntryUpdate(openFile.orElseThrow(),
+                                       publication.getIdentifier(),
+                                       UserInstance.fromPublication(publication));
+        var event = emulateEventEmittedByDataEntryUpdateHandler(FILE_ENTRY_UPDATE_EVENT_TOPIC, EMPTY_IMAGE, newImage);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+
+        var persistedResource = s3Driver.getFile(
+            UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
+        var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
+        assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
+    }
+
+    @Test
+    void shouldExpandResourceOnFileEntryDeletion() throws IOException {
+        var publication = PublicationGenerator.randomPublication();
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
+
+        var openFile = extractOpenFile(publication);
+        var oldImage = fileEntryUpdate(openFile.orElseThrow(),
+                                       publication.getIdentifier(),
+                                       UserInstance.fromPublication(publication));
+        var event = emulateEventEmittedByDataEntryUpdateHandler(FILE_ENTRY_DELETED_EVENT_TOPIC, oldImage, EMPTY_IMAGE);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+
+        var persistedResource = s3Driver.getFile(
+            UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
+        var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
+        assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
+    }
+
+    @Test
+    void shouldNotFailIfResourceNoLongerExistOnDeletedFileEntry() throws IOException {
+        var publication = PublicationGenerator.randomPublication();
+        publication.setStatus(PublicationStatus.PUBLISHED);
+
+        var openFile = extractOpenFile(publication);
+        var oldImage = fileEntryUpdate(openFile.orElseThrow(),
+                                       publication.getIdentifier(),
+                                       UserInstance.fromPublication(publication));
+        var event = emulateEventEmittedByDataEntryUpdateHandler(FILE_ENTRY_DELETED_EVENT_TOPIC, oldImage, EMPTY_IMAGE);
+
+        assertDoesNotThrow(() -> expandResourceHandler.handleRequest(event, output, CONTEXT));
+
+        assertThrows(NoSuchKeyException.class, () -> s3Driver.getFile(
+            UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING)));
+    }
+
+    private static Optional<OpenFile> extractOpenFile(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(OpenFile.class::isInstance)
+                   .map(OpenFile.class::cast)
+                   .findFirst();
+    }
+
+    private FileEntry fileEntryUpdate(OpenFile openFile,
+                                      SortableIdentifier resourceIdentifier,
+                                      UserInstance userInstance) {
+        var file = File.builder()
+                       .withEmbargoDate(openFile.getEmbargoDate().orElse(null))
+                       .withIdentifier(openFile.getIdentifier())
+                       .withLicense(openFile.getLicense())
+                       .withLegalNote("The new legal note!")
+                       .withName(openFile.getName())
+                       .withMimeType(openFile.getMimeType())
+                       .withSize(openFile.getSize())
+                       .withPublisherVersion(openFile.getPublisherVersion())
+                       .withUploadDetails(openFile.getUploadDetails())
+                       .withRightsRetentionStrategy(openFile.getRightsRetentionStrategy())
+                       .buildOpenFile();
+        return FileEntry.create(file, resourceIdentifier, userInstance);
     }
 
     @Test
@@ -344,10 +443,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         return oldImage.copy().withModifiedDate(randomInstant(oldImage.getModifiedDate())).build();
     }
 
-    private InputStream emulateEventEmittedByDataEntryUpdateHandler(Object oldImage, Object newImage)
+    private InputStream emulateEventEmittedByDataEntryUpdateHandler(String topic, Object oldImage, Object newImage)
         throws IOException {
         var blobUri = createSampleBlob(oldImage, newImage);
-        var event = new EventReference(RESOURCE_UPDATE_EVENT_TOPIC, blobUri);
+        var event = new EventReference(topic, blobUri);
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
     }
 
@@ -370,6 +469,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             case Publication publication -> Resource.fromPublication(publication);
             case DoiRequest doiRequest -> doiRequest;
             case Message message -> message;
+            case FileEntry fileEntry -> fileEntry;
             case null, default -> null;
         };
     }
@@ -403,7 +503,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private ResourceExpansionService createFailingService() {
         return new ResourceExpansionService() {
             @Override
-            public ExpandedDataEntry expandEntry(Entity dataEntry, boolean ignored) {
+            public Optional<ExpandedDataEntry> expandEntry(Entity dataEntry, boolean ignored) {
                 throw new RuntimeException(EXPECTED_ERROR_MESSAGE);
             }
 

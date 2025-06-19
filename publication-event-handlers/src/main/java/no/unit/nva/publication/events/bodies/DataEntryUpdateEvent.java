@@ -43,7 +43,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     private static final String UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC =
             "PublicationService.UnpublishRequest.Update";
     public static final String FILE_ENTRY_UPDATE_EVENT_TOPIC = "PublicationService.FileEntry.Update";
-    public static final String FILE_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.FileEntry.Delete";
+    public static final String FILE_ENTRY_DELETING_EVENT_TOPIC = "PublicationService.FileEntry.Deleting";
+    public static final String FILE_ENTRY_DELETED_EVENT_TOPIC = "PublicationService.FileEntry.Deleted";
     public static final String PUBLICATION_CHANNEL_UPDATED_EVENT_TOPIC =
             "PublicationService.PublicationChannel.Update";
     private static final String ACTION = "action";
@@ -156,12 +157,20 @@ public class DataEntryUpdateEvent implements JsonSerializable {
             case Message message -> MESSAGE_UPDATE_EVENT_TOPIC;
             case GeneralSupportRequest generalSupportRequest -> GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC;
             case UnpublishRequest unpublishRequest -> UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC;
-            case FileEntry fileEntry when hasNewImage() -> fileEntry.getFileEvent() instanceof FileDeletedEvent
-                    ? FILE_ENTRY_DELETE_EVENT_TOPIC
-                    : FILE_ENTRY_UPDATE_EVENT_TOPIC;
+            case FileEntry fileEntry -> resolveFileEntryTopic(fileEntry);
             case PublicationChannel publicationChannel -> PUBLICATION_CHANNEL_UPDATED_EVENT_TOPIC;
             default -> throw new IllegalArgumentException("Unknown entry type: " + type);
         };
+    }
+
+    private String resolveFileEntryTopic(FileEntry fileEntry) {
+        if (hasNewImage() && fileEntry.getFileEvent() instanceof FileDeletedEvent) {
+            return FILE_ENTRY_DELETING_EVENT_TOPIC;
+        } else if (hasNewImage()) {
+            return FILE_ENTRY_UPDATE_EVENT_TOPIC;
+        } else {
+            return FILE_ENTRY_DELETED_EVENT_TOPIC;
+        }
     }
 
     private Entity extractDataEntryType() {
