@@ -190,7 +190,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @MethodSource("userSupplier")
     void handlerReturnsOkResponseOnValidInputPublishedPublication(String user) throws IOException {
 
-        var publication = buildPublication(PUBLISHED, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
+        var publication = buildPublication(PUBLISHED, openFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler();
         var request = createRequest(user, publication.getIdentifier(), FILE_IDENTIFIER, httpClient);
         handler.handleRequest(request, output, context);
@@ -202,7 +202,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnOkWhenPublicationUnpublishedAndUserIsOwner() throws IOException {
-        var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
+        var publication = buildPublication(DRAFT, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler();
         var request = createRequest(
             publication.getResourceOwner().getOwner().getValue(),
@@ -219,7 +219,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnOkWhenPublicationUnpublishedAndUserHasAccessRightManageResourceFiles()
         throws IOException {
-        var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
+        var publication = buildPublication(DRAFT, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler();
         var customer = randomUri();
         handler.handleRequest(createRequestWithAccessRight(
@@ -242,7 +242,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @MethodSource("mimeTypeProvider")
     void shouldReturnOkWhenPublicationUnpublishedAndUserIsOwnerAndMimeTypeIs(String mimeType)
         throws IOException {
-        var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
+        var publication = buildPublication(DRAFT, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler();
 
         handler.handleRequest(createRequest(publication.getResourceOwner().getOwner().getValue(),
@@ -257,7 +257,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerReturnsNotFoundResponseOnUnknownIdentifier()
         throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
-        var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
+        var publication = buildPublication(DRAFT, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler();
         when(resourceService.getResourceByIdentifier(publication.getIdentifier())).thenThrow(
             new nva.commons.apigateway.exceptions.NotFoundException("test"));
@@ -315,7 +315,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnServiceUnavailableResponseOnS3ServiceException() throws IOException {
-        var publication = buildPublication(PUBLISHED, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
+        var publication = buildPublication(PUBLISHED, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var publicationIdentifier = publication.getIdentifier();
         when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenThrow(new SdkClientException("test"));
         var handler = getCreatePresignedDownloadUrlHandler();
@@ -335,7 +335,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnUnauthorizedOnAnonymousRequestForDraftPublication()
         throws IOException {
-        var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
+        var publication = buildPublication(DRAFT, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var handler = getCreatePresignedDownloadUrlHandler();
         handler.handleRequest(createAnonymousRequest(publication.getIdentifier()), output, context);
 
@@ -354,7 +354,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldThrowInternalServerExceptionIfUriShortenerFails() throws IOException {
-        var publication = buildPublication(DRAFT, fileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
+        var publication = buildPublication(DRAFT, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         when(uriShortener.shorten(any(), any(), any())).thenThrow(
             new RuntimeException("shouldThrowInternalServerExceptionIfUriShortenerFails"));
         var handler = getCreatePresignedDownloadUrlHandler();
@@ -388,7 +388,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
             Arguments.of(Named.of("Owner with embargoed file", OWNER_USER_ID),
                          pendingOpenFileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(Named.of("Owner with unembargoed file", OWNER_USER_ID),
-                         fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
+                         pendingFileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(Named.of("Owner with unpublishable file", OWNER_USER_ID),
                          fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
             Arguments.of(Named.of("Owner with unpublishable file", OWNER_USER_ID),
@@ -396,7 +396,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
             Arguments.of(Named.of("Owner with unpublished file", OWNER_USER_ID), fileWithTypeUnpublished()),
             Arguments.of(Named.of("Curator with embargoed file", CURATOR), fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(Named.of("Curator with unembargoed file", CURATOR),
-                         fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
+                         pendingFileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER)),
             Arguments.of(Named.of("Curator with unpublishable file", CURATOR),
                          fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER)),
             Arguments.of(Named.of("Curator with unpublishable file", CURATOR),
@@ -422,7 +422,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     private static Stream<File> fileTypeSupplier() {
         return Stream.of(
             fileWithEmbargo(EMBARGOED_FILE_IDENTIFIER),
-            fileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER),
+            pendingFileWithoutEmbargo(APPLICATION_PDF, UNEMBARGOED_FILE_IDENTIFIER),
             fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER),
             fileWithTypeUnpublishable(ADMINISTRATIVE_IDENTIFIER),
             fileWithTypeUnpublished()
@@ -458,7 +458,15 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                    .buildPendingOpenFile();
     }
 
-    private static File fileWithoutEmbargo(String mimeType, UUID fileIdentifier) {
+    private static File pendingFileWithoutEmbargo(String mimeType, UUID fileIdentifier) {
+        return randomOpenFile()
+                   .copy()
+                   .withIdentifier(fileIdentifier)
+                   .withMimeType(mimeType)
+                   .buildPendingOpenFile();
+    }
+
+    private static File openFileWithoutEmbargo(String mimeType, UUID fileIdentifier) {
         return randomOpenFile()
                    .copy()
                    .withIdentifier(fileIdentifier)
