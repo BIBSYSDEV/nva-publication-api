@@ -13,7 +13,8 @@ import no.unit.nva.publication.model.business.Entity;
  * Manager class for expanding entities.
  * <p>
  * Iterates through a list of configured {@link EntityExpander}'s and delegates to the first expander that can expand
- * the entity based on {@link EntityExpander#canExpand(Entity)}. The {@link EntityExpander}'s are responsible for
+ * the entity based on {@link EntityExpander#canExpand(Class)}. The {@link EntityExpander}'s are
+ * responsible for
  * deciding whether to expand the entity, and optionally expanding it.
  * </p>
  */
@@ -30,7 +31,7 @@ public class ExpansionManager {
     public Optional<ExpandedDataEntry> expand(Entity oldVersion, Entity newVersion) {
         var entity = nonNull(newVersion) ? newVersion : oldVersion;
         return entityExpanders.stream()
-                   .filter(entityExpander -> entityExpander.canExpand(entity))
+                   .filter(entityExpander -> entityExpander.canExpand(entity.getClass()))
                    .findFirst()
                    .orElseThrow(() -> new NoEntityExpanderException(entity.getClass()))
                    .expand(resourceExpansionService, oldVersion, newVersion);

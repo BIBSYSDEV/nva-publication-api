@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Message;
 
 /**
@@ -13,7 +14,7 @@ import no.unit.nva.publication.model.business.Message;
 public class MessageExpander extends AbstractEntityExpander {
 
     @Override
-    public boolean canExpand(Entity entity) {
-        return entity instanceof Message;
+    public boolean canExpand(Class<? extends Entity> entityClass) {
+        return Message.class.isAssignableFrom(entityClass);
     }
 }

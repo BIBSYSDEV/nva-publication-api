@@ -17,8 +17,8 @@ import no.unit.nva.publication.model.business.FileEntry;
 public class FileEntryExpander extends AbstractEntityExpander {
 
     @Override
-    public boolean canExpand(Entity entity) {
-        return entity instanceof FileEntry;
+    public boolean canExpand(Class<? extends Entity> entityClass) {
+        return FileEntry.class.isAssignableFrom(entityClass);
     }
 
     @Override

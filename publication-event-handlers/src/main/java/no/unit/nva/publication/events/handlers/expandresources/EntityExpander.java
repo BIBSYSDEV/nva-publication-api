@@ -7,7 +7,7 @@ import no.unit.nva.publication.model.business.Entity;
 
 public interface EntityExpander {
 
-    boolean canExpand(Entity entity);
+    boolean canExpand(Class<? extends Entity> entityClass);
 
     Optional<ExpandedDataEntry> expand(ResourceExpansionService resourceExpansionService,
                                        Entity oldEntity,

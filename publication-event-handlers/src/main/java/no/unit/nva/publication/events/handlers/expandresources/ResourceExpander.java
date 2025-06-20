@@ -35,8 +35,8 @@ public class ResourceExpander extends AbstractEntityExpander {
                                                                                                DRAFT);
 
     @Override
-    public boolean canExpand(Entity entity) {
-        return entity instanceof Resource;
+    public boolean canExpand(Class<? extends Entity> entityClass) {
+        return Resource.class.isAssignableFrom(entityClass);
     }
 
     @Override
