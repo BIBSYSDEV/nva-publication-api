@@ -761,7 +761,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var expandedTicket = expansionService.expandEntry(ticket, false);
 
-        assertThat(expandedTicket, instanceOf(ExpandedUnpublishRequest.class));
+        assertThat(expandedTicket.orElseThrow(), instanceOf(ExpandedUnpublishRequest.class));
     }
 
     // TODO: Handle redirects where id's received back in response matches with the requested resource
