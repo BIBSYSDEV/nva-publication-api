@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Message;
 
 /**

@@ -7,7 +7,6 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 
 /**
