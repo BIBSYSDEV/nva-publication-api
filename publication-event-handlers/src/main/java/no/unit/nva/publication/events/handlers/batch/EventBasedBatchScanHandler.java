@@ -8,6 +8,8 @@ import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,23 +17,30 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
     public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
+    private static final String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
+    private final CristinUnitsUtil  cristinUnitsUtil;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
 
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
-        this(ResourceService.defaultService(), defaultEventBridgeClient());
+        this(ResourceService.defaultService(), defaultEventBridgeClient(),
+             new CristinUnitsUtil(S3Client.create(), new Environment().readEnv(CRISTIN_UNITS_S3_URI_ENV)));
     }
 
-    public EventBasedBatchScanHandler(ResourceService resourceService, EventBridgeClient eventBridgeClient) {
+    public EventBasedBatchScanHandler(ResourceService resourceService,
+                                      EventBridgeClient eventBridgeClient,
+                                      CristinUnitsUtil cristinUnitsUtil) {
         super(ScanDatabaseRequest.class);
         this.resourceService = resourceService;
         this.eventBridgeClient = eventBridgeClient;
+        this.cristinUnitsUtil = cristinUnitsUtil;
     }
 
     @Override
@@ -39,7 +48,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
                                 Context context) {
         logger.info("Query starting point: {}", input.getStartMarker());
         var result = resourceService.scanResources(input.getPageSize(), input.getStartMarker(), input.getTypes());
-        resourceService.refreshResources(result.getDatabaseEntries());
+        resourceService.refreshResources(result.getDatabaseEntries(), cristinUnitsUtil);
         if (result.isTruncated()) {
             sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);
         }

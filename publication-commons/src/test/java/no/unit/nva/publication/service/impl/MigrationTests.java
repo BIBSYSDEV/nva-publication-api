@@ -2,14 +2,21 @@ package no.unit.nva.publication.service.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
+import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithIdAndAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -23,13 +30,18 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.instancetypes.book.Textbook;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.Dao;
@@ -37,9 +49,14 @@ import no.unit.nva.publication.model.storage.DataCompressor;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.utils.CustomerList;
+import no.unit.nva.publication.model.utils.CustomerSummary;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UriWrapper;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -51,7 +68,11 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 class MigrationTests extends ResourcesLocalTest {
 
+    public static final String CRISTIN_UNITS_S3_URI = "s3://some-bucket/some-key";
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
+    protected static final URI CRISTIN_ID = URI.create("https" +
+                                                       "://api.dev" +
+                                                       ".nva.aws.unit.no/cristin/organization/20754.0.0.0");
     private S3Client s3Client;
     private ResourceService resourceService;
 
@@ -62,19 +83,8 @@ class MigrationTests extends ResourcesLocalTest {
         when(s3Client.utilities()).thenReturn(S3Client.create().utilities());
         when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
                 (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
-        this.resourceService = getResourceServiceBuilder().build();
-        TicketService ticketService = new TicketService(client, uriRetriever);
-    }
-
-    @Test
-    void shouldWriteBackEntryAsIsWhenMigrating() throws NotFoundException {
-        var publication = PublicationGenerator.randomPublication();
-        var savedPublication = resourceService.insertPreexistingPublication(publication);
-        migrateResources();
-
-        var migratedResource = resourceService.getResourceByIdentifier(savedPublication.getIdentifier());
-        var migratedPublication = migratedResource.toPublication();
-        assertThat(migratedPublication, is(equalTo(savedPublication)));
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
+        this.resourceService = getResourceServiceBuilder().withCustomerService(customerService).build();
     }
 
     @Test
@@ -171,6 +181,119 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
     }
 
+    @Test
+    void shouldPersistNonClaimedPublicationChannelWhenDegreeWithPublisher() throws NotFoundException {
+        var channelIdentifier = randomUUID();
+        var publisherId = randomPublisherId(channelIdentifier);
+        var publisher = new Publisher(publisherId);
+
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        var publication = randomPublication(DegreeBachelor.class);
+        publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(publisher));
+        publication.setIdentifier(hardCodedIdentifier);
+        updatePublication(publication);
+
+        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
+
+        migrateResources();
+
+        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        Assertions.assertFalse(updatedResource.getPublicationChannels().isEmpty());
+
+        var publicationChannel = updatedResource.getPublicationChannels().getFirst();
+        assertEquals(channelIdentifier.toString(), publicationChannel.getIdentifier().toString());
+    }
+
+    @Test
+    void shouldNotPersistNonClaimedPublicationChannelWhenDegreeWithoutPublisher() throws NotFoundException {
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        var publication = randomPublication(DegreeBachelor.class);
+        publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(null));
+        publication.setIdentifier(hardCodedIdentifier);
+        updatePublication(publication);
+
+        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
+
+        migrateResources();
+
+        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        Assertions.assertTrue(updatedResource.getPublicationChannels().isEmpty());
+    }
+
+    @Test
+    void shouldNotPersistNonClaimedPublicationChannelWhenNonDegreeWithPublisher() throws NotFoundException {
+        var publisherId = randomPublisherId(randomUUID());
+        var publisher = new Publisher(publisherId);
+
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        var publication = randomPublication(Textbook.class);
+        publication.getEntityDescription().getReference().setPublicationContext(reportWithPublisher(publisher));
+        publication.setIdentifier(hardCodedIdentifier);
+        updatePublication(publication);
+
+        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
+
+        migrateResources();
+
+        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        Assertions.assertTrue(updatedResource.getPublicationChannels().isEmpty());
+    }
+
+    @Test
+    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeggingAndEndOfTheTitle() throws NotFoundException {
+        var title = "Some title";
+        var trailingSpacesTitle = "  %s  ".formatted(title);
+        var publication = randomPublication(Textbook.class);
+        publication.getEntityDescription().setMainTitle(trailingSpacesTitle);
+        updatePublication(publication);
+
+        migrateResources();
+
+        var migratedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+
+        assertEquals(title, migratedResource.getEntityDescription().getMainTitle());
+    }
+
+    @Test
+    void shouldMigrateCuratingInstitutions() throws NotFoundException {
+        var affiliationId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
+        var customerCristinId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+        var contributor = randomContributorWithIdAndAffiliation(randomUri(), affiliationId);
+        var publication = randomPublication(Textbook.class);
+        publication.getEntityDescription().setContributors(List.of(contributor));
+        updatePublication(publication);
+
+        migrateResources();
+        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
+                                                                                                       customerCristinId))));
+        var migratedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+
+        assertTrue(migratedResource.getCuratingInstitutions().stream()
+                       .anyMatch(curatingInstitution -> curatingInstitution.id().equals(customerCristinId)));
+    }
+
+    private static Degree degreeWithPublisher(Publisher publisher) {
+        return attempt(() ->  new Degree(null, null, null, publisher, List.of(), null))
+                   .orElseThrow();
+    }
+
+    private static Report reportWithPublisher(Publisher publisher) {
+        return attempt(() ->  new Report(null, null, null, publisher, List.of()))
+                   .orElseThrow();
+    }
+
+    private static URI randomPublisherId(UUID channelIdentifier) {
+        return UriWrapper.fromUri(randomUri())
+                   .addChild("publication-channel-v2")
+                   .addChild("publisher")
+                   .addChild(channelIdentifier.toString())
+                   .addChild(randomInteger().toString())
+                   .getUri();
+    }
+
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
         return allMigratedItems.stream()
                 .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
@@ -214,7 +337,8 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries());
+        resourceService.refreshResources(scanResources.getDatabaseEntries(), new CristinUnitsUtil(s3Client,
+                                                                                                  CRISTIN_UNITS_S3_URI));
     }
 
     public static ResponseBytes getUnitsResponseBytes() {
