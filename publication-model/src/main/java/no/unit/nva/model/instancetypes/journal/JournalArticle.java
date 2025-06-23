@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Range;
-import nva.commons.core.JacocoGenerated;
 
 import java.util.Objects;
 
@@ -77,24 +76,19 @@ public class JournalArticle implements PublicationInstance<Range> {
     }
 
     @Override
-    @JacocoGenerated
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof JournalArticle)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         JournalArticle that = (JournalArticle) o;
         return Objects.equals(getPages(), that.getPages())
-                && Objects.equals(getVolume(), that.getVolume())
-                && Objects.equals(getIssue(), that.getIssue())
-                && Objects.equals(getArticleNumber(), that.getArticleNumber());
+               && Objects.equals(getVolume(), that.getVolume())
+               && Objects.equals(getIssue(), that.getIssue())
+               && Objects.equals(getArticleNumber(), that.getArticleNumber());
     }
 
     @Override
-    @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getPages(), getVolume(), getIssue(), getArticleNumber());
+        return Objects.hash(getClass(), getPages(), getVolume(), getIssue(), getArticleNumber());
     }
 }

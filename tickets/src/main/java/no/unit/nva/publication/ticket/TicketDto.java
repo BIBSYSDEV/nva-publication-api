@@ -139,6 +139,10 @@ public abstract class TicketDto implements JsonSerializable {
                    .orElse(null);
     }
 
+    public Set<TicketOperation> getAllowedOperations() {
+        return allowedOperations;
+    }
+
     private static URI toTicketIdentifier(URI resourceId, SortableIdentifier ticketIdentifier) {
         return UriWrapper.fromUri(resourceId)
                    .addChild(PublicationServiceConfig.TICKET_PATH)

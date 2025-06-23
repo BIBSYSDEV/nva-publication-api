@@ -1,8 +1,11 @@
 package no.unit.nva.publication.permissions.ticket.grant;
 
+import static no.unit.nva.model.PublicationOperation.APPROVE_FILES;
 import static no.unit.nva.model.TicketOperation.APPROVE;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.TicketOperation;
+import no.unit.nva.publication.model.FilesApprovalEntry;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -22,17 +25,19 @@ public class ApproveTicketGrantStrategy extends TicketStrategyBase implements Ti
 
     @Override
     public boolean allowsAction(TicketOperation permission) {
-        if (permission.equals(APPROVE)) {
-            return publicationPermissions.allowsAction(PublicationOperation.APPROVE_FILES)
-                   && userBelongsToReceivingTopLevelOrg();
+        if (!permission.equals(APPROVE)) {
+            return false;
         }
 
-        return false;
+        return switch (ticket) {
+            case FilesApprovalEntry ignored -> canManagePublishingTicket() && canApproveFiles();
+            case DoiRequest ignored -> canManageDoiTicket();
+            case GeneralSupportRequest ignored -> canManageSupportTicket();
+            default -> false;
+        };
     }
 
-    private boolean userBelongsToReceivingTopLevelOrg() {
-        return ticket.getReceivingOrganizationDetails()
-                   .topLevelOrganizationId()
-                   .equals(userInstance.getTopLevelOrgCristinId());
+    private boolean canApproveFiles() {
+        return publicationPermissions.allowsAction(APPROVE_FILES);
     }
 }

@@ -1,5 +1,8 @@
 package cucumber.permissions.ticket;
 
+import static cucumber.permissions.enums.TicketTypeConfig.DOI_REQUEST;
+import static cucumber.permissions.enums.TicketTypeConfig.FILE_APPROVAL;
+import static cucumber.permissions.enums.TicketTypeConfig.SUPPORT_REQUEST;
 import static cucumber.permissions.publication.PublicationScenarioContext.CURATING_INSTITUTION;
 import static cucumber.permissions.publication.PublicationScenarioContext.NON_CURATING_INSTITUTION;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -9,6 +12,8 @@ import cucumber.permissions.PermissionsRole;
 import cucumber.permissions.enums.ChannelClaimConfig;
 import cucumber.permissions.enums.PublicationFileConfig;
 import cucumber.permissions.enums.PublicationTypeConfig;
+import cucumber.permissions.enums.TicketOwnerConfig;
+import cucumber.permissions.enums.TicketStatusConfig;
 import cucumber.permissions.enums.UserInstitutionConfig;
 import cucumber.permissions.publication.PublicationScenarioContext;
 import io.cucumber.java.en.And;
@@ -117,6 +122,19 @@ public class TicketAccessFeatures {
         }
     }
 
+    @And("ticket creator is {string}")
+    public void ticketCreatorIs(String input) {
+        if ("user".equalsIgnoreCase(input)) {
+            ticketScenarioContext.setTicketCreator(TicketOwnerConfig.USER);
+        } else if ("other user at different institution".equalsIgnoreCase(input)) {
+            ticketScenarioContext.setTicketCreator(TicketOwnerConfig.OTHER_USER_AT_DIFFERENT_INSTITUTION);
+        } else if ("other user at same institution".equalsIgnoreCase(input)) {
+            ticketScenarioContext.setTicketCreator(TicketOwnerConfig.OTHER_USER_AT_SAME_INSTITUTION);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + input);
+        }
+    }
+
     @And("the user attempts to {string}")
     public void theUserAttemptsTo(String operation) {
         ticketScenarioContext.setOperation(TicketOperation.lookup(operation));
@@ -135,5 +153,29 @@ public class TicketAccessFeatures {
                                                        ticketScenarioContext.getOperation()),
                     actual,
                     is(equalTo(expected)));
+    }
+
+    @And("ticket is of type {string}")
+    public void ticketIsOfType(String input) {
+        if ("file approval".equalsIgnoreCase(input)) {
+            ticketScenarioContext.setTicketType(FILE_APPROVAL);
+        } else if ("doi request".equalsIgnoreCase(input)) {
+            ticketScenarioContext.setTicketType(DOI_REQUEST);
+        } else if ("support request".equalsIgnoreCase(input)) {
+            ticketScenarioContext.setTicketType(SUPPORT_REQUEST);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + input);
+        }
+    }
+
+    @And("ticket status is {string}")
+    public void ticketStatusIs(String input) {
+        if ("completed".equalsIgnoreCase(input)) {
+            ticketScenarioContext.setTicketStatus(TicketStatusConfig.COMPLETED);
+        } else if ("pending".equalsIgnoreCase(input)) {
+            ticketScenarioContext.setTicketStatus(TicketStatusConfig.PENDING);
+        } else {
+            throw new IllegalArgumentException("Non valid input: " + input);
+        }
     }
 }

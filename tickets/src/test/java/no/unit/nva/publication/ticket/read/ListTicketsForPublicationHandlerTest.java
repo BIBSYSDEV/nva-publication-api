@@ -2,8 +2,6 @@ package no.unit.nva.publication.ticket.read;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
-import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithIdAndAffiliation;
-import static no.unit.nva.publication.model.business.UserClientType.INTERNAL;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
@@ -23,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -32,11 +29,10 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.TicketOperation;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -50,6 +46,9 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.permissions.ticket.TicketPermissions;
 import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.ticket.DoiRequestDto;
+import no.unit.nva.publication.ticket.GeneralSupportRequestDto;
+import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketDtoParser;
 import no.unit.nva.publication.ticket.TicketTestLocal;
@@ -72,17 +71,17 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     private MessageService messageService;
 
     public static Stream<Arguments> accessRightAndTicketTypeProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class,
+        return Stream.of(Arguments.of(DoiRequestDto.class,
                                       new AccessRight[]{AccessRight.MANAGE_DOI, MANAGE_RESOURCES_STANDARD}),
-                         Arguments.of(GeneralSupportRequest.class,
+                         Arguments.of(GeneralSupportRequestDto.class,
                                       new AccessRight[]{AccessRight.SUPPORT, MANAGE_RESOURCES_STANDARD}),
-                         Arguments.of(PublishingRequestCase.class,
+                         Arguments.of(PublishingRequestDto.class,
                                       new AccessRight[]{AccessRight.MANAGE_PUBLISHING_REQUESTS,
                                           MANAGE_RESOURCES_STANDARD}));
     }
 
     public static Stream<Arguments> accessRightAndTicketTypeProviderDraft() {
-        return Stream.of(Arguments.of(PublishingRequestCase.class,
+        return Stream.of(Arguments.of(PublishingRequestDto.class,
                                       new AccessRight[]{AccessRight.MANAGE_PUBLISHING_REQUESTS,
                                           MANAGE_RESOURCES_STANDARD}));
     }
@@ -150,19 +149,21 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser(
+    void shouldReturnEmptyListForPublicationWhenUserIsNotTheOwnerAndNotElevatedUser(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = nonOwnerRequestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var body = response.getBodyObject(TicketCollection.class);
+        assertThat(body.getTickets(), hasSize(0));
     }
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenWhenUserIsElevatedUserOfAlienOrganization(Class<? extends TicketEntry> ticketType,
+    void shouldReturnEmptyListWhenUserIsElevatedUserOfAlienOrganization(Class<? extends TicketEntry> ticketType,
                                                                         PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -171,7 +172,28 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var body = response.getBodyObject(TicketCollection.class);
+        assertThat(body.getTickets(), hasSize(0));
+    }
+
+    @Test
+    void shouldReturnTicketWhenUserHaveTransferAccess()
+        throws IOException, ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+
+        var request = curatorWithAccessRightRequestTicketsForPublication(publication,
+                                                                         new AccessRight[]{
+                                                                             AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                                                             AccessRight.SUPPORT,
+                                                                             AccessRight.MANAGE_RESOURCES_STANDARD});
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var body = response.getBodyObject(TicketCollection.class);
+        assertThat(body.getTickets(), hasSize(1));
     }
 
     @ParameterizedTest
@@ -192,8 +214,15 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         var body = response.getBodyObject(TicketCollection.class);
+        var ticketsWithWriteAccess = body.getTickets()
+                                         .stream()
+                                         .filter(ticket -> ticket.getAllowedOperations()
+                                                               .stream()
+                                                               .anyMatch(a -> !a.equals(TicketOperation.READ)))
+                                         .toList();
 
-        assertThat(body.getTickets(), hasSize(3));
+        assertThat(ticketsWithWriteAccess, hasSize(1));
+        assertThat(ticketsWithWriteAccess.getFirst().getClass(), is(equalTo(ticketType)));
     }
 
     @ParameterizedTest
@@ -212,31 +241,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var body = response.getBodyObject(TicketCollection.class);
 
         assertThat(body.getTickets(), hasSize(1));
-        assertThat(body.getTickets().getFirst().ticketType(), is(equalTo(ticketType)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("accessRightAndTicketTypeProvider")
-    void shouldListAllTicketsWhenCuratorIsPublicationOwnerAndHasAccessRight(
-        Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        var userInstance = UserInstance.fromPublication(publication);
-
-        var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
-        var resource = Resource.fromPublication(publication);
-        DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
-        PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
-        GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
-
-        var request = userRequestsTickets(publication, randomUri(), ownerAffiliation, accessRight);
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
-        var body = response.getBodyObject(TicketCollection.class);
-
-        assertThat(body.getTickets(), hasSize(3));
+        assertThat(body.getTickets().getFirst().getClass(), is(equalTo(ticketType)));
     }
 
     @Test
@@ -269,8 +274,9 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     private void persistCompletedTicketsForPublication(Publication publication,
                                                        Class<? extends TicketEntry>... ticketTypes) {
         Arrays.stream(ticketTypes).forEach(ticketType -> {
+            URI ownerAffiliation = randomUri();
             attempt(() -> TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService))
-                .map(ticket -> ticket.withOwnerAffiliation(randomUri()))
+                .map(ticket -> ticket.withOwnerAffiliation(ownerAffiliation))
                 .map(ticket -> ticket.complete(publication, randomUserInstance()))
                 .forEach(ticketEntry -> ticketEntry.persistUpdate(ticketService));
         });
@@ -283,7 +289,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @Test
     void shouldNotListPendingTicketsThatHasOtherReceivingOrganizationThanUserOrganization()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedDegreePublication(PublicationStatus.PUBLISHED, resourceService);
+        var publication = TicketTestUtils.createPersistedDegreePublication(PublicationStatus.PUBLISHED,
+                                                                           resourceService);
         var contributorId = randomUri();
         var contributor = randomContributorWithId(contributorId);
         publication.getEntityDescription().setContributors(List.of(contributor));
@@ -379,7 +386,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @Test
     void shouldListTicketsForUserFromReceivingOrganization()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedDegreePublication(PublicationStatus.PUBLISHED, resourceService);
+        var publication = TicketTestUtils.createPersistedDegreePublication(PublicationStatus.PUBLISHED,
+                                                                           resourceService);
         var contributorId = randomUri();
         var contributor = randomContributorWithId(contributorId);
         publication.getEntityDescription().setContributors(List.of(contributor));
@@ -423,13 +431,6 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     private static List<URI> getCuratingInstitutionsIdList(Resource resource) {
         return resource.getCuratingInstitutions().stream().map(CuratingInstitution::id).toList();
-    }
-
-    private static Stream<URI> getOrganizationIds(Contributor contributor) {
-        return contributor.getAffiliations().stream()
-                   .filter(Organization.class::isInstance)
-                   .map(Organization.class::cast)
-                   .map(Organization::getId);
     }
 
     private static InputStream ownerRequestsTicketsForPublication(Publication publication)

@@ -110,12 +110,12 @@ Feature: File permissions for embargo and degree files
       | Authenticated               | delete         | Not Allowed |
 
       | Publication creator         | read-metadata  | Allowed     |
-      | Publication creator         | download       | Allowed     |
+      | Publication creator         | download       | Not Allowed |
       | Publication creator         | write-metadata | Not Allowed |
       | Publication creator         | delete         | Not Allowed |
 
       | Contributor                 | read-metadata  | Allowed     |
-      | Contributor                 | download       | Allowed     |
+      | Contributor                 | download       | Not Allowed |
       | Contributor                 | write-metadata | Not Allowed |
       | Contributor                 | delete         | Not Allowed |
 
@@ -156,7 +156,7 @@ Feature: File permissions for embargo and degree files
     Examples:
       | UserRole               | Operation      | Outcome     |
       | Contributor            | read-metadata  | Allowed     |
-      | Contributor            | download       | Allowed     |
+      | Contributor            | download       | Not Allowed |
       | Contributor            | write-metadata | Not Allowed |
       | Contributor            | delete         | Not Allowed |
 

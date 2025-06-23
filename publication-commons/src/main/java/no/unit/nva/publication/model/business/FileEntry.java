@@ -257,6 +257,21 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         resourceService.updateFile(this);
     }
 
+    public FileEntry updateFromImport(File file, UserInstance userInstance) {
+        if (!file.equals(this.file)) {
+            this.setFileEvent(FileTypeUpdatedEvent.create(userInstance.getUser(), Instant.now()));
+            this.file = this.file.copy()
+                            .withPublisherVersion(file.getPublisherVersion())
+                            .withLicense(file.getLicense())
+                            .withEmbargoDate(file.getEmbargoDate().orElse(null))
+                            .withLegalNote(file.getLegalNote())
+                            .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
+                            .build(file.getClass());
+            this.modifiedDate = Instant.now();
+        }
+        return this;
+    }
+
     private boolean pendingFileTypeIsUpdated(File file) {
         return this.file instanceof PendingFile<?,?>
                && file instanceof PendingFile<?,?>

@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
@@ -31,6 +32,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionStrategyTest {
@@ -1159,6 +1162,28 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(editor), identityServiceClient);
         Assertions.assertTrue(PublicationPermissions
+                                  .create(resource, userInstance)
+                                  .allowsAction(UPDATE));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"DRAFT"})
+    void shouldDenyUserByChannelClaimWhenPublicationHasFinalizedFilesRegardlessOfPublicationStatus(PublicationStatus status)
+        throws JsonProcessingException, UnauthorizedException {
+        var suite = InstitutionSuite.random();
+        var owningInstitution = suite.owningInstitution();
+        var nonCuratingInstitution = suite.nonCuratingInstitution();
+        var registrator = owningInstitution.registrator();
+
+        var publication = createNonDegreePublicationWithFinalizedFiles(registrator);
+        var publicationWithStatus = publication.copy().withStatus(status).build();
+
+        var resource = Resource.fromPublication(publicationWithStatus);
+        setPublicationChannelWithinScope(resource, nonCuratingInstitution, EVERYONE, OWNER_ONLY);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(toRequestInfo(registrator), identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissions
                                   .create(resource, userInstance)
                                   .allowsAction(UPDATE));
     }

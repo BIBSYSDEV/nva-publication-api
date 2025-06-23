@@ -18,8 +18,8 @@ public class FileOwnerGrantStrategy extends FileStrategyBase implements FileGran
     public boolean allowsAction(FileOperation permission) {
         if (currentUserIsFileOwner()) {
             return switch (permission) {
-                case READ_METADATA, DOWNLOAD -> !(file.getFile() instanceof HiddenFile);
-                case WRITE_METADATA, DELETE -> !fileIsFinalized();
+                case READ_METADATA  -> !(file.getFile() instanceof HiddenFile);
+                case WRITE_METADATA, DELETE, DOWNLOAD -> !fileIsFinalized();
             };
         }
 
