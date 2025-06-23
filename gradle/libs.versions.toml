@@ -7,7 +7,6 @@ awsLambdaCore = { strictly = '1.2.3' }
 awsLambdaEvents = { strictly = '3.15.0' }
 awsSdk = { strictly = '1.12.782' }
 awsSdk2 = { strictly = '2.31.28' }
-classgraph = { strictly = '4.8.179' }
 commonsValidator = { strictly = '1.9.0' }
 configTypesafe = { strictly = '1.4.3' }
 cucumber = { strictly = '7.18.1' }
@@ -132,7 +131,6 @@ swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.re
 mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
 open-csv = { group = 'com.opencsv', name = 'opencsv', version = '5.9' } # open-csv is used by cristin-import, can be deleted when cristin-import is deleted
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
-classgraph = { group = 'io.github.classgraph', name = 'classgraph', version.ref = 'classgraph' }
 
 [bundles]
 validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']

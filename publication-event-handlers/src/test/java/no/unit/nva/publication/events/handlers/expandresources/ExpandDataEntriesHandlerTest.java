@@ -296,6 +296,26 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         assertThat(messageAttributes.get("type").stringValue(), is(equalTo("Message")));
     }
 
+    @Test
+    void shouldExpandTicketOnMessageInsertOrUpdate() throws ApiGatewayException, IOException {
+        var publication = createPublicationWithStatus(PUBLISHED);
+        var persistedPublication =
+            resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
+        var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
+                         .withOwner(UserInstance.fromPublication(persistedPublication).getUsername())
+                         .persistNewTicket(ticketService);
+        var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
+        var request = emulateEventEmittedByDataEntryUpdateHandler(RESOURCE_UPDATE_EVENT_TOPIC, null, message);
+
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedResource = s3Driver.getFile(
+            UnixPath.of("tickets", ticket.getIdentifier().toString() + GZIP_ENDING));
+        var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
+        assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(ticket.getIdentifier())));
+    }
+
     private static UriRetriever uriRetrieverThrowingException() {
         var mockUriRetriever = mock(UriRetriever.class);
         when(mockUriRetriever.getRawContent(any(), any())).thenThrow(new RuntimeException());
@@ -350,7 +370,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldExpandResourceOnFileEntryChange() throws IOException {
-        var publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         publication.setStatus(PublicationStatus.PUBLISHED);
         var persistedPublication = resourceService.insertPreexistingPublication(publication);
 

@@ -51,8 +51,9 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     private static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
     private final QueueClient sqsClient;
     private final S3Driver s3DriverEventsBucket;
-    private final ExpansionManager expansionManager;
+    private final EntityExpansionResolverRegistry entityExpansionResolverRegistry;
     private final PersistedResourcesService persistedResourcesService;
+    private final ResourceExpansionService resourceExpansionService;
 
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
@@ -73,12 +74,20 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
         super(EventReference.class);
         this.sqsClient = sqsClient;
         this.s3DriverEventsBucket = s3DriverEventsBucket;
-        this.expansionManager = new ExpansionManager(resourceExpansionService,
-                                                     new ResourceExpander(),
-                                                     new TicketExpander(),
-                                                     new MessageExpander(),
-                                                     new FileEntryExpander());
+        this.resourceExpansionService = resourceExpansionService;
         this.persistedResourcesService = new PersistedResourcesService(s3DriverPersistedResourcesBucket);
+        this.entityExpansionResolverRegistry = initializeEntityExpansionStrategyRegistry();
+    }
+
+    private EntityExpansionResolverRegistry initializeEntityExpansionStrategyRegistry() {
+        var registry = new EntityExpansionResolverRegistry();
+
+        registry.register(Resource.class, new ResourceExpansionResolver());
+        registry.register(TicketEntry.class, new TicketExpansionResolver());
+        registry.register(Message.class, new MessageExpansionResolver());
+        registry.register(FileEntry.class, new FileEntryExpansionResolver());
+
+        return registry;
     }
 
     @Override
@@ -133,10 +142,17 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private EventReference processDataEntryUpdateEvent(DataEntryUpdateEvent dataEntryUpdateEvent) {
-        var expandedEntity = expansionManager.expand(dataEntryUpdateEvent.getOldData(),
-                                                     dataEntryUpdateEvent.getNewData());
+        return entityExpansionResolverRegistry
+                   .resolveEntityToExpand(dataEntryUpdateEvent.getOldData(), dataEntryUpdateEvent.getNewData())
+                   .map(this::expandEntityOrThrow)
+                   .flatMap(expandedDataEntry -> expandedDataEntry.map(this::createEnrichedEventReference))
+                   .orElseGet(this::emptyEvent);
+    }
 
-        return expandedEntity.isPresent() ? createEnrichedEventReference(expandedEntity.get()) : emptyEvent();
+    private Optional<ExpandedDataEntry> expandEntityOrThrow(Entity entity) {
+        return attempt(() -> resourceExpansionService.expandEntry(entity, true))
+                   .orElseThrow(
+                       failure -> new EntityExpansionException("Failed to expand " + entity, failure.getException()));
     }
 
     private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry) {
