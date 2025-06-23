@@ -371,7 +371,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldExpandResourceOnFileEntryDeletion() throws IOException {
-        var publication = PublicationGenerator.randomPublication();
+        var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         publication.setStatus(PublicationStatus.PUBLISHED);
         var persistedPublication = resourceService.insertPreexistingPublication(publication);
 

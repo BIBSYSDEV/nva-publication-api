@@ -132,15 +132,6 @@ public class ExpansionManagerTest {
         return entities;
     }
 
-    static Stream<ArgumentSet> entityExpanderInstances() {
-        return Stream.of(
-            allEntityExpanders().stream()
-                .map(clazz -> attempt(() -> clazz.getDeclaredConstructor().newInstance()))
-                .map(entityExpander -> Arguments.argumentSet(entityExpander.getClass().getSimpleName(), entityExpander))
-                .toArray(ArgumentSet[]::new)
-        );
-    }
-
     static Stream<ArgumentSet> failingExpansionDataProvider() {
         return allEntityExpanders().stream()
                    .map(clazz -> attempt(() -> clazz.getDeclaredConstructor().newInstance()).orElseThrow())
