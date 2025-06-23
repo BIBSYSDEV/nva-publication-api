@@ -7,6 +7,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.toChannelClaimUri;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
@@ -64,6 +65,8 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
+import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
@@ -79,6 +82,7 @@ import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -259,8 +263,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    public void refreshResources(List<Entity> dataEntries) {
-        final var refreshedEntries = refreshAndMigrate(dataEntries);
+    public void refreshResources(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
+        final var refreshedEntries = refreshAndMigrate(dataEntries, cristinUnitsUtil);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
     }
@@ -318,8 +322,37 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // update this method according to current needs.
-    public Entity migrate(Entity dataEntry) {
+    public Entity migrate(Entity dataEntry, CristinUnitsUtil cristinUnitsUtil) {
+        if (dataEntry instanceof Resource resource) {
+            return migrateResource(resource, cristinUnitsUtil);
+        }
         return dataEntry;
+    }
+
+    private Resource migrateResource(Resource resource,
+                                     CristinUnitsUtil cristinUnitsUtil) {
+
+        // Populating PublicationChannels
+        resource.getPublisherWhenDegree().ifPresent(publisher -> {
+            var channelClaimId = toChannelClaimUri(publisher.getIdentifier());
+            var channelType = ChannelType.fromChannelId(publisher.getId());
+            var nonClaimedPublicationChannelDao = NonClaimedPublicationChannel
+                                                      .create(channelClaimId, resource.getIdentifier(), channelType)
+                                                      .toDao();
+            var transactionItem = toPutTransactionItem(nonClaimedPublicationChannelDao, tableName);
+            sendTransactionWriteRequest(new TransactWriteItemsRequest().withTransactItems(transactionItem));
+        });
+
+        // Migrating curating institutions
+        var curatingInstitutions = new CuratingInstitutionsUtil(uriRetriever, customerService)
+            .getCuratingInstitutionsCached(resource.getEntityDescription(), cristinUnitsUtil);
+        resource.setCuratingInstitutions(curatingInstitutions);
+        return resource;
+    }
+
+    public TransactWriteItem toPutTransactionItem(PublicationChannelDao dao, String tableName) {
+        var put = new Put().withItem(dao.toDynamoFormat()).withTableName(tableName);
+        return new TransactWriteItem().withPut(put);
     }
 
     public Stream<FileEntry> fetchFileEntriesForResource(Resource resource) {
@@ -546,8 +579,8 @@ public class ResourceService extends ServiceWithTransactions {
         toResource.setStatus(status);
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
-        return dataEntries.stream().map(attempt(this::migrate)).map(Try::orElseThrow).toList();
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
+        return dataEntries.stream().map(attempt(dataEntry -> migrate(dataEntry, cristinUnitsUtil))).map(Try::orElseThrow).toList();
     }
 
     private Organization createOrganization(UserInstance userInstance) {

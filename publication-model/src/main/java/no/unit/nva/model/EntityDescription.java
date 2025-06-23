@@ -1,5 +1,6 @@
 package no.unit.nva.model;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -9,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import nva.commons.core.JacocoGenerated;
 
@@ -56,19 +58,23 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
 
     public String getMainTitle() {
-        return mainTitle;
+        return Optional.ofNullable(mainTitle).map(String::trim).orElse(null);
     }
 
     public void setMainTitle(String mainTitle) {
-        this.mainTitle = mainTitle;
+        if (nonNull(mainTitle)) {
+            this.mainTitle = mainTitle.trim();
+        } else {
+            this.mainTitle = mainTitle;
+        }
     }
 
     public Map<String, String> getAlternativeTitles() {
-        return Objects.nonNull(alternativeTitles) ? alternativeTitles : Collections.emptyMap();
+        return nonNull(alternativeTitles) ? alternativeTitles : Collections.emptyMap();
     }
 
     public Map<String, String> getAlternativeAbstracts() {
-        return Objects.nonNull(alternativeAbstracts) ? alternativeAbstracts : Collections.emptyMap();
+        return nonNull(alternativeAbstracts) ? alternativeAbstracts : Collections.emptyMap();
     }
 
     public void setAlternativeAbstracts(Map<String, String> alternativeAbstracts) {
@@ -96,11 +102,11 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     }
 
     public List<Contributor> getContributors() {
-        return Objects.nonNull(contributors) ? contributors : Collections.emptyList();
+        return nonNull(contributors) ? contributors : Collections.emptyList();
     }
 
     public void setContributors(List<Contributor> contributors) {
-        this.contributors = Objects.nonNull(contributors)
+        this.contributors = nonNull(contributors)
                 ? extractContributors(contributors)
                 : List.of();
     }
@@ -152,7 +158,7 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     }
 
     public List<String> getTags() {
-        return Objects.nonNull(tags) ? tags : Collections.emptyList();
+        return nonNull(tags) ? tags : Collections.emptyList();
     }
 
     public void setTags(List<String> tags) {
