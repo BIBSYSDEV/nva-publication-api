@@ -1779,6 +1779,7 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
           TABLE_NAME: !Ref NvaResourcesTable
+          CRISTIN_UNITS_S3_URI: !Ref CristinUnitsS3ObjectUri
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
