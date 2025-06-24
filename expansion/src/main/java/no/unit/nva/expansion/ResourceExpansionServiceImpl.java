@@ -93,7 +93,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             var resourceQueryObject = Resource.resourceQueryObject(fileEntry.getResourceIdentifier());
             return resourceQueryObject.fetch(resourceService)
                        .map(resource -> attempt(() -> expandResource(resource, true)).orElseThrow())
-                       .orElse(logAndProvideEmptyOptional(fileEntry));
+                       .orElseGet(() -> logAndProvideEmptyOptional(fileEntry));
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
@@ -108,8 +108,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private Optional<ExpandedDataEntry> expandResource(Resource resource, boolean useUriContext)
         throws JsonProcessingException {
         logger.info("Expanding Resource: {}",
-                    attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(resource))
-                        .or(() -> "Unable to serialize resource: " + resource.getIdentifier()));
+                    attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(resource)).orElseThrow());
         var expandedResource = ExpandedResource.fromPublication(uriRetriever,
                                                                 resourceService,
                                                                 queueClient,
