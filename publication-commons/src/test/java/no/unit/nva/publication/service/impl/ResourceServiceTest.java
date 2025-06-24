@@ -16,6 +16,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.MigrationTests.getUnitsResponseBytes;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
@@ -139,6 +140,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -158,6 +160,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentMatchers;
+import org.mockito.stubbing.Answer;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -181,11 +189,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private TicketService ticketService;
     private MessageService messageService;
+    private S3Client s3Client;
     private Instant now;
 
     @BeforeEach
     public void init() {
         super.init();
+        this.s3Client = mock(S3Client.class);
+        when(s3Client.utilities()).thenReturn(S3Client.create().utilities());
+        when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
+            (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         now = Clock.systemDefaultZone().instant();
         resourceService = getResourceServiceBuilder().build();
         ticketService = getTicketService();
@@ -889,7 +902,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources);
+        resourceService.refreshResources(resources, new CristinUnitsUtil(s3Client,
+                                                                         "s3://some-bucket/some-key"));
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }

@@ -312,8 +312,6 @@ public class UpdatePublicationHandler
         RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingResource, updatedResource,
                                                                 customer.getRightsRetentionStrategy(), actingUser,
                                                                 permissionStrategy).handle();
-
-
     }
 
     private JavaHttpClientCustomerApiClient getCustomerApiClient() {
