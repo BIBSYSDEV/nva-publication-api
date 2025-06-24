@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -136,6 +137,30 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
 
         var actualPublicationChannel = fetchedResource.getPublicationChannels().getFirst();
         var expectedClaim = constructExpectedPublicationChannel(channelIdentifier, persistedPublication.getIdentifier(),
+                                                                claim, actualPublicationChannel.getCreatedDate(),
+                                                                actualPublicationChannel.getModifiedDate());
+
+        assertEquals(expectedClaim, actualPublicationChannel);
+    }
+
+    @Test
+    void shouldPersistClaimedPublicationChannelWhenPublisherIsPresentAndChannelClaimExistsWhenImportingPublication()
+        throws NotFoundException {
+        var channelIdentifier = randomUUID();
+        var publisherId = randomPublisherId(channelIdentifier);
+        var publication = randomPublication(DegreeBachelor.class);
+        publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisherId(publisherId));
+
+        var claim = channelClaimDtoForPublisher(channelIdentifier);
+        when(channelClaimClient.fetchChannelClaim(toChannelClaimId(channelIdentifier))).thenReturn(claim);
+
+        var resource = Resource.fromPublication(publication).importResource(resourceService,
+                                                             ImportSource.fromBrageArchive(randomString()));
+
+        var fetchedResource = resourceService.getResourceByIdentifier(resource.getIdentifier());
+
+        var actualPublicationChannel = fetchedResource.getPublicationChannels().getFirst();
+        var expectedClaim = constructExpectedPublicationChannel(channelIdentifier, resource.getIdentifier(),
                                                                 claim, actualPublicationChannel.getCreatedDate(),
                                                                 actualPublicationChannel.getModifiedDate());
 

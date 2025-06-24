@@ -526,9 +526,12 @@ public class ResourceService extends ServiceWithTransactions {
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();
 
-        var transactions = new ArrayList<>(fileTransactionWriteItems);
+
+        var transactions = new ArrayList<TransactWriteItem>();
+        transactions.addAll(fileTransactionWriteItems);
         transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
         transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
+        transactions.addAll(createPublicationChannelsTransaction(resource));
 
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);
