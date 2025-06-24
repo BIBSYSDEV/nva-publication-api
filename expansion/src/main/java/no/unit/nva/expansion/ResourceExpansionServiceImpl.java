@@ -73,22 +73,13 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     @Override
     public Optional<ExpandedDataEntry> expandEntry(Entity dataEntry, boolean useUriContext)
-        throws JsonProcessingException,
-               NotFoundException {
-        if (dataEntry instanceof Resource resource) {
-            logger.info("Expanding Resource: {}", resource.getIdentifier());
-            var expandedResource = ExpandedResource.fromPublication(uriRetriever,
-                                                                    resourceService,
-                                                                    queueClient,
-                                                                    resource.fetch(resourceService)
-                                                                        .orElseThrow()
-                                                                        .toPublication());
-            var resourceWithContextUri = useUriContext
-                                             ? replaceInlineContextWithUriContext(expandedResource)
-                                             : replaceContextWithInlineContext(expandedResource);
-
-            return Optional.of(attempt(
-                () -> objectMapper.readValue(resourceWithContextUri.toString(), ExpandedResource.class)).orElseThrow());
+        throws JsonProcessingException, NotFoundException {
+        if (dataEntry instanceof Resource resourceFromEvent) {
+            // we need to fetch the resource from the database to make sure the files in associatedArtifacts are
+            // up-to-date as that is needed in OpenSearch:
+            var resourceQueryObject = Resource.resourceQueryObject(resourceFromEvent.getIdentifier());
+            var resource = resourceQueryObject.fetch(resourceService).orElseThrow();
+            return expandResource(resource, useUriContext);
         } else if (dataEntry instanceof TicketEntry ticketEntry) {
             logger.info("Expanding TicketEntry: {}", ticketEntry.getIdentifier());
             return Optional.of(ExpandedTicket.create(ticketEntry, resourceService, this, ticketService));
@@ -99,16 +90,36 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         } else if (dataEntry instanceof FileEntry fileEntry) {
             logger.info("Expanding resource {} based on update of FileEntry {}",
                         fileEntry.getResourceIdentifier(), fileEntry.getIdentifier());
-            try {
-                var resource = resourceService.getResourceByIdentifier(fileEntry.getResourceIdentifier());
-                return expandEntry(resource, true);
-            } catch (NotFoundException e) {
-                logger.info("Resource is no longer present -> nothing to expand: {}", fileEntry.getIdentifier());
-                return Optional.empty();
-            }
+            var resourceQueryObject = Resource.resourceQueryObject(fileEntry.getResourceIdentifier());
+            return resourceQueryObject.fetch(resourceService)
+                       .map(resource -> attempt(() -> expandResource(resource, true)).orElseThrow())
+                       .orElse(logAndProvideEmptyOptional(fileEntry));
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
+    }
+
+    private Optional<ExpandedDataEntry> logAndProvideEmptyOptional(FileEntry fileEntry) {
+        logger.info("Resource {} is no longer present -> nothing to expand for fileEntry {}",
+                    fileEntry.getResourceIdentifier(), fileEntry.getIdentifier());
+        return Optional.empty();
+    }
+
+    private Optional<ExpandedDataEntry> expandResource(Resource resource, boolean useUriContext)
+        throws JsonProcessingException {
+        logger.info("Expanding Resource: {}",
+                    attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(resource))
+                        .or(() -> "Unable to serialize resource: " + resource.getIdentifier()));
+        var expandedResource = ExpandedResource.fromPublication(uriRetriever,
+                                                                resourceService,
+                                                                queueClient,
+                                                                resource.toPublication());
+        var resourceWithContextUri = useUriContext
+                                         ? replaceInlineContextWithUriContext(expandedResource)
+                                         : replaceContextWithInlineContext(expandedResource);
+
+        return Optional.of(attempt(
+            () -> objectMapper.readValue(resourceWithContextUri.toString(), ExpandedResource.class)).orElseThrow());
     }
 
     @Override

@@ -142,11 +142,25 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private EventReference processDataEntryUpdateEvent(DataEntryUpdateEvent dataEntryUpdateEvent) {
-        return entityExpansionResolverRegistry
-                   .resolveEntityToExpand(dataEntryUpdateEvent.getOldData(), dataEntryUpdateEvent.getNewData())
-                   .map(this::expandEntityOrThrow)
-                   .flatMap(expandedDataEntry -> expandedDataEntry.map(this::createEnrichedEventReference))
-                   .orElseGet(this::emptyEvent);
+        var entityToExpand = entityExpansionResolverRegistry
+                                 .resolveEntityToExpand(dataEntryUpdateEvent.getOldData(),
+                                                        dataEntryUpdateEvent.getNewData());
+
+        if (entityToExpand.isEmpty()) {
+            logger.info("No expansion based on update of entity!");
+            return emptyEvent();
+        }
+
+        var expandedEntity = expandEntityOrThrow(entityToExpand.get());
+
+        return expandedEntity
+                   .map(this::createEnrichedEventReference)
+                   .orElseGet(() -> logAndProvideEmptyEvent(entityToExpand.get()));
+    }
+
+    private EventReference logAndProvideEmptyEvent(Entity entity) {
+        logger.info("No expansion based on update of entity {}", entity.getIdentifier());
+        return emptyEvent();
     }
 
     private Optional<ExpandedDataEntry> expandEntityOrThrow(Entity entity) {
@@ -163,6 +177,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
 
     private DataEntryUpdateEvent readDataEntryUpdateEventFromS3(EventReference input) {
         var dataEntryUpdateEventAsString = s3DriverEventsBucket.readEvent(input.getUri());
+        logger.info("Handling event from s3: {}", dataEntryUpdateEventAsString);
         return DataEntryUpdateEvent.fromJson(dataEntryUpdateEventAsString);
     }
 

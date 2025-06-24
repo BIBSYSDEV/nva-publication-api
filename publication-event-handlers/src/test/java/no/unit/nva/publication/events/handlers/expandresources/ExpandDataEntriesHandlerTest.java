@@ -411,6 +411,48 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldExpandResourceOnFileEntryInsertion() throws IOException {
+        var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
+
+        var openFile = extractOpenFile(publication);
+        var image = fileEntryUpdate(openFile.orElseThrow(),
+                                    publication.getIdentifier(),
+                                    UserInstance.fromPublication(publication));
+        var event = emulateEventEmittedByDataEntryUpdateHandler(FILE_ENTRY_DELETED_EVENT_TOPIC, EMPTY_IMAGE, image);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+
+        var persistedResource = s3Driver.getFile(
+            UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
+        var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
+        assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
+    }
+
+    @Test
+    void shouldExpandResourceOnFileEntryModification() throws IOException {
+        var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
+
+        var openFile = extractOpenFile(publication);
+        var image = fileEntryUpdate(openFile.orElseThrow(),
+                                    publication.getIdentifier(),
+                                    UserInstance.fromPublication(publication));
+        var event = emulateEventEmittedByDataEntryUpdateHandler(FILE_ENTRY_DELETED_EVENT_TOPIC, image, image);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+
+        var persistedResource = s3Driver.getFile(
+            UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
+        var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
+        assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
+    }
+
+    @Test
     void shouldNotFailIfResourceNoLongerExistOnDeletedFileEntry() throws IOException {
         var publication = PublicationGenerator.randomPublication();
         publication.setStatus(PublicationStatus.PUBLISHED);
