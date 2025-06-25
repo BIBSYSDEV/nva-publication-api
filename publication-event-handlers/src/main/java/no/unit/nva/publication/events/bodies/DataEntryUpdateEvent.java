@@ -123,11 +123,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         if (!isUserUpdate() && shouldIgnoreBatchScan(environment)) {
             return false;
         }
-        if (extractDataEntryType() instanceof FileEntry) {
-            return hasNewImage();
-        } else {
-            return nonNull(oldData) || nonNull(newData);
-        }
+        return nonNull(oldData) || nonNull(newData);
     }
 
     private static Boolean shouldIgnoreBatchScan(Environment environment) {
