@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 public class PersistedResourcesService {
 
     private static final Logger logger = LoggerFactory.getLogger(PersistedResourcesService.class);
+    private static final String FAILED_TO_PERSIST_MESSAGE_TEMPLATE =
+        "Failed to persist expanded representation of %s to S3";
 
     private final S3Driver s3Driver;
 
@@ -29,8 +31,7 @@ public class PersistedResourcesService {
     }
 
     private PersistedResourcesException throwError(Failure<URI> failure, ExpandedDataEntry expandedDataEntry) {
-        var logMessage = String.format("Failed to persist expanded representation of %s to S3",
-                                       expandedDataEntry.toJsonString());
+        var logMessage = FAILED_TO_PERSIST_MESSAGE_TEMPLATE.formatted(expandedDataEntry.toJsonString());
         logger.error(logMessage, failure.getException());
         return new PersistedResourcesException("Failed to persist expanded resource to S3.", failure.getException());
     }
