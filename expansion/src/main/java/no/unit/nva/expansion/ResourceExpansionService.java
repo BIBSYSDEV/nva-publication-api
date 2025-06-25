@@ -1,6 +1,7 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Optional;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedOrganization;
@@ -12,8 +13,8 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 
 public interface ResourceExpansionService {
 
-    ExpandedDataEntry expandEntry(Entity dataEntry, boolean replaceContext) throws JsonProcessingException,
-                                                                                   NotFoundException;
+    Optional<ExpandedDataEntry> expandEntry(Entity dataEntry, boolean replaceContext) throws JsonProcessingException,
+                                                                                             NotFoundException;
 
     ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException;
 

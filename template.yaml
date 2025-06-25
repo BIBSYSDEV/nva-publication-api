@@ -1525,6 +1525,8 @@ Resources:
                     - "PublicationService.FilesApprovalThesis.Update"
                     - "PublicationService.GeneralSupportRequest.Update"
                     - "PublicationService.UnpublishRequest.Update"
+                    - "PublicationService.FileEntry.Update"
+                    - "PublicationService.FileEntry.Deleted"
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -1761,7 +1763,7 @@ Resources:
                   topic:
                     - PublicationService.Resource.Update
                     - PublicationService.FileEntry.Update
-                    - PublicationService.FileEntry.Delete
+                    - PublicationService.FileEntry.Deleting
                     - PublicationService.DoiRequest.Update
 
   EventBasedBatchScanHandlerTest:
@@ -2033,7 +2035,7 @@ Resources:
               detail:
                 responsePayload:
                   topic:
-                    - PublicationService.FileEntry.Delete
+                    - PublicationService.FileEntry.Deleting
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:

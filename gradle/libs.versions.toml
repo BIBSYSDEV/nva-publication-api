@@ -128,10 +128,10 @@ tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect
 vavr = { group = 'io.vavr', name = 'vavr', version.ref = 'vavrVersion' }
 resilience4j-all = { group = 'io.github.resilience4j', name = 'resilience4j-all', version.ref = 'resilience4j' }
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
-swagger-annotations = { group = 'io.swagger.core.v3', name = 'swagger-annotations', version.ref = 'swaggerCoreVersion' }
 mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
 open-csv = { group = 'com.opencsv', name = 'opencsv', version = '5.9' } # open-csv is used by cristin-import, can be deleted when cristin-import is deleted
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
+
 [bundles]
 validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',

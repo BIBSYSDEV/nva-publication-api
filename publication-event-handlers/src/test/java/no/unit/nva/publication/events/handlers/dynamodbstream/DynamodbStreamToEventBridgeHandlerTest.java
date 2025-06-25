@@ -14,7 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
@@ -32,8 +32,6 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
-import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
@@ -124,17 +122,13 @@ class DynamodbStreamToEventBridgeHandlerTest {
     }
 
     @Test
-    void shouldNotEmitEventWhenDataEntryUpdateEventForFileEntryDoesNotHaveNewImage() {
+    void shouldEmitEventWhenDataEntryUpdateEventForFileEntryDoesNotHaveNewImage() {
         var event = randomEventWithSingleDynamoRecord(OperationType.REMOVE, randomFileEntry(), null);
         handler.handleRequest(event, context);
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         var persistedEvents = s3Driver.getFiles(UnixPath.ROOT_PATH);
 
-        assertTrue(persistedEvents.isEmpty());
-    }
-
-    private Entity randomPublicationChannel() {
-        return NonClaimedPublicationChannel.create(randomUri(), SortableIdentifier.next(), ChannelType.SERIAL_PUBLICATION);
+        assertFalse(persistedEvents.isEmpty());
     }
 
     private static FileEntry randomFileEntry() {

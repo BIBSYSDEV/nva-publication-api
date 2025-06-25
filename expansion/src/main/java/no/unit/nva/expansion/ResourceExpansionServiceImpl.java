@@ -1,5 +1,6 @@
 package no.unit.nva.expansion;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -17,6 +18,7 @@ import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.cristin.CristinPerson;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
 import no.unit.nva.publication.model.business.Resource;
@@ -71,30 +73,79 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public ExpandedDataEntry expandEntry(Entity dataEntry, boolean useUriContext) throws JsonProcessingException,
-                                                                                         NotFoundException {
-        if (dataEntry instanceof Resource resource) {
-            logger.info("Expanding Resource: {}", resource.getIdentifier());
-            var expandedResource = ExpandedResource.fromPublication(uriRetriever,
-                                                                    resourceService,
-                                                                    queueClient,
-                                                                    resource.fetch(resourceService).orElseThrow().toPublication());
-            var resourceWithContextUri = useUriContext
-                                             ? replaceInlineContextWithUriContext(expandedResource)
-                                             : replaceContextWithInlineContext(expandedResource);
-
-            return attempt(
-                () -> objectMapper.readValue(resourceWithContextUri.toString(), ExpandedResource.class)).orElseThrow();
-        } else if (dataEntry instanceof TicketEntry ticketEntry) {
-            logger.info("Expanding TicketEntry: {}", ticketEntry.getIdentifier());
-            return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
-        } else if (dataEntry instanceof Message message) {
-            logger.info("Expanding Message: {}", message.getIdentifier());
-            var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
-            return expandEntry(ticket, true);
+    public Optional<ExpandedDataEntry> expandEntry(Entity dataEntry, boolean useUriContext)
+        throws JsonProcessingException, NotFoundException {
+        switch (dataEntry) {
+            case Resource resourceFromEvent -> {
+                return fetchFullyPopulatedResourceAndExpand(useUriContext, resourceFromEvent);
+            }
+            case TicketEntry ticketEntry -> {
+                return expandTicketEntry(ticketEntry);
+            }
+            case Message message -> {
+                return fetchAssociatedTicketAndExpand(message);
+            }
+            case FileEntry fileEntry -> {
+                return fetchAssociatedResourceAndExpandIfPresent(fileEntry);
+            }
+            case null, default -> {
+            }
         }
         // will throw exception if we want to index a new type that we are not handling yet
-        throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
+        throw new UnsupportedOperationException(UNSUPPORTED_TYPE + (nonNull(dataEntry) ?
+                                                                        dataEntry.getClass().getSimpleName() : "null"));
+    }
+
+    private Optional<ExpandedDataEntry> expandTicketEntry(TicketEntry ticketEntry)
+        throws NotFoundException, JsonProcessingException {
+        logger.info("Expanding TicketEntry: {}", ticketEntry.getIdentifier());
+        return Optional.of(ExpandedTicket.create(ticketEntry, resourceService, this, ticketService));
+    }
+
+    private Optional<ExpandedDataEntry> fetchAssociatedTicketAndExpand(Message message)
+        throws NotFoundException, JsonProcessingException {
+        logger.info("Expanding Message: {}", message.getIdentifier());
+        var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
+        return expandEntry(ticket, true);
+    }
+
+    private Optional<ExpandedDataEntry> fetchAssociatedResourceAndExpandIfPresent(FileEntry fileEntry) {
+        logger.info("Expanding resource {} based on update of FileEntry {}",
+                    fileEntry.getResourceIdentifier(), fileEntry.getIdentifier());
+        var resourceQueryObject = Resource.resourceQueryObject(fileEntry.getResourceIdentifier());
+        return resourceQueryObject.fetch(resourceService)
+                   .map(resource -> attempt(() -> expandResource(resource, true)).orElseThrow())
+                   .orElseGet(() -> logAndProvideEmptyOptional(fileEntry));
+    }
+
+    private Optional<ExpandedDataEntry> fetchFullyPopulatedResourceAndExpand(boolean useUriContext, Resource resourceFromEvent)
+        throws JsonProcessingException {
+        var resourceQueryObject = Resource.resourceQueryObject(resourceFromEvent.getIdentifier());
+        var resource = resourceQueryObject.fetch(resourceService).orElseThrow();
+        return expandResource(resource, useUriContext);
+    }
+
+    private Optional<ExpandedDataEntry> logAndProvideEmptyOptional(FileEntry fileEntry) {
+        logger.info("Resource {} is no longer present -> nothing to expand for fileEntry {}",
+                    fileEntry.getResourceIdentifier(), fileEntry.getIdentifier());
+        return Optional.empty();
+    }
+
+    private Optional<ExpandedDataEntry> expandResource(Resource resource, boolean useUriContext)
+        throws JsonProcessingException {
+        logger.info("Expanding Resource: {} - {}",
+                    resource.getIdentifier(),
+                    attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(resource)).orElseThrow());
+        var expandedResource = ExpandedResource.fromPublication(uriRetriever,
+                                                                resourceService,
+                                                                queueClient,
+                                                                resource.toPublication());
+        var resourceWithContextUri = useUriContext
+                                         ? replaceInlineContextWithUriContext(expandedResource)
+                                         : replaceContextWithInlineContext(expandedResource);
+
+        return Optional.of(attempt(
+            () -> objectMapper.readValue(resourceWithContextUri.toString(), ExpandedResource.class)).orElseThrow());
     }
 
     @Override
