@@ -107,7 +107,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     private Optional<ExpandedDataEntry> expandResource(Resource resource, boolean useUriContext)
         throws JsonProcessingException {
-        logger.info("Expanding Resource: {}",
+        logger.info("Expanding Resource: {} - {}",
+                    resource.getIdentifier(),
                     attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(resource)).orElseThrow());
         var expandedResource = ExpandedResource.fromPublication(uriRetriever,
                                                                 resourceService,
