@@ -12,6 +12,7 @@ import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
@@ -296,8 +297,14 @@ public class UpdatePublicationHandler
     private static List<FileEntry> getUpdatedFiles(Resource existingResource,
                                                    Resource updatedResource) {
         return existingResource.getFileEntries().stream()
-                   .filter(existingFileEntry -> updatedResource.getFileByIdentifier(existingFileEntry.getFile().getIdentifier()).filter(updatedFile -> isUpdatedFile(existingFileEntry.getFile(), updatedFile)).isPresent())
+                   .filter(existingFileEntry -> fileIsPresentAndIsUpdated(updatedResource, existingFileEntry))
                    .toList();
+    }
+
+    private static boolean fileIsPresentAndIsUpdated(Resource updatedResource, FileEntry existingFileEntry) {
+        var updatedFile = updatedResource.getFileByIdentifier(existingFileEntry.getFile().getIdentifier());
+        return updatedFile.filter(file -> isUpdatedFile(existingFileEntry.getFile(), file))
+                   .isPresent();
     }
 
     private static boolean isUpdatedFile(File existingFile, File updatedFile) {
