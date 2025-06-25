@@ -65,7 +65,9 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
+import no.unit.nva.model.instancetypes.exhibition.ExhibitionProduction;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
@@ -74,6 +76,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
@@ -743,6 +746,54 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldExpandResourceOnFileEntryUpdateWhenPresentInDatabase()
+        throws BadRequestException, NotFoundException, JsonProcessingException {
+        var publication = randomPublication(ExhibitionProduction.class);
+        publication.setStatus(PUBLISHED);
+
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
+
+        var fileEntry = FileEntry.create(openFileFromPublication(publication), persistedPublication.getIdentifier(),
+                                         userInstance);
+        var expandedResourceAsJson = expansionService.expandEntry(fileEntry, false)
+                                         .orElseThrow().toJsonString();
+        var expandedResource = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
+        assertThat(expandedResource.at("/identifier").asText(),
+                   is(equalTo(persistedPublication.getIdentifier().toString())));
+    }
+
+    @Test
+    void shouldNotExpandResourceOnFileEntryUpdateWhenNotPresentInDatabase()
+        throws BadRequestException, NotFoundException, JsonProcessingException {
+        var publication = randomPublication(ExhibitionProduction.class);
+        publication.setStatus(DRAFT);
+
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
+
+        resourceService.deleteDraftPublication(userInstance, persistedPublication.getIdentifier());
+
+        var fileEntry = FileEntry.create(openFileFromPublication(publication), persistedPublication.getIdentifier(),
+                                         userInstance);
+        var result = expansionService.expandEntry(fileEntry, false);
+
+        assertThat(result.isPresent(), is(false));
+    }
+
+    private File openFileFromPublication(Publication publication) {
+        return publication.getAssociatedArtifacts()
+                   .stream()
+                   .filter(OpenFile.class::isInstance)
+                   .map(OpenFile.class::cast)
+                   .findFirst().orElseThrow();
+    }
+
+    @Test
     void shouldThrowExpansionExceptionWhenUnexpectedErrorFetchingNviCandidateForPublication()
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
@@ -785,7 +836,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         FakeUriResponse.setUpNviResponse(fakeUriRetriever, statusCode, publication, responseBody);
 
-        return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
+        return new ResourceExpansionServiceImpl(resourceService,
                                                 new TicketService(client, fakeUriRetriever),
                                                 fakeUriRetriever,
                                                 fakeUriRetriever, sqsClient);
