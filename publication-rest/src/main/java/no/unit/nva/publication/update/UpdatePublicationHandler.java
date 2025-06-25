@@ -20,7 +20,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.PublicationResponseFactory;
@@ -170,7 +169,7 @@ public class UpdatePublicationHandler
 
         var resourceUpdate = input.generateUpdate(existingResource);
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, resourceUpdate.getPublisher().getId());
-        authorizeFileEntries(existingResource, userInstance, getExistingFilesToUpdate(existingResource, input.getAssociatedArtifacts()));
+        authorizeFileEntries(existingResource, userInstance, getUpdatedFiles(existingResource, resourceUpdate));
 
         var updatedFiles = resourceUpdate.getFiles();
         if (!updatedFiles.stream().allMatch(file -> canUpdateFileToPendingOpenFile(file, customer, existingResource,
@@ -294,16 +293,21 @@ public class UpdatePublicationHandler
         }
     }
 
-    private static List<FileEntry> getExistingFilesToUpdate(Resource existingPublication,
-                                                            AssociatedArtifactList associatedArtifacts) {
-        var inputFiles = associatedArtifacts.stream()
-                             .filter(File.class::isInstance)
-                             .map(File.class::cast).toList();
-        var existingFiles = existingPublication.getFileEntries();
+    private static List<FileEntry> getUpdatedFiles(Resource existingResource,
+                                                   Resource updatedResource) {
+        return existingResource.getFileEntries().stream()
+                   .filter(existingFileEntry -> fileIsPresentAndIsUpdated(updatedResource, existingFileEntry))
+                   .toList();
+    }
 
-        return existingFiles.stream()
-                                .filter(existingFile -> !inputFiles.contains(existingFile.getFile()))
-                                .toList();
+    private static boolean fileIsPresentAndIsUpdated(Resource updatedResource, FileEntry existingFileEntry) {
+        var updatedFile = updatedResource.getFileByIdentifier(existingFileEntry.getFile().getIdentifier());
+        return updatedFile.filter(file -> isUpdatedFile(existingFileEntry.getFile(), file))
+                   .isPresent();
+    }
+
+    private static boolean isUpdatedFile(File existingFile, File updatedFile) {
+        return !existingFile.equals(updatedFile);
     }
 
     private void setRrsOnFiles(Resource updatedResource, Resource existingResource, Customer customer,

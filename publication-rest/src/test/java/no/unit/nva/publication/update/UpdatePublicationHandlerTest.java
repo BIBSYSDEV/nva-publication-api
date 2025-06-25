@@ -21,6 +21,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomFundings;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
@@ -101,7 +102,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -139,7 +139,6 @@ import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
@@ -150,7 +149,6 @@ import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.model.pages.Range;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
@@ -196,8 +194,6 @@ import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -1660,35 +1656,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenNonCuratorAttemptsToRemovePublishedFile()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
-                                                                                  resourceService);
-        var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
-        var event = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
-
-        updatePublicationHandler.handleRequest(event, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = AccessRight.class, mode = Mode.EXCLUDE, names = {"MANAGE_RESOURCE_FILES"})
-    void shouldNotAllowUserWithoutAccessRightManageResourceFilesToRemovePublishedFile(AccessRight accessRight)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
-                                                                                  resourceService);
-        var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
-        var event = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
-                                                              publication.getResourceOwner().getOwnerAffiliation(),
-                                                              accessRight);
-
-        updatePublicationHandler.handleRequest(event, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
-    }
-
-    @Test
     void publicationOwnerShouldNotBeAbleToUpdateMetadataOfOpenFile() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithOpenFiles(customerId, PUBLISHED,
                                                                                   resourceService);
@@ -2039,6 +2006,28 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertNotEquals(publication.getFundings(), updatedPublication.getFundings());
         assertNotEquals(publication.getAssociatedArtifacts(), updatedPublication.getAssociatedArtifacts());
         assertNotEquals(publication.getProjects(), updatedPublication.getProjects());
+    }
+
+    @Test
+    void partialUpdateShouldNotValidateFilesNotPresentInRequest()
+        throws BadRequestException, IOException, NotFoundException {
+        var existingFile = randomHiddenFile();
+        var publication = randomPublication(JournalArticle.class);
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(existingFile)));
+        publication.setPublisher(Organization.fromUri(customerId));
+        var userInstance = UserInstance.fromPublication(publication);
+        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        Resource.fromPublication(publication).publish(resourceService, userInstance);
+
+        var partialUpdateRequest = new PartialUpdatePublicationRequest(publication.getIdentifier(), null, null,
+                                                                       AssociatedArtifactList.empty());
+        stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+        var input = request(userInstance, partialUpdateRequest, publication.getIdentifier());
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        assertEquals(HTTP_OK, response.getStatusCode());
     }
 
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
