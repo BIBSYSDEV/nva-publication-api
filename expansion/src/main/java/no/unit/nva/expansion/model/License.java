@@ -95,8 +95,8 @@ public record License(URI value, String name, Map<String, String> labels) implem
                 NORWEGIAN_LABEL, "Creative Commons - Ingen opphavsrett");
 
             public static final Map<String, String> COPYRIGHT_ACT_LABELS = Map.of(
-                ENGLISH_LABEL, "Generelle bruksvilkår",
-                NORWEGIAN_LABEL, "General Terms of Use");
+                ENGLISH_LABEL, "General Terms of Use",
+                NORWEGIAN_LABEL, "Generelle bruksvilkår");
 
             public static final Map<String, String> OTHER_LABELS = Map.of(
                 ENGLISH_LABEL, "Other license",
