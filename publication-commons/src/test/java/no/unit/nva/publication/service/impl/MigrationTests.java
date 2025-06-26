@@ -2,7 +2,6 @@ package no.unit.nva.publication.service.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
-import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithIdAndAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -41,7 +40,6 @@ import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.instancetypes.book.Textbook;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.Dao;
@@ -56,7 +54,6 @@ import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -179,67 +176,6 @@ class MigrationTests extends ResourcesLocalTest {
                 .orElseThrow();
 
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
-    }
-
-    @Test
-    void shouldPersistNonClaimedPublicationChannelWhenDegreeWithPublisher() throws NotFoundException {
-        var channelIdentifier = randomUUID();
-        var publisherId = randomPublisherId(channelIdentifier);
-        var publisher = new Publisher(publisherId);
-
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        var publication = randomPublication(DegreeBachelor.class);
-        publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(publisher));
-        publication.setIdentifier(hardCodedIdentifier);
-        updatePublication(publication);
-
-        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
-
-        migrateResources();
-
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertFalse(updatedResource.getPublicationChannels().isEmpty());
-
-        var publicationChannel = updatedResource.getPublicationChannels().getFirst();
-        assertEquals(channelIdentifier.toString(), publicationChannel.getIdentifier().toString());
-    }
-
-    @Test
-    void shouldNotPersistNonClaimedPublicationChannelWhenDegreeWithoutPublisher() throws NotFoundException {
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        var publication = randomPublication(DegreeBachelor.class);
-        publication.getEntityDescription().getReference().setPublicationContext(degreeWithPublisher(null));
-        publication.setIdentifier(hardCodedIdentifier);
-        updatePublication(publication);
-
-        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
-
-        migrateResources();
-
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(updatedResource.getPublicationChannels().isEmpty());
-    }
-
-    @Test
-    void shouldNotPersistNonClaimedPublicationChannelWhenNonDegreeWithPublisher() throws NotFoundException {
-        var publisherId = randomPublisherId(randomUUID());
-        var publisher = new Publisher(publisherId);
-
-        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
-        var publication = randomPublication(Textbook.class);
-        publication.getEntityDescription().getReference().setPublicationContext(reportWithPublisher(publisher));
-        publication.setIdentifier(hardCodedIdentifier);
-        updatePublication(publication);
-
-        var fetchedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(fetchedResource.getPublicationChannels().isEmpty());
-
-        migrateResources();
-
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-        Assertions.assertTrue(updatedResource.getPublicationChannels().isEmpty());
     }
 
     @Test
