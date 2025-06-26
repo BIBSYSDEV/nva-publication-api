@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class FileModelTest {
 
@@ -149,19 +150,6 @@ public class FileModelTest {
         assertThat(unmapped.isVisibleForNonOwner(), equalTo(false));
     }
 
-    /**
-     * @deprecated remove when PublisherVersion no longer needs to parse boolean
-     */
-    @Deprecated
-    @Test
-    void objectMapperShouldSerializeAndDeserializePublishedVersion() throws JsonProcessingException {
-        var file = new PendingOpenFile(UUID.randomUUID(), randomString(), randomString(), 10L, null,
-                                       PublisherVersion.ACCEPTED_VERSION, null, null, randomString(), randomInserted());
-        var fileAsString = file.toString();
-        var roundTrippedFile = dataModelObjectMapper.readValue(fileAsString, PendingOpenFile.class);
-        assertThat(roundTrippedFile.getPublisherVersion(), is(equalTo(PublisherVersion.ACCEPTED_VERSION)));
-    }
-
     @Test
     void shouldThrowIllegalStateExceptionWhenApprovingPendingFileWithoutLicense() {
         var fileWithoutLicense = randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
@@ -171,12 +159,21 @@ public class FileModelTest {
                      "Cannot publish a file without a license: " + fileWithoutLicense.getIdentifier());
     }
 
-    @Test
-    void shouldKeepLicenseAsIs() {
-        var license = URI.create("https://rightsstatements.org/vocab/InC/1.0/");
-        var file = randomOpenFile().copy().withLicense(license).build(OpenFile.class);
+    //TODO: Remove when right reserved license has been migrated. NP-49368
+    @Deprecated
+    @ParameterizedTest
+    @ValueSource(strings = {"https://rightsstatements.org/page/InC/1.0/", "https://rightsstatements.org/page/InC/1.0",
+        "http://rightsstatements.org/vocab/InC/1.0/", "http://rightsstatements.org/vocab/inc/1.0/"})
+    void shouldMigrateLegacyRightsReservedLicenses(String value) throws JsonProcessingException {
+        var json = """
+            {
+            "type": "OpenFile",
+            "license": "%s"
+            }
+            """.formatted(value);
+        var file = JsonUtils.dtoObjectMapper.readValue(json, File.class);
 
-        assertEquals(license, file.getLicense());
+        assertEquals(URI.create("https://nva.sikt.no/license/copyright-act/1.0"), file.getLicense());
     }
 
     private static Username randomUsername() {

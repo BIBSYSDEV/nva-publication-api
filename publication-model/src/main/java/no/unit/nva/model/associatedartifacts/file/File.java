@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -36,6 +37,12 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = UploadedFile.TYPE, value = UploadedFile.class)})
 public abstract class File implements JsonSerializable, AssociatedArtifact {
 
+    public static final List<URI> DEPRECATED_RIGHTS_RESERVED_LICENSES = List.of(
+        URI.create("https://rightsstatements.org/page/InC/1.0/"),
+        URI.create("https://rightsstatements.org/page/InC/1.0"),
+        URI.create("http://rightsstatements.org/vocab/InC/1.0/"),
+        URI.create("http://rightsstatements.org/vocab/inc/1.0/")
+    );
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String NAME_FIELD = "name";
     public static final String MIME_TYPE_FIELD = "mimeType";
@@ -51,6 +58,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final Set<Class<? extends File>> APPROVED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     public static final Set<Class<? extends File>> FINALIZED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class,
                                                                                 HiddenFile.class);
+    protected static final String RIGHTS_RESERVED_LICENSE = "https://nva.sikt.no/license/copyright-act/1.0";
     @JsonProperty(IDENTIFIER_FIELD)
     private final UUID identifier;
     @JsonProperty(NAME_FIELD)
@@ -104,13 +112,20 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         this.name = name;
         this.mimeType = mimeType;
         this.size = size;
-        this.license = license;
+        this.license = migrateRightsReservedLicense(license);
         this.publisherVersion = publisherVersion;
         this.embargoDate = embargoDate;
         this.rightsRetentionStrategy = assignDefaultStrategyIfNull(rightsRetentionStrategy);
         this.legalNote = legalNote;
         this.publishedDate = publishedDate;
         this.uploadDetails = uploadDetails;
+    }
+
+    private URI migrateRightsReservedLicense(URI license) {
+        return nonNull(license) && DEPRECATED_RIGHTS_RESERVED_LICENSES.contains(license)
+                   ? URI.create(RIGHTS_RESERVED_LICENSE)
+                   : license;
+
     }
 
     public static Builder builder() {
