@@ -230,6 +230,7 @@ public class Resource implements Entity {
                    .build();
     }
 
+    @JsonIgnore
     public boolean isDegree() {
         return Optional.ofNullable(getEntityDescription())
             .map(EntityDescription::getReference)
@@ -844,6 +845,7 @@ public class Resource implements Entity {
      * @return the hashcode.
      */
 
+    @JsonIgnore
     public Optional<CristinIdentifier> getCristinIdentifier() {
         return Optional.ofNullable(additionalIdentifiers)
                        .orElse(Collections.emptySet())

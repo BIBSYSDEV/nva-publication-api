@@ -220,6 +220,7 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
         return KEY_PATTERN.formatted(TYPE, getIdentifier());
     }
 
+    @JsonIgnore
     public FileEntry getFileEntry() {
         return (FileEntry) getData();
     }
