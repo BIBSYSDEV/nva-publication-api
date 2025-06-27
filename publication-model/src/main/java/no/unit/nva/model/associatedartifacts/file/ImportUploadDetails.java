@@ -18,7 +18,7 @@ public record ImportUploadDetails(Source source, String archive, Instant uploade
     public static final String TYPE = "ImportUploadDetails";
 
     public enum Source {
-        BRAGE("Brage"), SCOPUS("Scopus");
+        BRAGE("Brage"), SCOPUS("Scopus"), DLR("DLR");
 
         private final String value;
 
