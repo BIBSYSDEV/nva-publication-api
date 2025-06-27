@@ -62,6 +62,6 @@ public class ImportSource implements JsonSerializable {
     }
 
     public enum Source {
-        BRAGE, CRISTIN, SCOPUS
+        BRAGE, CRISTIN, SCOPUS, DLR
     }
 }
