@@ -1,8 +1,10 @@
 package no.unit.nva.model.instancetypes.degree;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.instancetypes.PublicationInstance.Constants.PAGES_FIELD;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.model.PublicationDate;
@@ -41,6 +43,6 @@ public class DegreePhd extends DegreeBase {
     }
 
     public Set<RelatedDocument> getRelated() {
-        return related;
+        return nonNull(related) ? related : Collections.emptySet();
     }
 }
