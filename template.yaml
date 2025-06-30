@@ -1924,7 +1924,6 @@ Resources:
             BatchSize: 1
             Enabled: true
             MaximumRetryAttempts: 3
-            MaximumRecordAgeInSeconds: 3600
             BisectBatchOnFunctionError: true
             DestinationConfig:
               OnFailure:
