@@ -1552,9 +1552,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void updatingResourceFromImportShouldSetMergedResourceEventWithInstitutionFrom
-
-    @Test
     void shouldSetFileTypeRetractedEventWhenRetractingFinalizedFile() throws BadRequestException {
         var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
         var userInstance = UserInstance.fromPublication(publication);
