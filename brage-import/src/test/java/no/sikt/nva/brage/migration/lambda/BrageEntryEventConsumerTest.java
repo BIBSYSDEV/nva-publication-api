@@ -24,6 +24,7 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
+import static no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.HARDCODED_NTNU_CRISTIN_ID;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomAdditionalIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -52,6 +53,7 @@ import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
@@ -2110,7 +2112,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAddImportDetailWhenUpdatingExistingPublicationByBrageRecord() throws IOException {
+    void shouldSetMergedResourceEventWhenUpdatingExistingPublicationWithInstitutionFromIncomingPublication() throws IOException {
         var generator = generateBrageRecordAndPersistDuplicate(new Lecture(), TYPE_CONFERENCE_REPORT);
         var existingPublication = generator.getExistingPublication();
         var brageRecord = generator.getGeneratorBuilder().build().getBrageRecord();
@@ -2125,6 +2127,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var resourceEvent = (MergedResourceEvent) resource.getResourceEvent();
 
         assertEquals(Source.BRAGE, resourceEvent.importSource().getSource());
+        assertNotEquals(existingPublication.getResourceOwner().getOwnerAffiliation(), resourceEvent.institution());
+        assertEquals(HARDCODED_NTNU_CRISTIN_ID, resourceEvent.institution());
     }
 
     @DisplayName("Should not keep Cristin identifier from Brage when Cristin identifier is present in existing " +

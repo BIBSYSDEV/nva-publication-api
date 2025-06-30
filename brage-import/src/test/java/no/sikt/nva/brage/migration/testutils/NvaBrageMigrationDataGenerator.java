@@ -67,7 +67,7 @@ public class NvaBrageMigrationDataGenerator {
 
     private static final URI HARDCODED_NTNU_CUSTOMER_VALUE = URI.create(
         "https://test.nva.aws.unit.no/customer/33c17ef6-864b-4267-bc9d-0cee636e247e");
-    private static final URI HARDCODED_NTNU_CRISTIN_ID = URI.create(
+    public static final URI HARDCODED_NTNU_CRISTIN_ID = URI.create(
         "https://test.nva.aws.unit.no/cristin/organization/194.0.0.0");
     private static final String HARDCODED_NTNU_USERNAME = "ntnu@194.0.0.0";
     public static final String WISEFLOW_IDENTIFIER_SOURCE_NAME = "wiseflow";

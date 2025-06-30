@@ -426,8 +426,7 @@ public class Resource implements Entity {
         return resourceService.importResource(this, importSource);
     }
 
-    public Resource updateResourceFromImport(ResourceService resourceService, ImportSource importSource) {
-        var userInstance = UserInstance.fromPublication(this.toPublication());
+    public Resource updateResourceFromImport(ResourceService resourceService, ImportSource importSource, UserInstance userInstance) {
         this.setResourceEvent(MergedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
         return resourceService.updateResourceFromImport(this, userInstance);
     }

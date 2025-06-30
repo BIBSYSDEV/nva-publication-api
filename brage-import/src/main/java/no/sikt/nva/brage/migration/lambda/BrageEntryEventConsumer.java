@@ -286,7 +286,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         updatedFiles.stream()
             .filter(not(file -> oldFiles.contains(file.getIdentifier())))
             .forEach(file -> importFile(representation, file, resource, importSource));
-        var newImage = resource.updateResourceFromImport(resourceService, importSource).toPublication();
+        var userInstance = UserInstance.fromPublication(representation.publication());
+        var newImage = resource.updateResourceFromImport(resourceService, importSource,
+                                                         userInstance).toPublication();
         return new BrageMergingReport(existinPublication, newImage);
     }
 

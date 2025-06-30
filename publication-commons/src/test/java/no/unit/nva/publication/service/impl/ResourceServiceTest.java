@@ -1515,19 +1515,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateResourceFromImportAndSetMergedResourceEventWhenUpdatingExistingPublication()
+    void shouldUpdateResourceFromImportAndSetMergedResourceEventUserAndInstitutionToUserInstanceFromInput()
         throws BadRequestException, NotFoundException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        resource.setDoi(randomDoi());
-        Resource.fromPublication(resource)
-            .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
-        var updatedResource = resourceService.getResourceByIdentifier(resource.getIdentifier());
+        var publication = createPersistedPublicationWithDoi();
+        var userInstance = UserInstance.createBackendUser(new ResourceOwner(new Username(randomString()), randomUri()), randomUri());
+        publication.setDoi(randomDoi());
+        Resource.fromPublication(publication)
+            .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
+        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
 
         var resourceEvent = (MergedResourceEvent) updatedResource.getResourceEvent();
 
-        assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
+        assertEquals(userInstance.getTopLevelOrgCristinId(), resourceEvent.institution());
+        assertEquals(userInstance.getUser(), resourceEvent.user());
     }
 
     @Test
@@ -1546,7 +1546,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                          .build();
 
         var updatedResource = Resource.fromPublication(update)
-                                  .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS));
+                                  .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
 
         assertInstanceOf(InternalFile.class, updatedResource.getFiles().getFirst());
     }
