@@ -1911,7 +1911,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           RECOVERY_QUEUE: !Ref RecoveryQueue
@@ -1924,6 +1923,11 @@ Resources:
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
             Enabled: true
+            MaximumRetryAttempts: 3
+            BisectBatchOnFunctionError: true
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.Arn
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
