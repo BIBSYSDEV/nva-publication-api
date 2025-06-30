@@ -189,6 +189,7 @@ public class Resource implements Entity {
                    .findFirst();
     }
 
+    @JsonIgnore
     public Set<File> getPendingFiles() {
         return getAssociatedArtifacts().stream()
                    .filter(PendingFile.class::isInstance)
