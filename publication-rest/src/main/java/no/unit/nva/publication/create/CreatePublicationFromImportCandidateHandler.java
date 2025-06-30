@@ -37,13 +37,17 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 
 public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandler<ImportCandidate,
                                                                                       PublicationResponse> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreatePublicationFromImportCandidateHandler.class);
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String SCOPUS_IDENTIFIER = "Scopus";
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
@@ -89,7 +93,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         throws ApiGatewayException {
         return attempt(() -> importCandidate(input, requestInfo))
                    .map(PublicationResponse::fromPublication)
-                   .orElseThrow(fail -> rollbackAndThrowException(input));
+                   .orElseThrow(fail -> rollbackAndThrowException(fail, input));
     }
 
     @Override
@@ -241,7 +245,8 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         }
     }
 
-    private BadGatewayException rollbackAndThrowException(ImportCandidate input) {
+    private BadGatewayException rollbackAndThrowException(Failure<PublicationResponse> failure, ImportCandidate input) {
+        LOGGER.error("Import failed with exception: {}", failure.getException().getMessage());
         return attempt(() -> rollbackImportStatusUpdate(input))
                    .orElse(fail -> new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE));
     }
