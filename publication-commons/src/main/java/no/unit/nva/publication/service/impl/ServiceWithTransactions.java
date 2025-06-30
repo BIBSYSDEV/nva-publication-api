@@ -33,6 +33,7 @@ public class ServiceWithTransactions {
     public static final String EMPTY_STRING = "";
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     private static final Integer MAX_FETCH_ATTEMPTS = 3;
+    private static final int TRANSACTION_BATCH_SIZE = 100;
 
     protected final AmazonDynamoDB client;
 
@@ -92,8 +93,14 @@ public class ServiceWithTransactions {
     }
 
     protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest) {
-        attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
-            .orElseThrow(this::handleTransactionFailure);
+        List<TransactWriteItem> items = transactWriteItemsRequest.getTransactItems();
+        for (int i = 0; i < items.size(); i += TRANSACTION_BATCH_SIZE) {
+            List<TransactWriteItem> batch = items.subList(i, Math.min(i + TRANSACTION_BATCH_SIZE, items.size()));
+            TransactWriteItemsRequest batchRequest = transactWriteItemsRequest.clone()
+                .withTransactItems(batch);
+            attempt(() -> getClient().transactWriteItems(batchRequest))
+                .orElseThrow(this::handleTransactionFailure);
+        }
     }
 
     @SuppressWarnings("PMD.DoNotUseThreads")

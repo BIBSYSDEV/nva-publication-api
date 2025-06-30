@@ -8,6 +8,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
@@ -30,7 +31,8 @@ import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -65,7 +67,8 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         resourceService = getResourceServiceBuilder().build();
         ticketService = getTicketService();
         var identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getCustomerById(any())).thenReturn(customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue()));
+        when(identityServiceClient.getCustomerById(any())).thenReturn(
+            customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue()));
         var publishingService = new PublishingService(resourceService, ticketService,
                                                       identityServiceClient);
         handler = new PublishPublicationHandler(publishingService, new Environment());
@@ -114,6 +117,27 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
         assertEquals(HTTP_BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void shouldAllowMoreThanMaxDynamodbTransactionsOnUpdate()
+        throws IOException, BadRequestException {
+        var pub = randomNonDegreePublication().copy().withStatus(PublicationStatus.DRAFT).build();
+        var publication = Resource.fromPublication(pub)
+                              .persistNew(resourceService, UserInstance.fromPublication(pub));
+
+        for (int i = 0; i < 101; i++) {
+            FileEntry.create(randomOpenFile(),
+                             publication.getIdentifier(),
+                             UserInstance.create(randomString(), randomUri())).persist(resourceService);
+        }
+
+        var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
+        handler.handleRequest(request, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertEquals(HTTP_ACCEPTED, response.getStatusCode());
     }
 
     @Test
