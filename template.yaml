@@ -1922,8 +1922,8 @@ Resources:
           Properties:
             Stream: !GetAtt NvaResourcesTable.StreamArn
             StartingPosition: TRIM_HORIZON
-            BatchSize: 100
-            MaximumBatchingWindowInSeconds: 2
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 0
             Enabled: true
             MaximumRetryAttempts: 1
             BisectBatchOnFunctionError: true
