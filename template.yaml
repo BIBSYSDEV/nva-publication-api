@@ -1918,7 +1918,7 @@ Resources:
       Events:
         FanoutSource:
           Type: DynamoDB
-#==============================PROPERTIES WHEN RUNNING CRISTIN IMPORT=======================================================================
+#==============================PROPERTIES WE WILL TEST=======================================================================
           Properties:
             Stream: !GetAtt NvaResourcesTable.StreamArn
             StartingPosition: TRIM_HORIZON
