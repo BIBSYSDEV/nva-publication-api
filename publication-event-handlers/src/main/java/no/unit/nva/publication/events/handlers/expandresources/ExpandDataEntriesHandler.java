@@ -49,6 +49,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     private static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     private static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
+    private static final String EXPANSION_FAILED_MESSAGE_TEMPLATE = "Expansion failed for %s";
     private final QueueClient sqsClient;
     private final S3Driver s3DriverEventsBucket;
     private final EntityExpansionResolverRegistry entityExpansionResolverRegistry;
@@ -123,6 +124,8 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     private EventReference persistRecoveryMessage(Failure<EventReference> failure,
                                                   DataEntryUpdateEvent dataEntryUpdateEvent) {
         var identifier = getIdentifier(dataEntryUpdateEvent);
+        var message = String.format(EXPANSION_FAILED_MESSAGE_TEMPLATE, identifier);
+        logger.error(message, failure.getException());
         RecoveryEntry.create(findType(dataEntryUpdateEvent), identifier)
             .withException(failure.getException())
             .persist(sqsClient);
