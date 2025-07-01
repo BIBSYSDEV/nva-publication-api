@@ -17,6 +17,8 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.storage.Dao;
@@ -93,14 +95,18 @@ public class ServiceWithTransactions {
     }
 
     protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest) {
-        List<TransactWriteItem> items = transactWriteItemsRequest.getTransactItems();
-        for (int i = 0; i < items.size(); i += TRANSACTION_BATCH_SIZE) {
-            List<TransactWriteItem> batch = items.subList(i, Math.min(i + TRANSACTION_BATCH_SIZE, items.size()));
-            TransactWriteItemsRequest batchRequest = transactWriteItemsRequest.clone()
-                .withTransactItems(batch);
-            attempt(() -> getClient().transactWriteItems(batchRequest))
-                .orElseThrow(this::handleTransactionFailure);
-        }
+        var counter = new AtomicInteger();
+
+        transactWriteItemsRequest.getTransactItems()
+            .stream()
+            .collect(Collectors.groupingBy(
+                it -> counter.getAndIncrement() / TRANSACTION_BATCH_SIZE
+            ))
+            .values()
+            .forEach(batch -> {
+                TransactWriteItemsRequest batchRequest = transactWriteItemsRequest.clone().withTransactItems(batch);
+                attempt(() -> getClient().transactWriteItems(batchRequest)).orElseThrow(this::handleTransactionFailure);
+            });
     }
 
     @SuppressWarnings("PMD.DoNotUseThreads")
