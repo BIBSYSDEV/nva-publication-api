@@ -1918,16 +1918,31 @@ Resources:
       Events:
         FanoutSource:
           Type: DynamoDB
+#==============================PROPERTIES WHEN RUNNING CRISTIN IMPORT=======================================================================
           Properties:
             Stream: !GetAtt NvaResourcesTable.StreamArn
             StartingPosition: TRIM_HORIZON
-            BatchSize: 1
+            BatchSize: 100
+            MaximumBatchingWindowInSeconds: 0
             Enabled: true
-            MaximumRetryAttempts: 3
+            MaximumRetryAttempts: 1
             BisectBatchOnFunctionError: true
             DestinationConfig:
               OnFailure:
                 Destination: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.Arn
+
+#==============================NVA PROPERTIES=======================================================================
+
+#          Properties:
+#            Stream: !GetAtt NvaResourcesTable.StreamArn
+#            StartingPosition: TRIM_HORIZON
+#            BatchSize: 1
+#            Enabled: true
+#            MaximumRetryAttempts: 3
+#            BisectBatchOnFunctionError: true
+#            DestinationConfig:
+#              OnFailure:
+#                Destination: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.Arn
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function

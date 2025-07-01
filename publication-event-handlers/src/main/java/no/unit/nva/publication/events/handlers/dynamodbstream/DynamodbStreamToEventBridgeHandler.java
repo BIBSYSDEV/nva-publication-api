@@ -59,7 +59,6 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     private static final String DETAIL_TYPE_NOT_IMPORTANT = "See event topic";
     private static final String EMITTED_EVENT_MESSAGE = "Emitted Event:{}";
     private static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
-    private static final EventReference DO_NOT_EMIT_EVENT = null;
     private static final String DYNAMO_DB_STREAM_SOURCE = "DynamoDbStream";
     private static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     private static final Logger logger = LoggerFactory.getLogger(DynamodbStreamToEventBridgeHandler.class);
@@ -84,10 +83,15 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
 
     @Override
     public EventReference handleRequest(DynamodbEvent inputEvent, Context context) {
-        var dynamodbStreamRecord = inputEvent.getRecords().getFirst();
-        var dataEntryUpdateEvent = convertToDataEntryUpdateEvent(dynamodbStreamRecord);
-        return dataEntryUpdateEvent.shouldProcessUpdate(environment) ? sendEvent(dataEntryUpdateEvent, context) :
-                                                                                                          DO_NOT_EMIT_EVENT;
+        inputEvent.getRecords().forEach(record -> processRecord(record, context));
+        return null;
+    }
+
+    private void processRecord(DynamodbStreamRecord record, Context context) {
+        var dataEntryUpdateEvent = convertToDataEntryUpdateEvent(record);
+        if (dataEntryUpdateEvent.shouldProcessUpdate(environment)) {
+            sendEvent(dataEntryUpdateEvent, context);
+        }
     }
 
     private static SortableIdentifier getIdentifier(DataEntryUpdateEvent blobObject) {
@@ -121,11 +125,11 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
         };
     }
 
-    private EventReference sendEvent(DataEntryUpdateEvent blob, Context context) {
+    private void sendEvent(DataEntryUpdateEvent blob, Context context) {
         logger.info(PROCESSING_EVENT_MESSAGE, getIdentifier(blob));
-        return attempt(() -> saveBlobToS3(blob)).map(blobUri -> new EventReference(blob.getTopic(), blobUri))
-                   .map(eventReference -> sendEvent(eventReference, context))
-                   .orElse(failure -> processRecoveryMessage(failure, blob));
+        attempt(() -> saveBlobToS3(blob)).map(blobUri -> new EventReference(blob.getTopic(), blobUri))
+            .map(eventReference -> sendEvent(eventReference, context))
+            .orElse(failure -> processRecoveryMessage(failure, blob));
     }
 
     private EventReference sendEvent(EventReference eventReference, Context context) throws JsonProcessingException {
