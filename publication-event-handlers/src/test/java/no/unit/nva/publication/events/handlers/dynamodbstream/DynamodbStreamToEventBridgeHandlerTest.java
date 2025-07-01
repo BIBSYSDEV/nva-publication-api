@@ -14,16 +14,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
 import com.fasterxml.jackson.databind.JavaType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -48,6 +52,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
@@ -130,6 +135,29 @@ class DynamodbStreamToEventBridgeHandlerTest {
 
         assertFalse(persistedEvents.isEmpty());
     }
+    
+    @Test
+    void shouldProcessMultipleRecordsInEvent() {
+        var numberOfEvents = 10;
+        var event = randomEventWithMultipleRecords(numberOfEvents);
+        handler.handleRequest(event, context);
+        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        var persistedEvents = s3Driver.getFiles(UnixPath.ROOT_PATH);
+
+        assertEquals(numberOfEvents, persistedEvents.size());
+    }
+
+    @Test
+    void shouldProcessRestOfTheRecordsWhenSingleRecordFailsInEvent() {
+        var numberOfEvents = 10;
+        var event = randomEventWithMultipleRecords(numberOfEvents);
+        var singleFailureS3Client = new FailingS3Client();
+        handler = new DynamodbStreamToEventBridgeHandler(singleFailureS3Client, eventBridgeClient, fakeSqsClient,
+                                                         new Environment());
+        handler.handleRequest(event, context);
+
+        assertEquals(numberOfEvents - 1, singleFailureS3Client.getSuccessRequest().size());
+    }
 
     private static FileEntry randomFileEntry() {
         return FileEntry.create(randomOpenFile(),
@@ -140,10 +168,29 @@ class DynamodbStreamToEventBridgeHandlerTest {
                                                                    Entity oldImage,
                                                                    Entity newImage) {
         var event = new DynamodbEvent();
-        var record = randomDynamoRecord(operationType);
-        record.getDynamodb().setOldImage(toDynamoDbFormat(oldImage));
-        record.getDynamodb().setNewImage(toDynamoDbFormat(newImage));
+        var record = randomRecord(randomDynamoRecord(operationType), toDynamoDbFormat(oldImage),
+                                  toDynamoDbFormat(newImage));
         event.setRecords(List.of(record));
+        return event;
+    }
+
+    private static DynamodbStreamRecord randomRecord(DynamodbStreamRecord operationType,
+                                                     Map<String, AttributeValue> oldImage,
+                                                     Map<String, AttributeValue> newImage) {
+        var record = operationType;
+        record.getDynamodb().setOldImage(oldImage);
+        record.getDynamodb().setNewImage(newImage);
+        return record;
+    }
+
+    private static DynamodbEvent randomEventWithMultipleRecords(int numberOfEvents) {
+        var event = new DynamodbEvent();
+        var records = IntStream.range(0, numberOfEvents).boxed()
+                          .map(i -> randomRecord(randomDynamoRecord(OperationType.MODIFY),
+                                                 toDynamoDbFormat(Resource.fromPublication(randomPublication())),
+                                                 toDynamoDbFormat(Resource.fromPublication(randomPublication()))))
+                          .toList();
+        event.setRecords(records);
         return event;
     }
 
@@ -191,6 +238,37 @@ class DynamodbStreamToEventBridgeHandlerTest {
                 throw new RuntimeException(EXPECTED_EXCEPTION_MESSAGE);
             }
         };
+    }
+
+    public static class FailingS3Client implements S3Client {
+        private boolean hasFailed = false;
+
+        @Override
+        public String serviceName() {
+            return "";
+        }
+
+        @Override
+        public void close() {
+
+        }
+
+        public List<PutObjectRequest> getSuccessRequest() {
+            return successRequest;
+        }
+
+        @SuppressWarnings("PMD.CloseResource")
+        @Override
+        public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody) {
+            if (!hasFailed) {
+                hasFailed = true;
+                throw new RuntimeException(EXPECTED_EXCEPTION_MESSAGE);
+            }
+            successRequest.add(putObjectRequest);
+            return null;
+        }
+
+        private final List<PutObjectRequest> successRequest = new ArrayList<>();
     }
 
     private DataEntryUpdateEvent convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
