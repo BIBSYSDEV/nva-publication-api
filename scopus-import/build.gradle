@@ -55,7 +55,7 @@ test {
     environment "SCOPUS_IMPORT_BUCKET", "someBucket"
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
-    environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "someBucket"
+    environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "nva-import-candidate-resources-884807050265"
     environment "CROSSREF_FETCH_DOI_URI", "https://api.crossref.org/v1/works/"
     environment "CUSTOMER_ID", "someValue"
     environment "AWS_REGION", "eu-west-1"
