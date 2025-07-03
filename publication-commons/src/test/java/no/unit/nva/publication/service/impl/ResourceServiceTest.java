@@ -210,6 +210,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldThrowExceptionWhenInstantiatingResourceServiceWithoutMandatoryServices() {
+        assertThrows(NullPointerException.class,
+                     () -> new ResourceService(null, null, null, null, null, null));
+    }
+
+    @Test
     void shouldInstantiateResourceServiceForProvidedTable() {
         var customTable = "CustomTable";
         super.init(customTable);

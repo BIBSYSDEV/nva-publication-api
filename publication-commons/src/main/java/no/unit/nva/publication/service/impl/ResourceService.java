@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -40,6 +41,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -118,11 +120,19 @@ public class ResourceService extends ServiceWithTransactions {
     private final CounterService counterService;
     private final CustomerService customerService;
 
-    public ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
-                              RawContentRetriever uriRetriever,
-                              ChannelClaimClient channelClaimClient,
-                              CustomerService customerService) {
+    public ResourceService(AmazonDynamoDB dynamoDBClient,
+                           String tableName, Clock clock,
+                           RawContentRetriever uriRetriever,
+                           ChannelClaimClient channelClaimClient,
+                           CustomerService customerService) {
         super(dynamoDBClient);
+
+        requireNonNull(dynamoDBClient, "DynamoDbClient cannot be null");
+        requireNonNull(tableName, "Table name cannot be null");
+        requireNonNull(uriRetriever, "UriRetriever name cannot be null");
+        requireNonNull(channelClaimClient, "ChannelClaimClient name cannot be null");
+        requireNonNull(customerService, "CustomerService name cannot be null");
+
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.uriRetriever = uriRetriever;
