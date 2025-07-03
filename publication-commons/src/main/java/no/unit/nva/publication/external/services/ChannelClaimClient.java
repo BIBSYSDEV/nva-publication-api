@@ -9,10 +9,13 @@ import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.http.HttpStatusCode;
 
 public final class ChannelClaimClient {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelClaimClient.class);
     private final RawContentRetriever uriRetriever;
 
     private ChannelClaimClient(RawContentRetriever uriRetriever) {
@@ -47,6 +50,8 @@ public final class ChannelClaimClient {
 
     private NotFoundException handleFailure(Failure<?> responseFailure) {
         var exception = responseFailure.getException();
+        LOGGER.error("Could not fetch channel claim from identity service: ", exception);
+
         if (exception instanceof NotFoundException notFoundException) {
             return notFoundException;
         }
