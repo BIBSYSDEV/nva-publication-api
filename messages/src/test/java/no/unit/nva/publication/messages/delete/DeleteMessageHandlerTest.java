@@ -57,7 +57,7 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
         this.ticketService = getTicketService();
         this.messageService = getMessageService();
         this.handler = new DeleteMessageHandler(messageService, ticketService, resourceService, new Environment());

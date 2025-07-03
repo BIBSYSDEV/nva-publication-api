@@ -31,6 +31,7 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -41,7 +42,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.ResourceServiceBuilder;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
@@ -61,12 +61,7 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     public void init() {
-        uriRetriever = mock(UriRetriever.class);
-        customerService = mock(CustomerService.class);
-        channelClaimClient = mock(ChannelClaimClient.class);
-        client = DynamoDBEmbedded.create().amazonDynamoDB();
-        CreateTableRequest request = createTableRequest(RESOURCES_TABLE_NAME);
-        client.createTable(request);
+        init(RESOURCES_TABLE_NAME);
     }
 
     public void init(String tableName) {
@@ -188,18 +183,17 @@ public class ResourcesLocalTest extends TestDataSource {
                    .withAttributeType(STRING_TYPE);
     }
 
-    public ResourceServiceBuilder getResourceServiceBuilder(AmazonDynamoDB dynamoDbClient) {
-        return ResourceService.builder().withDynamoDbClient(dynamoDbClient).withUriRetriever(uriRetriever)
-                   .withCustomerService(customerService)
-                   .withChannelClaimClient(channelClaimClient);
-    }
-
-    public ResourceServiceBuilder getResourceServiceBuilder() {
-        return getResourceServiceBuilder(client);
-    }
-
     public TicketService getTicketService() {
         return new TicketService(client, uriRetriever);
+    }
+
+    public ResourceService getResourceService(AmazonDynamoDB dynamoDbClient) {
+        return getResourceService(dynamoDbClient, RESOURCES_TABLE_NAME);
+    }
+
+    public ResourceService getResourceService(AmazonDynamoDB dynamoDbClient, String tableName) {
+        return new ResourceService(dynamoDbClient, tableName, Clock.systemDefaultZone(), uriRetriever,
+                                   channelClaimClient, customerService);
     }
 
     public MessageService getMessageService() {

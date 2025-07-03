@@ -137,7 +137,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
         this.messageService = getMessageService();
         this.ticketService = getTicketService();
         this.uriRetriever = FakeUriRetriever.newInstance();

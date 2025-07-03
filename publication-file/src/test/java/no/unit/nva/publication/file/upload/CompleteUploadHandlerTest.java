@@ -77,7 +77,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     void setUp() {
         super.init();
         s3client = mock(AmazonS3Client.class);
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         handler = new CompleteUploadHandler(new FileService(s3client, mock(CustomerApiClient.class), resourceService)
             , mock(IdentityServiceClient.class), new Environment());
         context = mock(Context.class);

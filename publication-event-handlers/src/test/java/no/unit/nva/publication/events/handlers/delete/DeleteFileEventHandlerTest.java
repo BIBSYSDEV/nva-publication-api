@@ -42,7 +42,7 @@ class DeleteFileEventHandlerTest extends ResourcesLocalTest {
         super.init();
         output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         handler = new DeleteFileEventHandler(s3Client, resourceService);
     }
 

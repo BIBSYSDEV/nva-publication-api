@@ -60,7 +60,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     public void setUp() {
         super.init();
         output = new ByteArrayOutputStream();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         ticketService = getTicketService();
         handler = new FetchPublicationLogHandler(resourceService, new Environment());
     }

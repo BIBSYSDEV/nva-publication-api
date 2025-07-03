@@ -45,7 +45,7 @@ class SearchServiceTest extends ResourcesLocalTest {
     public void setUp() {
         super.init();
         uriRetriever = mock(UriRetriever.class);
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         searchService = SearchService.create(uriRetriever, resourceService);
     }
 

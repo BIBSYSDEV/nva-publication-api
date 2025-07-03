@@ -116,7 +116,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     void setUp() {
         super.init();
         httpClient = mock(HttpClient.class);
-        resourceService = spy(getResourceServiceBuilder().build());
+        resourceService = spy(getResourceService(client));
 
         context = mock(Context.class);
         output = new ByteArrayOutputStream();

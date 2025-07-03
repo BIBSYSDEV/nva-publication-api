@@ -7,6 +7,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -16,6 +17,7 @@ import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -24,6 +26,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.model.utils.CustomerService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -55,11 +58,9 @@ public class TicketService extends ServiceWithTransactions {
         super(client);
         this.identifierProvider = identifierProvider;
         tableName = RESOURCES_TABLE_NAME;
-        resourceService = ResourceService.builder()
-                              .withDynamoDbClient(client)
-                              .withIdentifierSupplier(identifierProvider)
-                              .withUriRetriever(uriRetriever)
-                              .build();
+        resourceService = new ResourceService(client, tableName, Clock.systemDefaultZone(),
+                                              uriRetriever, ChannelClaimClient.create(uriRetriever),
+                                              new CustomerService(uriRetriever));
     }
 
     @JacocoGenerated

@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +69,8 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
     public void init() {
         super.init();
         channelClaimClient = mock(ChannelClaimClient.class);
-        resourceService = getResourceServiceBuilder().withChannelClaimClient(channelClaimClient).build();
+        resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(), uriRetriever,
+                                              channelClaimClient, customerService);
     }
 
     @ParameterizedTest

@@ -42,7 +42,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     @BeforeEach
     public void initialize() {
         super.init();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
         this.messageService = getMessageService();
         this.ticketService = getTicketService();
     }

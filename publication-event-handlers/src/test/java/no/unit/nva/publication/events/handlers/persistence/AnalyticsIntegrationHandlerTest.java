@@ -72,7 +72,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
 
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         ticketService = getTicketService();
     }
 

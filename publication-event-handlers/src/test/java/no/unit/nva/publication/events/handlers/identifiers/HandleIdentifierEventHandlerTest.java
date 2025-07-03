@@ -79,7 +79,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() throws IOException, InterruptedException {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         var s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, randomString());
         var environment = mock(Environment.class);

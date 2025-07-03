@@ -34,7 +34,7 @@ class ExpandedParentPublicationTest extends ResourcesLocalTest {
     void setUp() {
         super.init();
         this.fakeUriRetriever = FakeUriRetriever.newInstance();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
     }
 
     @Test

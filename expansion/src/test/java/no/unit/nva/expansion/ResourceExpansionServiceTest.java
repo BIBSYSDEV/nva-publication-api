@@ -1041,7 +1041,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private void initializeServices() {
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         messageService = getMessageService();
         ticketService = getTicketService();
         fakeUriRetriever = FakeUriRetriever.newInstance();

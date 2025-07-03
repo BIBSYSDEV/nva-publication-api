@@ -53,7 +53,7 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     void setUp() {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         var fileService = new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService);
         handler = new DeleteFileHandler(fileService, new Environment());
         output = new ByteArrayOutputStream();

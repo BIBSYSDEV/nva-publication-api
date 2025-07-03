@@ -145,7 +145,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
         lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
 
-        publicationService = getResourceServiceBuilder().build();
+        publicationService = getResourceService(client);
         output = new ByteArrayOutputStream();
         this.uriRetriever = new UriRetriever(WiremockHttpClient.create());
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, uriRetriever, environment,

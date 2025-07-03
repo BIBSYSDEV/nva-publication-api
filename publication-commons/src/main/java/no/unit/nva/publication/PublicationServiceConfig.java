@@ -25,7 +25,7 @@ public final class PublicationServiceConfig {
 
     public static final String PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME = "publicationIdentifier";
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
-    public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
+        public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     public static final String TICKET_PATH = "ticket";
 

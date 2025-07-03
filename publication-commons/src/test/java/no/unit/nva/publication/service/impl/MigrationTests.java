@@ -26,6 +26,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,8 @@ class MigrationTests extends ResourcesLocalTest {
         when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
                 (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
-        this.resourceService = getResourceServiceBuilder().withCustomerService(customerService).build();
+        this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(), uriRetriever,
+                                                   channelClaimClient, customerService);
     }
 
     @Test

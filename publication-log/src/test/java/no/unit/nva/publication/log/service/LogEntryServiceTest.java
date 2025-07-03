@@ -50,15 +50,14 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private IdentityServiceClient identityServiceClient;
     private LogEntryService logEntryService;
-    private CristinClient cristinClient;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
         super.init();
         ticketService = getTicketService();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         identityServiceClient = mock(IdentityServiceClient.class);
-        cristinClient = mock(CristinClient.class);
+        var cristinClient = mock(CristinClient.class);
         when(identityServiceClient.getUser(any())).thenReturn(randomUser());
         when(identityServiceClient.getCustomerByCristinId(any())).thenReturn(randomCustomer());
         logEntryService = new LogEntryService(resourceService, identityServiceClient, cristinClient);

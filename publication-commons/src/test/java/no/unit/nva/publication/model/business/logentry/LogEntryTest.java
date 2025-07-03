@@ -44,7 +44,7 @@ class LogEntryTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         ticketService = getTicketService();
     }
 

@@ -190,7 +190,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @BeforeEach
     public void init() {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         s3Client = spy(new FakeS3Client());
         doReturn(S3Client.create().utilities()).when(s3Client).utilities();
         doReturn(getMockUnitsResponseBytes()).when(s3Client).getObjectAsBytes(any(GetObjectRequest.class));
@@ -1296,7 +1296,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        var resourceService = spy(getResourceServiceBuilder().build());
+        var resourceService = spy(getResourceService(client));
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
             .importResource(any(), any());
         return resourceService;

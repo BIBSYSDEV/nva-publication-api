@@ -59,7 +59,7 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
         outputStream = new ByteArrayOutputStream();
         context = null;
         s3Client = new FakeS3Client();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         identityServiceClient = mock(IdentityServiceClient.class);
         cristinClient = mock(CristinClient.class);
         when(identityServiceClient.getUser(any())).thenReturn(randomUser());

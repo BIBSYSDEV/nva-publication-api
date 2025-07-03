@@ -170,7 +170,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignored");
         handler = new CristinPatchEventConsumer(resourceService, s3Client);

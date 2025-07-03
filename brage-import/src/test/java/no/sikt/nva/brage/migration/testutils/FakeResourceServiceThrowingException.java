@@ -17,7 +17,7 @@ public class FakeResourceServiceThrowingException extends ResourceService {
     private int numberOfAttempts = 0;
 
     public FakeResourceServiceThrowingException(AmazonDynamoDB client) {
-        super(client, FAKE_TABLE_NAME, Clock.systemDefaultZone(), DEFAULT_IDENTIFIER_SUPPLIER,
+        super(client, FAKE_TABLE_NAME, Clock.systemDefaultZone(),
               mock(UriRetriever.class), mock(ChannelClaimClient.class), mock(CustomerService.class));
     }
 

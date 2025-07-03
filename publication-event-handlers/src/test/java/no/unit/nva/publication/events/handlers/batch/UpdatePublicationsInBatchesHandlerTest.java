@@ -62,7 +62,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     public void setUp() {
         super.init();
         output = new ByteArrayOutputStream();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         uriRetriever = mock(UriRetriever.class);
         handler = new ManuallyUpdatePublicationsHandler(SearchService.create(uriRetriever, resourceService),
                                                         resourceService);

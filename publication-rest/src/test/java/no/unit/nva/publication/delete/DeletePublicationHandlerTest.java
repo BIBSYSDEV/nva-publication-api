@@ -63,7 +63,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         init();
         prepareEnvironment();
         prepareIdentityServiceClient();
-        publicationService = getResourceServiceBuilder().build();
+        publicationService = getResourceService(client);
         handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
     }
