@@ -41,6 +41,8 @@ public class FileAccessFeatures {
             fileScenarioContext.setFileOwnerConfig(FileOwnerConfig.PUBLICATION_CREATOR);
         } else if ("contributor at curating institution".equalsIgnoreCase(fileOwner)) {
             fileScenarioContext.setFileOwnerConfig(FileOwnerConfig.CONTRIBUTOR_AT_CURATING_INSTITUTION);
+        } else if ("someone else".equalsIgnoreCase(fileOwner)) {
+            fileScenarioContext.setFileOwnerConfig(FileOwnerConfig.SOMEONE_ELSE);
         } else {
             throw new IllegalArgumentException("Non valid input: " + fileOwner);
         }

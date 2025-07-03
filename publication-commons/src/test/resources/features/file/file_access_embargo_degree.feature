@@ -8,6 +8,7 @@ Feature: File permissions for embargo and degree files
     And the file is owned by "publication creator"
     And publication is of type "degree"
     When the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 
@@ -94,6 +95,7 @@ Feature: File permissions for embargo and degree files
     And the file is owned by "publication creator"
     And the file has embargo
     When the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 
@@ -266,6 +268,7 @@ Feature: File permissions for embargo and degree files
     And publication is of type "degree"
     And publication has publisher claimed by "not users institution"
     When the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 

@@ -7,6 +7,7 @@ Feature: Publication action permissions for publications with claimed channel an
     And channel claim has "publishing" policy "everyone"
     And channel claim has "editing" policy "ownerOnly"
     And the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     When the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 
@@ -218,6 +219,7 @@ Feature: Publication action permissions for publications with claimed channel an
     And channel claim has "publishing" policy "everyone"
     And channel claim has "editing" policy "ownerOnly"
     And the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     When the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 

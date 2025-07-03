@@ -4,6 +4,7 @@ Feature: Publication action permissions for publication status UNPUBLISHED
     Given a "publication"
     And publication has status "unpublished"
     And the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     When the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 
