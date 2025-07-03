@@ -1,11 +1,9 @@
 package no.unit.nva.cristin.lambda;
 
 import static no.unit.nva.cristin.patcher.exception.ExceptionHandling.castToCorrectRuntimeException;
-import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -48,12 +46,7 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, Void>
 
     @JacocoGenerated
     public CristinPatchEventConsumer() {
-        this(defaultDynamoDbClient(), defaultS3Client());
-    }
-
-    @JacocoGenerated
-    protected CristinPatchEventConsumer(AmazonDynamoDB dynamoDbClient, S3Client s3Client) {
-        this(ResourceService.builder().withDynamoDbClient(dynamoDbClient).build(), s3Client);
+        this(ResourceService.defaultService(), defaultS3Client());
     }
 
     public CristinPatchEventConsumer(ResourceService resourceService, S3Client s3Client) {

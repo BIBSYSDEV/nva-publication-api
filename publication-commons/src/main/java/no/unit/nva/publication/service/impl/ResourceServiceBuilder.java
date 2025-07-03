@@ -17,10 +17,10 @@ public final class ResourceServiceBuilder {
     private String tableName = RESOURCES_TABLE_NAME;
     private AmazonDynamoDB dynamoDbClient = DEFAULT_DYNAMODB_CLIENT;
     private Clock clock = Clock.systemDefaultZone();
-    Supplier<SortableIdentifier> identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
+    private Supplier<SortableIdentifier> identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
     private RawContentRetriever uriRetriever = new UriRetriever();
-    private ChannelClaimClient channelClaimClient;
-    private CustomerService customerService;
+    private ChannelClaimClient channelClaimClient = ChannelClaimClient.create(new UriRetriever());
+    private CustomerService customerService = new CustomerService(new UriRetriever());
 
     ResourceServiceBuilder() {
     }

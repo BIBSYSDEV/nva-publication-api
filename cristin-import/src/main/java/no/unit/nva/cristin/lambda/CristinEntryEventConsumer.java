@@ -6,8 +6,6 @@ import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castTo
 import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -33,7 +31,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.utils.CustomerService;
-import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
 import no.unit.nva.publication.s3imports.ImportResult;
@@ -84,7 +81,7 @@ public class CristinEntryEventConsumer
 
     @JacocoGenerated
     public CristinEntryEventConsumer() {
-        this(ResourceService.builder().withDynamoDbClient(defaultDynamoDbClient()).build(),
+        this(ResourceService.defaultService(),
              defaultS3Client(),
              defaultDoiDuplicateChecker(),
              new CristinUnitsUtil(S3Client.create(), new Environment().readEnv(UNITS_S3_OBJECT_URI_ENV)),
@@ -124,14 +121,6 @@ public class CristinEntryEventConsumer
     @JacocoGenerated
     private static DoiDuplicateChecker defaultDoiDuplicateChecker() {
         return new DoiDuplicateChecker(defaultUriRetriever(), new Environment().readEnv("API_HOST"));
-    }
-
-    @JacocoGenerated
-    private static AmazonDynamoDB defaultDynamoDbClient() {
-        return AmazonDynamoDBClientBuilder
-                   .standard()
-                   .withRegion(ApplicationConstants.AWS_REGION.id())
-                   .build();
     }
 
     @JacocoGenerated

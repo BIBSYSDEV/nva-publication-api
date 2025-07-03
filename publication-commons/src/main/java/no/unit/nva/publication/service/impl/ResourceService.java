@@ -13,6 +13,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -140,11 +141,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     @JacocoGenerated
     public static ResourceService defaultService() {
-        var uriRetriever = new UriRetriever();
-        return builder()
-                   .withChannelClaimClient(ChannelClaimClient.create(uriRetriever))
-                   .withCustomerService(new CustomerService(new UriRetriever()))
-                   .build();
+        return defaultService(RESOURCES_TABLE_NAME);
     }
 
     /**
@@ -160,10 +157,12 @@ public class ResourceService extends ServiceWithTransactions {
         return builder()
                    .withTableName(tableName)
                    .withChannelClaimClient(ChannelClaimClient.create(uriRetriever))
-                   .withCustomerService(new CustomerService(new UriRetriever()))
+                   .withCustomerService(new CustomerService(uriRetriever))
                    .build();
     }
 
+    //TODO: This builder should be private and used in tests only. All the production constructors should consume
+    // defaultService()
     public static ResourceServiceBuilder builder() {
         return new ResourceServiceBuilder();
     }
