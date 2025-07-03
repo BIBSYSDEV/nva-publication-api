@@ -286,7 +286,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
         publicationChannelConnection = new PublicationChannelConnection(authorizedBackendUriRetriever);
         nvaCustomerConnection = mockCustomerConnection();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         uriRetriever = mock(UriRetriever.class);
         scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
         var environment = mock(Environment.class);
@@ -1424,7 +1424,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        var resourceService = spy(getResourceServiceBuilder().build());
+        var resourceService = spy(getResourceService(client));
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
             .createPublicationFromImportedEntry(any(), any());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).persistImportCandidate(any());

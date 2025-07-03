@@ -57,7 +57,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
     @BeforeEach
     void setUp() throws NotFoundException {
         super.init();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
         var ticketService = getTicketService();
         this.identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getCustomerById(any())).thenReturn(customerWithWorkflow(

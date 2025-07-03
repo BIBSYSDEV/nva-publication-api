@@ -60,12 +60,11 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
 
     @BeforeEach
     public void init() {
-        super.init("import-candidates");
+        var tableName = "import-candidates";
+        super.init(tableName);
         this.output = new ByteArrayOutputStream();
         uriRetriever = mock(UriRetriever.class);
-        resourceService = getResourceServiceBuilder(client)
-                              .withTableName("import-candidates")
-                              .build();
+        resourceService = getResourceService(client, tableName);
         this.handler = new DeleteImportCandidateEventConsumer(resourceService, uriRetriever);
     }
 

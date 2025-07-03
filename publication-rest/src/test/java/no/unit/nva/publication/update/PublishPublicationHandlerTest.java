@@ -64,7 +64,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         super.init();
         context = new FakeContext();
         output = new ByteArrayOutputStream();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         ticketService = getTicketService();
         var identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getCustomerById(any())).thenReturn(

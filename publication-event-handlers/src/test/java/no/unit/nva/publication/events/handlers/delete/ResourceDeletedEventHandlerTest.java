@@ -60,7 +60,7 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
     void setUp() {
         super.init();
         this.output = new ByteArrayOutputStream();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
         this.environment = mock(Environment.class);
         when(environment.readEnv("RESOURCE_STORAGE_BUCKET_NAME")).thenReturn(RESOURCE_STORAGE_BUCKET_NAME);
 

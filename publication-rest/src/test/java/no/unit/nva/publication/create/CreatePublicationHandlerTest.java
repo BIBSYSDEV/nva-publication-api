@@ -146,7 +146,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         lenient().when(environmentMock.readEnv("BACKEND_CLIENT_AUTH_URL"))
             .thenReturn(baseUrl.toString());
 
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
 
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");

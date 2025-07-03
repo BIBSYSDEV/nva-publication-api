@@ -34,7 +34,7 @@ class PublicationChannelsBatchUpdateServiceTest extends PublicationChannelLocalT
     @BeforeEach
     void setUp() {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         service = new PublicationChannelsBatchUpdateService(resourceService);
     }
 

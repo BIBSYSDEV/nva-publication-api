@@ -107,7 +107,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         super.init();
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         sqsClient = new FakeSqsClient();
         ticketService = getTicketService();
         messageService = getMessageService();

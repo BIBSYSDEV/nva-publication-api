@@ -141,7 +141,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         super.init();
         this.now = Instant.now();
         this.owner = randomUserInstance();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
         this.ticketService = getTicketService();
         this.messageService = getMessageService();
     }

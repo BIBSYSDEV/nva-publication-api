@@ -139,7 +139,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     void setup() {
         super.init();
         this.fakeUriRetriever = FakeUriRetriever.newInstance();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         sqsClient = new FakeSqsClient();
     }
 

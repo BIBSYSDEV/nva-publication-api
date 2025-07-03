@@ -81,7 +81,7 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
         context = new FakeContext();
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         ticketService = getTicketService();
     }
 

@@ -93,7 +93,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
         context = new FakeContext();
         output = new ByteArrayOutputStream();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         var reserveDoiClient = new DataCiteDoiClient(WiremockHttpClient.create(), secretsManagerClient,
                                                      wireMockRuntimeInfo.getHttpsBaseUrl());
         handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);

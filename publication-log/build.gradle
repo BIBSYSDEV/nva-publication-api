@@ -8,6 +8,7 @@ dependencies {
     implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation libs.nva.clients
+    implementation libs.aws.sdk.dynamodb
 
     implementation libs.jackson.core
     implementation libs.jackson.databind

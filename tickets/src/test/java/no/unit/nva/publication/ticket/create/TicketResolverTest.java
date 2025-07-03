@@ -32,7 +32,7 @@ class TicketResolverTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         ticketResolver = new TicketResolver(resourceService, getTicketService());
     }
 

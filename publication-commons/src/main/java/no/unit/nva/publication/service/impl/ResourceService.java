@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -40,7 +41,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
@@ -95,7 +95,6 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals", "PMD.CouplingBetweenObjects"})
 public class ResourceService extends ServiceWithTransactions {
 
-    public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String RESOURCE_REFRESHED_MESSAGE = "Resource has been refreshed successfully: {}";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
@@ -111,7 +110,6 @@ public class ResourceService extends ServiceWithTransactions {
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     private final String tableName;
     private final Clock clockForTimestamps;
-    private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
@@ -120,14 +118,13 @@ public class ResourceService extends ServiceWithTransactions {
     private final CounterService counterService;
     private final CustomerService customerService;
 
-    protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
-                              Supplier<SortableIdentifier> identifierSupplier, RawContentRetriever uriRetriever,
+    public ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
+                              RawContentRetriever uriRetriever,
                               ChannelClaimClient channelClaimClient,
                               CustomerService customerService) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
-        this.identifierSupplier = identifierSupplier;
         this.uriRetriever = uriRetriever;
         this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
         this.channelClaimClient = channelClaimClient;
@@ -154,23 +151,14 @@ public class ResourceService extends ServiceWithTransactions {
     @JacocoGenerated
     public static ResourceService defaultService(String tableName) {
         var uriRetriever = new UriRetriever();
-        return builder()
-                   .withTableName(tableName)
-                   .withChannelClaimClient(ChannelClaimClient.create(uriRetriever))
-                   .withCustomerService(new CustomerService(uriRetriever))
-                   .build();
-    }
-
-    //TODO: This builder should be private and used in tests only. All the production constructors should consume
-    // defaultService()
-    public static ResourceServiceBuilder builder() {
-        return new ResourceServiceBuilder();
+        return new ResourceService(defaultDynamoDbClient(), tableName, Clock.systemDefaultZone(), uriRetriever,
+                                   ChannelClaimClient.create(uriRetriever), new CustomerService(uriRetriever));
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData) throws BadRequestException {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
-        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setIdentifier(SortableIdentifier.next());
         newResource.setResourceOwner(createResourceOwner(userInstance));
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
@@ -190,7 +178,7 @@ public class ResourceService extends ServiceWithTransactions {
             inputData.addImportDetail(new ImportDetail(now, importSource));
         }
         Resource newResource = Resource.fromPublication(inputData);
-        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setIdentifier(SortableIdentifier.next());
         newResource.setPublishedDate(now);
         newResource.setCreatedDate(now);
         newResource.setModifiedDate(now);
@@ -215,7 +203,7 @@ public class ResourceService extends ServiceWithTransactions {
     public ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
         var now = clockForTimestamps.instant();
         var newResource = Resource.fromImportCandidate(importCandidate);
-        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setIdentifier(SortableIdentifier.next());
         newResource.setPublishedDate(now);
         newResource.setCreatedDate(now);
         newResource.setModifiedDate(now);

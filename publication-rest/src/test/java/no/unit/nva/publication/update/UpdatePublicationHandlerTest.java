@@ -259,7 +259,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         lenient().when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
             .thenReturn(baseUrl.toString());
 
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         this.ticketService = getTicketService();
 
         this.eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
@@ -1842,7 +1842,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         var input = ownerUpdatesOwnPublication(resource.getIdentifier(), updatedPublication);
 
-        var resourceService = getResourceServiceBuilder().build();
+        var resourceService = getResourceService(client);
         var handler = new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
                                                    eventBridgeClient, secretsManagerClient,
                                                    WiremockHttpClient.create());
@@ -2528,7 +2528,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
-        var resourceService = spy(getResourceServiceBuilder().build());
+        var resourceService = spy(getResourceService(client));
         doThrow(new RuntimeException(SOME_MESSAGE)).when(resourceService).updateResource(any(), any());
         return resourceService;
     }

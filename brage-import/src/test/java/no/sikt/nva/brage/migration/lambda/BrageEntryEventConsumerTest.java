@@ -314,7 +314,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         super.init();
         when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of()));
         when(CONTEXT.getRemainingTimeInMillis()).thenReturn(100000);
-        this.resourceService = getResourceServiceBuilder(client).build();
+        this.resourceService = getResourceService(client);
         this.s3Client = new ExtendedFakeS3Client();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
         mockSingleHitSearchApiResponse(SortableIdentifier.next(), 502);

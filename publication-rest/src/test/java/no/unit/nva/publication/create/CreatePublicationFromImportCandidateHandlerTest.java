@@ -126,12 +126,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                       WireMockRuntimeInfo wireMockRuntimeInfo) {
         this.s3Client = s3Client;
         super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
-        importCandidateService = getResourceServiceBuilder(client)
-                                     .withTableName(IMPORT_CANDIDATES_TABLE)
-                                     .build();
-        publicationService = getResourceServiceBuilder(client)
-                                 .withTableName(PUBLICATIONS_TABLE)
-                                 .build();
+        importCandidateService = getResourceService(client, IMPORT_CANDIDATES_TABLE);
+        publicationService = getResourceService(client, PUBLICATIONS_TABLE);
         this.context = context;
         output = new ByteArrayOutputStream();
         piaClientConfig = createPiaConfig(wireMockRuntimeInfo);
@@ -250,7 +246,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldReturnBadGatewayWhenCanNotAccessImportCandidate()
         throws IOException {
         var importCandidate = createImportCandidate();
-        importCandidateService = getResourceServiceBuilder().build();
+        importCandidateService = getResourceService(client);
         var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);

@@ -38,7 +38,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp() {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
         context = null;

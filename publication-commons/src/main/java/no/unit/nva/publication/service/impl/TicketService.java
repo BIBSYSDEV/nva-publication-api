@@ -58,7 +58,7 @@ public class TicketService extends ServiceWithTransactions {
         super(client);
         this.identifierProvider = identifierProvider;
         tableName = RESOURCES_TABLE_NAME;
-        resourceService = new ResourceService(client, tableName, Clock.systemDefaultZone(), identifierProvider,
+        resourceService = new ResourceService(client, tableName, Clock.systemDefaultZone(),
                                               uriRetriever, ChannelClaimClient.create(uriRetriever),
                                               new CustomerService(uriRetriever));
     }

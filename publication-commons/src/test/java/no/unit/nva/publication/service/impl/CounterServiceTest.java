@@ -27,7 +27,7 @@ class CounterServiceTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         counterService = new CristinIdentifierCounterService(super.client, RESOURCES_TABLE_NAME);
     }
 

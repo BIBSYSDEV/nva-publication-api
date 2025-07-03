@@ -54,7 +54,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         this.s3Client = new FakeS3Client();
-        this.resourceService = getResourceServiceBuilder(client).build();
+        this.resourceService = getResourceService(client);
         this.uriRetriever = mock(UriRetriever.class);
         this.handler = new BragePatchEventConsumer(resourceService, s3Client, uriRetriever);
     }

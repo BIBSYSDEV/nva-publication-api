@@ -59,7 +59,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     public void setUp() {
         super.init();
         this.output = new ByteArrayOutputStream();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
         this.handler = new UpdateFileHandler(
             new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService), new Environment());
     }

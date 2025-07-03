@@ -33,7 +33,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         outputStream = new ByteArrayOutputStream();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         handler = new DeletePublicationHandler(resourceService);
     }
 

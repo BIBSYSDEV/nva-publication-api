@@ -64,10 +64,9 @@ class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
 
     @BeforeEach
     public void init() {
-        super.init("import-candidates-table");
-        importCandidateService = getResourceServiceBuilder(client)
-                                     .withTableName("import-candidates-table")
-                                     .build();
+        var tableName = "import-candidates-table";
+        super.init(tableName);
+        importCandidateService = getResourceService(client, tableName);
         s3Presigner = mock(S3Presigner.class);
         handler = new ImportCandidatePresignedUrlHandler(s3Presigner, importCandidateService, new Environment());
         output = new ByteArrayOutputStream();

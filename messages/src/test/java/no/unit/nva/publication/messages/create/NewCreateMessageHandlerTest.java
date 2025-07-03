@@ -66,7 +66,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
         this.ticketService = getTicketService();
         var messageService = getMessageService();
         this.handler = new NewCreateMessageHandler(messageService, ticketService, resourceService, new Environment());

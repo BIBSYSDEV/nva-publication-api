@@ -56,7 +56,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         outputStream = new ByteArrayOutputStream();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         ticketService = getTicketService();
         messageService = getMessageService();
         queueClient = new FakeSqsClient();

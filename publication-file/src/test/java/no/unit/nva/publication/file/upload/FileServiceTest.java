@@ -161,7 +161,7 @@ class FileServiceTest extends ResourcesLocalTest {
         super.init();
         s3client = mock(AmazonS3Client.class);
         customerApiClient = mock(CustomerApiClient.class);
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         fileService = new FileService(s3client, customerApiClient, resourceService);
     }
 

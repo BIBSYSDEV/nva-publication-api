@@ -53,7 +53,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     public void setUp() throws NotFoundException {
         super.init();
         ticketService = getTicketService();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
     }
 
     @DisplayName("When user removes unpublished files from a publication" +

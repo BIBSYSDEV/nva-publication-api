@@ -68,7 +68,7 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
         super.init();
         lenient().when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         output = new ByteArrayOutputStream();
         handler = new FetchImportCandidateHandler(resourceService, new Environment());
     }

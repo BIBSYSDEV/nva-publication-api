@@ -75,7 +75,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -200,7 +199,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
             (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         now = Clock.systemDefaultZone().instant();
-        resourceService = getResourceServiceBuilder().build();
+        resourceService = getResourceService(client);
         ticketService = getTicketService();
         messageService = getMessageService();
     }
@@ -214,7 +213,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldInstantiateResourceServiceForProvidedTable() {
         var customTable = "CustomTable";
         super.init(customTable);
-        var resourceService = getResourceServiceBuilder(client).withTableName(customTable).build();
+        var resourceService = getResourceService(client, customTable);
         List<String> tableNames = resourceService.getClient().listTables().getTableNames();
         assertThat(tableNames, hasItem(customTable));
     }
@@ -258,27 +257,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(readResource, is(equalTo(expectedResource)));
         assertThat(readResource.getCreatedDate(), is(not(equalTo(notExpectedCreatedDate))));
         assertThat(readResource.getModifiedDate(), is(not(equalTo(notExpectedModifiedDate))));
-    }
-
-    @Test
-    void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
-        throws BadRequestException {
-        final Publication sampleResource = randomPublication();
-        final Publication collidingResource = sampleResource.copy()
-                                                  .withPublisher(anotherPublisher())
-                                                  .withResourceOwner(
-                                                      new ResourceOwner(new Username(SOME_OTHER_USER), null))
-                                                  .build();
-        ResourceService resourceService = getResourceServiceWithDuplicateIdentifier(sampleResource.getIdentifier());
-
-        createPersistedPublicationWithDoi(resourceService, sampleResource);
-        Executable action = () -> createPersistedPublicationWithDoi(resourceService, collidingResource);
-        assertThrows(TransactionFailedException.class, action);
-
-        assertThat(sampleResource.getIdentifier(), is(equalTo(collidingResource.getIdentifier())));
-        assertThat(sampleResource.getResourceOwner().getOwner(),
-                   is(not(equalTo(collidingResource.getResourceOwner().getOwner()))));
-        assertThat(sampleResource.getPublisher().getId(), is(not(equalTo(collidingResource.getPublisher().getId()))));
     }
 
     @Test
@@ -398,7 +376,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException expectedCause = new RuntimeException(expectedMessage);
         when(client.transactWriteItems(any(TransactWriteItemsRequest.class))).thenThrow(expectedCause);
 
-        ResourceService failingService = getResourceServiceBuilder(client).build();
+        ResourceService failingService = getResourceService(client);
 
         Publication resource = publicationWithIdentifier();
         Executable action = () -> createPersistedPublicationWithDoi(failingService, resource);
@@ -421,7 +399,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         when(client.query(any(QueryRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
-        var failingResourceService = getResourceServiceBuilder(client).build();
+        var failingResourceService = getResourceService(client);
 
         Executable action = () -> failingResourceService.getPublicationByIdentifier(resource.getIdentifier());
         var exception = assertThrows(RuntimeException.class, action);
@@ -494,7 +472,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException expectedException = new RuntimeException(expectedMessage);
         when(client.query(any(QueryRequest.class))).thenThrow(expectedException);
 
-        var failingResourceService = getResourceServiceBuilder(client).build();
+        var failingResourceService = getResourceService(client);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
                                                   () -> failingResourceService.getPublicationSummaryByOwner(
@@ -511,7 +489,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = getResourceServiceBuilder(mockClient).build();
+        ResourceService failingResourceService = getResourceService(mockClient);
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
@@ -527,7 +505,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var responseWithInvalidItem = new QueryResult().withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any())).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = getResourceServiceBuilder(mockClient).build();
+        ResourceService failingResourceService = getResourceService(mockClient);
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         SortableIdentifier someIdentifier = SortableIdentifier.next();
@@ -892,7 +870,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldLogIdentifiersOfRecordsWhenBatchScanWriteFails() {
         var failingClient = new FailingDynamoClient(this.client);
-        resourceService = getResourceServiceBuilder(failingClient).build();
+        resourceService = getResourceService(failingClient);
 
         var userInstance = randomUserInstance();
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
@@ -1376,7 +1354,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldFetchResourceWithNewFilesWhenEnvironmentVariableShouldUseNewFileIsSet() throws BadRequestException {
-        var resourceService = getResourceServiceBuilder(client).build();
+        var resourceService = getResourceService(client);
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
@@ -1393,7 +1371,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldApproveApprovedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
-        var resourceService = getResourceServiceBuilder().build();
+        var resourceService = getResourceService(client);
 
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1441,7 +1419,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldRejectRejectedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
-        var resourceService = getResourceServiceBuilder().build();
+        var resourceService = getResourceService(client);
 
         var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
         var userInstance = UserInstance.fromPublication(publication);
@@ -1760,12 +1738,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return parseAttributeValuesMap(getRefreshedResourceResult.getItem(), Dao.class);
     }
 
-    private ResourceService getResourceServiceWithDuplicateIdentifier(SortableIdentifier identifier) {
-        return getResourceServiceBuilder(client).withIdentifierSupplier(() -> identifier)
-                   .withUriRetriever(mock(UriRetriever.class))
-                   .build();
-    }
-
     private Username randomPerson() {
         return new Username(randomString());
     }
@@ -2056,10 +2028,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private UserInstance someOtherUser() {
         return UserInstance.create(SOME_OTHER_USER, SOME_OTHER_ORG);
-    }
-
-    private Organization anotherPublisher() {
-        return new Organization.Builder().withId(SOME_OTHER_ORG).build();
     }
 
     private Organization newOrganization() {

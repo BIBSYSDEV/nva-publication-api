@@ -27,7 +27,7 @@ class EntityTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = getResourceServiceBuilder().build();
+        this.resourceService = getResourceService(client);
     }
     
     @ParameterizedTest
