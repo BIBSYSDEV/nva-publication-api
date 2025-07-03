@@ -125,12 +125,13 @@ public class ResourceService extends ServiceWithTransactions {
                            ChannelClaimClient channelClaimClient,
                            CustomerService customerService) {
         super(dynamoDBClient);
-
-        requireNonNull(dynamoDBClient, "DynamoDbClient cannot be null");
-        requireNonNull(tableName, "Table name cannot be null");
-        requireNonNull(uriRetriever, "UriRetriever name cannot be null");
-        requireNonNull(channelClaimClient, "ChannelClaimClient name cannot be null");
-        requireNonNull(customerService, "CustomerService name cannot be null");
+        
+        
+        requireNonNull(dynamoDBClient, "DynamoDbClient is missing!");
+        requireNonNull(tableName, "Table name is missing!");
+        requireNonNull(uriRetriever, "UriRetriever is missing!");
+        requireNonNull(channelClaimClient, "ChannelClaimClient is missing!");
+        requireNonNull(customerService, "CustomerService is missing!");
 
         this.tableName = tableName;
         this.clockForTimestamps = clock;
