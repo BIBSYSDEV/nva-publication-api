@@ -86,6 +86,7 @@ Feature: Permissions given claimed publisher
   Scenario: Should not give transfer permission when only available curation institution is same as user
     Given a "publication"
     When the user have the role "publishing curator"
+    And the user belongs to "creating institution"
     And the user attempts to "transfer"
     Then the action outcome is "Not Allowed"
 
@@ -94,6 +95,7 @@ Feature: Permissions given claimed publisher
     And publication has "<Files>" files
     And publication has publisher claimed by "<ClaimedBy>"
     When the user have the role "thesis curator"
+    And the user belongs to "creating institution"
     And the user attempts to "transfer"
     Then the action outcome is "Not Allowed"
 

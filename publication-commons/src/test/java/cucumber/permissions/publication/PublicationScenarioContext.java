@@ -7,8 +7,8 @@ import static cucumber.permissions.PermissionsRole.NOT_RELATED_EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.RELATED_EXTERNAL_CLIENT;
 import static cucumber.permissions.PermissionsRole.UNAUTHENTICATED;
 import static cucumber.permissions.RolesToAccessRights.roleToAccessRightsMap;
-import static cucumber.permissions.enums.UserInstitutionConfig.BELONGS_TO_CREATING_INSTITUTION;
 import static cucumber.permissions.enums.UserInstitutionConfig.BELONGS_TO_CURATING_INSTITUTION;
+import static cucumber.permissions.enums.UserInstitutionConfig.BELONGS_TO_NON_CURATING_INSTITUTION;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
@@ -81,7 +81,7 @@ public class PublicationScenarioContext {
     private ChannelPolicy channelClaimPublishingPolicy;
     private ChannelPolicy channelClaimEditingPolicy;
     private Set<PermissionsRole> roles = new HashSet<>();
-    private UserInstitutionConfig userInstitutionConfig = BELONGS_TO_CREATING_INSTITUTION;
+    private UserInstitutionConfig userInstitutionConfig = BELONGS_TO_NON_CURATING_INSTITUTION;
     private PublicationOperation operation;
 
     public PublicationTypeConfig getPublicationTypeConfig() {
@@ -217,7 +217,7 @@ public class PublicationScenarioContext {
             case BELONGS_TO_CURATING_INSTITUTION -> CURATING_INSTITUTION;
             case BELONGS_TO_NON_CURATING_INSTITUTION -> NON_CURATING_INSTITUTION;
         };
-        return UserInstance.create(USER_NAME, userInstitution, USER_CRISTIN_ID, accessRights, userInstitution);
+        return UserInstance.create(USER_NAME, randomUri(), USER_CRISTIN_ID, accessRights, userInstitution);
     }
 
     private HashSet<CuratingInstitution> createCuratingInstitutions() {

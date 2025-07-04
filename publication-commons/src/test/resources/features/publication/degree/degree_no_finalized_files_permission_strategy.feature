@@ -4,6 +4,7 @@ Feature: Publication action permissions for degrees when user relates to publica
     Given a "degree"
     And publication has "no finalized" files
     When the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     And the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 

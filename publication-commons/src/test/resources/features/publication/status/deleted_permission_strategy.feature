@@ -5,6 +5,7 @@ Feature: Publication action permissions for publication status DELETED
     And publication has status "deleted"
     And the user have the role "<UserRole>"
     When the user attempts to "<Operation>"
+    And the user belongs to "creating institution"
     Then the action outcome is "<Outcome>"
 
     Examples:

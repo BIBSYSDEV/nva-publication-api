@@ -10,6 +10,7 @@ Feature: File metadata write and file delete permissions
     Given a file of type "<FileType>"
     And the file is owned by "publication creator"
     When the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     And the user attempts to "write-metadata"
     Then the action outcome is "<Outcome>"
 

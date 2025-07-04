@@ -4,6 +4,7 @@ Feature: Publication action permissions for publication with no finalized files
     Given a "publication"
     And publication has "no finalized" files
     And the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     When the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 

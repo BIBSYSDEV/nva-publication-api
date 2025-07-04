@@ -119,7 +119,7 @@ public class FileStrategyBase {
         return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
     }
 
-    private boolean userRelatesToPublication() {
+    public boolean userRelatesToPublication() {
         return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution() ||
                userBelongsToPublicationChannelOwner();
     }

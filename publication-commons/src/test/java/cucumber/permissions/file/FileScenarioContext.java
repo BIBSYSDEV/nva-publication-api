@@ -2,13 +2,17 @@ package cucumber.permissions.file;
 
 import static cucumber.permissions.enums.FileEmbargoConfig.HAS_EMBARGO;
 import static java.time.temporal.ChronoUnit.DAYS;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import cucumber.permissions.enums.FileEmbargoConfig;
 import cucumber.permissions.enums.FileOwnerConfig;
 import cucumber.permissions.publication.PublicationScenarioContext;
 import java.time.Instant;
+import java.util.Collections;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.File.Builder;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -76,6 +80,8 @@ public final class FileScenarioContext {
         return switch (getFileOwnerConfig()) {
             case FileOwnerConfig.USER -> userInstance;
             case FileOwnerConfig.PUBLICATION_CREATOR -> UserInstance.fromPublication(resource.toPublication());
+            case FileOwnerConfig.SOMEONE_ELSE -> UserInstance.create(randomString(), randomUri(), randomUri(),
+                                                                     Collections.emptyList(), randomUri());
             case FileOwnerConfig.CONTRIBUTOR_AT_CURATING_INSTITUTION -> throw new UnsupportedOperationException();
         };
     }
@@ -89,7 +95,7 @@ public final class FileScenarioContext {
         return file.build(getFileClassFromString());
     }
 
-    private void addEmbargo(File.Builder fileBuilder, Class<File> fileType) {
+    private void addEmbargo(Builder fileBuilder, Class<File> fileType) {
         if (UploadedFile.class.equals(fileType)) {
             throw new IllegalArgumentException("'UploadedFile.class' does not support embargo");
         }

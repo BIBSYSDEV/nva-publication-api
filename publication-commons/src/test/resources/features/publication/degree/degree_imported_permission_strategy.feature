@@ -5,6 +5,7 @@ Feature: Publication action permissions for imported degrees
     And publication is an imported degree
     And publication has "no" files
     And the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     When the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 
@@ -172,6 +173,7 @@ Feature: Publication action permissions for imported degrees
     And publication is an imported degree
     And publication has "finalized" files
     And the user have the role "<UserRole>"
+    And the user belongs to "creating institution"
     When the user attempts to "<Operation>"
     Then the action outcome is "<Outcome>"
 
