@@ -46,6 +46,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
+import org.apache.tika.io.TikaInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -69,9 +70,8 @@ public class ScopusFileConverter {
     public static final String XML_CONTENT_TYPE = "text/xml";
     public static final String FILENAME_CONTENT_TYPE_HEADER_VALUE = "filename=";
     public static final String QUOTE = "\"";
-    public static final int ZERO_LENGTH_CONTENT = 0;
     public static final String ELSEVIER_HOST = "api.elsevier.com";
-    public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file: ";
+    public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file. %s";
     public static final String COULD_NOT_SAVE_FILE = "Could not save file to s3 {}";
     private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
@@ -227,7 +227,7 @@ public class ScopusFileConverter {
 
     private ScopusFile fetchFileContent(ScopusFile file) throws IOException {
         var response = fetchResponseAsInputStream(file.downloadFileUrl());
-        var inputStream = tikaUtils.fetch(response.request().uri());
+        var inputStream = TikaInputStream.get(response.body());
         var filename = getFilename(response);
         var size = inputStream.getLength();
         return file.copy().withContent(inputStream).withSize(size).withName(filename).build();
@@ -239,7 +239,7 @@ public class ScopusFileConverter {
         if (isSuccess(response)) {
             return response;
         } else {
-            throw new RuntimeException(FETCH_FILE_ERROR_MESSAGE);
+            throw new RuntimeException(FETCH_FILE_ERROR_MESSAGE.formatted(response.toString()));
         }
     }
 
