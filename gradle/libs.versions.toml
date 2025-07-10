@@ -1,15 +1,15 @@
 [versions]
-apache-bval = { strictly = '3.0.1' }
-apacheCommonsCollections = { strictly = '4.4' }
-apacheCommonsText = { strictly = '1.12.0' }
+apache-bval = { strictly = '3.0.2' }
+apacheCommonsCollections = { strictly = '4.5.0' }
+apacheCommonsText = { strictly = '1.13.1' }
 awsIon = { strictly = '1.11.10' }
-awsLambdaCore = { strictly = '1.2.3' }
-awsLambdaEvents = { strictly = '3.15.0' }
-awsSdk = { strictly = '1.12.782' }
-awsSdk2 = { strictly = '2.31.28' }
+awsLambdaCore = { strictly = '1.3.0' }
+awsLambdaEvents = { strictly = '3.16.0' }
+awsSdk = { strictly = '1.12.787' }
+awsSdk2 = { strictly = '2.31.77' }
 commonsValidator = { strictly = '1.9.0' }
 configTypesafe = { strictly = '1.4.3' }
-cucumber = { strictly = '7.18.1' }
+cucumber = { strictly = '7.23.0' }
 datafaker = { strictly = '2.4.3' }
 dynamoDbLocal = { strictly = '2.0.0' }
 glassfish-el = { strictly = '4.0.2' }
@@ -17,25 +17,25 @@ guava = { strictly = '33.4.8-jre' }
 hamcrest = { strictly = '3.0' }
 hamcrestSpotify = { strictly = '1.3.2' }
 httpcore = { strictly = '5.3.4' }
-jackson = { strictly = '2.19.0' }
+jackson = { strictly = '2.19.1' }
 jakarta-el-api = { strictly = '6.0.1' }
-jakarta-validation-api = { strictly = '3.1.0' }
-javers = { strictly = '7.6.1' }
-jena = { strictly = '5.2.0'}
+jakarta-validation-api = { strictly = '3.1.1' }
+javers = { strictly = '7.8.0' }
+jena = { strictly = '5.4.0'}
 jsonassert = { strictly = '1.5.3'}
-junit = { strictly = '5.12.2' }
-log4j = { strictly = '2.24.3' }
-mockito = { strictly = '5.15.2' }
-nva = { strictly = '2.2.6' }
-nva-language = { strictly = '1.2.0' }
+junit = { strictly = '5.13.3' }
+log4j = { strictly = '2.25.0' }
+mockito = { strictly = '5.18.0' }
+nva = { strictly = '2.2.9' }
+nva-language = { strictly = '1.2.1' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
 reflections = { strictly = '0.10.2' }
-resilience4j = { strictly = '2.2.0' }
+resilience4j = { strictly = '2.3.0' }
 slf4j = { strictly = '2.0.17' }
-swaggerCoreVersion = { strictly = '2.2.22' }
-tika = { strictly = '2.9.2' }
-vavrVersion = { strictly = '0.10.4' }
-wiremock = { strictly = "3.12.1" }
+swaggerCoreVersion = { strictly = '2.2.34' }
+tika = { strictly = '3.2.0' }
+vavrVersion = { strictly = '0.10.6' }
+wiremock = { strictly = "3.13.1" }
 zalandoProblem = { strictly = '0.27.1' }
 
 [libraries]
