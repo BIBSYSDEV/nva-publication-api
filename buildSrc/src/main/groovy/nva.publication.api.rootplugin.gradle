@@ -1,9 +1,8 @@
-plugins{
+plugins {
     id 'jacoco-report-aggregation'
     id 'base'
     id 'java-library'
 }
-
 
 repositories {
     mavenCentral()
@@ -19,15 +18,11 @@ dependencies {
 reporting {
     reports {
         testCodeCoverageReport(JacocoCoverageReport) {
-            testType = TestSuiteType.UNIT_TEST
-        }
-        integrationTestCodeCoverageReport(JacocoCoverageReport) {
-            testType = TestSuiteType.INTEGRATION_TEST
+            testSuiteName = 'test'
         }
     }
 }
 
 tasks.named('check') {
     dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
-    dependsOn tasks.named('integrationTestCodeCoverageReport', JacocoReport)
 }

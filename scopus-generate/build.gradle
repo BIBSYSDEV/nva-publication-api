@@ -5,26 +5,49 @@ project.ext {
 sourceSets.main.java.srcDirs += jaxbTargetDir
 
 configurations {
-    jaxb
+    xjc
 }
 
 dependencies {
-    jaxb libs.bundles.xsd2java
+    xjc 'com.sun.xml.bind:jaxb-xjc:2.3.3'
+    xjc 'com.sun.xml.bind:jaxb-core:2.3.3'
+    xjc libs.bundles.xsd2java
     implementation libs.bundles.xsd2java
 }
 
-tasks.register('xsd2java') {
-    doLast {
-        jaxbTargetDir.mkdirs()
-        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: configurations.jaxb.asPath)
-        ant.jaxbTargetDir = jaxbTargetDir
+@CacheableTask
+abstract class Xsd2Pojo extends DefaultTask {
+
+    @Classpath
+    abstract ConfigurableFileCollection getXjcClasspath()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @TaskAction
+    void generate() {
+        getOutputDir().get().asFile.mkdirs()
+        ant.taskdef(
+                name: 'xjc',
+                classname: 'com.sun.tools.xjc.XJC2Task',
+                classpath: getXjcClasspath().asPath
+        )
         ant.xjc(
-                destdir: '${jaxbTargetDir}',
+                destdir: getOutputDir().get().asFile,
                 package: 'no.scopus.generated',
                 schema: 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd',
                 binding: 'src/main/resources/xocs-ani515.xjb'
         )
     }
+}
+
+tasks.register('xsd2java', Xsd2Pojo) {
+    xjcClasspath = configurations.xjc
+    outputDir = jaxbTargetDir
+}
+
+tasks.withType(Jar).configureEach {
+    outputs.cacheIf { true }
 }
 
 tasks.withType(JavaCompile).configureEach {
