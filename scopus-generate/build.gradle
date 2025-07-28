@@ -9,8 +9,6 @@ configurations {
 }
 
 dependencies {
-    xjc 'com.sun.xml.bind:jaxb-xjc:2.3.3'
-    xjc 'com.sun.xml.bind:jaxb-core:2.3.3'
     xjc libs.bundles.xsd2java
     implementation libs.bundles.xsd2java
 }
