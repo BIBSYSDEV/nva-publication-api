@@ -12,6 +12,7 @@ def javaVersion = 21
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(javaVersion)
+        vendor = JvmVendorSpec.AMAZON
     }
 }
 
