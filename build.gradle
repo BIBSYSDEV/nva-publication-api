@@ -8,8 +8,15 @@ allprojects{
     apply plugin: 'nva.publication.api.dynamo-db'
 }
 
-tasks.withType(JavaCompile) {
-    sourceCompatibility = JavaVersion.VERSION_21
+def javaVersion = 21
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(javaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = javaVersion
 }
 
 wrapper {
