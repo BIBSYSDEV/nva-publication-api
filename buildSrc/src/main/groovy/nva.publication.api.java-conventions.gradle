@@ -20,7 +20,7 @@ dependencies {
 
     // This is required until Gradle TestSuites are used, note no version is specified as this syncs
     // with JUnit from gradle.
-    testRuntimeOnly(group: 'org.junit.platform', name: 'junit-platform-launcher')
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     //To support dynamodb local when testing, using mac m1
     if (System.getProperty("os.arch") == "aarch64") {
@@ -30,20 +30,20 @@ dependencies {
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
-    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
+    maven { url = 'https://jitpack.io' }
+    maven { url = "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
 }
 
 tasks.named('test') {
-    environment "API_HOST", "localhost"
+    environment("API_HOST", "localhost")
     useJUnitPlatform {
-        excludeTags "RemoteTest", "integrationTest", "KarateTest"
+        excludeTags  = [ "RemoteTest", "integrationTest", "KarateTest" ]
     }
     failFast = false
     testLogging {
-        events 'skipped', 'passed', 'failed'
-        showCauses true
-        exceptionFormat "full"
+        events = [ 'skipped', 'passed', 'failed' ]
+        showCauses = true
+        exceptionFormat = "full"
     }
 }
 
@@ -63,7 +63,7 @@ tasks.withType(Checkstyle) .configureEach{
     reports {
         xml.required
         html.required
-        html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
+        html.stylesheet = rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
     }
 }
 
@@ -98,13 +98,13 @@ spotless {
         googleJavaFormat().reflowLongStrings().formatJavadoc(true).reorderImports(true)
     }
 
-    format 'misc', {
-        target '.gitignore', '.gitattributes', '.editorconfig', '**/*.gradle'
+    format('misc', {
+        target = [ '.gitignore', '.gitattributes', '.editorconfig', '**/*.gradle' ]
         leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
-    }
-    enforceCheck false // Temporarily disable checking during build until the project is reformatted
+    })
+    enforceCheck = false // Temporarily disable checking during build until the project is reformatted
 }
 
 // Commented out for now, uncomment when the project is reformatted and ready to enforce the formatting rules
