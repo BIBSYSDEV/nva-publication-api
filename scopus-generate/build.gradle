@@ -16,6 +16,13 @@ dependencies {
 @CacheableTask
 abstract class Xsd2Pojo extends DefaultTask {
 
+    @InputFile
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract RegularFileProperty getBindingFile()
+
+    @Input
+    abstract Property<String> getSchemaUri();
+
     @Classpath
     abstract ConfigurableFileCollection getXjcClasspath()
 
@@ -25,21 +32,25 @@ abstract class Xsd2Pojo extends DefaultTask {
     @TaskAction
     void generate() {
         getOutputDir().get().asFile.mkdirs()
+        def normalizedClasspath = getXjcClasspath().files.toSorted()
+
         ant.taskdef(
                 name: 'xjc',
                 classname: 'com.sun.tools.xjc.XJC2Task',
-                classpath: getXjcClasspath().asPath
+                classpath: normalizedClasspath.collect { it.absolutePath }.join(File.pathSeparator)
         )
         ant.xjc(
                 destdir: getOutputDir().get().asFile,
                 package: 'no.scopus.generated',
-                schema: 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd',
-                binding: 'src/main/resources/xocs-ani515.xjb'
+                schema: getSchemaUri().get(),
+                binding: getBindingFile().get().asFile.path
         )
     }
 }
 
 tasks.register('xsd2java', Xsd2Pojo) {
+    schemaUri = 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd'
+    bindingFile = file('src/main/resources/xocs-ani515.xjb')
     xjcClasspath = configurations.xjc
     outputDir = jaxbTargetDir
 }
