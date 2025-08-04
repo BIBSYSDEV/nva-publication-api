@@ -107,7 +107,7 @@ spotless {
     }
 
     format 'misc', {
-        target('.gitignore', '.gitattributes', '.editorconfig')
+        target('.gitignore', '.gitattributes', '.editorconfig', '**/*.md')
         leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
