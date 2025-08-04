@@ -98,8 +98,16 @@ spotless {
         googleJavaFormat().reflowLongStrings().formatJavadoc(true).reorderImports(true)
     }
 
+    groovyGradle {
+        target('**/*.gradle')
+        greclipse()
+        leadingTabsToSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+
     format 'misc', {
-        target('.gitignore', '.gitattributes', '.editorconfig', '**/*.gradle')
+        target('.gitignore', '.gitattributes', '.editorconfig')
         leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
