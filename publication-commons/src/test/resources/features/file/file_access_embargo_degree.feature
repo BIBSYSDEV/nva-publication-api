@@ -379,11 +379,11 @@ Feature: File permissions for embargo and degree files
       | HiddenFile          | Publishing curator          | write-metadata | Not Allowed |
       | HiddenFile          | Publishing curator          | delete         | Not Allowed |
 
-      | PendingOpenFile     | Thesis curator              | read-metadata  | Not Allowed |
+      | PendingOpenFile     | Thesis curator              | read-metadata  | Allowed     |
       | PendingOpenFile     | Thesis curator              | download       | Not Allowed |
       | PendingOpenFile     | Thesis curator              | write-metadata | Not Allowed |
       | PendingOpenFile     | Thesis curator              | delete         | Not Allowed |
-      | PendingInternalFile | Thesis curator              | read-metadata  | Not Allowed |
+      | PendingInternalFile | Thesis curator              | read-metadata  | Allowed     |
       | PendingInternalFile | Thesis curator              | download       | Not Allowed |
       | PendingInternalFile | Thesis curator              | write-metadata | Not Allowed |
       | PendingInternalFile | Thesis curator              | delete         | Not Allowed |
@@ -391,7 +391,7 @@ Feature: File permissions for embargo and degree files
       | OpenFile            | Thesis curator              | download       | Not Allowed |
       | OpenFile            | Thesis curator              | write-metadata | Not Allowed |
       | OpenFile            | Thesis curator              | delete         | Not Allowed |
-      | InternalFile        | Thesis curator              | read-metadata  | Not Allowed |
+      | InternalFile        | Thesis curator              | read-metadata  | Allowed     |
       | InternalFile        | Thesis curator              | download       | Not Allowed |
       | InternalFile        | Thesis curator              | write-metadata | Not Allowed |
       | InternalFile        | Thesis curator              | delete         | Not Allowed |
@@ -560,11 +560,11 @@ Feature: File permissions for embargo and degree files
       | HiddenFile          | Publishing curator          | write-metadata | Not Allowed |
       | HiddenFile          | Publishing curator          | delete         | Not Allowed |
 
-      | PendingOpenFile     | Thesis curator              | read-metadata  | Not Allowed |
+      | PendingOpenFile     | Thesis curator              | read-metadata  | Allowed     |
       | PendingOpenFile     | Thesis curator              | download       | Not Allowed |
       | PendingOpenFile     | Thesis curator              | write-metadata | Not Allowed |
       | PendingOpenFile     | Thesis curator              | delete         | Not Allowed |
-      | PendingInternalFile | Thesis curator              | read-metadata  | Not Allowed |
+      | PendingInternalFile | Thesis curator              | read-metadata  | Allowed     |
       | PendingInternalFile | Thesis curator              | download       | Not Allowed |
       | PendingInternalFile | Thesis curator              | write-metadata | Not Allowed |
       | PendingInternalFile | Thesis curator              | delete         | Not Allowed |
@@ -572,7 +572,7 @@ Feature: File permissions for embargo and degree files
       | OpenFile            | Thesis curator              | download       | Not Allowed |
       | OpenFile            | Thesis curator              | write-metadata | Not Allowed |
       | OpenFile            | Thesis curator              | delete         | Not Allowed |
-      | InternalFile        | Thesis curator              | read-metadata  | Not Allowed |
+      | InternalFile        | Thesis curator              | read-metadata  | Allowed     |
       | InternalFile        | Thesis curator              | download       | Not Allowed |
       | InternalFile        | Thesis curator              | write-metadata | Not Allowed |
       | InternalFile        | Thesis curator              | delete         | Not Allowed |

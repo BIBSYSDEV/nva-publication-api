@@ -18,6 +18,9 @@ Feature: File metadata read and file download permissions
       | UploadedFile        | Publication creator     | Allowed     |
       | UploadedFile        | Contributor             | Not Allowed |
       | UploadedFile        | Publishing curator      | Allowed     |
+      | UploadedFile        | Support Curator         | Allowed     |
+      | UploadedFile        | DOI Curator             | Not Allowed |
+      | UploadedFile        | NVI Curator             | Not Allowed |
       | UploadedFile        | Related external client | Not Allowed |
       | UploadedFile        | Editor                  | Not Allowed |
 
@@ -26,6 +29,9 @@ Feature: File metadata read and file download permissions
       | PendingOpenFile     | Publication creator     | Allowed     |
       | PendingOpenFile     | Contributor             | Allowed     |
       | PendingOpenFile     | Publishing curator      | Allowed     |
+      | PendingOpenFile     | Support Curator         | Allowed     |
+      | PendingOpenFile     | DOI Curator             | Allowed     |
+      | PendingOpenFile     | NVI Curator             | Allowed     |
       | PendingOpenFile     | Related external client | Not Allowed |
       | PendingOpenFile     | Editor                  | Allowed     |
 
@@ -34,6 +40,9 @@ Feature: File metadata read and file download permissions
       | PendingInternalFile | Publication creator     | Allowed     |
       | PendingInternalFile | Contributor             | Allowed     |
       | PendingInternalFile | Publishing curator      | Allowed     |
+      | PendingInternalFile | Support Curator         | Allowed     |
+      | PendingInternalFile | DOI Curator             | Allowed     |
+      | PendingInternalFile | NVI Curator             | Allowed     |
       | PendingInternalFile | Related external client | Not Allowed |
       | PendingInternalFile | Editor                  | Allowed     |
 
@@ -42,6 +51,9 @@ Feature: File metadata read and file download permissions
       | OpenFile            | Publication creator     | Allowed     |
       | OpenFile            | Contributor             | Allowed     |
       | OpenFile            | Publishing curator      | Allowed     |
+      | OpenFile            | Support Curator         | Allowed     |
+      | OpenFile            | DOI Curator             | Allowed     |
+      | OpenFile            | NVI Curator             | Allowed     |
       | OpenFile            | Related external client | Allowed     |
       | OpenFile            | Editor                  | Allowed     |
 
@@ -50,6 +62,9 @@ Feature: File metadata read and file download permissions
       | InternalFile        | Publication creator     | Allowed     |
       | InternalFile        | Contributor             | Allowed     |
       | InternalFile        | Publishing curator      | Allowed     |
+      | InternalFile        | Support Curator         | Allowed     |
+      | InternalFile        | DOI Curator             | Allowed     |
+      | InternalFile        | NVI Curator             | Allowed     |
       | InternalFile        | Related external client | Allowed     |
       | InternalFile        | Editor                  | Allowed     |
 
@@ -58,6 +73,9 @@ Feature: File metadata read and file download permissions
       | HiddenFile          | Publication creator     | Not Allowed |
       | HiddenFile          | Contributor             | Not Allowed |
       | HiddenFile          | Publishing curator      | Allowed     |
+      | HiddenFile          | Support Curator         | Not Allowed |
+      | HiddenFile          | DOI Curator             | Not Allowed |
+      | HiddenFile          | NVI Curator             | Not Allowed |
       | HiddenFile          | Related external client | Not Allowed |
       | HiddenFile          | Editor                  | Not Allowed |
 
@@ -74,36 +92,54 @@ Feature: File metadata read and file download permissions
       | UploadedFile        | Authenticated               | Not Allowed |
       | UploadedFile        | Contributor                 | Not Allowed |
       | UploadedFile        | Publishing curator          | Not Allowed |
+      | UploadedFile        | Support Curator             | Not Allowed |
+      | UploadedFile        | DOI Curator                 | Not Allowed |
+      | UploadedFile        | NVI Curator                 | Not Allowed |
       | UploadedFile        | Not related external client | Not Allowed |
       | UploadedFile        | Editor                      | Not Allowed |
 
       | PendingOpenFile     | Authenticated               | Not Allowed |
       | PendingOpenFile     | Contributor                 | Allowed     |
       | PendingOpenFile     | Publishing curator          | Allowed     |
+      | PendingOpenFile     | Support Curator             | Allowed     |
+      | PendingOpenFile     | DOI Curator                 | Allowed     |
+      | PendingOpenFile     | NVI Curator                 | Allowed     |
       | PendingOpenFile     | Not related external client | Not Allowed |
       | PendingOpenFile     | Editor                      | Allowed     |
 
       | PendingInternalFile | Authenticated               | Not Allowed |
       | PendingInternalFile | Contributor                 | Allowed     |
       | PendingInternalFile | Publishing curator          | Allowed     |
+      | PendingInternalFile | Support Curator             | Allowed     |
+      | PendingInternalFile | DOI Curator                 | Allowed     |
+      | PendingInternalFile | NVI Curator                 | Allowed     |
       | PendingInternalFile | Not related external client | Not Allowed |
       | PendingInternalFile | Editor                      | Allowed     |
 
       | OpenFile            | Authenticated               | Allowed     |
       | OpenFile            | Contributor                 | Allowed     |
       | OpenFile            | Publishing curator          | Allowed     |
+      | OpenFile            | Support Curator             | Allowed     |
+      | OpenFile            | DOI Curator                 | Allowed     |
+      | OpenFile            | NVI Curator                 | Allowed     |
       | OpenFile            | Not related external client | Allowed     |
       | OpenFile            | Editor                      | Allowed     |
 
       | InternalFile        | Authenticated               | Not Allowed |
       | InternalFile        | Contributor                 | Allowed     |
       | InternalFile        | Publishing curator          | Allowed     |
+      | InternalFile        | Support Curator             | Allowed     |
+      | InternalFile        | DOI Curator                 | Allowed     |
+      | InternalFile        | NVI Curator                 | Allowed     |
       | InternalFile        | Not related external client | Not Allowed |
       | InternalFile        | Editor                      | Allowed     |
 
       | HiddenFile          | Authenticated               | Not Allowed |
       | HiddenFile          | Contributor                 | Not Allowed |
       | HiddenFile          | Publishing curator          | Not Allowed |
+      | HiddenFile          | Support Curator             | Not Allowed |
+      | HiddenFile          | DOI Curator                 | Not Allowed |
+      | HiddenFile          | NVI Curator                 | Not Allowed |
       | HiddenFile          | Not related external client | Not Allowed |
       | HiddenFile          | Editor                      | Not Allowed |
 

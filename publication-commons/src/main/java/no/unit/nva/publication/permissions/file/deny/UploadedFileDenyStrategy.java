@@ -34,7 +34,9 @@ public class UploadedFileDenyStrategy extends FileStrategyBase implements FileDe
     }
 
     private boolean isDeniedUser() {
-        return !(currentUserIsFileCuratorForGivenFile() || currentUserIsDegreeFileCuratorForGivenFile());
+        return !(currentUserIsFileCuratorForGivenFile()
+                 || currentUserIsDegreeFileCuratorForGivenFile()
+                 || currentUserIsSupportCuratorForGivenFile());
     }
 
     private boolean fileTypeIsUploadedFile() {

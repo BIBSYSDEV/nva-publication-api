@@ -18,12 +18,14 @@ import no.unit.nva.publication.permissions.file.deny.UploadedFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.grant.ContributorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.DegreeCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.DegreeEmbargoCuratorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.DoiThesisAndNviCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EditorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EmbargoCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EveryoneGrantStrategy;
-import no.unit.nva.publication.permissions.file.grant.CuratorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.FileCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.ExternalClientGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.FileOwnerGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.SupportCuratorFileGrantStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,14 +47,16 @@ public class FilePermissions {
         this.file = file;
         this.grantStrategies = Set.of(
             new EveryoneGrantStrategy(file, userInstance, resource),
-            new CuratorFileGrantStrategy(file, userInstance, resource),
+            new FileCuratorFileGrantStrategy(file, userInstance, resource),
             new FileOwnerGrantStrategy(file, userInstance, resource),
             new ContributorFileGrantStrategy(file, userInstance, resource),
             new ExternalClientGrantStrategy(file, userInstance, resource),
             new DegreeEmbargoCuratorFileGrantStrategy(file, userInstance, resource),
             new DegreeCuratorFileGrantStrategy(file, userInstance, resource),
             new EmbargoCuratorFileGrantStrategy(file, userInstance, resource),
-            new EditorFileGrantStrategy(file, userInstance, resource)
+            new EditorFileGrantStrategy(file, userInstance, resource),
+            new DoiThesisAndNviCuratorFileGrantStrategy(file, userInstance, resource),
+            new SupportCuratorFileGrantStrategy(file, userInstance, resource)
         );
         this.denyStrategies = Set.of(
             new HiddenFileDenyStrategy(file, userInstance, resource),

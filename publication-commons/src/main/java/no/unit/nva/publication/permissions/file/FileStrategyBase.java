@@ -54,6 +54,12 @@ public class FileStrategyBase {
         return hasAccessRight(AccessRight.MANAGE_RESOURCE_FILES) && userRelatesToPublication();
     }
 
+    protected boolean currentUserIsSupportCuratorForGivenFile() {
+        return hasAccessRight(AccessRight.SUPPORT)
+               && userRelatesToPublication()
+               && haveTopLevelRelationForCurrentFile();
+    }
+
     protected boolean currentUserIsContributor() {
         return Optional.ofNullable(userInstance)
                    .map(UserInstance::getPersonCristinId)
@@ -82,11 +88,13 @@ public class FileStrategyBase {
     }
 
     protected boolean currentUserIsDegreeEmbargoFileCuratorForGivenFile() {
-        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && (haveTopLevelRelationForCurrentFile() || userBelongsToPublicationChannelOwner());
+        return hasAccessRight(MANAGE_DEGREE_EMBARGO) && (haveTopLevelRelationForCurrentFile()
+                                                         || userBelongsToPublicationChannelOwner());
     }
 
     protected boolean currentUserIsDegreeFileCuratorForGivenFile() {
-        return hasAccessRight(MANAGE_DEGREE) && (haveTopLevelRelationForCurrentFile() || userBelongsToPublicationChannelOwner());
+        return hasAccessRight(MANAGE_DEGREE) && (haveTopLevelRelationForCurrentFile()
+                                                 || userBelongsToPublicationChannelOwner());
     }
 
     protected boolean isWriteOrDelete(FileOperation permission) {

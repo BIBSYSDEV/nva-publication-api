@@ -264,11 +264,7 @@ public class PublicationContextBuilder {
 
     private static URI randomPublicationChannelsUri() {
         return URI.create("https://api.dev.nva.aws.unit.no/publication-channels-v2/%s/%s/%s".formatted(
-            randomChannelType(), randomUUID(), randomPublicationDate().getYear()));
-    }
-
-    private static String randomChannelType() {
-        return CHANNEL_TYPES_SUB_PATH.get(new Random().nextInt(2));
+            "serial-publication", randomUUID(), randomPublicationDate().getYear()));
     }
 
     private static Artistic randomArtistic() {

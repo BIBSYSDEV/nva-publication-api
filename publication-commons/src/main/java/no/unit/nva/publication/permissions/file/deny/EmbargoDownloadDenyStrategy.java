@@ -1,6 +1,6 @@
 package no.unit.nva.publication.permissions.file.deny;
 
-import static no.unit.nva.model.FileOperation.DOWNLOAD;
+import static no.unit.nva.model.FileOperation.READ_METADATA;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -18,16 +18,26 @@ public class EmbargoDownloadDenyStrategy extends FileStrategyBase implements Fil
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        if (currentUserIsFileOwner() && !fileIsFinalized()) {
+        if (!fileHasEmbargo()) {
             return false;
         }
-        if (permission.equals(DOWNLOAD) && fileHasEmbargo()) {
-            return isDeniedUser();
+
+        if (shouldAllowMetadataReadOnFinalizedFiles(permission)) {
+            return false;
         }
-        return false;
+
+        return isDeniedUser();
+    }
+
+    private boolean shouldAllowMetadataReadOnFinalizedFiles(FileOperation permission) {
+        return permission == READ_METADATA && (fileIsFinalized() || userRelatesToPublication());
     }
 
     private boolean isDeniedUser() {
+        if (currentUserIsFileOwner()) {
+            return false;
+        }
+
         return resourceIsDegree()
                    ? isDegreeEmbargoDeniedUser()
                    : isEmbargoDeniedUser();
@@ -42,7 +52,6 @@ public class EmbargoDownloadDenyStrategy extends FileStrategyBase implements Fil
         return !(currentUserIsFileOwner()
                  || currentUserIsContributor()
                  || currentUserIsFileCuratorForGivenFile()
-                 || currentUserIsDegreeEmbargoFileCuratorForGivenFile()
                  || currentUserIsFileCurator()
                  || isExternalClientWithRelation());
     }
