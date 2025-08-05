@@ -98,12 +98,20 @@ spotless {
         googleJavaFormat().reflowLongStrings().formatJavadoc(true).reorderImports(true)
     }
 
-    format('misc', {
-        target = [ '.gitignore', '.gitattributes', '.editorconfig', '**/*.gradle' ]
+    groovyGradle {
+        target('**/*.gradle')
+        greclipse()
         leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
-    })
+    }
+
+    format 'misc', {
+        target('.gitignore', '.gitattributes', '.editorconfig', '**/*.md')
+        leadingTabsToSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
     enforceCheck = false // Temporarily disable checking during build until the project is reformatted
 }
 
