@@ -8,11 +8,11 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FileDenyStrategy;
 import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
-public class EmbargoDownloadDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
+public class EmbargoReadDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
 
-    public EmbargoDownloadDenyStrategy(FileEntry file,
-                                       UserInstance userInstance,
-                                       Resource resource) {
+    public EmbargoReadDenyStrategy(FileEntry file,
+                                   UserInstance userInstance,
+                                   Resource resource) {
         super(file, userInstance, resource);
     }
 

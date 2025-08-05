@@ -9,7 +9,7 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.deny.ClaimedChannelFileDenyStrategy;
-import no.unit.nva.publication.permissions.file.deny.EmbargoDownloadDenyStrategy;
+import no.unit.nva.publication.permissions.file.deny.EmbargoReadDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.DegreeEmbargoWriteDeleteDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.DegreeWriteDeleteDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.EmbargoWriteDeleteDenyStrategy;
@@ -61,7 +61,7 @@ public class FilePermissions {
         this.denyStrategies = Set.of(
             new HiddenFileDenyStrategy(file, userInstance, resource),
             new UploadedFileDenyStrategy(file, userInstance, resource),
-            new EmbargoDownloadDenyStrategy(file, userInstance, resource),
+            new EmbargoReadDenyStrategy(file, userInstance, resource),
             new EmbargoWriteDeleteDenyStrategy(file, userInstance, resource),
             new DegreeWriteDeleteDenyStrategy(file, userInstance, resource),
             new DegreeEmbargoWriteDeleteDenyStrategy(file, userInstance, resource),
