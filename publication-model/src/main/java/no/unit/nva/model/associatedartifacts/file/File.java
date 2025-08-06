@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,12 +37,6 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = UploadedFile.TYPE, value = UploadedFile.class)})
 public abstract class File implements JsonSerializable, AssociatedArtifact {
 
-    public static final List<URI> DEPRECATED_RIGHTS_RESERVED_LICENSES = List.of(
-        URI.create("https://rightsstatements.org/page/InC/1.0/"),
-        URI.create("https://rightsstatements.org/page/InC/1.0"),
-        URI.create("http://rightsstatements.org/vocab/InC/1.0/"),
-        URI.create("http://rightsstatements.org/vocab/inc/1.0/"),
-        URI.create("https://rightsstatements.org/vocab/InC/1.0/"));
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String NAME_FIELD = "name";
     public static final String MIME_TYPE_FIELD = "mimeType";
