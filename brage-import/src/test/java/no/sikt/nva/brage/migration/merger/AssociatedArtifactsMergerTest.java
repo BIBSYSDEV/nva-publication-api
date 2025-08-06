@@ -64,17 +64,6 @@ class AssociatedArtifactsMergerTest {
     }
 
     @Test
-    void shouldKeepIncomingOpenFileWithPublishedVersionWhenThereIsNoExistingOpenFileWithPublishedVersionWithTheSameFileName() {
-        var existing = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION)));
-        var incoming = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION)));
-
-        var result = AssociatedArtifactsMerger.merge(existing, incoming);
-
-        assertTrue(result.containsAll(existing));
-        assertTrue(result.containsAll(incoming));
-    }
-
-    @Test
     void shouldKeepExistingOpenFileWithPublishedVersionWhenIncomingOpenFileWithPublishedVersionHasTheSameFileName() {
 
         var filename = randomString();
@@ -87,13 +76,42 @@ class AssociatedArtifactsMergerTest {
     }
 
     @Test
-    void shouldNotKeepIncomingOpenFileWithPublishedVersionWhenThereExistsOpenFileWithPublishedVersionWithTheSameFileName() {
+    void shouldNotKeepIncomingOpenFilesWithPublishedVersionWhenThereExistsOpenFileWithPublishedVersionWithTheSameFileName() {
         var filename = randomString();
+        var fileWithNewFilename = randomOpenFile(PUBLISHED_VERSION, randomString());
+        var fileWithExistingFilename = randomOpenFile(PUBLISHED_VERSION, filename);
         var existing = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION, filename)));
-        var incoming = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION, filename)));
+        var incoming = new AssociatedArtifactList(List.of(fileWithExistingFilename,
+                                                          fileWithNewFilename));
 
         var result = AssociatedArtifactsMerger.merge(existing, incoming);
 
+        assertTrue(result.containsAll(existing));
+        assertTrue(result.contains(fileWithNewFilename));
+        assertFalse(result.contains(fileWithExistingFilename));
+    }
+
+    @Test
+    void shouldKeepExistingOpenFileWithPublishedVersionWhenIncomingPublicationHasOnlyOneOpenFileWithPublishedVersion() {
+        var existing = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION, randomString())));
+        var incoming = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION, randomString())));
+
+        var result = AssociatedArtifactsMerger.merge(existing, incoming);
+
+        assertTrue(result.containsAll(existing));
         assertFalse(result.containsAll(incoming));
+    }
+
+    @Test
+    void shouldKeepAllOpenFilesWithPublishedVersionWhenIncomingAndExistingPublicationsHaveMultipleOpenFilesWithPublishedVersion() {
+        var existing = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION, randomString()),
+                                                          randomOpenFile(PUBLISHED_VERSION, randomString())));
+        var incoming = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION, randomString()),
+                                                          randomOpenFile(PUBLISHED_VERSION, randomString())));
+
+        var result = AssociatedArtifactsMerger.merge(existing, incoming);
+
+        assertTrue(result.containsAll(existing));
+        assertTrue(result.containsAll(incoming));
     }
 }
