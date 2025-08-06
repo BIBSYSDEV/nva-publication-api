@@ -101,4 +101,17 @@ class AssociatedArtifactsMergerTest {
         assertTrue(result.containsAll(existing));
         assertFalse(result.containsAll(incoming));
     }
+
+    @Test
+    void shouldKeepAllOpenFilesWithPublishedVersionWhenIncomingAndExistingPublicationsHaveMultipleOpenFilesWithPublishedVersion() {
+        var existing = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION, randomString()),
+                                                          randomOpenFile(PUBLISHED_VERSION, randomString())));
+        var incoming = new AssociatedArtifactList(List.of(randomOpenFile(PUBLISHED_VERSION, randomString()),
+                                                          randomOpenFile(PUBLISHED_VERSION, randomString())));
+
+        var result = AssociatedArtifactsMerger.merge(existing, incoming);
+
+        assertTrue(result.containsAll(existing));
+        assertTrue(result.containsAll(incoming));
+    }
 }
