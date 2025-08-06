@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -42,8 +43,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         URI.create("https://rightsstatements.org/page/InC/1.0"),
         URI.create("http://rightsstatements.org/vocab/InC/1.0/"),
         URI.create("http://rightsstatements.org/vocab/inc/1.0/"),
-        URI.create("https://rightsstatements.org/vocab/InC/1.0/")
-    );
+        URI.create("https://rightsstatements.org/vocab/InC/1.0/"));
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String NAME_FIELD = "name";
     public static final String MIME_TYPE_FIELD = "mimeType";
@@ -58,8 +58,10 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final String LEGAL_NOTE_FIELD = "legalNote";
     public static final Set<Class<? extends File>> APPROVED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     public static final Set<Class<? extends File>> FINALIZED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class,
-                                                                                HiddenFile.class);
-    protected static final String RIGHTS_RESERVED_LICENSE = "https://nva.sikt.no/license/copyright-act/1.0";
+                                                                                 HiddenFile.class);
+    protected static final URI RIGHTS_RESERVED_LICENSE = URI.create("https://nva.sikt.no/license/copyright-act/1.0");
+    protected static final String RIGHTS_STATEMENTS_LICENSE_REGEX =
+        "http(s)?://rightsstatements.org/(page|vocab|data)/inc/1.0(/)?";
     @JsonProperty(IDENTIFIER_FIELD)
     private final UUID identifier;
     @JsonProperty(NAME_FIELD)
@@ -120,13 +122,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         this.legalNote = legalNote;
         this.publishedDate = publishedDate;
         this.uploadDetails = uploadDetails;
-    }
-
-    private URI migrateRightsReservedLicense(URI license) {
-        return nonNull(license) && DEPRECATED_RIGHTS_RESERVED_LICENSES.contains(license)
-                   ? URI.create(RIGHTS_RESERVED_LICENSE)
-                   : license;
-
     }
 
     public static Builder builder() {
@@ -218,6 +213,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
 
     @JsonIgnore
     public abstract boolean isVisibleForNonOwner();
+
     @JsonIgnore
     public abstract boolean canBeConvertedTo(File file);
 
@@ -272,6 +268,11 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                    .withPublishedDate(getPublishedDate().orElse(null))
                    .withUploadDetails(getUploadDetails())
                    .build();
+    }
+
+    private URI migrateRightsReservedLicense(URI license) {
+        return nonNull(license) && license.toString().toLowerCase(Locale.ROOT).matches(RIGHTS_STATEMENTS_LICENSE_REGEX)
+                   ? RIGHTS_RESERVED_LICENSE : license;
     }
 
     /**
@@ -353,36 +354,33 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         }
 
         public File buildOpenFile() {
-            return new OpenFile(identifier, name, mimeType, size, license, publisherVersion,
-                                embargoDate, rightsRetentionStrategy, legalNote, Instant.now(), uploadDetails);
+            return new OpenFile(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
+                                rightsRetentionStrategy, legalNote, Instant.now(), uploadDetails);
         }
 
         public File buildInternalFile() {
-            return new InternalFile(identifier, name, mimeType, size, license,
-                                    publisherVersion, embargoDate, rightsRetentionStrategy, legalNote, Instant.now(),
-                                    uploadDetails);
+            return new InternalFile(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
+                                    rightsRetentionStrategy, legalNote, Instant.now(), uploadDetails);
         }
 
         public File buildPendingOpenFile() {
-            return new PendingOpenFile(identifier, name, mimeType, size, license,
-                                       publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
-                                       uploadDetails);
+            return new PendingOpenFile(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
+                                       rightsRetentionStrategy, legalNote, uploadDetails);
         }
 
         public File buildPendingInternalFile() {
-            return new PendingInternalFile(identifier, name, mimeType, size, license,
-                                           publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
-                                           uploadDetails);
+            return new PendingInternalFile(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
+                                           rightsRetentionStrategy, legalNote, uploadDetails);
         }
 
         public File buildRejectedFile() {
-            return new RejectedFile(identifier, name, mimeType, size, license,
-                                    publisherVersion, embargoDate, rightsRetentionStrategy, legalNote, uploadDetails);
+            return new RejectedFile(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
+                                    rightsRetentionStrategy, legalNote, uploadDetails);
         }
 
         public File buildHiddenFile() {
-            return new HiddenFile(identifier, name, mimeType, size, license, publisherVersion,
-                                  embargoDate, rightsRetentionStrategy, legalNote, uploadDetails);
+            return new HiddenFile(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
+                                  rightsRetentionStrategy, legalNote, uploadDetails);
         }
 
         public File buildUploadedFile() {
