@@ -77,7 +77,7 @@ public class ScopusUpdater {
     }
 
     private static boolean containsSingleHit(ImportCandidateSearchApiResponse response) {
-        return response.getTotal() == 1;
+        return response.getHits().size() == 1;
     }
 
     private static SortableIdentifier extractIdentifier(ExpandedImportCandidate expandedImportCandidate) {
