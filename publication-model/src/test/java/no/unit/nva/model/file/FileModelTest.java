@@ -163,7 +163,7 @@ public class FileModelTest {
     @Deprecated
     @ParameterizedTest
     @ValueSource(strings = {"https://rightsstatements.org/page/InC/1.0/", "https://rightsstatements.org/page/InC/1.0",
-        "http://rightsstatements.org/vocab/InC/1.0/", "http://rightsstatements.org/vocab/inc/1.0/"})
+        "http://rightsstatements.org/vocab/InC/1.0/", "http://rightsstatements.org/vocab/inc/1.0/", "https://rightsstatements.org/vocab/InC/1.0/"})
     void shouldMigrateLegacyRightsReservedLicenses(String value) throws JsonProcessingException {
         var json = """
             {

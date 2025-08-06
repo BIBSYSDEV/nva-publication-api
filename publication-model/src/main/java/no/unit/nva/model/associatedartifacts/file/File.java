@@ -41,7 +41,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         URI.create("https://rightsstatements.org/page/InC/1.0/"),
         URI.create("https://rightsstatements.org/page/InC/1.0"),
         URI.create("http://rightsstatements.org/vocab/InC/1.0/"),
-        URI.create("http://rightsstatements.org/vocab/inc/1.0/")
+        URI.create("http://rightsstatements.org/vocab/inc/1.0/"),
+        URI.create("https://rightsstatements.org/vocab/InC/1.0/")
     );
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String NAME_FIELD = "name";
