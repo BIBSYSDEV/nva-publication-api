@@ -12,6 +12,8 @@ import no.unit.nva.model.associatedartifacts.file.OpenFile;
 
 public final class AssociatedArtifactsMerger {
 
+    private static final int SINGLETON = 1;
+
     private AssociatedArtifactsMerger() {
     }
 
@@ -25,12 +27,23 @@ public final class AssociatedArtifactsMerger {
         } else if (hasNoOpenFilesWithPublishedVersion(existing)) {
             associatedArtifacts.addAll(convertOpenFilesToInternal(existing));
             associatedArtifacts.addAll(getOpenFilesWithPublishedVersion(incoming));
+        } else if (hasOnlyOneOpenFileWithPublishedVersion(existing) && hasOnlyOneOpenFileWithPublishedVersion(incoming)) {
+            associatedArtifacts.addAll(getOpenFiles(existing));
         } else if (hasOpenFilesWithPublishedVersion(existing)) {
             associatedArtifacts.addAll(getOpenFiles(existing));
             associatedArtifacts.addAll(
                 getOpenFilesWithPublishedVersionAndDifferentNamesThanExisting(existing, incoming));
         }
         return new AssociatedArtifactList(associatedArtifacts);
+    }
+
+    private static boolean hasOnlyOneOpenFileWithPublishedVersion(AssociatedArtifactList associatedArtifacts) {
+        return associatedArtifacts.stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .filter(OpenFile.class::isInstance)
+                   .filter(file -> PUBLISHED_VERSION.equals(file.getPublisherVersion()))
+                   .toList().size() == SINGLETON;
     }
 
     private static boolean hasOpenFilesWithPublishedVersion(AssociatedArtifactList existing) {
