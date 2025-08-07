@@ -26,6 +26,7 @@ import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.publication.model.business.Resource;
 import org.junit.jupiter.api.Test;
 
 class PublicationComparatorTest {
@@ -171,6 +172,19 @@ class PublicationComparatorTest {
         academicMonograph.getEntityDescription().setContributors(List.of(contributorWithLastName(randomString())));
 
         assertTrue(publicationsMatchIgnoringTypeAndContributors(academicMonograph, publication));
+    }
+
+    @Test
+    void shouldReturnTrueWhenComparingPublicationsWithTheSameMainTitlesButOneOfTitlesContainsXmlTags() {
+        var publication = randomPublication();
+        var publicationWithoutTagsInTitle = publication.copy().build();
+        publicationWithoutTagsInTitle.getEntityDescription().setMainTitle("Territorial expansion of the European Ips species in the 20th " +
+                                                                          "century - a review");
+        var publicationWithXmlTags = publication.copy().build();
+        publicationWithXmlTags.getEntityDescription().setMainTitle("Territorial expansion of the European Ips species" +
+                                                                   " in the 20<sup>th</sup> century - a review");
+
+        assertTrue(publicationsMatch(publicationWithXmlTags, publicationWithoutTagsInTitle));
     }
 
     private static Contributor contributorWithLastName(String lastName) {
