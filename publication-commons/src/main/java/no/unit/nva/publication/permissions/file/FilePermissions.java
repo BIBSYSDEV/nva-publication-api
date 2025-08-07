@@ -9,7 +9,7 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.deny.ClaimedChannelFileDenyStrategy;
-import no.unit.nva.publication.permissions.file.deny.EmbargoDownloadDenyStrategy;
+import no.unit.nva.publication.permissions.file.deny.EmbargoReadDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.DegreeEmbargoWriteDeleteDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.DegreeWriteDeleteDenyStrategy;
 import no.unit.nva.publication.permissions.file.deny.EmbargoWriteDeleteDenyStrategy;
@@ -18,12 +18,14 @@ import no.unit.nva.publication.permissions.file.deny.UploadedFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.grant.ContributorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.DegreeCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.DegreeEmbargoCuratorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.CuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EditorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EmbargoCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EveryoneGrantStrategy;
-import no.unit.nva.publication.permissions.file.grant.CuratorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.FileCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.ExternalClientGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.FileOwnerGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.SupportCuratorFileGrantStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,19 +47,21 @@ public class FilePermissions {
         this.file = file;
         this.grantStrategies = Set.of(
             new EveryoneGrantStrategy(file, userInstance, resource),
-            new CuratorFileGrantStrategy(file, userInstance, resource),
+            new FileCuratorFileGrantStrategy(file, userInstance, resource),
             new FileOwnerGrantStrategy(file, userInstance, resource),
             new ContributorFileGrantStrategy(file, userInstance, resource),
             new ExternalClientGrantStrategy(file, userInstance, resource),
             new DegreeEmbargoCuratorFileGrantStrategy(file, userInstance, resource),
             new DegreeCuratorFileGrantStrategy(file, userInstance, resource),
             new EmbargoCuratorFileGrantStrategy(file, userInstance, resource),
-            new EditorFileGrantStrategy(file, userInstance, resource)
+            new EditorFileGrantStrategy(file, userInstance, resource),
+            new CuratorFileGrantStrategy(file, userInstance, resource),
+            new SupportCuratorFileGrantStrategy(file, userInstance, resource)
         );
         this.denyStrategies = Set.of(
             new HiddenFileDenyStrategy(file, userInstance, resource),
             new UploadedFileDenyStrategy(file, userInstance, resource),
-            new EmbargoDownloadDenyStrategy(file, userInstance, resource),
+            new EmbargoReadDenyStrategy(file, userInstance, resource),
             new EmbargoWriteDeleteDenyStrategy(file, userInstance, resource),
             new DegreeWriteDeleteDenyStrategy(file, userInstance, resource),
             new DegreeEmbargoWriteDeleteDenyStrategy(file, userInstance, resource),
