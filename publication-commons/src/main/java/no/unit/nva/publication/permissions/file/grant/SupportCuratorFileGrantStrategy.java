@@ -18,7 +18,7 @@ public class SupportCuratorFileGrantStrategy extends FileStrategyBase implements
     public boolean allowsAction(FileOperation permission) {
         if (hasAccessRight(SUPPORT)) {
             return switch (permission) {
-                case READ_METADATA, DOWNLOAD -> userRelatesToPublication();
+                case READ_METADATA, DOWNLOAD -> currentUserIsSupportCuratorForGivenFile();
                 case WRITE_METADATA, DELETE -> false;
             };
         }

@@ -101,18 +101,18 @@ Feature: File metadata read and file download permissions
       | PendingOpenFile     | Authenticated               | Not Allowed |
       | PendingOpenFile     | Contributor                 | Allowed     |
       | PendingOpenFile     | Publishing curator          | Allowed     |
-      | PendingOpenFile     | Support Curator             | Allowed     |
-      | PendingOpenFile     | DOI Curator                 | Allowed     |
-      | PendingOpenFile     | NVI Curator                 | Allowed     |
+      | PendingOpenFile     | Support Curator             | Not Allowed |
+      | PendingOpenFile     | DOI Curator                 | Not Allowed |
+      | PendingOpenFile     | NVI Curator                 | Not Allowed |
       | PendingOpenFile     | Not related external client | Not Allowed |
       | PendingOpenFile     | Editor                      | Allowed     |
 
       | PendingInternalFile | Authenticated               | Not Allowed |
       | PendingInternalFile | Contributor                 | Allowed     |
       | PendingInternalFile | Publishing curator          | Allowed     |
-      | PendingInternalFile | Support Curator             | Allowed     |
-      | PendingInternalFile | DOI Curator                 | Allowed     |
-      | PendingInternalFile | NVI Curator                 | Allowed     |
+      | PendingInternalFile | Support Curator             | Not Allowed |
+      | PendingInternalFile | DOI Curator                 | Not Allowed |
+      | PendingInternalFile | NVI Curator                 | Not Allowed |
       | PendingInternalFile | Not related external client | Not Allowed |
       | PendingInternalFile | Editor                      | Allowed     |
 
@@ -128,9 +128,9 @@ Feature: File metadata read and file download permissions
       | InternalFile        | Authenticated               | Not Allowed |
       | InternalFile        | Contributor                 | Allowed     |
       | InternalFile        | Publishing curator          | Allowed     |
-      | InternalFile        | Support Curator             | Allowed     |
-      | InternalFile        | DOI Curator                 | Allowed     |
-      | InternalFile        | NVI Curator                 | Allowed     |
+      | InternalFile        | Support Curator             | Not Allowed |
+      | InternalFile        | DOI Curator                 | Not Allowed |
+      | InternalFile        | NVI Curator                 | Not Allowed |
       | InternalFile        | Not related external client | Not Allowed |
       | InternalFile        | Editor                      | Allowed     |
 

@@ -8,9 +8,9 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FileGrantStrategy;
 import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
-public class DoiThesisAndNviCuratorFileGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
+public class CuratorFileGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
 
-    public DoiThesisAndNviCuratorFileGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
+    public CuratorFileGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
         super(file, userInstance, resource);
     }
 
@@ -18,7 +18,7 @@ public class DoiThesisAndNviCuratorFileGrantStrategy extends FileStrategyBase im
     public boolean allowsAction(FileOperation permission) {
         if (hasAccessRight(MANAGE_RESOURCES_STANDARD)) {
             return switch (permission) {
-                case READ_METADATA, DOWNLOAD -> userRelatesToPublication();
+                case READ_METADATA, DOWNLOAD -> currentUserIsCuratorForGivenFile();
                 case WRITE_METADATA, DELETE -> false;
             };
         }

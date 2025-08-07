@@ -60,6 +60,12 @@ public class FileStrategyBase {
                && haveTopLevelRelationForCurrentFile();
     }
 
+    protected boolean currentUserIsCuratorForGivenFile() {
+        return hasAccessRight(AccessRight.MANAGE_RESOURCES_STANDARD)
+               && userRelatesToPublication()
+               && haveTopLevelRelationForCurrentFile();
+    }
+
     protected boolean currentUserIsContributor() {
         return Optional.ofNullable(userInstance)
                    .map(UserInstance::getPersonCristinId)

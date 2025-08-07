@@ -18,7 +18,7 @@ import no.unit.nva.publication.permissions.file.deny.UploadedFileDenyStrategy;
 import no.unit.nva.publication.permissions.file.grant.ContributorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.DegreeCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.DegreeEmbargoCuratorFileGrantStrategy;
-import no.unit.nva.publication.permissions.file.grant.DoiThesisAndNviCuratorFileGrantStrategy;
+import no.unit.nva.publication.permissions.file.grant.CuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EditorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EmbargoCuratorFileGrantStrategy;
 import no.unit.nva.publication.permissions.file.grant.EveryoneGrantStrategy;
@@ -55,7 +55,7 @@ public class FilePermissions {
             new DegreeCuratorFileGrantStrategy(file, userInstance, resource),
             new EmbargoCuratorFileGrantStrategy(file, userInstance, resource),
             new EditorFileGrantStrategy(file, userInstance, resource),
-            new DoiThesisAndNviCuratorFileGrantStrategy(file, userInstance, resource),
+            new CuratorFileGrantStrategy(file, userInstance, resource),
             new SupportCuratorFileGrantStrategy(file, userInstance, resource)
         );
         this.denyStrategies = Set.of(

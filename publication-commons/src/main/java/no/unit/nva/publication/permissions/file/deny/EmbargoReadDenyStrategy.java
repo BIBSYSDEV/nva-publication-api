@@ -1,6 +1,8 @@
 package no.unit.nva.publication.permissions.file.deny;
 
+import static no.unit.nva.model.FileOperation.DOWNLOAD;
 import static no.unit.nva.model.FileOperation.READ_METADATA;
+import java.util.List;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -18,7 +20,7 @@ public class EmbargoReadDenyStrategy extends FileStrategyBase implements FileDen
 
     @Override
     public boolean deniesAction(FileOperation permission) {
-        if (!fileHasEmbargo()) {
+        if (!fileHasEmbargo() || !List.of(READ_METADATA, DOWNLOAD).contains(permission)) {
             return false;
         }
 
