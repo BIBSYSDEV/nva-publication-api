@@ -400,6 +400,27 @@ Feature: File permissions for embargo and degree files
       | HiddenFile          | Thesis curator              | write-metadata | Not Allowed |
       | HiddenFile          | Thesis curator              | delete         | Not Allowed |
 
+      | PendingOpenFile     | Support curator             | read-metadata  | Allowed     |
+      | PendingOpenFile     | Support curator             | download       | Not Allowed |
+      | PendingOpenFile     | Support curator             | write-metadata | Not Allowed |
+      | PendingOpenFile     | Support curator             | delete         | Not Allowed |
+      | PendingInternalFile | Support curator             | read-metadata  | Allowed     |
+      | PendingInternalFile | Support curator             | download       | Not Allowed |
+      | PendingInternalFile | Support curator             | write-metadata | Not Allowed |
+      | PendingInternalFile | Support curator             | delete         | Not Allowed |
+      | OpenFile            | Support curator             | read-metadata  | Allowed     |
+      | OpenFile            | Support curator             | download       | Not Allowed |
+      | OpenFile            | Support curator             | write-metadata | Not Allowed |
+      | OpenFile            | Support curator             | delete         | Not Allowed |
+      | InternalFile        | Support curator             | read-metadata  | Allowed     |
+      | InternalFile        | Support curator             | download       | Not Allowed |
+      | InternalFile        | Support curator             | write-metadata | Not Allowed |
+      | InternalFile        | Support curator             | delete         | Not Allowed |
+      | HiddenFile          | Support curator             | read-metadata  | Not Allowed |
+      | HiddenFile          | Support curator             | download       | Not Allowed |
+      | HiddenFile          | Support curator             | write-metadata | Not Allowed |
+      | HiddenFile          | Support curator             | delete         | Not Allowed |
+
       | PendingOpenFile     | Embargo thesis curator      | read-metadata  | Allowed     |
       | PendingOpenFile     | Embargo thesis curator      | download       | Not Allowed |
       | PendingOpenFile     | Embargo thesis curator      | write-metadata | Not Allowed |
