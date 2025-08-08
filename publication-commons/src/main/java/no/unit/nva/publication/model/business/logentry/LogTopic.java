@@ -8,6 +8,7 @@ public enum LogTopic {
     FILE_APPROVED("FileApproved"),
     FILE_REJECTED("FileRejected"),
     FILE_TYPE_UPDATED("FileTypeUpdated"),
+    FILE_TYPE_UPDATED_BY_IMPORT("FileTypeUpdatedByImport"),
     FILE_UPLOADED("FileUploaded"),
     FILE_IMPORTED("FileImported"),
     FILE_RETRACTED("FileRetracted"),

@@ -10,12 +10,11 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 
-public record FileImportedEvent(Instant date, User user, URI institution, SortableIdentifier identifier,
-                                ImportSource importSource)
-    implements FileEvent, ImportEvent {
+public record FileTypeUpdatedByImportEvent(Instant date, User user, URI institution, SortableIdentifier identifier,
+                                           ImportSource importSource) implements FileEvent, ImportEvent  {
 
-    public static FileImportedEvent create(User user, URI institution, Instant timestamp, ImportSource importSource) {
-        return new FileImportedEvent(timestamp, user, institution, SortableIdentifier.next(), importSource);
+    public static FileTypeUpdatedByImportEvent create(User user, URI institution, Instant timestamp, ImportSource importSource) {
+        return new FileTypeUpdatedByImportEvent(timestamp, user, institution, SortableIdentifier.next(), importSource);
     }
 
     @Override
@@ -24,7 +23,7 @@ public record FileImportedEvent(Instant date, User user, URI institution, Sortab
                    .withIdentifier(identifier)
                    .withFileIdentifier(fileEntry.getIdentifier())
                    .withResourceIdentifier(fileEntry.getResourceIdentifier())
-                   .withTopic(LogTopic.FILE_IMPORTED)
+                   .withTopic(LogTopic.FILE_TYPE_UPDATED_BY_IMPORT)
                    .withTimestamp(date)
                    .withPerformedBy(user)
                    .withFilename(fileEntry.getFile().getName())

@@ -35,7 +35,10 @@ public class FileEventTest {
                          Arguments.of(new FileRetractedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
                          Arguments.of(new FileHiddenEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
                          Arguments.of(new FileTypeUpdatedEvent(randomUser(),Instant.now(),
-                                                               SortableIdentifier.next())));
+                                                               SortableIdentifier.next())),
+                         Arguments.of(new FileTypeUpdatedByImportEvent(Instant.now(), randomUser(),
+                                                               randomUri(), SortableIdentifier.next(),
+                                                                       ImportSource.fromBrageArchive(randomString()))));
     }
 
     @ParameterizedTest
