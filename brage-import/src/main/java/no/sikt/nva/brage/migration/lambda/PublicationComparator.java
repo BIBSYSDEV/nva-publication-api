@@ -141,8 +141,12 @@ public final class PublicationComparator {
     private static boolean titlesMatch(Publication existingPublication, Publication incomingPublication) {
         var existingPublicationTitle = existingPublication.getEntityDescription().getMainTitle();
         var incomingPublicationTitle = incomingPublication.getEntityDescription().getMainTitle();
-        return levenshteinDistanceIsLessThan(existingPublicationTitle.toLowerCase(Locale.ROOT),
-                                             incomingPublicationTitle.toLowerCase(Locale.ROOT),
+        return levenshteinDistanceIsLessThan(trimMainTitle(existingPublicationTitle),
+                                             trimMainTitle(incomingPublicationTitle),
                                              MAX_ACCEPTABLE_TITLE_LEVENSHTEIN_DISTANCE);
+    }
+
+    private static String trimMainTitle(String incomingPublicationTitle) {
+        return StringUtils.removeXmlTags(incomingPublicationTitle.toLowerCase(Locale.ROOT));
     }
 }
