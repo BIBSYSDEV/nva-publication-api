@@ -159,6 +159,21 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldPersistLogEntryFromFileTypeUpdateByImportEvent() throws BadRequestException {
+        var publication = createPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+        fileEntry.updateFromImport(randomOpenFile(), userInstance, ImportSource.fromBrageArchive(randomString()));
+        fileEntry.toDao().updateExistingEntry(client);
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        logEntryService.persistLogEntry(updatedFileEntry);
+        var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
+
+        assertEquals(LogTopic.FILE_TYPE_UPDATED_BY_IMPORT, logEntries.getFirst().topic());
+    }
+
+    @Test
     void shouldPersistLogEntryWhenConsumingDoiRequest() throws ApiGatewayException {
         var publication = createPublication();
         var resource = Resource.fromPublication(publication);

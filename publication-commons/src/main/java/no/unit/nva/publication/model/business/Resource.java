@@ -429,7 +429,7 @@ public class Resource implements Entity {
 
     public Resource updateResourceFromImport(ResourceService resourceService, ImportSource importSource, UserInstance userInstance) {
         this.setResourceEvent(MergedResourceEvent.fromImportSource(importSource, userInstance, Instant.now()));
-        return resourceService.updateResourceFromImport(this, userInstance);
+        return resourceService.updateResourceFromImport(this, userInstance, importSource);
     }
 
     public List<LogEntry> fetchLogEntries(ResourceService resourceService) {

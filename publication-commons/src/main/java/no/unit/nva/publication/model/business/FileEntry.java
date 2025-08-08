@@ -27,6 +27,7 @@ import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileTypeUpdatedByImportEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileTypeUpdatedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -257,9 +258,11 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         resourceService.updateFile(this);
     }
 
-    public FileEntry updateFromImport(File file, UserInstance userInstance) {
+    public FileEntry updateFromImport(File file, UserInstance userInstance, ImportSource importSource) {
         if (!file.equals(this.file)) {
-            this.setFileEvent(FileTypeUpdatedEvent.create(userInstance.getUser(), Instant.now()));
+            this.setFileEvent(FileTypeUpdatedByImportEvent.create(userInstance.getUser(),
+                                                                  userInstance.getTopLevelOrgCristinId(),
+                                                                  Instant.now(), importSource));
             this.file = this.file.copy()
                             .withPublisherVersion(file.getPublisherVersion())
                             .withLicense(file.getLicense())

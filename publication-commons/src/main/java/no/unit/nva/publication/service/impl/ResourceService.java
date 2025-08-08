@@ -348,8 +348,8 @@ public class ResourceService extends ServiceWithTransactions {
                    .map(FileDao::getFileEntry);
     }
 
-    public Resource updateResourceFromImport(Resource resource, UserInstance userInstance) {
-        return updateResourceService.updateResourceFromImport(resource, userInstance);
+    public Resource updateResourceFromImport(Resource resource, UserInstance userInstance, ImportSource importSource) {
+        return updateResourceService.updateResourceFromImport(resource, userInstance, importSource);
     }
 
     private QueryRequest createQueryForFilesAssociatedWithResource(String partitionKeyValue) {
