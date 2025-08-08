@@ -15,6 +15,7 @@
     "username": "npolar@7466.0.0.0",
     "cristinIdentifier": "7466.0.0.0",
     "identifiers": {
+      "prod": "4bffea43-c3c5-4416-93ed-16b2ccd0dd7e",
       "test": "7de3c640-f71e-4837-b46b-32f250acf179",
       "dev": "009974e9-217c-46b8-8f61-f7c1501ee04a"
     },
@@ -65,9 +66,10 @@
     "username": "nmh@178.0.0.0",
     "cristinIdentifier": "178.0.0.0",
     "identifiers": {
-      "sandbox": "b075d6e7-4cec-4579-8c8b-ecae18affcc6",
+      "prod": "eda1b8c8-5e8a-4138-b095-1816a5b38c2e",
       "test": "9efe66cc-ead0-49e0-b787-b73a188d4770",
-      "dev": "2f148e5f-a017-4e7f-8f78-6a52eb6a9938"
+      "dev": "2f148e5f-a017-4e7f-8f78-6a52eb6a9938",
+      "sandbox": "b075d6e7-4cec-4579-8c8b-ecae18affcc6"
     },
     "shortName": "NMH"
   },
@@ -96,6 +98,7 @@
     "username": "usn@222.0.0.0",
     "cristinIdentifier": "222.0.0.0",
     "identifiers": {
+      "prod": "72a4dc34-ff98-4d66-a663-7f2eb005555b",
       "test": "b3d72c51-c4f2-4aa1-a15a-e9cc9b1f5e1e",
       "dev": "702c4fbe-d51a-4d20-aec8-50beb813ff36",
       "e2e": "702c4fbe-d51a-4d20-aec8-50beb813ff36"
@@ -193,9 +196,9 @@
     "username": "ffi@7428.0.0.0",
     "cristinIdentifier": "7428.0.0.0",
     "identifiers": {
+      "prod": "eb732391-19ec-4d9f-9cb3-a77c8876a18f",
       "test": "b11f0a40-ac27-42b9-ba94-f4952e3d5a5a",
-      "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5",
-      "prod": "eb732391-19ec-4d9f-9cb3-a77c8876a18f"
+      "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5"
     },
     "shortName": "FFI"
   },
@@ -225,6 +228,7 @@
     "username": "samfunnsforskning@7437.0.0.0",
     "cristinIdentifier": "7437.0.0.0",
     "identifiers": {
+      "prod": "b21d784f-dbd7-4d09-bc60-3584bea585e0",
       "test": "999f15f5-b0d4-4273-8dc4-97a971454b74",
       "dev": "818c957b-65ce-447d-b78c-cd472ea0e65f"
     },
@@ -257,6 +261,7 @@
     "username": "unit@195.0.0.0",
     "cristinIdentifier": "195.0.0.0",
     "identifiers": {
+      "prod": "256b9785-808b-4c2a-a2d9-fd7a2de8da0c",
       "test": "ed671c06-964c-46ce-85d5-777c164ac81e",
       "dev": "bbd9048d-e51b-49f6-b699-fd86ec86acd6"
     },
@@ -267,6 +272,7 @@
     "username": "nupi@7471.0.0.0",
     "cristinIdentifier": "7471.0.0.0",
     "identifiers": {
+      "prod": "64413cd2-13c8-4f9b-aa1b-6750079f61a8",
       "test": "122d33a7-1844-466a-926b-333eeff42a93",
       "dev": "8d11f0f0-d414-4564-9250-298c06ef5c87"
     },
@@ -277,6 +283,7 @@
     "username": "nb@5931.0.0.0",
     "cristinIdentifier": "5931.0.0.0",
     "identifiers": {
+      "prod": "20db2e6c-228c-4071-971c-9eb2f9eb133b",
       "test": "155b291c-9da7-482c-833d-e1b1488f9ee3",
       "dev": "9fde89c7-baea-4ac1-ad52-97d4dee0e6da"
     },
@@ -308,6 +315,7 @@
     "username": "nilu@7460.0.0.0",
     "cristinIdentifier": "7460.0.0.0",
     "identifiers": {
+      "prod": "da2c0478-9ec4-4e1e-8b7d-0a27898fb6de",
       "test": "31ac9694-3e2e-4424-bd4c-b03e950335e2",
       "dev": "68e24208-5840-45a1-903c-44ebb3afccc2"
     },
@@ -328,6 +336,7 @@
     "username": "ntnu@194.0.0.0",
     "cristinIdentifier": "194.0.0.0",
     "identifiers": {
+      "prod": "7509c2b8-dcaf-463e-a041-88dd89435f59",
       "test": "33c17ef6-864b-4267-bc9d-0cee636e247e",
       "dev": "8ddecceb-7d64-4df3-a842-489fe4d98f3a"
     },
@@ -360,6 +369,7 @@
     "username": "nr@7467.0.0.0",
     "cristinIdentifier": "7467.0.0.0",
     "identifiers": {
+      "prod": "382ef5b6-19d1-4f64-9b27-bff934ceb9a8",
       "test": "505328d2-1992-406c-8792-b064748d2f38",
       "dev": "54bed9d9-2bc4-4fa4-a6c4-9e957f93870d"
     },
@@ -425,6 +435,7 @@
     "username": "ntnu@194.0.0.0",
     "cristinIdentifier": "194.0.0.0",
     "identifiers": {
+      "prod": "7509c2b8-dcaf-463e-a041-88dd89435f59",
       "test": "33c17ef6-864b-4267-bc9d-0cee636e247e",
       "dev": "8ddecceb-7d64-4df3-a842-489fe4d98f3a"
     },
@@ -561,6 +572,7 @@
     "username": "uis@217.0.0.0",
     "cristinIdentifier": "217.0.0.0",
     "identifiers": {
+      "prod": "48ab46e0-9a2e-4908-b144-25bfcdeb42e9",
       "test": "2d353a69-afa0-44a2-9028-211771d748ae",
       "dev": "3e1da1fd-559e-4334-acb9-797684e5bae2"
     },
@@ -593,6 +605,7 @@
     "username": "nmbu@192.0.0.0",
     "cristinIdentifier": "192.0.0.0",
     "identifiers": {
+      "prod": "83abb85b-768b-4b3d-a096-3fd9442e3d6d",
       "test": "b8977f51-28bd-41b5-bb19-71c577be7c28",
       "dev": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1",
       "e2e": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
@@ -623,6 +636,7 @@
     "username": "uit@186.0.0.0",
     "cristinIdentifier": "186.0.0.0",
     "identifiers": {
+      "prod": "7c277049-48de-4901-bc7e-21768835d461",
       "test": "acf2bd2e-a721-4f0f-91ca-3c7f46c0e375",
       "dev": "2d35d439-055d-40e5-94de-a9ec28493835"
     },
@@ -665,6 +679,7 @@
     "username": "inn@209.0.0.0",
     "cristinIdentifier": "209.0.0.0",
     "identifiers": {
+      "prod": "54c3e27c-b414-4f42-8aa4-55bccf09cb49",
       "test": "df2a796f-3eef-45dc-a39d-51b21989285a",
       "dev": "023f1608-1baa-4d5a-8acc-80d329bddd74"
     },
@@ -728,6 +743,7 @@
     "username": "khio@260.0.0.0",
     "cristinIdentifier": "260.0.0.0",
     "identifiers": {
+      "prod": "5056e51f-0b49-41c6-9dc5-1fa0a5c48e7d",
       "test": "130e5373-9673-4d66-a0d3-d22a2874b32f",
       "dev": "67e867aa-e925-4697-bad0-c2125c1d6a7c"
     },
@@ -738,6 +754,7 @@
     "username": "ldh@230.0.0.0",
     "cristinIdentifier": "230.0.0.0",
     "identifiers": {
+      "prod": "5fcf63d0-fedd-49c0-8470-6c3037f4a3d9",
       "test": "2197e9e0-93b0-4051-8044-16ffd0087982",
       "dev": "367b47d3-8532-47ca-aebf-e3553bea76a8"
     },
@@ -758,6 +775,7 @@
     "username": "krus@1661.0.0.0",
     "cristinIdentifier": "1661.0.0.0",
     "identifiers": {
+      "prod": "a7b6b6cb-a69d-48a6-af42-a9a4401efd26",
       "test": "2e0dc263-5af7-4b0e-8bdc-c6f2c660dfd3",
       "dev": "a768727e-4ecb-41c1-a616-1fec000cac1c",
       "sandbox": "6b5e1238-7a05-11ed-a1eb-0242ac120002"
