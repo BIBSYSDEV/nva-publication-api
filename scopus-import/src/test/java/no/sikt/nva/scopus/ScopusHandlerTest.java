@@ -303,7 +303,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         when(tikaInputStream.getLength()).thenReturn(Long.parseLong(String.valueOf(randomInteger())));
         when(tikaInputStream.getPath()).thenReturn(
             Path.of(getClass().getClassLoader().getResource("2-s2.0-0000469852.xml").toURI()));
-        when(tikaUtils.fetch(any())).thenReturn(tikaInputStream);
         when(tikaUtils.getMimeType(any())).thenReturn("application/pdf");
         return tikaUtils;
     }
