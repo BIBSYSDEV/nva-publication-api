@@ -617,6 +617,7 @@
     "username": "bibsys@5991.0.0.0",
     "cristinIdentifier": "5991.0.0.0",
     "identifiers": {
+      "prod": "22139870-8d31-4df9-bc45-14eb68287c4a",
       "e2e": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
     },
     "shortName": "BIBSYS"
