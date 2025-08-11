@@ -29,7 +29,7 @@ public final class AssociatedArtifactsMerger {
                     .filter(file -> isUniqueOpenFileWithPublishedVersion(existing, file))
                     .forEach(merged::add);
         }
-        return new AssociatedArtifactList(merged);
+        return new AssociatedArtifactList(merged.stream().distinct().toList());
     }
 
     private static Collection<AssociatedArtifact> filterOutOpenFilesWithPublishedVersion(AssociatedArtifactList artifacts) {

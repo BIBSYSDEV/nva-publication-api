@@ -9,8 +9,7 @@ import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.ACCEPT
 import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.PUBLISHED_VERSION;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.*;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AssociatedArtifactsMergerTest {
 
@@ -48,6 +47,29 @@ class AssociatedArtifactsMergerTest {
 
         assertTrue(result.containsAll(existing));
         assertTrue(result.containsAll(incoming));
+    }
+
+    @Test
+    void shouldKeepAllUniqueAssociatedLinkFromBothPublications() {
+        var existing = new AssociatedArtifactList(List.of(randomAssociatedLink()));
+        var incoming = new AssociatedArtifactList(List.of(randomAssociatedLink()));
+
+        var result = AssociatedArtifactsMerger.merge(existing, incoming);
+
+        assertTrue(result.containsAll(existing));
+        assertTrue(result.containsAll(incoming));
+    }
+
+    @Test
+    void shouldFilterOutDuplicatedAssociatedLink() {
+        var associatedLink = randomAssociatedLink();
+        var existing = new AssociatedArtifactList(List.of(associatedLink));
+        var incoming = new AssociatedArtifactList(List.of(associatedLink));
+
+        var result = AssociatedArtifactsMerger.merge(existing, incoming);
+
+        assertTrue(result.contains(associatedLink));
+        assertEquals(1, result.size());
     }
 
     @Test
