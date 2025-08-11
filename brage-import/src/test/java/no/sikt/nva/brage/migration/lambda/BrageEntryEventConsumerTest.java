@@ -1,115 +1,18 @@
 package no.sikt.nva.brage.migration.lambda;
 
-import static java.util.UUID.randomUUID;
-import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
-import static no.sikt.nva.brage.migration.NvaType.CRISTIN_RECORD;
-import static no.sikt.nva.brage.migration.NvaType.EDITORIAL;
-import static no.sikt.nva.brage.migration.NvaType.EXHIBITION_CATALOGUE;
-import static no.sikt.nva.brage.migration.NvaType.FILM;
-import static no.sikt.nva.brage.migration.NvaType.LITERARY_ARTS;
-import static no.sikt.nva.brage.migration.NvaType.PERFORMING_ARTS;
-import static no.sikt.nva.brage.migration.NvaType.POPULAR_SCIENCE_ARTICLE;
-import static no.sikt.nva.brage.migration.NvaType.POPULAR_SCIENCE_MONOGRAPH;
-import static no.sikt.nva.brage.migration.NvaType.PROFESSIONAL_ARTICLE;
-import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
-import static no.sikt.nva.brage.migration.NvaType.TEXTBOOK;
-import static no.sikt.nva.brage.migration.NvaType.VISUAL_ARTS;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.CRISTIN_RECORD_EXCEPTION;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATED_PUBLICATIONS_REPORTS_PATH;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
-import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
-import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
-import static no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.HARDCODED_NTNU_CRISTIN_ID;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.testing.PublicationGenerator.randomAdditionalIdentifier;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.samePropertyValuesAs;
-import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.ResponseElementsEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3BucketEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3Entity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import jdk.jfr.Description;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
-import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
-import no.sikt.nva.brage.migration.merger.BrageMergingReport;
-import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
-import no.sikt.nva.brage.migration.merger.PublicationMergeReport;
-import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
+import no.sikt.nva.brage.migration.merger.*;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicateDetectionCause;
-import no.sikt.nva.brage.migration.record.Affiliation;
-import no.sikt.nva.brage.migration.record.Contributor;
-import no.sikt.nva.brage.migration.record.Customer;
-import no.sikt.nva.brage.migration.record.EntityDescription;
-import no.sikt.nva.brage.migration.record.Identity;
-import no.sikt.nva.brage.migration.record.Pages;
-import no.sikt.nva.brage.migration.record.PartOfSeries;
-import no.sikt.nva.brage.migration.record.PublicationDate;
-import no.sikt.nva.brage.migration.record.PublicationDateNva;
-import no.sikt.nva.brage.migration.record.PublisherAuthority;
-import no.sikt.nva.brage.migration.record.Range;
+import no.sikt.nva.brage.migration.record.*;
 import no.sikt.nva.brage.migration.record.Record;
-import no.sikt.nva.brage.migration.record.ResourceOwner;
-import no.sikt.nva.brage.migration.record.Type;
-import no.sikt.nva.brage.migration.record.UnknownCustomerException;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
@@ -126,20 +29,12 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnconfirmedCourse;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
-import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
-import no.unit.nva.model.additionalidentifiers.SourceName;
+import no.unit.nva.model.additionalidentifiers.*;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Journal;
@@ -159,11 +54,7 @@ import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.instancetypes.report.ConferenceReport;
-import no.unit.nva.model.instancetypes.report.ReportBasic;
-import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
-import no.unit.nva.model.instancetypes.report.ReportResearch;
-import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
+import no.unit.nva.model.instancetypes.report.*;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
@@ -194,6 +85,42 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static java.util.UUID.randomUUID;
+import static no.sikt.nva.brage.migration.NvaType.*;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.*;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
+import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
+import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
+import static no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.HARDCODED_NTNU_CRISTIN_ID;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.PUBLISHED_VERSION;
+import static no.unit.nva.model.testing.PublicationGenerator.*;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
+import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
+import static no.unit.nva.testutils.RandomDataGenerator.*;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
@@ -1860,7 +1787,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                   .withYear("2022")
                                                                   .build());
         publication.setHandle(randomUri());
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomOpenFile())));
+        var file = randomOpenFile(PUBLISHED_VERSION, randomString());
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
         var existingPublication =
@@ -1880,8 +1808,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                          .withYear("2023")
                                                                          .build()))
                             .withMainTitle(existingPublication.getEntityDescription().getMainTitle())
-                            .withResourceContent(new ResourceContent(List.of(createContentFile(),
-                                                                             createContentFile())))
+                            .withResourceContent(new ResourceContent(List.of(createMatchingContentFile(file))))
                             .build();
 
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
@@ -2567,21 +2494,13 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .addChild(String.valueOf(cristinPublication.getIdentifier()));
     }
 
-    private AssociatedArtifact randomOpenFile() {
-
-        return new OpenFile(randomUUID(), randomString(), "application/pdf", 10L, null,
-                            PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
-            RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(),
-                            new ImportUploadDetails(null, null, null));
-    }
-
     private Record createMinimalRecord(String cristinIdentifier) {
         var minimalRecord = new Record();
         var fakeDummyHandle = UriWrapper.fromUri(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
                                                  + "/1").getUri();
         minimalRecord.setId(fakeDummyHandle);
         minimalRecord.setPublisherAuthority(new PublisherAuthority(List.of(),
-                                                                   PublisherVersion.PUBLISHED_VERSION));
+                                                                   PUBLISHED_VERSION));
         minimalRecord.setCustomer(new Customer("unis", null));
         minimalRecord.setCristinId(cristinIdentifier);
         minimalRecord.setEntityDescription(new EntityDescription());
@@ -2592,6 +2511,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private ContentFile createContentFile() {
         var contentFile = new ContentFile();
         contentFile.setFilename("MyAwsomeUnisFile.pdf");
+        contentFile.setBundleType(BundleType.ORIGINAL);
+        contentFile.setIdentifier(randomUUID());
+        contentFile.setLicense(new License("", new NvaLicense(randomUri())));
+        return contentFile;
+    }
+
+    private ContentFile createMatchingContentFile(File file) {
+        var contentFile = new ContentFile();
+        contentFile.setFilename(file.getName());
         contentFile.setBundleType(BundleType.ORIGINAL);
         contentFile.setIdentifier(randomUUID());
         contentFile.setLicense(new License("", new NvaLicense(randomUri())));

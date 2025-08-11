@@ -1,14 +1,14 @@
 package no.sikt.nva.brage.migration.merger;
 
-import static java.util.function.Predicate.not;
-import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.PUBLISHED_VERSION;
-import java.util.ArrayList;
-import java.util.List;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.PUBLISHED_VERSION;
 
 public final class AssociatedArtifactsMerger {
 
@@ -18,104 +18,45 @@ public final class AssociatedArtifactsMerger {
     }
 
     public static AssociatedArtifactList merge(AssociatedArtifactList existing, AssociatedArtifactList incoming) {
-        var associatedArtifacts = new ArrayList<AssociatedArtifact>();
-        associatedArtifacts.addAll(getAssociatedArtifactsExceptOpenFiles(existing));
-        associatedArtifacts.addAll(getAssociatedArtifactsExceptOpenFiles(incoming));
+        var merged = new ArrayList<AssociatedArtifact>();
+        merged.addAll(existing);
+        merged.addAll(filterOutOpenFilesWithPublishedVersion(incoming));
 
-        if (hasNoOpenFiles(existing)) {
-            associatedArtifacts.addAll(getOpenFiles(incoming));
-        } else {
-            handlePublicationWithOpenFiles(existing, incoming, associatedArtifacts);
+        if (hasMultipleOrNoOpenFilesWithPublishedVersion(existing) || hasMultipleOrNoOpenFilesWithPublishedVersion(incoming)) {
+            incoming.stream()
+                    .filter(File.class::isInstance)
+                    .map(File.class::cast)
+                    .filter(file -> isUniqueOpenFileWithPublishedVersion(existing, file))
+                    .forEach(merged::add);
         }
-        return new AssociatedArtifactList(associatedArtifacts);
+        return new AssociatedArtifactList(merged);
     }
 
-    private static void handlePublicationWithOpenFiles(AssociatedArtifactList existing, AssociatedArtifactList incoming, ArrayList<AssociatedArtifact> associatedArtifacts) {
-        if (hasNoOpenFilesWithPublishedVersion(existing)) {
-            if (hasOpenFilesWithPublishedVersion(incoming)) {
-                associatedArtifacts.addAll(convertOpenFilesToInternal(existing));
-                associatedArtifacts.addAll(getOpenFilesWithPublishedVersion(incoming));
-            } else {
-                associatedArtifacts.addAll(getOpenFiles(existing));
-            }
-        } else if (hasOpenFilesWithPublishedVersion(existing)) {
-            if (hasOnlyOneOpenFileWithPublishedVersion(existing) && hasOnlyOneOpenFileWithPublishedVersion(incoming)) {
-                associatedArtifacts.addAll(getOpenFiles(existing));
-            } else if (hasOpenFilesWithPublishedVersion(existing)) {
-                associatedArtifacts.addAll(getOpenFiles(existing));
-                associatedArtifacts.addAll(
-                        getOpenFilesWithPublishedVersionAndDifferentNamesThanExisting(existing, incoming));
-            }
-        }
+    private static Collection<AssociatedArtifact> filterOutOpenFilesWithPublishedVersion(AssociatedArtifactList artifacts) {
+        return artifacts.stream()
+                .filter(associatedArtifact -> !(associatedArtifact instanceof OpenFile openFile && hasPublishedVersion(openFile)))
+                .toList();
     }
 
-    private static boolean hasOnlyOneOpenFileWithPublishedVersion(AssociatedArtifactList associatedArtifacts) {
-        return associatedArtifacts.stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .filter(OpenFile.class::isInstance)
-                   .filter(file -> PUBLISHED_VERSION.equals(file.getPublisherVersion()))
-                   .toList().size() == SINGLETON;
+    private static boolean hasPublishedVersion(OpenFile openFile) {
+        return PUBLISHED_VERSION.equals(openFile.getPublisherVersion());
     }
 
-    private static boolean hasOpenFilesWithPublishedVersion(AssociatedArtifactList existing) {
-        return existing.stream().anyMatch(AssociatedArtifactsMerger::isOpenFileWithPublishedVersion);
+    private static boolean isUniqueOpenFileWithPublishedVersion(AssociatedArtifactList existing, File file) {
+        return PUBLISHED_VERSION.equals(file.getPublisherVersion())
+                && existing.stream()
+                .noneMatch(associatedArtifact -> associatedArtifact instanceof OpenFile openFile
+                        && hasPublishedVersion(openFile)
+                        && openFile.getName().equals(file.getName()));
     }
 
-    private static boolean hasNoOpenFilesWithPublishedVersion(AssociatedArtifactList existing) {
-        return existing.stream().noneMatch(AssociatedArtifactsMerger::isOpenFileWithPublishedVersion);
-    }
-
-    private static boolean hasNoOpenFiles(AssociatedArtifactList existing) {
-        return existing.stream().noneMatch(OpenFile.class::isInstance);
-    }
-
-    private static List<InternalFile> convertOpenFilesToInternal(AssociatedArtifactList associatedArtifactList) {
-        return getOpenFiles(associatedArtifactList).stream().map(File::toInternalFile).toList();
-    }
-
-    private static List<AssociatedArtifact> getOpenFilesWithPublishedVersion(
-        AssociatedArtifactList associatedArtifactList) {
-        return associatedArtifactList.stream()
-                   .filter(AssociatedArtifactsMerger::isOpenFileWithPublishedVersion)
-                   .toList();
-    }
-
-    private static List<File> getOpenFiles(AssociatedArtifactList associatedArtifactList) {
-        return associatedArtifactList.stream().filter(OpenFile.class::isInstance).map(File.class::cast).toList();
-    }
-
-    private static List<AssociatedArtifact> getOpenFilesWithPublishedVersionAndDifferentNamesThanExisting(
-        AssociatedArtifactList existing, AssociatedArtifactList incoming) {
-        var associatedArtifacts = new ArrayList<AssociatedArtifact>();
-        for (AssociatedArtifact incomingArtifact : incoming) {
-            if (isOpenFileWithPublishedVersion(incomingArtifact) &&
-                thereIsNoOpenFileWithPublishedVersionInCollectionWithTheSameFilename(existing, incomingArtifact)) {
-                associatedArtifacts.add(incomingArtifact);
-            }
-        }
-        return associatedArtifacts;
-    }
-
-    private static boolean thereIsNoOpenFileWithPublishedVersionInCollectionWithTheSameFilename(
-        AssociatedArtifactList existing, AssociatedArtifact incomingArtifact) {
-        return existing.stream()
-                   .filter(AssociatedArtifactsMerger::isOpenFileWithPublishedVersion)
-                   .map(OpenFile.class::cast)
-                   .noneMatch(existingFile -> existingFile.getName().equals(getFilename(incomingArtifact)));
-    }
-
-    private static String getFilename(AssociatedArtifact incomingArtifact) {
-        return ((File) incomingArtifact).getName();
-    }
-
-    private static boolean isOpenFileWithPublishedVersion(AssociatedArtifact associatedArtifact) {
-        return associatedArtifact instanceof OpenFile openFile &&
-               PUBLISHED_VERSION.equals(openFile.getPublisherVersion());
-    }
-
-    private static List<AssociatedArtifact> getAssociatedArtifactsExceptOpenFiles(
-        AssociatedArtifactList associatedArtifactList) {
-        return associatedArtifactList.stream().filter(not(OpenFile.class::isInstance)).toList();
+    private static boolean hasMultipleOrNoOpenFilesWithPublishedVersion(AssociatedArtifactList artifacts) {
+        long count = artifacts.stream()
+                .filter(File.class::isInstance)
+                .map(File.class::cast)
+                .filter(OpenFile.class::isInstance)
+                .filter(f -> PUBLISHED_VERSION.equals(f.getPublisherVersion()))
+                .count();
+        return count != SINGLETON;
     }
 }

@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.testutils;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.PUBLISHED_VERSION;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
@@ -17,26 +18,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import no.sikt.nva.brage.migration.record.Affiliation;
-import no.sikt.nva.brage.migration.record.Contributor;
-import no.sikt.nva.brage.migration.record.Customer;
-import no.sikt.nva.brage.migration.record.Identity;
-import no.sikt.nva.brage.migration.record.Journal;
-import no.sikt.nva.brage.migration.record.Language;
-import no.sikt.nva.brage.migration.record.Pages;
-import no.sikt.nva.brage.migration.record.PartOfSeries;
-import no.sikt.nva.brage.migration.record.Project;
-import no.sikt.nva.brage.migration.record.PublicationContext;
-import no.sikt.nva.brage.migration.record.PublicationDate;
-import no.sikt.nva.brage.migration.record.PublicationDateNva;
-import no.sikt.nva.brage.migration.record.PublicationInstance;
-import no.sikt.nva.brage.migration.record.PublishedDate;
-import no.sikt.nva.brage.migration.record.Publisher;
-import no.sikt.nva.brage.migration.record.Range;
+
+import no.sikt.nva.brage.migration.record.*;
 import no.sikt.nva.brage.migration.record.Record;
-import no.sikt.nva.brage.migration.record.ResourceOwner;
-import no.sikt.nva.brage.migration.record.Series;
-import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -191,6 +175,7 @@ public class NvaBrageMigrationDataGenerator {
                                 .orElse(List.of()).stream().toList());
         brageRecord.setAccessCode(builder.getAccessCode());
         brageRecord.setProjects(List.of(builder.getProject()));
+        brageRecord.setPublisherAuthority(new PublisherAuthority(List.of(), PUBLISHED_VERSION));
         return brageRecord;
     }
 
