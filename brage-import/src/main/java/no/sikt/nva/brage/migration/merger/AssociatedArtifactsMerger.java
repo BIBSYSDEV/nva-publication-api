@@ -24,17 +24,29 @@ public final class AssociatedArtifactsMerger {
 
         if (hasNoOpenFiles(existing)) {
             associatedArtifacts.addAll(getOpenFiles(incoming));
-        } else if (hasNoOpenFilesWithPublishedVersion(existing)) {
-            associatedArtifacts.addAll(convertOpenFilesToInternal(existing));
-            associatedArtifacts.addAll(getOpenFilesWithPublishedVersion(incoming));
-        } else if (hasOnlyOneOpenFileWithPublishedVersion(existing) && hasOnlyOneOpenFileWithPublishedVersion(incoming)) {
-            associatedArtifacts.addAll(getOpenFiles(existing));
-        } else if (hasOpenFilesWithPublishedVersion(existing)) {
-            associatedArtifacts.addAll(getOpenFiles(existing));
-            associatedArtifacts.addAll(
-                getOpenFilesWithPublishedVersionAndDifferentNamesThanExisting(existing, incoming));
+        } else {
+            handlePublicationWithOpenFiles(existing, incoming, associatedArtifacts);
         }
         return new AssociatedArtifactList(associatedArtifacts);
+    }
+
+    private static void handlePublicationWithOpenFiles(AssociatedArtifactList existing, AssociatedArtifactList incoming, ArrayList<AssociatedArtifact> associatedArtifacts) {
+        if (hasNoOpenFilesWithPublishedVersion(existing)) {
+            if (hasOpenFilesWithPublishedVersion(incoming)) {
+                associatedArtifacts.addAll(convertOpenFilesToInternal(existing));
+                associatedArtifacts.addAll(getOpenFilesWithPublishedVersion(incoming));
+            } else {
+                associatedArtifacts.addAll(getOpenFiles(existing));
+            }
+        } else if (hasOpenFilesWithPublishedVersion(existing)) {
+            if (hasOnlyOneOpenFileWithPublishedVersion(existing) && hasOnlyOneOpenFileWithPublishedVersion(incoming)) {
+                associatedArtifacts.addAll(getOpenFiles(existing));
+            } else if (hasOpenFilesWithPublishedVersion(existing)) {
+                associatedArtifacts.addAll(getOpenFiles(existing));
+                associatedArtifacts.addAll(
+                        getOpenFilesWithPublishedVersionAndDifferentNamesThanExisting(existing, incoming));
+            }
+        }
     }
 
     private static boolean hasOnlyOneOpenFileWithPublishedVersion(AssociatedArtifactList associatedArtifacts) {
