@@ -15,7 +15,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.logentry.LogUser;
-import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
@@ -100,8 +100,8 @@ public class LogEntryService {
 
     private void persistFileLogEntry(FileEntry fileEntry) {
         var fileEvent = fileEntry.getFileEvent();
-        if (fileEvent instanceof FileImportedEvent fileImportedEvent) {
-            var organization = fetchOrganization(fileImportedEvent.institution());
+        if (fileEvent instanceof ImportEvent importEvent) {
+            var organization = fetchOrganization(importEvent.institution());
             fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
         } else {
             var user = createUser(fileEvent.user(), null);
