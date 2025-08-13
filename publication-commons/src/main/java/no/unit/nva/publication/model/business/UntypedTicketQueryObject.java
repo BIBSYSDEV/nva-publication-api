@@ -1,15 +1,11 @@
 package no.unit.nva.publication.model.business;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import java.net.URI;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.TicketDao;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
+
+import java.net.URI;
 
 public final class UntypedTicketQueryObject extends TicketDao {
     
@@ -29,10 +25,6 @@ public final class UntypedTicketQueryObject extends TicketDao {
     
     public static UntypedTicketQueryObject create(SortableIdentifier ticketIdentifier) {
         return new UntypedTicketQueryObject(EMPTY_OWNER, ticketIdentifier);
-    }
-    
-    public static UntypedTicketQueryObject create(UserInstance userInstance) {
-        return new UntypedTicketQueryObject(userInstance, null);
     }
     
     @Override
@@ -55,22 +47,7 @@ public final class UntypedTicketQueryObject extends TicketDao {
     public User getOwner() {
         return new User(owner.getUsername());
     }
-    
-    public Stream<TicketEntry> fetchTicketsForUser(AmazonDynamoDB client) {
-        var queryRequest = new QueryRequest()
-                               .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
-                               .withKeyConditions(this.primaryKeyPartitionKeyCondition());
-        
-        return fetchAllQueryResults(client, queryRequest)
-                   .map(Dao::getData)
-                   .map(TicketEntry.class::cast)
-                   .filter(UntypedTicketQueryObject::isNotRemoved);
-    }
 
-    private static boolean isNotRemoved(TicketEntry ticket) {
-        return !TicketStatus.REMOVED.equals(ticket.getStatus());
-    }
-    
     @JacocoGenerated
     @Override
     public String joinByResourceOrderedType() {

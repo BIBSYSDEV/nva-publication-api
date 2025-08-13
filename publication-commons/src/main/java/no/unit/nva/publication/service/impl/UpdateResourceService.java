@@ -1,52 +1,20 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.DELETED;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
-import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.getPublisherIdentifierWhenDegree;
-import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Stream;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.Owner;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
@@ -59,6 +27,20 @@ import no.unit.nva.publication.model.utils.CustomerService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
+import java.net.HttpURLConnection;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Stream;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.*;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
+import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.getPublisherIdentifierWhenDegree;
+import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.*;
+import static nva.commons.core.attempt.Try.attempt;
+
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class UpdateResourceService extends ServiceWithTransactions {
 
@@ -66,8 +48,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
     public static final String DELETION_IN_PROGRESS = "Deletion in progress. This may take a while";
     public static final String ILLEGAL_DELETE_WHEN_NOT_DRAFT =
         "Attempting to update publication to DRAFT_FOR_DELETION when current status " + "is not draft";
-    //TODO: fix affiliation update when updating owner
-    private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
@@ -117,16 +97,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
             return updatePublicationIncludingStatus(publication);
         }
         throw new IllegalStateException(ILLEGAL_DELETE_WHEN_NOT_DRAFT);
-    }
-
-    public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException {
-        Resource existingResource = readResourceService.getResource(oldOwner, identifier);
-        Resource newResource = updateResourceOwner(newOwner, existingResource);
-        TransactWriteItem deleteAction = newDeleteTransactionItem(new ResourceDao(existingResource));
-        TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource), tableName);
-        TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
-        sendTransactionWriteRequest(request);
     }
 
     public List<TransactWriteItem> updatePublicationChannelsForPublisherWhenDegree(Resource resource,
@@ -419,15 +389,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private Resource fetchExistingResource(Publication publication) {
         return attempt(() -> readResourceService.getResourceByIdentifier(publication.getIdentifier())).map(
             Optional::orElseThrow).orElseThrow(fail -> new TransactionFailedException(fail.getException()));
-    }
-
-    private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
-        return existingResource.copy()
-                   .withPublisher(userOrganization(newOwner))
-                   .withResourceOwner(Owner.fromResourceOwner(
-                       new ResourceOwner(new Username(newOwner.getUsername()), AFFILIATION_UPDATE_NOT_UPDATE_YET)))
-                   .withModifiedDate(clockForTimestamps.instant())
-                   .build();
     }
 
     private TransactWriteItem createPutTransaction(Resource resourceUpdate) {

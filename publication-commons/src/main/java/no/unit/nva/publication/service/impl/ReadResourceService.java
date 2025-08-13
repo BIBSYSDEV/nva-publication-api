@@ -1,30 +1,12 @@
 package no.unit.nva.publication.service.impl;
 
-import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
-import static java.util.Objects.isNull;
-import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -32,20 +14,21 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
-import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.DoiRequestDao;
-import no.unit.nva.publication.model.storage.FileDao;
-import no.unit.nva.publication.model.storage.PublicationChannelDao;
-import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.model.storage.TicketDao;
-import nva.commons.apigateway.exceptions.NotFoundException;
+import no.unit.nva.publication.model.storage.*;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
+import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.*;
+import static nva.commons.core.attempt.Try.attempt;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
@@ -159,17 +142,6 @@ public class ReadResourceService {
         return queryResultToListOfPublications(queryResult);
     }
 
-    protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
-        return getResource(resourceQueryObject(userInstance, identifier));
-    }
-
-    protected Resource getResource(Resource resource) throws NotFoundException {
-        Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
-        GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
-        ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
-        return (Resource) fetchedDao.getData();
-    }
-
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
@@ -227,16 +199,6 @@ public class ReadResourceService {
     private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
         return new ExpressionSpecBuilder()
                    .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
-    }
-
-    private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
-        GetItemResult result = client.getItem(new GetItemRequest()
-                                                  .withTableName(tableName)
-                                                  .withKey(primaryKey));
-        if (isNull(result.getItem())) {
-            throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
-        }
-        return result;
     }
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {

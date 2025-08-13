@@ -133,7 +133,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        var publication = resourceService.insertPreexistingPublication(newImage);
+        var publication = super.persistResource(Resource.fromPublication(newImage)).toPublication();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -152,7 +152,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        var publication = resourceService.insertPreexistingPublication(newImage);
+        var publication = super.persistResource(Resource.fromPublication(newImage)).toPublication();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
@@ -174,7 +174,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenExpansionFailing() throws IOException {
         var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        var publication = resourceService.insertPreexistingPublication(newImage);
+        var publication = super.persistResource(Resource.fromPublication(newImage)).toPublication();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
 
@@ -190,7 +190,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldPersistRecoveryMessageWhenExpansionHasFailed() throws IOException {
         var oldImage = createPublicationWithStatus(PUBLISHED);
         var newImage = createUpdatedVersionOfPublication(oldImage);
-        var publication = resourceService.insertPreexistingPublication(newImage);
+        var publication = super.persistResource(Resource.fromPublication(newImage)).toPublication();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
 
@@ -207,7 +207,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldPersistRecoveryMessageWhenExpansionHasFailedAndOldImageIsNotPresent()
         throws IOException {
         var newImage = createPublicationWithStatus(PUBLISHED);
-        var publication = resourceService.insertPreexistingPublication(newImage);
+        var publication = super.persistResource(Resource.fromPublication(newImage)).toPublication();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
 
@@ -224,7 +224,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldPersistRecoveryMessageForPublicationWhenBadResponseFromExternalApi()
         throws IOException {
         var newImage = createPublicationWithStatus(PUBLISHED);
-        var publication = resourceService.insertPreexistingPublication(newImage);
+        var publication = super.persistResource(Resource.fromPublication(newImage)).toPublication();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
 
@@ -246,7 +246,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistRecoveryMessageForTicketWhenBadResponseFromExternalApi() throws IOException {
         var publication = createPublicationWithStatus(PUBLISHED);
-        var resource = resourceService.insertPreexistingPublication(publication);
+        var resource = super.persistResource(Resource.fromPublication(publication)).toPublication();
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var ticket = TicketEntry.requestNewTicket(resource, DoiRequest.class);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
@@ -323,7 +323,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldCreateEnrichmentEventForMinimalisticInitialDrafts() throws IOException {
         var newImage = createMinimalisticDraft();
-        var publication = resourceService.insertPreexistingPublication(newImage);
+        var publication = super.persistResource(Resource.fromPublication(newImage)).toPublication();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, publication);
 
@@ -370,7 +370,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldExpandResourceOnFileEntryChange() throws IOException {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         publication.setStatus(PublicationStatus.PUBLISHED);
-        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+        var persistedPublication = super.persistResource(Resource.fromPublication(publication)).toPublication();
 
         FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
 
@@ -391,7 +391,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldExpandResourceOnFileEntryDeletion() throws IOException {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         publication.setStatus(PublicationStatus.PUBLISHED);
-        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+        var persistedPublication = super.persistResource(Resource.fromPublication(publication)).toPublication();
 
         FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
 
@@ -412,7 +412,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldExpandResourceOnFileEntryInsertion() throws IOException {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         publication.setStatus(PublicationStatus.PUBLISHED);
-        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+        var persistedPublication = super.persistResource(Resource.fromPublication(publication)).toPublication();
 
         FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
 
@@ -433,7 +433,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     void shouldExpandResourceOnFileEntryModification() throws IOException {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         publication.setStatus(PublicationStatus.PUBLISHED);
-        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+        var persistedPublication = super.persistResource(Resource.fromPublication(publication)).toPublication();
 
         FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, false);
 
@@ -541,7 +541,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
                                   new ResourceOwner(randomUsername(),
                                                     AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
                               .build();
-        attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
+        attempt(() -> super.persistResource(Resource.fromPublication(publication))).orElseThrow();
     }
 
     private Username randomUsername() {
