@@ -15,6 +15,7 @@
     "username": "npolar@7466.0.0.0",
     "cristinIdentifier": "7466.0.0.0",
     "identifiers": {
+      "prod": "4bffea43-c3c5-4416-93ed-16b2ccd0dd7e",
       "test": "7de3c640-f71e-4837-b46b-32f250acf179",
       "dev": "009974e9-217c-46b8-8f61-f7c1501ee04a"
     },
@@ -25,6 +26,7 @@
     "username": "ssb@5932.0.0.0",
     "cristinIdentifier": "5932.0.0.0",
     "identifiers": {
+      "prod": "8b699c48-85e0-40b3-b686-d91bed21b7ad",
       "test": "3f2485a8-ba56-48e2-827b-0a307a44eafb",
       "dev": "3169a5cb-db8b-44ac-8bab-69d3f4ff9f54"
     },
@@ -35,6 +37,7 @@
     "username": "ruralis@7501.0.0.0",
     "cristinIdentifier": "7501.0.0.0",
     "identifiers": {
+      "prod": "8ce49301-0615-4d32-a7c9-bc395cefda13",
       "test": "37b410b5-d85f-4bb2-8421-c8afc2e5de60",
       "dev": "f8f52dc0-688c-4d56-b0f6-26e2698e16a0"
     },
@@ -45,6 +48,7 @@
     "username": "sintef@7401.0.0.0",
     "cristinIdentifier": "7401.0.0.0",
     "identifiers": {
+      "prod": "668f1338-4026-4668-8ab8-426fd9176abb",
       "test": "dd70eb42-264a-4538-b77a-e31bb4cf3a99",
       "dev": "11b70ff2-1ba4-4cf1-95f3-06fea953cf2e"
     },
@@ -52,9 +56,10 @@
   },
   {
     "name": "norskfolkemuseum",
-    "username": "norskfolkemuseum@1302.0.0.0",
-    "cristinIdentifier": "1302.0.0.0",
+    "username": "norskfolkemuseum@20452.0.0.0",
+    "cristinIdentifier": "20452.0.0.0",
     "identifiers": {
+      "prod": "646b979a-1833-4048-9cd3-ae4043a4cba4",
       "test": "2fcfc7e5-b8d7-4c08-98ef-3927ad934e6f",
       "dev": "890ae660-440f-41cb-9d57-1afa3f5d0444"
     },
@@ -65,9 +70,10 @@
     "username": "nmh@178.0.0.0",
     "cristinIdentifier": "178.0.0.0",
     "identifiers": {
-      "sandbox": "b075d6e7-4cec-4579-8c8b-ecae18affcc6",
+      "prod": "eda1b8c8-5e8a-4138-b095-1816a5b38c2e",
       "test": "9efe66cc-ead0-49e0-b787-b73a188d4770",
-      "dev": "2f148e5f-a017-4e7f-8f78-6a52eb6a9938"
+      "dev": "2f148e5f-a017-4e7f-8f78-6a52eb6a9938",
+      "sandbox": "b075d6e7-4cec-4579-8c8b-ecae18affcc6"
     },
     "shortName": "NMH"
   },
@@ -76,6 +82,7 @@
     "username": "nih@150.0.0.0",
     "cristinIdentifier": "150.0.0.0",
     "identifiers": {
+      "prod": "e69348db-19da-4e5a-bbc8-43ec57c43f10",
       "test": "6c7ac184-1b21-425c-a422-2855804be2aa",
       "dev": "b5ff15a1-0e58-44bf-b137-d5c5389ef63f"
     },
@@ -86,6 +93,7 @@
     "username": "vid@251.0.0.0",
     "cristinIdentifier": "251.0.0.0",
     "identifiers": {
+      "prod": "8df3cee4-1d52-4c6a-910d-17d0386323f6",
       "test": "9b17e692-6690-41a2-923b-b7ac0d7a1522",
       "dev": "58d2d14c-ff23-4aa0-94f1-b53190fd020a"
     },
@@ -96,6 +104,7 @@
     "username": "usn@222.0.0.0",
     "cristinIdentifier": "222.0.0.0",
     "identifiers": {
+      "prod": "72a4dc34-ff98-4d66-a663-7f2eb005555b",
       "test": "b3d72c51-c4f2-4aa1-a15a-e9cc9b1f5e1e",
       "dev": "702c4fbe-d51a-4d20-aec8-50beb813ff36",
       "e2e": "702c4fbe-d51a-4d20-aec8-50beb813ff36"
@@ -151,6 +160,7 @@
     "username": "nina@7511.0.0.0",
     "cristinIdentifier": "7511.0.0.0",
     "identifiers": {
+      "prod": "adb5c9d0-0973-47c9-92db-7323c2b59cb7",
       "test": "899823c8-7315-4bb7-b734-97e65b43af15",
       "dev": "afa4fb86-76f6-4339-9133-924d999a792e"
     },
@@ -183,6 +193,7 @@
     "username": "hiof@224.0.0.0",
     "cristinIdentifier": "224.0.0.0",
     "identifiers": {
+      "prod": "fc77ac8f-6adc-474c-9cf9-42a52623dd6b",
       "test": "719fdb5a-f90a-4e20-b81d-1dde3ca6e647",
       "dev": "5c243c2d-a8fb-48fb-a2c6-c6fa70310194"
     },
@@ -193,9 +204,9 @@
     "username": "ffi@7428.0.0.0",
     "cristinIdentifier": "7428.0.0.0",
     "identifiers": {
+      "prod": "eb732391-19ec-4d9f-9cb3-a77c8876a18f",
       "test": "b11f0a40-ac27-42b9-ba94-f4952e3d5a5a",
-      "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5",
-      "prod": "eb732391-19ec-4d9f-9cb3-a77c8876a18f"
+      "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5"
     },
     "shortName": "FFI"
   },
@@ -215,6 +226,7 @@
     "username": "norceresearch@2057.0.0.0",
     "cristinIdentifier": "2057.0.0.0",
     "identifiers": {
+      "prod": "858d32f1-fb0b-4b5c-a02f-118d8294ffc0",
       "test": "e58d2162-c4de-4627-8b3f-ac2d9fb49446",
       "dev": "d039e7ea-1380-46f1-bb7d-b6456ddc0fc2"
     },
@@ -225,6 +237,7 @@
     "username": "samfunnsforskning@7437.0.0.0",
     "cristinIdentifier": "7437.0.0.0",
     "identifiers": {
+      "prod": "b21d784f-dbd7-4d09-bc60-3584bea585e0",
       "test": "999f15f5-b0d4-4273-8dc4-97a971454b74",
       "dev": "818c957b-65ce-447d-b78c-cd472ea0e65f"
     },
@@ -246,6 +259,7 @@
     "username": "ra@5989.0.0.0",
     "cristinIdentifier": "5989.0.0.0",
     "identifiers": {
+      "prod": "9e389a98-5115-42cf-aac8-55d46f4272a0",
       "test": "434ed8ed-f302-409f-9943-8886320550a3",
       "dev": "e974d7d1-50b5-47c0-ad7e-7135a2d47555",
       "sandbox": "b3435185-929a-4842-96ee-4243f4c9078c"
@@ -257,6 +271,7 @@
     "username": "unit@195.0.0.0",
     "cristinIdentifier": "195.0.0.0",
     "identifiers": {
+      "prod": "256b9785-808b-4c2a-a2d9-fd7a2de8da0c",
       "test": "ed671c06-964c-46ce-85d5-777c164ac81e",
       "dev": "bbd9048d-e51b-49f6-b699-fd86ec86acd6"
     },
@@ -267,6 +282,7 @@
     "username": "nupi@7471.0.0.0",
     "cristinIdentifier": "7471.0.0.0",
     "identifiers": {
+      "prod": "64413cd2-13c8-4f9b-aa1b-6750079f61a8",
       "test": "122d33a7-1844-466a-926b-333eeff42a93",
       "dev": "8d11f0f0-d414-4564-9250-298c06ef5c87"
     },
@@ -277,6 +293,7 @@
     "username": "nb@5931.0.0.0",
     "cristinIdentifier": "5931.0.0.0",
     "identifiers": {
+      "prod": "20db2e6c-228c-4071-971c-9eb2f9eb133b",
       "test": "155b291c-9da7-482c-833d-e1b1488f9ee3",
       "dev": "9fde89c7-baea-4ac1-ad52-97d4dee0e6da"
     },
@@ -298,6 +315,7 @@
     "username": "stami@7476.0.0.0",
     "cristinIdentifier": "7476.0.0.0",
     "identifiers": {
+      "prod": "de807018-361b-4472-b753-cd268a1f35c8",
       "test": "959587b0-d49b-49c8-adb4-43910500c2c3",
       "dev": "838c45e1-8470-490b-b71d-a947b444e220"
     },
@@ -308,6 +326,7 @@
     "username": "nilu@7460.0.0.0",
     "cristinIdentifier": "7460.0.0.0",
     "identifiers": {
+      "prod": "da2c0478-9ec4-4e1e-8b7d-0a27898fb6de",
       "test": "31ac9694-3e2e-4424-bd4c-b03e950335e2",
       "dev": "68e24208-5840-45a1-903c-44ebb3afccc2"
     },
@@ -315,9 +334,10 @@
   },
   {
     "name": "banenor",
-    "username": "banenor@21033.0.0.0",
-    "cristinIdentifier": "21033.0.0.0",
+    "username": "banenor@20452.0.0.0",
+    "cristinIdentifier": "20452.0.0.0",
     "identifiers": {
+      "prod": "646b979a-1833-4048-9cd3-ae4043a4cba4",
       "test": "ccfff2f4-e50a-4ee9-af52-469821476cc3",
       "dev": "4a8749c6-567b-42bd-b8c2-384aa41f43d3"
     },
@@ -328,6 +348,7 @@
     "username": "ntnu@194.0.0.0",
     "cristinIdentifier": "194.0.0.0",
     "identifiers": {
+      "prod": "7509c2b8-dcaf-463e-a041-88dd89435f59",
       "test": "33c17ef6-864b-4267-bc9d-0cee636e247e",
       "dev": "8ddecceb-7d64-4df3-a842-489fe4d98f3a"
     },
@@ -360,6 +381,7 @@
     "username": "nr@7467.0.0.0",
     "cristinIdentifier": "7467.0.0.0",
     "identifiers": {
+      "prod": "382ef5b6-19d1-4f64-9b27-bff934ceb9a8",
       "test": "505328d2-1992-406c-8792-b064748d2f38",
       "dev": "54bed9d9-2bc4-4fa4-a6c4-9e957f93870d"
     },
@@ -425,6 +447,7 @@
     "username": "ntnu@194.0.0.0",
     "cristinIdentifier": "194.0.0.0",
     "identifiers": {
+      "prod": "7509c2b8-dcaf-463e-a041-88dd89435f59",
       "test": "33c17ef6-864b-4267-bc9d-0cee636e247e",
       "dev": "8ddecceb-7d64-4df3-a842-489fe4d98f3a"
     },
@@ -469,6 +492,7 @@
     "username": "ngi@7452.0.0.0",
     "cristinIdentifier": "7452.0.0.0",
     "identifiers": {
+      "prod": "0557ff2c-9658-47e6-8289-c98e4555bb64",
       "test": "1f899570-ed06-4c08-bc9f-ed92402e5128",
       "dev": "f415cb81-ac56-4244-b31b-25e43dc3027e"
     },
@@ -490,6 +514,7 @@
     "username": "samas@231.0.0.0",
     "cristinIdentifier": "231.0.0.0",
     "identifiers": {
+      "prod": "ebcf1530-b634-4f7d-b02c-988b029e68d1",
       "test": "b611090b-a768-4d89-a62d-ddd90f19ae22",
       "dev": "69f64ed3-e2c6-4c0c-a370-0de946ca6568"
     },
@@ -500,6 +525,7 @@
     "username": "niku@7530.0.0.0",
     "cristinIdentifier": "7530.0.0.0",
     "identifiers": {
+      "prod": "4223e8a3-8ed5-4f02-b47d-b557b7fa482d",
       "test": "61f179e2-4c8a-4f92-a285-6244556011f6",
       "dev": "11c1a22c-6b1b-4463-b74e-e20cd13d7243"
     },
@@ -510,6 +536,7 @@
     "username": "samforsk@7403.0.0.0",
     "cristinIdentifier": "7403.0.0.0",
     "identifiers": {
+      "prod": "7d2c7158-8944-463b-b7ed-7477878e679e",
       "test": "999f15f5-b0d4-4273-8dc4-97a971454b74",
       "dev": "6da57387-b48a-46dc-a395-d07c12b1e54b"
     },
@@ -531,6 +558,7 @@
     "username": "nofima@7543.0.0.0",
     "cristinIdentifier": "7543.0.0.0",
     "identifiers": {
+      "prod": "b5748bde-b32f-4a7e-81cc-901eae44291b",
       "test": "dc9f40f0-7397-4237-a54d-cf33b5d236f1",
       "dev": "15af7bc4-16cd-4134-91ba-68d900a5685c"
     },
@@ -541,6 +569,7 @@
     "username": "uio@185.90.0.0",
     "cristinIdentifier": "185.90.0.0",
     "identifiers": {
+      "prod": "a4aaa430-c26a-43ba-bbdf-8d102f814559",
       "test": "e4fd5fe5-b073-47a7-bb3e-2516d40335e6",
       "dev": "8db4a8bd-3db5-420b-a2e4-fc17a489aa6d"
     },
@@ -551,6 +580,7 @@
     "username": "ngu@7452.0.0.0",
     "cristinIdentifier": "7452.0.0.0",
     "identifiers": {
+      "prod": "0557ff2c-9658-47e6-8289-c98e4555bb64",
       "test": "897e5123-d4b5-425a-9872-bfd1c554e30b",
       "dev": "4ff971c0-071b-421e-8566-1c0899f3b26c"
     },
@@ -561,6 +591,7 @@
     "username": "uis@217.0.0.0",
     "cristinIdentifier": "217.0.0.0",
     "identifiers": {
+      "prod": "48ab46e0-9a2e-4908-b144-25bfcdeb42e9",
       "test": "2d353a69-afa0-44a2-9028-211771d748ae",
       "dev": "3e1da1fd-559e-4334-acb9-797684e5bae2"
     },
@@ -593,6 +624,7 @@
     "username": "nmbu@192.0.0.0",
     "cristinIdentifier": "192.0.0.0",
     "identifiers": {
+      "prod": "83abb85b-768b-4b3d-a096-3fd9442e3d6d",
       "test": "b8977f51-28bd-41b5-bb19-71c577be7c28",
       "dev": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1",
       "e2e": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
@@ -601,9 +633,10 @@
   },
   {
     "name": "bibsys",
-    "username": "bibsys@5991.0.0.0",
-    "cristinIdentifier": "5991.0.0.0",
+    "username": "bibsys@20754.0.0.0",
+    "cristinIdentifier": "20754.0.0.0",
     "identifiers": {
+      "prod": "22139870-8d31-4df9-bc45-14eb68287c4a",
       "e2e": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
     },
     "shortName": "BIBSYS"
@@ -613,6 +646,7 @@
     "username": "sihf@1991.0.0.0",
     "cristinIdentifier": "1991.0.0.0",
     "identifiers": {
+      "prod": "9d0ab613-7ddc-4a2d-8d9a-638cfb65898d",
       "test": "ff990b53-59da-44b0-ba95-ac942a220d12",
       "dev": "73662b0f-4eba-4783-97da-de9e835affb6"
     },
@@ -623,6 +657,7 @@
     "username": "uit@186.0.0.0",
     "cristinIdentifier": "186.0.0.0",
     "identifiers": {
+      "prod": "7c277049-48de-4901-bc7e-21768835d461",
       "test": "acf2bd2e-a721-4f0f-91ca-3c7f46c0e375",
       "dev": "2d35d439-055d-40e5-94de-a9ec28493835"
     },
@@ -633,6 +668,7 @@
     "username": "nla@254.0.0.0",
     "cristinIdentifier": "254.0.0.0",
     "identifiers": {
+      "prod": "b04c8716-865c-4f81-8555-d3e33c2b7ec3",
       "test": "d1472762-8e09-4897-bcfe-93418fa90448",
       "dev": "53fdf89c-7408-4371-bab9-89812ce34e91"
     },
@@ -665,6 +701,7 @@
     "username": "inn@209.0.0.0",
     "cristinIdentifier": "209.0.0.0",
     "identifiers": {
+      "prod": "54c3e27c-b414-4f42-8aa4-55bccf09cb49",
       "test": "df2a796f-3eef-45dc-a39d-51b21989285a",
       "dev": "023f1608-1baa-4d5a-8acc-80d329bddd74"
     },
@@ -675,6 +712,7 @@
     "username": "ife@7492.0.0.0",
     "cristinIdentifier": "7492.0.0.0",
     "identifiers": {
+      "prod": "4c941422-7865-4c8e-a996-b09266854d6c",
       "test": "6c55e437-b373-4875-8505-d0af113aec59",
       "dev": "d13b4e4e-5dfe-4c92-b6d9-dab1b910cb02"
     },
@@ -696,6 +734,7 @@
     "username": "norges-bank@5923.0.0.0",
     "cristinIdentifier": "5923.0.0.0",
     "identifiers": {
+      "prod": "de3c6727-8a17-4efa-b2d4-9bf248e0bf5a",
       "test": "2d37e9a9-dc70-4c30-bdb6-c7724eb7f0c3",
       "dev": "9d02e866-aeba-466d-993a-b519c664d38c"
     },
@@ -728,6 +767,7 @@
     "username": "khio@260.0.0.0",
     "cristinIdentifier": "260.0.0.0",
     "identifiers": {
+      "prod": "5056e51f-0b49-41c6-9dc5-1fa0a5c48e7d",
       "test": "130e5373-9673-4d66-a0d3-d22a2874b32f",
       "dev": "67e867aa-e925-4697-bad0-c2125c1d6a7c"
     },
@@ -738,6 +778,7 @@
     "username": "ldh@230.0.0.0",
     "cristinIdentifier": "230.0.0.0",
     "identifiers": {
+      "prod": "5fcf63d0-fedd-49c0-8470-6c3037f4a3d9",
       "test": "2197e9e0-93b0-4051-8044-16ffd0087982",
       "dev": "367b47d3-8532-47ca-aebf-e3553bea76a8"
     },
@@ -748,6 +789,7 @@
     "username": "steinerhoyskolen@1525.0.0.0",
     "cristinIdentifier": "1525.0.0.0",
     "identifiers": {
+      "prod": "f25f082e-7522-49bf-a615-c0ea02788ceb",
       "test": "57bb7742-271a-4a17-ac4c-d142cb598edb",
       "dev": "a739d345-a564-4f0e-adec-c8c9ecb09bbb"
     },
@@ -758,6 +800,7 @@
     "username": "krus@1661.0.0.0",
     "cristinIdentifier": "1661.0.0.0",
     "identifiers": {
+      "prod": "a7b6b6cb-a69d-48a6-af42-a9a4401efd26",
       "test": "2e0dc263-5af7-4b0e-8bdc-c6f2c660dfd3",
       "dev": "a768727e-4ecb-41c1-a616-1fec000cac1c",
       "sandbox": "6b5e1238-7a05-11ed-a1eb-0242ac120002"
@@ -769,6 +812,7 @@
     "username": "nasjonalmuseet@1305.0.0.0",
     "cristinIdentifier": "1305.0.0.0",
     "identifiers": {
+      "prod": "7f8dab31-0600-4454-80c0-3b519290f60d",
       "test": "63efab04-c807-4efa-8ee9-a2c3ae6f77af",
       "dev": "bbd9048d-e51b-49f6-b699-fd86ec86acd6"
     },
@@ -801,6 +845,7 @@
     "username": "r-bup@7539.0.0.0",
     "cristinIdentifier": "7539.0.0.0",
     "identifiers": {
+      "prod": "8b04e93b-5d73-4202-b260-969bdd779ee4",
       "test": "458137ea-64bf-438d-a69c-6808d1b06e79",
       "dev": "3259519a-1ef6-444d-87d2-534d7c6df021"
     },
