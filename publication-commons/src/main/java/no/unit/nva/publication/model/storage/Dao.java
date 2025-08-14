@@ -2,9 +2,6 @@ package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.storage.DataCompressor.compressDaoData;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
@@ -21,7 +18,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,7 +35,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = FileDao.TYPE, value = FileDao.class),
     @JsonSubTypes.Type(name = PublicationChannelDao.TYPE, value = PublicationChannelDao.class)})
 public abstract class Dao
-    implements DynamoEntry, WithPrimaryKey, DynamoEntryByIdentifier, WithByTypeCustomerStatusIndex {
+    implements DynamoEntry, WithPrimaryKey, DynamoEntryByIdentifier {
 
     public static final String URI_PATH_SEPARATOR = "/";
     public static final String VERSION_FIELD = "version";
@@ -136,23 +132,6 @@ public abstract class Dao
     @Override
     public abstract String indexingType();
 
-    @Override
-    public String getByTypeCustomerStatusPartitionKey() {
-        String publisherId = customerIdentifier();
-        Optional<String> publicationStatus = extractStatus();
-
-        return publicationStatus.map(status -> formatByTypeCustomerStatusIndexPartitionKey(publisherId, status))
-                   .orElse(null);
-    }
-
-    @Override
-    @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
-    public String getByTypeCustomerStatusSortKey() {
-        //Codacy complains that identifier is already a String
-        SortableIdentifier identifier = getData().getIdentifier();
-        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, this.indexingType(), identifier.toString());
-    }
-
     @JsonIgnore
     public final String getCustomerIdentifier() {
         return orgUriToOrgIdentifier(getCustomerId());
@@ -235,17 +214,5 @@ public abstract class Dao
             case FILE_ENTRY ->
                 Map.entry(keyField.getKeyField(), new AttributeValue("File" + KEY_FIELDS_DELIMITER));
         };
-    }
-
-    private String formatByTypeCustomerStatusIndexPartitionKey(String publisherId, String status) {
-        return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT, indexingType(), publisherId, status);
-    }
-
-    private Optional<String> extractStatus() {
-        return attempt(this::getData).map(Entity::getStatusString).toOptional();
-    }
-
-    private String customerIdentifier() {
-        return orgUriToOrgIdentifier(getCustomerId());
     }
 }

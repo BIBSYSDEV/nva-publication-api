@@ -208,14 +208,14 @@ Resources:
         - AttributeName: SK0
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: ByTypeCustomerStatus
-          KeySchema:
-            - AttributeName: PK1
-              KeyType: HASH
-            - AttributeName: SK1
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+#        - IndexName: ByTypeCustomerStatus
+#          KeySchema:
+#            - AttributeName: PK1
+#              KeyType: HASH
+#            - AttributeName: SK1
+#              KeyType: RANGE
+#          Projection:
+#            ProjectionType: ALL
         - IndexName: ByCustomerResource
           KeySchema:
             - AttributeName: PK2
@@ -1116,7 +1116,7 @@ Resources:
             Path: /{publicationIdentifier}/log
             Method: get
             RestApiId: !Ref NvaPublicationApi
-            
+
   CreateUploadFunction:
     Type: AWS::Serverless::Function
     Properties:

@@ -1,14 +1,94 @@
 package no.unit.nva.publication.service.impl;
 
+import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
+import static java.util.Collections.emptyList;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.MigrationTests.getUnitsResponseBytes;
+import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
+import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.*;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationNote;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
@@ -27,11 +107,30 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.FilesApprovalThesis;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
-import no.unit.nva.publication.model.business.publicationstate.*;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -65,41 +164,6 @@ import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-
-import java.net.URI;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
-import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
-import static java.util.Collections.emptyList;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.model.PublicationStatus.*;
-import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
-import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.*;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.MigrationTests.getUnitsResponseBytes;
-import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
-import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
-import static no.unit.nva.testutils.RandomDataGenerator.*;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -136,11 +200,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService = getResourceService(client);
         ticketService = getTicketService();
         messageService = getMessageService();
-    }
-
-    public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
-        QueryResult queryResult = queryForDraftResource(resourceDaoWithStatusDraft);
-        return parseResult(queryResult);
     }
 
     @Test
@@ -416,21 +475,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertEquals(PUBLISHED, publishedPublication.getStatus());
         assertNotNull(publishedPublication.getPublishedDate());
-    }
-
-    @Test
-    void byTypeCustomerStatusIndexIsUpdatedWhenResourceIsUpdated() throws ApiGatewayException {
-        Publication resourceWithStatusDraft = createPersistedPublicationWithDoi();
-        ResourceDao resourceDaoWithStatusDraft = new ResourceDao(Resource.fromPublication(resourceWithStatusDraft));
-
-        assertThatResourceCanBeFoundInDraftResources(resourceDaoWithStatusDraft);
-
-        Resource.fromPublication(resourceWithStatusDraft)
-            .publish(resourceService, UserInstance.fromPublication(resourceWithStatusDraft));
-
-        verifyThatTheResourceWasMovedFromTheDrafts(resourceDaoWithStatusDraft);
-
-        verifyThatTheResourceIsInThePublishedResources(resourceWithStatusDraft);
     }
 
     @Test
@@ -1799,44 +1843,20 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                 .persistNewTicket(ticketService);
     }
 
-    private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {
-        ResourceDao resourceDaoWithStatusPublished = queryObjectForPublishedResource(resourceWithStatusDraft);
+    private void verifyThatTheResourceIsInThePublishedResources(Publication publication) {
+        var publishedResource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
 
-        Optional<ResourceDao> publishedResource = searchForResource(resourceDaoWithStatusPublished);
-        assertThat(publishedResource.isPresent(), is(true));
-
-        var actualResourceDao = publishedResource.orElseThrow();
-        var resource = (Resource) actualResourceDao.getData();
-        assertThat(resource.getStatus(), is(equalTo(PUBLISHED)));
+        assertThat(publishedResource.getStatus(), is(equalTo(PUBLISHED)));
     }
 
-    private void verifyThatTheResourceWasMovedFromTheDrafts(ResourceDao resourceDaoWithStatusDraft) {
-        Optional<ResourceDao> expectedEmptyResult = searchForResource(resourceDaoWithStatusDraft);
+    private void verifyThatTheResourceWasMovedFromTheDrafts(ResourceDao resourceDao) {
+        var expectedEmptyResult = resourceDao.getResource().fetch(resourceService);
         assertThat(expectedEmptyResult.isEmpty(), is(true));
     }
 
-    private void assertThatResourceCanBeFoundInDraftResources(ResourceDao resourceDaoWithStatusDraft) {
-        Optional<ResourceDao> savedResource = searchForResource(resourceDaoWithStatusDraft);
+    private void assertThatResourceCanBeFoundInDraftResources(ResourceDao resourceDao) {
+        Optional<Resource> savedResource = resourceDao.getResource().fetch(resourceService);
         assertThat(savedResource.isPresent(), is(true));
-    }
-
-    private ResourceDao queryObjectForPublishedResource(Publication resourceWithStatusDraft) {
-        Resource resourceWithStatusPublished = Resource.fromPublication(resourceWithStatusDraft)
-                                                   .copy()
-                                                   .withStatus(PUBLISHED)
-                                                   .build();
-        return new ResourceDao(resourceWithStatusPublished);
-    }
-
-    private QueryResult queryForDraftResource(ResourceDao resourceDao) {
-
-        return client.query(new QueryRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
-                                .withIndexName(DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-                                .withKeyConditions(resourceDao.fetchEntryByTypeCustomerStatusKey()));
-    }
-
-    private Optional<ResourceDao> parseResult(QueryResult result) {
-        return result.getItems().stream().map(map -> parseAttributeValuesMap(map, ResourceDao.class)).findAny();
     }
 
     private Publication createPublishedResource() throws ApiGatewayException {

@@ -14,14 +14,11 @@ public final class DatabaseConstants {
     public static final String DEFAULT_RESOURCES_TABLE_NAME = "NonExistingTable";
     public static final String KEY_FIELDS_DELIMITER = ":";
     public static final String STRING_PLACEHOLDER = "%s";
-    public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_NAME = "ByTypeCustomerStatus";
     public static final String BY_CUSTOMER_RESOURCE_INDEX_NAME = "ByCustomerResource";
     public static final String BY_TYPE_AND_IDENTIFIER_INDEX_NAME = "ResourcesByIdentifier";
     public static final String RESOURCE_BY_CRISTIN_ID_INDEX_NAME = "ResourceByCristinId";
     public static final String PRIMARY_KEY_PARTITION_KEY_NAME = "PK0";
     public static final String PRIMARY_KEY_SORT_KEY_NAME = "SK0";
-    public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME = "PK1";
-    public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME = "SK1";
     public static final String BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME = "PK2";
     public static final String BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME = "SK2";
     public static final String BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME = "PK3";

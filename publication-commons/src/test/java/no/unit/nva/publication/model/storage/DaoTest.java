@@ -7,15 +7,10 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.STATUS_INDEX_FIELD_PREFIX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -31,8 +26,6 @@ import static org.hamcrest.text.IsEmptyString.emptyString;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -76,7 +69,6 @@ import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPubli
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
@@ -209,42 +201,6 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(primaryKeySortKey, is(equalTo(expectedFormat)));
     }
 
-    @ParameterizedTest
-        (name = "daoByCustomerAndStatusIndexPartitionKey contains only Type, CustomerIdentifier and Status "
-                + "in that order: {0}")
-    @MethodSource("instanceProvider")
-    void daoByCustomerAndStatusIndexPartitionKeyContainsOnlyTypeCustomerIdentifierAndStatusInThatOrder(Dao dao)
-        throws JsonProcessingException {
-
-        JsonNode jsonNode = serializeInstance(dao);
-        assertThat(jsonNode.get(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME), is(not(nullValue())));
-        String byTypeCustomerStatusIndexPartitionKey = dao.getByTypeCustomerStatusPartitionKey();
-
-        String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
-                                            dao.indexingType(),
-                                            CUSTOMER_INDEX_FIELD_PREFIX,
-                                            dao.getCustomerIdentifier(),
-                                            STATUS_INDEX_FIELD_PREFIX,
-                                            dao.getData().getStatusString());
-
-        assertThat(byTypeCustomerStatusIndexPartitionKey, is(equalTo(expectedFormat)));
-    }
-
-    @ParameterizedTest(name = "daoByCustomerAndStatusIndexSortKey contains only type and identifier: {0}")
-    @MethodSource("instanceProvider")
-    void daoByCustomerAndStatusIndexSortKeyContainsOnlyTypeAndIdentifier(Dao dao)
-        throws JsonProcessingException {
-        JsonNode jsonNode = serializeInstance(dao);
-        assertThat(jsonNode.get(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME), is(not(nullValue())));
-        String byTypeCustomerStatusIndexPartitionKey = dao.getByTypeCustomerStatusSortKey();
-
-        String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
-                                            dao.indexingType(),
-                                            dao.getIdentifier().toString());
-
-        assertThat(byTypeCustomerStatusIndexPartitionKey, is(equalTo(expectedFormat)));
-    }
-
     @ParameterizedTest(name = "dao can be retrieved by primary-key from dynamo: {0}")
     @MethodSource("instanceProvider")
     void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao originalResource) {
@@ -257,18 +213,6 @@ class DaoTest extends ResourcesLocalTest {
 
         assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
         assertThat(originalResource, is(equalTo(retrievedResource)));
-    }
-
-    @ParameterizedTest(name = "dao can be retrieved by the ByTypePublisherStatus index: {0}")
-    @MethodSource("instanceProvider")
-    void daoCanBeRetrievedByTypePublisherStatusIndex(Dao originalDao) {
-        client.putItem(toPutItemRequest(originalDao));
-        QueryResult queryResult = client.query(queryByTypeCustomerStatusIndex(originalDao));
-        Dao retrievedDao = queryResult.getItems()
-                               .stream()
-                               .map(map -> parseAttributeValuesMap(map, originalDao.getClass()))
-                               .collect(SingletonCollector.collect());
-        assertThat(retrievedDao, is(equalTo(originalDao)));
     }
 
     @ParameterizedTest
@@ -456,13 +400,6 @@ class DaoTest extends ResourcesLocalTest {
                    .withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
                    .build();
-    }
-
-    private QueryRequest queryByTypeCustomerStatusIndex(Dao originalResource) {
-        return new QueryRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-                   .withKeyConditions(originalResource.fetchEntryByTypeCustomerStatusKey());
     }
 
     private JsonNode serializeInstance(Dao daoInstance) throws JsonProcessingException {
