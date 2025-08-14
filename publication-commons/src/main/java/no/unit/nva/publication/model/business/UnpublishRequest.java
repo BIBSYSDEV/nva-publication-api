@@ -72,11 +72,6 @@ public class UnpublishRequest extends TicketEntry {
     }
 
     @Override
-    public String getStatusString() {
-        return this.getStatus().toString();
-    }
-
-    @Override
     public void validateCreationRequirements(Publication publication) {
         // TODO:
     }
