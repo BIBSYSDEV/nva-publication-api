@@ -186,10 +186,10 @@ Resources:
           AttributeType: S
         - AttributeName: SK0
           AttributeType: S
-        - AttributeName: PK1
-          AttributeType: S
-        - AttributeName: SK1
-          AttributeType: S
+#        - AttributeName: PK1
+#          AttributeType: S
+#        - AttributeName: SK1
+#          AttributeType: S
         - AttributeName: PK2
           AttributeType: S
         - AttributeName: SK2
@@ -261,10 +261,10 @@ Resources:
           AttributeType: S
         - AttributeName: SK0
           AttributeType: S
-        - AttributeName: PK1
-          AttributeType: S
-        - AttributeName: SK1
-          AttributeType: S
+#        - AttributeName: PK1
+#          AttributeType: S
+#        - AttributeName: SK1
+#          AttributeType: S
         - AttributeName: PK2
           AttributeType: S
         - AttributeName: SK2
@@ -283,14 +283,14 @@ Resources:
         - AttributeName: SK0
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: ByTypeCustomerStatus
-          KeySchema:
-            - AttributeName: PK1
-              KeyType: HASH
-            - AttributeName: SK1
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+#        - IndexName: ByTypeCustomerStatus
+#          KeySchema:
+#            - AttributeName: PK1
+#              KeyType: HASH
+#            - AttributeName: SK1
+#              KeyType: RANGE
+#          Projection:
+#            ProjectionType: ALL
         - IndexName: ByCustomerResource
           KeySchema:
             - AttributeName: PK2
