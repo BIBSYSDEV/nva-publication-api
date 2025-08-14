@@ -113,7 +113,10 @@ class DaoTest extends ResourcesLocalTest {
                                                             DATA_TICKET_EVENT,
                                                             DATA_VIEWED_BY,
                                                             DATA_PUBLICATION_CHANNELS,
-                                                            RESOURCE_PUBLICATION_CHANNELS);
+                                                            RESOURCE_PUBLICATION_CHANNELS,
+                                                            "resource.importDetails",
+                                                            ".importDetails",
+                                                            "data.importDetails");
 
     public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
@@ -204,7 +207,6 @@ class DaoTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "dao can be retrieved by primary-key from dynamo: {0}")
     @MethodSource("instanceProvider")
     void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao originalResource) {
-
         client.putItem(toPutItemRequest(originalResource));
         GetItemResult getItemResult = client.getItem(
             new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
