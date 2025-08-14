@@ -1,9 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
-import static no.unit.nva.publication.PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.storage.DataCompressor.compressDaoData;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
@@ -13,7 +11,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,10 +25,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.QuerySpliterator;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
@@ -48,7 +43,6 @@ public abstract class Dao
 
     public static final String URI_PATH_SEPARATOR = "/";
     public static final String VERSION_FIELD = "version";
-    public static final boolean SINGLE_THREADED = false;
     private Entity data;
 
     @JsonProperty(VERSION_FIELD)
@@ -208,12 +202,6 @@ public abstract class Dao
         return Objects.equals(getData(), dao.getData()) && Objects.equals(getVersion(), dao.getVersion());
     }
 
-    protected static Stream<Dao> fetchAllQueryResults(AmazonDynamoDB client, QueryRequest queryRequest) {
-        var queryIterator = new QuerySpliterator(client, queryRequest, RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES);
-        return StreamSupport.stream(queryIterator, SINGLE_THREADED)
-                   .map(item -> parseAttributeValuesMap(item, Dao.class));
-    }
-
     protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
         String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
         return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
@@ -254,7 +242,7 @@ public abstract class Dao
     }
 
     private Optional<String> extractStatus() {
-        return attempt(this::getData).map(Entity.class::cast).map(Entity::getStatusString).toOptional();
+        return attempt(this::getData).map(Entity::getStatusString).toOptional();
     }
 
     private String customerIdentifier() {

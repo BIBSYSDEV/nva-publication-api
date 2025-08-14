@@ -1,95 +1,14 @@
 package no.unit.nva.publication.service.impl;
 
-import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
-import static java.util.Collections.emptyList;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
-import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.MigrationTests.getUnitsResponseBytes;
-import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
-import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.*;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationNote;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
@@ -108,30 +27,11 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.FilesApprovalThesis;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
-import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileHiddenEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileRejectedEvent;
-import no.unit.nva.publication.model.business.publicationstate.FileRetractedEvent;
-import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.*;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
@@ -166,10 +66,44 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
+import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
+import static java.util.Collections.emptyList;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.model.PublicationStatus.*;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.*;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.MigrationTests.getUnitsResponseBytes;
+import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
+import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
+import static no.unit.nva.testutils.RandomDataGenerator.*;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
 class ResourceServiceTest extends ResourcesLocalTest {
 
     private static final String ANOTHER_OWNER = "another@owner.no";
-    private static final String SOME_OTHER_USER = "some_other@user.no";
     private static final String UPDATED_TITLE = "UpdatedTitle";
     private static final String SOME_INVALID_FIELD = "someInvalidField";
     private static final String SOME_STRING = "someValue";
@@ -289,53 +223,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void whenPublicationOwnerIsUpdatedTheResourceEntryMaintainsTheRestResourceMetadata() throws ApiGatewayException {
-        var originalResource = createPersistedPublicationWithDoi();
-
-        var oldOwner = UserInstance.fromPublication(originalResource);
-        var newOwner = someOtherUser();
-
-        resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
-
-        assertThatResourceHaveNewOwner(originalResource);
-
-        var newResource = resourceService.getPublicationByIdentifier(originalResource.getIdentifier());
-
-        var expectedResource = expectedUpdatedResource(originalResource, newResource, newOwner);
-        var diff = JAVERS.compare(expectedResource, newResource);
-        assertThat(diff.prettyPrint(), newResource, is(equalTo(expectedResource)));
-    }
-
-    @Test
-    void whenPublicationOwnerIsUpdatedThenBothOrganizationAndUserAreUpdated() throws ApiGatewayException {
-        Publication originalResource = createPersistedPublicationWithDoi();
-        UserInstance oldOwner = UserInstance.fromPublication(originalResource);
-        UserInstance newOwner = someOtherUser();
-
-        resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
-
-        Publication newResource = resourceService.getPublicationByIdentifier(originalResource.getIdentifier());
-
-        assertThat(newResource.getResourceOwner().getOwner().getValue(), is(equalTo(newOwner.getUsername())));
-        assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getCustomerId())));
-    }
-
-    @Test
-    void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated() throws ApiGatewayException {
-        Publication sampleResource = createPersistedPublicationWithDoi();
-        UserInstance oldOwner = UserInstance.fromPublication(sampleResource);
-        UserInstance newOwner = someOtherUser();
-
-        resourceService.updateOwner(sampleResource.getIdentifier(), oldOwner, newOwner);
-
-        assertThatResourceHaveNewOwner(sampleResource);
-
-        Publication newResource = resourceService.getPublicationByIdentifier(sampleResource.getIdentifier());
-
-        assertThat(newResource.getModifiedDate(), is(greaterThan(newResource.getCreatedDate())));
-    }
-
-    @Test
     void resourceIsUpdatedWhenResourceUpdateIsReceived() throws ApiGatewayException {
         Publication resource = createPersistedPublicationWithDoi();
         Publication actualOriginalResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
@@ -394,7 +281,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier() {
         Publication publication = publicationWithIdentifier();
-        Publication savedPublication = resourceService.insertPreexistingPublication(publication);
+        Publication savedPublication = super.persistResource(Resource.fromPublication(publication)).toPublication();
         assertThat(savedPublication.getIdentifier(), is(equalTo(publication.getIdentifier())));
     }
 
@@ -995,7 +882,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"NEW", "DRAFT_FOR_DELETION", "DELETED"})
     void shouldAllowPublish(PublicationStatus status) throws ApiGatewayException {
         var publication = randomPublication().copy().withStatus(status).build();
-        resourceService.insertPreexistingPublication(publication);
+        super.persistResource(Resource.fromPublication(publication));
         Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
         assertThat(resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
                    is(equalTo(PUBLISHED)));
@@ -1006,7 +893,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         "PUBLISHED", "DELETED", "UNPUBLISHED"})
     void shouldNotAllowPublish(PublicationStatus status) {
         var publication = randomPublication().copy().withStatus(status).build();
-        resourceService.insertPreexistingPublication(publication);
+        super.persistResource(Resource.fromPublication(publication));
         assertThrows(IllegalStateException.class, () -> Resource.fromPublication(publication)
                                                             .publish(resourceService,
                                                                      UserInstance.fromPublication(publication)));
@@ -1986,17 +1873,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private Publication expectedUpdatedResource(Publication originalResource, Publication updatedResource,
-                                                UserInstance expectedOwner) {
-        return originalResource.copy()
-                   .withResourceOwner(
-                       new ResourceOwner(new Username(expectedOwner.getUsername()), AFFILIATION_NOT_IMPORTANT))
-                   .withPublisher(userOrganization(expectedOwner))
-                   .withCreatedDate(originalResource.getCreatedDate())
-                   .withModifiedDate(updatedResource.getModifiedDate())
-                   .build();
-    }
-
     private void assertThatUpdateFails(Publication resourceUpdate) {
         Executable action = () -> resourceService.updatePublication(resourceUpdate);
         assertThrows(TransactionFailedException.class, action);
@@ -2020,20 +1896,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private String fetchMainTitleFieldName() {
         return attempt(() -> EntityDescription.class.getDeclaredField(MAIN_TITLE_FIELD).getName()).orElseThrow(
             fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
-    }
-
-    private void assertThatResourceHaveNewOwner(Publication sampleResource) {
-        try {
-            assertThat(resourceService.getPublicationByIdentifier(sampleResource.getIdentifier())
-                           .getResourceOwner()
-                           .getOwner(), is(not(equalTo(sampleResource.getResourceOwner().getOwner()))));
-        } catch (NotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private UserInstance someOtherUser() {
-        return UserInstance.create(SOME_OTHER_USER, SOME_OTHER_ORG);
     }
 
     private Organization newOrganization() {

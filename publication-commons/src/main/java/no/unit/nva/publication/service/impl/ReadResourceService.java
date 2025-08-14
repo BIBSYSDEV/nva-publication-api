@@ -1,7 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
-import static java.util.Objects.isNull;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
@@ -12,8 +11,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
@@ -45,7 +42,6 @@ import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
-import nva.commons.apigateway.exceptions.NotFoundException;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
@@ -159,17 +155,6 @@ public class ReadResourceService {
         return queryResultToListOfPublications(queryResult);
     }
 
-    protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
-        return getResource(resourceQueryObject(userInstance, identifier));
-    }
-
-    protected Resource getResource(Resource resource) throws NotFoundException {
-        Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
-        GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
-        ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
-        return (Resource) fetchedDao.getData();
-    }
-
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
@@ -227,16 +212,6 @@ public class ReadResourceService {
     private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
         return new ExpressionSpecBuilder()
                    .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
-    }
-
-    private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
-        GetItemResult result = client.getItem(new GetItemRequest()
-                                                  .withTableName(tableName)
-                                                  .withKey(primaryKey));
-        if (isNull(result.getItem())) {
-            throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
-        }
-        return result;
     }
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {

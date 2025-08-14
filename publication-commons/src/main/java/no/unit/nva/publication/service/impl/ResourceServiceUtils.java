@@ -1,15 +1,14 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import java.net.URI;
+import no.unit.nva.publication.model.storage.WithPrimaryKey;
+
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import no.unit.nva.model.Organization;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.storage.WithPrimaryKey;
+
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
 public final class ResourceServiceUtils {
     
@@ -38,15 +37,7 @@ public final class ResourceServiceUtils {
             new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
             SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
     }
-    
-    static Organization newOrganization(URI organizationUri) {
-        return new Organization.Builder().withId(organizationUri).build();
-    }
-    
-    static Organization userOrganization(UserInstance user) {
-        return newOrganization(user.getCustomerId());
-    }
-    
+
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
                                                                                 Class<T> valueClass) {
         if (String.class.equals(valueClass)) {

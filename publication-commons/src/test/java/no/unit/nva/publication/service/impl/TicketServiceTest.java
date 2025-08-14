@@ -1,120 +1,64 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.lang.StrictMath.ceil;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.TestingUtils.createGeneralSupportRequest;
-import static no.unit.nva.publication.TestingUtils.createOrganization;
-import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
-import static no.unit.nva.publication.TestingUtils.createUnpublishRequest;
-import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
-import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
-import static no.unit.nva.publication.TestingUtils.randomUserInstance;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
-import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
-import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
-import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
-import static no.unit.nva.publication.model.business.TicketStatus.REMOVED;
-import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.everyItem;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.collection.IsIn.in;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.ItemResponse;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.TransactGetItemsResult;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import com.amazonaws.services.dynamodbv2.model.*;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
+import no.unit.nva.model.*;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
-import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.FilesApprovalEntry;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.FilesApprovalThesis;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UnpublishRequest;
-import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
-import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
-import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.*;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
+
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.TestingUtils.*;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.publication.model.business.TicketStatus.*;
+import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
+import static no.unit.nva.testutils.RandomDataGenerator.*;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.everyItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.collection.IsIn.in;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 public class TicketServiceTest extends ResourcesLocalTest {
 
     private static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
     public static final String SOME_ASSIGNEE = "some@user";
-    private static final int TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET = 5;
     private static final UserInstance USER_INSTANCE = UserInstance.create(randomString(), randomUri());
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String ASSIGNEE = "assignee";
@@ -460,30 +404,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should update modified date and version when refreshing a ticket")
-    @MethodSource("ticketTypeProvider")
-    void shouldReturnTicketForElevatedUserOfSameInstitution(Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var ticket = createPersistedTicket(publication, ticketType);
-        var elevatedUser = UserInstance.create(randomString(), ticket.getCustomerId());
-        var retrievedTicket = ticketService.fetchTicketForElevatedUser(elevatedUser, ticket.getIdentifier());
-        assertThat(retrievedTicket, is(equalTo(ticket)));
-    }
-
-    @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should update modified date and version when refreshing a ticket")
-    @MethodSource("ticketTypeProvider")
-    void shouldThrowNotFoundExceptionWhenUserIsElevatedUserOfAlienInstitution(Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var ticket = createPersistedTicket(publication, ticketType);
-        var elevatedUser = UserInstance.create(randomString(), randomUri());
-        Executable action = () -> ticketService.fetchTicketForElevatedUser(elevatedUser, ticket.getIdentifier());
-        assertThrows(NotFoundException.class, action);
-    }
-
-    @ParameterizedTest(name = "ticket type:{0}")
     @DisplayName("should mark ticket as Unread by owner when requested")
     @MethodSource("ticketTypeProvider")
     void shouldMarkTicketAsUnreadByOwnerWhenRequested(Class<? extends TicketEntry> ticketType)
@@ -497,24 +417,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), not(hasItem(owner)));
         assertThat(updatedTicket.getModifiedDate(), is(greaterThan(ticket.getModifiedDate())));
-    }
-
-    @ParameterizedTest(name = "number of tickets:{0}")
-    @DisplayName("should list all tickets for a user")
-    @Timeout(TIMEOUT_TEST_IF_LARGE_PAGE_SIZE_IS_SET)
-    @ValueSource(doubles = {0.5, 1.0, 1.5, 2.0, 2.5})
-    void shouldListTicketsForUser(double timesTheResultSetSize) {
-        int numberOfTickets = (int) ceil(
-            PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES * timesTheResultSetSize);
-        var expectedTickets = IntStream.range(0, numberOfTickets)
-            .boxed()
-            .map(attempt(ignored -> persistPublication(owner, DRAFT)))
-            .flatMap(Try::stream)
-            .map(this::persistGeneralSupportRequest)
-                                  .toList();
-
-        var actualTickets = ticketService.fetchTicketsForUser(owner).toList();
-        assertThat(actualTickets, containsInAnyOrder(expectedTickets.toArray(TicketEntry[]::new)));
     }
 
     @ParameterizedTest
@@ -564,25 +466,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(ticket.getViewedBy(), hasItem(expectedAssigneeUsername));
         ticket.markUnReadForAssignee().persistUpdate(ticketService);
         assertThat(ticket.getViewedBy(), not(hasItem(expectedAssigneeUsername)));
-    }
-
-    @Test
-    void shouldReturnEmptyListWhenUserHasNoTickets() throws ApiGatewayException {
-        persistPublication(owner, DRAFT);
-        var actualTickets = ticketService.fetchTicketsForUser(owner).toList();
-        assertThat(actualTickets, is(empty()));
-    }
-
-    @Test
-    void shouldReturnAllResultsOfaQuery() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var tickets = IntStream.range(0, 2)
-            .boxed()
-            .map(ticketType -> createPersistedTicket(publication, GeneralSupportRequest.class))
-            .toList();
-        var query = UntypedTicketQueryObject.create(UserInstance.fromPublication(publication));
-        var retrievedTickets = query.fetchTicketsForUser(client).toList();
-        assertThat(retrievedTickets.size(), is(equalTo(tickets.size())));
     }
 
     @Test
@@ -849,18 +732,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
                    .toList();
     }
 
-    private GeneralSupportRequest persistGeneralSupportRequest(Publication publication) {
-        return attempt(() -> createGeneralSupportRequest(publication).persistNewTicket(ticketService)).map(
-            GeneralSupportRequest.class::cast).orElseThrow();
-    }
-
-    private TicketEntry legacyQueryObject(Publication publication) {
-        return DoiRequest.builder()
-                   .withCustomerId(publication.getPublisher().getId())
-                   .withResourceIdentifier(publication.getIdentifier())
-                   .build();
-    }
-
     private PublicationStatus validPublicationStatusForTicketApproval(Class<? extends TicketEntry> ticketType) {
         return DoiRequest.class.equals(ticketType) ? PUBLISHED : DRAFT;
     }
@@ -934,7 +805,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = createUnpersistedPublication(owner);
         publication.setStatus(publicationStatus);
         publication.setCuratingInstitutions(getCuratingInstitutions(publication));
-        var persistedPublication = resourceService.insertPreexistingPublication(publication);
+        var persistedPublication = super.persistResource(Resource.fromPublication(publication)).toPublication();
 
         return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }

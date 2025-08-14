@@ -220,13 +220,6 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResourceFromImportCandidate(newResource);
     }
 
-    // @deprecated Only here for existing tests.
-    @Deprecated(forRemoval = true)
-    public Publication insertPreexistingPublication(Publication publication) {
-        Resource resource = Resource.fromPublication(publication);
-        return insertResource(resource).toPublication();
-    }
-
     public Publication markPublicationForDeletion(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier)).toPublication();
@@ -305,11 +298,6 @@ public class ResourceService extends ServiceWithTransactions {
     public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
         deleteResourceService.deleteImportCandidate(importCandidate);
         logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE, importCandidate.getIdentifier());
-    }
-
-    public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException {
-        updateResourceService.updateOwner(identifier, oldOwner, newOwner);
     }
 
     public Publication updatePublication(Publication resourceUpdate) {

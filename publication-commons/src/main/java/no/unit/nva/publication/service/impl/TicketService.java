@@ -1,17 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
-import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import java.net.URI;
-import java.time.Clock;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -21,7 +10,6 @@ import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
@@ -35,6 +23,18 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URI;
+import java.time.Clock;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
+
+import static java.util.Objects.isNull;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
+import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class TicketService extends ServiceWithTransactions {
@@ -132,22 +132,6 @@ public class TicketService extends ServiceWithTransactions {
         var dao = refreshedTicket.toDao();
         getClient().putItem(dao.createPutItemRequest());
         return refreshedTicket;
-    }
-
-    public TicketEntry fetchTicketForElevatedUser(UserInstance user, SortableIdentifier ticketIdentifier)
-        throws NotFoundException {
-        var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
-        return attempt(() -> queryObject.fetchByIdentifier(getClient(), tableName))
-                   .map(Dao::getData)
-                   .map(TicketEntry.class::cast)
-                   .toOptional()
-                   .filter(ticketEntry -> ticketEntry.getCustomerId().equals(user.getCustomerId()))
-                   .orElseThrow(TicketService::notFoundException);
-    }
-
-    public Stream<TicketEntry> fetchTicketsForUser(UserInstance userInstance) {
-        var queryObject = UntypedTicketQueryObject.create(userInstance);
-        return queryObject.fetchTicketsForUser(getClient());
     }
 
     public TicketEntry fetchTicketByIdentifier(SortableIdentifier ticketIdentifier)

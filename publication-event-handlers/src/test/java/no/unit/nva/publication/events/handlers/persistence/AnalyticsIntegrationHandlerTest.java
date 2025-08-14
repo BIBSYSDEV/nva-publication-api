@@ -126,7 +126,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private EventReference generateEventForExpandedPublication(Class<?> type) throws IOException {
         var publication = randomPublication(type);
-        var resource = resourceService.insertPreexistingPublication(publication);
+        var resource = super.persistResource(Resource.fromPublication(publication)).toPublication();
         var inputFileUri = expandPublicationAndSaveToS3(resource);
         return new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, inputFileUri);
     }
