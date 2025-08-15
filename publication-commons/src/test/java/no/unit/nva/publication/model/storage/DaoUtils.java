@@ -4,25 +4,16 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
-import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import java.time.Instant;
-import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.ImportDetail;
-import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -37,16 +28,8 @@ import org.junit.jupiter.api.Named;
 
 public final class DaoUtils extends TestDataSource {
 
-    public static Resource sampleResource(Publication publication) {
-        var additionalIdentifier = Set.of(
-            (AdditionalIdentifierBase) new AdditionalIdentifier(CRISTIN_SOURCE, randomString()));
-        publication.setAdditionalIdentifiers(additionalIdentifier);
-        publication.setImportDetails(List.of(new ImportDetail(Instant.now(), ImportSource.fromSource(Source.CRISTIN))));
-        return Resource.fromPublication(publication);
-    }
-
     public static ResourceDao sampleResourceDao() {
-        return Try.of(sampleResource(randomPublication()))
+        return Try.of(Resource.fromPublication(randomPublication()))
                    .map(ResourceDao::new)
                    .orElseThrow();
     }

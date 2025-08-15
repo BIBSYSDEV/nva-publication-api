@@ -148,7 +148,7 @@ class ResourceDaoTest extends ResourcesLocalTest {
                               .withAdditionalIdentifiers(deserialized)
                               .build();
         client.putItem(toPutItemRequest(Resource.fromPublication(publication).toDao()));
-        var daoWithMultipleCristinIdentifiers = Try.of(DaoUtils.sampleResource(publication))
+        var daoWithMultipleCristinIdentifiers = Try.of(Resource.fromPublication(publication))
                                                     .map(ResourceDao::new)
                                                     .orElseThrow();
         assertDoesNotThrow(() -> dtoObjectMapper.convertValue(daoWithMultipleCristinIdentifiers, JsonNode.class));

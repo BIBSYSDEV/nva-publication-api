@@ -3,12 +3,15 @@ package no.unit.nva.publication.model.storage;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
@@ -32,11 +35,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
-import no.unit.nva.model.ImportDetail;
-import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -192,14 +196,25 @@ public class ResourceDao extends Dao
 
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
     public String getResourceByCristinIdentifierPartitionKey() {
-        return extractCristinIdentifier().isEmpty() ? null
-                   : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX
-                     + KEY_FIELDS_DELIMITER
-                     + extractCristinIdentifier().orElseThrow();
+        return extractCristinIdentifier()
+                   .map(value -> CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + value)
+                   .orElse(null);
     }
 
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
     public String getResourceByCristinIdentifierSortKey() {
+        return indexingType() + KEY_FIELDS_DELIMITER + getIdentifier();
+    }
+
+    @JsonProperty(GSI_1_PARTITION_KEY_NAME)
+    public String getResourceByScopusIdentifierPartitionKey() {
+        return extractScopusIdentifier()
+                   .map(value -> String.format("%s:%s", SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX, value))
+                   .orElse(null);
+    }
+
+    @JsonProperty(GSI_1_SORT_KEY_NAME)
+    public String getResourceByScopusIdentifierSortKey() {
         return indexingType() + KEY_FIELDS_DELIMITER + getIdentifier();
     }
 
@@ -223,6 +238,14 @@ public class ResourceDao extends Dao
                    .or(() -> getAdditionalIdentifier(AdditionalIdentifier.class, CRISTIN_SOURCE))
                    .or(() -> getAdditionalIdentifier(CristinIdentifier.class, BRAGE_SOURCE))
                    .or(() -> getAdditionalIdentifier(CristinIdentifier.class, NVA_SOURCE));
+    }
+
+    public Optional<String> extractScopusIdentifier() {
+        return getResource().getAdditionalIdentifiers().stream()
+                   .filter(ScopusIdentifier.class::isInstance)
+                    .map(ScopusIdentifier.class::cast)
+                    .map(ScopusIdentifier::value)
+                    .findFirst();
     }
 
     private <T extends AdditionalIdentifierBase> Optional<String> getAdditionalIdentifier(Class<T> identifierType,

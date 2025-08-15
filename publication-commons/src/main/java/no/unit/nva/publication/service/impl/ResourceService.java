@@ -53,6 +53,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -268,6 +269,18 @@ public class ResourceService extends ServiceWithTransactions {
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
         return readResourceService.getPublicationsByCristinIdentifier(cristinIdentifier)
+                   .stream()
+                   .map(Resource::fromPublication)
+                   .map(Resource::getIdentifier)
+                   .map(readResourceService::getResourceByIdentifier)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(Resource::toPublication)
+                   .toList();
+    }
+
+    public List<Publication> getPublicationsByScopusIdentifier(ScopusIdentifier scopusIdentifier) {
+        return readResourceService.getPublicationsByScopusIdentifier(scopusIdentifier.value())
                    .stream()
                    .map(Resource::fromPublication)
                    .map(Resource::getIdentifier)

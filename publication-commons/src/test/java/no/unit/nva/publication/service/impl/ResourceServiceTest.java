@@ -92,6 +92,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -1640,6 +1641,26 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertEquals(persistedResource, refreshedResource);
         assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
+    }
+
+    @Test
+    void shouldFetchPublicationByScopusIdentifier() throws BadRequestException {
+        var publication = randomPublication();
+        var scopusIdentifier = ScopusIdentifier.fromValue(randomString());
+        publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                             UserInstance.fromPublication(publication));
+
+        var publicationByScopusIdentifier = resourceService.getPublicationsByScopusIdentifier(scopusIdentifier).getFirst();
+
+        assertEquals(persistedPublication, publicationByScopusIdentifier);
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoPublicationWithProvidedScopusIdentifier() {
+        var scopusIdentifier = ScopusIdentifier.fromValue(randomString());
+
+        assertEquals(Collections.emptyList(), resourceService.getPublicationsByScopusIdentifier(scopusIdentifier));
     }
 
     private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {

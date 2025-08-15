@@ -6,7 +6,9 @@ import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeVa
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -149,8 +151,19 @@ public class ReadResourceService {
     }
 
     public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
-        var queryObject = new ResourceDao(resourceQueryObjectWithCristinIdentifier(cristinIdentifier));
+        var queryObject = new ResourceDao(resourceQueryObjectWithAdditionalIdentifier(cristinIdentifier));
         var queryRequest = queryObject.createQueryFindByCristinIdentifier();
+        var queryResult = client.query(queryRequest);
+        return queryResultToListOfPublications(queryResult);
+    }
+
+    public List<Publication> getPublicationsByScopusIdentifier(String scopusIdentifier) {
+        var queryRequest = new QueryRequest().withTableName(tableName)
+                               .withIndexName(GSI_1_INDEX_NAME)
+                               .withKeyConditionExpression("#PK1 = :value")
+                               .withExpressionAttributeNames(Map.of("#PK1", "PK1"))
+                               .withExpressionAttributeValues(Map.of(":value",
+                                                                     new AttributeValue(String.format("%s:%s", SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX, scopusIdentifier))));
         var queryResult = client.query(queryRequest);
         return queryResultToListOfPublications(queryResult);
     }
@@ -172,10 +185,10 @@ public class ReadResourceService {
                    .collect(Collectors.toList());
     }
 
-    private Resource resourceQueryObjectWithCristinIdentifier(String cristinIdentifier) {
+    private Resource resourceQueryObjectWithAdditionalIdentifier(String identifier) {
         var resource = new Resource();
         resource.setAdditionalIdentifiers(
-            Set.of(new AdditionalIdentifier(ADDITIONAL_IDENTIFIER_CRISTIN, cristinIdentifier)));
+            Set.of(new AdditionalIdentifier(ADDITIONAL_IDENTIFIER_CRISTIN, identifier)));
         return resource;
     }
 

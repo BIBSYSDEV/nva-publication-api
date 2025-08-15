@@ -7,6 +7,9 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOME
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME;
@@ -113,6 +116,11 @@ public class ResourcesLocalTest extends TestDataSource {
     private Collection<GlobalSecondaryIndex> globalSecondaryIndexes() {
         List<GlobalSecondaryIndex> indexes = new ArrayList<>();
         indexes.add(
+            newGsi(GSI_1_INDEX_NAME,
+                   GSI_1_PARTITION_KEY_NAME,
+                   GSI_1_SORT_KEY_NAME)
+        );
+        indexes.add(
             newGsi(BY_CUSTOMER_RESOURCE_INDEX_NAME,
                    BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
                    BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME)
@@ -156,6 +164,8 @@ public class ResourcesLocalTest extends TestDataSource {
         List<AttributeDefinition> attributesList = new ArrayList<>();
         attributesList.add(newAttribute(PRIMARY_KEY_PARTITION_KEY_NAME));
         attributesList.add(newAttribute(PRIMARY_KEY_SORT_KEY_NAME));
+        attributesList.add(newAttribute(GSI_1_PARTITION_KEY_NAME));
+        attributesList.add(newAttribute(GSI_1_SORT_KEY_NAME));
         attributesList.add(newAttribute(BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME));
         attributesList.add(newAttribute(BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME));
         attributesList.add(newAttribute(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME));
