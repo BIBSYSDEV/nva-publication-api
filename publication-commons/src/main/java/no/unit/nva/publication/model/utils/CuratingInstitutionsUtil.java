@@ -69,7 +69,8 @@ public class CuratingInstitutionsUtil {
                    .stream()
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
-                   .map(Organization::getId);
+                   .map(Organization::getId)
+                   .filter(Objects::nonNull);
     }
 
     private static Stream<Contributor> getAffiliatedContributors(EntityDescription entityDescription) {
