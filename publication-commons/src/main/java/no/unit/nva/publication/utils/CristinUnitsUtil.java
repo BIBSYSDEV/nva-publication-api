@@ -38,6 +38,10 @@ public class CristinUnitsUtil {
      * @return URI of the top level unit or null if not found
      */
     public URI getTopLevel(URI unitId) {
+        if (isNull(unitId)) {
+            throw new IllegalArgumentException("unitId cannot be null");
+        }
+
         if (allUnits.isEmpty()) {
             loadAllData();
             buildTree();
