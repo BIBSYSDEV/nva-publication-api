@@ -234,7 +234,7 @@ public final class PublicationGenerator {
     }
 
     public static AdditionalIdentifierBase randomCristinIdentifier() {
-        return new CristinIdentifier(new SourceName(randomLowerCaseString(), randomLowerCaseString()),
+        return new CristinIdentifier(new SourceName(SourceName.CRISTIN_SYSTEM, randomLowerCaseString()),
                                      randomInteger().toString());
     }
 

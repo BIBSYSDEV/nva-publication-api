@@ -99,6 +99,9 @@ class DaoTest extends ResourcesLocalTest {
     private static final String DATA_VIEWED_BY = "data.viewedBy";
     protected static final String DATA_PUBLICATION_CHANNELS = "data.publicationChannels";
     protected static final String RESOURCE_PUBLICATION_CHANNELS = "resource.publicationChannels";
+    public static final String RESOURCE_IMPORT_DETAILS = "resource.importDetails";
+    public static final String IMPORT_DETAILS = ".importDetails";
+    public static final String DATA_IMPORT_DETAILS1 = "data.importDetails";
     public static final Set<String> IGNORED_FIELDS = Set.of(DATA_OWNER_AFFILIATION,
                                                             DATA_RESPONSIBILITY_AREA,
                                                             DATA_ASSIGNEE,
@@ -113,7 +116,10 @@ class DaoTest extends ResourcesLocalTest {
                                                             DATA_TICKET_EVENT,
                                                             DATA_VIEWED_BY,
                                                             DATA_PUBLICATION_CHANNELS,
-                                                            RESOURCE_PUBLICATION_CHANNELS);
+                                                            RESOURCE_PUBLICATION_CHANNELS,
+                                                            RESOURCE_IMPORT_DETAILS,
+                                                            IMPORT_DETAILS,
+                                                            DATA_IMPORT_DETAILS1);
 
     public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
@@ -204,7 +210,6 @@ class DaoTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "dao can be retrieved by primary-key from dynamo: {0}")
     @MethodSource("instanceProvider")
     void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao originalResource) {
-
         client.putItem(toPutItemRequest(originalResource));
         GetItemResult getItemResult = client.getItem(
             new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
