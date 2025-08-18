@@ -27,7 +27,6 @@ import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.model.utils.CustomerSummary;
 import no.unit.nva.testutils.RandomDataGenerator;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 

@@ -310,10 +310,18 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     public Entity migrate(Entity dataEntry, CristinUnitsUtil cristinUnitsUtil) {
-        if (dataEntry instanceof Resource resource) {
-            return migrateResource(resource, cristinUnitsUtil);
+        try {
+            if (dataEntry instanceof Resource resource) {
+                return migrateResource(resource, cristinUnitsUtil);
+            }
+            return dataEntry;
+        } catch (Exception e) {
+            logger.error("Could not migrate data entry: {}, {}. Error: {}",
+                        dataEntry.getType(),
+                        dataEntry.getIdentifier(),
+                        e.getMessage());
+            throw new RuntimeException("Could not migrate data entry: " + dataEntry.getIdentifier(), e);
         }
-        return dataEntry;
     }
 
     private Resource migrateResource(Resource resource,
