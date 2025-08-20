@@ -818,8 +818,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources, new CristinUnitsUtil(s3Client,
-                                                                         "s3://some-bucket/some-key"));
+        resourceService.refreshResources(resources);
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }

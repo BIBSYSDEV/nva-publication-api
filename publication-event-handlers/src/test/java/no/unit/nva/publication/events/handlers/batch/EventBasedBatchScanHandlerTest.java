@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -46,7 +45,6 @@ import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -90,8 +88,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         dynamoDbClient = super.client;
         this.resourceService = spy(getResourceService(client));
         this.ticketService = getTicketService();
-        var cristinUtils = mock(CristinUnitsUtil.class);
-        this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient, cristinUtils);
+        this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
     }
 
     //TODO: Enable after migration
@@ -242,14 +239,14 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         doThrow(new RuntimeException(expectedExceptionMessage)).when(spiedResourceService)
             .scanResources(anyInt(), any(), any());
 
-        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient, mock(CristinUnitsUtil.class));
+        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient);
         Executable action = () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         assertThrows(RuntimeException.class, action);
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
     }
 
     @Test
-    void shouldConsumeLogEnryWithoutFailing() throws BadRequestException, NotFoundException {
+    void shouldConsumeLogEnryWithoutFailing() throws BadRequestException {
         var publication = randomPublication();
         var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                  publication);
@@ -259,7 +256,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     }
 
-    private void persistLogEntry(Publication persistedPublication) throws NotFoundException {
+    private void persistLogEntry(Publication persistedPublication) {
         Resource.resourceQueryObject(persistedPublication.getIdentifier())
             .fetch(resourceService)
             .orElseThrow()

@@ -195,43 +195,6 @@ class MigrationTests extends ResourcesLocalTest {
         assertEquals(title, migratedResource.getEntityDescription().getMainTitle());
     }
 
-    @Test
-    void shouldMigrateCuratingInstitutions() throws NotFoundException {
-        var affiliationId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
-        var customerCristinId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
-        var contributor = randomContributorWithIdAndAffiliation(randomUri(), affiliationId);
-        var publication = randomPublication(Textbook.class);
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        updatePublication(publication);
-
-        migrateResources();
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
-                                                                                                       customerCristinId))));
-        var migratedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-
-        assertTrue(migratedResource.getCuratingInstitutions().stream()
-                       .anyMatch(curatingInstitution -> curatingInstitution.id().equals(customerCristinId)));
-    }
-
-    private static Degree degreeWithPublisher(Publisher publisher) {
-        return attempt(() ->  new Degree(null, null, null, publisher, List.of(), null))
-                   .orElseThrow();
-    }
-
-    private static Report reportWithPublisher(Publisher publisher) {
-        return attempt(() ->  new Report(null, null, null, publisher, List.of()))
-                   .orElseThrow();
-    }
-
-    private static URI randomPublisherId(UUID channelIdentifier) {
-        return UriWrapper.fromUri(randomUri())
-                   .addChild("publication-channel-v2")
-                   .addChild("publisher")
-                   .addChild(channelIdentifier.toString())
-                   .addChild(randomInteger().toString())
-                   .getUri();
-    }
-
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
         return allMigratedItems.stream()
                 .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
@@ -275,8 +238,7 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries(), new CristinUnitsUtil(s3Client,
-                                                                                                  CRISTIN_UNITS_S3_URI));
+        resourceService.refreshResources(scanResources.getDatabaseEntries());
     }
 
     public static ResponseBytes getUnitsResponseBytes() {

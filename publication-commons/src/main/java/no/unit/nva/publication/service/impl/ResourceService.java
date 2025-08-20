@@ -82,7 +82,6 @@ import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -256,8 +255,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    public void refreshResources(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
-        final var refreshedEntries = refreshAndMigrate(dataEntries, cristinUnitsUtil);
+    public void refreshResources(List<Entity> dataEntries) {
+        final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
     }
@@ -322,11 +321,9 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // update this method according to current needs.
-    public Entity migrate(Entity dataEntry, CristinUnitsUtil cristinUnitsUtil) {
+    public Entity migrate(Entity dataEntry) {
         try {
-            if (dataEntry instanceof Resource resource) {
-                return migrateResource(resource, cristinUnitsUtil);
-            }
+            // Migrate resource
             return dataEntry;
         } catch (Exception e) {
             logger.error("Could not migrate data entry: {}, {}. Error: {}",
@@ -335,15 +332,6 @@ public class ResourceService extends ServiceWithTransactions {
                         e.getMessage());
             throw new RuntimeException("Could not migrate data entry: " + dataEntry.getIdentifier(), e);
         }
-    }
-
-    private Resource migrateResource(Resource resource,
-                                     CristinUnitsUtil cristinUnitsUtil) {
-        // Migrating curating institutions
-        var curatingInstitutions = new CuratingInstitutionsUtil(uriRetriever, customerService)
-            .getCuratingInstitutionsCached(resource.getEntityDescription(), cristinUnitsUtil);
-        resource.setCuratingInstitutions(curatingInstitutions);
-        return resource;
     }
 
     public Stream<FileEntry> fetchFileEntriesForResource(Resource resource) {
@@ -573,8 +561,8 @@ public class ResourceService extends ServiceWithTransactions {
         toResource.setStatus(status);
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
-        return dataEntries.stream().map(attempt(dataEntry -> migrate(dataEntry, cristinUnitsUtil))).map(Try::orElseThrow).toList();
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
+        return dataEntries.stream().map(attempt(this::migrate)).map(Try::orElseThrow).toList();
     }
 
     private Organization createOrganization(UserInstance userInstance) {
