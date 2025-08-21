@@ -15,14 +15,18 @@ import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.utils.CustomerService;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.net.URI;
 import java.time.Clock;
@@ -44,28 +48,33 @@ public class TicketService extends ServiceWithTransactions {
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private static final String TICKET_REFRESHED_MESSAGE = "Ticket has been refreshed successfully: {}";
     public static final String TICKET_TO_REFRESH_NOT_FOUND_MESSAGE = "Ticket to refresh is not found: {}";
+    private static final String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
     private final Supplier<SortableIdentifier> identifierProvider;
     private final ResourceService resourceService;
     private final String tableName;
 
-    public TicketService(AmazonDynamoDB client, RawContentRetriever uriRetriever) {
-        this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever);
+    public TicketService(AmazonDynamoDB client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
+        this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever, cristinUnitsUtil);
     }
 
     protected TicketService(AmazonDynamoDB client,
                             Supplier<SortableIdentifier> identifierProvider,
-                            RawContentRetriever uriRetriever) {
+                            RawContentRetriever uriRetriever,
+                            CristinUnitsUtil cristinUnitsUtil) {
         super(client);
         this.identifierProvider = identifierProvider;
         tableName = RESOURCES_TABLE_NAME;
         resourceService = new ResourceService(client, tableName, Clock.systemDefaultZone(),
                                               uriRetriever, ChannelClaimClient.create(uriRetriever),
-                                              new CustomerService(uriRetriever));
+                                              new CustomerService(uriRetriever), cristinUnitsUtil);
     }
 
     @JacocoGenerated
     public static TicketService defaultService() {
-        return new TicketService(DEFAULT_DYNAMODB_CLIENT, new UriRetriever());
+        return new TicketService(DEFAULT_DYNAMODB_CLIENT,
+                                 new UriRetriever(),
+                                 new CristinUnitsUtilImpl(S3Client.create(),
+                                                          new Environment().readEnv(CRISTIN_UNITS_S3_URI_ENV)));
     }
 
     //TODO make the method protected or package private and use TicketEntry#persist instead.

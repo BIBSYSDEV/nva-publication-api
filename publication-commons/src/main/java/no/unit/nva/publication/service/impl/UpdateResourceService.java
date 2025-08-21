@@ -120,7 +120,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var newPublisherIdentifier = getPublisherIdentifierWhenDegree(resource);
 
         if (!Objects.equals(oldPublisherIdentifier, newPublisherIdentifier)) {
-            oldPublisherIdentifier.ifPresent(identifier -> removePublicationChannel(persistedResource, identifier, transactWriteItems));
+            oldPublisherIdentifier.ifPresent(
+                identifier -> removePublicationChannel(persistedResource, identifier, transactWriteItems));
             newPublisherIdentifier.ifPresent(identifier -> addPublicationChannel(resource, transactWriteItems));
         }
 
@@ -319,7 +320,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private void updateCuratingInstitutions(Resource resource, Resource persistedResource) {
         if (isContributorsChanged(resource, persistedResource)) {
             resource.setCuratingInstitutions(new CuratingInstitutionsUtil(uriRetriever, customerService)
-                                                 .getCuratingInstitutionsOnline(resource.toPublication()));
+                                                 .getCuratingInstitutionsOnline(
+                                                     resource.toPublication().getEntityDescription()));
         }
     }
 

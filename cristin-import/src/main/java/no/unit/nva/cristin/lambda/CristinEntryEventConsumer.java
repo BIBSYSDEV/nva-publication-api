@@ -35,7 +35,7 @@ import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -75,7 +75,7 @@ public class CristinEntryEventConsumer
     private final ResourceService resourceService;
     private final S3Client s3Client;
     private final DoiDuplicateChecker doiDuplicateChecker;
-    private final CristinUnitsUtil cristinUnitsUtil;
+    private final CristinUnitsUtilImpl cristinUnitsUtil;
     private final RawContentRetriever uriRetriever;
     private final CustomerService customerService;
 
@@ -84,14 +84,14 @@ public class CristinEntryEventConsumer
         this(ResourceService.defaultService(),
              defaultS3Client(),
              defaultDoiDuplicateChecker(),
-             new CristinUnitsUtil(S3Client.create(), new Environment().readEnv(UNITS_S3_OBJECT_URI_ENV)),
+             new CristinUnitsUtilImpl(S3Client.create(), new Environment().readEnv(UNITS_S3_OBJECT_URI_ENV)),
              new UriRetriever(), new CustomerService(new UriRetriever()));
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService,
                                         S3Client s3Client,
                                         DoiDuplicateChecker doiDuplicateChecker,
-                                        CristinUnitsUtil cristinUnitsUtil, RawContentRetriever uriRetriever,
+                                        CristinUnitsUtilImpl cristinUnitsUtil, RawContentRetriever uriRetriever,
                                         CustomerService customerService) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;

@@ -40,6 +40,7 @@ import no.unit.nva.publication.external.services.ChannelClaimDto.CustomerSummary
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.PublicationChannelLocalTestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -70,7 +71,7 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
         super.init();
         channelClaimClient = mock(ChannelClaimClient.class);
         resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(), uriRetriever,
-                                              channelClaimClient, customerService);
+                                              channelClaimClient, customerService, new FakeCristinUnitsUtil());
     }
 
     @ParameterizedTest

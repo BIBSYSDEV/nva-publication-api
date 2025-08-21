@@ -16,7 +16,7 @@ import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.utils.CustomerService;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import org.mockito.stubbing.Answer;
@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 public class ScenarioContext {
 
-    private final CristinUnitsUtil cristinUnitsUtil;
+    private final CristinUnitsUtilImpl cristinUnitsUtil;
     private CristinObject cristinEntry;
     private Try<Publication> mappingAttempt;
     private Publication nvaEntry;
@@ -37,7 +37,7 @@ public class ScenarioContext {
         when(s3Client.utilities()).thenReturn(S3Client.create().utilities());
         when(s3Client.getObjectAsBytes(any(GetObjectRequest.class))).thenAnswer(
             (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
-        this.cristinUnitsUtil = new CristinUnitsUtil(s3Client, "s3://some-bucket/some-key");
+        this.cristinUnitsUtil = new CristinUnitsUtilImpl(s3Client, "s3://some-bucket/some-key");
     }
 
     private static ResponseBytes getUnitsResponseBytes() {

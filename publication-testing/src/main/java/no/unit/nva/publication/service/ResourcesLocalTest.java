@@ -46,7 +46,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
 
-@SuppressWarnings({"PMD.TestClassWithoutTestCases"})
+@SuppressWarnings({"PMD.TestClassWithoutTestCases", "PMD.CouplingBetweenObjects"})
 @JacocoGenerated
 public class ResourcesLocalTest extends TestDataSource {
 
@@ -55,6 +55,7 @@ public class ResourcesLocalTest extends TestDataSource {
     protected UriRetriever uriRetriever;
     protected ChannelClaimClient channelClaimClient;
     protected CustomerService customerService;
+    protected FakeCristinUnitsUtil cristinUnitsUtil;
 
     public ResourcesLocalTest() {
         super();
@@ -69,6 +70,7 @@ public class ResourcesLocalTest extends TestDataSource {
         customerService = mock(CustomerService.class);
         channelClaimClient = mock(ChannelClaimClient.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
+        cristinUnitsUtil = new FakeCristinUnitsUtil();
         CreateTableRequest request = createTableRequest(tableName);
         client.createTable(request);
     }
@@ -92,7 +94,8 @@ public class ResourcesLocalTest extends TestDataSource {
                                                                           .withTableName(RESOURCES_TABLE_NAME))));
         resource.getPublicationChannels()
             .forEach(channel -> client.transactWriteItems(channel.toDao().createInsertionTransactionRequest()));
-        resource.getFileEntries().forEach(entry -> client.transactWriteItems(entry.toDao().createInsertionTransactionRequest()));
+        resource.getFileEntries()
+            .forEach(entry -> client.transactWriteItems(entry.toDao().createInsertionTransactionRequest()));
         return resource;
     }
 
@@ -101,7 +104,6 @@ public class ResourcesLocalTest extends TestDataSource {
         if (nonNull(client)) {
             client.shutdown();
         }
-
     }
 
     private CreateTableRequest createTableRequest(String tableName) {
@@ -184,7 +186,7 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     public TicketService getTicketService() {
-        return new TicketService(client, uriRetriever);
+        return new TicketService(client, uriRetriever, cristinUnitsUtil);
     }
 
     public ResourceService getResourceService(AmazonDynamoDB dynamoDbClient) {
@@ -193,10 +195,10 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public ResourceService getResourceService(AmazonDynamoDB dynamoDbClient, String tableName) {
         return new ResourceService(dynamoDbClient, tableName, Clock.systemDefaultZone(), uriRetriever,
-                                   channelClaimClient, customerService);
+                                   channelClaimClient, customerService, new FakeCristinUnitsUtil());
     }
 
     public MessageService getMessageService() {
-        return new MessageService(client, uriRetriever);
+        return new MessageService(client, uriRetriever, cristinUnitsUtil);
     }
 }

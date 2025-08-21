@@ -160,6 +160,7 @@ Globals:
         BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
         EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
         COGNITO_AUTHORIZER_URLS: !Join [",", !Ref CognitoAuthorizerUrls]
+        CRISTIN_UNITS_S3_URI: !Ref CristinUnitsS3ObjectUri
     Architectures:
       - arm64
 

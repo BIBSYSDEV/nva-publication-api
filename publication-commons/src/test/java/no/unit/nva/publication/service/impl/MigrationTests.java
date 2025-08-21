@@ -50,8 +50,9 @@ import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.model.utils.CustomerSummary;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -83,7 +84,7 @@ class MigrationTests extends ResourcesLocalTest {
                 (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
         this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(), uriRetriever,
-                                                   channelClaimClient, customerService);
+                                                   channelClaimClient, customerService, new FakeCristinUnitsUtil());
     }
 
     @Test
@@ -275,8 +276,8 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries(), new CristinUnitsUtil(s3Client,
-                                                                                                  CRISTIN_UNITS_S3_URI));
+        resourceService.refreshResources(scanResources.getDatabaseEntries(), new CristinUnitsUtilImpl(s3Client,
+                                                                                                      CRISTIN_UNITS_S3_URI));
     }
 
     public static ResponseBytes getUnitsResponseBytes() {

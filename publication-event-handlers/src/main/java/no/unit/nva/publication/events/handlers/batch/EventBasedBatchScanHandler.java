@@ -8,7 +8,7 @@ import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -25,18 +25,18 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     private static final String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
-    private final CristinUnitsUtil  cristinUnitsUtil;
+    private final CristinUnitsUtilImpl cristinUnitsUtil;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
 
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
         this(ResourceService.defaultService(), defaultEventBridgeClient(),
-             new CristinUnitsUtil(S3Client.create(), new Environment().readEnv(CRISTIN_UNITS_S3_URI_ENV)));
+             new CristinUnitsUtilImpl(S3Client.create(), new Environment().readEnv(CRISTIN_UNITS_S3_URI_ENV)));
     }
 
     public EventBasedBatchScanHandler(ResourceService resourceService,
                                       EventBridgeClient eventBridgeClient,
-                                      CristinUnitsUtil cristinUnitsUtil) {
+                                      CristinUnitsUtilImpl cristinUnitsUtil) {
         super(ScanDatabaseRequest.class);
         this.resourceService = resourceService;
         this.eventBridgeClient = eventBridgeClient;

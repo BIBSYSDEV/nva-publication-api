@@ -124,7 +124,7 @@ import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -169,7 +169,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private S3Driver s3Driver;
     private UriRetriever uriRetriever;
     private DoiDuplicateChecker doiDuplicateChecker;
-    private CristinUnitsUtil cristinUnitsUtil;
+    private CristinUnitsUtilImpl cristinUnitsUtil;
     private CustomerService customerService;
 
     public static Stream<Arguments> invalidUriProvider() {
@@ -199,7 +199,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         this.customerService = mock(CustomerService.class);
         when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of()));
         doiDuplicateChecker = new DoiDuplicateChecker(uriRetriever, "api.test.nva.aws.unit.no");
-        cristinUnitsUtil = new CristinUnitsUtil(s3Client, "s3://some-bucket/some-key");
+        cristinUnitsUtil = new CristinUnitsUtilImpl(s3Client, "s3://some-bucket/some-key");
         handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil,
                                                 uriRetriever, customerService);
     }

@@ -32,7 +32,8 @@ import org.junit.jupiter.api.Test;
 
 class CuratingInstitutionsUtilTest {
 
-    protected static final URI TOP_LEVEL_ORG = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+    protected static final URI TOP_LEVEL_ORG = URI.create(
+        "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
     @Test
     void shouldReturnCuratingInstitutionForContributorAffiliatedWithCustomer() {
@@ -42,7 +43,7 @@ class CuratingInstitutionsUtilTest {
                                     .copy()
                                     .withContributors(List.of(contributorWithOrganization(organization)))
                                     .build();
-        var util = mock(CristinUnitsUtil.class);
+        var util = mock(CristinUnitsUtilImpl.class);
         var customerService = mock(CustomerService.class);
 
         entityDescription.getContributors().forEach(contributor -> mockTopLevelOrg(contributor, TOP_LEVEL_ORG, util));
@@ -61,7 +62,6 @@ class CuratingInstitutionsUtilTest {
         var customerService = mock(CustomerService.class);
         when(customerService.fetchCustomers())
             .thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), TOP_LEVEL_ORG))));
-
 
         new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
         new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
@@ -85,7 +85,8 @@ class CuratingInstitutionsUtilTest {
         var publication = randomPublication();
         publication.getEntityDescription().setContributors(List.of(contributorWithOrganization(orgId)));
 
-        var curatingInstitutions = curatingInstitutionsUtil.getCuratingInstitutionsOnline(publication);
+        var curatingInstitutions = curatingInstitutionsUtil.getCuratingInstitutionsOnline(
+            publication.getEntityDescription());
 
         assertThat(curatingInstitutions.stream().findFirst().orElseThrow().id(), is(equalTo(topLevelId)));
     }
@@ -95,7 +96,7 @@ class CuratingInstitutionsUtilTest {
         return new Contributor(identity, List.of(Organization.fromUri(organization)), null, 0, true);
     }
 
-    private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtil util) {
+    private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtilImpl util) {
         contributor.getAffiliations()
             .stream()
             .filter(Organization.class::isInstance)

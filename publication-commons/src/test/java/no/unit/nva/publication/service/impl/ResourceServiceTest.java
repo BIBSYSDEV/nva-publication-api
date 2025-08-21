@@ -139,7 +139,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -206,7 +206,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenInstantiatingResourceServiceWithoutMandatoryServices() {
         assertThrows(NullPointerException.class,
-                     () -> new ResourceService(null, null, null, null, null, null));
+                     () -> new ResourceService(null, null, null, null, null, null, null));
     }
 
     @Test
@@ -818,8 +818,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources, new CristinUnitsUtil(s3Client,
-                                                                         "s3://some-bucket/some-key"));
+        resourceService.refreshResources(resources, new CristinUnitsUtilImpl(s3Client,
+                                                                             "s3://some-bucket/some-key"));
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }
@@ -893,7 +893,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.unpublishPublication(publication, userInstance);
         resource.republish(resourceService, ticketService, userInstance);
-
 
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
         assertThat(tickets, hasSize(5));
@@ -1434,7 +1433,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldUpdateResourceFromImportAndSetMergedResourceEventUserAndInstitutionToUserInstanceFromInput()
         throws BadRequestException, NotFoundException {
         var publication = createPersistedPublicationWithDoi();
-        var userInstance = UserInstance.createBackendUser(new ResourceOwner(new Username(randomString()), randomUri()), randomUri());
+        var userInstance = UserInstance.createBackendUser(new ResourceOwner(new Username(randomString()), randomUri()),
+                                                          randomUri());
         publication.setDoi(randomDoi());
         Resource.fromPublication(publication)
             .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
@@ -1462,7 +1462,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
                          .build();
 
         var updatedResource = Resource.fromPublication(update)
-                                  .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
+                                  .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS),
+                                                            userInstance);
 
         assertInstanceOf(InternalFile.class, updatedResource.getFiles().getFirst());
     }
@@ -1741,7 +1742,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication().copy().withCuratingInstitutions(null).withDoi(null).build();
         var contributions = IntStream.rangeClosed(1, amount).mapToObj(i -> randomContributor()).toList();
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)

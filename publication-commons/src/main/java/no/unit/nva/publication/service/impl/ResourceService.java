@@ -83,16 +83,19 @@ import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals", "PMD.CouplingBetweenObjects"})
 public class ResourceService extends ServiceWithTransactions {
@@ -110,6 +113,7 @@ public class ResourceService extends ServiceWithTransactions {
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+    private static final String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
@@ -119,12 +123,14 @@ public class ResourceService extends ServiceWithTransactions {
     private final ChannelClaimClient channelClaimClient;
     private final CounterService counterService;
     private final CustomerService customerService;
+    private final CristinUnitsUtil cristinUnitsUtil;
 
     public ResourceService(AmazonDynamoDB dynamoDBClient,
                            String tableName, Clock clock,
                            RawContentRetriever uriRetriever,
                            ChannelClaimClient channelClaimClient,
-                           CustomerService customerService) {
+                           CustomerService customerService,
+                           CristinUnitsUtil cristinUnitsUtil) {
         super(dynamoDBClient);
         
         
@@ -137,6 +143,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.uriRetriever = uriRetriever;
+        this.cristinUnitsUtil = cristinUnitsUtil;
         this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
         this.channelClaimClient = channelClaimClient;
         this.readResourceService = new ReadResourceService(client, this.tableName);
@@ -163,7 +170,8 @@ public class ResourceService extends ServiceWithTransactions {
     public static ResourceService defaultService(String tableName) {
         var uriRetriever = new UriRetriever();
         return new ResourceService(defaultDynamoDbClient(), tableName, Clock.systemDefaultZone(), uriRetriever,
-                                   ChannelClaimClient.create(uriRetriever), new CustomerService(uriRetriever));
+                                   ChannelClaimClient.create(uriRetriever), new CustomerService(uriRetriever),
+                                   new CristinUnitsUtilImpl(S3Client.create(), new Environment().readEnv(CRISTIN_UNITS_S3_URI_ENV)));
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData) throws BadRequestException {
@@ -256,7 +264,7 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    public void refreshResources(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
+    public void refreshResources(List<Entity> dataEntries, CristinUnitsUtilImpl cristinUnitsUtil) {
         final var refreshedEntries = refreshAndMigrate(dataEntries, cristinUnitsUtil);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
@@ -502,7 +510,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     private Resource insertImportedResource(Resource resource, ImportSource importSource) {
         if (resource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(resource);
+            setCuratingInstitutions(resource, cristinUnitsUtil);
         }
 
         mutateResourceIfMissingCristinIdentifier(resource);
@@ -573,7 +581,7 @@ public class ResourceService extends ServiceWithTransactions {
         toResource.setStatus(status);
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, CristinUnitsUtilImpl cristinUnitsUtil) {
         return dataEntries.stream().map(attempt(dataEntry -> migrate(dataEntry, cristinUnitsUtil))).map(Try::orElseThrow).toList();
     }
 
@@ -667,7 +675,7 @@ public class ResourceService extends ServiceWithTransactions {
         var transactions = new ArrayList<TransactWriteItem>();
 
         if (resource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(resource);
+            setCuratingInstitutions(resource, cristinUnitsUtil);
         }
 
         mutateResourceIfMissingCristinIdentifier(resource);
@@ -691,10 +699,10 @@ public class ResourceService extends ServiceWithTransactions {
         return resource;
     }
 
-    private void setCuratingInstitutions(Resource newResource) {
+    private void setCuratingInstitutions(Resource newResource, CristinUnitsUtil cristinUnitsUtil) {
         newResource.setCuratingInstitutions(
-            new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsOnline(
-                newResource.toPublication()));
+            new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutions(
+                newResource.toPublication().getEntityDescription(), cristinUnitsUtil));
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
