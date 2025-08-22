@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -52,9 +51,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final Set<Class<? extends File>> APPROVED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class);
     public static final Set<Class<? extends File>> FINALIZED_FILE_TYPES = Set.of(OpenFile.class, InternalFile.class,
                                                                                  HiddenFile.class);
-    protected static final URI RIGHTS_RESERVED_LICENSE = URI.create("https://nva.sikt.no/license/copyright-act/1.0");
-    protected static final String RIGHTS_STATEMENTS_LICENSE_REGEX =
-        "http(s)?://rightsstatements.org/(page|vocab|data)/inc/1.0(/)?";
+
     @JsonProperty(IDENTIFIER_FIELD)
     private final UUID identifier;
     @JsonProperty(NAME_FIELD)
@@ -108,7 +105,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         this.name = name;
         this.mimeType = mimeType;
         this.size = size;
-        this.license = migrateRightsReservedLicense(license);
+        this.license = license;
         this.publisherVersion = publisherVersion;
         this.embargoDate = embargoDate;
         this.rightsRetentionStrategy = assignDefaultStrategyIfNull(rightsRetentionStrategy);
@@ -160,10 +157,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
 
     public URI getLicense() {
         return license;
-    }
-
-    public boolean hasLicense() {
-        return nonNull(license);
     }
 
     public PublisherVersion getPublisherVersion() {
@@ -261,11 +254,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                    .withPublishedDate(getPublishedDate().orElse(null))
                    .withUploadDetails(getUploadDetails())
                    .build();
-    }
-
-    private URI migrateRightsReservedLicense(URI license) {
-        return nonNull(license) && license.toString().toLowerCase(Locale.ROOT).matches(RIGHTS_STATEMENTS_LICENSE_REGEX)
-                   ? RIGHTS_RESERVED_LICENSE : license;
     }
 
     /**
