@@ -51,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -123,8 +122,9 @@ import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -143,9 +143,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
-import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
@@ -169,7 +167,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private S3Driver s3Driver;
     private UriRetriever uriRetriever;
     private DoiDuplicateChecker doiDuplicateChecker;
-    private CristinUnitsUtilImpl cristinUnitsUtil;
+    private CristinUnitsUtil cristinUnitsUtil;
     private CustomerService customerService;
 
     public static Stream<Arguments> invalidUriProvider() {
@@ -192,23 +190,14 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         super.init();
         resourceService = getResourceService(client);
         s3Client = spy(new FakeS3Client());
-        doReturn(S3Client.create().utilities()).when(s3Client).utilities();
-        doReturn(getMockUnitsResponseBytes()).when(s3Client).getObjectAsBytes(any(GetObjectRequest.class));
         s3Driver = new S3Driver(s3Client, "ignored");
         uriRetriever = mock(UriRetriever.class);
         this.customerService = mock(CustomerService.class);
         when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of()));
         doiDuplicateChecker = new DoiDuplicateChecker(uriRetriever, "api.test.nva.aws.unit.no");
-        cristinUnitsUtil = new CristinUnitsUtilImpl(s3Client, "s3://some-bucket/some-key");
+        cristinUnitsUtil = new FakeCristinUnitsUtil();
         handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil,
                                                 uriRetriever, customerService);
-    }
-
-    private static ResponseBytes getMockUnitsResponseBytes() {
-        var result = IoUtils.stringFromResources(Path.of("cristinUnits/units-norway.json"));
-        var httpResponse = mock(ResponseBytes.class);
-        when(httpResponse.asUtf8String()).thenReturn(result);
-        return httpResponse;
     }
 
     @Test

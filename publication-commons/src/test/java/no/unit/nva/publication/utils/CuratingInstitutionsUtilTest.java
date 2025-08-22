@@ -43,7 +43,7 @@ class CuratingInstitutionsUtilTest {
                                     .copy()
                                     .withContributors(List.of(contributorWithOrganization(organization)))
                                     .build();
-        var util = mock(CristinUnitsUtilImpl.class);
+        var util = mock(CristinUnitsUtil.class);
         var customerService = mock(CustomerService.class);
 
         entityDescription.getContributors().forEach(contributor -> mockTopLevelOrg(contributor, TOP_LEVEL_ORG, util));
@@ -96,7 +96,7 @@ class CuratingInstitutionsUtilTest {
         return new Contributor(identity, List.of(Organization.fromUri(organization)), null, 0, true);
     }
 
-    private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtilImpl util) {
+    private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtil util) {
         contributor.getAffiliations()
             .stream()
             .filter(Organization.class::isInstance)

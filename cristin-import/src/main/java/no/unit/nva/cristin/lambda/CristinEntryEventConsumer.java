@@ -35,7 +35,7 @@ import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -70,12 +70,11 @@ public class CristinEntryEventConsumer
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private static final String PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH =
         "PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS";
-    public static final String UNITS_S3_OBJECT_URI_ENV = "CRISTIN_UNITS_S3_OBJECT_URI";
 
     private final ResourceService resourceService;
     private final S3Client s3Client;
     private final DoiDuplicateChecker doiDuplicateChecker;
-    private final CristinUnitsUtilImpl cristinUnitsUtil;
+    private final CristinUnitsUtil cristinUnitsUtil;
     private final RawContentRetriever uriRetriever;
     private final CustomerService customerService;
 
@@ -84,14 +83,15 @@ public class CristinEntryEventConsumer
         this(ResourceService.defaultService(),
              defaultS3Client(),
              defaultDoiDuplicateChecker(),
-             new CristinUnitsUtilImpl(S3Client.create(), new Environment().readEnv(UNITS_S3_OBJECT_URI_ENV)),
+             CristinUnitsUtil.defaultInstance(),
              new UriRetriever(), new CustomerService(new UriRetriever()));
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService,
                                         S3Client s3Client,
                                         DoiDuplicateChecker doiDuplicateChecker,
-                                        CristinUnitsUtilImpl cristinUnitsUtil, RawContentRetriever uriRetriever,
+                                        CristinUnitsUtil cristinUnitsUtil,
+                                        RawContentRetriever uriRetriever,
                                         CustomerService customerService) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;

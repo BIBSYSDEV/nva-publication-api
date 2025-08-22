@@ -61,7 +61,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.utils.CustomerService;
-import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.Assertions;
@@ -76,14 +76,14 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final int NUMBER_OF_OBJECTS = 100;
     private List<CristinObject> cristinObjects;
-    private CristinUnitsUtilImpl cristinUnitsUtil;
+    private CristinUnitsUtil cristinUnitsUtil;
 
     @Override
     @BeforeEach
     public void init() {
         super.init();
         this.cristinObjects = cristinObjects(NUMBER_OF_OBJECTS).toList();
-        this.cristinUnitsUtil = mock(CristinUnitsUtilImpl.class);
+        this.cristinUnitsUtil = mock(CristinUnitsUtil.class);
     }
 
     @ParameterizedTest(name = "map returns journal with DOI URI when input is Journal with DOI:{0}")
@@ -619,7 +619,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         cristinObject.setBookOrReportMetadata(cristinObject.getBookOrReportMetadata().copy()
                                                  .withSubjectField(null)
                                                  .build());
-        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtilImpl.class), mock(S3Client.class), mock(
+        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtil.class), mock(S3Client.class), mock(
             UriRetriever.class), mock(CustomerService.class))
                          .generatePublication();
 
@@ -632,7 +632,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         cristinObject.setBookOrReportPartMetadata(cristinObject.getBookOrReportPartMetadata().copy()
                                                   .withSubjectField(null)
                                                   .build());
-        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtilImpl.class), mock(S3Client.class), mock(
+        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtil.class), mock(S3Client.class), mock(
             UriRetriever.class), mock(CustomerService.class))
                               .generatePublication();
 
@@ -646,7 +646,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         var cristinObject = CristinDataGenerator.randomObject(CHAPTER.getValue());
         cristinObject.setCristinTitles(List.of(new CristinTitle(null, randomString(), null, null),
                                                new CristinTitle(null, randomString(), "N", null)));
-        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtilImpl.class), mock(S3Client.class), mock(
+        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtil.class), mock(S3Client.class), mock(
             UriRetriever.class), mock(CustomerService.class))
                               .generatePublication();
 

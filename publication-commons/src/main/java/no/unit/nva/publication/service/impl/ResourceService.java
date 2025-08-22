@@ -83,19 +83,16 @@ import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
-import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.S3Client;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals", "PMD.CouplingBetweenObjects"})
 public class ResourceService extends ServiceWithTransactions {
@@ -113,7 +110,6 @@ public class ResourceService extends ServiceWithTransactions {
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
-    private static final String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
@@ -171,7 +167,7 @@ public class ResourceService extends ServiceWithTransactions {
         var uriRetriever = new UriRetriever();
         return new ResourceService(defaultDynamoDbClient(), tableName, Clock.systemDefaultZone(), uriRetriever,
                                    ChannelClaimClient.create(uriRetriever), new CustomerService(uriRetriever),
-                                   new CristinUnitsUtilImpl(S3Client.create(), new Environment().readEnv(CRISTIN_UNITS_S3_URI_ENV)));
+                                   CristinUnitsUtil.defaultInstance());
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData) throws BadRequestException {
@@ -264,7 +260,7 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    public void refreshResources(List<Entity> dataEntries, CristinUnitsUtilImpl cristinUnitsUtil) {
+    public void refreshResources(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
         final var refreshedEntries = refreshAndMigrate(dataEntries, cristinUnitsUtil);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
@@ -581,7 +577,7 @@ public class ResourceService extends ServiceWithTransactions {
         toResource.setStatus(status);
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, CristinUnitsUtilImpl cristinUnitsUtil) {
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
         return dataEntries.stream().map(attempt(dataEntry -> migrate(dataEntry, cristinUnitsUtil))).map(Try::orElseThrow).toList();
     }
 

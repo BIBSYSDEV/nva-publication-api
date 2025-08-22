@@ -60,7 +60,7 @@ import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
-import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.publication.utils.DoesNotHaveEmptyValues;
 import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
@@ -94,12 +94,12 @@ public class CristinMapper extends CristinMappingModule {
                                                                    "api.nva.unit.no",
                                                                    "22139870-8d31-4df9-bc45-14eb68287c4a");
     public static final String SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN = "scopus";
-    private final CristinUnitsUtilImpl cristinUnitsUtil;
+    private final CristinUnitsUtil cristinUnitsUtil;
     private final S3Client s3Client;
     private final RawContentRetriever uriRetriever;
     private final CustomerService customerService;
 
-    public CristinMapper(CristinObject cristinObject, CristinUnitsUtilImpl cristinUnitsUtil, S3Client s3Client,
+    public CristinMapper(CristinObject cristinObject, CristinUnitsUtil cristinUnitsUtil, S3Client s3Client,
                          RawContentRetriever uriRetriever, CustomerService customerService) {
         super(cristinObject, ChannelRegistryMapper.getInstance(), s3Client);
         this.cristinUnitsUtil = cristinUnitsUtil;

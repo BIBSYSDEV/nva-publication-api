@@ -46,7 +46,7 @@ import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -90,7 +90,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         dynamoDbClient = super.client;
         this.resourceService = spy(getResourceService(client));
         this.ticketService = getTicketService();
-        var cristinUtils = mock(CristinUnitsUtilImpl.class);
+        var cristinUtils = mock(CristinUnitsUtil.class);
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient, cristinUtils);
     }
 
@@ -242,7 +242,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         doThrow(new RuntimeException(expectedExceptionMessage)).when(spiedResourceService)
             .scanResources(anyInt(), any(), any());
 
-        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient, mock(CristinUnitsUtilImpl.class));
+        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient, mock(CristinUnitsUtil.class));
         Executable action = () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         assertThrows(RuntimeException.class, action);
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));

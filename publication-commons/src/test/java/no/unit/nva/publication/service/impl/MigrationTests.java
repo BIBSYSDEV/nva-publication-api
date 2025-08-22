@@ -16,7 +16,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
@@ -52,36 +51,23 @@ import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.model.utils.CustomerSummary;
 import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.stubbing.Answer;
-import software.amazon.awssdk.core.ResponseBytes;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 class MigrationTests extends ResourcesLocalTest {
 
-    public static final String CRISTIN_UNITS_S3_URI = "s3://some-bucket/some-key";
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
     protected static final URI CRISTIN_ID = URI.create("https" +
                                                        "://api.dev" +
                                                        ".nva.aws.unit.no/cristin/organization/20754.0.0.0");
-    private S3Client s3Client;
     private ResourceService resourceService;
 
     @BeforeEach
     public void init() {
         super.init();
-        this.s3Client = mock(S3Client.class);
-        when(s3Client.utilities()).thenReturn(S3Client.create().utilities());
-        when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
-                (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
         this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(), uriRetriever,
                                                    channelClaimClient, customerService, new FakeCristinUnitsUtil());
@@ -276,14 +262,6 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries(), new CristinUnitsUtilImpl(s3Client,
-                                                                                                      CRISTIN_UNITS_S3_URI));
-    }
-
-    public static ResponseBytes getUnitsResponseBytes() {
-        var result = IoUtils.stringFromResources(Path.of("cristinUnits/units-norway.json"));
-        var httpResponse = mock(ResponseBytes.class);
-        when(httpResponse.asUtf8String()).thenReturn(result);
-        return httpResponse;
+        resourceService.refreshResources(scanResources.getDatabaseEntries(), new FakeCristinUnitsUtil());
     }
 }

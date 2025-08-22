@@ -11,7 +11,7 @@ import no.unit.nva.model.time.duration.DefinedDuration;
 import no.unit.nva.model.time.duration.NullDuration;
 import no.unit.nva.model.time.duration.UndefinedDuration;
 import no.unit.nva.publication.model.utils.CustomerService;
-import no.unit.nva.publication.utils.CristinUnitsUtilImpl;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -47,7 +47,7 @@ public class ArtisticMapperTest {
     }
 
     private static CristinMapper getMapper(CristinObject cristinObject) {
-        return new CristinMapper(cristinObject, mock(CristinUnitsUtilImpl.class), mock(S3Client.class),
+        return new CristinMapper(cristinObject, mock(CristinUnitsUtil.class), mock(S3Client.class),
                                  mock(UriRetriever.class), mock(CustomerService.class));
     }
 }
