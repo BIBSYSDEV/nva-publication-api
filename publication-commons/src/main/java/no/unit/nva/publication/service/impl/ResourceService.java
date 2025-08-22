@@ -146,7 +146,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.customerService = customerService;
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService, uriRetriever, channelClaimClient,
-                                                               customerService);
+                                                               customerService, cristinUnitsUtil);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
