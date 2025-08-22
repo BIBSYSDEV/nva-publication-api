@@ -124,6 +124,9 @@ Parameters:
   CristinUnitsS3ObjectUri:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/S3/CristinIntermediateStorage/Units'
+  CristinIntermediateS3BucketName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/S3/CristinIntermediateStorage/BucketName'
   CognitoAuthorizerUrls:
     Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
     Default: 'CognitoAuthorizerUrls'
@@ -753,6 +756,7 @@ Resources:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ReadFromCristinCacheS3BucketManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -2890,6 +2894,18 @@ Resources:
               - s3:GetObject
             Resource:
               - !Sub 'arn:aws:s3:::${NvaEventsBucketsName}/*'
+
+  ReadFromCristinCacheS3BucketManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+            Resource:
+              - !Sub 'arn:aws:s3:::${CristinIntermediateS3BucketName}/*'
 
   DeleteFromResourceStorageS3BucketManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
