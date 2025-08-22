@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class CuratingInstitutionsUtil {
 
+    private static final int CONTRIBUTOR_CACHE_THRESHOLD = 100;
     private static CustomerList customerList;
     private final RawContentRetriever uriRetriever;
     private final CustomerService customerService;
@@ -35,8 +36,9 @@ public class CuratingInstitutionsUtil {
         var contributors = getAffiliatedContributors(entityDescription).toList();
 
         var topLevelMap = contributors.stream()
-                              .flatMap(contributor -> contributors.size() > 100 ? toCuratingInstitution(contributor,
-                                                                                                        cristinUnitsUtil)
+                              .flatMap(contributor -> contributors.size() > CONTRIBUTOR_CACHE_THRESHOLD
+                                                          ? toCuratingInstitution(contributor,
+                                                                                  cristinUnitsUtil)
                                                           : toCuratingInstitutionOnline(contributor));
         return toCuratingInstitutionSet(topLevelMap);
     }
