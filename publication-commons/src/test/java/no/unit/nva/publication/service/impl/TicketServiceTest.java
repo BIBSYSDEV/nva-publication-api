@@ -10,6 +10,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -88,6 +89,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         this.resourceService = getResourceService(client);
         this.ticketService = getTicketService();
         this.messageService = getMessageService();
+        this.cristinUnitsUtil = new FakeCristinUnitsUtil();
     }
 
     @ParameterizedTest(name = "Publication status: {0}")
@@ -234,7 +236,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var duplicateIdentifier = SortableIdentifier.next();
-        ticketService = new TicketService(client, () -> duplicateIdentifier, uriRetriever);
+        ticketService = new TicketService(client, () -> duplicateIdentifier, uriRetriever, cristinUnitsUtil);
         var ticket = createUnpersistedTicket(publication, ticketType);
         Executable action = () -> ticket.withOwner(randomString()).persistNewTicket(ticketService);
         assertDoesNotThrow(action);
@@ -362,7 +364,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     void shouldRetrieveEventuallyConsistentTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
         var client = mock(AmazonDynamoDB.class);
         var expectedTicketEntry = createMockResponsesImitatingEventualConsistency(ticketType, client);
-        var service = new TicketService(client, uriRetriever);
+        var service = new TicketService(client, uriRetriever, cristinUnitsUtil);
         var response = randomPublishingRequest().persistNewTicket(service);
         assertThat(response, is(equalTo(expectedTicketEntry)));
         verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());

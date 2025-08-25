@@ -70,7 +70,6 @@ public class CristinEntryEventConsumer
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private static final String PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH =
         "PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS";
-    public static final String UNITS_S3_OBJECT_URI_ENV = "CRISTIN_UNITS_S3_OBJECT_URI";
 
     private final ResourceService resourceService;
     private final S3Client s3Client;
@@ -84,14 +83,15 @@ public class CristinEntryEventConsumer
         this(ResourceService.defaultService(),
              defaultS3Client(),
              defaultDoiDuplicateChecker(),
-             new CristinUnitsUtil(S3Client.create(), new Environment().readEnv(UNITS_S3_OBJECT_URI_ENV)),
+             CristinUnitsUtil.defaultInstance(),
              new UriRetriever(), new CustomerService(new UriRetriever()));
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService,
                                         S3Client s3Client,
                                         DoiDuplicateChecker doiDuplicateChecker,
-                                        CristinUnitsUtil cristinUnitsUtil, RawContentRetriever uriRetriever,
+                                        CristinUnitsUtil cristinUnitsUtil,
+                                        RawContentRetriever uriRetriever,
                                         CustomerService customerService) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;

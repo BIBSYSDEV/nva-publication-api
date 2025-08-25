@@ -89,6 +89,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -837,7 +838,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         FakeUriResponse.setUpNviResponse(fakeUriRetriever, statusCode, publication, responseBody);
 
         return new ResourceExpansionServiceImpl(resourceService,
-                                                new TicketService(client, fakeUriRetriever),
+                                                new TicketService(client, fakeUriRetriever, cristinUnitsUtil),
                                                 fakeUriRetriever,
                                                 fakeUriRetriever, sqsClient);
     }
@@ -1046,6 +1047,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketService = getTicketService();
         fakeUriRetriever = FakeUriRetriever.newInstance();
         sqsClient = new FakeSqsClient();
+        cristinUnitsUtil = new FakeCristinUnitsUtil();
         expansionService = new ResourceExpansionServiceImpl(resourceService,
                                                             ticketService,
                                                             fakeUriRetriever,

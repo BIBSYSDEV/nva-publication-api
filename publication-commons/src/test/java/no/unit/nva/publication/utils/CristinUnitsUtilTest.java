@@ -49,7 +49,7 @@ class CristinUnitsUtilTest {
     })
 
     void shouldReturnTopLevel(String inputUri, String expectedUri) {
-        var result = new CristinUnitsUtil(s3Client, "s3://something/object.json").getTopLevel(
+        var result = new CristinUnitsUtilImpl(s3Client, "s3://something/object.json").getTopLevel(
             URI.create(inputUri));
         Assertions.assertEquals(expectedUri != null ? URI.create(expectedUri) : null, result);
     }

@@ -24,6 +24,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -44,15 +45,15 @@ public class MessageService extends ServiceWithTransactions {
     
     private final TicketService ticketService;
     
-    public MessageService(AmazonDynamoDB client, UriRetriever uriRetriever) {
+    public MessageService(AmazonDynamoDB client, UriRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
         super(client);
-        this.ticketService = new TicketService(client, uriRetriever);
+        this.ticketService = new TicketService(client, uriRetriever, cristinUnitsUtil);
         tableName = RESOURCES_TABLE_NAME;
     }
     
     @JacocoGenerated
     public static MessageService defaultService() {
-        return new MessageService(DEFAULT_DYNAMODB_CLIENT, new UriRetriever());
+        return new MessageService(DEFAULT_DYNAMODB_CLIENT, new UriRetriever(), CristinUnitsUtil.defaultInstance());
     }
     
     public Message createMessage(TicketEntry ticketEntry, UserInstance sender, String messageText) {

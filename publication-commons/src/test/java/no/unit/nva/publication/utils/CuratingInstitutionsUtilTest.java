@@ -32,7 +32,8 @@ import org.junit.jupiter.api.Test;
 
 class CuratingInstitutionsUtilTest {
 
-    protected static final URI TOP_LEVEL_ORG = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+    protected static final URI TOP_LEVEL_ORG = URI.create(
+        "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
     @Test
     void shouldReturnCuratingInstitutionForContributorAffiliatedWithCustomer() {
@@ -62,7 +63,6 @@ class CuratingInstitutionsUtilTest {
         when(customerService.fetchCustomers())
             .thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), TOP_LEVEL_ORG))));
 
-
         new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
         new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
 
@@ -85,7 +85,8 @@ class CuratingInstitutionsUtilTest {
         var publication = randomPublication();
         publication.getEntityDescription().setContributors(List.of(contributorWithOrganization(orgId)));
 
-        var curatingInstitutions = curatingInstitutionsUtil.getCuratingInstitutionsOnline(publication);
+        var curatingInstitutions = curatingInstitutionsUtil.getCuratingInstitutionsOnline(
+            publication.getEntityDescription());
 
         assertThat(curatingInstitutions.stream().findFirst().orElseThrow().id(), is(equalTo(topLevelId)));
     }

@@ -16,11 +16,12 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
+import org.jetbrains.annotations.NotNull;
 
 public class CuratingInstitutionsUtil {
 
+    private static final int CONTRIBUTOR_CACHE_THRESHOLD = 100;
     private static CustomerList customerList;
     private final RawContentRetriever uriRetriever;
     private final CustomerService customerService;
@@ -30,9 +31,28 @@ public class CuratingInstitutionsUtil {
         this.uriRetriever = uriRetriever;
     }
 
-    public Set<CuratingInstitution> getCuratingInstitutionsOnline(Publication publication) {
-        return getAffiliatedContributors(publication.getEntityDescription()).flatMap(this::toCuratingInstitutionOnline)
-                   .filter(this::isCustomer)
+    public Set<CuratingInstitution> getCuratingInstitutions(EntityDescription entityDescription,
+                                                            CristinUnitsUtil cristinUnitsUtil) {
+        var contributors = getAffiliatedContributors(entityDescription).toList();
+
+        var topLevelMap = contributors.stream()
+                              .flatMap(contributor -> contributors.size() > CONTRIBUTOR_CACHE_THRESHOLD
+                                                          ? toCuratingInstitution(contributor,
+                                                                                  cristinUnitsUtil)
+                                                          : toCuratingInstitutionOnline(contributor));
+        return toCuratingInstitutionSet(topLevelMap);
+    }
+
+    public Set<CuratingInstitution> getCuratingInstitutionsOnline(EntityDescription entityDescription) {
+        var contributors = getAffiliatedContributors(entityDescription);
+        var topLevelMap = contributors.flatMap(this::toCuratingInstitutionOnline);
+
+        return toCuratingInstitutionSet(topLevelMap);
+    }
+
+    @NotNull
+    private Set<CuratingInstitution> toCuratingInstitutionSet(Stream<SimpleEntry<URI, URI>> topLevelMap) {
+        return topLevelMap.filter(this::isCustomer)
                    .collect(Collectors.groupingBy(SimpleEntry::getKey,
                                                   Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
                    .entrySet()
@@ -43,15 +63,11 @@ public class CuratingInstitutionsUtil {
 
     public Set<CuratingInstitution> getCuratingInstitutionsCached(EntityDescription entityDescription,
                                                                   CristinUnitsUtil cristinUnitsUtil) {
-        return getAffiliatedContributors(entityDescription).flatMap(
-                contributor -> toCuratingInstitution(contributor, cristinUnitsUtil))
-                   .filter(this::isCustomer)
-                   .collect(Collectors.groupingBy(SimpleEntry::getKey,
-                                                  Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
-                   .entrySet()
-                   .stream()
-                   .map(entry -> new CuratingInstitution(entry.getKey(), entry.getValue()))
-                   .collect(Collectors.toSet());
+        var contributors = getAffiliatedContributors(entityDescription);
+
+        var topLevelMap = contributors.flatMap(contributor -> toCuratingInstitution(contributor, cristinUnitsUtil));
+
+        return toCuratingInstitutionSet(topLevelMap);
     }
 
     private static Stream<SimpleEntry<URI, URI>> toCuratingInstitution(Contributor contributor,
