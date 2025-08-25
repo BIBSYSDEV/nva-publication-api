@@ -31,7 +31,6 @@ import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -75,8 +74,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
              new PublicationChannelConnection(getAuthorizedBackendUriRetriever()),
              new NvaCustomerConnection(getAuthorizedBackendUriRetriever()),
              ResourceService.defaultService(),
-             new ScopusUpdater(ResourceService.defaultService(),
-                               getAuthorizedBackendUriRetriever()),
+             new ScopusUpdater(ResourceService.defaultService()),
              new ScopusFileConverter(defaultHttpClientWithRedirect(),
                                      S3Driver.defaultS3Client().build(),
                                      new TikaUtils()));
@@ -141,7 +139,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
         return ImportResult.reportFailure(content, fail.getException());
     }
 
-    private ImportCandidate updateExistingIfNeeded(ImportCandidate importCandidate) throws NotFoundException {
+    private ImportCandidate updateExistingIfNeeded(ImportCandidate importCandidate) {
         return scopusUpdater.updateImportCandidate(importCandidate);
     }
 

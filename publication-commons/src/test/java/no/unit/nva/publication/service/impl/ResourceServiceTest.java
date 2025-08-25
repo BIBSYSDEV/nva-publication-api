@@ -1644,23 +1644,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFetchPublicationByScopusIdentifier() throws BadRequestException {
+    void shouldFetchResourceByScopusIdentifier() throws BadRequestException {
         var publication = randomPublication();
         var scopusIdentifier = ScopusIdentifier.fromValue(randomString());
         publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                              UserInstance.fromPublication(publication));
 
-        var publicationByScopusIdentifier = resourceService.getPublicationsByScopusIdentifier(scopusIdentifier).getFirst();
+        var resourceByScopusIdentifier = resourceService.getResourcesByScopusIdentifier(scopusIdentifier).getFirst();
+        var expectedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
 
-        assertEquals(persistedPublication, publicationByScopusIdentifier);
+        assertEquals(expectedResource, resourceByScopusIdentifier);
     }
 
     @Test
     void shouldReturnEmptyListWhenNoPublicationWithProvidedScopusIdentifier() {
         var scopusIdentifier = ScopusIdentifier.fromValue(randomString());
 
-        assertEquals(Collections.emptyList(), resourceService.getPublicationsByScopusIdentifier(scopusIdentifier));
+        assertEquals(Collections.emptyList(), resourceService.getResourcesByScopusIdentifier(scopusIdentifier));
     }
 
     private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {

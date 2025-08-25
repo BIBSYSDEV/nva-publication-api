@@ -129,7 +129,6 @@ import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Message;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Primary;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Resource;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Start;
-import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse.PublicationChannelHit;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
@@ -148,7 +147,6 @@ import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
-import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
@@ -288,7 +286,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         nvaCustomerConnection = mockCustomerConnection();
         resourceService = getResourceService(client);
         uriRetriever = mock(UriRetriever.class);
-        scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
+        scopusUpdater = new ScopusUpdater(resourceService);
         var environment = mock(Environment.class);
         when(environment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, environment, mockedTikaUtils());
@@ -1161,8 +1159,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     void shouldMergeIncomingImportCandidateIntoExistingOneWhenScopusIdsMatch() throws IOException {
         var existingImportCandidate = createPersistedImportCandidate();
         createEmptyPiaMock();
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(existingImportCandidate));
         scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+        scopusData.getDocument().getMeta().setEid(getScopusIdentifier(existingImportCandidate));
         var expectedIssue = String.valueOf(randomInteger());
         var expectedVolume = randomString();
         var expectedPages = randomString();
@@ -1174,6 +1172,15 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         assertThat(importCandidate.getImportStatus(), is(equalTo(existingImportCandidate.getImportStatus())));
         assertThat(importCandidate.getEntityDescription(),
                    is(not(equalTo(existingImportCandidate.getEntityDescription()))));
+    }
+
+    private static String getScopusIdentifier(ImportCandidate existingImportCandidate) {
+        return existingImportCandidate.getAdditionalIdentifiers()
+                   .stream()
+                   .filter(ScopusIdentifier.class::isInstance)
+                   .toList()
+                   .getFirst()
+                   .value();
     }
 
     void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {
@@ -1254,12 +1261,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .map(ScopusIdentifier::value)
                    .findFirst()
                    .orElse(null);
-    }
-
-    private static Optional<String> toResponse(ImportCandidate importCandidate) {
-        return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
-            List.of(ExpandedImportCandidate
-                        .fromImportCandidate(importCandidate, mock(AuthorizedBackendUriRetriever.class))), 1)));
     }
 
     private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
