@@ -17,7 +17,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 
 public final class ManuallyUpdatePublicationUtil {
 
