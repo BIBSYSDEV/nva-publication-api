@@ -15,6 +15,7 @@ import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.utils.CustomerService;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -48,24 +49,27 @@ public class TicketService extends ServiceWithTransactions {
     private final ResourceService resourceService;
     private final String tableName;
 
-    public TicketService(AmazonDynamoDB client, RawContentRetriever uriRetriever) {
-        this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever);
+    public TicketService(AmazonDynamoDB client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
+        this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever, cristinUnitsUtil);
     }
 
     protected TicketService(AmazonDynamoDB client,
                             Supplier<SortableIdentifier> identifierProvider,
-                            RawContentRetriever uriRetriever) {
+                            RawContentRetriever uriRetriever,
+                            CristinUnitsUtil cristinUnitsUtil) {
         super(client);
         this.identifierProvider = identifierProvider;
         tableName = RESOURCES_TABLE_NAME;
         resourceService = new ResourceService(client, tableName, Clock.systemDefaultZone(),
                                               uriRetriever, ChannelClaimClient.create(uriRetriever),
-                                              new CustomerService(uriRetriever));
+                                              new CustomerService(uriRetriever), cristinUnitsUtil);
     }
 
     @JacocoGenerated
     public static TicketService defaultService() {
-        return new TicketService(DEFAULT_DYNAMODB_CLIENT, new UriRetriever());
+        return new TicketService(DEFAULT_DYNAMODB_CLIENT,
+                                 new UriRetriever(),
+                                 CristinUnitsUtil.defaultInstance());
     }
 
     //TODO make the method protected or package private and use TicketEntry#persist instead.

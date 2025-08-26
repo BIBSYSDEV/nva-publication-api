@@ -16,7 +16,6 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.MigrationTests.getUnitsResponseBytes;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -135,11 +134,11 @@ import no.unit.nva.publication.model.business.publicationstate.RepublishedResour
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -159,12 +158,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentMatchers;
-import org.mockito.stubbing.Answer;
-import software.amazon.awssdk.core.ResponseBytes;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -187,16 +180,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private TicketService ticketService;
     private MessageService messageService;
-    private S3Client s3Client;
     private Instant now;
 
     @BeforeEach
     public void init() {
         super.init();
-        this.s3Client = mock(S3Client.class);
-        when(s3Client.utilities()).thenReturn(S3Client.create().utilities());
-        when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
-            (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         now = Clock.systemDefaultZone().instant();
         resourceService = getResourceService(client);
         ticketService = getTicketService();
@@ -206,7 +194,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenInstantiatingResourceServiceWithoutMandatoryServices() {
         assertThrows(NullPointerException.class,
-                     () -> new ResourceService(null, null, null, null, null, null));
+                     () -> new ResourceService(null, null, null, null, null, null, null));
     }
 
     @Test
@@ -818,8 +806,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources, new CristinUnitsUtil(s3Client,
-                                                                         "s3://some-bucket/some-key"));
+        resourceService.refreshResources(resources, new FakeCristinUnitsUtil());
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }
@@ -893,7 +880,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.unpublishPublication(publication, userInstance);
         resource.republish(resourceService, ticketService, userInstance);
-
 
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
         assertThat(tickets, hasSize(5));
@@ -1434,7 +1420,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldUpdateResourceFromImportAndSetMergedResourceEventUserAndInstitutionToUserInstanceFromInput()
         throws BadRequestException, NotFoundException {
         var publication = createPersistedPublicationWithDoi();
-        var userInstance = UserInstance.createBackendUser(new ResourceOwner(new Username(randomString()), randomUri()), randomUri());
+        var userInstance = UserInstance.createBackendUser(new ResourceOwner(new Username(randomString()), randomUri()),
+                                                          randomUri());
         publication.setDoi(randomDoi());
         Resource.fromPublication(publication)
             .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
@@ -1462,7 +1449,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
                          .build();
 
         var updatedResource = Resource.fromPublication(update)
-                                  .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
+                                  .updateResourceFromImport(resourceService, ImportSource.fromSource(Source.SCOPUS),
+                                                            userInstance);
 
         assertInstanceOf(InternalFile.class, updatedResource.getFiles().getFirst());
     }
@@ -1742,7 +1730,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication().copy().withCuratingInstitutions(null).withDoi(null).build();
         var contributions = IntStream.rangeClosed(1, amount).mapToObj(i -> randomContributor()).toList();
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)

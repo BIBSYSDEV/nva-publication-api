@@ -124,6 +124,9 @@ Parameters:
   CristinUnitsS3ObjectUri:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/S3/CristinIntermediateStorage/Units'
+  CristinIntermediateS3BucketName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/S3/CristinIntermediateStorage/BucketName'
   CognitoAuthorizerUrls:
     Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
     Default: 'CognitoAuthorizerUrls'
@@ -160,6 +163,7 @@ Globals:
         BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
         EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
         COGNITO_AUTHORIZER_URLS: !Join [",", !Ref CognitoAuthorizerUrls]
+        CRISTIN_UNITS_S3_URI: !Ref CristinUnitsS3ObjectUri
     Architectures:
       - arm64
 
@@ -467,7 +471,7 @@ Resources:
               - lambda:InvokeFunction
             Resource: "*"
 
-  DatabaseAccessLambdaManagedPolicy:
+  ResourceServiceAccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       Roles:
@@ -485,6 +489,11 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}/index/*
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+            Resource:
+              - !Sub 'arn:aws:s3:::${CristinIntermediateS3BucketName}/*'
 
   S3AccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -751,7 +760,7 @@ Resources:
       Policies:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -772,7 +781,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Policies:
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Events:
         PutEvent:
@@ -794,7 +803,7 @@ Resources:
           DOMAIN_NAME: !Ref ApiDomain
       Policies:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -1063,7 +1072,7 @@ Resources:
           CUSTOM_DOMAIN_BASE_PATH: !Ref CustomDomainBasePath
       Policies:
         - !GetAtt S3AccessResourceStorageManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt DownloadUrlShorteningTableManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn # because of identityServiceClient::getExternalClient call
       Events:
@@ -1130,7 +1139,7 @@ Resources:
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
       Events:
         CreateEvent:
           Type: Api
@@ -1209,7 +1218,7 @@ Resources:
       Policies:
         - !GetAtt MultipartUploadResourceStorageBucketManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
       Events:
         CompleteEvent:
           Type: Api
@@ -1228,7 +1237,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.UpdateFileHandler::handleRequest
       Policies:
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Events:
         CompleteEvent:
@@ -1248,7 +1257,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
       Handler: no.unit.nva.publication.file.upload.DeleteFileHandler::handleRequest
       Policies:
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Events:
         CompleteEvent:
@@ -1299,7 +1308,7 @@ Resources:
       Policies:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
         - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
@@ -1745,7 +1754,7 @@ Resources:
       Policies:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
@@ -1781,7 +1790,6 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
           TABLE_NAME: !Ref NvaResourcesTable
-          CRISTIN_UNITS_S3_URI: !Ref CristinUnitsS3ObjectUri
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1845,7 +1853,6 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
           TABLE_NAME: !Ref NvaImportCandidatesTable
-          CRISTIN_UNITS_S3_URI: !Ref CristinUnitsS3ObjectUri
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1899,7 +1906,7 @@ Resources:
   DynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
     DependsOn:
-      - DatabaseAccessLambdaManagedPolicy
+      - ResourceServiceAccessManagedPolicy
       - DynamoDbStreamsAccessPolicy
     Properties:
       CodeUri: publication-event-handlers
@@ -1947,7 +1954,7 @@ Resources:
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
     DependsOn:
-      - DatabaseAccessLambdaManagedPolicy
+      - ResourceServiceAccessManagedPolicy
       - DynamoDbStreamsAccessPolicy
     Properties:
       CodeUri: publication-event-handlers
@@ -2044,7 +2051,7 @@ Resources:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
         - !GetAtt S3AccessManagedPolicy.PolicyArn
         - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -2073,7 +2080,7 @@ Resources:
       Timeout: 900
       Policies:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
       Environment:
         Variables:
@@ -2331,7 +2338,6 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          CRISTIN_UNITS_S3_OBJECT_URI: !Ref CristinUnitsS3ObjectUri
           CRISTIN_IMPORT_BUCKET: !Sub 'cristin-import-${AWS::AccountId}'
       Events:
         SqsEvent:
@@ -2858,14 +2864,14 @@ Resources:
         - !Ref SlackSnsArn
 
   UpdatedPublicationChannelEventHandler:
-    DependsOn: DatabaseAccessLambdaManagedPolicy
+    DependsOn: ResourceServiceAccessManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.UpdatedPublicationChannelEventHandler::handleRequest
       Timeout: 200
       Policies:
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
@@ -2912,7 +2918,7 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.delete.ResourceDeletedEventHandler::handleRequest
       Timeout: 200
       Policies:
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt ReadFromEventsS3BucketManagedPolicy.PolicyArn
         - !GetAtt DeleteFromResourceStorageS3BucketManagedPolicy.PolicyArn
       Environment:

@@ -119,12 +119,14 @@ public class ResourceService extends ServiceWithTransactions {
     private final ChannelClaimClient channelClaimClient;
     private final CounterService counterService;
     private final CustomerService customerService;
+    private final CristinUnitsUtil cristinUnitsUtil;
 
     public ResourceService(AmazonDynamoDB dynamoDBClient,
                            String tableName, Clock clock,
                            RawContentRetriever uriRetriever,
                            ChannelClaimClient channelClaimClient,
-                           CustomerService customerService) {
+                           CustomerService customerService,
+                           CristinUnitsUtil cristinUnitsUtil) {
         super(dynamoDBClient);
         
         
@@ -137,13 +139,14 @@ public class ResourceService extends ServiceWithTransactions {
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.uriRetriever = uriRetriever;
+        this.cristinUnitsUtil = cristinUnitsUtil;
         this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
         this.channelClaimClient = channelClaimClient;
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.customerService = customerService;
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService, uriRetriever, channelClaimClient,
-                                                               customerService);
+                                                               customerService, cristinUnitsUtil);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
@@ -163,7 +166,8 @@ public class ResourceService extends ServiceWithTransactions {
     public static ResourceService defaultService(String tableName) {
         var uriRetriever = new UriRetriever();
         return new ResourceService(defaultDynamoDbClient(), tableName, Clock.systemDefaultZone(), uriRetriever,
-                                   ChannelClaimClient.create(uriRetriever), new CustomerService(uriRetriever));
+                                   ChannelClaimClient.create(uriRetriever), new CustomerService(uriRetriever),
+                                   CristinUnitsUtil.defaultInstance());
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData) throws BadRequestException {
@@ -501,7 +505,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     private Resource insertImportedResource(Resource resource, ImportSource importSource) {
         if (resource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(resource);
+            setCuratingInstitutions(resource, cristinUnitsUtil);
         }
 
         mutateResourceIfMissingCristinIdentifier(resource);
@@ -666,7 +670,7 @@ public class ResourceService extends ServiceWithTransactions {
         var transactions = new ArrayList<TransactWriteItem>();
 
         if (resource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(resource);
+            setCuratingInstitutions(resource, cristinUnitsUtil);
         }
 
         mutateResourceIfMissingCristinIdentifier(resource);
@@ -690,10 +694,10 @@ public class ResourceService extends ServiceWithTransactions {
         return resource;
     }
 
-    private void setCuratingInstitutions(Resource newResource) {
+    private void setCuratingInstitutions(Resource newResource, CristinUnitsUtil cristinUnitsUtil) {
         newResource.setCuratingInstitutions(
-            new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsOnline(
-                newResource.toPublication()));
+            new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutions(
+                newResource.toPublication().getEntityDescription(), cristinUnitsUtil));
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {

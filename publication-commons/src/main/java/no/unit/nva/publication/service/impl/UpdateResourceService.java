@@ -51,6 +51,7 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
@@ -67,11 +68,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private final RawContentRetriever uriRetriever;
     private final CustomerService customerService;
     private final ChannelClaimClient channelClaimClient;
+    private final CristinUnitsUtil cristinUnitsUtil;
 
     public UpdateResourceService(AmazonDynamoDB client, String tableName, Clock clockForTimestamps,
                                  ReadResourceService readResourceService, RawContentRetriever uriRetriever,
                                  ChannelClaimClient channelClaimClient,
-                                 CustomerService customerService) {
+                                 CustomerService customerService,
+                                 CristinUnitsUtil cristinUnitsUtil) {
         super(client);
         this.tableName = tableName;
         this.clockForTimestamps = clockForTimestamps;
@@ -79,6 +82,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         this.uriRetriever = uriRetriever;
         this.channelClaimClient = channelClaimClient;
         this.customerService = customerService;
+        this.cristinUnitsUtil = cristinUnitsUtil;
     }
 
     public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
@@ -120,7 +124,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var newPublisherIdentifier = getPublisherIdentifierWhenDegree(resource);
 
         if (!Objects.equals(oldPublisherIdentifier, newPublisherIdentifier)) {
-            oldPublisherIdentifier.ifPresent(identifier -> removePublicationChannel(persistedResource, identifier, transactWriteItems));
+            oldPublisherIdentifier.ifPresent(
+                identifier -> removePublicationChannel(persistedResource, identifier, transactWriteItems));
             newPublisherIdentifier.ifPresent(identifier -> addPublicationChannel(resource, transactWriteItems));
         }
 
@@ -319,7 +324,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private void updateCuratingInstitutions(Resource resource, Resource persistedResource) {
         if (isContributorsChanged(resource, persistedResource)) {
             resource.setCuratingInstitutions(new CuratingInstitutionsUtil(uriRetriever, customerService)
-                                                 .getCuratingInstitutionsOnline(resource.toPublication()));
+                                                 .getCuratingInstitutions(
+                                                     resource.toPublication().getEntityDescription(),
+                                                     cristinUnitsUtil));
         }
     }
 
