@@ -259,7 +259,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private Optional<InputStream> getAnthology(JsonNode indexDocument) {
         return extractPublicationContextUri(indexDocument)
-                   .map(uri -> new ExpandedParentPublication(uriRetriever, resourceService)
+                   .map(uri -> new ExpandedParentPublication(uriRetriever, resourceService, queueClient)
                                    .getExpandedParentPublication(uri))
                    .map(IoUtils::stringToStream);
     }
