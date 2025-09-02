@@ -48,6 +48,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
@@ -204,11 +205,11 @@ public class PublicationScenarioContext {
         }
         if (roles.contains(RELATED_EXTERNAL_CLIENT)) {
             return UserInstance.createExternalUser(
-                new ResourceOwner(new Username(USER_NAME), CREATING_INSTITUTION), CREATING_INSTITUTION);
+                new ResourceOwner(new Username(USER_NAME), CREATING_INSTITUTION), CREATING_INSTITUTION, ThirdPartySystem.OTHER);
         }
         if (roles.contains(NOT_RELATED_EXTERNAL_CLIENT)) {
             return UserInstance.createExternalUser(
-                new ResourceOwner(new Username(USER_NAME), NON_CURATING_INSTITUTION), NON_CURATING_INSTITUTION);
+                new ResourceOwner(new Username(USER_NAME), NON_CURATING_INSTITUTION), NON_CURATING_INSTITUTION, ThirdPartySystem.OTHER);
         }
 
         var accessRights = getAccessRights(getRoles()).stream().toList();

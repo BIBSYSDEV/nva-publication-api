@@ -63,6 +63,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -523,7 +524,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
 
         var curatingInstitution = randomUri();
         randomPublication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of())));
-        var user = UserInstance.createExternalUser(randomPublication.getResourceOwner(), randomUri());
+        var user = UserInstance.createExternalUser(randomPublication.getResourceOwner(), randomUri(), ThirdPartySystem.OTHER);
 
         var publication = attempt(
             () -> Resource.fromPublication(randomPublication)

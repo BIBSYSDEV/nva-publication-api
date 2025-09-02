@@ -2,6 +2,7 @@ package no.unit.nva.publication.messages.create;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
@@ -35,7 +36,6 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -95,7 +95,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var sender = UserInstance.create(randomResourceOwner(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, accessRights);
 
@@ -111,7 +111,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = UserInstance.create(randomString(), randomUri());
+        var sender = UserInstance.create(randomResourceOwner(), randomUri());
         var expectedText = randomString();
         var request = createNewMessageRequest(publication, ticket, sender, expectedText,
                                                              randomUri(), MANAGE_DOI);
@@ -128,7 +128,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var sender = UserInstance.create(randomResourceOwner(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
                                                              MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS,
@@ -149,9 +149,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     void shouldCreateMessageAndDoNotSetCuratorAsAssigneeWhenSenderIsCuratorAndPublicationOwnerAndTicketHasNoAssignee(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var curatorAndOwner = new UserInstance(new User(randomString()).toString(), randomUri(), randomUri(), null,
-                                               null,
-                                               null, UserClientType.INTERNAL);
+        var curatorAndOwner = randomUserInstance(randomUri());
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, curatorAndOwner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expectedText = randomString();
@@ -177,9 +175,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
         var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
-                                      publication.getResourceOwner().getOwnerAffiliation(), null, null,
-                                      null, UserClientType.INTERNAL);
+
+        var sender = UserInstance.create(publication.getResourceOwner(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
                                                              accessRights);
@@ -203,9 +200,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                               ? TicketTestUtils.createPersistedDegreePublication(publicationStatus, resourceService)
                               : TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
-                                      publication.getResourceOwner().getOwnerAffiliation(), null, null,
-                                      null, UserClientType.INTERNAL);
+        var sender = UserInstance.create(publication.getResourceOwner(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
                                                              accessRights);
@@ -256,7 +251,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
-        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, UserInstance.create(randomString(), randomUri()));
+        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, UserInstance.create(randomResourceOwner(), randomUri()));
         var owner = UserInstance.fromPublication(publication);
         var request = createNewMessageRequestForResourceOwner(publication, ticket, owner, randomString());
         handler.handleRequest(request, output, context);
@@ -269,7 +264,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
-        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var sender = UserInstance.create(randomResourceOwner(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, MANAGE_RESOURCES_STANDARD);
 
@@ -304,7 +299,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance randomUserInstance(URI customerId) {
-        return UserInstance.create(randomString(), customerId);
+        return UserInstance.create(randomResourceOwner(), customerId);
     }
 
     private String createExpectedLocationHeader(Message actualMessage) {

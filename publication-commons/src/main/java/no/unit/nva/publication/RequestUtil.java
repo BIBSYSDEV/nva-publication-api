@@ -95,7 +95,7 @@ public final class RequestUtil {
 
         return requestInfo.clientIsInternalBackend()
                    ? UserInstance.createBackendUser(resourceOwner, client.getCustomerUri())
-                   : UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
+                   : UserInstance.createExternalUser(resourceOwner, client.getCustomerUri(), null);
     }
 
     private static UserInstance createDataportenUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
@@ -106,7 +106,7 @@ public final class RequestUtil {
         var personAffiliation = attempt(requestInfo::getPersonAffiliation).orElse(failure -> null);
         var accessRights = requestInfo.getAccessRights();
         return new UserInstance(owner, customerId, topLevelOrg, personAffiliation, personCristinId, accessRights,
-                                UserClientType.INTERNAL);
+                                UserClientType.INTERNAL, null);
     }
 
     public static UserInstance createUserInstanceFromRequest(RequestInfo requestInfo,
