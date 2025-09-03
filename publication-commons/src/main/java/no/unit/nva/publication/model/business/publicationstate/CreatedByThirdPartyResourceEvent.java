@@ -47,6 +47,7 @@ public record CreatedByThirdPartyResourceEvent(Instant date, User user, URI inst
                    .withTopic(LogTopic.PUBLICATION_CREATED_BY_THIRD_PARTY)
                    .withTimestamp(date)
                    .withPerformedBy(user)
+                   .withImportSource(importSource)
                    .build();
     }
 }
