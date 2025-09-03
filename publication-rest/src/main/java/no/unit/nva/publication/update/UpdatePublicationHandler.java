@@ -140,12 +140,12 @@ public class UpdatePublicationHandler
         var existingResource = fetchResource(identifierInPath);
 
         if (etag.isPresent()) {
-            logger.error("ETag provided {} for resource {}", etag.get(), identifierInPath);
+            logger.info("ETag provided {} for resource {}", etag.get(), identifierInPath);
             if (!existingResource.getVersion().toString().equals(etag.get())) {
                 throw new PreconditionFailedException(ETAG_DOES_NOT_MATCH_MESSAGE);
             }
         } else {
-            logger.error("No ETag provided for resource {}", identifierInPath);
+            logger.info("No ETag provided for resource {}", identifierInPath);
         }
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
