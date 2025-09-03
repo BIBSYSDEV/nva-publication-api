@@ -73,6 +73,11 @@ paths:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
         responses:
+          200:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Expose-Headers:
+                - ETag
           301:
             statusCode: "301"
             responseParameters:
@@ -107,6 +112,8 @@ paths:
               description: Cache-Control header
               schema:
                 type: string
+        '304':
+          description: Not Modified
         '410':
           description: Permanently gone
           content:
