@@ -1,6 +1,7 @@
 package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
+import com.google.common.net.HttpHeaders;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -79,6 +80,18 @@ public final class RequestUtil {
     @SuppressWarnings("PMD.InvalidLogMessageFormat")
     public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
         return attempt(requestInfo::getUserName).orElseThrow(fail -> new UnauthorizedException());
+    }
+
+    public static Optional<String> getETagFromIfMatchHeader(RequestInfo requestInfo) {
+        return requestInfo.getHeaderOptional(HttpHeaders.IF_MATCH)
+                   .map(SortableIdentifier::new)
+                   .map(SortableIdentifier::toString);
+    }
+
+    public static Optional<String> getETagFromIfNoneMatchHeader(RequestInfo requestInfo) {
+        return requestInfo.getHeaderOptional(HttpHeaders.IF_NONE_MATCH)
+                   .map(SortableIdentifier::new)
+                   .map(SortableIdentifier::toString);
     }
 
     private static UserInstance createClientCredentialUserInstance(RequestInfo requestInfo,

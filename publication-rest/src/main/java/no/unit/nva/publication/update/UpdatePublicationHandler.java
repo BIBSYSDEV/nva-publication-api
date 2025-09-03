@@ -47,6 +47,7 @@ import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.PreconditionFailedException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -67,6 +68,7 @@ public class UpdatePublicationHandler
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    public static final String ETAG_DOES_NOT_MATCH_MESSAGE = "The provided ETag does not match the current state of the resource.";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -133,8 +135,18 @@ public class UpdatePublicationHandler
                                                Context context)
         throws ApiGatewayException {
         var identifierInPath = RequestUtil.getIdentifier(requestInfo);
+        var etag = RequestUtil.getETagFromIfMatchHeader(requestInfo);
 
         var existingResource = fetchResource(identifierInPath);
+
+        if (etag.isPresent()) {
+            logger.error("ETag provided {} for resource {}", etag.get(), identifierInPath);
+            if (!existingResource.getVersion().toString().equals(etag.get())) {
+                throw new PreconditionFailedException(ETAG_DOES_NOT_MATCH_MESSAGE);
+            }
+        } else {
+            logger.error("No ETag provided for resource {}", identifierInPath);
+        }
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissions.create(existingResource, userInstance);
