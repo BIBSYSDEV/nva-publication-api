@@ -1,5 +1,7 @@
 package no.unit.nva.publication.update;
 
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static com.google.common.net.HttpHeaders.ETAG;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
@@ -12,6 +14,7 @@ import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
@@ -150,7 +153,7 @@ public class UpdatePublicationHandler
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissions.create(existingResource, userInstance);
-        var updatedPublication = switch (input) {
+        var updatedResource = switch (input) {
             case UpdateRequest request -> updatePublication(request,
                                                                   identifierInPath,
                                                                   existingResource,
@@ -169,8 +172,13 @@ public class UpdatePublicationHandler
 
             default -> throw new BadRequestException("Unknown input body type");
         };
+        addEtagHeaderForUpdatedPublication(updatedResource);
+        return PublicationResponseFactory.create(updatedResource, requestInfo, identityServiceClient);
+    }
 
-        return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
+    private void addEtagHeaderForUpdatedPublication(Resource updatedResource) {
+        addAdditionalHeaders(() -> Map.of(ETAG, updatedResource.getVersion().toString(), ACCESS_CONTROL_EXPOSE_HEADERS,
+                                          ETAG));
     }
 
     private Resource updatePublication(UpdateRequest input, SortableIdentifier identifierInPath,

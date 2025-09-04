@@ -1,7 +1,9 @@
 package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.ETAG;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -338,6 +340,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ETAG));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_EXPOSE_HEADERS));
 
         final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
