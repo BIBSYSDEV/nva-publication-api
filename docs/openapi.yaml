@@ -76,8 +76,7 @@ paths:
           200:
             statusCode: "200"
             responseParameters:
-              method.response.header.Access-Control-Expose-Headers:
-                - ETag
+              method.response.header.Access-Control-Expose-Headers: "'ETag'"
           301:
             statusCode: "301"
             responseParameters:
