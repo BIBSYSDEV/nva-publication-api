@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.ETAG;
@@ -529,6 +530,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = parseHandlerResponse();
         var expectedEtag = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
 
+        assertEquals(gatewayResponse.getHeaders().get(ACCESS_CONTROL_EXPOSE_HEADERS), ETAG);
         assertEquals(String.valueOf(expectedEtag), gatewayResponse.getHeaders().get(ETAG));
     }
 

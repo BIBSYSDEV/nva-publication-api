@@ -1,5 +1,6 @@
 package no.unit.nva.publication.fetch;
 
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.ETAG;
 import static com.google.common.net.HttpHeaders.LOCATION;
@@ -21,7 +22,6 @@ import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.paths.UriWrapper.HTTPS;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -197,8 +197,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
 
         var headers = new ConcurrentHashMap<String, String>();
-        headers.put(HttpHeaders.ETAG, resource.getVersion().toString());
-
+        headers.put(ETAG, resource.getVersion().toString());
+        headers.put(ACCESS_CONTROL_EXPOSE_HEADERS, ETAG);
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(resource);
         } else if (SCHEMA_ORG.equals(contentType)) {
