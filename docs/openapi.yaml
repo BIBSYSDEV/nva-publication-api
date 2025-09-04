@@ -69,6 +69,13 @@ paths:
           style: form
           explode: false
           description: If fetching a deleted / unpublished publication, the response code will be 410, instead of 301. A non deleted / non-unpublished will respond as if the query param was not set.
+        - name: If-None-Match
+          in: header
+          required: false
+          schema:
+            type: string
+          description: ETag value used for caching and conditional requests
+          example: '123e4567-e89b-12d3-a456-426614174000'
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
@@ -155,6 +162,13 @@ paths:
           style: simple
           explode: false
           description: UUID identifier of the Publication to update.
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+          description: ETag value used for caching and conditional requests
+          example: '123e4567-e89b-12d3-a456-426614174000'
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaUpdatePublicationFunction.Arn}/invocations
