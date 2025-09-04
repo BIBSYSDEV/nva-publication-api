@@ -76,7 +76,7 @@ paths:
           200:
             statusCode: "200"
             responseParameters:
-              method.response.header.Access-Control-Expose-Headers: "'ETag'"
+              method.response.header.Access-Control-Expose-Headers: true
           301:
             statusCode: "301"
             responseParameters:
@@ -86,6 +86,12 @@ paths:
       responses:
         '200':
           description: OK
+          headers:
+            ETag:
+              description: A unique version for the publication, used for caching and conditional requests.
+              schema:
+                type: string
+                example: "123e4567-e89b-12d3-a456-426614174000"
           content:
             application/json:
               schema:
