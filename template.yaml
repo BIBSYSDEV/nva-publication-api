@@ -146,9 +146,8 @@ Globals:
   Api:
     Cors:
       AllowMethods: "'PUT, GET, OPTIONS, DELETE, POST'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Location,ETag,If-None-Match,If-Match'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Location,If-None-Match,If-Match'"
       AllowOrigin: "'*'"
-      ExposeHeaders: "'ETag,Location,Authorization,If-None-Match,If-Match'"
   Function:
     Runtime: java21
     Timeout: 20
