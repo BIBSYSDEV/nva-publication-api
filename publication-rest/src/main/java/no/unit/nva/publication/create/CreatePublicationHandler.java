@@ -25,7 +25,7 @@ import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
+import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -109,8 +109,9 @@ public class CreatePublicationHandler
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
 
-        RightsRetentionsApplier.rrsApplierForNewPublication(newResource, customer.getRightsRetentionStrategy(),
-                                                            customerAwareUserContext.username()).handle();
+        new FileRightsRetentionService(customer.getRightsRetentionStrategy(), customerAwareUserContext.userInstance())
+            .applyRightsRetention(newResource);
+
         var createdPublication = newResource
                                      .persistNew(publicationService, customerAwareUserContext.userInstance());
         setLocationHeader(createdPublication.getIdentifier());

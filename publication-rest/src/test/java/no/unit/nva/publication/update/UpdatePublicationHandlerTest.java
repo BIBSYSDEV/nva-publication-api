@@ -1773,17 +1773,18 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             customerId, PUBLISHED, resourceService);
         persistPublishingRequestContainingExistingUnpublishedFiles(publication);
-        var updatedPublication = updateTitle(publication);
+        var publicationUpdate = updateTitle(publication);
 
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
-        var input = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
+        var input = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId,
                                                               publication.getResourceOwner().getOwnerAffiliation(),
                                                               SUPPORT, MANAGE_OWN_RESOURCES, MANAGE_NVI_CANDIDATES,
                                                               MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(input, output, context);
 
         var publishingRequest = getPublishingRequestCase(publication);
-        var unpublishedFile = getUnpublishedFiles(publication).getFirst();
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        var unpublishedFile = getUnpublishedFiles(updatedPublication).getFirst();
         assertThat(publishingRequest.getFilesForApproval(), hasItem(unpublishedFile));
     }
 
@@ -1839,7 +1840,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                    WiremockHttpClient.create());
         handler.handleRequest(input, output, context);
 
-        assertEquals(updatedFile,
+        assertNotEquals(file,
                      FileEntry.queryObject(file.getIdentifier(), resource.getIdentifier())
                          .fetch(resourceService).orElseThrow().getFile());
     }

@@ -36,7 +36,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
-import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
+import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
@@ -177,7 +177,7 @@ public class UpdatePublicationHandler
             throw new ForbiddenException();
         }
 
-        setRrsOnFiles(resourceUpdate, existingResource, customer, userInstance.getUsername(), permissionStrategy);
+        setRrsOnFiles(resourceUpdate, existingResource, customer, userInstance);
 
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingResource, resourceUpdate);
@@ -311,11 +311,10 @@ public class UpdatePublicationHandler
     }
 
     private void setRrsOnFiles(Resource updatedResource, Resource existingResource, Customer customer,
-                               String actingUser, PublicationPermissions permissionStrategy)
+                               UserInstance userInstance)
         throws BadRequestException, UnauthorizedException {
-        RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingResource, updatedResource,
-                                                                customer.getRightsRetentionStrategy(), actingUser,
-                                                                permissionStrategy).handle();
+        new FileRightsRetentionService(customer.getRightsRetentionStrategy(), userInstance)
+            .applyRightsRetention(updatedResource, existingResource);
     }
 
     private JavaHttpClientCustomerApiClient getCustomerApiClient() {
