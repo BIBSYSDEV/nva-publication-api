@@ -197,8 +197,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
 
         var headers = new ConcurrentHashMap<String, String>();
-        headers.put(ETAG, resource.getVersion().toString());
-        headers.put(ACCESS_CONTROL_EXPOSE_HEADERS, ETAG);
+
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(resource);
         } else if (SCHEMA_ORG.equals(contentType)) {
@@ -207,6 +206,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             statusCode = HTTP_SEE_OTHER;
             headers.put(LOCATION, landingPageLocation(resource.getIdentifier()).toString());
         } else {
+            headers.put(ETAG, resource.getVersion().toString());
+            headers.put(ACCESS_CONTROL_EXPOSE_HEADERS, ETAG);
             response = createPublicationResponse(requestInfo, resource);
         }
         addAdditionalHeaders(() -> headers);
