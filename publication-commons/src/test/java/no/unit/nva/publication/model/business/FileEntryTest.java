@@ -71,6 +71,6 @@ class FileEntryTest {
     private static UserInstance randomUserInstance() {
         return new UserInstance(randomHiddenFile().toJsonString(), randomUri(), randomUri(), randomUri(),
                                 randomUri(), List.of(),
-                                UserClientType.INTERNAL);
+                                UserClientType.INTERNAL, null);
     }
 }

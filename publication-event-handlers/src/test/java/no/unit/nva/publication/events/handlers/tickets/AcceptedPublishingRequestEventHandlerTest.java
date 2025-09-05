@@ -40,6 +40,8 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -747,15 +749,14 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     private PublishingRequestCase pendingPublishingRequest(Publication publication, Set<File> files) {
-        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
-                                            List.of(), UserClientType.INTERNAL);
+        var userInstance = UserInstance.create(new ResourceOwner(new Username(randomString()), randomUri()),
+                                               randomUri());
         return PublishingRequestCase.createWithFilesForApproval(Resource.fromPublication(publication), userInstance,
                                                                 REGISTRATOR_PUBLISHES_METADATA_ONLY, files);
     }
 
     private FilesApprovalThesis pendingFilesApprovalThesis(Publication publication) {
-        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
-                                            List.of(), UserClientType.INTERNAL);
+        var userInstance = UserInstance.create(randomString(), randomUri());
         return FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication), userInstance,
                                                             REGISTRATOR_PUBLISHES_METADATA_ONLY);
     }

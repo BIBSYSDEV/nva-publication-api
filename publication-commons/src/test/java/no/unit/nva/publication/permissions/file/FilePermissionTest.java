@@ -31,6 +31,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.Institution;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.InstitutionSuite;
@@ -96,7 +97,7 @@ class FilePermissionTest {
         setPublicationChannelWithinScope(resource, institution, EVERYONE, OWNER_ONLY);
 
         var userInstance = UserInstance.createExternalUser(publication.getResourceOwner(),
-                                                           publication.getPublisher().getId());
+                                                           publication.getPublisher().getId(), ThirdPartySystem.OTHER);
         var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
         assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));

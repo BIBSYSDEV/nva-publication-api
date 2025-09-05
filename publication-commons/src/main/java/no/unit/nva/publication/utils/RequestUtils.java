@@ -89,6 +89,6 @@ public record RequestUtils(List<AccessRight> accessRights,
     public UserInstance toUserInstance() {
         return new UserInstance(username, customerId, topLevelCristinOrgId, personAffiliation, personCristinId,
                                 accessRights,
-                                UserClientType.INTERNAL);
+                                UserClientType.INTERNAL, null);
     }
 }

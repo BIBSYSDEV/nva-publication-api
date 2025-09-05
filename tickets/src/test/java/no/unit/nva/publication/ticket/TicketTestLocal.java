@@ -38,12 +38,6 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
     }
     
-    protected Publication createAndPersistDraftPublication()
-        throws ApiGatewayException {
-        return createAndPersistPublicationAndThenActOnIt(publication -> {
-        });
-    }
-    
     protected Publication createPersistAndPublishPublication()
         throws ApiGatewayException {
         return createAndPersistPublicationAndThenActOnIt(this::publish);
@@ -67,9 +61,9 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         return DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
     }
 
-    public static UserInstance userInstanceWithTopLevelCristinOrg(URI ownerAffiliation) {
-        return new UserInstance(randomString(), randomUri(), ownerAffiliation, randomUri(), randomUri(),
-                                List.of(), UserClientType.INTERNAL);
+    public static UserInstance userInstanceWithTopLevelCristinOrg(URI topLevelOrgCristinId) {
+        return new UserInstance(randomString(), randomUri(), topLevelOrgCristinId, randomUri(), randomUri(),
+                                List.of(), UserClientType.INTERNAL, null);
     }
 
     protected Publication nonPersistedPublication() {

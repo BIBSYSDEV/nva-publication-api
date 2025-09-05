@@ -3,6 +3,7 @@ package no.unit.nva.publication.file.upload;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.publication.model.business.UserInstanceFixture.getDegreeAndFileCuratorFromPublication;
@@ -53,10 +54,10 @@ import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadReque
 import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstanceFixture;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.UserInstanceFixture;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -398,7 +399,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var completeMultipartUploadResult = mockCompleteMultipartUpload();
         var request = new ExternalCompleteUploadRequest(randomString(), randomString(), List.of(), fileType, null, null,
                                                         null);
-        var userInstance = constructExternalClient(publication);
+        var userInstance = externalUserInstance(publication);
         fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
 
         var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
@@ -418,7 +419,7 @@ class FileServiceTest extends ResourcesLocalTest {
         mockCompleteMultipartUpload();
         var request = new ExternalCompleteUploadRequest(randomString(), randomString(), List.of(), "PendingOpenFile",
                                                         null, null, null);
-        var userInstance = constructExternalClient(publication);
+        var userInstance = externalUserInstance(publication);
 
         assertThrows(BadRequestException.class,
                      () -> fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance));
@@ -443,12 +444,6 @@ class FileServiceTest extends ResourcesLocalTest {
                      NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
     }
 
-    private static UserInstance constructExternalClient(Publication publication) {
-        return new UserInstance(randomString(), publication.getPublisher().getId(), randomUri(), randomUri(), randomUri(),
-                                List.of(),
-                                UserClientType.EXTERNAL);
-    }
-
     private static File constructExpectedFile(CompleteMultipartUploadResult completeMultipartUploadResult,
                                               UserInstance userInstance, FileEntry fileEntry) {
         return new UploadedFile(UUID.fromString(completeMultipartUploadResult.getKey()), FILE_NAME, CONTENT_TYPE,
@@ -463,9 +458,7 @@ class FileServiceTest extends ResourcesLocalTest {
     }
 
     private UserInstance externalUserInstance(Publication resource) {
-        return new UserInstance(randomString(), resource.getPublisher().getId(), randomUri(), randomUri(), randomUri(),
-                                List.of(),
-                                UserClientType.EXTERNAL);
+        return UserInstance.createExternalUser(randomResourceOwner(), resource.getPublisher().getId(), ThirdPartySystem.OTHER);
     }
 
     private void mockCustomerResponse(UserInstance userInstance) {
