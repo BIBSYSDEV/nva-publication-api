@@ -40,7 +40,8 @@ public class FileRightsRetentionService {
     private final CustomerApiRightsRetention customerApiRightsRetention;
     private final UserInstance userInstance;
 
-    public FileRightsRetentionService(CustomerApiRightsRetention customerApiRightsRetention, UserInstance userInstance) {
+    public FileRightsRetentionService(CustomerApiRightsRetention customerApiRightsRetention,
+                                      UserInstance userInstance) {
         this.customerApiRightsRetention = customerApiRightsRetention;
         this.userInstance = userInstance;
     }
@@ -50,9 +51,10 @@ public class FileRightsRetentionService {
      */
     public void applyRightsRetention(Resource newImage, Resource oldImage)
         throws BadRequestException, UnauthorizedException {
+        var existingFileEntries = getFileEntries(oldImage);
         for (var file : getFiles(newImage)) {
-            var existingFileEntry = getFileEntries(oldImage)
-                    .getOrDefault(new SortableIdentifier(file.getIdentifier().toString()), null);
+            var existingFileEntry = existingFileEntries.getOrDefault(
+                new SortableIdentifier(file.getIdentifier().toString()), null);
             applyRightsRetentionToExistingFile(file, existingFileEntry, newImage);
         }
     }
@@ -60,19 +62,20 @@ public class FileRightsRetentionService {
     /**
      * Apply rights retention strategy to all files in a new publication
      */
-    public void applyRightsRetention(Resource resource) throws BadRequestException, UnauthorizedException {
+    public void applyRightsRetention(Resource resource) throws UnauthorizedException, BadRequestException {
         applyDefaultStrategyToAllFiles(resource);
     }
 
     /**
      * Apply strategy to all files in a new publication - processes file's requested strategy
      */
-    private void applyDefaultStrategyToAllFiles(Resource resource) throws BadRequestException, UnauthorizedException {
+    private void applyDefaultStrategyToAllFiles(Resource resource) throws UnauthorizedException, BadRequestException {
         for (var file : getFiles(resource)) {
             if (isRightsRetentionRelevant(file, resource)) {
+                // Process what the file is requesting, like the original logic
                 var requestedStrategy = file.getRightsRetentionStrategy();
-                file.setRightsRetentionStrategy(createValidatedStrategy(requestedStrategy, null, resource));
-
+                var validatedStrategy = createValidatedStrategy(requestedStrategy, null, resource);
+                file.setRightsRetentionStrategy(validatedStrategy);
             } else {
                 file.setRightsRetentionStrategy(createNullStrategy());
             }
@@ -102,8 +105,11 @@ public class FileRightsRetentionService {
         var existingStrategy = existingFile.getFile().getRightsRetentionStrategy();
 
         if (strategyTypeChanged(requestedStrategy, existingStrategy)) {
-            file.setRightsRetentionStrategy(createValidatedStrategy(requestedStrategy, existingFile, resource));
+            // Validate and create the requested strategy
+            var validatedStrategy = createValidatedStrategy(requestedStrategy, existingFile, resource);
+            file.setRightsRetentionStrategy(validatedStrategy);
         } else {
+            // Keep existing strategy
             file.setRightsRetentionStrategy(existingStrategy);
         }
     }
@@ -126,33 +132,20 @@ public class FileRightsRetentionService {
                    .isPresent();
     }
 
-    private RightsRetentionStrategy determineDefaultStrategy(File file, Resource resource) {
-        // For new files in existing publications, process their requested strategy
-        var requestedStrategy = file.getRightsRetentionStrategy();
-        try {
-            return createValidatedStrategy(requestedStrategy, null, resource);
-        } catch (BadRequestException | UnauthorizedException e) {
-            // If requested strategy is invalid, fall back to customer default
-            return createCustomerDefaultStrategy();
-        }
-    }
-
-    private RightsRetentionStrategy createCustomerDefaultStrategy() {
-        // Create default strategy based on customer configuration
-        return switch (customerApiRightsRetention.getType()) {
-            case "RightsRetentionStrategy", "OverridableRightsRetentionStrategy" -> createCustomerStrategy();
-            default -> createNullStrategy();
-        };
+    private RightsRetentionStrategy determineDefaultStrategy(File file, Resource resource)
+        throws UnauthorizedException, BadRequestException {
+        return createValidatedStrategy(file.getRightsRetentionStrategy(), null, resource);
     }
 
     private boolean strategyTypeChanged(RightsRetentionStrategy newStrategy, RightsRetentionStrategy oldStrategy) {
         return !newStrategy.getClass().equals(oldStrategy.getClass());
     }
 
-    private RightsRetentionStrategy createValidatedStrategy(RightsRetentionStrategy requestedStrategy, FileEntry existingFile,
-                                                            Resource resource)
-        throws BadRequestException, UnauthorizedException {
+    private RightsRetentionStrategy createValidatedStrategy(RightsRetentionStrategy requestedStrategy,
+                                                            FileEntry existingFile, Resource resource)
+        throws BadRequestException {
 
+        // Create the strategy based on what the file is requesting
         var rrs = switch (requestedStrategy) {
             case OverriddenRightsRetentionStrategy ignored ->
                 OverriddenRightsRetentionStrategy.create(getConfig(), userInstance.getUsername());
@@ -162,26 +155,27 @@ public class FileRightsRetentionService {
             default -> throw new IllegalArgumentException("Unknown RightsRetentionStrategy type " + requestedStrategy);
         };
 
-        if (!isValidStrategyForCustomerConfig(rrs)) {
+        // Validate if matches customer config OR user can override
+        if (!isValidStrategy(rrs, existingFile, resource)) {
             throw new BadRequestException(ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE);
-        }
-
-        if (rrs instanceof OverriddenRightsRetentionStrategy && !canOverrideStrategy(existingFile, resource)) {
-            throw new UnauthorizedException("Not authorized to override rights retention strategy");
         }
 
         return rrs;
     }
 
+    private boolean isValidStrategy(RightsRetentionStrategy rrs, FileEntry existingFile, Resource resource) {
+        return isValidStrategyForCustomerConfig(rrs) || (rrs instanceof OverriddenRightsRetentionStrategy
+                                                         && canOverrideStrategy(existingFile, resource));
+    }
+
     private boolean canOverrideStrategy(FileEntry existingFile, Resource resource) {
-        return nonNull(existingFile)
-               && new FilePermissions(existingFile, userInstance, resource)
-                      .allowsAction(WRITE_METADATA);
+        return nonNull(existingFile) && new FilePermissions(existingFile, userInstance, resource).allowsAction(
+            WRITE_METADATA);
     }
 
     private boolean isValidStrategyForCustomerConfig(RightsRetentionStrategy strategy) {
         var allowedConfigurations = getAllowedConfigurationsForStrategy(strategy);
-        return allowedConfigurations.contains(getConfig());
+        return allowedConfigurations.contains(strategy.getConfiguredType());
     }
 
     private Set<RightsRetentionStrategyConfiguration> getAllowedConfigurationsForStrategy(RightsRetentionStrategy rrs) {
@@ -196,6 +190,7 @@ public class FileRightsRetentionService {
         };
     }
 
+    // Helper methods for strategy creation
     private NullRightsRetentionStrategy createNullStrategy() {
         return NullRightsRetentionStrategy.create(getConfig());
     }
@@ -217,7 +212,8 @@ public class FileRightsRetentionService {
     }
 
     private Map<SortableIdentifier, FileEntry> getFileEntries(Resource resource) {
-        return resource.getFileEntries().stream().collect(Collectors.toMap(FileEntry::getIdentifier,
-                                                                           Function.identity()));
+        return resource.getFileEntries()
+                   .stream()
+                   .collect(Collectors.toMap(FileEntry::getIdentifier, Function.identity()));
     }
 }
