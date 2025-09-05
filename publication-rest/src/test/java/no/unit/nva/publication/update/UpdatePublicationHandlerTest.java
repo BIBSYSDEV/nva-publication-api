@@ -166,7 +166,6 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -1102,7 +1101,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                        .withId(customerId)
                                                        .build()).build();
 
-        var owner = getOwner(randomPublication);
+        var owner = UserInstance.fromPublication(publication);
 
         var contributorTopLevelCristinId = owner.getTopLevelOrgCristinId();
 
@@ -1132,13 +1131,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actualPublishedFile.getRightsRetentionStrategy(),
                    allOf(instanceOf(OverriddenRightsRetentionStrategy.class),
                          hasProperty("overriddenBy", is(notNullValue()))));
-    }
-
-    private UserInstance getOwner(Publication randomPublication) {
-        return new UserInstance(randomPublication.getResourceOwner().getOwner().getValue(),
-                                customerId,
-                                randomPublication.getResourceOwner().getOwnerAffiliation(),
-                                null, null, List.of(), UserClientType.INTERNAL);
     }
 
     @Test

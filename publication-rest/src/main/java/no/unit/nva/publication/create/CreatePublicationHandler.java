@@ -199,7 +199,7 @@ public class CreatePublicationHandler
             client.getCristinUrgUri()
         );
 
-        final var userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
+        final var userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri(), null);
 
         return new CustomerAwareUserContext(userInstance, customerUri, client.getActingUser());
     }

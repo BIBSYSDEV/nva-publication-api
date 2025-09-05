@@ -3,6 +3,7 @@ package no.unit.nva.publication.model.business;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -13,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
-import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
@@ -213,10 +213,5 @@ class TicketEntryTest {
         assertEquals(responsibilityArea, ticket.getReceivingOrganizationDetails().subOrganizationId());
         assertEquals(ownerAffiliation, ticket.getReceivingOrganizationDetails().topLevelOrganizationId());
         assertNull(ticket.getAssignee());
-    }
-
-    private static UserInstance randomUserInstance() {
-        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(),
-                                randomUri(), List.of(), UserClientType.INTERNAL);
     }
 }
