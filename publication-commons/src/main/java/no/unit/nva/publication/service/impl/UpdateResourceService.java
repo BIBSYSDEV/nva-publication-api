@@ -224,7 +224,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
             sendTransactionWriteRequest(transactWriteItemsRequest);
             return resource;
         }
-        return resource;
+        return persistedResource;
     }
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {

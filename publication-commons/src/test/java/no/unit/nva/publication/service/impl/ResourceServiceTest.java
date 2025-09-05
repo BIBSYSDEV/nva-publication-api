@@ -18,6 +18,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -1544,14 +1545,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
         fileEntry.persist(resourceService);
 
         var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-        var persistedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+        var persistedResult = client.getItem(new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
                                                  .withKey(fileEntry.toDao().primaryKey()));
         var persistedDao = Optional.ofNullable(persistedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
 
         resourceService.refreshFile(fileEntry.getIdentifier());
 
         var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-        var refreshedResult = client.getItem(new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+        var refreshedResult = client.getItem(new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
                                                  .withKey(fileEntry.toDao().primaryKey()));
         var refreshedDao = Optional.ofNullable(refreshedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
 
@@ -1652,6 +1653,23 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertEquals(Collections.emptyList(), resourceService.getResourcesByScopusIdentifier(scopusIdentifier));
     }
 
+    @Test
+    void resourceVersionShouldNotBeWrittenBackToDatabase() throws BadRequestException {
+        var publication = Resource.fromPublication(randomPublication()).persistNew(resourceService, randomUserInstance());
+        var persistedVersion = Resource.fromPublication(publication).fetch(resourceService).orElseThrow().getVersion();
+
+        resourceService.refreshResource(publication.getIdentifier());
+
+        var version = super.client.scan(new ScanRequest(RESOURCES_TABLE_NAME)).getItems().stream()
+                          .filter(attribute -> attribute.get("type").getS().equals("Resource"))
+                          .findFirst()
+                          .orElseThrow()
+                          .get("version")
+                          .getS();
+
+        assertNotEquals(persistedVersion.toString(), version);
+    }
+
     private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {
         GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
         DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
@@ -1680,7 +1698,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private Dao getDao(Resource persistedResource) {
         var getRefreshedResourceResult = client.getItem(
-            new GetItemRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+            new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
                 .withKey(persistedResource.toDao().primaryKey()));
         return parseAttributeValuesMap(getRefreshedResourceResult.getItem(), Dao.class);
     }
@@ -1834,7 +1852,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private void assertThatResourceAndIdentifierEntryExist() {
-        ScanResult result = client.scan(new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
+        ScanResult result = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME));
         assertThat(result.getCount(), is(doesNotHaveEmptyValues()));
     }
 
@@ -1843,7 +1861,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private void assertThatAllEntriesHaveBeenDeleted() {
-        ScanResult result = client.scan(new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
+        ScanResult result = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME));
         assertThat(result.getCount(), is(equalTo(0)));
     }
 

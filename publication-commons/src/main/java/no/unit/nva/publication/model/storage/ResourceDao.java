@@ -265,7 +265,9 @@ public class ResourceDao extends Dao
 
     @JsonIgnore
     public Resource getResource() {
-        return (Resource) getData();
+        var resource = (Resource) getData();
+        resource.setVersion(getVersion());
+        return resource;
     }
 
     @Override

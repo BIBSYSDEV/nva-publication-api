@@ -1,10 +1,13 @@
 package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.ETAG;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_PRECON_FAILED;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
@@ -336,6 +339,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ETAG));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_EXPOSE_HEADERS));
 
         final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
@@ -1108,10 +1113,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var resourceWithRrs = resourceService.getResourceByIdentifier(publicationWithRrs.getIdentifier());
 
         resourceWithRrs.getFileEntries()
-            .forEach(file -> {
+            .forEach(file ->
                 file.getFile().setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
-                    OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));
-            });
+                    OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null))
+            );
 
         var request = curatorWithAccessRightsUpdatesPublication(resourceWithRrs.toPublication(), customerId,
                                                                 contributorTopLevelCristinId,
@@ -2002,7 +2007,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void partialUpdateShouldNotValidateFilesNotPresentInRequest()
-        throws BadRequestException, IOException, NotFoundException {
+        throws BadRequestException, IOException {
         var existingFile = randomHiddenFile();
         var publication = randomPublication(JournalArticle.class);
         publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(existingFile)));
@@ -2020,6 +2025,47 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
 
         assertEquals(HTTP_OK, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnPreconditionFailedWhenIfMatchHeaderIsProvidedButVersionOfResourcesIsOutdated()
+        throws BadRequestException, IOException {
+        var publication = randomPublicationWithPublisher(customerId, JournalArticle.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+
+        var partialUpdateRequest = new PartialUpdatePublicationRequest(persistedPublication.getIdentifier(), null, null, AssociatedArtifactList.empty());
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        resourceService.refreshResource(resource.getIdentifier());
+        var input = request(userInstance, partialUpdateRequest, persistedPublication.getIdentifier(),
+                            Map.of("If-Match", resource.getVersion().toString()));
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals("The provided ETag does not match the current state of the resource.",
+                     response.getBodyObject(Problem.class).getDetail());
+        assertEquals(HTTP_PRECON_FAILED, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnOkWithUpdatedETagWhenIfMatchHeaderIsProvidedAndVersionOfResourceMatches()
+        throws BadRequestException, IOException {
+        var publication = randomPublicationWithPublisher(customerId, JournalArticle.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+
+        var partialUpdateRequest = new PartialUpdatePublicationRequest(persistedPublication.getIdentifier(), null, null, AssociatedArtifactList.empty());
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        var version = resource.getVersion().toString();
+        var input = request(userInstance, partialUpdateRequest, persistedPublication.getIdentifier(),
+                            Map.of("If-Match", version));
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals(HTTP_OK, response.getStatusCode());
+        assertNotEquals(version, response.getHeaders().get("ETag"));
     }
 
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
@@ -2451,6 +2497,21 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withTopLevelCristinOrgId(userInstance.getTopLevelOrgCristinId())
                    .withPersonCristinId(Optional.ofNullable(userInstance.getPersonCristinId()).orElse(randomUri()))
                    .withPathParameters(pathParameters)
+                   .build();
+    }
+
+    private InputStream request(UserInstance userInstance, PublicationRequest publicationRequest,
+                                SortableIdentifier publicationIdentifier, Map<String, String> headers)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
+        return new HandlerRequestBuilder<PublicationRequest>(restApiMapper)
+                   .withUserName(userInstance.getUsername())
+                   .withCurrentCustomer(userInstance.getCustomerId())
+                   .withBody(publicationRequest)
+                   .withTopLevelCristinOrgId(userInstance.getTopLevelOrgCristinId())
+                   .withPersonCristinId(Optional.ofNullable(userInstance.getPersonCristinId()).orElse(randomUri()))
+                   .withPathParameters(pathParameters)
+                   .withHeaders(headers)
                    .build();
     }
 

@@ -4,8 +4,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.ETAG;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -39,6 +41,8 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -98,7 +102,6 @@ import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -131,7 +134,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
     private final Context context = new FakeContext();
     private ResourceService publicationService;
-    private UriRetriever uriRetriever;
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
 
@@ -147,7 +149,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService = getResourceService(client);
         output = new ByteArrayOutputStream();
-        this.uriRetriever = new UriRetriever(WiremockHttpClient.create());
+        var uriRetriever = new UriRetriever(WiremockHttpClient.create());
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, uriRetriever, environment,
                                                               identityServiceClient);
     }
@@ -514,8 +516,57 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
                                                                       PublicationResponseElevatedUser.class);
 
+        var expectedEtag = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
+
+        assertEquals(gatewayResponse.getHeaders().get(ETAG), expectedEtag.toString());
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(publicationResponse.getAssociatedArtifacts(), is(not(emptyIterable())));
+    }
+
+    @Test
+    void shouldReturnPublicationVersionAsETagHeader() throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
+                                              context);
+        var gatewayResponse = parseHandlerResponse();
+        var expectedEtag = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
+
+        assertEquals(ETAG, gatewayResponse.getHeaders().get(ACCESS_CONTROL_EXPOSE_HEADERS));
+        assertEquals(String.valueOf(expectedEtag), gatewayResponse.getHeaders().get(ETAG));
+    }
+
+    @Test
+    void shouldReturnNotModifiedWhenProvidingIfNoneMatchHeaderWithETagMatchingCurrentVersionOfPublication()
+        throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        var version = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
+
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString(),
+                                                                     Map.of(HttpHeaders.IF_NONE_MATCH,
+                                                                            version.toString()), Map.of()),
+                                              output,
+                                              context);
+        var gatewayResponse = parseHandlerResponse();
+
+        assertNull(gatewayResponse.getBody());
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_MODIFIED)));
+    }
+
+    @Test
+    void shouldReturnOkWithBodyWhenProvidingIfNoneMatchHeaderWithETagNotMatchingCurrentVersionOfPublication()
+        throws ApiGatewayException, IOException {
+        var publication = createPublication();
+
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString(),
+                                                                     Map.of(HttpHeaders.IF_NONE_MATCH,
+                                                                            randomString(), ACCEPT, "application/json"),
+                                                                     Map.of()),
+                                              output,
+                                              context);
+        var gatewayResponse = parseHandlerResponse();
+
+        assertNotNull(gatewayResponse.getBody());
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
     private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {
