@@ -42,7 +42,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -81,7 +80,7 @@ class FileRightsRetentionServiceTest {
     @MethodSource("publicationTypeAndForceNull")
     void shouldForceNullRightsRetentionIfNotAcademicArticleForNewPublication(
         Class<? extends PublicationInstance<?>> publicationType, boolean forceNull)
-        throws UnauthorizedException, BadRequestException {
+        throws BadRequestException {
 
         var publication = PublicationGenerator.randomPublication(
             PublicationInstanceBuilder.randomPublicationInstance(publicationType).getClass());
@@ -117,7 +116,7 @@ class FileRightsRetentionServiceTest {
     }
 
     @Test
-    void shouldApplyDefaultStrategyToAllFilesInNewPublication() throws UnauthorizedException, BadRequestException {
+    void shouldApplyDefaultStrategyToAllFilesInNewPublication() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var file1 = createPendingOpenFileWithAcceptedVersionAndRrs(
             CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
@@ -136,7 +135,7 @@ class FileRightsRetentionServiceTest {
 
     // Test for existing publications (two parameter method)
     @Test
-    void shouldNotResetRrsWhenFileMetadataIsUnchanged() throws BadRequestException, UnauthorizedException {
+    void shouldNotResetRrsWhenFileMetadataIsUnchanged() throws BadRequestException {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
@@ -160,7 +159,7 @@ class FileRightsRetentionServiceTest {
     }
 
     @Test
-    void shouldPreserveExistingStrategyWhenClientTriesToChangeIt() throws BadRequestException, UnauthorizedException {
+    void shouldPreserveExistingStrategyWhenClientTriesToChangeIt() throws BadRequestException {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, overriddenBy);
@@ -185,7 +184,7 @@ class FileRightsRetentionServiceTest {
     }
 
     @Test
-    void shouldApplyDefaultStrategyToNewFileInExistingPublication() throws BadRequestException, UnauthorizedException {
+    void shouldApplyDefaultStrategyToNewFileInExistingPublication() throws BadRequestException {
 
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var existingFile = createPendingOpenFileWithAcceptedVersionAndRrs(

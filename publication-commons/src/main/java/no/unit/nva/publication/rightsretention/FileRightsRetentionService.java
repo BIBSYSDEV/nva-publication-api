@@ -31,7 +31,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public class FileRightsRetentionService {
 
@@ -50,7 +49,7 @@ public class FileRightsRetentionService {
      * Apply rights retention strategy to files when updating existing publication
      */
     public void applyRightsRetention(Resource newImage, Resource oldImage)
-        throws BadRequestException, UnauthorizedException {
+        throws BadRequestException {
         var existingFileEntries = getFileEntries(oldImage);
         for (var file : getFiles(newImage)) {
             var existingFileEntry = existingFileEntries.getOrDefault(
@@ -62,14 +61,14 @@ public class FileRightsRetentionService {
     /**
      * Apply rights retention strategy to all files in a new publication
      */
-    public void applyRightsRetention(Resource resource) throws UnauthorizedException, BadRequestException {
+    public void applyRightsRetention(Resource resource) throws BadRequestException {
         applyDefaultStrategyToAllFiles(resource);
     }
 
     /**
      * Apply strategy to all files in a new publication - processes file's requested strategy
      */
-    private void applyDefaultStrategyToAllFiles(Resource resource) throws UnauthorizedException, BadRequestException {
+    private void applyDefaultStrategyToAllFiles(Resource resource) throws BadRequestException {
         for (var file : getFiles(resource)) {
             if (isRightsRetentionRelevant(file, resource)) {
                 // Process what the file is requesting, like the original logic
@@ -86,7 +85,7 @@ public class FileRightsRetentionService {
      * Apply rights retention to a file in an existing publication
      */
     private void applyRightsRetentionToExistingFile(File file, FileEntry existingFile, Resource resource)
-        throws BadRequestException, UnauthorizedException {
+        throws BadRequestException {
 
         // Rule 1: Skip if RRS is not relevant for this file
         if (!isRightsRetentionRelevant(file, resource)) {
@@ -133,7 +132,7 @@ public class FileRightsRetentionService {
     }
 
     private RightsRetentionStrategy determineDefaultStrategy(File file, Resource resource)
-        throws UnauthorizedException, BadRequestException {
+        throws BadRequestException {
         return createValidatedStrategy(file.getRightsRetentionStrategy(), null, resource);
     }
 
