@@ -1,10 +1,12 @@
 package no.unit.nva.publication.model.business.publicationstate;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_ASSIGNED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_REJECTED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_REQUESTED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_RESERVED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
+import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED_BY_THIRD_PARTY;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_DELETED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_IMPORTED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_MERGED;
@@ -20,6 +22,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
@@ -47,7 +50,10 @@ class ResourceEventTest {
                          Arguments.of(MergedResourceEvent.fromImportSource(getImportSource(), randomUserInstance(),
                                                                            Instant.now()), PUBLICATION_MERGED),
                          Arguments.of(UpdatedResourceEvent.create(randomUserInstance(),
-                                                                           Instant.now()), PUBLICATION_UPDATED));
+                                                                           Instant.now()), PUBLICATION_UPDATED),
+                         Arguments.of(CreatedByThirdPartyResourceEvent.create(UserInstance.createExternalUser(randomResourceOwner(), randomUri(), ThirdPartySystem.WISE_FLOW),
+                                                                              Instant.now()),
+                                      PUBLICATION_CREATED_BY_THIRD_PARTY));
     }
 
     public static Stream<Arguments> ticketEventProvider() {

@@ -15,6 +15,7 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.publicationstate.CreatedByThirdPartyResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
@@ -83,7 +84,9 @@ public class LogEntryService {
     }
 
     private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {
-        if (resourceEvent instanceof ImportedResourceEvent || resourceEvent instanceof MergedResourceEvent) {
+        if (resourceEvent instanceof ImportedResourceEvent
+            || resourceEvent instanceof MergedResourceEvent
+            || resourceEvent instanceof CreatedByThirdPartyResourceEvent) {
             var organization = fetchOrganization(resourceEvent.institution());
             return resourceEvent.toLogEntry(resource.getIdentifier(), organization);
         } else {

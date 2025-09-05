@@ -19,6 +19,7 @@ public enum LogTopic {
     DOI_REJECTED("DoiRejected"),
     DOI_ASSIGNED("DoiAssigned"),
     PUBLICATION_CREATED("PublicationCreated"),
+    PUBLICATION_CREATED_BY_THIRD_PARTY("PublicationCreatedByThirdParty"),
     PUBLICATION_UPDATED("PublicationUpdated"),
     PUBLICATION_DELETED("PublicationDeleted"),
     PUBLICATION_PUBLISHED("PublicationPublished"),

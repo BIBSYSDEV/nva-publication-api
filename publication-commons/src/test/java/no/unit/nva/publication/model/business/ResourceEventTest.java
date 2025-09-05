@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,15 +11,16 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
+import no.unit.nva.publication.model.business.publicationstate.CreatedByThirdPartyResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiReservedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -45,7 +47,11 @@ public class ResourceEventTest {
                                                                   Instant.now())),
                          Arguments.of(
                              UpdatedResourceEvent.create(UserInstance.create(randomString(), randomUri()),
-                                                         Instant.now())));
+                                                         Instant.now())),
+                         Arguments.of(
+                             CreatedByThirdPartyResourceEvent.create(UserInstance.createExternalUser(randomResourceOwner(),
+                                                                                                     randomUri(), ThirdPartySystem.OTHER),
+                                                                     Instant.now())));
     }
 
     @ParameterizedTest
