@@ -41,6 +41,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
@@ -530,7 +531,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = parseHandlerResponse();
         var expectedEtag = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
 
-        assertEquals(gatewayResponse.getHeaders().get(ACCESS_CONTROL_EXPOSE_HEADERS), ETAG);
+        assertEquals(ETAG, gatewayResponse.getHeaders().get(ACCESS_CONTROL_EXPOSE_HEADERS));
         assertEquals(String.valueOf(expectedEtag), gatewayResponse.getHeaders().get(ETAG));
     }
 
@@ -549,6 +550,23 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         assertNull(gatewayResponse.getBody());
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_MODIFIED)));
+    }
+
+    @Test
+    void shouldReturnOkWithBodyWhenProvidingIfNoneMatchHeaderWithETagNotMatchingCurrentVersionOfPublication()
+        throws ApiGatewayException, IOException {
+        var publication = createPublication();
+
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString(),
+                                                                     Map.of(HttpHeaders.IF_NONE_MATCH,
+                                                                            randomString(), ACCEPT, "application/json"),
+                                                                     Map.of()),
+                                              output,
+                                              context);
+        var gatewayResponse = parseHandlerResponse();
+
+        assertNotNull(gatewayResponse.getBody());
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
     private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {

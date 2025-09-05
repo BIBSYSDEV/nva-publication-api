@@ -83,15 +83,11 @@ public final class RequestUtil {
     }
 
     public static Optional<String> getETagFromIfMatchHeader(RequestInfo requestInfo) {
-        return requestInfo.getHeaderOptional(HttpHeaders.IF_MATCH)
-                   .map(SortableIdentifier::new)
-                   .map(SortableIdentifier::toString);
+        return requestInfo.getHeaderOptional(HttpHeaders.IF_MATCH);
     }
 
     public static Optional<String> getETagFromIfNoneMatchHeader(RequestInfo requestInfo) {
-        return requestInfo.getHeaderOptional(HttpHeaders.IF_NONE_MATCH)
-                   .map(SortableIdentifier::new)
-                   .map(SortableIdentifier::toString);
+        return requestInfo.getHeaderOptional(HttpHeaders.IF_NONE_MATCH);
     }
 
     private static UserInstance createClientCredentialUserInstance(RequestInfo requestInfo,

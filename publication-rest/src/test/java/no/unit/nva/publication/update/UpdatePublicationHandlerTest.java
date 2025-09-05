@@ -2055,6 +2055,26 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(HTTP_PRECON_FAILED, response.getStatusCode());
     }
 
+    @Test
+    void shouldReturnOkWithUpdatedETagWhenIfMatchHeaderIsProvidedAndVersionOfResourceMatches()
+        throws BadRequestException, IOException {
+        var publication = randomPublicationWithPublisher(customerId, JournalArticle.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+
+        var partialUpdateRequest = new PartialUpdatePublicationRequest(persistedPublication.getIdentifier(), null, null, AssociatedArtifactList.empty());
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        var version = resource.getVersion().toString();
+        var input = request(userInstance, partialUpdateRequest, persistedPublication.getIdentifier(),
+                            Map.of("If-Match", version));
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals(HTTP_OK, response.getStatusCode());
+        assertNotEquals(version, response.getHeaders().get("ETag"));
+    }
+
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
         throws ApiGatewayException {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication,
