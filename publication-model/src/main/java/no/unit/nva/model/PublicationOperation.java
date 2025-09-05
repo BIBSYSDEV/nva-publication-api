@@ -10,8 +10,6 @@ public enum PublicationOperation {
 
     UPDATE("update"),
     PARTIAL_UPDATE("partial-update"),
-    @Deprecated
-    UPDATE_FILES("update-including-files"),
     READ_HIDDEN_FILES("read-hidden-files"),
     UNPUBLISH("unpublish"),
     REPUBLISH("republish"),
@@ -20,8 +18,6 @@ public enum PublicationOperation {
     DOI_REQUEST_CREATE("doi-request-create"),
     DOI_REQUEST_APPROVE("doi-request-approve"),
     PUBLISHING_REQUEST_CREATE("publishing-request-create"),
-    @Deprecated
-    PUBLISHING_REQUEST_APPROVE("publishing-request-approve"),
     APPROVE_FILES("approve-files"),
     SUPPORT_REQUEST_CREATE("support-request-create"),
     SUPPORT_REQUEST_APPROVE("support-request-approve"),
