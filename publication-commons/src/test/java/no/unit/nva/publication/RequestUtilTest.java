@@ -12,6 +12,7 @@ import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
 import static no.unit.nva.publication.RequestUtil.getIdentifier;
 import static no.unit.nva.publication.RequestUtil.getImportCandidateIdentifier;
 import static no.unit.nva.publication.RequestUtil.getOwner;
+import static no.unit.nva.publication.model.business.ThirdPartySystem.INSPERA;
 import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -146,6 +147,26 @@ class RequestUtilTest {
 
         var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
         assertNotNull(userInstance);
+    }
+
+    @Test
+    void createExternalUserReturnsThirdPartySystemWhenProvided()
+        throws NotFoundException, JsonProcessingException, UnauthorizedException {
+        var requestInfo = getRequestInfo();
+        requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
+            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
+            INJECT_CLIENT_ID_CLAIM, "clientId",
+            SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ
+        )));
+        requestInfo.setHeaders(Map.of("System", "Inspera"));
+
+        var getExternalClientResponse = mock(GetExternalClientResponse.class);
+        var identityServiceClient = mock(IdentityServiceClient.class);
+        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+
+        var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        assertEquals(INSPERA, userInstance.getThirdPartySystem().orElseThrow());
     }
 
     @Test

@@ -7,6 +7,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.RequestInfo;
@@ -93,9 +94,13 @@ public final class RequestUtil {
             client.getCristinUrgUri()
         );
 
+        var thirdPartySystem = requestInfo.getHeaderOptional("System").map(
+            ThirdPartySystem::fromValue).orElse(null);
+
+
         return requestInfo.clientIsInternalBackend()
                    ? UserInstance.createBackendUser(resourceOwner, client.getCustomerUri())
-                   : UserInstance.createExternalUser(resourceOwner, client.getCustomerUri(), null);
+                   : UserInstance.createExternalUser(resourceOwner, client.getCustomerUri(), thirdPartySystem);
     }
 
     private static UserInstance createDataportenUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
