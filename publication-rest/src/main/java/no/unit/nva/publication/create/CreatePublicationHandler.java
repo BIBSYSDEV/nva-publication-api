@@ -15,8 +15,7 @@ import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
+import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.ValidatingApiGatewayHandler;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
@@ -24,14 +23,12 @@ import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.secrets.SecretsReader;
@@ -106,14 +103,14 @@ public class CreatePublicationHandler
                                  .map(CreatePublicationRequest::toPublication)
                                  .map(Resource::fromPublication)
                                  .orElseGet(Resource::new);
-        var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
 
-        new FileRightsRetentionService(customer.getRightsRetentionStrategy(), customerAwareUserContext.userInstance())
+        new FileRightsRetentionService(customer.getRightsRetentionStrategy(), userInstance)
             .applyRightsRetention(newResource);
 
         var createdPublication = newResource
-                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
+                                     .persistNew(publicationService, userInstance);
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationResponseElevatedUser.fromPublication(createdPublication);
@@ -151,20 +148,6 @@ public class CreatePublicationHandler
         return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
     }
 
-    private CustomerAwareUserContext getCustomerAwareUserContextFromLoginInformation(RequestInfo requestInfo)
-        throws UnauthorizedException {
-        return requestInfo.clientIsThirdParty()
-                   ? customerAwareUserContextFromExternalClient(requestInfo, identityServiceClient)
-                   : customerAwareUserContextFromInternalUser(requestInfo);
-    }
-
-    private static ResourceOwner createInternalResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
-        return attempt(() -> requestInfo.getTopLevelOrgCristinId().orElseThrow())
-                   .map(topLevelOrgCristinId -> new ResourceOwner(new Username(requestInfo.getUserName()),
-                                                                  topLevelOrgCristinId))
-                   .orElseThrow(fail -> new UnauthorizedException());
-    }
-
     private void setLocationHeader(SortableIdentifier identifier) {
         addAdditionalHeaders(() -> Map.of(
             HttpHeaders.LOCATION,
@@ -184,39 +167,5 @@ public class CreatePublicationHandler
                 .toOptional();
 
         return requestInstanceType.isPresent() && THESIS_INSTANCE_TYPES.contains(requestInstanceType.get());
-    }
-
-    private CustomerAwareUserContext customerAwareUserContextFromExternalClient(
-        final RequestInfo requestInfo,
-        final IdentityServiceClient identityServiceClient) throws UnauthorizedException {
-
-        var client = attempt(() -> requestInfo.getClientId().orElseThrow())
-                         .map(identityServiceClient::getExternalClient)
-                         .orElseThrow(fail -> new UnauthorizedException());
-
-        final var customerUri = client.getCustomerUri();
-        var resourceOwner = new ResourceOwner(
-            new Username(client.getActingUser()),
-            client.getCristinUrgUri()
-        );
-
-        final var userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri(), null);
-
-        return new CustomerAwareUserContext(userInstance, customerUri, client.getActingUser());
-    }
-
-    private static CustomerAwareUserContext customerAwareUserContextFromInternalUser(RequestInfo requestInfo)
-        throws UnauthorizedException {
-        var resourceOwner = createInternalResourceOwner(requestInfo);
-        var customerUri = requestInfo.getCurrentCustomer();
-        return fromUserInstance(UserInstance.create(resourceOwner, customerUri));
-    }
-
-    private static CustomerAwareUserContext fromUserInstance(UserInstance userInstance) {
-        return new CustomerAwareUserContext(userInstance, userInstance.getCustomerId(), userInstance.getUsername());
-    }
-
-    private record CustomerAwareUserContext(UserInstance userInstance, URI customerUri, String username) {
-
     }
 }

@@ -178,9 +178,13 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
-        newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
+        setResourceEvent(userInstance, newResource, currentTime);
         setStatusOnNewPublication(userInstance, inputData, newResource);
         return insertResource(newResource).toPublication();
+    }
+
+    private static void setResourceEvent(UserInstance userInstance, Resource newResource, Instant currentTime) {
+        newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
     }
 
     public Resource importResource(Resource resource, ImportSource importSource) {

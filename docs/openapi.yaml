@@ -15,6 +15,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Publication'
+      parameters:
+        - name: System
+          in: header
+          description: System header for additional context
+          required: false
+          schema:
+            type: string
       security:
         - CognitoUserPool: [
           'https://api.nva.unit.no/scopes/backend',
