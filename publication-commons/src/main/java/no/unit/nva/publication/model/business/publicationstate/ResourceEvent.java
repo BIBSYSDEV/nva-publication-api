@@ -14,7 +14,7 @@ import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
     @JsonSubTypes.Type(PublishedResourceEvent.class), @JsonSubTypes.Type(UnpublishedResourceEvent.class),
     @JsonSubTypes.Type(DeletedResourceEvent.class), @JsonSubTypes.Type(RepublishedResourceEvent.class),
     @JsonSubTypes.Type(ImportedResourceEvent.class), @JsonSubTypes.Type(DoiReservedEvent.class),
-    @JsonSubTypes.Type(MergedResourceEvent.class), @JsonSubTypes.Type(CreatedByThirdPartyResourceEvent.class)})
+    @JsonSubTypes.Type(MergedResourceEvent.class)})
 public interface ResourceEvent {
 
     Instant date();

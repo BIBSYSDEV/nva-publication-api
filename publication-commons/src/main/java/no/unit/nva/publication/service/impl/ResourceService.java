@@ -68,7 +68,6 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
-import no.unit.nva.publication.model.business.publicationstate.CreatedByThirdPartyResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
@@ -185,11 +184,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private static void setResourceEvent(UserInstance userInstance, Resource newResource, Instant currentTime) {
-        if (userInstance.isExternalClient()) {
-            newResource.setResourceEvent(CreatedByThirdPartyResourceEvent.create(userInstance, currentTime));
-        } else {
-            newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
-        }
+        newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
     }
 
     public Resource importResource(Resource resource, ImportSource importSource) {

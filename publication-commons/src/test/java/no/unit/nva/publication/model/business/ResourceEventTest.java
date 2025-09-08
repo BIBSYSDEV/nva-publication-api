@@ -11,7 +11,6 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
-import no.unit.nva.publication.model.business.publicationstate.CreatedByThirdPartyResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiReservedEvent;
@@ -30,7 +29,7 @@ public class ResourceEventTest {
     public static Stream<Arguments> stateProvider() {
         return Stream.of(Arguments.of(
                              new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
-                                                      SortableIdentifier.next())),
+                                                      SortableIdentifier.next(), null)),
                          Arguments.of(new UnpublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
                                                                    SortableIdentifier.next())), Arguments.of(
                 new PublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
@@ -49,7 +48,7 @@ public class ResourceEventTest {
                              UpdatedResourceEvent.create(UserInstance.create(randomString(), randomUri()),
                                                          Instant.now())),
                          Arguments.of(
-                             CreatedByThirdPartyResourceEvent.create(UserInstance.createExternalUser(randomResourceOwner(),
+                             CreatedResourceEvent.create(UserInstance.createExternalUser(randomResourceOwner(),
                                                                                                      randomUri(), ThirdPartySystem.OTHER),
                                                                      Instant.now())));
     }
