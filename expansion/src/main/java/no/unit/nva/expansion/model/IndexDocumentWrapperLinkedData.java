@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.expansion.model.nvi.NviCandidateResponse;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
@@ -47,8 +46,6 @@ import org.slf4j.LoggerFactory;
 public class IndexDocumentWrapperLinkedData {
 
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
-    private static final String CRISTIN_VERSION = "; version=2023-05-26";
-    private static final String MEDIA_TYPE_JSON_LD_V2 = APPLICATION_JSON_LD.toString() + CRISTIN_VERSION;
     private static final String SOURCE = "source";
     private static final String FRAME_JSON = "frame.json";
     private static final String CONTEXT = "@context";
@@ -108,7 +105,7 @@ public class IndexDocumentWrapperLinkedData {
         injectScientificIndexStatus(indexDocument);
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
-        inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
+        inputStreams.addAll(fetchAll(extractAffiliationUris(indexDocument), indexDocument));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument), indexDocument));
         inputStreams.addAll(fetchFundingSourcesAddingContext(indexDocument));
         inputStreams.removeIf(Objects::isNull);
@@ -224,31 +221,19 @@ public class IndexDocumentWrapperLinkedData {
         if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             var body = response.body();
             return stringToStream(removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(body));
-        } else if (response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY) {
+        } else {
             var identifier = new SortableIdentifier(indexDocument.get("identifier").asText());
-            logger.info("Request for publication channel <{}> returned 404", response.uri());
             RecoveryEntry.create(RecoveryEntry.RESOURCE, identifier)
                 .withException(new Exception(response.toString()))
                 .persist(queueClient);
             return null;
         }
-        throw new RuntimeException("Unexpected response " + response);
     }
 
     private String removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(String body) {
         var objectNode = (ObjectNode) attempt(() -> objectMapper.readTree(body)).orElseThrow();
         objectNode.remove(TYPE);
         return attempt(() -> objectMapper.writeValueAsString(objectNode)).orElseThrow();
-    }
-
-    private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
-        return extractAffiliationUris(indexDocument)
-                   .stream()
-                   .distinct()
-                   .map(this::fetchOrganization)
-                   .map(CristinOrganization::toJsonString)
-                   .map(IoUtils::stringToStream)
-                   .toList();
     }
 
     private Optional<InputStream> fetchAnthologyContent(JsonNode indexDocument) {
@@ -266,10 +251,5 @@ public class IndexDocumentWrapperLinkedData {
 
     private HttpResponse<String> fetch(URI externalReference) {
         return uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString()).orElseThrow();
-    }
-
-    private CristinOrganization fetchOrganization(URI externalReference) {
-        var rawContent = uriRetriever.getRawContent(externalReference, MEDIA_TYPE_JSON_LD_V2).orElseThrow();
-        return attempt(() -> objectMapper.readValue(rawContent, CristinOrganization.class)).orElseThrow();
     }
 }

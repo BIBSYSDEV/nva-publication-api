@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -816,19 +817,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.orElseThrow(), instanceOf(ExpandedUnpublishRequest.class));
     }
 
-    // TODO: Handle redirects where id's received back in response matches with the requested resource
     @Test
-    void shouldThrowExpansionExceptionWhenFetchingPublicationChannelReturnsRedirect()
-        throws ApiGatewayException {
+    void shouldPersistRecoveryMessageWhenFetchingPublicationChannelReturnsRedirect()
+        throws ApiGatewayException, JsonProcessingException {
         var publication = randomPublication(JournalArticle.class);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
         FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, true);
 
-        assertThrows(RuntimeException.class,
-                     () -> expansionService.expandEntry(Resource.fromPublication(persistedPublication),
-                                                        false));
+        expansionService.expandEntry(Resource.fromPublication(persistedPublication), false);
+        var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
+
+        assertEquals(persistedPublication.getIdentifier().toString(), id);
     }
 
     private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,
