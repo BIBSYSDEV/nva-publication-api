@@ -76,6 +76,13 @@ paths:
           style: form
           explode: false
           description: If fetching a deleted / unpublished publication, the response code will be 410, instead of 301. A non deleted / non-unpublished will respond as if the query param was not set.
+        - name: If-None-Match
+          in: header
+          required: false
+          schema:
+            type: string
+          description: ETag value used for caching and conditional requests
+          example: '123e4567-e89b-12d3-a456-426614174000'
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
@@ -89,6 +96,16 @@ paths:
       responses:
         '200':
           description: OK
+          headers:
+            ETag:
+              description: A unique version for the publication, used for caching and conditional requests.
+              schema:
+                type: string
+                example: "123e4567-e89b-12d3-a456-426614174000"
+            Access-Control-Expose-Headers:
+              description: Headers exposed to CORS requests
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -114,6 +131,8 @@ paths:
               description: Cache-Control header
               schema:
                 type: string
+        '304':
+          description: Not Modified
         '410':
           description: Permanently gone
           content:
@@ -150,6 +169,13 @@ paths:
           style: simple
           explode: false
           description: UUID identifier of the Publication to update.
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+          description: ETag value used for caching and conditional requests
+          example: '123e4567-e89b-12d3-a456-426614174000'
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaUpdatePublicationFunction.Arn}/invocations

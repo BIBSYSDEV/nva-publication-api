@@ -202,6 +202,28 @@ class RequestUtilTest {
         assertEquals(username, userInstance.getUsername());
         assertEquals(customer, userInstance.getCustomerId());
     }
+
+    @Test
+    void shouldReturnIfMatchHeaderValueWhenPresent() {
+        var requestInfo = getRequestInfo();
+        var eTag = SortableIdentifier.next().toString();
+        requestInfo.setHeaders(Map.of("If-Match", eTag));
+
+        var result = RequestUtil.getETagFromIfMatchHeader(requestInfo);
+
+        assertEquals(eTag, result.orElseThrow());
+    }
+
+    @Test
+    void shouldReturnIfNoneMatchHeaderValueWhenPresent() {
+        var requestInfo = getRequestInfo();
+        var eTag = SortableIdentifier.next().toString();
+        requestInfo.setHeaders(Map.of("If-None-Match", eTag));
+
+        var result = RequestUtil.getETagFromIfNoneMatchHeader(requestInfo);
+
+        assertEquals(eTag, result.orElseThrow());
+    }
     
     private JsonNode getRequestContextForClaim(String key, String value) throws JsonProcessingException {
         return getRequestContextForClaim(Map.of(key, value));

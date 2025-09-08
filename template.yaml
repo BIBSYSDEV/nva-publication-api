@@ -145,8 +145,8 @@ Conditions:
 Globals:
   Api:
     Cors:
-      AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Location'"
+      AllowMethods: "'PUT, GET, OPTIONS, DELETE, POST'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Location,If-None-Match,If-Match'"
       AllowOrigin: "'*'"
   Function:
     Runtime: java21

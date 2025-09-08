@@ -136,6 +136,8 @@ public class Resource implements Entity {
     private List<FileEntry> files;
     @JsonIgnore
     private List<PublicationChannel> publicationChannels;
+    @JsonProperty
+    private UUID version;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -292,6 +294,14 @@ public class Resource implements Entity {
 
     public Stream<FileEntry> fetchFileEntries(ResourceService resourceService) {
         return resourceService.fetchFileEntriesForResource(this);
+    }
+
+    public UUID getVersion() {
+        return version;
+    }
+
+    public void setVersion(UUID version) {
+        this.version = version;
     }
 
     private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {
