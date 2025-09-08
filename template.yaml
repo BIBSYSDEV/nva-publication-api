@@ -2770,17 +2770,13 @@ Resources:
       BucketName: !Sub "${ScopusZipBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
-          - Id: DeleteContentAfter3Days
-            Status: Enabled
-            ExpirationInDays: 3
-            Prefix: 'unzipped'
           - Id: ExpireOldObjectVersions
             Status: Enabled
             NoncurrentVersionExpiration:
               NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
       Tags:
           - Key: IncludedInBackup
-            Value: "false"
+            Value: "true"
       VersioningConfiguration:
           Status: Enabled
 

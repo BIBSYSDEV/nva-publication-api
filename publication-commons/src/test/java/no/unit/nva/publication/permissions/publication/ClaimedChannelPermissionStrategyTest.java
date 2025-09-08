@@ -1233,7 +1233,6 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
     private static Stream<Arguments> argumentsForCurator() {
         final var operations = Set.of(UPDATE,
-                                      PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.UPLOAD_FILE,
                                       PublicationOperation.PARTIAL_UPDATE);

@@ -28,10 +28,8 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase impl
             case PUBLISHING_REQUEST_CREATE,
                  SUPPORT_REQUEST_CREATE,
                  DOI_REQUEST_CREATE -> !isDraft() && userIsVerifiedContributorAtCurrentInstitution();
-            case UPDATE_FILES,
-                 REPUBLISH,
+            case REPUBLISH,
                  DOI_REQUEST_APPROVE,
-                 PUBLISHING_REQUEST_APPROVE,
                  SUPPORT_REQUEST_APPROVE,
                  TERMINATE,
                  DELETE,

@@ -23,7 +23,7 @@ import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
+import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -103,13 +103,14 @@ public class CreatePublicationHandler
                                  .map(CreatePublicationRequest::toPublication)
                                  .map(Resource::fromPublication)
                                  .orElseGet(Resource::new);
-        var customerAwareUserContext = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.getCustomerId());
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
 
-        RightsRetentionsApplier.rrsApplierForNewPublication(newResource, customer.getRightsRetentionStrategy(),
-                                                            customerAwareUserContext.getUsername()).handle();
+        new FileRightsRetentionService(customer.getRightsRetentionStrategy(), userInstance)
+            .applyRightsRetention(newResource);
+
         var createdPublication = newResource
-                                     .persistNew(publicationService, customerAwareUserContext);
+                                     .persistNew(publicationService, userInstance);
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationResponseElevatedUser.fromPublication(createdPublication);
