@@ -45,6 +45,8 @@ public class PublicationSummary {
     private Instant publishedDate;
     @JsonProperty
     private List<Contributor> contributors;
+    @JsonProperty
+    private int contributorsCount;
     @JsonProperty("abstract")
     private String mainLanguageAbstract;
 
@@ -98,7 +100,12 @@ public class PublicationSummary {
     }
 
     public void setContributors(List<Contributor> contributors) {
-        this.contributors = contributors;
+        this.contributorsCount = contributors.size();
+        this.contributors = sortAndLimitNumberOfContributors(contributors);
+    }
+
+    public int getContributorsCount() {
+        return contributorsCount;
     }
 
     public SortableIdentifier getIdentifier() {
@@ -161,7 +168,8 @@ public class PublicationSummary {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
-                            getPublicationInstance(), getPublishedDate(), getContributors(), getAbstract());
+                            getPublicationInstance(), getPublishedDate(), getContributors(), getContributorsCount(),
+                            getAbstract());
     }
 
     @Override
@@ -181,6 +189,7 @@ public class PublicationSummary {
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
                && Objects.equals(getContributors(), that.getContributors())
+               && Objects.equals(getContributorsCount(), that.getContributorsCount())
                && Objects.equals(getAbstract(), that.getAbstract());
     }
 
@@ -191,8 +200,11 @@ public class PublicationSummary {
     private static List<Contributor> extractContributors(EntityDescription entityDescription) {
         return Optional.ofNullable(entityDescription)
                    .map(EntityDescription::getContributors)
-                   .orElse(Collections.emptyList())
-                   .stream()
+                   .orElse(Collections.emptyList());
+    }
+
+    private static List<Contributor> sortAndLimitNumberOfContributors(List<Contributor> contributors) {
+        return contributors.stream()
                    .sorted(Comparator.comparing(Contributor::getSequence))
                    .limit(MAX_SIZE_CONTRIBUTOR_LIST)
                    .collect(Collectors.toList());
