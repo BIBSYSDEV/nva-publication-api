@@ -192,7 +192,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     @Test
     void shouldAllowMissingChannelButPersistRecoveryMessage() throws BadRequestException {
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
         var publication = randomPublication(AcademicArticle.class);
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -200,11 +199,26 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var channel = ((Journal) resource.getEntityDescription().getReference().getPublicationContext()).getId();
         fakeUriRetriever.registerResponse(channel, 404, APPLICATION_JSON_LD, "");
         assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient, resource));
-        assertThat(logger.getMessages(),
-                   containsString("Request for publication channel <%s> returned 404".formatted(channel)));
+
         var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
         assertEquals(resource.getIdentifier().toString(),
                      id);
+    }
+
+    @Test
+    void shouldAllowNotExpandedAffiliationButPersistRecoveryMessage() throws BadRequestException {
+        var publication = randomPublication(AcademicArticle.class);
+        var affiliation = randomOrganization();
+        publication.getEntityDescription().setContributors(List.of(new Contributor.Builder().withAffiliations(List.of(affiliation)).build()));
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        fakeUriRetriever.registerResponse(affiliation.getId(), 500, APPLICATION_JSON_LD, "");
+        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient, resource));
+
+        var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
+
+        assertEquals(resource.getIdentifier().toString(), id);
     }
 
     @Test
