@@ -458,7 +458,7 @@ class FileServiceTest extends ResourcesLocalTest {
     }
 
     private UserInstance externalUserInstance(Publication resource) {
-        return UserInstance.createExternalUser(randomResourceOwner(), resource.getPublisher().getId(), ThirdPartySystem.OTHER);
+        return UserInstance.createExternalUser(resource.getResourceOwner(), resource.getPublisher().getId(), ThirdPartySystem.OTHER);
     }
 
     private void mockCustomerResponse(UserInstance userInstance) {

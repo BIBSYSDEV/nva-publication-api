@@ -493,6 +493,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .thenReturn(publication.getPublisher().getId());
         when(getExternalClientResponse.getActingUser())
             .thenReturn(publication.getResourceOwner().getOwner().getValue());
+        when(getExternalClientResponse.getCristinUrgUri())
+            .thenReturn(publication.getResourceOwner().getOwnerAffiliation());
 
         var event = externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
@@ -514,10 +516,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationUpdate = updateTitle(savedPublication);
 
         when(getExternalClientResponse.getCustomerUri())
-            .thenReturn(randomUri());
+            .thenReturn(customerId);
         when(getExternalClientResponse.getActingUser())
             .thenReturn(randomString());
-
+        stubCustomerResponseAcceptingFilesForAllTypes(customerId);
         var event = backendClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
@@ -882,7 +884,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             persistPublication(nonDegreePublication
                                    .withEntityDescription(entityDescription)
                                    .withCuratingInstitutions(mockCuratingInstitutions(contributors))).build();
-        var customerId = ((Organization) contributor.getAffiliations().getFirst()).getId();
         var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().getFirst()).getId();
         when(uriRetriever.getRawContent(eq(topLevelCristinOrgId), any())).thenReturn(
             Optional.of(String.format("""
@@ -1021,6 +1022,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .thenReturn(publication.getPublisher().getId());
         when(getExternalClientResponse.getActingUser())
             .thenReturn(publication.getResourceOwner().getOwner().getValue());
+        when(getExternalClientResponse.getCristinUrgUri())
+            .thenReturn(publication.getResourceOwner().getOwnerAffiliation());
 
         var inputStream = externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -1758,7 +1761,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationWithFile(publication, newUnpublishedFile);
 
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
-        var input = contributorsUpdatesPublication(publication, cristinId, randomUri());
+        var input = contributorsUpdatesPublication(publication, cristinId, randomUri(), customerId);
         updatePublicationHandler.handleRequest(input, output, context);
 
         var publishingRequest = getPublishingRequestCase(publication);
@@ -2437,18 +2440,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream contributorsUpdatesPublication(Publication publicationUpdate,
                                                        URI cristinId,
-                                                       URI topLevelCristinOrgId)
+                                                       URI topLevelCristinOrgId,
+                                                       URI customerId)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withUserName(randomString())
                    .withPathParameters(pathParameters)
-                   .withCurrentCustomer(randomUri())
+                   .withCurrentCustomer(customerId)
                    .withPersonCristinId(cristinId)
                    .withBody(publicationUpdate)
                    .withAccessRights(customerId, MANAGE_OWN_RESOURCES)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .build();
+    }
+
+    private URI randomCustomerId() {
+        return UriWrapper.fromHost(ENVIRONMENT.readEnv(API_HOST_KEY)).addChild("customer").addChild(randomUUID().toString()).getUri();
     }
 
     private InputStream contributorUpdatesPublicationWithoutHavingRights(Publication publicationUpdate)
@@ -2565,7 +2573,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withTopLevelCristinOrgId(randomUri())
                    .withPersonCristinId(randomUri())
                    .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
+                   .withCurrentCustomer(customerId)
                    .withPathParameters(pathParameters)
                    .build();
     }

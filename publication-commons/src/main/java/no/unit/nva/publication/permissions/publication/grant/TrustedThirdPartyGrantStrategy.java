@@ -38,7 +38,7 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
         return nonNull(userInstance)
                && userInstance.isExternalClient()
                && attempt(
-                   () -> userInstance.getCustomerId().equals(resource.getPublisher().getId()))
+                   () -> userInstance.getTopLevelOrgCristinId().equals(resource.getResourceOwner().getOwnerAffiliation()))
                       .orElse(fail -> false);
     }
 }
