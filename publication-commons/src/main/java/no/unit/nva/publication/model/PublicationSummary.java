@@ -46,7 +46,7 @@ public class PublicationSummary {
     @JsonProperty
     private List<Contributor> contributors;
     @JsonProperty
-    private int contributorsCount;
+    private int contributorCount;
     @JsonProperty("abstract")
     private String mainLanguageAbstract;
 
@@ -100,12 +100,12 @@ public class PublicationSummary {
     }
 
     public void setContributors(List<Contributor> contributors) {
-        this.contributorsCount = contributors.size();
+        this.contributorCount = contributors.size();
         this.contributors = sortAndLimitNumberOfContributors(contributors);
     }
 
-    public int getContributorsCount() {
-        return contributorsCount;
+    public int getContributorCount() {
+        return contributorCount;
     }
 
     public SortableIdentifier getIdentifier() {
@@ -168,7 +168,7 @@ public class PublicationSummary {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
-                            getPublicationInstance(), getPublishedDate(), getContributors(), getContributorsCount(),
+                            getPublicationInstance(), getPublishedDate(), getContributors(), getContributorCount(),
                             getAbstract());
     }
 
@@ -189,7 +189,7 @@ public class PublicationSummary {
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
                && Objects.equals(getContributors(), that.getContributors())
-               && Objects.equals(getContributorsCount(), that.getContributorsCount())
+               && Objects.equals(getContributorCount(), that.getContributorCount())
                && Objects.equals(getAbstract(), that.getAbstract());
     }
 
