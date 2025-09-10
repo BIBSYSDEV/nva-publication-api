@@ -1561,6 +1561,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldDoNothingWhenAttemptingToRefreshNonExistingFile() throws BadRequestException {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService);
+        fileEntry.delete(resourceService);
+
+        assertDoesNotThrow(() -> resourceService.refreshFile(fileEntry.getIdentifier()));
+    }
+
+    @Test
     void scanResourcesShouldScanFileEntries() throws BadRequestException {
         createPersistedPublicationWithDoi();
         var entries = resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(),

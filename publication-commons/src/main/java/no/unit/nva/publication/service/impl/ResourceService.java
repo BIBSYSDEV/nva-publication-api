@@ -235,7 +235,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void refreshFile(SortableIdentifier identifier) {
-        FileEntry.queryObject(identifier).fetch(this).orElseThrow().toDao().updateExistingEntry(client);
+        FileEntry.queryObject(identifier).fetch(this)
+            .ifPresent(fileEntry -> fileEntry.toDao().updateExistingEntry(client));
     }
 
     // TODO: Should we delete all tickets for delete draft publication?
