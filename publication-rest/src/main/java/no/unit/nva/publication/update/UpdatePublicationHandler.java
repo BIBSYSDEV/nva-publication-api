@@ -188,7 +188,7 @@ public class UpdatePublicationHandler
         validateRequest(identifierInPath, input);
 
         var resourceUpdate = input.generateUpdate(existingResource);
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, resourceUpdate.getPublisher().getId());
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
         authorizeFileEntries(existingResource, userInstance, getUpdatedFiles(existingResource, resourceUpdate));
 
         var updatedFiles = resourceUpdate.getFiles();
@@ -331,8 +331,7 @@ public class UpdatePublicationHandler
     }
 
     private void setRrsOnFiles(Resource updatedResource, Resource existingResource, Customer customer,
-                               UserInstance userInstance)
-        throws BadRequestException, UnauthorizedException {
+                               UserInstance userInstance) {
         new FileRightsRetentionService(customer.getRightsRetentionStrategy(), userInstance)
             .applyRightsRetention(updatedResource, existingResource);
     }

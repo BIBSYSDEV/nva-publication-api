@@ -86,7 +86,7 @@ public class FileStrategyBase {
 
     protected boolean isExternalClientWithRelation() {
         return nonNull(userInstance) && userInstance.isExternalClient() &&
-               userInstance.getCustomerId().equals(resource.getPublisher().getId());
+               userInstance.getTopLevelOrgCristinId().equals(resource.getResourceOwner().getOwnerAffiliation());
     }
 
     protected boolean resourceIsDegree() {
