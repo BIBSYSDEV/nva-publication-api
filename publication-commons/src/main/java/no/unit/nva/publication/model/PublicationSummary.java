@@ -27,7 +27,7 @@ import nva.commons.core.paths.UriWrapper;
 public class PublicationSummary {
 
     public static final String TYPE = "Publication";
-    private static final int MAX_SIZE_CONTRIBUTOR_LIST = 5;
+    private static final int MAX_SIZE_CONTRIBUTOR_LIST = 10;
 
     @JsonProperty("id")
     private URI publicationId;
