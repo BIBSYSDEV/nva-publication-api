@@ -72,7 +72,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.publicationWithIdentifier();
         var entityDescription = publication.getEntityDescription();
         entityDescription.setContributors(getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
-        PublicationSummary summary = PublicationSummary.create(publication);
+        var summary = PublicationSummary.create(publication);
         assertThat(summary.getContributors().size(), is(equalTo(MAX_SIZE_CONTRIBUTOR_LIST)));
     }
 
@@ -81,13 +81,22 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.publicationWithIdentifier();
         var entityDescription = publication.getEntityDescription();
         entityDescription.setContributors(getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
-        PublicationSummary summary = PublicationSummary.create(publication);
+        var summary = PublicationSummary.create(publication);
         assertThat(summary.getContributors(), containsInAnyOrder(entityDescription.getContributors()
                                                                      .stream()
                                                                      .sorted(
                                                                          Comparator.comparing(Contributor::getSequence))
                                                                      .limit(MAX_SIZE_CONTRIBUTOR_LIST)
                                                                      .toArray()));
+    }
+
+    @Test
+    void shouldReturnTotalNumberOfContributorsWhenNumberOfContributorsExceedsMaxSize() {
+        var publication = PublicationGenerator.publicationWithIdentifier();
+        var entityDescription = publication.getEntityDescription();
+        entityDescription.setContributors(getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
+        var summary = PublicationSummary.create(publication);
+        assertThat(summary.getContributorCount(), is(equalTo(entityDescription.getContributors().size())));
     }
 
     @Test
