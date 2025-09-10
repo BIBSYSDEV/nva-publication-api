@@ -96,7 +96,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         var entityDescription = publication.getEntityDescription();
         entityDescription.setContributors(getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
         var summary = PublicationSummary.create(publication);
-        assertThat(summary.getContributorCount(), is(equalTo(entityDescription.getContributors().size())));
+        assertThat(summary.getContributorsCount(), is(equalTo(entityDescription.getContributors().size())));
     }
 
     @Test
