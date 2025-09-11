@@ -5,9 +5,9 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -49,13 +49,14 @@ public class ResourceDeletedEventHandler extends DestinationsEventBridgeEventHan
         var entryUpdate = DataEntryUpdateEvent.fromJson(eventContent);
         var deletedResource = (Resource) entryUpdate.getOldData();
 
+        var files = resourceService.fetchFileEntriesForResource(deletedResource);
         resourceService.deleteAllResourceAssociatedEntries(deletedResource.getCustomerId(),
                                                            deletedResource.getIdentifier());
-        deletedResource.getFiles().forEach(this::deleteFromS3IfStillPresent);
+        files.forEach(this::deleteFromS3IfStillPresent);
         return null;
     }
 
-    private void deleteFromS3IfStillPresent(File file) {
-        resourceStorageS3Driver.deleteFile(UnixPath.of(file.getIdentifier().toString()));
+    private void deleteFromS3IfStillPresent(FileEntry fileEntry) {
+        resourceStorageS3Driver.deleteFile(UnixPath.of(fileEntry.getIdentifier().toString()));
     }
 }
