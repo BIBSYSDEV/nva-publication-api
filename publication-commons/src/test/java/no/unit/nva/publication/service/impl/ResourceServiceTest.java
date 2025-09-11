@@ -1683,6 +1683,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertNotEquals(persistedVersion.toString(), version);
     }
 
+    @Test
+    void shouldDeleteAllResourceAssociatedResources() throws ApiGatewayException {
+        var userInstance = randomUserInstance();
+        var publication = Resource.fromPublication(randomPublication()).persistNew(resourceService, userInstance);
+        var doiRequest = createDoiRequest(publication);
+        var message = messageService.createMessage(doiRequest, )
+
+    }
+
     private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {
         GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
         DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);

@@ -8,6 +8,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOME
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -17,11 +18,13 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -44,6 +47,7 @@ import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
@@ -114,6 +118,24 @@ public class ReadResourceService {
                    .map(TicketDao::getData)
                    .map(TicketEntry.class::cast)
                    .filter(ReadResourceService::isNotRemoved);
+    }
+
+    public List<Dao> fetchAllResourceAssociatedEntries(URI customerId, SortableIdentifier resourceIdentifier) {
+        var value = "Customer:%s:Resource:%s".formatted(Dao.orgUriToOrgIdentifier(customerId), resourceIdentifier);
+        var queryRequest = new QueryRequest()
+                               .withTableName(RESOURCES_TABLE_NAME)
+                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                               .withKeyConditionExpression("PK2 = :value")
+                               .withExpressionAttributeValues(
+                                   Map.of(
+                                       ":value", new AttributeValue().withS(value)
+                                   )
+                               );
+        return client.query(queryRequest)
+                   .getItems()
+                   .stream()
+                   .map(item -> parseAttributeValuesMap(item, Dao.class))
+                   .collect(Collectors.toList());
     }
 
     private static boolean isNotRemoved(TicketEntry ticket) {
