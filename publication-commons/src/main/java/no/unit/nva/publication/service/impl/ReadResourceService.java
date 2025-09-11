@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
@@ -121,20 +122,31 @@ public class ReadResourceService {
 
     public List<Dao> fetchAllResourceAssociatedEntries(URI customerId, SortableIdentifier resourceIdentifier) {
         var value = "Customer:%s:Resource:%s".formatted(Dao.orgUriToOrgIdentifier(customerId), resourceIdentifier);
+
         var queryRequest = new QueryRequest()
                                .withTableName(RESOURCES_TABLE_NAME)
                                .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
                                .withKeyConditionExpression("PK2 = :value")
-                               .withExpressionAttributeValues(
-                                   Map.of(
-                                       ":value", new AttributeValue().withS(value)
-                                   )
-                               );
-        return client.query(queryRequest)
-                   .getItems()
-                   .stream()
-                   .map(item -> parseAttributeValuesMap(item, Dao.class))
-                   .collect(Collectors.toList());
+                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(value)));
+
+        var daoList = new ArrayList<Dao>();
+        Map<String, AttributeValue> lastEvaluatedKey = null;
+
+        do {
+            if (nonNull(lastEvaluatedKey)) {
+                queryRequest = queryRequest.withExclusiveStartKey(lastEvaluatedKey);
+            }
+            var queryResult = client.query(queryRequest);
+            var currentPageItems = queryResult.getItems().stream()
+                                             .map(item -> parseAttributeValuesMap(item, Dao.class))
+                                             .toList();
+            daoList.addAll(currentPageItems);
+
+            lastEvaluatedKey = queryResult.getLastEvaluatedKey();
+
+        } while (nonNull(lastEvaluatedKey));
+
+        return daoList;
     }
 
     private static boolean isNotRemoved(TicketEntry ticket) {
