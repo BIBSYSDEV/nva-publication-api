@@ -80,14 +80,14 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
     void shouldHandleNoFilesForResource() {
         handler = new ResourceDeletedEventHandler(environment, s3Client, resourceService);
 
-        assertDoesNotThrow(() -> handler.handleRequest(resourceWithoutFiles(), output, fakeContext));
+        assertDoesNotThrow(() -> handler.handleRequest(resourceWithoutFiles(randomUri()), output, fakeContext));
     }
 
     @Test
     void shouldDeleteFilesForResourceWithFilesPresentOnS3() throws IOException {
         handler = new ResourceDeletedEventHandler(environment, s3Client, resourceService);
         var resourceIdentifier = SortableIdentifier.next();
-        var context = resourceWithFiles(resourceIdentifier, true);
+        var context = resourceWithFiles(resourceIdentifier, true, randomUri());
         handler.handleRequest(context.request(), output, fakeContext);
 
         context.identifiers()
@@ -105,7 +105,7 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
     void shouldDeleteFilesForResourceWithFiles(boolean filesPresentOnS3) throws IOException {
         handler = new ResourceDeletedEventHandler(environment, s3Client, resourceService);
         var resourceIdentifier = SortableIdentifier.next();
-        var context = resourceWithFiles(resourceIdentifier, filesPresentOnS3);
+        var context = resourceWithFiles(resourceIdentifier, filesPresentOnS3, randomUri());
         handler.handleRequest(context.request(), output, fakeContext);
 
         context.identifiers()
@@ -130,10 +130,10 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(new EventReference(NOT_RELEVANT, randomUri()));
     }
 
-    private InputStream resourceWithoutFiles() throws IOException {
+    private InputStream resourceWithoutFiles(URI customerId) throws IOException {
         var resourceIdentifier = SortableIdentifier.next();
         var eventBody = eventBody(
-            Resource.emptyResource(new User(randomString()), randomUri(), resourceIdentifier)
+            Resource.emptyResource(new User(randomString()), customerId, resourceIdentifier)
         );
         var blobUri = eventsS3Driver.insertEvent(UnixPath.of(randomString()), eventBody);
 
@@ -141,11 +141,11 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
     }
 
     private RequestContext resourceWithFiles(SortableIdentifier resourceIdentifier,
-                                             boolean filesPresentOnS3) throws IOException {
+                                             boolean filesPresentOnS3, URI customerId) throws IOException {
 
         var fileIdentifiers = new ArrayList<FileIdentifiers>();
-        fileIdentifiers.add(persistFileEntry(resourceIdentifier));
-        fileIdentifiers.add(persistFileEntry(resourceIdentifier));
+        fileIdentifiers.add(persistFileEntry(resourceIdentifier, customerId));
+        fileIdentifiers.add(persistFileEntry(resourceIdentifier, customerId));
 
         if (filesPresentOnS3) {
             for (FileIdentifiers identifiers : fileIdentifiers) {
@@ -155,14 +155,14 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
             }
         }
         var eventBody = eventBody(
-            Resource.emptyResource(new User(randomString()), randomUri(), resourceIdentifier)
+            Resource.emptyResource(new User(randomString()), customerId, resourceIdentifier)
         );
         var blobUri = eventsS3Driver.insertEvent(UnixPath.of(randomString()), eventBody);
 
         return new RequestContext(validEvent(blobUri), fileIdentifiers);
     }
 
-    private FileIdentifiers persistFileEntry(SortableIdentifier resourceIdentifier) {
+    private FileIdentifiers persistFileEntry(SortableIdentifier resourceIdentifier, URI customerId) {
         var s3Key = UUID.randomUUID();
         var file = new PendingOpenFile(s3Key,
                                        randomString(),
@@ -175,7 +175,7 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
                                            RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY),
                                        null,
                                        null);
-        var userInstance = UserInstance.create(new User(randomString()), randomUri());
+        var userInstance = UserInstance.create(new User(randomString()), customerId);
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
         resourceService.persistFile(fileEntry);
 
