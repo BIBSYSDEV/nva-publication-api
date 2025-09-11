@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 class PublicationSummaryTest extends ResourcesLocalTest {
 
-    private static final int MAX_SIZE_CONTRIBUTOR_LIST = 5;
+    private static final int MAX_SIZE_CONTRIBUTOR_LIST = 10;
 
     @BeforeEach
     public void setup() {
