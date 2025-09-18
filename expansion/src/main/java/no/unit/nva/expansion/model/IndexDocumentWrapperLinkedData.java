@@ -86,7 +86,7 @@ public class IndexDocumentWrapperLinkedData {
     public String toFramedJsonLd(JsonNode indexDocument) {
         var frame = SearchIndexFrame.getFrameWithContext(Path.of(FRAME_JSON));
         var inputStreams = getInputStreams(indexDocument);
-        return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
+        return new FramedJsonGenerator(inputStreams, frame, uriRetriever).getFramedJson();
     }
 
     //TODO: parallelize

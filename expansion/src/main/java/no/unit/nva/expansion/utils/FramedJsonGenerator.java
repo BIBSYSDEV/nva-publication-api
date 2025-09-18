@@ -2,16 +2,32 @@ package no.unit.nva.expansion.utils;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
+import static org.apache.http.HttpStatus.SC_OK;
 import com.apicatalog.jsonld.document.Document;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
+import nva.commons.apigateway.MediaTypes;
 import nva.commons.core.JacocoGenerated;
+import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RiotException;
+import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,9 +35,13 @@ import org.slf4j.LoggerFactory;
 public class FramedJsonGenerator {
 
     private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
+    private static final String PROJECT_PROPERTY_URI = "https://nva.sikt.no/ontology/publication#project";
+    private static final String PUBLICATION_CLASS_URI = "https://nva.sikt.no/ontology/publication#Publication";
     private final String framedJson;
+    private final RawContentRetriever uriRetriever;
 
-    public FramedJsonGenerator(List<InputStream> streams, Document frame) {
+    public FramedJsonGenerator(List<InputStream> streams, Document frame, RawContentRetriever uriRetriever) {
+        this.uriRetriever = uriRetriever;
         var model = createModel(streams);
         framedJson = frameJsonLd(model, frame);
     }
@@ -40,7 +60,82 @@ public class FramedJsonGenerator {
         addTopLevelOrganizations(model);
         addContributorOrganizations(model);
         addSubUnitsToTopLevelAffiliation(model);
+        model.add(constructFundingsFromProjects(model));
         return model;
+    }
+
+    private Model constructFundingsFromProjects(Model model) {
+        var projectsModel = assembleProjectData(model);
+
+        try (var qexec = QueryExecutionFactory.create(constructFundingsQuery(model), projectsModel)) {
+            return qexec.execConstruct();
+        }
+    }
+
+    private Model assembleProjectData(Model model) {
+        var projectsModel = ModelFactory.createDefaultModel();
+        projectsModel.add(model);
+
+        fetchDataFromModelResource(model, ResourceFactory.createProperty(PROJECT_PROPERTY_URI))
+            .forEach(stream -> loadDataIntoModel(projectsModel, stream));
+        return projectsModel;
+    }
+
+    private Stream<ByteArrayInputStream> fetchDataFromModelResource(Model model, Property property) {
+        return model.listObjectsOfProperty(property)
+                   .toList()
+                   .stream()
+                   .filter(RDFNode::isURIResource)
+                   .map(RDFNode::asResource)
+                   .map(Resource::getURI)
+                   .map(URI::create)
+                   .map(a -> uriRetriever.fetchResponse(a, MediaTypes.APPLICATION_JSON_LD.toString()))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .filter(a -> a.statusCode() == SC_OK)
+                   .map(HttpResponse::body)
+                   .map(body -> new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private static Query constructFundingsQuery(Model model) {
+        var fundingsNode = model.listSubjectsWithProperty(RDF.type, ResourceFactory.createResource(PUBLICATION_CLASS_URI))
+                               .nextResource()
+                               .getURI();
+        var query =  """
+            PREFIX nva: <https://nva.sikt.no/ontology/publication#>
+            PREFIX project: <https://example.org/project-ontology.ttl#>
+            
+            CONSTRUCT {
+              <%s> nva:funding ?funding .
+              ?funding a ?type ;
+                  nva:source ?source ;
+                  nva:identifier ?identifier ;
+                  nva:label ?label .
+            } WHERE {
+              [] project:funding ?funding .
+              ?funding a ?rawType ;
+                  project:source ?source ;
+                  project:identifier ?identifier ;
+                  project:label ?label .
+              BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
+            
+              FILTER NOT EXISTS {
+                  ?publication a nva:Publication ;
+                    nva:funding ?publicationFunding .
+                  ?publicationFunding nva:source ?publicationFundingSource ;
+                    nva:identifier ?publicationFundingIdentifier ;
+                    a ?publicationFundingType .
+                  FILTER(
+                    STR(?publicationFunding) != STR(?funding)
+                    && ?publicationFundingSource = ?source
+                    && ?publicationFundingIdentifier = ?identifier
+                    && ?publicationFundingType = ?type
+                  )
+              }
+            }
+            """.formatted(fundingsNode);
+
+        return QueryFactory.create(query);
     }
 
     private void loadDataIntoModel(Model model, InputStream inputStream) {
