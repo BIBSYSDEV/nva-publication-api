@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.util.Map;
 import no.unit.nva.commons.json.JsonSerializable;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -14,6 +15,15 @@ public class FundingSource implements JsonSerializable {
 
     public static final String TYPE = "FundingSource";
     private final URI id;
+    private static final Map<String, Object> CONTEXT = Map.of(
+        "@vocab", "https://nva.sikt.no/ontology/publication#",
+        "id", "@id",
+        "type", "@type",
+        "labels", Map.of(
+            "@id", "label",
+            "@container", "@language"
+        )
+    );
 
     @JsonCreator
     public FundingSource(@JsonProperty("id") URI id) {
@@ -27,4 +37,10 @@ public class FundingSource implements JsonSerializable {
     public URI getId() {
         return id;
     }
+
+    @JsonProperty("@context")
+    public Map<String, Object> getContext() {
+        return CONTEXT;
+    }
+
 }

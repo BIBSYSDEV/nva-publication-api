@@ -329,13 +329,8 @@ public final class FakeUriResponse {
                                               SC_OK,
                                               APPLICATION_JSON_LD,
                                               confirmedFundingResponse(id, source));
-        } else {
-
-            fakeUriRetriever.registerResponse(source,
-                                              SC_OK,
-                                              APPLICATION_JSON_LD,
-                                              unconfirmedFundingResponse(source));
         }
+
         fakeUriRetriever.registerResponse(source,
                                           SC_OK,
                                           APPLICATION_JSON_LD,
@@ -345,7 +340,7 @@ public final class FakeUriResponse {
     private static String fundingSourceResponse(URI source) {
         return """
             {
-              "type" : "ConfirmedFunding",
+              "type" : "FundingSource",
               "id" : "%s",
               "identifier" : "NFR",
               "labels" : {
@@ -366,16 +361,6 @@ public final class FakeUriResponse {
                 }
               }
             }
-            """.formatted(source);
-    }
-
-    private static String unconfirmedFundingResponse(URI source) {
-        return """
-            {
-              "type" : "UnconfirmedFunding",
-              "source" : "%s",
-              "identifier" : "NFR00011-12-3211"
-              }
             """.formatted(source);
     }
 

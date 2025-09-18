@@ -2,18 +2,17 @@ package no.unit.nva.expansion.utils;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
+import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static org.apache.http.HttpStatus.SC_OK;
 import com.apicatalog.jsonld.document.Document;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
-import nva.commons.apigateway.MediaTypes;
+import no.unit.nva.expansion.model.FundingSource;
 import nva.commons.core.JacocoGenerated;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -37,6 +36,7 @@ public class FramedJsonGenerator {
     private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
     private static final String PROJECT_PROPERTY_URI = "https://nva.sikt.no/ontology/publication#project";
     private static final String PUBLICATION_CLASS_URI = "https://nva.sikt.no/ontology/publication#Publication";
+    private static final String SOURCE_PROPERTY_URI = "https://nva.sikt.no/ontology/publication#source";
     private final String framedJson;
     private final RawContentRetriever uriRetriever;
 
@@ -76,12 +76,27 @@ public class FramedJsonGenerator {
         var projectsModel = ModelFactory.createDefaultModel();
         projectsModel.add(model);
 
+        fetchDataFromModelResource(model, ResourceFactory.createProperty(SOURCE_PROPERTY_URI))
+            .map(entry -> addFailoverStream(entry, FundingSource.withId(entry.uri()).toJsonString()))
+            .forEach(stream -> loadDataIntoModel(model, stream));
+
         fetchDataFromModelResource(model, ResourceFactory.createProperty(PROJECT_PROPERTY_URI))
-            .forEach(stream -> loadDataIntoModel(projectsModel, stream));
+            .forEach(entry -> loadDataIntoModel(projectsModel, entry.stream()));
+
         return projectsModel;
     }
 
-    private Stream<ByteArrayInputStream> fetchDataFromModelResource(Model model, Property property) {
+    private static ByteArrayInputStream addFailoverStream(URIStreamEntry entry, String failover) {
+        if (isNull(entry.stream())) {
+            return new ByteArrayInputStream(failover.getBytes(StandardCharsets.UTF_8));
+        } else {
+            return entry.stream();
+        }
+    }
+
+    private record URIStreamEntry(URI uri, ByteArrayInputStream stream) {}
+
+    private Stream<URIStreamEntry> fetchDataFromModelResource(Model model, Property property) {
         return model.listObjectsOfProperty(property)
                    .toList()
                    .stream()
@@ -89,19 +104,24 @@ public class FramedJsonGenerator {
                    .map(RDFNode::asResource)
                    .map(Resource::getURI)
                    .map(URI::create)
-                   .map(a -> uriRetriever.fetchResponse(a, MediaTypes.APPLICATION_JSON_LD.toString()))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .filter(a -> a.statusCode() == SC_OK)
-                   .map(HttpResponse::body)
-                   .map(body -> new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+                   .map(this::fetchResponseUriStreamEntry);
+    }
+
+    private URIStreamEntry fetchResponseUriStreamEntry(URI uri) {
+        var response = uriRetriever.fetchResponse(uri, APPLICATION_JSON_LD.toString());
+        ByteArrayInputStream data = null;
+        if (response.isPresent() && response.get().statusCode() == SC_OK) {
+            data = new ByteArrayInputStream(response.get().body().getBytes(StandardCharsets.UTF_8));
+        }
+        return new URIStreamEntry(uri, data);
     }
 
     private static Query constructFundingsQuery(Model model) {
-        var fundingsNode = model.listSubjectsWithProperty(RDF.type, ResourceFactory.createResource(PUBLICATION_CLASS_URI))
+        var fundingsNode = model.listSubjectsWithProperty(RDF.type,
+                                                          ResourceFactory.createResource(PUBLICATION_CLASS_URI))
                                .nextResource()
                                .getURI();
-        var query =  """
+        var query = """
             PREFIX nva: <https://nva.sikt.no/ontology/publication#>
             PREFIX project: <https://example.org/project-ontology.ttl#>
             
