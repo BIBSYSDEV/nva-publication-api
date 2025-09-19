@@ -128,22 +128,18 @@ public class FramedJsonGenerator {
                     project:source ?source ;
                     project:identifier ?identifier ;
                     project:label ?label .
-                OPTIONAL {
-                    ?source a project:FundingSource ;
-                        project:identifier ?sourceIdentifier ;
-                        project:label ?sourceLabel .
-                }
+                 OPTIONAL {   ?source a project:FundingSource . }
+                 OPTIONAL {   ?source project:identifier ?sourceIdentifier . }
+                 OPTIONAL {   ?source project:label ?sourceLabel . }
               } UNION {
                 [] nva:funding ?funding .
                 ?funding a ?rawType ;
                     nva:source ?source ;
                     nva:identifier ?identifier ;
                     nva:label ?label .
-                OPTIONAL {
-                    ?source a nva:FundingSource ;
-                        nva:identifier ?sourceIdentifier ;
-                        nva:label ?sourceLabel .
-                }
+                OPTIONAL { ?source a nva:FundingSource . }
+                OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
+                OPTIONAL { ?source nva:label ?sourceLabel . }
               }
               # The following line maps the type IRI from project namespace to nva namespace.
               BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
