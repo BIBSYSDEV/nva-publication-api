@@ -38,6 +38,7 @@ public class FramedJsonGenerator {
     private static final String PROJECT_PROPERTY_URI = "https://nva.sikt.no/ontology/publication#project";
     private static final String PUBLICATION_CLASS_URI = "https://nva.sikt.no/ontology/publication#Publication";
     private static final String SOURCE_PROPERTY_URI = "https://nva.sikt.no/ontology/publication#source";
+    private static final String PROJECT_SOURCE_URI = "https://example.org/project-ontology.ttl#source";
     private final String framedJson;
     private final RawContentRetriever uriRetriever;
 
@@ -78,12 +79,14 @@ public class FramedJsonGenerator {
         var projectsModel = ModelFactory.createDefaultModel();
         projectsModel.add(model);
 
-        fetchDataFromModelResource(projectsModel, ResourceFactory.createProperty(PROJECT_PROPERTY_URI))
-            .forEach(stream -> loadDataIntoModel(projectsModel, stream));
-
-        fetchDataFromModelResource(model, ResourceFactory.createProperty(SOURCE_PROPERTY_URI))
-            .forEach(stream -> loadDataIntoModel(projectsModel, stream));
-
+        var tempModel = ModelFactory.createDefaultModel();
+        Stream.of(PROJECT_PROPERTY_URI, SOURCE_PROPERTY_URI, PROJECT_SOURCE_URI)
+                  .forEach(uri -> {
+                      tempModel.removeAll();
+                      fetchDataFromModelResource(projectsModel, ResourceFactory.createProperty(uri))
+                          .forEach(stream -> loadDataIntoModel(tempModel, stream));
+                      projectsModel.add(tempModel);
+                  });
         return projectsModel;
     }
 
@@ -128,9 +131,9 @@ public class FramedJsonGenerator {
                     project:source ?source ;
                     project:identifier ?identifier ;
                     project:label ?label .
-                 OPTIONAL {   ?source a project:FundingSource . }
-                 OPTIONAL {   ?source project:identifier ?sourceIdentifier . }
-                 OPTIONAL {   ?source project:label ?sourceLabel . }
+                 OPTIONAL {   ?source a nva:FundingSource . }
+                 OPTIONAL {   ?source nva:identifier ?sourceIdentifier . }
+                 OPTIONAL {   ?source nva:label ?sourceLabel . }
               } UNION {
                 [] nva:funding ?funding .
                 ?funding a ?rawType ;
