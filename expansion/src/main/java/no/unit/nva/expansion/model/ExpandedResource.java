@@ -5,7 +5,6 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTRIBUTORS_POINTER;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.FUNDING_SOURCE_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.INSTANCE_TYPE_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLICATION_CONTEXT_ID_JSON_PTR;
@@ -127,10 +126,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     public static boolean isAcademicChapter(JsonNode root) {
         return INSTANCE_TYPE_ACADEMIC_CHAPTER.equals(getInstanceType(root));
-    }
-
-    public static ArrayNode fundingNodes(JsonNode root) {
-        return (ArrayNode) root.at(FUNDING_SOURCE_POINTER);
     }
 
     public static Set<URI> extractUris(ArrayNode root, String nodeName) {
