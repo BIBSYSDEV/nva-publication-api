@@ -2,17 +2,18 @@ package no.unit.nva.expansion.utils;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
-import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static org.apache.http.HttpStatus.SC_OK;
 import com.apicatalog.jsonld.document.Document;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
-import no.unit.nva.expansion.model.FundingSource;
+import nva.commons.apigateway.MediaTypes;
 import nva.commons.core.JacocoGenerated;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -60,7 +61,8 @@ public class FramedJsonGenerator {
         addTopLevelOrganizations(model);
         addContributorOrganizations(model);
         addSubUnitsToTopLevelAffiliation(model);
-        model.add(constructFundingsFromProjects(model));
+        Model model1 = constructFundingsFromProjects(model);
+        model.add(model1);
         return model;
     }
 
@@ -76,27 +78,16 @@ public class FramedJsonGenerator {
         var projectsModel = ModelFactory.createDefaultModel();
         projectsModel.add(model);
 
-        fetchDataFromModelResource(model, ResourceFactory.createProperty(SOURCE_PROPERTY_URI))
-            .map(entry -> addFailoverStream(entry, FundingSource.withId(entry.uri()).toJsonString()))
-            .forEach(stream -> loadDataIntoModel(model, stream));
+        fetchDataFromModelResource(projectsModel, ResourceFactory.createProperty(PROJECT_PROPERTY_URI))
+            .forEach(stream -> loadDataIntoModel(projectsModel, stream));
 
-        fetchDataFromModelResource(model, ResourceFactory.createProperty(PROJECT_PROPERTY_URI))
-            .forEach(entry -> loadDataIntoModel(projectsModel, entry.stream()));
+        fetchDataFromModelResource(model, ResourceFactory.createProperty(SOURCE_PROPERTY_URI))
+            .forEach(stream -> loadDataIntoModel(projectsModel, stream));
 
         return projectsModel;
     }
 
-    private static ByteArrayInputStream addFailoverStream(URIStreamEntry entry, String failover) {
-        if (isNull(entry.stream())) {
-            return new ByteArrayInputStream(failover.getBytes(StandardCharsets.UTF_8));
-        } else {
-            return entry.stream();
-        }
-    }
-
-    private record URIStreamEntry(URI uri, ByteArrayInputStream stream) {}
-
-    private Stream<URIStreamEntry> fetchDataFromModelResource(Model model, Property property) {
+    private Stream<InputStream> fetchDataFromModelResource(Model model, Property property) {
         return model.listObjectsOfProperty(property)
                    .toList()
                    .stream()
@@ -104,20 +95,16 @@ public class FramedJsonGenerator {
                    .map(RDFNode::asResource)
                    .map(Resource::getURI)
                    .map(URI::create)
-                   .map(this::fetchResponseUriStreamEntry);
-    }
-
-    private URIStreamEntry fetchResponseUriStreamEntry(URI uri) {
-        var response = uriRetriever.fetchResponse(uri, APPLICATION_JSON_LD.toString());
-        ByteArrayInputStream data = null;
-        if (response.isPresent() && response.get().statusCode() == SC_OK) {
-            data = new ByteArrayInputStream(response.get().body().getBytes(StandardCharsets.UTF_8));
-        }
-        return new URIStreamEntry(uri, data);
+                   .map(a -> uriRetriever.fetchResponse(a, MediaTypes.APPLICATION_JSON_LD.toString()))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .filter(a -> a.statusCode() == SC_OK)
+                   .map(HttpResponse::body)
+                   .map(body -> new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
     }
 
     private static Query constructFundingsQuery(Model model) {
-        var fundingsNode = model.listSubjectsWithProperty(RDF.type,
+        var publicationUri = model.listSubjectsWithProperty(RDF.type,
                                                           ResourceFactory.createResource(PUBLICATION_CLASS_URI))
                                .nextResource()
                                .getURI();
@@ -128,17 +115,41 @@ public class FramedJsonGenerator {
             CONSTRUCT {
               <%s> nva:funding ?funding .
               ?funding a ?type ;
-                  nva:source ?source ;
-                  nva:identifier ?identifier ;
-                  nva:label ?label .
+                nva:source ?source ;
+                nva:identifier ?identifier ;
+                nva:label ?label .
+              ?source a nva:FundingSource ;
+                nva:identifier ?sourceIdentifier ;
+                nva:label ?sourceLabel .
             } WHERE {
-              [] project:funding ?funding .
-              ?funding a ?rawType ;
-                  project:source ?source ;
-                  project:identifier ?identifier ;
-                  project:label ?label .
+              {
+                [] project:funding ?funding .
+                ?funding a ?rawType ;
+                    project:source ?source ;
+                    project:identifier ?identifier ;
+                    project:label ?label .
+                OPTIONAL {
+                    ?source a project:FundingSource ;
+                        project:identifier ?sourceIdentifier ;
+                        project:label ?sourceLabel .
+                }
+              } UNION {
+                [] nva:funding ?funding .
+                ?funding a ?rawType ;
+                    nva:source ?source ;
+                    nva:identifier ?identifier ;
+                    nva:label ?label .
+                OPTIONAL {
+                    ?source a nva:FundingSource ;
+                        nva:identifier ?sourceIdentifier ;
+                        nva:label ?sourceLabel .
+                }
+              }
+              # The following line maps the type IRI from project namespace to nva namespace.
               BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
             
+              # This filter removes duplicate UnconfirmedFundings by comparing values.
+              # (they have blank nodes which are not comparable)
               FILTER NOT EXISTS {
                   ?publication a nva:Publication ;
                     nva:funding ?publicationFunding .
@@ -153,7 +164,7 @@ public class FramedJsonGenerator {
                   )
               }
             }
-            """.formatted(fundingsNode);
+            """.formatted(publicationUri);
 
         return QueryFactory.create(query);
     }
