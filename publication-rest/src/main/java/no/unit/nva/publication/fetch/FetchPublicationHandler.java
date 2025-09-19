@@ -108,11 +108,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var resource = fetchResource(identifier);
 
-        var eTagFromIfNoneMatchHeader = RequestUtil.getETagFromIfNoneMatchHeader(requestInfo);
-
-        var version = resource.getVersion().toString();
-
-        if (eTagFromIfNoneMatchHeader.isPresent() && eTagFromIfNoneMatchHeader.get().equals(version)) {
+        if (!userIsAuthenticated(requestInfo) && eTagMatches(requestInfo, resource)) {
             statusCode = HttpURLConnection.HTTP_NOT_MODIFIED;
             return FetchPublicationHandler.NO_BODY;
         }
@@ -122,6 +118,17 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
             default -> throwNotFoundException();
         };
+    }
+
+    private boolean userIsAuthenticated(RequestInfo requestInfo) {
+        return !requestInfo.getAccessRights().isEmpty();
+    }
+
+    private boolean eTagMatches(RequestInfo requestInfo, Resource resource) {
+        var eTagFromIfNoneMatchHeader = RequestUtil.getETagFromIfNoneMatchHeader(requestInfo);
+        var version = resource.getVersion().toString();
+
+        return eTagFromIfNoneMatchHeader.isPresent() && eTagFromIfNoneMatchHeader.get().equals(version);
     }
 
     private boolean shouldRedirectToDuplicate(RequestInfo requestInfo, Resource resource) {

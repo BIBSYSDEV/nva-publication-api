@@ -569,6 +569,21 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
+    @Test
+    void shouldReturnOkWithBodyWhenProvidingIfNoneMatchHeaderWithETagMatchingCurrentVersionOfPublicationIfUserIsAuthenticated()
+        throws ApiGatewayException, IOException {
+        var publication = createPublication();
+        var version = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
+
+        fetchPublicationHandler.handleRequest(generateAuthenticatedRequest(publication, Map.of(HttpHeaders.IF_NONE_MATCH, version.toString(), ACCEPT, "application/json")),
+                                              output,
+                                              context);
+        var gatewayResponse = parseHandlerResponse();
+
+        assertNotNull(gatewayResponse.getBody());
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+    }
+
     private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {
         return new Organization.Builder().withId(
             URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + "/customer/" + randomUUID())).build();
@@ -641,6 +656,16 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(publication.getResourceOwner().getOwner().toString())
+                   .build();
+    }
+
+    private InputStream generateAuthenticatedRequest(Publication publication, Map<String, String> headers) throws JsonProcessingException {
+        return new HandlerRequestBuilder<InputStream>(restApiMapper)
+                   .withHeaders(headers)
+                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                   .withCurrentCustomer(randomUri())
+                   .withUserName(randomString())
+                   .withAccessRights(randomUri(), AccessRight.MANAGE_OWN_RESOURCES)
                    .build();
     }
 
