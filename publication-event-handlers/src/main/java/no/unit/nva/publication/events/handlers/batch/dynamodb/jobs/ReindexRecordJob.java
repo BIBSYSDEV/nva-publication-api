@@ -24,10 +24,6 @@ import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Executor for REINDEX_RECORD job type.
- * Updates the version field with a new UUID to trigger reindexing of records in DynamoDB.
- */
 public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
     private static final String REINDEX_RECORD = "REINDEX_RECORD";
     private static final Logger logger = LoggerFactory.getLogger(ReindexRecordJob.class);
@@ -138,12 +134,10 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
                 .withLimit(100);
             
             try {
-                QueryResult result = dynamoDbClient.query(queryRequest);
+                var result = dynamoDbClient.query(queryRequest);
                 
-                // Create new work items with primary keys
                 createWorkItems(gsiItem, result, resolvedItems);
 
-                // Handle pagination if needed
                 while (result.getLastEvaluatedKey() != null && !result.getLastEvaluatedKey().isEmpty()) {
                     queryRequest.setExclusiveStartKey(result.getLastEvaluatedKey());
                     result = dynamoDbClient.query(queryRequest);
@@ -165,8 +159,8 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
 
     private static void createWorkItems(BatchWorkItem gsiItem, QueryResult result, ArrayList<BatchWorkItem> resolvedItems) {
         for (Map<String, AttributeValue> item : result.getItems()) {
-            String primaryPk = item.get(PK_0).getS();
-            String primarySk = item.get(SK_0).getS();
+            var primaryPk = item.get(PK_0).getS();
+            var primarySk = item.get(SK_0).getS();
 
             var primaryKey = new DynamodbResourceBatchDynamoDbKey(primaryPk, primarySk, null);
             resolvedItems.add(new BatchWorkItem(primaryKey, gsiItem.jobType(), gsiItem.parameters()));

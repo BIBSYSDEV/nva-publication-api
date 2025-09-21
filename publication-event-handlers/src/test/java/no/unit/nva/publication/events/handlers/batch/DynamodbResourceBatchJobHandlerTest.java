@@ -14,6 +14,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,7 @@ class DynamodbResourceBatchJobHandlerTest {
     
     @BeforeEach
     void setUp() {
-        // Create handler with mocked executor for testing
-        Map<String, DynamodbResourceBatchJobExecutor> handlers = new HashMap<>();
+        var handlers = new HashMap<String, DynamodbResourceBatchJobExecutor>();
         handlers.put(TEST_JOB_NAME, mockExecutor);
         handler = new DynamodbResourceBatchJobHandler(handlers);
     }
@@ -188,8 +188,7 @@ class DynamodbResourceBatchJobHandlerTest {
         message.setMessageId("error-message");
         message.setBody("{ invalid json }");
         
-        // Add message attributes
-        Map<String, String> attributes = new HashMap<>();
+        var attributes = new HashMap<String, String>();
         attributes.put("ApproximateReceiveCount", "2");
         message.setAttributes(attributes);
         
@@ -259,7 +258,7 @@ class DynamodbResourceBatchJobHandlerTest {
             throws JsonProcessingException {
         
         var sqsEvent = new SQSEvent();
-        var messages = new java.util.ArrayList<SQSMessage>();
+        var messages = new ArrayList<SQSMessage>();
         
         for (int i = 0; i < workItems.size(); i++) {
             var message = new SQSMessage();

@@ -53,14 +53,12 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     public SQSBatchResponse handleRequest(SQSEvent sqsEvent, Context context) {
         logger.info("Processing batch of {} messages", sqsEvent.getRecords().size());
 
-        // Group messages by job type
-        Map<String, List<MessageWithWorkItem>> messagesByJobType = new HashMap<>();
-        List<SQSBatchResponse.BatchItemFailure> parseFailures = new ArrayList<>();
+        var messagesByJobType = new HashMap<String, List<MessageWithWorkItem>>();
+        var parseFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
 
-        // Parse all messages and group by job type
         for (SQSMessage message : sqsEvent.getRecords()) {
             try {
-                BatchWorkItem workItem = parseWorkItem(message.getBody());
+                var workItem = parseWorkItem(message.getBody());
                 messagesByJobType.computeIfAbsent(workItem.jobType(), k -> new ArrayList<>())
                     .add(new MessageWithWorkItem(message, workItem));
             } catch (Exception e) {
@@ -69,13 +67,11 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
             }
         }
 
-        // Process each job type batch
-        List<SQSBatchResponse.BatchItemFailure> executionFailures = messagesByJobType.entrySet().stream()
+        var executionFailures = messagesByJobType.entrySet().stream()
             .flatMap(entry -> processBatch(entry.getKey(), entry.getValue()).stream())
             .toList();
 
-        // Combine all failures
-        List<SQSBatchResponse.BatchItemFailure> allFailures = new ArrayList<>();
+        var allFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
         allFailures.addAll(parseFailures);
         allFailures.addAll(executionFailures);
 
@@ -88,10 +84,8 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     }
 
     private SQSBatchResponse.BatchItemFailure createBatchItemFailure(SQSMessage message, Exception exception) {
-        // Create failure with message ID
         var failure = new SQSBatchResponse.BatchItemFailure(message.getMessageId());
 
-        // Add error metadata to message attributes for debugging
         var errorAttributes = new HashMap<String, String>();
         errorAttributes.put(ERROR_MESSAGE_ATTRIBUTE, exception.getMessage());
         var stringWriter = new StringWriter();
@@ -100,14 +94,12 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         errorAttributes.put(ERROR_COUNT_ATTRIBUTE, getErrorCount(message));
         errorAttributes.put(LAST_ERROR_TIMESTAMP_ATTRIBUTE, String.valueOf(System.currentTimeMillis()));
 
-        // Log the error details for monitoring
         logger.info("Message {} failed with attributes: {}", message.getMessageId(), errorAttributes);
 
         return failure;
     }
 
     private String getErrorCount(SQSMessage message) {
-        // Get approximate receive count from message attributes if available
         if (message.getAttributes() != null && message.getAttributes().containsKey("ApproximateReceiveCount")) {
             return message.getAttributes().get("ApproximateReceiveCount");
         }
@@ -127,21 +119,17 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         }
 
         try {
-            // Extract work items for batch execution
             var workItems = messages.stream()
                 .map(m -> m.workItem)
                 .toList();
 
-            // Execute the entire batch as a transaction
             executor.executeBatch(workItems);
 
             logger.info("Successfully processed batch of {} items for job type: {}", workItems.size(), jobType);
-            // All succeeded
             return List.of();
 
         } catch (Exception e) {
             logger.error("Failed to process batch for job type: {}", jobType, e);
-            // If batch execution fails, all messages in the batch fail
             return messages.stream()
                 .map(m -> createBatchItemFailure(m.message, e))
                 .toList();
