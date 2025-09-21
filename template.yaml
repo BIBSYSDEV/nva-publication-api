@@ -2952,7 +2952,7 @@ Resources:
         deadLetterTargetArn: !GetAtt DynamodbResourceBatchJobDLQ.Arn
         maxReceiveCount: 3
       RedriveAllowPolicy:
-        redrivePermission: allowAll
+        redrivePermission: byQueue
         sourceQueueArns:
           - !GetAtt DynamodbResourceBatchJobDLQ.Arn
 

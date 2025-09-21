@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -100,10 +101,9 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     }
 
     private String getErrorCount(SQSMessage message) {
-        if (message.getAttributes() != null && message.getAttributes().containsKey("ApproximateReceiveCount")) {
-            return message.getAttributes().get("ApproximateReceiveCount");
-        }
-        return "1";
+        return Optional.ofNullable(message.getAttributes())
+                   .map(attrs -> attrs.get("ApproximateReceiveCount"))
+                   .orElse("1");
     }
 
     private List<SQSBatchResponse.BatchItemFailure> processBatch(String jobType, List<MessageWithWorkItem> messages) {
