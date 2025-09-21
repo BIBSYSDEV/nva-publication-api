@@ -2933,19 +2933,16 @@ Resources:
                   topic:
                     - PublicationService.Resource.Deleted
 
-  # DynamoDB Batch Job Processing Resources
   DynamodbResourceBatchJobDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: DynamodbResourceBatchJobDlq
       MessageRetentionPeriod: 1209600
       VisibilityTimeout: 60
 
   DynamodbResourceBatchJobWorkQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: DynamodbResourceBatchJobWorkQueue
-      VisibilityTimeout: 360 # Should be at least 6 times the Lambda timeout
+      VisibilityTimeout: 360 # 6 times the Lambda timeout
       MessageRetentionPeriod: 1209600 # 14 days
       ReceiveMessageWaitTimeSeconds: 20
       RedrivePolicy:
@@ -2959,7 +2956,6 @@ Resources:
   DynamodbResourceBatchJobFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: DynamodbResourceBatchJob
       Handler: no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobHandler::handleRequest
       CodeUri: publication-event-handlers
       Policies:
