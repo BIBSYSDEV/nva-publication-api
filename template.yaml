@@ -2939,13 +2939,13 @@ Resources:
     Properties:
       QueueName: DynamodbResourceBatchJobDlq
       MessageRetentionPeriod: 1209600
-      VisibilityTimeoutSeconds: 60
+      VisibilityTimeout: 60
 
   DynamodbResourceBatchJobWorkQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: DynamodbResourceBatchJobWorkQueue
-      VisibilityTimeoutSeconds: 360 # Should be at least 6 times the Lambda timeout
+      VisibilityTimeout: 360 # Should be at least 6 times the Lambda timeout
       MessageRetentionPeriod: 1209600 # 14 days
       ReceiveMessageWaitTimeSeconds: 20
       RedrivePolicy:
