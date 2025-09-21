@@ -35,7 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ReindexRecordJobTest {
 
     private static final String TEST_TABLE_NAME = "test-table";
-    private static final String TEST_PARTITION_KEY = "Resource#0190e0e7-5eef-7d23-b716-02c670833fcd";
+    private static final String TEST_PARTITION_KEY = "Resource:0190e0e7-5eef-7d23-b716-02c670833fcd";
     private static final String TEST_SORT_KEY = "Resource";
     
     @Mock
@@ -87,8 +87,8 @@ class ReindexRecordJobTest {
     void shouldResolveGsiQueryToPrimaryKeys() {
         // Given
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
-            "Customer#123", 
-            "Resource#2024", 
+            "Customer:123", 
+            "Resource:2024", 
             BY_CUSTOMER_RESOURCE_INDEX_NAME
         );
         var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
@@ -96,10 +96,10 @@ class ReindexRecordJobTest {
         // Mock GSI query response
         var queryResult = new QueryResult();
         var item1 = new java.util.HashMap<String, AttributeValue>();
-        item1.put("PK0", new AttributeValue().withS("Resource#123"));
+        item1.put("PK0", new AttributeValue().withS("Resource:123"));
         item1.put("SK0", new AttributeValue().withS("Resource"));
         var item2 = new java.util.HashMap<String, AttributeValue>();
-        item2.put("PK0", new AttributeValue().withS("Resource#456"));
+        item2.put("PK0", new AttributeValue().withS("Resource:456"));
         item2.put("SK0", new AttributeValue().withS("Resource"));
         queryResult.setItems(List.of(item1, item2));
         
@@ -148,12 +148,12 @@ class ReindexRecordJobTest {
     void shouldProcessBatchWithTransaction() {
         // Given
         var dynamoDbKey1 = new DynamodbResourceBatchDynamoDbKey(
-            "Resource#0190e0e7-5eef-7d23-b716-02c670833fcd",
+            "Resource:0190e0e7-5eef-7d23-b716-02c670833fcd",
             "Resource",
             null
         );
         var dynamoDbKey2 = new DynamodbResourceBatchDynamoDbKey(
-            "Resource#0190e0e7-5eef-7d23-b716-02c670833fce", 
+            "Resource:0190e0e7-5eef-7d23-b716-02c670833fce", 
             "Resource",
             null
         );
@@ -196,7 +196,7 @@ class ReindexRecordJobTest {
         );
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
             "CristinIdentifier#12345",
-            "Resource#2024",
+            "Resource:2024",
             RESOURCE_BY_CRISTIN_ID_INDEX_NAME
         );
         
@@ -206,7 +206,7 @@ class ReindexRecordJobTest {
         // Mock GSI query response
         var queryResult = new QueryResult();
         var item = new java.util.HashMap<String, AttributeValue>();
-        item.put("PK0", new AttributeValue().withS("Resource#789"));
+        item.put("PK0", new AttributeValue().withS("Resource:789"));
         item.put("SK0", new AttributeValue().withS("Resource"));
         queryResult.setItems(List.of(item));
         
@@ -233,8 +233,8 @@ class ReindexRecordJobTest {
     void shouldHandleGsiQueryWithPagination() {
         // Given
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
-            "Customer#456",
-            "Resource#Article",
+            "Customer:456",
+            "Resource:Article",
             BY_CUSTOMER_RESOURCE_INDEX_NAME
         );
         var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
@@ -242,7 +242,7 @@ class ReindexRecordJobTest {
         // First page
         var firstResult = new QueryResult();
         var item1 = Map.of(
-            "PK0", new AttributeValue().withS("Resource#001"),
+            "PK0", new AttributeValue().withS("Resource:001"),
             "SK0", new AttributeValue().withS("Resource")
         );
         firstResult.setItems(List.of(item1));
@@ -251,7 +251,7 @@ class ReindexRecordJobTest {
         // Second page
         var secondResult = new QueryResult();
         var item2 = Map.of(
-            "PK0", new AttributeValue().withS("Resource#002"),
+            "PK0", new AttributeValue().withS("Resource:002"),
             "SK0", new AttributeValue().withS("Resource")
         );
         secondResult.setItems(List.of(item2));
@@ -280,8 +280,8 @@ class ReindexRecordJobTest {
     void shouldPropagateExceptionWhenGsiQueryFails() {
         // Given
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
-            "Customer#999",
-            "Resource#Failed",
+            "Customer:999",
+            "Resource:Failed",
             BY_CUSTOMER_RESOURCE_INDEX_NAME
         );
         var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
@@ -308,7 +308,7 @@ class ReindexRecordJobTest {
         var workItems = new java.util.ArrayList<BatchWorkItem>();
         for (int i = 0; i < 25; i++) {
             var key = new DynamodbResourceBatchDynamoDbKey(
-                "Resource#" + String.format("%03d", i),
+                "Resource:" + String.format("%03d", i),
                 "Resource",
                 null
             );
@@ -333,8 +333,8 @@ class ReindexRecordJobTest {
     void shouldHandleGsiQueryReturningNoResults() {
         // Given
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
-            "Customer#NoResults",
-            "Resource#Empty",
+            "Customer:NoResults",
+            "Resource:Empty",
             BY_CUSTOMER_RESOURCE_INDEX_NAME
         );
         var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
@@ -359,13 +359,13 @@ class ReindexRecordJobTest {
     void shouldHandleMultipleGsiQueries() {
         // Given - two different GSI queries
         var gsiKey1 = new DynamodbResourceBatchDynamoDbKey(
-            "Customer#111",
-            "Resource#Type1",
+            "Customer:111",
+            "Resource:Type1",
             BY_CUSTOMER_RESOURCE_INDEX_NAME
         );
         var gsiKey2 = new DynamodbResourceBatchDynamoDbKey(
             "CristinIdentifier#222",
-            "Resource#Type2",
+            "Resource:Type2",
             RESOURCE_BY_CRISTIN_ID_INDEX_NAME
         );
         
@@ -375,14 +375,14 @@ class ReindexRecordJobTest {
         // Mock GSI query responses
         var queryResult1 = new QueryResult();
         var item1 = Map.of(
-            "PK0", new AttributeValue().withS("Resource#AAA"),
+            "PK0", new AttributeValue().withS("Resource:AAA"),
             "SK0", new AttributeValue().withS("Resource")
         );
         queryResult1.setItems(List.of(item1));
         
         var queryResult2 = new QueryResult();
         var item2 = Map.of(
-            "PK0", new AttributeValue().withS("Resource#BBB"),
+            "PK0", new AttributeValue().withS("Resource:BBB"),
             "SK0", new AttributeValue().withS("Resource")
         );
         queryResult2.setItems(List.of(item2));
