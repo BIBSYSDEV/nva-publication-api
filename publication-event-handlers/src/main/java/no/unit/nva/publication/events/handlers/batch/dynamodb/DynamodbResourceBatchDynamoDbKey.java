@@ -3,6 +3,10 @@ package no.unit.nva.publication.events.handlers.batch.dynamodb;
 import nva.commons.core.JacocoGenerated;
 
 public record DynamodbResourceBatchDynamoDbKey(String partitionKey, String sortKey, String indexName) {
+    public DynamodbResourceBatchDynamoDbKey(String partitionKey, String sortKey) {
+        this(partitionKey, sortKey, null);
+    }
+
     public boolean isGsiQuery() {
         return indexName != null;
     }

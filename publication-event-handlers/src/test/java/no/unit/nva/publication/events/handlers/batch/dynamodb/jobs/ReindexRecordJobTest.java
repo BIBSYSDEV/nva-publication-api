@@ -51,14 +51,13 @@ class ReindexRecordJobTest {
         reindexRecordJob = new ReindexRecordJob(mockDynamoDbClient, TEST_TABLE_NAME);
     }
     
-    // Helper methods for creating test data
     private static BatchWorkItem createWorkItem(String partitionKey, String sortKey) {
         return createWorkItem(partitionKey, sortKey, null);
     }
     
     private static BatchWorkItem createWorkItem(String partitionKey, String sortKey, String indexName) {
         var key = new DynamodbResourceBatchDynamoDbKey(partitionKey, sortKey, indexName);
-        return new BatchWorkItem(key, "REINDEX_RECORD", null);
+        return new BatchWorkItem(key, "REINDEX_RECORD");
     }
     
     private static Map<String, AttributeValue> createDynamoItem(String pk, String sk) {
@@ -130,8 +129,8 @@ class ReindexRecordJobTest {
     
     @Test
     void shouldPropagateExceptionWhenDynamoDbUpdateFails() {
-        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY, null);
-        var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD", null);
+        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY);
+        var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD");
         
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenThrow(new RuntimeException("DynamoDB error"));
@@ -214,7 +213,7 @@ class ReindexRecordJobTest {
             "Resource:Failed",
             BY_CUSTOMER_RESOURCE_INDEX_NAME
         );
-        var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
+        var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD");
         
         when(mockDynamoDbClient.query(any(QueryRequest.class)))
             .thenThrow(new AmazonDynamoDBException("Query failed"));
@@ -239,7 +238,7 @@ class ReindexRecordJobTest {
                 "Resource",
                 null
             );
-            workItems.add(new BatchWorkItem(key, "REINDEX_RECORD", null));
+            workItems.add(new BatchWorkItem(key, "REINDEX_RECORD"));
         }
         
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
@@ -261,10 +260,10 @@ class ReindexRecordJobTest {
             "Resource:Empty",
             BY_CUSTOMER_RESOURCE_INDEX_NAME
         );
-        var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
+        var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD");
         
         var queryResult = new QueryResult();
-        queryResult.setItems(List.of()); // Empty result
+        queryResult.setItems(List.of());
         
         when(mockDynamoDbClient.query(any(QueryRequest.class)))
             .thenReturn(queryResult);
@@ -293,8 +292,8 @@ class ReindexRecordJobTest {
             RESOURCE_BY_CRISTIN_ID_INDEX_NAME
         );
         
-        var workItem1 = new BatchWorkItem(gsiKey1, "REINDEX_RECORD", null);
-        var workItem2 = new BatchWorkItem(gsiKey2, "REINDEX_RECORD", null);
+        var workItem1 = new BatchWorkItem(gsiKey1, "REINDEX_RECORD");
+        var workItem2 = new BatchWorkItem(gsiKey2, "REINDEX_RECORD");
         
         var queryResult1 = new QueryResult();
         var item1 = Map.of(
@@ -336,8 +335,8 @@ class ReindexRecordJobTest {
     
     @Test
     void shouldVerifyTransactionContainsCorrectUpdateExpression() {
-        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY, null);
-        var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD", null);
+        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY);
+        var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD");
         
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
@@ -362,7 +361,7 @@ class ReindexRecordJobTest {
         
         var newVersion = update.getExpressionAttributeValues().get(":newVersion").getS();
         assertThat(newVersion, notNullValue());
-        assertThat(newVersion.length(), equalTo(36)); // UUID length
+        assertThat(newVersion.length(), equalTo(36));
     }
 
     @Test
@@ -401,8 +400,8 @@ class ReindexRecordJobTest {
 
     @Test
     void shouldIncludeReturnValuesOnConditionCheckFailureInUpdate() {
-        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY, null);
-        var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD", null);
+        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY);
+        var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD");
 
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
@@ -425,8 +424,7 @@ class ReindexRecordJobTest {
         var workItem1 = createWorkItem("Resource:exists", "Resource");
         var workItem2 = createWorkItem("Resource:does-not-exist", "Resource");
         
-        // Mock partial success - only one key was successfully updated
-        var existingKey = new DynamodbResourceBatchDynamoDbKey("Resource:exists", "Resource", null);
+        var existingKey = new DynamodbResourceBatchDynamoDbKey("Resource:exists", "Resource");
         org.mockito.Mockito.doReturn(Set.of(existingKey))
             .when(spyJob)
             .updateVersionBatchByTransaction(any());

@@ -1,6 +1,10 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_KEY_PAIRS;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import static nva.commons.core.StringUtils.EMPTY_STRING;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -32,8 +36,6 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
     private static final Logger logger = LoggerFactory.getLogger(ReindexRecordJob.class);
     private static final String TABLE_NAME_ENV = "TABLE_NAME";
     private static final String VERSION_FIELD = "version";
-    private static final String PK_0 = "PK0";
-    private static final String SK_0 = "SK0";
 
     private final AmazonDynamoDB dynamoDbClient;
     private final String tableName;
@@ -69,7 +71,6 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
         if (!resolvedItems.isEmpty()) {
             var affectedKeys = updateVersionBatchByTransaction(resolvedItems);
             
-            // Identify work items that were not successfully updated
             var failedItems = resolvedItems.stream()
                 .filter(item -> !affectedKeys.contains(item.dynamoDbKey()))
                 .toList();
@@ -83,7 +84,6 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
                                                          item.dynamoDbKey().sortKey()))
                                .collect(Collectors.joining(", ")));
                 
-                // Fail the job for non-existent records
                 throw new RuntimeException(String.format(
                     "Failed to update %d records - records do not exist in database", 
                     failedItems.size()));
@@ -111,9 +111,7 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
         try {
             dynamoDbClient.transactWriteItems(transactRequest);
             
-            // Collect successfully updated keys
             for (BatchWorkItem workItem : workItems) {
-                // If the transaction succeeded, all items were updated
                 affectedKeys.add(workItem.dynamoDbKey());
             }
             
@@ -122,10 +120,8 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
         } catch (Exception e) {
             logger.error("Failed to update batch of {} records in transaction", workItems.size(), e);
             
-            // Try to determine which items failed
             var failedKeys = identifyFailedItems(workItems, e);
             
-            // If we identified failed items due to conditional checks, throw specific error
             if (!failedKeys.isEmpty()) {
                 logger.error("Failed to update {} work items - likely non-existent records", failedKeys.size());
                 throw new RuntimeException(String.format(
@@ -133,7 +129,6 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
                     failedKeys.size()), e);
             }
             
-            // Otherwise, it's a different kind of error
             throw new RuntimeException("Failed to update batch for reindexing", e);
         }
     }
@@ -165,20 +160,16 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
     
     private Set<DynamodbResourceBatchDynamoDbKey> identifyFailedItems(List<BatchWorkItem> workItems, Exception e) {
         var failedKeys = new HashSet<DynamodbResourceBatchDynamoDbKey>();
-        
-        // Check if the exception provides details about which items failed
+
         var message = e.getMessage();
         var causeMessage = nonNull(e.getCause()) ? e.getCause().getMessage() : EMPTY_STRING;
         
-        if (noNull(message) && message.contains("ConditionalCheckFailed")
+        if (nonNull(message) && message.contains("ConditionalCheckFailed")
             || nonNull(causeMessage) && causeMessage.contains("ConditionalCheckFailed")
             || e instanceof ConditionalCheckFailedException
             || e.getCause() instanceof ConditionalCheckFailedException) {
-            // When condition checks fail, typically it means the record doesn't exist
-            // Transaction failed due to conditional check - all items in batch are considered failed
             logger.warn("Conditional check failed - likely non-existent records in batch");
             
-            // Mark all items as failed since DynamoDB transaction is atomic
             workItems.forEach(item -> failedKeys.add(item.dynamoDbKey()));
         }
         
@@ -241,9 +232,9 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
     private static void createWorkItems(BatchWorkItem gsiItem, QueryResult result, ArrayList<BatchWorkItem> resolvedItems) {
         var newItems = result.getItems().stream()
             .map(item -> {
-                var primaryPk = item.get(PK_0).getS();
-                var primarySk = item.get(SK_0).getS();
-                var primaryKey = new DynamodbResourceBatchDynamoDbKey(primaryPk, primarySk, null);
+                var primaryPk = item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS();
+                var primarySk = item.get(PRIMARY_KEY_SORT_KEY_NAME).getS();
+                var primaryKey = new DynamodbResourceBatchDynamoDbKey(primaryPk, primarySk);
                 return new BatchWorkItem(primaryKey, gsiItem.jobType(), gsiItem.parameters());
             })
             .toList();

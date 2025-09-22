@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
