@@ -112,7 +112,7 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         logger.info("Processing batch of {} messages for job type: {}", messages.size(), jobType);
         
         var executor = jobHandlers.get(jobType);
-        if (executor == null) {
+        if (isNull(executor)) {
             logger.error("No executor found for job type: {}", jobType);
             return messages.stream()
                 .map(m -> createBatchItemFailure(m.message, 
