@@ -463,7 +463,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         throws BadRequestException, JsonProcessingException {
         var publication = randomPublication();
 
-        //Remove fundings from publication and add to project response
         var fundings = new FundingList(publication.getFundings());
         publication.setFundings(emptyList());
         var resource = Resource.fromPublication(publication)
@@ -485,13 +484,11 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        // Set up project response with null fundings to simulate case where project has no funding identifiers
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptyList());
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
                                    .asJsonNode();
 
-        // Verify that the original publication funding is preserved
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
     }
 
@@ -504,16 +501,13 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        // Set up project response with same fundings as publication to simulate duplicate case
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, existingFundings);
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
                                    .asJsonNode();
 
-        // Verify that fundings are not duplicated - should still only have the original 2 fundings
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/1/type")).isMissingNode());
-        // Verify no third funding was added
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/2/type")).isMissingNode());
     }
 
@@ -529,7 +523,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        // Set up project response with same fundings as publication to simulate duplicate case
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, projectFundings);
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
@@ -544,18 +537,15 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         throws BadRequestException, JsonProcessingException {
         var publication = randomPublication();
 
-        // Remove fundings from publication to simulate no funding identifiers
         publication.setFundings(null);
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        // Set up project response with empty fundings list to simulate no project funding identifiers either
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptyList());
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
                                    .asJsonNode();
 
-        // Verify that the fundings array is empty or missing
         var fundingsNode = expandedResource.at(JsonPointer.compile("/fundings"));
         assertTrue(fundingsNode.isMissingNode() || fundingsNode.isEmpty());
     }
