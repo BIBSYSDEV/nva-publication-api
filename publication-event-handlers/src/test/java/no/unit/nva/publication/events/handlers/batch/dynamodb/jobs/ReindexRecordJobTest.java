@@ -24,7 +24,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchDynamoDbKey;
 import org.junit.jupiter.api.BeforeEach;
@@ -415,26 +414,5 @@ class ReindexRecordJobTest {
         var update = requestCaptor.getValue().getTransactItems().getFirst().getUpdate();
 
         assertThat(update.getReturnValuesOnConditionCheckFailure(), equalTo("ALL_OLD"));
-    }
-    
-    @Test
-    void shouldFailWithDetailedErrorWhenSomeRecordsDoNotExist() {
-        var spyJob = org.mockito.Mockito.spy(reindexRecordJob);
-        
-        var workItem1 = createWorkItem("Resource:exists", "Resource");
-        var workItem2 = createWorkItem("Resource:does-not-exist", "Resource");
-        
-        var existingKey = new DynamodbResourceBatchDynamoDbKey("Resource:exists", "Resource");
-        org.mockito.Mockito.doReturn(Set.of(existingKey))
-            .when(spyJob)
-            .updateVersionBatchByTransaction(any());
-        
-        var exception = assertThrows(
-            RuntimeException.class,
-            () -> spyJob.executeBatch(List.of(workItem1, workItem2))
-        );
-        
-        assertThat(exception.getMessage(), containsString("Failed to update 1 records"));
-        assertThat(exception.getMessage(), containsString("records do not exist in database"));
     }
 }
