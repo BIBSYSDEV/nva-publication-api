@@ -58,7 +58,7 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         var messagesByJobType = new HashMap<String, List<MessageWithWorkItem>>();
         var parseFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
 
-        for (SQSMessage message : sqsEvent.getRecords()) {
+        for (var message : sqsEvent.getRecords()) {
             try {
                 var workItem = parseWorkItem(message.getBody());
                 messagesByJobType.computeIfAbsent(workItem.jobType(), k -> new ArrayList<>())
