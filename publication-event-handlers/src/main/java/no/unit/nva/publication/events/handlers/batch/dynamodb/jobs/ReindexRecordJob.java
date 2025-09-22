@@ -170,10 +170,10 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
         var message = e.getMessage();
         var causeMessage = e.getCause() != null ? e.getCause().getMessage() : "";
         
-        if ((message != null && message.contains("ConditionalCheckFailed")) 
-            || (causeMessage != null && causeMessage.contains("ConditionalCheckFailed"))
+        if (message != null && message.contains("ConditionalCheckFailed")
+            || causeMessage != null && causeMessage.contains("ConditionalCheckFailed")
             || e instanceof ConditionalCheckFailedException
-            || (e.getCause() instanceof ConditionalCheckFailedException)) {
+            || e.getCause() instanceof ConditionalCheckFailedException) {
             // When condition checks fail, typically it means the record doesn't exist
             // Transaction failed due to conditional check - all items in batch are considered failed
             logger.warn("Conditional check failed - likely non-existent records in batch");
