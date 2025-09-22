@@ -5,8 +5,6 @@ import static no.unit.nva.expansion.ResourceExpansionServiceImpl.API_HOST;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUri;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
-import static no.unit.nva.expansion.model.ExpandedResource.extractUris;
-import static no.unit.nva.expansion.model.ExpandedResource.fundingNodes;
 import static no.unit.nva.expansion.model.ExpandedResource.isAcademicChapter;
 import static no.unit.nva.expansion.model.ExpandedResource.isPublicationContextTypeAnthology;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
@@ -16,7 +14,6 @@ import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -46,21 +43,7 @@ import org.slf4j.LoggerFactory;
 public class IndexDocumentWrapperLinkedData {
 
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
-    private static final String SOURCE = "source";
     private static final String FRAME_JSON = "frame.json";
-    private static final String CONTEXT = "@context";
-    @Deprecated
-    private static final String contextAsString =
-        "{\n"
-        + "  \"@vocab\": \"https://nva.sikt.no/ontology/publication#\",\n"
-        + "  \"id\": \"@id\",\n"
-        + "  \"type\": \"@type\",\n"
-        + "  \"name\": {\n"
-        + "    \"@id\": \"label\",\n"
-        + "    \"@container\": \"@language\"\n"
-        + "  }\n"
-        + "}\n";
-    private static final JsonNode CONTEXT_NODE = attempt(() -> objectMapper.readTree(contextAsString)).get();
     private static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
         "Could not fetch nvi candidate for publication with identifier: %s";
     private static final String EXCEPTION = "Exception {}:";
@@ -69,7 +52,6 @@ public class IndexDocumentWrapperLinkedData {
     private static final String PUBLICATION = "publication";
     private static final int ONE_HUNDRED = 100;
     private static final int SUCCESS_FAMILY = 2;
-    private static final int CLIENT_ERROR_FAMILY = 4;
     private static final String TYPE = "type";
     private static final String REPORT_STATUS = "report-status";
     private final RawContentRetriever uriRetriever;
@@ -86,7 +68,7 @@ public class IndexDocumentWrapperLinkedData {
     public String toFramedJsonLd(JsonNode indexDocument) {
         var frame = SearchIndexFrame.getFrameWithContext(Path.of(FRAME_JSON));
         var inputStreams = getInputStreams(indexDocument);
-        return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
+        return new FramedJsonGenerator(inputStreams, frame, uriRetriever).getFramedJson();
     }
 
     //TODO: parallelize
@@ -107,7 +89,6 @@ public class IndexDocumentWrapperLinkedData {
         fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
         inputStreams.addAll(fetchAll(extractAffiliationUris(indexDocument), indexDocument));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument), indexDocument));
-        inputStreams.addAll(fetchFundingSourcesAddingContext(indexDocument));
         inputStreams.removeIf(Objects::isNull);
         return inputStreams;
     }
@@ -150,63 +131,6 @@ public class IndexDocumentWrapperLinkedData {
 
     private NviCandidateResponse toNviCandidateResponse(String value) {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(value, NviCandidateResponse.class)).orElseThrow();
-    }
-
-    @Deprecated
-    private Collection<? extends InputStream> fetchFundingSourcesAddingContext(JsonNode indexDocument) {
-        return fetchFundingSources(indexDocument).stream()
-                   .map(IoUtils::stringToStream)
-                   .map(this::addPotentiallyMissingContext)
-                   .toList();
-    }
-
-    private Collection<String> fetchFundingSources(JsonNode indexDocument) {
-        return extractUris(fundingNodes(indexDocument), SOURCE).stream()
-                   .map(uri -> extractResponseBody(uri, fetch(uri)))
-                   .toList();
-    }
-
-    private String extractResponseBody(URI uri, HttpResponse<String> response) {
-        if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
-            return response.body();
-        } else if (isClientError(response)) {
-            logger.warn("Client error when fetching funding source: {}. Response body: {}", uri, response.body());
-            return FundingSource.withId(uri).toJsonString();
-        } else {
-            throw new RuntimeException("Unexpected response " + response);
-        }
-    }
-
-    private boolean isClientError(HttpResponse<String> response) {
-        return response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY;
-    }
-
-    @Deprecated
-    private InputStream addPotentiallyMissingContext(InputStream inputStream) {
-        return attempt(() -> objectMapper.readTree(inputStream))
-                   .toOptional()
-                   .filter(this::hasNoContextNode)
-                   .map(this::injectContext)
-                   .map(JsonNode::toString)
-                   .map(IoUtils::stringToStream)
-                   .orElseGet(() -> resetInputStream(inputStream));
-    }
-
-    private InputStream resetInputStream(InputStream inputStream) {
-        try {
-            inputStream.reset();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return inputStream;
-    }
-
-    private JsonNode injectContext(JsonNode jsonNode) {
-        return ((ObjectNode) jsonNode).set(CONTEXT, CONTEXT_NODE);
-    }
-
-    private boolean hasNoContextNode(JsonNode jsonNode) {
-        return !jsonNode.has(CONTEXT);
     }
 
     private Collection<? extends InputStream> fetchAll(Collection<URI> uris, JsonNode indexDocument) {
