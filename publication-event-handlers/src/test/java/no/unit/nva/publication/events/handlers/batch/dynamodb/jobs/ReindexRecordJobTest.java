@@ -10,19 +10,22 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchDynamoDbKey;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class ReindexRecordJobTest {
@@ -56,17 +60,14 @@ class ReindexRecordJobTest {
     
     @Test
     void shouldUpdateSingleVersionWithNewUuid() {
-        // Given
         var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY, null);
         var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD", null);
         
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
         
-        // When
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(workItem)));
         
-        // Then
         ArgumentCaptor<TransactWriteItemsRequest> requestCaptor = ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(requestCaptor.capture());
         
@@ -94,7 +95,6 @@ class ReindexRecordJobTest {
         );
         var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
         
-        // Mock GSI query response
         var queryResult = new QueryResult();
         var item1 = new java.util.HashMap<String, AttributeValue>();
         item1.put("PK0", new AttributeValue().withS("Resource:123"));
@@ -109,11 +109,9 @@ class ReindexRecordJobTest {
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
         
-        // When
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(workItem)));
         
-        // Then
-        verify(mockDynamoDbClient).query(argThat(request -> 
+        verify(mockDynamoDbClient).query(argThat(request ->
             BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.getIndexName()) &&
             TEST_TABLE_NAME.equals(request.getTableName())
         ));
@@ -122,20 +120,17 @@ class ReindexRecordJobTest {
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(transactCaptor.capture());
         
-        // Should have 2 items in transaction (one for each resolved primary key)
         assertThat(transactCaptor.getValue().getTransactItems().size(), equalTo(2));
     }
     
     @Test
     void shouldPropagateExceptionWhenDynamoDbUpdateFails() {
-        // Given
         var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY, null);
         var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD", null);
         
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenThrow(new RuntimeException("DynamoDB error"));
         
-        // When & Then
         var exception = assertThrows(
             RuntimeException.class,
             () -> reindexRecordJob.executeBatch(List.of(workItem))
@@ -147,7 +142,6 @@ class ReindexRecordJobTest {
     
     @Test
     void shouldProcessBatchWithTransaction() {
-        // Given
         var dynamoDbKey1 = new DynamodbResourceBatchDynamoDbKey(
             "Resource:0190e0e7-5eef-7d23-b716-02c670833fcd",
             "Resource",
@@ -165,11 +159,9 @@ class ReindexRecordJobTest {
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
         
-        // When
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(workItem1, workItem2)));
         
-        // Then
-        ArgumentCaptor<TransactWriteItemsRequest> requestCaptor = 
+        ArgumentCaptor<TransactWriteItemsRequest> requestCaptor =
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(requestCaptor.capture());
         
@@ -180,16 +172,13 @@ class ReindexRecordJobTest {
     
     @Test
     void shouldHandleEmptyBatch() {
-        // When & Then
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of()));
         
-        // Verify no DynamoDB calls were made
         verify(mockDynamoDbClient, times(0)).transactWriteItems(any(TransactWriteItemsRequest.class));
     }
     
     @Test
     void shouldHandleMixedPrimaryAndGsiKeys() {
-        // Given - mix of primary key and GSI key items
         var primaryKey = new DynamodbResourceBatchDynamoDbKey(
             TEST_PARTITION_KEY,
             TEST_SORT_KEY,
@@ -204,7 +193,6 @@ class ReindexRecordJobTest {
         var primaryWorkItem = new BatchWorkItem(primaryKey, "REINDEX_RECORD", null);
         var gsiWorkItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
         
-        // Mock GSI query response
         var queryResult = new QueryResult();
         var item = new java.util.HashMap<String, AttributeValue>();
         item.put("PK0", new AttributeValue().withS("Resource:789"));
@@ -216,23 +204,19 @@ class ReindexRecordJobTest {
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
         
-        // When
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(primaryWorkItem, gsiWorkItem)));
         
-        // Then
         verify(mockDynamoDbClient).query(any(QueryRequest.class)); // For GSI resolution
         
         ArgumentCaptor<TransactWriteItemsRequest> transactCaptor = 
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(transactCaptor.capture());
         
-        // Should have 2 items in transaction (1 primary + 1 resolved from GSI)
         assertThat(transactCaptor.getValue().getTransactItems().size(), equalTo(2));
     }
     
     @Test
     void shouldHandleGsiQueryWithPagination() {
-        // Given
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
             "Customer:456",
             "Resource:Article",
@@ -240,7 +224,6 @@ class ReindexRecordJobTest {
         );
         var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
         
-        // First page
         var firstResult = new QueryResult();
         var item1 = Map.of(
             "PK0", new AttributeValue().withS("Resource:001"),
@@ -249,7 +232,6 @@ class ReindexRecordJobTest {
         firstResult.setItems(List.of(item1));
         firstResult.setLastEvaluatedKey(Map.of("dummy", new AttributeValue().withS("key")));
         
-        // Second page
         var secondResult = new QueryResult();
         var item2 = Map.of(
             "PK0", new AttributeValue().withS("Resource:002"),
@@ -263,23 +245,19 @@ class ReindexRecordJobTest {
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
         
-        // When
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(workItem)));
         
-        // Then
         verify(mockDynamoDbClient, times(2)).query(any(QueryRequest.class)); // Two queries for pagination
         
         ArgumentCaptor<TransactWriteItemsRequest> transactCaptor = 
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(transactCaptor.capture());
         
-        // Should have 2 items from both pages
         assertThat(transactCaptor.getValue().getTransactItems().size(), equalTo(2));
     }
     
     @Test
     void shouldPropagateExceptionWhenGsiQueryFails() {
-        // Given
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
             "Customer:999",
             "Resource:Failed",
@@ -290,7 +268,6 @@ class ReindexRecordJobTest {
         when(mockDynamoDbClient.query(any(QueryRequest.class)))
             .thenThrow(new AmazonDynamoDBException("Query failed"));
         
-        // When & Then
         var exception = assertThrows(
             RuntimeException.class,
             () -> reindexRecordJob.executeBatch(List.of(workItem))
@@ -299,13 +276,11 @@ class ReindexRecordJobTest {
         assertThat(exception.getMessage(), equalTo("Failed to resolve GSI to primary keys"));
         assertThat(exception.getCause().getClass(), equalTo(AmazonDynamoDBException.class));
         
-        // Verify transaction was never attempted
         verify(mockDynamoDbClient, never()).transactWriteItems(any(TransactWriteItemsRequest.class));
     }
     
     @Test
     void shouldHandleLargeBatchOfPrimaryKeys() {
-        // Given - batch of 25 items (max DynamoDB transaction limit)
         var workItems = new java.util.ArrayList<BatchWorkItem>();
         for (int i = 0; i < 25; i++) {
             var key = new DynamodbResourceBatchDynamoDbKey(
@@ -319,11 +294,9 @@ class ReindexRecordJobTest {
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
         
-        // When
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(workItems));
         
-        // Then
-        ArgumentCaptor<TransactWriteItemsRequest> requestCaptor = 
+        ArgumentCaptor<TransactWriteItemsRequest> requestCaptor =
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(requestCaptor.capture());
         
@@ -332,7 +305,6 @@ class ReindexRecordJobTest {
     
     @Test
     void shouldThrowExceptionWhenGsiQueryReturnsNoResults() {
-        // Given
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
             "Customer:NoResults",
             "Resource:Empty",
@@ -340,15 +312,13 @@ class ReindexRecordJobTest {
         );
         var workItem = new BatchWorkItem(gsiKey, "REINDEX_RECORD", null);
         
-        // Mock empty GSI query response
         var queryResult = new QueryResult();
         queryResult.setItems(List.of()); // Empty result
         
         when(mockDynamoDbClient.query(any(QueryRequest.class)))
             .thenReturn(queryResult);
         
-        // When & Then
-        var exception = assertThrows(RuntimeException.class, 
+        var exception = assertThrows(RuntimeException.class,
             () -> reindexRecordJob.executeBatch(List.of(workItem)));
         
         assertThat(exception.getMessage(), containsString("Failed to resolve GSI to primary keys"));
@@ -356,13 +326,11 @@ class ReindexRecordJobTest {
         assertThat(exception.getCause().getMessage(), containsString("No items found for GSI query"));
         
         verify(mockDynamoDbClient).query(any(QueryRequest.class));
-        // No transaction should be attempted since there are no items to update
         verify(mockDynamoDbClient, never()).transactWriteItems(any(TransactWriteItemsRequest.class));
     }
     
     @Test
     void shouldHandleMultipleGsiQueries() {
-        // Given - two different GSI queries
         var gsiKey1 = new DynamodbResourceBatchDynamoDbKey(
             "Customer:111",
             "Resource:Type1",
@@ -377,7 +345,6 @@ class ReindexRecordJobTest {
         var workItem1 = new BatchWorkItem(gsiKey1, "REINDEX_RECORD", null);
         var workItem2 = new BatchWorkItem(gsiKey2, "REINDEX_RECORD", null);
         
-        // Mock GSI query responses
         var queryResult1 = new QueryResult();
         var item1 = Map.of(
             "PK0", new AttributeValue().withS("Resource:AAA"),
@@ -405,40 +372,33 @@ class ReindexRecordJobTest {
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
         
-        // When
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(workItem1, workItem2)));
         
-        // Then
         verify(mockDynamoDbClient, times(2)).query(any(QueryRequest.class));
         
         ArgumentCaptor<TransactWriteItemsRequest> transactCaptor = 
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(transactCaptor.capture());
         
-        // Should have 2 items (one from each GSI query)
         assertThat(transactCaptor.getValue().getTransactItems().size(), equalTo(2));
     }
     
     @Test
     void shouldVerifyTransactionContainsCorrectUpdateExpression() {
-        // Given
         var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY, null);
         var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD", null);
         
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenReturn(new TransactWriteItemsResult());
         
-        // When
         reindexRecordJob.executeBatch(List.of(workItem));
         
-        // Then
-        ArgumentCaptor<TransactWriteItemsRequest> requestCaptor = 
+        ArgumentCaptor<TransactWriteItemsRequest> requestCaptor =
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(requestCaptor.capture());
         
         var update = requestCaptor.getValue().getTransactItems().getFirst().getUpdate();
         
-        // Verify all required fields are present
         assertThat(update.getTableName(), equalTo(TEST_TABLE_NAME));
         assertThat(update.getKey().size(), equalTo(2));
         assertThat(update.getKey().containsKey("PK0"), equalTo(true));
@@ -446,10 +406,205 @@ class ReindexRecordJobTest {
         assertThat(update.getUpdateExpression(), notNullValue());
         assertThat(update.getExpressionAttributeNames(), notNullValue());
         assertThat(update.getExpressionAttributeValues(), notNullValue());
+        assertThat(update.getConditionExpression(), equalTo("attribute_exists(PK0) AND attribute_exists(SK0)"));
+        assertThat(update.getReturnValuesOnConditionCheckFailure(), equalTo("ALL_OLD"));
         
-        // Verify version is being updated with a UUID
         var newVersion = update.getExpressionAttributeValues().get(":newVersion").getS();
         assertThat(newVersion, notNullValue());
         assertThat(newVersion.length(), equalTo(36)); // UUID length
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRecordsDoNotExist() {
+        var nonExistentKey1 = new DynamodbResourceBatchDynamoDbKey(
+            "Resource:non-existent-1",
+            "Resource",
+            null
+        );
+        var nonExistentKey2 = new DynamodbResourceBatchDynamoDbKey(
+            "Resource:non-existent-2",
+            "Resource",
+            null
+        );
+
+        var workItem1 = new BatchWorkItem(nonExistentKey1, "REINDEX_RECORD", null);
+        var workItem2 = new BatchWorkItem(nonExistentKey2, "REINDEX_RECORD", null);
+
+        when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
+            .thenThrow(new ConditionalCheckFailedException("ConditionalCheckFailed: The conditional request failed"));
+
+        var exception = assertThrows(
+            RuntimeException.class,
+            () -> reindexRecordJob.executeBatch(List.of(workItem1, workItem2))
+        );
+
+        assertThat(exception.getMessage(), containsString("records do not exist in database"));
+        verify(mockDynamoDbClient).transactWriteItems(any(TransactWriteItemsRequest.class));
+    }
+
+    @Test
+    void shouldIdentifyFailedItemsInErrorMessage() {
+        var existingKey = new DynamodbResourceBatchDynamoDbKey(
+            "Resource:existing",
+            "Resource",
+            null
+        );
+        var nonExistentKey = new DynamodbResourceBatchDynamoDbKey(
+            "Resource:non-existent",
+            "Resource",
+            null
+        );
+
+        var workItem1 = new BatchWorkItem(existingKey, "REINDEX_RECORD", null);
+        var workItem2 = new BatchWorkItem(nonExistentKey, "REINDEX_RECORD", null);
+
+        when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
+            .thenThrow(new ConditionalCheckFailedException("ConditionalCheckFailed"));
+
+        var exception = assertThrows(
+            RuntimeException.class,
+            () -> reindexRecordJob.executeBatch(List.of(workItem1, workItem2))
+        );
+
+        assertThat(exception.getMessage(), containsString("Failed to update 2 records"));
+        assertThat(exception.getMessage(), containsString("records do not exist in database"));
+    }
+
+    @Test
+    void shouldHandleConditionalCheckFailureInTransaction() {
+        var validKey = new DynamodbResourceBatchDynamoDbKey(
+            "Resource:valid-item",
+            "Resource",
+            null
+        );
+        var invalidKey = new DynamodbResourceBatchDynamoDbKey(
+            "Resource:invalid-item",
+            "Resource",
+            null
+        );
+
+        var validWorkItem = new BatchWorkItem(validKey, "REINDEX_RECORD", null);
+        var invalidWorkItem = new BatchWorkItem(invalidKey, "REINDEX_RECORD", null);
+
+        when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
+            .thenThrow(new RuntimeException("Transaction cancelled, one or more conditional checks failed"));
+
+        var exception = assertThrows(
+            RuntimeException.class,
+            () -> reindexRecordJob.executeBatch(List.of(validWorkItem, invalidWorkItem))
+        );
+
+        assertThat(exception.getMessage(), equalTo("Failed to update batch for reindexing"));
+        verify(mockDynamoDbClient).transactWriteItems(any(TransactWriteItemsRequest.class));
+    }
+
+    @Test
+    void shouldIncludeReturnValuesOnConditionCheckFailureInUpdate() {
+        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY, null);
+        var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD", null);
+
+        when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
+            .thenReturn(new TransactWriteItemsResult());
+
+        reindexRecordJob.executeBatch(List.of(workItem));
+
+        ArgumentCaptor<TransactWriteItemsRequest> requestCaptor =
+            ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
+        verify(mockDynamoDbClient).transactWriteItems(requestCaptor.capture());
+
+        var update = requestCaptor.getValue().getTransactItems().getFirst().getUpdate();
+
+        assertThat(update.getReturnValuesOnConditionCheckFailure(), equalTo("ALL_OLD"));
+    }
+    
+    @Test
+    void shouldFailJobWhenItemsNotSuccessfullyUpdated() {
+        var key1 = new DynamodbResourceBatchDynamoDbKey("Resource:exists1", "Resource", null);
+        var key2 = new DynamodbResourceBatchDynamoDbKey("Resource:exists2", "Resource", null);
+        var key3 = new DynamodbResourceBatchDynamoDbKey("Resource:notexists", "Resource", null);
+        
+        var workItem1 = new BatchWorkItem(key1, "REINDEX_RECORD", null);
+        var workItem2 = new BatchWorkItem(key2, "REINDEX_RECORD", null);
+        var workItem3 = new BatchWorkItem(key3, "REINDEX_RECORD", null);
+        
+        var testJob = new ReindexRecordJobTestable(key3);
+
+        var exception = assertThrows(
+            RuntimeException.class,
+            () -> testJob.executeBatch(List.of(workItem1, workItem2, workItem3))
+        );
+        
+        assertThat(exception.getMessage(), containsString("Failed to update 1 records"));
+        assertThat(exception.getMessage(), containsString("records do not exist in database"));
+    }
+    
+    @Test
+    void shouldFailWithDetailedErrorWhenSomeRecordsDoNotExist() {
+        var spyJob = org.mockito.Mockito.spy(reindexRecordJob);
+        
+        var existingKey = new DynamodbResourceBatchDynamoDbKey("Resource:exists", "Resource", null);
+        var nonExistentKey = new DynamodbResourceBatchDynamoDbKey("Resource:does-not-exist", "Resource", null);
+        
+        var workItem1 = new BatchWorkItem(existingKey, "REINDEX_RECORD", null);
+        var workItem2 = new BatchWorkItem(nonExistentKey, "REINDEX_RECORD", null);
+        
+        org.mockito.Mockito.doReturn(Set.of(existingKey))
+            .when(spyJob)
+            .updateVersionBatchByTransaction(any());
+        
+        var exception = assertThrows(
+            RuntimeException.class,
+            () -> spyJob.executeBatch(List.of(workItem1, workItem2))
+        );
+        
+        assertThat(exception.getMessage(), containsString("Failed to update 1 records"));
+        assertThat(exception.getMessage(), containsString("records do not exist in database"));
+    }
+    
+    private static class ReindexRecordJobTestable extends ReindexRecordJob {
+        private final Set<DynamodbResourceBatchDynamoDbKey> failedKeys;
+        
+        ReindexRecordJobTestable(DynamodbResourceBatchDynamoDbKey... failedKeys) {
+            super(null, "test-table");
+            this.failedKeys = Set.of(failedKeys);
+        }
+        
+        @Override
+        public void executeBatch(List<BatchWorkItem> workItems) {
+            if (workItems.isEmpty()) {
+                return;
+            }
+            
+            var partitionedItems = workItems.stream()
+                .collect(Collectors.partitioningBy(item -> item.dynamoDbKey().isGsiQuery()));
+            
+            var primaryKeyItems = partitionedItems.get(false);
+            
+            if (!primaryKeyItems.isEmpty()) {
+                var affectedKeys = primaryKeyItems.stream()
+                    .map(BatchWorkItem::dynamoDbKey)
+                    .filter(key -> !failedKeys.contains(key))
+                    .collect(Collectors.toSet());
+                
+                var failedItems = primaryKeyItems.stream()
+                    .filter(item -> !affectedKeys.contains(item.dynamoDbKey()))
+                    .toList();
+                
+                if (!failedItems.isEmpty()) {
+                    var logger = LoggerFactory.getLogger(ReindexRecordJob.class);
+                    logger.error("Failed to update {} work items - likely non-existent records: {}", 
+                               failedItems.size(), 
+                               failedItems.stream()
+                                   .map(item -> String.format("[PK=%s, SK=%s]", 
+                                                             item.dynamoDbKey().partitionKey(), 
+                                                             item.dynamoDbKey().sortKey()))
+                                   .collect(Collectors.joining(", ")));
+                    
+                    throw new RuntimeException(String.format(
+                        "Failed to update %d records - records do not exist in database", 
+                        failedItems.size()));
+                }
+            }
+        }
     }
 }
