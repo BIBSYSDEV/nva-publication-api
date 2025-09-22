@@ -18,6 +18,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -68,6 +69,7 @@ import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.funding.FundingList;
+import no.unit.nva.model.funding.UnconfirmedFunding;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -622,6 +624,93 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
             , resource);
         assertThat(actualDocument.getPublicationContextUris(), contains(expectedJournalUri));
+    }
+
+    @Test
+    void shouldReturnFundingSourceAsObjectWhenExternalUriFailsToLoad() throws JsonProcessingException,
+                                                                           BadRequestException {
+        var publication = randomPublication();
+        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
+                                                      .withSource(URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR"))
+                                                      .withIdentifier("249994")
+                                                      .build();
+        publication.setFundings(List.of(unconfirmedFunding));
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var uriRetriever = FakeUriRetriever.newInstance();
+
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+        uriRetriever.registerResponse(unconfirmedFunding.getSource(),
+                                      404,
+                                      APPLICATION_JSON_LD,
+                                      "Not Found");
+
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+
+        assertTrue(fundingSource.isContainerNode(),
+                   "Expected funding source to be a object, but got: " + fundingSource);
+        assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
+                     fundingSource.at(JsonPointer.compile("/id")).asText());
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
+    }
+
+    @Test
+    void shouldReturnFundingSourceAsObjectWhenFundingSourceLacksLabels() throws JsonProcessingException,
+                                                                              BadRequestException {
+        var publication = randomPublication();
+        var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR");
+        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
+                                                          .withSource(source)
+                                                          .withIdentifier("249994")
+                                                          .build();
+        publication.setFundings(List.of(unconfirmedFunding));
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var uriRetriever = FakeUriRetriever.newInstance();
+
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+        uriRetriever.registerResponse(source,
+                                      SC_OK,
+                                      APPLICATION_JSON_LD,
+                                      """
+                                        {
+                                          "type" : "FundingSource",
+                                          "identifier" : "NFR",
+                                          "@context" : {
+                                            "@vocab" : "https://nva.sikt.no/ontology/publication#",
+                                            "id" : "@id",
+                                            "type" : "@type",
+                                            "labels" : {
+                                              "@id" : "label",
+                                              "@container" : "@language"
+                                            }
+                                          }
+                                        }
+                                        """);
+
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+
+        assertTrue(fundingSource.isContainerNode(),
+                   "Expected funding source to be a object, but got: " + fundingSource);
+        assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
+                     fundingSource.at(JsonPointer.compile("/id")).asText());
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
     }
 
     @Test
