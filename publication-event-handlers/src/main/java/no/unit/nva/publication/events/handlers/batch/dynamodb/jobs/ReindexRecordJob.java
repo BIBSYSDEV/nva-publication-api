@@ -214,7 +214,7 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
                 var initialSize = resolvedItems.size();
                 createWorkItems(gsiItem, result, resolvedItems);
 
-                while (result.getLastEvaluatedKey() != null && !result.getLastEvaluatedKey().isEmpty()) {
+                while (nonNull(result.getLastEvaluatedKey()) && !result.getLastEvaluatedKey().isEmpty()) {
                     queryRequest.setExclusiveStartKey(result.getLastEvaluatedKey());
                     result = dynamoDbClient.query(queryRequest);
 
