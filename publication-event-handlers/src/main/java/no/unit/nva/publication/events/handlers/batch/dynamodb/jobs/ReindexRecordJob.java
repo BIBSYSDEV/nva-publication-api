@@ -170,7 +170,7 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
         var message = e.getMessage();
         var causeMessage = nonNull(e.getCause()) ? e.getCause().getMessage() : EMPTY_STRING;
         
-        if (message != null && message.contains("ConditionalCheckFailed")
+        if (noNull(message) && message.contains("ConditionalCheckFailed")
             || causeMessage != null && causeMessage.contains("ConditionalCheckFailed")
             || e instanceof ConditionalCheckFailedException
             || e.getCause() instanceof ConditionalCheckFailedException) {
