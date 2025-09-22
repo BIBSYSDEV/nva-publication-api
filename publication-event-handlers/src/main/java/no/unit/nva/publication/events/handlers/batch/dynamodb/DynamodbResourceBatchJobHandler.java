@@ -29,6 +29,7 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     private static final String ERROR_COUNT_ATTRIBUTE = "ErrorCount";
     private static final String LAST_ERROR_TIMESTAMP_ATTRIBUTE = "LastErrorTimestamp";
     private static final String STACK_TRACE_ATTRIBUTE = "StackTrace";
+    private static final String MESSAGE_BODY_ATTRIBUTE = "MessageBody";
     private static final DynamodbResourceBatchJobExecutor[] JOBS = {new ReindexRecordJob()};
 
     private final Map<String, DynamodbResourceBatchJobExecutor> jobHandlers;
@@ -89,6 +90,7 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
 
         var errorAttributes = new HashMap<String, String>();
         errorAttributes.put(ERROR_MESSAGE_ATTRIBUTE, exception.getMessage());
+        errorAttributes.put(MESSAGE_BODY_ATTRIBUTE, message.getBody());
         var stringWriter = new StringWriter();
         exception.printStackTrace(new PrintWriter(stringWriter));
         errorAttributes.put(STACK_TRACE_ATTRIBUTE, stringWriter.toString());
