@@ -128,7 +128,7 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
             executor.executeBatch(workItems);
 
             logger.info("Successfully processed batch of {} items for job type: {}", workItems.size(), jobType);
-            return List.of();
+            return emptyList();
 
         } catch (Exception e) {
             logger.error("Failed to process batch for job type: {}", jobType, e);
