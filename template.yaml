@@ -2962,8 +2962,6 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
-      Runtime: java21
-      MemorySize: 1024
       Timeout: 60 # if changing, also change the visibility timeout of the SQS queue
       Environment:
         Variables:
