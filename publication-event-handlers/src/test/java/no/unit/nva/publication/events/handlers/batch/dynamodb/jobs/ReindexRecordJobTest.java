@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -330,7 +331,7 @@ class ReindexRecordJobTest {
     }
     
     @Test
-    void shouldHandleGsiQueryReturningNoResults() {
+    void shouldThrowExceptionWhenGsiQueryReturnsNoResults() {
         // Given
         var gsiKey = new DynamodbResourceBatchDynamoDbKey(
             "Customer:NoResults",
@@ -346,10 +347,14 @@ class ReindexRecordJobTest {
         when(mockDynamoDbClient.query(any(QueryRequest.class)))
             .thenReturn(queryResult);
         
-        // When
-        assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(workItem)));
+        // When & Then
+        var exception = assertThrows(RuntimeException.class, 
+            () -> reindexRecordJob.executeBatch(List.of(workItem)));
         
-        // Then
+        assertThat(exception.getMessage(), containsString("Failed to resolve GSI to primary keys"));
+        assertThat(exception.getCause() instanceof NoGsiResultsException, equalTo(true));
+        assertThat(exception.getCause().getMessage(), containsString("No items found for GSI query"));
+        
         verify(mockDynamoDbClient).query(any(QueryRequest.class));
         // No transaction should be attempted since there are no items to update
         verify(mockDynamoDbClient, never()).transactWriteItems(any(TransactWriteItemsRequest.class));

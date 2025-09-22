@@ -74,33 +74,14 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
     }
 
     private void updateVersionBatchByTransaction(List<BatchWorkItem> workItems) {
-        var transactItems = new ArrayList<TransactWriteItem>();
-        
-        for (BatchWorkItem workItem : workItems) {
-            var key = workItem.dynamoDbKey();
-            var newVersion = UUID.randomUUID().toString();
-            
-            var dynamoKey = new HashMap<String, AttributeValue>();
-            dynamoKey.put("PK0", new AttributeValue().withS(key.partitionKey()));
-            dynamoKey.put("SK0", new AttributeValue().withS(key.sortKey()));
-            
-            var expressionAttributeValues = new HashMap<String, AttributeValue>();
-            expressionAttributeValues.put(":newVersion", new AttributeValue().withS(newVersion));
-            
-            var update = new Update()
-                .withTableName(tableName)
-                .withKey(dynamoKey)
-                .withUpdateExpression("SET #version = :newVersion")
-                .withExpressionAttributeNames(Map.of(
-                    "#version", VERSION_FIELD
-                ))
-                .withExpressionAttributeValues(expressionAttributeValues);
-            
-            transactItems.add(new TransactWriteItem().withUpdate(update));
-        }
+        var transactItems = workItems.stream()
+            .map(this::createUpdateTransactItem)
+            .toList();
         
         var transactRequest = new TransactWriteItemsRequest()
-            .withTransactItems(transactItems);
+            .withTransactItems(transactItems)
+            .withReturnConsumedCapacity("TOTAL")
+            .withReturnItemCollectionMetrics("SIZE");
         
         try {
             dynamoDbClient.transactWriteItems(transactRequest);
@@ -111,6 +92,31 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
         }
     }
     
+    private TransactWriteItem createUpdateTransactItem(BatchWorkItem workItem) {
+        var key = workItem.dynamoDbKey();
+        var newVersion = UUID.randomUUID().toString();
+        
+        var dynamoKey = new HashMap<String, AttributeValue>();
+        dynamoKey.put("PK0", new AttributeValue().withS(key.partitionKey()));
+        dynamoKey.put("SK0", new AttributeValue().withS(key.sortKey()));
+        
+        var expressionAttributeValues = new HashMap<String, AttributeValue>();
+        expressionAttributeValues.put(":newVersion", new AttributeValue().withS(newVersion));
+
+        var update = new Update()
+            .withTableName(tableName)
+            .withKey(dynamoKey)
+            .withUpdateExpression("SET #version = :newVersion")
+            .withConditionExpression("attribute_exists(PK0) AND attribute_exists(SK0)")
+            .withExpressionAttributeNames(Map.of(
+                "#version", VERSION_FIELD
+            ))
+            .withExpressionAttributeValues(expressionAttributeValues);
+        
+        return new TransactWriteItem().withUpdate(update);
+    }
+
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private List<BatchWorkItem> resolveGsiToPrimaryKeys(List<BatchWorkItem> gsiItems) {
         var resolvedItems = new ArrayList<BatchWorkItem>();
         
@@ -136,6 +142,7 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
             try {
                 var result = dynamoDbClient.query(queryRequest);
                 
+                var initialSize = resolvedItems.size();
                 createWorkItems(gsiItem, result, resolvedItems);
 
                 while (result.getLastEvaluatedKey() != null && !result.getLastEvaluatedKey().isEmpty()) {
@@ -145,8 +152,13 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
                     createWorkItems(gsiItem, result, resolvedItems);
                 }
                 
+                var itemsResolved = resolvedItems.size() - initialSize;
+                if (itemsResolved == 0) {
+                    throw new NoGsiResultsException(key.indexName(), key.partitionKey(), key.sortKey());
+                }
+                
                 logger.info("Resolved {} primary keys from GSI query for index: {}", 
-                           resolvedItems.size(), key.indexName());
+                           itemsResolved, key.indexName());
                 
             } catch (Exception e) {
                 logger.error("Failed to resolve GSI to primary keys for index: {}", key.indexName(), e);
@@ -158,12 +170,15 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
     }
 
     private static void createWorkItems(BatchWorkItem gsiItem, QueryResult result, ArrayList<BatchWorkItem> resolvedItems) {
-        for (Map<String, AttributeValue> item : result.getItems()) {
-            var primaryPk = item.get(PK_0).getS();
-            var primarySk = item.get(SK_0).getS();
-
-            var primaryKey = new DynamodbResourceBatchDynamoDbKey(primaryPk, primarySk, null);
-            resolvedItems.add(new BatchWorkItem(primaryKey, gsiItem.jobType(), gsiItem.parameters()));
-        }
+        var newItems = result.getItems().stream()
+            .map(item -> {
+                var primaryPk = item.get(PK_0).getS();
+                var primarySk = item.get(SK_0).getS();
+                var primaryKey = new DynamodbResourceBatchDynamoDbKey(primaryPk, primarySk, null);
+                return new BatchWorkItem(primaryKey, gsiItem.jobType(), gsiItem.parameters());
+            })
+            .toList();
+        
+        resolvedItems.addAll(newItems);
     }
 }
