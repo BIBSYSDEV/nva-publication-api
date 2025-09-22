@@ -2932,3 +2932,55 @@ Resources:
                 responsePayload:
                   topic:
                     - PublicationService.Resource.Deleted
+
+  DynamodbResourceBatchJobDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      VisibilityTimeout: 60
+
+  DynamodbResourceBatchJobWorkQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 360 # 6 times the Lambda timeout
+      MessageRetentionPeriod: 1209600 # 14 days
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DynamodbResourceBatchJobDLQ.Arn
+        maxReceiveCount: 3
+      RedriveAllowPolicy:
+        redrivePermission: byQueue
+        sourceQueueArns:
+          - !GetAtt DynamodbResourceBatchJobDLQ.Arn
+
+  DynamodbResourceBatchJobFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobHandler::handleRequest
+      CodeUri: publication-event-handlers
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+      Timeout: 60 # if changing, also change the visibility timeout of the SQS queue
+      Environment:
+        Variables:
+          WORK_QUEUE_URL: !Ref DynamodbResourceBatchJobWorkQueue
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt DynamodbResourceBatchJobWorkQueue.Arn
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 5
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+            ScalingConfig:
+              MaximumConcurrency: 10
+
+  DynamodbResourceBatchJobLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${DynamodbResourceBatchJobFunction}
+      RetentionInDays: 14
