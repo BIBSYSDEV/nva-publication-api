@@ -171,7 +171,7 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
         var causeMessage = nonNull(e.getCause()) ? e.getCause().getMessage() : EMPTY_STRING;
         
         if (noNull(message) && message.contains("ConditionalCheckFailed")
-            || causeMessage != null && causeMessage.contains("ConditionalCheckFailed")
+            || nonNull(causeMessage) && causeMessage.contains("ConditionalCheckFailed")
             || e instanceof ConditionalCheckFailedException
             || e.getCause() instanceof ConditionalCheckFailedException) {
             // When condition checks fail, typically it means the record doesn't exist
