@@ -2,6 +2,7 @@ package no.unit.nva.expansion.utils;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.apache.http.HttpStatus.SC_OK;
 import com.apicatalog.jsonld.document.Document;
 import java.io.ByteArrayInputStream;
@@ -9,6 +10,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -39,6 +41,8 @@ public class FramedJsonGenerator {
     private static final String PUBLICATION_CLASS_URI = "https://nva.sikt.no/ontology/publication#Publication";
     private static final String SOURCE_PROPERTY_URI = "https://nva.sikt.no/ontology/publication#source";
     private static final String PROJECT_SOURCE_URI = "https://example.org/project-ontology.ttl#source";
+    private static final String FUNDING_QUERY =
+      stringFromResources(Path.of("funding_query.sparql"));
     private final String framedJson;
     private final RawContentRetriever uriRetriever;
 
@@ -111,59 +115,7 @@ public class FramedJsonGenerator {
                                                           ResourceFactory.createResource(PUBLICATION_CLASS_URI))
                                .nextResource()
                                .getURI();
-        var query = """
-            PREFIX nva: <https://nva.sikt.no/ontology/publication#>
-            PREFIX project: <https://example.org/project-ontology.ttl#>
-            
-            CONSTRUCT {
-              <%s> nva:funding ?funding .
-              ?funding a ?type ;
-                nva:source ?source ;
-                nva:identifier ?identifier ;
-                nva:label ?label .
-              ?source a nva:FundingSource ;
-                nva:identifier ?sourceIdentifier ;
-                nva:label ?sourceLabel .
-            } WHERE {
-              {
-                [] project:funding ?funding .
-                ?funding a ?rawType ;
-                    project:source ?source ;
-                    project:identifier ?identifier .
-                 OPTIONAL { ?funding project:label ?label . }
-                 OPTIONAL { ?source a nva:FundingSource . }
-                 OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
-                 OPTIONAL { ?source nva:label ?sourceLabel . }
-              } UNION {
-                [] nva:funding ?funding .
-                ?funding a ?rawType ;
-                    nva:source ?source ;
-                    nva:identifier ?identifier .
-                OPTIONAL { ?funding nva:label ?label . }
-                OPTIONAL { ?source a nva:FundingSource . }
-                OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
-                OPTIONAL { ?source nva:label ?sourceLabel . }
-              }
-              # The following line maps the type IRI from project namespace to nva namespace.
-              BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
-            
-              # This filter removes duplicate UnconfirmedFundings by comparing values.
-              # (they have blank nodes which are not comparable)
-              FILTER NOT EXISTS {
-                  ?publication a nva:Publication ;
-                    nva:funding ?publicationFunding .
-                  ?publicationFunding nva:source ?publicationFundingSource ;
-                    nva:identifier ?publicationFundingIdentifier ;
-                    a ?publicationFundingType .
-                  FILTER(
-                    STR(?publicationFunding) != STR(?funding)
-                    && ?publicationFundingSource = ?source
-                    && ?publicationFundingIdentifier = ?identifier
-                    && ?publicationFundingType = ?type
-                  )
-              }
-            }
-            """.formatted(publicationUri);
+        var query = FUNDING_QUERY.formatted(publicationUri);
 
         return QueryFactory.create(query);
     }
