@@ -32,19 +32,16 @@ CONSTRUCT {
     # The following line maps the type IRI from project namespace to nva namespace.
     BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
 
-    # This filter removes duplicate UnconfirmedFundings by comparing values.
+    # This removes duplicate UnconfirmedFundings by comparing values.
     # (they have blank nodes which are not comparable)
-    FILTER NOT EXISTS {
-        ?publication a nva:Publication ;
-        nva:funding ?publicationFunding .
-        ?publicationFunding nva:source ?publicationFundingSource ;
-        nva:identifier ?publicationFundingIdentifier ;
-        a ?publicationFundingType .
-        FILTER(
-        STR(?publicationFunding) != STR(?funding)
-        && ?publicationFundingSource = ?source
-        && ?publicationFundingIdentifier = ?identifier
-        && ?publicationFundingType = ?type
-        )
-    }
+    BIND(
+        IF(isBlank(?funding),
+            IRI(CONCAT("https://nva.sikt.no/funding/dedup/",
+                MD5(CONCAT(COALESCE(STR(?type), ""), "|",
+                    COALESCE(STR(?source), ""), "|",
+                    COALESCE(STR(?identifier), ""), "|",
+                    COALESCE(STR(?label), ""))))),
+            ?funding)
+        AS ?fundingUri
+    )
 }

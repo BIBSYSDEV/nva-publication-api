@@ -722,7 +722,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
     }
 
-    @Disabled
     @Test
     void shouldExpandFundingSourcesEvenWithDuplicateUnconfirmedFundingSources() throws JsonProcessingException,
                                                                                 BadRequestException {
