@@ -62,9 +62,13 @@ public class FramedJsonGenerator {
         addTopLevelOrganizations(model);
         addContributorOrganizations(model);
         addSubUnitsToTopLevelAffiliation(model);
-        Model model1 = constructFundingsFromProjects(model);
-        model.add(model1);
+        replaceFundingBlankNodesInModel(model);
+        model.add(constructFundingsFromProjects(model));
         return model;
+    }
+
+    private void replaceFundingBlankNodesInModel(Model model) {
+        FundingBlankNodeReplacer.replaceFundingBlankNodesInModel(model);
     }
 
     private Model constructFundingsFromProjects(Model model) {
@@ -116,8 +120,8 @@ public class FramedJsonGenerator {
             PREFIX project: <https://example.org/project-ontology.ttl#>
             
             CONSTRUCT {
-              <%s> nva:funding ?funding .
-              ?funding a ?type ;
+              <%s> nva:funding ?skolemizedFunding.
+              ?skolemizedFunding a ?type ;
                 nva:source ?source ;
                 nva:identifier ?identifier ;
                 nva:label ?label .
@@ -129,7 +133,7 @@ public class FramedJsonGenerator {
                 [] project:funding ?funding .
                 ?funding a ?rawType ;
                     project:source ?source ;
-                    project:identifier ?identifier .
+                 OPTIONAL { ?funding project:identifier ?identifier . }
                  OPTIONAL { ?funding project:label ?label . }
                  OPTIONAL { ?source a nva:FundingSource . }
                  OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
@@ -138,7 +142,7 @@ public class FramedJsonGenerator {
                 [] nva:funding ?funding .
                 ?funding a ?rawType ;
                     nva:source ?source ;
-                    nva:identifier ?identifier .
+                OPTIONAL { ?funding nva:identifier ?identifier . }
                 OPTIONAL { ?funding nva:label ?label . }
                 OPTIONAL { ?source a nva:FundingSource . }
                 OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
@@ -147,21 +151,14 @@ public class FramedJsonGenerator {
               # The following line maps the type IRI from project namespace to nva namespace.
               BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
             
-              # This filter removes duplicate UnconfirmedFundings by comparing values.
-              # (they have blank nodes which are not comparable)
-              FILTER NOT EXISTS {
-                  ?publication a nva:Publication ;
-                    nva:funding ?publicationFunding .
-                  ?publicationFunding nva:source ?publicationFundingSource ;
-                    nva:identifier ?publicationFundingIdentifier ;
-                    a ?publicationFundingType .
-                  FILTER(
-                    STR(?publicationFunding) != STR(?funding)
-                    && ?publicationFundingSource = ?source
-                    && ?publicationFundingIdentifier = ?identifier
-                    && ?publicationFundingType = ?type
-                  )
-              }
+              # publication already have skolemized fundings, but we also have to fix this for project fundings
+              BIND(
+                IF(isBlank(?funding),
+                   IRI(CONCAT(STR(?source), "/", STR(?identifier))),
+                   ?funding
+                ) AS ?skolemizedFunding
+              )
+            
             }
             """.formatted(publicationUri);
 
