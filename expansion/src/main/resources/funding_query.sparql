@@ -1,6 +1,5 @@
 PREFIX nva: <https://nva.sikt.no/ontology/publication#>
 PREFIX project: <https://example.org/project-ontology.ttl#>
-
 CONSTRUCT {
     <%s> nva:funding ?funding .
     ?funding a ?type ;
@@ -11,31 +10,41 @@ CONSTRUCT {
     nva:identifier ?sourceIdentifier ;
     nva:label ?sourceLabel .
 } WHERE {
-    SELECT ?funding ?type ?source ?identifier ?label ?sourceIdentifier ?sourceLabel
-    WHERE {
-        {
-            SELECT (MIN(?otherFunding) as ?funding) ?type ?source ?identifier ?label
-            WHERE {
-                {
-                    [] project:funding ?otherFunding .
-                    ?otherFunding a ?rawType .
-                    OPTIONAL { ?otherFunding project:source ?source . }
-                    OPTIONAL { ?otherFunding project:identifier ?identifier . }
-                    OPTIONAL { ?otherFunding project:label ?label . }
-                } UNION {
-                    [] nva:funding ?otherFunding .
-                    ?otherFunding a ?rawType .
-                    OPTIONAL { ?otherFunding nva:source ?source . }
-                    OPTIONAL { ?otherFunding nva:identifier ?identifier . }
-                    OPTIONAL { ?otherFunding nva:label ?label . }
-                }
-                BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
-            }
-            GROUP BY ?type ?source ?identifier ?label
-        }
-
+    {
+        [] project:funding ?funding .
+        ?funding a ?rawType ;
+        project:source ?source ;
+        project:identifier ?identifier .
+        OPTIONAL { ?funding project:label ?label . }
         OPTIONAL { ?source a nva:FundingSource . }
         OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
         OPTIONAL { ?source nva:label ?sourceLabel . }
+    } UNION {
+        [] nva:funding ?funding .
+        ?funding a ?rawType ;
+        nva:source ?source ;
+        nva:identifier ?identifier .
+        OPTIONAL { ?funding nva:label ?label . }
+        OPTIONAL { ?source a nva:FundingSource . }
+        OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
+        OPTIONAL { ?source nva:label ?sourceLabel . }
+    }
+    # The following line maps the type IRI from project namespace to nva namespace.
+    BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
+
+    # This filter removes duplicate UnconfirmedFundings by comparing values.
+    # (they have blank nodes which are not comparable)
+    FILTER NOT EXISTS {
+        ?publication a nva:Publication ;
+        nva:funding ?publicationFunding .
+        ?publicationFunding nva:source ?publicationFundingSource ;
+        nva:identifier ?publicationFundingIdentifier ;
+        a ?publicationFundingType .
+        FILTER(
+        STR(?publicationFunding) != STR(?funding)
+        && ?publicationFundingSource = ?source
+        && ?publicationFundingIdentifier = ?identifier
+        && ?publicationFundingType = ?type
+        )
     }
 }
