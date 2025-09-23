@@ -215,7 +215,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
-        public Builder withFundings(List<Funding> fundings) {
+        public Builder withFundings(Set<Funding> fundings) {
             importCandidate.setFundings(fundings);
             return this;
         }

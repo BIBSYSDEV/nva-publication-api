@@ -1,6 +1,6 @@
 package no.unit.nva.publication.uriretriever;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Contributor;
@@ -80,7 +81,7 @@ public final class FakeUriResponse {
         fakeOwnerResponse(fakeUriRetriever, publication.getResourceOwner().getOwnerAffiliation());
         fakePendingNviResponse(fakeUriRetriever, publication);
         fakeFundingResponses(fakeUriRetriever, publication);
-        fakeProjectResponses(fakeUriRetriever, publication, emptyList());
+        fakeProjectResponses(fakeUriRetriever, publication, emptySet());
         fakeContextResponses(publication, fakeUriRetriever, resourceService, publicationContextRedirects);
         if (publication instanceof ImportCandidate) {
             createFakeCustomerApiResponse(fakeUriRetriever);
@@ -317,7 +318,7 @@ public final class FakeUriResponse {
     }
 
     public static void fakeProjectResponses(FakeUriRetriever fakeUriRetriever, Publication publication,
-                                             List<Funding> fundings) {
+                                             Set<Funding> fundings) {
         publication.getProjects().forEach(project -> fakeProjectResponse(fakeUriRetriever, project, fundings));
     }
 
@@ -376,12 +377,12 @@ public final class FakeUriResponse {
     }
 
     private static void fakeProjectResponse(FakeUriRetriever fakeUriRetriever, ResearchProject project,
-                                            List<Funding> fundings) {
+                                            Set<Funding> fundings) {
         fakeUriRetriever.registerResponse(project.getId(), SC_OK, APPLICATION_JSON_LD,
                                           projectResponse(project.getId(), getFundingsArray(fundings)));
     }
 
-    private static String getFundingsArray(List<Funding> fundings) {
+    private static String getFundingsArray(Set<Funding> fundings) {
         return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(fundings)).orElseThrow();
     }
 

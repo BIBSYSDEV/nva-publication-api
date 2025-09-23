@@ -141,7 +141,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
                    .withSubjects(List.of(randomUri()))
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(List.of())
+                   .withFundings(Set.of())
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())

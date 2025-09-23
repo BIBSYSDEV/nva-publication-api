@@ -156,7 +156,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
                    .withIdentifier(SortableIdentifier.next())
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(List.of(new FundingBuilder().build()))
+                   .withFundings(Set.of(new FundingBuilder().build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SCOPUS_IDENTIFIER, randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())

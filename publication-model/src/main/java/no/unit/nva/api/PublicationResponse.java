@@ -57,7 +57,7 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     @JsonProperty("@context")
     private JsonNode context;
     private List<ResearchProject> projects;
-    private List<Funding> fundings;
+    private Set<Funding> fundings;
     private List<URI> subjects;
     private List<AssociatedArtifactDto> associatedArtifacts;
     private List<ImportDetail> importDetails;
@@ -272,12 +272,12 @@ public class PublicationResponse implements WithIdentifier, WithInternal, WithMe
     }
 
     @Override
-    public List<Funding> getFundings() {
+    public Set<Funding> getFundings() {
         return fundings;
     }
 
     @Override
-    public void setFundings(List<Funding> fundings) {
+    public void setFundings(Set<Funding> fundings) {
         this.fundings = fundings;
     }
 

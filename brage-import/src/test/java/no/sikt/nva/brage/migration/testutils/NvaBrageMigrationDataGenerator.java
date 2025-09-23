@@ -126,7 +126,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withResourceOwner(new no.unit.nva.model.ResourceOwner(new Username(HARDCODED_NTNU_USERNAME), HARDCODED_NTNU_CRISTIN_ID))
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers(builder))
                    .withSubjects(builder.subjects.stream().toList())
-                   .withFundings(List.of(convertProjectToFunding(builder.getProject())))
+                   .withFundings(Set.of(convertProjectToFunding(builder.getProject())))
                    .build();
     }
 

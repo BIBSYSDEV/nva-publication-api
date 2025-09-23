@@ -383,7 +383,7 @@ class DaoTest extends ResourcesLocalTest {
                    .withIdentifier(SortableIdentifier.next())
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(List.of(new FundingBuilder().withIdentifier(randomString()).build()))
+                   .withFundings(Set.of(new FundingBuilder().withIdentifier(randomString()).build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
