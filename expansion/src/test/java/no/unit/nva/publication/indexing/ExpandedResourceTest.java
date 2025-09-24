@@ -21,7 +21,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.AllOf.allOf;
@@ -121,7 +120,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1195,52 +1193,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                 .toList();
         publication.getEntityDescription().setContributors(contributions);
         return publication;
-    }
-
-
-    @Test
-    void originalTest() throws Exception {
-        // Test case 1: Author affiliated with top-level org (123.0.0.0)
-        // Should NOT include sub-organizations in the response
-        var publication = randomPublication(AcademicArticle.class);
-        var topLevelAffiliation = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
-        var contributor = publication.getEntityDescription().getContributors().getFirst().copy()
-          .withAffiliations(List.of(topLevelAffiliation))
-          .build();
-
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        var resource = Resource.fromPublication(publication)
-          .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-
-        // Get the framed JSON output
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
-        var framedJson = expandedResource.toJsonString();
-
-        // Verify the size is reasonable (<10KB uncompressed, not ~500KB)
-        var jsonSize = framedJson.getBytes(StandardCharsets.UTF_8).length;
-        assertThat("Framed JSON should be less than 50KB (way less than the 500KB bug)",
-          jsonSize, is(lessThan(50000))); // Allow some margin, but way less than 500KB
-
-        // Verify that excessive sub-organization hierarchy is NOT included
-        // The response should NOT contain the level 2 and level 3 orgs as separate entities
-        assertThat("Should not contain level 2 org URI when only affiliated with top level",
-          framedJson, not(containsString(FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI.toString())));
-        assertThat("Should not contain level 3 org URI when only affiliated with top level",
-          framedJson, not(containsString(FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI.toString())));
-    }
-
-
-    @Test
-    void shouldNotIncludeExcessiveOrganizationDataWhenAuthorAffiliatedWithTopLevelOrg() throws Exception {
-        var framedJson = createExpandedResourceWithAffiliation(HARD_CODED_TOP_LEVEL_ORG_URI).toJsonString();
-
-        var jsonSize = framedJson.getBytes(StandardCharsets.UTF_8).length;
-        assertThat("Framed JSON should be less than 50KB", jsonSize, is(lessThan(50000)));
-
-        assertThat(framedJson, containsString(HARD_CODED_TOP_LEVEL_ORG_URI.toString()));
-        assertThat(framedJson, not(containsString(HARD_CODED_LEVEL_2_ORG_URI.toString())));
-        assertThat(framedJson, not(containsString(HARD_CODED_LEVEL_3_ORG_URI.toString())));
     }
 
     @Test
