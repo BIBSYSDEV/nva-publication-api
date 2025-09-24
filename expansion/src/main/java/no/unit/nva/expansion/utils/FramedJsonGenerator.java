@@ -129,17 +129,17 @@ public class FramedJsonGenerator {
                 [] project:funding ?funding .
                 ?funding a ?rawType ;
                     project:source ?source ;
-                    project:identifier ?identifier ;
-                    project:label ?label .
-                 OPTIONAL {   ?source a nva:FundingSource . }
-                 OPTIONAL {   ?source nva:identifier ?sourceIdentifier . }
-                 OPTIONAL {   ?source nva:label ?sourceLabel . }
+                    project:identifier ?identifier .
+                 OPTIONAL { ?funding project:label ?label . }
+                 OPTIONAL { ?source a nva:FundingSource . }
+                 OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
+                 OPTIONAL { ?source nva:label ?sourceLabel . }
               } UNION {
                 [] nva:funding ?funding .
                 ?funding a ?rawType ;
                     nva:source ?source ;
-                    nva:identifier ?identifier ;
-                    nva:label ?label .
+                    nva:identifier ?identifier .
+                OPTIONAL { ?funding nva:label ?label . }
                 OPTIONAL { ?source a nva:FundingSource . }
                 OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
                 OPTIONAL { ?source nva:label ?sourceLabel . }

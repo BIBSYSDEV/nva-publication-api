@@ -1,4 +1,5 @@
 dependencies {
+    implementation project(":publication-constants")
     implementation project(":publication-doi-commons")
     implementation project(":expansion")
     implementation project(":publication-commons")
