@@ -1,8 +1,5 @@
 package no.unit.nva.publication.indexing;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.stream.StreamSupport.stream;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
@@ -12,14 +9,19 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUnconfirmedFunding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.AllOf.allOf;
@@ -32,6 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.stream.StreamSupport.stream;
+
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -41,16 +48,7 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import com.google.common.net.MediaType;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -107,9 +105,11 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.uriretriever.FakeUriResponse;
 import no.unit.nva.publication.uriretriever.FakeUriRetriever;
+
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
+
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -117,6 +117,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 class ExpandedResourceTest extends ResourcesLocalTest {
 
@@ -280,7 +292,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
         final var publication = randomPublication(AcademicArticle.class);
-        final var affiliationToBeExpanded = FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
+        final var affiliationToBeExpanded = HARD_CODED_LEVEL_3_ORG_URI;
         var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
                                                   .withAffiliations(
                                                       List.of(Organization.fromUri(affiliationToBeExpanded))).build();
@@ -302,8 +314,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
         var publication = randomPublication(AcademicArticle.class);
-        var contributor1org = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI);
-        var contributor1parentOrg = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI);
+        var contributor1org = Organization.fromUri(HARD_CODED_LEVEL_3_ORG_URI);
+        var contributor1parentOrg = Organization.fromUri(HARD_CODED_LEVEL_2_ORG_URI);
         var contributor2org = Organization.fromUri(FakeUriResponse.constructCristinOrgUri("123.1.2.0"));
         var topLevelOrg = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
 
@@ -1095,5 +1107,118 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                 .toList();
         publication.getEntityDescription().setContributors(contributions);
         return publication;
+    }
+
+
+    @Test
+    void originalTest() throws Exception {
+        // Test case 1: Author affiliated with top-level org (123.0.0.0)
+        // Should NOT include sub-organizations in the response
+        var publication = randomPublication(AcademicArticle.class);
+        var topLevelAffiliation = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
+        var contributor = publication.getEntityDescription().getContributors().getFirst().copy()
+          .withAffiliations(List.of(topLevelAffiliation))
+          .build();
+
+        publication.getEntityDescription().setContributors(List.of(contributor));
+        var resource = Resource.fromPublication(publication)
+          .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+
+        // Get the framed JSON output
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        var framedJson = expandedResource.toJsonString();
+
+        // Verify the size is reasonable (<10KB uncompressed, not ~500KB)
+        var jsonSize = framedJson.getBytes(StandardCharsets.UTF_8).length;
+        assertThat("Framed JSON should be less than 50KB (way less than the 500KB bug)",
+          jsonSize, is(lessThan(50000))); // Allow some margin, but way less than 500KB
+
+        // Verify that excessive sub-organization hierarchy is NOT included
+        // The response should NOT contain the level 2 and level 3 orgs as separate entities
+        assertThat("Should not contain level 2 org URI when only affiliated with top level",
+          framedJson, not(containsString(FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI.toString())));
+        assertThat("Should not contain level 3 org URI when only affiliated with top level",
+          framedJson, not(containsString(FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI.toString())));
+    }
+
+
+    @Test
+    void shouldNotIncludeExcessiveOrganizationDataWhenAuthorAffiliatedWithTopLevelOrg() throws Exception {
+        var framedJson = createExpandedResourceWithAffiliation(HARD_CODED_TOP_LEVEL_ORG_URI).toJsonString();
+
+        var jsonSize = framedJson.getBytes(StandardCharsets.UTF_8).length;
+        assertThat("Framed JSON should be less than 50KB", jsonSize, is(lessThan(50000)));
+
+        assertThat(framedJson, containsString(HARD_CODED_TOP_LEVEL_ORG_URI.toString()));
+        assertThat(framedJson, not(containsString(HARD_CODED_LEVEL_2_ORG_URI.toString())));
+        assertThat(framedJson, not(containsString(HARD_CODED_LEVEL_3_ORG_URI.toString())));
+    }
+
+    @Test
+    void shouldOnlyIncludeDirectParentPerSubOrganization() {
+        var framedResult = createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var topLevelOrganizations = framedResult.get("topLevelOrganizations");
+
+        for (var organization : topLevelOrganizations) {
+            var id = organization.get("id").toString();
+            var hasPart = organization.findValue("hasPart");
+            for (var child : hasPart) {
+                var partOf = child.get("partOf");
+                assertTrue(partOf.toString().contains(id));
+                assertEquals(1, partOf.size());
+            }
+        }
+    }
+
+    @Test
+    void shouldOnlyIncludeDirectParentPerAffiliation() {
+        var framedResult = createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var allAffiliations = framedResult.findValues("affiliations");
+
+        for (var affiliation : allAffiliations) {
+            var partOf = affiliation.findValue("partOf");
+            assertEquals(1, partOf.size());
+            assertTrue(partOf.toString().contains(HARD_CODED_TOP_LEVEL_ORG_URI.toString()));
+        }
+    }
+
+    @Test
+    void shouldNotIncludeChildOrganizationsOfAffiliations() {
+        var framedResult = createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var allAffiliations = framedResult.findValues("affiliations");
+
+        for (var affiliation : allAffiliations) {
+            var hasPart = affiliation.findValue("hasPart");
+            assertTrue(hasPart.isMissingNode());
+        }
+    }
+
+    private ExpandedResource createExpandedResourceWithAffiliation(URI affiliationUri) {
+        var publication = randomPublication(AcademicArticle.class);
+        var affiliation = Organization.fromUri(affiliationUri);
+        var contributor =
+                publication
+                        .getEntityDescription()
+                        .getContributors()
+                        .getFirst()
+                        .copy()
+                        .withAffiliations(List.of(affiliation))
+                        .build();
+
+        publication.getEntityDescription().setContributors(List.of(contributor));
+
+        try {
+            var resource =
+                    Resource.fromPublication(publication)
+                            .persistNew(resourceService, UserInstance.fromPublication(publication));
+            FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+            return fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
