@@ -41,7 +41,7 @@ public final class FundingBlankNodeReplacer {
             
                     BIND(
                      IF(isBlank(?funding),
-                        IRI(CONCAT(STR(?source), "/", STR(?identifier))),
+                        IRI(CONCAT(STR(?source), "#", STR(?identifier))),
                         ?funding
                      ) AS ?skolemizedFunding
                    )

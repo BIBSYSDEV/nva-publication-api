@@ -154,7 +154,7 @@ public class FramedJsonGenerator {
               # publication already have skolemized fundings, but we also have to fix this for project fundings
               BIND(
                 IF(isBlank(?funding),
-                   IRI(CONCAT(STR(?source), "/", STR(?identifier))),
+                   IRI(CONCAT(STR(?source), "#", STR(?identifier))),
                    ?funding
                 ) AS ?skolemizedFunding
               )
