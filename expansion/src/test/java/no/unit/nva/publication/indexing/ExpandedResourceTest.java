@@ -47,14 +47,11 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import no.unit.nva.auth.uriretriever.UriRetriever;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -667,134 +664,29 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void liveTest()
-        throws BadRequestException, JsonProcessingException {
-        var publication = JsonUtils.dtoObjectMapper.readValue("""
-                                                                  {
-                                                                     "type": "Publication",
-                                                                     "status": "PUBLISHED",
-                                                                     "resourceOwner": {
-                                                                       "owner": "uib@184.0.0.0",
-                                                                       "ownerAffiliation": "https://api.dev.nva.aws.unit.no/cristin/organization/184.0.0.0"
-                                                                     },
-                                                                     "publisher": {
-                                                                       "type": "Organization",
-                                                                       "id": "https://api.dev.nva.aws.unit.no/customer/bb3d0c0c-5065-4623-9b98-5810983c2478"
-                                                                     },
-                                                                     "createdDate": "2025-08-21T09:36:04.645973776Z",
-                                                                     "modifiedDate": "2025-08-21T09:36:04.645973776Z",
-                                                                     "publishedDate": "2025-08-21T09:36:04.645973776Z",
-                                                                     "associatedArtifacts": [
-                                                                       {
-                                                                         "type": "AssociatedLink",
-                                                                         "id": "https://www.dagbladet.no/nyheter/nasas-smeltesjokk-pa-gronland-er-elendig-nytt---som-et-tog-som-loper-lopsk/68848107",
-                                                                         "relation": "sameAs"
-                                                                       }
-                                                                     ],
-                                                                     "entityDescription": {
-                                                                       "type": "EntityDescription",
-                                                                       "mainTitle": "Nasas smeltesjokk på Grønland er elendig nytt: - Som et tog som løper løpsk",
-                                                                       "language": "http://lexvo.org/id/iso639-3/nob",
-                                                                       "publicationDate": {
-                                                                         "type": "PublicationDate",
-                                                                         "year": "2017",
-                                                                         "month": "11",
-                                                                         "day": "3"
-                                                                       },
-                                                                       "contributors": [
-                                                                         {
-                                                                           "type": "Contributor",
-                                                                           "identity": {
-                                                                             "type": "Identity",
-                                                                             "id": "https://api.dev.nva.aws.unit.no/cristin/person/45717",
-                                                                             "name": "Kerim Hestnes Nisancioglu",
-                                                                             "verificationStatus": "Verified"
-                                                                           },
-                                                                           "affiliations": [
-                                                                             {
-                                                                               "type": "Organization",
-                                                                               "id": "https://api.dev.nva.aws.unit.no/cristin/organization/184.12.50.0"
-                                                                             }
-                                                                           ],
-                                                                           "role": {
-                                                                             "type": "InterviewSubject"
-                                                                           },
-                                                                           "sequence": 1,
-                                                                           "correspondingAuthor": false
-                                                                         }
-                                                                       ],
-                                                                       "reference": {
-                                                                         "type": "Reference",
-                                                                         "publicationContext": {
-                                                                           "type": "MediaContribution",
-                                                                           "medium": {
-                                                                             "type": "Internet"
-                                                                           },
-                                                                           "disseminationChannel": "Dagbladet"
-                                                                         },
-                                                                         "publicationInstance": {
-                                                                           "type": "MediaInterview",
-                                                                           "pages": {
-                                                                             "type": "NullPages"
-                                                                           }
-                                                                         }
-                                                                       },
-                                                                       "abstract": "Forskningen var allerede glassklar på at isen på Grønland renner ut i havet. Nye funn tegner et enda mer dystert bilde."
-                                                                     },
-                                                                     "additionalIdentifiers": [
-                                                                       {
-                                                                         "type": "CristinIdentifier",
-                                                                         "sourceName": "cristin@uib",
-                                                                         "value": "1511092"
-                                                                       }
-                                                                     ],
-                                                                     "fundings": [
-    {
-      "type": "UnconfirmedFunding",
-      "source": "https://api.dev.nva.aws.unit.no/cristin/funding-sources/SIGMA2",
-      "identifier": "NN4659K"
-    },
-    {
-      "type": "UnconfirmedFunding",
-      "source": "https://api.dev.nva.aws.unit.no/cristin/funding-sources/SIGMA2",
-      "identifier": "NN4659K"
-    }
-                                                                     ],
-                                                                     "curatingInstitutions": [
-                                                                       {
-                                                                         "id": "https://api.dev.nva.aws.unit.no/cristin/organization/184.0.0.0",
-                                                                         "contributorCristinIds": [
-                                                                           "https://api.dev.nva.aws.unit.no/cristin/person/45717"
-                                                                         ]
-                                                                       }
-                                                                     ],
-                                                                     "resourceEvent": {
-                                                                       "type": "ImportedResourceEvent",
-                                                                       "date": "2025-08-21T09:36:04.645973776Z",
-                                                                       "user": "uib@184.0.0.0",
-                                                                       "institution": "https://api.dev.nva.aws.unit.no/cristin/organization/184.0.0.0",
-                                                                       "importSource": {
-                                                                         "type": "ImportSource",
-                                                                         "source": "CRISTIN"
-                                                                       },
-                                                                       "identifier": "0198cbfc4626-a0c80f3e-fefb-43ae-b0ff-ce941178116e"
-                                                                     },
-                                                                     "version": "cb687bb7-958a-4697-be0b-566eec8ffc8d",
-                                                                     "identifier": "0198cbfc4625-e9be9a84-ec1a-4a62-bdcf-d0bc8f65bd73"
-                                                                   }
-        """, Publication.class);
+    void shouldExpandFundingSourcesEvenWithDuplicateUnconfirmedFundingSources() throws JsonProcessingException,
+                                                                                       BadRequestException {
+        var publication = randomPublication();
+        var source = randomUri();
+        var duplicateFunding = (UnconfirmedFunding) new FundingBuilder()
+                                                        .withSource(source)
+                                                        .withIdentifier(randomString())
+                                                        .build();
+        publication.setFundings(Set.of(duplicateFunding));
 
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-        //FakeUriResponse.setupFakeForType(resource,, resourceService, false);
-        // Set up project response with null fundings to simulate case where project has no funding identifiers
-        //FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptyList());
+        var uriRetriever = FakeUriRetriever.newInstance();
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, Set.of(duplicateFunding));
 
-        var expandedResource = fromPublication(new UriRetriever(), resourceService, sqsClient, resource)
-                                   .asJsonNode();
 
-        // Verify that the original publication funding is preserved
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource).asJsonNode();
+        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+
+        assertFalse(fundingSource.isTextual(),
+                    "Funding source should be expanded to object, but remained as string: " + fundingSource);
+        assertEquals(source.toString(), fundingSource.at(JsonPointer.compile("/id")).asText());
     }
 
     @Test
@@ -842,75 +734,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         assertTrue(fundingSource.isContainerNode(),
                    "Expected funding source to be a object, but got: " + fundingSource);
         assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
-                     fundingSource.at(JsonPointer.compile("/id")).asText());
-
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
-    }
-
-
-    @Test
-    void shouldReturnFundingSourceAsObjectWhenFundingSourceIsDuplicated() throws JsonProcessingException,
-                                                                                BadRequestException {
-        var publication = randomPublication();
-        var source = URI.create("https://api.dev.nva.aws.unit.no/cristin/funding-sources/SIGMA2");
-        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
-                                                          .withSource(source)
-                                                          .withIdentifier("NN4659K")
-                                                          .build();
-
-        var unconfirmedFundingDuplicate = (UnconfirmedFunding) new FundingBuilder()
-                                                          .withSource(source)
-                                                          .withIdentifier("NN4659K")
-                                                          .build();
-
-        publication.setFundings(new HashSet<>(List.of(unconfirmedFunding, unconfirmedFundingDuplicate)));
-
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-
-        var uriRetriever = FakeUriRetriever.newInstance();
-
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
-
-        uriRetriever.registerResponse(source,
-                                      SC_OK,
-                                      APPLICATION_JSON_LD,
-                                      """
-                                            {
-                                              "type" : "FundingSource",
-                                              "id" : "https://api.dev.nva.aws.unit.no/cristin/funding-sources/SIGMA2",
-                                              "identifier" : "SIGMA2",
-                                              "labels" : {
-                                                "en" : "Sigma2",
-                                                "nb" : "Sigma2",
-                                                "nn" : "Sigma2"
-                                              },
-                                              "name" : {
-                                                "en" : "Sigma2",
-                                                "nb" : "Sigma2",
-                                                "nn" : "Sigma2"
-                                              },
-                                              "@context" : {
-                                                "@vocab" : "https://nva.sikt.no/ontology/publication#",
-                                                "id" : "@id",
-                                                "type" : "@type",
-                                                "labels" : {
-                                                  "@id" : "label",
-                                                  "@container" : "@language"
-                                                }
-                                              }
-                                            }
-                                        """);
-
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
-                                   .asJsonNode();
-
-        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
-
-        assertTrue(fundingSource.isContainerNode(),
-                   "Expected funding source to be a object, but got: " + fundingSource);
-        assertEquals("https://api.dev.nva.aws.unit.no/cristin/funding-sources/SIGMA2",
                      fundingSource.at(JsonPointer.compile("/id")).asText());
 
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());

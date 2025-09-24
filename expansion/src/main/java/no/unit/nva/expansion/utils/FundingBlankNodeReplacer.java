@@ -6,10 +6,12 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.update.UpdateAction;
 import org.apache.jena.update.UpdateFactory;
 
-public class FundingBlankNodeReplacer {
+public final class FundingBlankNodeReplacer {
 
     private static final String NVA_PREFIX = "https://nva.sikt.no/ontology/publication#";
-    
+
+    private FundingBlankNodeReplacer() {}
+
     public static void replaceFundingBlankNodesInModel(Model model) {
         constructSkolemizedFundings(model);
         deleteBlankNodeFundings(model);
