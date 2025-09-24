@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -71,7 +72,7 @@ public final class PublicationUpdater {
         return shouldBeUpdated(existingHandle, incomingHandle) ? incomingHandle : existingHandle;
     }
 
-    private static List<Funding> updateFundings(PublicationRepresentations publicationRepresentations) {
+    private static Set<Funding> updateFundings(PublicationRepresentations publicationRepresentations) {
         var existingFundings = publicationRepresentations.getExistingPublication().getFundings();
         var incomingFundings = publicationRepresentations.getIncomingPublication().getFundings();
         return shouldBeUpdated(existingFundings, incomingFundings) ? incomingFundings : existingFundings;

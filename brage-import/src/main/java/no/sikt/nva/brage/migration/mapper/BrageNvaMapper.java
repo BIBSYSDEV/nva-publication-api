@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.mapper;
 
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.BRAGE_MIGRATION_REPORTS_BUCKET_NAME;
@@ -12,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -124,11 +126,11 @@ public final class BrageNvaMapper {
         }
     }
 
-    private static List<Funding> extractFundings(Record brageRecord) {
-        return nonNull(brageRecord.getProjects()) ? brageRecord.getProjects()
+    private static Set<Funding> extractFundings(Record brageRecord) {
+        return nonNull(brageRecord.getProjects()) ? new HashSet<>(brageRecord.getProjects()
                                                         .stream()
                                                         .map(Project::toFunding)
-                                                        .toList() : List.of();
+                                                        .toList()) : emptySet();
     }
 
     private static String joinByNewLine(List<String> values) {

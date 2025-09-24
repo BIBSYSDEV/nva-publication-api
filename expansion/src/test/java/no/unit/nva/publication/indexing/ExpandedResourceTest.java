@@ -1,5 +1,6 @@
 package no.unit.nva.publication.indexing;
 
+import static java.util.Collections.emptySet;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
@@ -119,6 +120,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -164,10 +166,10 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                                       .withActiveTo(randomInstant(unconfirmedFunding.getActiveTo()))
                                                       .build();
 
-        return Stream.of(Arguments.of(new FundingList(List.of(unconfirmedFunding)),
+        return Stream.of(Arguments.of(new FundingList(Set.of(unconfirmedFunding)),
                                                new FundingList(List.of(confirmedFunding))),
                          Arguments.of(new FundingList(List.of(confirmedFunding)),
-                                               new FundingList(List.of(unconfirmedFunding))));
+                                               new FundingList(Set.of(unconfirmedFunding))));
     }
 
     @BeforeEach
@@ -417,8 +419,9 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     void shouldReturnIndexDocumentWithValidFundingSourceInsertingContextInFundingSource() throws Exception {
 
         final var publication = randomBookWithConfirmedPublisher();
-        final var sourceUri0 = publication.getFundings().get(0).getSource();
-        final var sourceUri1 = publication.getFundings().get(1).getSource();
+        var fundings =  publication.getFundings().iterator();
+        final var sourceUri0 = fundings.next().getSource();
+        final var sourceUri1 = fundings.next().getSource();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
@@ -474,7 +477,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var publication = randomPublication();
 
         var fundings = new FundingList(publication.getFundings());
-        publication.setFundings(emptyList());
+        publication.setFundings(emptySet());
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
@@ -494,7 +497,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptyList());
+        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
                                    .asJsonNode();
@@ -551,7 +554,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptyList());
+        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
                                    .asJsonNode();
@@ -642,7 +645,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                                       .withSource(URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR"))
                                                       .withIdentifier("249994")
                                                       .build();
-        publication.setFundings(List.of(unconfirmedFunding));
+        publication.setFundings(Set.of(unconfirmedFunding));
 
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -679,7 +682,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                                           .withSource(source)
                                                           .withIdentifier("249994")
                                                           .build();
-        publication.setFundings(List.of(unconfirmedFunding));
+        publication.setFundings(Set.of(unconfirmedFunding));
 
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -726,11 +729,16 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                                                                 BadRequestException {
         var publication = randomPublication();
         var source = randomUri();
+        var identifier = randomUri();
         var duplicateFunding = (UnconfirmedFunding) new FundingBuilder()
                                                         .withSource(source)
-                                                        .withIdentifier(randomString())
+                                                        .withIdentifier(identifier.toString())
                                                         .build();
-        publication.setFundings(List.of(duplicateFunding, duplicateFunding));
+        var duplicateFunding2 = (UnconfirmedFunding) new FundingBuilder()
+          .withSource(source)
+          .withIdentifier(identifier.toString()).withActiveFrom(Instant.now())
+          .build();
+        publication.setFundings(Set.of(duplicateFunding, duplicateFunding2));
 
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
