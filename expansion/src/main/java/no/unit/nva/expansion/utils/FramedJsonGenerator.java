@@ -9,12 +9,14 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import nva.commons.apigateway.MediaTypes;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.ioutils.IoUtils;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
@@ -39,6 +41,7 @@ public class FramedJsonGenerator {
     private static final String PUBLICATION_CLASS_URI = "https://nva.sikt.no/ontology/publication#Publication";
     private static final String SOURCE_PROPERTY_URI = "https://nva.sikt.no/ontology/publication#source";
     private static final String PROJECT_SOURCE_URI = "https://example.org/project-ontology.ttl#source";
+    private static final Path FUNDING_QUERY_FILE_PATH = Path.of("funding_query.sparql");
     private final String framedJson;
     private final RawContentRetriever uriRetriever;
 
@@ -66,8 +69,6 @@ public class FramedJsonGenerator {
         return model;
     }
 
-
-
     private Model constructFundingsFromProjects(Model model) {
         var projectsModel = assembleProjectData(model);
 
@@ -82,12 +83,12 @@ public class FramedJsonGenerator {
 
         var tempModel = ModelFactory.createDefaultModel();
         Stream.of(PROJECT_PROPERTY_URI, SOURCE_PROPERTY_URI, PROJECT_SOURCE_URI)
-                  .forEach(uri -> {
-                      tempModel.removeAll();
-                      fetchDataFromModelResource(projectsModel, ResourceFactory.createProperty(uri))
-                          .forEach(stream -> loadDataIntoModel(tempModel, stream));
-                      projectsModel.add(tempModel);
-                  });
+            .forEach(uri -> {
+                tempModel.removeAll();
+                fetchDataFromModelResource(projectsModel, ResourceFactory.createProperty(uri))
+                    .forEach(stream -> loadDataIntoModel(tempModel, stream));
+                projectsModel.add(tempModel);
+            });
         return projectsModel;
     }
 
@@ -109,51 +110,11 @@ public class FramedJsonGenerator {
 
     private static Query constructFundingsQuery(Model model) {
         var publicationUri = model.listSubjectsWithProperty(RDF.type,
-                                                          ResourceFactory.createResource(PUBLICATION_CLASS_URI))
-                               .nextResource()
-                               .getURI();
-        var query = """
-            PREFIX nva: <https://nva.sikt.no/ontology/publication#>
-            PREFIX project: <https://example.org/project-ontology.ttl#>
-            
-             CONSTRUCT {
-                 <%s> nva:funding ?funding .
-                 ?funding a ?type ;
-                     nva:source ?source ;
-                     nva:identifier ?identifier ;
-                     nva:label ?label .
-                 ?source a nva:FundingSource ;
-                     nva:identifier ?sourceIdentifier ;
-                     nva:label ?sourceLabel .
-             } WHERE {
-                 [] nva:funding|project:funding ?funding .
-                 ?funding a ?rawType ;
-                     nva:source|project:source ?source ;
-                     nva:identifier|project:identifier ?identifier .
-                 OPTIONAL { ?funding nva:label|project:label ?label . }
-                 OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
-                 OPTIONAL { ?source nva:label ?sourceLabel . }
-        
-                 # The following line maps the type IRI from project namespace to nva namespace.
-                 BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
-        
-                 # This filter removes duplicate UnconfirmedFundings by comparing values.
-                 # (they have blank nodes which are not comparable)
-                 FILTER NOT EXISTS {
-                     ?publication a nva:Publication ;
-                       nva:funding ?publicationFunding .
-                     ?publicationFunding nva:source ?publicationFundingSource ;
-                       nva:identifier ?publicationFundingIdentifier ;
-                       a ?publicationFundingType .
-                     FILTER(
-                       STR(?publicationFunding) != STR(?funding)
-                       && ?publicationFundingSource = ?source
-                       && ?publicationFundingIdentifier = ?identifier
-                       && ?publicationFundingType = ?type
-                     )
-                  }
-             }
-            """.formatted(publicationUri);
+                                                            ResourceFactory.createResource(PUBLICATION_CLASS_URI))
+                                 .nextResource()
+                                 .getURI();
+
+        var query = IoUtils.stringFromResources(FUNDING_QUERY_FILE_PATH).formatted(publicationUri);
 
         return QueryFactory.create(query);
     }
