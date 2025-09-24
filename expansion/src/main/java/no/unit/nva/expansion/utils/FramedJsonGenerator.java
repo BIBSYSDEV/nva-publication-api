@@ -62,14 +62,11 @@ public class FramedJsonGenerator {
         addTopLevelOrganizations(model);
         addContributorOrganizations(model);
         addSubUnitsToTopLevelAffiliation(model);
-        replaceFundingBlankNodesInModel(model);
         model.add(constructFundingsFromProjects(model));
         return model;
     }
 
-    private void replaceFundingBlankNodesInModel(Model model) {
-        FundingBlankNodeReplacer.replaceFundingBlankNodesInModel(model);
-    }
+
 
     private Model constructFundingsFromProjects(Model model) {
         var projectsModel = assembleProjectData(model);
@@ -119,38 +116,43 @@ public class FramedJsonGenerator {
             PREFIX nva: <https://nva.sikt.no/ontology/publication#>
             PREFIX project: <https://example.org/project-ontology.ttl#>
             
-            CONSTRUCT {
-              <%s> nva:funding ?skolemizedFunding.
-              ?skolemizedFunding a ?type ;
-                nva:source ?source ;
-                nva:identifier ?identifier ;
-                nva:label ?label .
-              ?source a nva:FundingSource ;
-                nva:identifier ?sourceIdentifier ;
-                nva:label ?sourceLabel .
-            } WHERE {
-            
-              [] nva:funding|project:funding ?funding .
-              ?funding a ?rawType ;
-                       nva:source|project:source ?source .
-              OPTIONAL { ?funding nva:identifier|project:identifier ?identifier . }
-              OPTIONAL { ?funding nva:label|project:label ?label . }
-              OPTIONAL { ?source a nva:FundingSource . }
-              OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
-              OPTIONAL { ?source nva:label ?sourceLabel . }
-           
-              # The following line maps the type IRI from project namespace to nva namespace.
-              BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
-            
-              # publication already have skolemized fundings, but we also have to fix this for project fundings
-              BIND(
-                IF(isBlank(?funding),
-                   IRI(CONCAT(STR(?source), "#", STR(?identifier))),
-                   ?funding
-                ) AS ?skolemizedFunding
-              )
-            
-            }
+             CONSTRUCT {
+                 <%s> nva:funding ?funding .
+                 ?funding a ?type ;
+                     nva:source ?source ;
+                     nva:identifier ?identifier ;
+                     nva:label ?label .
+                 ?source a nva:FundingSource ;
+                     nva:identifier ?sourceIdentifier ;
+                     nva:label ?sourceLabel .
+             } WHERE {
+                 [] nva:funding|project:funding ?funding .
+                 ?funding a ?rawType ;
+                     nva:source|project:source ?source ;
+                     nva:identifier|project:identifier ?identifier .
+                 OPTIONAL { ?funding nva:label|project:label ?label . }
+                 OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
+                 OPTIONAL { ?source nva:label ?sourceLabel . }
+        
+                 # The following line maps the type IRI from project namespace to nva namespace.
+                 BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
+        
+                 # This filter removes duplicate UnconfirmedFundings by comparing values.
+                 # (they have blank nodes which are not comparable)
+                 FILTER NOT EXISTS {
+                     ?publication a nva:Publication ;
+                       nva:funding ?publicationFunding .
+                     ?publicationFunding nva:source ?publicationFundingSource ;
+                       nva:identifier ?publicationFundingIdentifier ;
+                       a ?publicationFundingType .
+                     FILTER(
+                       STR(?publicationFunding) != STR(?funding)
+                       && ?publicationFundingSource = ?source
+                       && ?publicationFundingIdentifier = ?identifier
+                       && ?publicationFundingType = ?type
+                     )
+                  }
+             }
             """.formatted(publicationUri);
 
         return QueryFactory.create(query);
