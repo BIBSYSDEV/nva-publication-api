@@ -12,6 +12,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUnconfirmedFunding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -124,23 +126,28 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedResourceTest extends ResourcesLocalTest {
 
-    public static final String JSON_PTR_TOP_LEVEL_ORGS = "/topLevelOrganizations";
-    public static final String JSON_CONTRIBUTOR_ORGANIZATIONS = "/contributorOrganizations";
-    public static final String JSON_PTR_ID = "/id";
-    public static final String JSON_PTR_HAS_PART = "/hasPart";
-    private static final String SERIES_LEVEL_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/series/scientificValue";
-    private static final String PUBLISHER_LEVEL_JSON_PTR = "/entityDescription/reference/publicationContext"
-                                                           + "/entityDescription/reference/publicationContext"
-                                                           + "/publisher/scientificValue";
-
-    private static final String PUBLISHER_ID_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/publisher/id";
-    private static final String SERIES_ID_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/series/id";
+    private static final JsonPointer JSON_PTR_CONTRIBUTORS =
+            JsonPointer.compile("/entityDescription/contributors");
+    private static final JsonPointer JSON_PTR_TOP_LEVEL_ORGS =
+            JsonPointer.compile("/topLevelOrganizations");
+    private static final JsonPointer JSON_CONTRIBUTOR_ORGANIZATIONS =
+            JsonPointer.compile("/contributorOrganizations");
+    private static final JsonPointer JSON_PTR_ID = JsonPointer.compile("/id");
+    private static final JsonPointer JSON_PTR_HAS_PART = JsonPointer.compile("/hasPart");
+    private static final JsonPointer JSON_PTR_PART_OF = JsonPointer.compile("/partOf");
+    private static final JsonPointer JSON_PTR_AFFILIATIONS = JsonPointer.compile("/affiliations");
+    private static final JsonPointer SERIES_LEVEL_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/scientificValue");
+    private static final JsonPointer PUBLISHER_LEVEL_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/scientificValue");
+    private static final JsonPointer PUBLISHER_ID_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/id");
+    private static final JsonPointer SERIES_ID_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/id");
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
     private FakeUriRetriever fakeUriRetriever;
     private ResourceService resourceService;
@@ -284,7 +291,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
         final var publication = randomPublication(AcademicArticle.class);
-        final var affiliationToBeExpanded = FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
+        final var affiliationToBeExpanded = HARD_CODED_LEVEL_3_ORG_URI;
         var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
                                                   .withAffiliations(
                                                       List.of(Organization.fromUri(affiliationToBeExpanded))).build();
@@ -306,8 +313,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
         var publication = randomPublication(AcademicArticle.class);
-        var contributor1org = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI);
-        var contributor1parentOrg = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI);
+        var contributor1org = Organization.fromUri(HARD_CODED_LEVEL_3_ORG_URI);
+        var contributor1parentOrg = Organization.fromUri(HARD_CODED_LEVEL_2_ORG_URI);
         var contributor2org = Organization.fromUri(FakeUriResponse.constructCristinOrgUri("123.1.2.0"));
         var topLevelOrg = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
 
@@ -1217,5 +1224,81 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                 .toList();
         publication.getEntityDescription().setContributors(contributions);
         return publication;
+    }
+
+    @Test
+    void shouldOnlyIncludeDirectParentPerSubOrganization() {
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var topLevelOrganizations = framedResult.at(JSON_PTR_TOP_LEVEL_ORGS);
+
+        for (var organization : topLevelOrganizations) {
+            var id = organization.at(JSON_PTR_ID).asText();
+            var hasPart = organization.at(JSON_PTR_HAS_PART);
+            for (var child : hasPart) {
+                var partOf = child.at(JSON_PTR_PART_OF);
+                assertEquals(1, partOf.size());
+                var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
+                assertEquals(id, parentId);
+            }
+        }
+    }
+
+    @Test
+    void shouldOnlyIncludeDirectParentPerAffiliation() {
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
+        for (var contributor : contributors) {
+            var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
+            for (var affiliation : affiliations) {
+                var partOf = affiliation.at(JSON_PTR_PART_OF);
+                assertEquals(1, partOf.size());
+                var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
+                assertEquals(HARD_CODED_TOP_LEVEL_ORG_URI.toString(), parentId);
+            }
+        }
+    }
+
+    @Test
+    void shouldNotIncludeChildOrganizationsOfAffiliations() {
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
+        for (var contributor : contributors) {
+            var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
+            for (var affiliation : affiliations) {
+                var hasPart = affiliation.at(JSON_PTR_HAS_PART);
+                assertTrue(hasPart.isMissingNode());
+            }
+        }
+    }
+
+    private ExpandedResource createExpandedResourceWithAffiliation(URI affiliationUri) {
+        var publication = randomPublication(AcademicArticle.class);
+        var affiliation = Organization.fromUri(affiliationUri);
+        var contributor =
+                publication
+                        .getEntityDescription()
+                        .getContributors()
+                        .getFirst()
+                        .copy()
+                        .withAffiliations(List.of(affiliation))
+                        .build();
+
+        publication.getEntityDescription().setContributors(List.of(contributor));
+
+        try {
+            var resource =
+                    Resource.fromPublication(publication)
+                            .persistNew(resourceService, UserInstance.fromPublication(publication));
+            FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+            return fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
