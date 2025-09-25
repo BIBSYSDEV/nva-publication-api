@@ -9,6 +9,12 @@ cache:
   paths:
     - '/root/.gradle/caches/**/*'
 
+reports:
+  unit-tests:
+    files:
+      - '*/build/test-results/test/TEST-*.xml'
+    file-format: JUNITXML
+
 phases:
   install:
     runtime-versions:
@@ -25,6 +31,7 @@ phases:
         fi
   build:
     commands:
+      - ./gradlew test
       - sam build
       - sam package --s3-bucket $S3_BUCKET --output-template-file packaged_raw.yaml
   post_build:
