@@ -32,6 +32,7 @@ public record FakeCristinOrganization(
         return builder().withId(organizationId).build();
     }
 
+    @Override
     public String toJsonString() {
         return attempt(() -> dtoObjectMapper.writeValueAsString(this)).orElseThrow();
     }
