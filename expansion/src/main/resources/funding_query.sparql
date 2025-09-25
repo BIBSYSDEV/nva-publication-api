@@ -1,0 +1,29 @@
+PREFIX nva: <https://nva.sikt.no/ontology/publication#>
+PREFIX project: <https://example.org/project-ontology.ttl#>
+CONSTRUCT {
+  <%s> nva:funding ?funding .
+  ?funding a ?type ;
+  nva:source ?source ;
+  nva:identifier ?identifier ;
+  nva:label ?label ;
+  nva:activeTo ?activeTo ;
+  nva:activeFrom ?activeFrom ;
+  nva:fundingAmount ?fundingAmount .
+  ?source a nva:FundingSource ;
+  nva:identifier ?sourceIdentifier ;
+  nva:label ?sourceLabel .
+} WHERE {
+  [] nva:funding|project:funding ?funding .
+  ?funding a ?rawType ;
+  nva:source|project:source ?source ;
+  nva:identifier|project:identifier ?identifier .
+  OPTIONAL { ?funding nva:label|project:label ?label . }
+  OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
+  OPTIONAL { ?source nva:activeTo ?activeTo . }
+  OPTIONAL { ?source nva:activeFrom ?activeFrom . }
+  OPTIONAL { ?source nva:fundingAmount ?fundingAmount . }
+  OPTIONAL { ?source nva:label ?sourceLabel . }
+
+  # The following line maps the type IRI from project namespace to nva namespace.
+  BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
+}

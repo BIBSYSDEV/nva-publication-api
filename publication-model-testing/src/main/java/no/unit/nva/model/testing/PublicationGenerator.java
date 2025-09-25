@@ -148,8 +148,8 @@ public final class PublicationGenerator {
         return List.of(randomResearchProject());
     }
 
-    public static List<Funding> randomFundings() {
-        return List.of(randomUnconfirmedFunding(), randomConfirmedFunding());
+    public static Set<Funding> randomFundings() {
+        return Set.of(randomUnconfirmedFunding(), randomConfirmedFunding());
     }
 
     public static Funding randomConfirmedFunding() {

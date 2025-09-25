@@ -261,7 +261,7 @@ class CristinImportPublicationMergerTest {
     void shouldUseIncomingPublicationsFundingsWhenExistingPublicationMissesProjects()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(Map.class);
-        existingPublication.setFundings(List.of());
+        existingPublication.setFundings(Set.of());
         var bragePublication = randomPublication(Map.class);
         var updatedPublication = mergePublications(existingPublication, bragePublication);
 
@@ -541,12 +541,12 @@ class CristinImportPublicationMergerTest {
                            .withSource(randomUri())
                            .withIdentifier(randomString())
                            .build();
-        existingPublication.setFundings(List.of(funding));
+        existingPublication.setFundings(Set.of(funding));
 
         var bragePublication = randomPublication(Textbook.class);
         var newFunding =  new FundingBuilder().withId(randomUri()).build();
 
-        bragePublication.setFundings(List.of(newFunding));
+        bragePublication.setFundings(Set.of(newFunding));
 
         var record = new Record();
         record.setId(bragePublication.getHandle());
