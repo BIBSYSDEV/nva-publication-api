@@ -126,26 +126,28 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedResourceTest extends ResourcesLocalTest {
 
-    private static final JsonPointer JSON_PTR_CONTRIBUTORS = JsonPointer.compile("/entityDescription/contributors");
-    private static final String JSON_PTR_TOP_LEVEL_ORGS = "/topLevelOrganizations";
-    private static final String JSON_CONTRIBUTOR_ORGANIZATIONS = "/contributorOrganizations";
-    private static final String JSON_PTR_ID = "/id";
-    private static final String JSON_PTR_HAS_PART = "/hasPart";
-    private static final String JSON_PTR_PART_OF = "/partOf";
-    private static final String JSON_PTR_AFFILIATIONS = "/affiliations";
-    private static final String SERIES_LEVEL_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/series/scientificValue";
-    private static final String PUBLISHER_LEVEL_JSON_PTR = "/entityDescription/reference/publicationContext"
-                                                           + "/entityDescription/reference/publicationContext"
-                                                           + "/publisher/scientificValue";
-
-    private static final String PUBLISHER_ID_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/publisher/id";
-    private static final String SERIES_ID_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/series/id";
+    private static final JsonPointer JSON_PTR_CONTRIBUTORS =
+            JsonPointer.compile("/entityDescription/contributors");
+    private static final JsonPointer JSON_PTR_TOP_LEVEL_ORGS =
+            JsonPointer.compile("/topLevelOrganizations");
+    private static final JsonPointer JSON_CONTRIBUTOR_ORGANIZATIONS =
+            JsonPointer.compile("/contributorOrganizations");
+    private static final JsonPointer JSON_PTR_ID = JsonPointer.compile("/id");
+    private static final JsonPointer JSON_PTR_HAS_PART = JsonPointer.compile("/hasPart");
+    private static final JsonPointer JSON_PTR_PART_OF = JsonPointer.compile("/partOf");
+    private static final JsonPointer JSON_PTR_AFFILIATIONS = JsonPointer.compile("/affiliations");
+    private static final JsonPointer SERIES_LEVEL_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/scientificValue");
+    private static final JsonPointer PUBLISHER_LEVEL_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/scientificValue");
+    private static final JsonPointer PUBLISHER_ID_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/id");
+    private static final JsonPointer SERIES_ID_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/id");
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
     private FakeUriRetriever fakeUriRetriever;
     private ResourceService resourceService;
