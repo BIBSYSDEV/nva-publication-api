@@ -1,0 +1,41 @@
+{
+  "@context": "https://bibsysdev.github.io/src/organization-context.json",
+  "type": "Organization",
+  "id": "%s",
+  "labels": {
+    "en": "Department of Teacher Education",
+    "nb": "Institutt for lærerutdanning"
+  },
+  "acronym": "SU-ILU",
+  "country": "NO",
+  "partOf": [
+    {
+      "type": "Organization",
+      "id": "%s",
+      "labels": {
+        "en": "Faculty of Social and Educational Sciences",
+        "nb": "Fakultet for samfunns- og utdanningsvitenskap"
+      },
+      "acronym": "SU",
+      "country": "NO",
+      "partOf": [
+        {
+          "type": "Organization",
+          "id": "%s",
+          "labels": {
+            "en": "Norwegian University of Science and Technology",
+            "nb": "Norges teknisk-naturvitenskapelige universitet",
+            "nn": "Noregs teknisk-naturvitskaplege universitet"
+          },
+          "acronym": "NTNU",
+          "country": "NO",
+          "partOf": [],
+          "hasPart": []
+        }
+      ],
+      "hasPart": []
+    }
+  ],
+  "hasPart": []
+} ], "hasPart": []
+}

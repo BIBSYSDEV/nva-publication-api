@@ -5,12 +5,14 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.apache.http.HttpStatus.SC_MOVED_PERMANENTLY;
 import static org.apache.http.HttpStatus.SC_OK;
 import com.google.common.net.MediaType;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -50,7 +52,7 @@ import nva.commons.core.paths.UriWrapper;
 @SuppressWarnings("PMD.GodClass")
 public final class FakeUriResponse {
 
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
+    public static final String API_HOST = new Environment().readEnv("API_HOST");
     private static final String ORGANIZATION_BASE = "123";
     public static final URI HARD_CODED_TOP_LEVEL_ORG_URI = constructCristinOrgUri(ORGANIZATION_BASE + ".0.0.0");
     public static final URI HARD_CODED_LEVEL_2_ORG_URI = constructCristinOrgUri(ORGANIZATION_BASE + ".1.0.0");
@@ -1488,46 +1490,9 @@ public final class FakeUriResponse {
     }
 
     private static String createCristinOrganizationResponse(URI uri) {
-        return """
-            {
-                             "@context" : "https://bibsysdev.github.io/src/organization-context.json",
-                             "type" : "Organization",
-                             "id" : "%s",
-                             "labels" : {
-                               "en" : "Department of Teacher Education",
-                               "nb" : "Institutt for lærerutdanning"
-                             },
-                             "acronym" : "SU-ILU",
-                             "country" : "NO",
-                             "partOf" : [ {
-                               "type" : "Organization",
-                               "id" : "%s",
-                               "labels" : {
-                                 "en" : "Faculty of Social and Educational Sciences",
-                                 "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
-                               },
-                               "acronym" : "SU",
-                               "country" : "NO",
-                               "partOf" : [ {
-                                 "type" : "Organization",
-                                 "id" : "%s",
-                                 "labels" : {
-                                   "en" : "Norwegian University of Science and Technology",
-                                   "nb" : "Norges teknisk-naturvitenskapelige universitet",
-                                   "nn" : "Noregs teknisk-naturvitskaplege universitet"
-                                 },
-                                 "acronym" : "NTNU",
-                                 "country" : "NO",
-                                 "partOf" : [ ],
-                                 "hasPart" : [ ]
-                               } ],
-                               "hasPart" : [ ]
-                             } ],
-                             "hasPart" : [ ]
-                           } ],
-                           "hasPart" : [ ]
-                         }
-            """.formatted(uri, HARD_CODED_LEVEL_2_ORG_URI, HARD_CODED_TOP_LEVEL_ORG_URI);
+        var path = Path.of("http/fake_cristin_service_response_default.json");
+        var template = stringFromResources(path);
+        return template.formatted(uri, HARD_CODED_LEVEL_2_ORG_URI, HARD_CODED_TOP_LEVEL_ORG_URI);
     }
 
     private static String createJournal(URI id) {
