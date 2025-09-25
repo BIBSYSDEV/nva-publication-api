@@ -1232,12 +1232,13 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var topLevelOrganizations = framedResult.at(JSON_PTR_TOP_LEVEL_ORGS);
 
         for (var organization : topLevelOrganizations) {
-            var id = organization.at(JSON_PTR_ID).toString();
+            var id = organization.at(JSON_PTR_ID).asText();
             var hasPart = organization.at(JSON_PTR_HAS_PART);
             for (var child : hasPart) {
                 var partOf = child.at(JSON_PTR_PART_OF);
-                assertTrue(partOf.toString().contains(id));
                 assertEquals(1, partOf.size());
+                var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
+                assertEquals(id, parentId);
             }
         }
     }
@@ -1253,7 +1254,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             for (var affiliation : affiliations) {
                 var partOf = affiliation.at(JSON_PTR_PART_OF);
                 assertEquals(1, partOf.size());
-                assertTrue(partOf.toString().contains(HARD_CODED_TOP_LEVEL_ORG_URI.toString()));
+                var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
+                assertEquals(HARD_CODED_TOP_LEVEL_ORG_URI.toString(), parentId);
             }
         }
     }

@@ -1,7 +1,6 @@
 package no.unit.nva.publication.service;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static no.unit.nva.testutils.RandomDataGenerator.objectMapper;
 
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -34,7 +33,7 @@ public record FakeCristinOrganization(
     }
 
     public String toJsonString() {
-        return attempt(() -> objectMapper.writeValueAsString(this)).orElseThrow();
+        return attempt(() -> dtoObjectMapper.writeValueAsString(this)).orElseThrow();
     }
 
     public static Builder builder() {
