@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.expansion.model.nvi.NviCandidateResponse;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
@@ -87,7 +88,7 @@ public class IndexDocumentWrapperLinkedData {
         injectScientificIndexStatus(indexDocument);
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
-        inputStreams.addAll(fetchAll(extractAffiliationUris(indexDocument), indexDocument));
+        inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument), indexDocument));
         inputStreams.removeIf(Objects::isNull);
         return inputStreams;
@@ -133,25 +134,33 @@ public class IndexDocumentWrapperLinkedData {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(value, NviCandidateResponse.class)).orElseThrow();
     }
 
-    private Collection<? extends InputStream> fetchAll(Collection<URI> uris, JsonNode indexDocument) {
+    private Collection<? extends InputStream> fetchAll(
+            Collection<URI> uris, JsonNode indexDocument) {
+        var documentIdentifier = new SortableIdentifier(indexDocument.get("identifier").asText());
         return uris.stream()
-                   .filter(Objects::nonNull)
-                   .map(this::fetch)
-                   .map(response -> processResponse(response, indexDocument))
-                   .toList();
+                .filter(Objects::nonNull)
+                .map(this::fetch)
+                .map(response -> processResponse(response, documentIdentifier))
+                .filter(Objects::nonNull)
+                .toList();
     }
 
-    private InputStream processResponse(HttpResponse<String> response, JsonNode indexDocument) {
+    private InputStream processResponse(
+            HttpResponse<String> response, SortableIdentifier documentIdentifier) {
         if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             var body = response.body();
             return stringToStream(removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(body));
         } else {
-            var identifier = new SortableIdentifier(indexDocument.get("identifier").asText());
-            RecoveryEntry.create(RecoveryEntry.RESOURCE, identifier)
-                .withException(new Exception(response.toString()))
-                .persist(queueClient);
+            createRecoveryMessage(response, documentIdentifier);
             return null;
         }
+    }
+
+    private void createRecoveryMessage(
+            HttpResponse<String> response, SortableIdentifier identifier) {
+        RecoveryEntry.create(RecoveryEntry.RESOURCE, identifier)
+                .withException(new Exception(response.toString()))
+                .persist(queueClient);
     }
 
     private String removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(String body) {
@@ -175,5 +184,34 @@ public class IndexDocumentWrapperLinkedData {
 
     private HttpResponse<String> fetch(URI externalReference) {
         return uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString()).orElseThrow();
+    }
+
+    private Optional<CristinOrganization> fetchOrganization(
+            URI externalReference, SortableIdentifier documentIdentifier) {
+        var response = fetch(externalReference);
+        if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
+            var body = response.body();
+            return Optional.of(mapToCristinOrganization(body));
+        } else {
+            createRecoveryMessage(response, documentIdentifier);
+            return Optional.empty();
+        }
+    }
+
+    private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
+        var documentIdentifier = new SortableIdentifier(indexDocument.get("identifier").asText());
+        return extractAffiliationUris(indexDocument).stream()
+                .distinct()
+                .map(organizationId -> fetchOrganization(organizationId, documentIdentifier))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(CristinOrganization::toJsonString)
+                .map(IoUtils::stringToStream)
+                .toList();
+    }
+
+    private CristinOrganization mapToCristinOrganization(String response) {
+        return attempt(() -> objectMapper.readValue(response, CristinOrganization.class))
+                .orElseThrow();
     }
 }

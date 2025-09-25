@@ -3,6 +3,9 @@ package no.unit.nva.publication.uriretriever;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.service.CristinOrganizationFixtures.randomCristinOrganization;
+import static no.unit.nva.publication.service.CristinOrganizationFixtures.randomOrganizationId;
+import static no.unit.nva.publication.service.FakeCristinOrganization.asLeafNode;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
@@ -45,6 +48,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.service.FakeCristinOrganization;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
@@ -95,9 +99,9 @@ public final class FakeUriResponse {
     public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
         var responsibilityArea = ticket.getReceivingOrganizationDetails().subOrganizationId();
         fakeUriRetriever.registerResponse(responsibilityArea, SC_OK, APPLICATION_JSON_LD,
-                                          createCristinOrganizationResponse(responsibilityArea));
+          createCristinOrganizationResponseForLowLevelOrg(responsibilityArea));
         fakeUriRetriever.registerResponse(ticket.getCustomerId(), SC_OK, APPLICATION_JSON_LD,
-                                          createCristinOrganizationResponse(ticket.getCustomerId()));
+          createCristinOrganizationResponseForLowLevelOrg(ticket.getCustomerId()));
         setUpPersonResponse(fakeUriRetriever, ticket.getOwner());
         setUpPersonResponse(fakeUriRetriever, ticket.getAssignee());
         setUpPersonResponse(fakeUriRetriever, ticket.getFinalizedBy());
@@ -217,8 +221,13 @@ public final class FakeUriResponse {
                    : Optional.empty();
     }
 
-    private static void fakeContributorResponses(Publication publication, FakeUriRetriever fakeUriRetriever) {
-        extractAffiliations(publication).forEach(i -> createFakeOrganizationStructure(fakeUriRetriever, i));
+    private static void fakeContributorResponses(
+            Publication publication, FakeUriRetriever fakeUriRetriever) {
+        for (var organizationId : extractAffiliations(publication)) {
+            var fakeResponse = createFakeOrganizationStructure(organizationId);
+            fakeUriRetriever.registerResponse(
+                    organizationId, SC_OK, MediaType.JSON_UTF_8, fakeResponse);
+        }
     }
 
     private static List<URI> extractAffiliations(Publication publication) {
@@ -234,12 +243,13 @@ public final class FakeUriResponse {
                    : List.of();
     }
 
-    private static void createFakeOrganizationStructure(FakeUriRetriever fakeUriRetriever, URI uri) {
+    private static String createFakeOrganizationStructure(URI uri) {
         if (HARD_CODED_TOP_LEVEL_ORG_URI.equals(uri)) {
-            fakeUriRetriever.registerResponse(uri, SC_OK, MediaType.JSON_UTF_8,
-                                              createCristinOrganizationResponseForTopLevelOrg(uri));
+            return createCristinOrganizationResponseForTopLevelOrg(uri);
+        } else if (HARD_CODED_LEVEL_2_ORG_URI.equals(uri)) {
+            return createCristinOrganizationResponseForMidLevelOrg(uri);
         } else {
-            fakeUriRetriever.registerResponse(uri, SC_OK, MediaType.JSON_UTF_8, createCristinOrganizationResponse(uri));
+            return createCristinOrganizationResponseForLowLevelOrg(uri);
         }
     }
 
@@ -311,7 +321,7 @@ public final class FakeUriResponse {
 
     private static void fakeOwnerResponse(FakeUriRetriever fakeUriRetriever, URI ownerAffiliation) {
         fakeUriRetriever.registerResponse(ownerAffiliation, SC_OK, APPLICATION_JSON_LD,
-                                          createCristinOrganizationResponse(ownerAffiliation));
+          createCristinOrganizationResponseForLowLevelOrg(ownerAffiliation));
     }
 
     private static void fakeFundingResponses(FakeUriRetriever fakeUriRetriever, Publication publication) {
@@ -1441,46 +1451,6 @@ public final class FakeUriResponse {
         setUpNviResponse(fakeUriRetriever, SC_OK, publication, getPendingNviResponseString());
     }
 
-    public static String createCristinOrganizationResponseForTopLevelOrg(URI uri) {
-        return """
-            {
-                           "@context" : "https://bibsysdev.github.io/src/organization-context.json",
-                           "type" : "Organization",
-                           "id" : "%s",
-                           "labels" : {
-                             "en" : "Norwegian Centre for Mathematics Education",
-                             "nb" : "Nasjonalt senter for matematikk i opplæringen"
-                           },
-                           "acronym" : "SU-ILU-NSM",
-                           "country" : "NO",
-                           "hasPart" : [ {
-                             "type" : "Organization",
-                             "id" : "%s",
-                             "labels" : {
-                               "en" : "Department of Teacher Education",
-                               "nb" : "Institutt for lærerutdanning"
-                             },
-                             "acronym" : "SU-ILU",
-                             "country" : "NO",
-                             "hasPart" : [ {
-                               "type" : "Organization",
-                               "id" : "%s",
-                               "labels" : {
-                                 "en" : "Faculty of Social and Educational Sciences",
-                                 "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
-                               },
-                               "acronym" : "SU",
-                               "country" : "NO",
-                               "partOf" : [ ],
-                               "hasPart" : [ ]
-                             } ],
-                             "partOf" : [ ]
-                           } ],
-                           "hasPart" : [ ]
-                         }
-            """.formatted(uri, HARD_CODED_LEVEL_2_ORG_URI, HARD_CODED_LEVEL_3_ORG_URI);
-    }
-
     private static String createCustomerApiResponse() {
         return """
             {
@@ -1489,10 +1459,45 @@ public final class FakeUriResponse {
             """;
     }
 
-    private static String createCristinOrganizationResponse(URI uri) {
-        var path = Path.of("http/fake_cristin_service_response_default.json");
-        var template = stringFromResources(path);
-        return template.formatted(uri, HARD_CODED_LEVEL_2_ORG_URI, HARD_CODED_TOP_LEVEL_ORG_URI);
+    public static String createCristinOrganizationResponseForTopLevelOrg(URI uri) {
+        var lowLevelOrg =
+                randomCristinOrganization(HARD_CODED_LEVEL_3_ORG_URI)
+                        .withPartOf(List.of(asLeafNode(HARD_CODED_LEVEL_2_ORG_URI)))
+                        .build();
+        var midLevelOrg =
+                randomCristinOrganization(HARD_CODED_LEVEL_2_ORG_URI)
+                        .withPartOf(List.of(asLeafNode(uri)))
+                        .withHasPart(List.of(lowLevelOrg))
+                        .build();
+
+        var topLevelOrg = randomCristinOrganization(uri).withHasPart(List.of(midLevelOrg)).build();
+        return topLevelOrg.toJsonString();
+    }
+
+    public static String createCristinOrganizationResponseForMidLevelOrg(URI uri) {
+        var topLevelOrg = randomCristinOrganization(HARD_CODED_TOP_LEVEL_ORG_URI).build();
+        var lowLevelOrg =
+                randomCristinOrganization(HARD_CODED_LEVEL_3_ORG_URI)
+                        .withPartOf(List.of(asLeafNode(uri)))
+                        .build();
+
+        var midLevelOrg =
+                randomCristinOrganization(uri)
+                        .withPartOf(List.of(topLevelOrg))
+                        .withHasPart(List.of(lowLevelOrg))
+                        .build();
+        return midLevelOrg.toJsonString();
+    }
+
+    public static String createCristinOrganizationResponseForLowLevelOrg(URI uri) {
+        var topLevelOrg = randomCristinOrganization(HARD_CODED_TOP_LEVEL_ORG_URI).build();
+        var midLevelOrg =
+                randomCristinOrganization(HARD_CODED_LEVEL_2_ORG_URI)
+                        .withPartOf(List.of(topLevelOrg))
+                        .build();
+
+        var lowLevelOrg = randomCristinOrganization(uri).withPartOf(List.of(midLevelOrg)).build();
+        return lowLevelOrg.toJsonString();
     }
 
     private static String createJournal(URI id) {

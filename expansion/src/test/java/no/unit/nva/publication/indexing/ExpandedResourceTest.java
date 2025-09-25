@@ -131,10 +131,13 @@ import java.util.stream.Stream;
 
 class ExpandedResourceTest extends ResourcesLocalTest {
 
-    public static final String JSON_PTR_TOP_LEVEL_ORGS = "/topLevelOrganizations";
-    public static final String JSON_CONTRIBUTOR_ORGANIZATIONS = "/contributorOrganizations";
-    public static final String JSON_PTR_ID = "/id";
-    public static final String JSON_PTR_HAS_PART = "/hasPart";
+    private static final JsonPointer JSON_PTR_CONTRIBUTORS = JsonPointer.compile("/entityDescription/contributors");
+    private static final String JSON_PTR_TOP_LEVEL_ORGS = "/topLevelOrganizations";
+    private static final String JSON_CONTRIBUTOR_ORGANIZATIONS = "/contributorOrganizations";
+    private static final String JSON_PTR_ID = "/id";
+    private static final String JSON_PTR_HAS_PART = "/hasPart";
+    private static final String JSON_PTR_PART_OF = "/partOf";
+    private static final String JSON_PTR_AFFILIATIONS = "/affiliations";
     private static final String SERIES_LEVEL_JSON_PTR =
         "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
         + "/series/scientificValue";
@@ -1197,15 +1200,16 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     @Test
     void shouldOnlyIncludeDirectParentPerSubOrganization() {
-        var framedResult = createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
 
-        var topLevelOrganizations = framedResult.get("topLevelOrganizations");
+        var topLevelOrganizations = framedResult.at(JSON_PTR_TOP_LEVEL_ORGS);
 
         for (var organization : topLevelOrganizations) {
-            var id = organization.get("id").toString();
-            var hasPart = organization.findValue("hasPart");
+            var id = organization.at(JSON_PTR_ID).toString();
+            var hasPart = organization.at(JSON_PTR_HAS_PART);
             for (var child : hasPart) {
-                var partOf = child.get("partOf");
+                var partOf = child.at(JSON_PTR_PART_OF);
                 assertTrue(partOf.toString().contains(id));
                 assertEquals(1, partOf.size());
             }
@@ -1214,26 +1218,32 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     @Test
     void shouldOnlyIncludeDirectParentPerAffiliation() {
-        var framedResult = createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
 
-        var allAffiliations = framedResult.findValues("affiliations");
-
-        for (var affiliation : allAffiliations) {
-            var partOf = affiliation.findValue("partOf");
-            assertEquals(1, partOf.size());
-            assertTrue(partOf.toString().contains(HARD_CODED_TOP_LEVEL_ORG_URI.toString()));
+        var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
+        for (var contributor : contributors) {
+            var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
+            for (var affiliation : affiliations) {
+                var partOf = affiliation.at(JSON_PTR_PART_OF);
+                assertEquals(1, partOf.size());
+                assertTrue(partOf.toString().contains(HARD_CODED_TOP_LEVEL_ORG_URI.toString()));
+            }
         }
     }
 
     @Test
     void shouldNotIncludeChildOrganizationsOfAffiliations() {
-        var framedResult = createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
 
-        var allAffiliations = framedResult.findValues("affiliations");
-
-        for (var affiliation : allAffiliations) {
-            var hasPart = affiliation.findValue("hasPart");
-            assertTrue(hasPart.isMissingNode());
+        var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
+        for (var contributor : contributors) {
+            var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
+            for (var affiliation : affiliations) {
+                var hasPart = affiliation.at(JSON_PTR_HAS_PART);
+                assertTrue(hasPart.isMissingNode());
+            }
         }
     }
 
