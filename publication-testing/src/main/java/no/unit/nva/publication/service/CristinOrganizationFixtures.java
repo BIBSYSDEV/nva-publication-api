@@ -8,10 +8,11 @@ import nva.commons.core.paths.UriWrapper;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-public class CristinOrganizationFixtures {
+public final class CristinOrganizationFixtures {
     private static final String COUNTRY_CODE_NORWAY = "NO";
     private static final Faker FAKER = new Faker();
 
@@ -40,7 +41,7 @@ public class CristinOrganizationFixtures {
         var label = randomAcademicUnit();
         return FakeCristinOrganization.builder()
                 .withId(organizationId)
-                .withAcronym(FAKER.word().noun().toUpperCase())
+                .withAcronym(FAKER.word().noun().toUpperCase(Locale.ROOT))
                 .withCountryCode(COUNTRY_CODE_NORWAY)
                 .withContext("https://bibsysdev.github.io/src/organization-context.json")
                 .withType("Organization")
