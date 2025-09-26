@@ -1,0 +1,40 @@
+plugins {
+    id 'base'
+    id 'java'
+    id 'com.diffplug.spotless'
+}
+
+// Configure project-wide automatic formatting
+spotless {
+    if (plugins.hasPlugin('java')) {
+        java {
+            toggleOffOn() // Ignores sections between `spotless:off` / `spotless:on`
+            googleJavaFormat().reflowLongStrings().formatJavadoc(true).reorderImports(true)
+        }
+    }
+
+    groovyGradle {
+        target('**/*.gradle')
+        greclipse()
+        leadingTabsToSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+
+    format 'misc', {
+        target('.gitignore', '.gitattributes', '.editorconfig', '**/*.md')
+        leadingTabsToSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    enforceCheck = false // Temporarily disable checking during build until the project is reformatted
+}
+
+// Reformat project before build
+//tasks.named('build').configure {
+//    dependsOn('spotlessApply')
+//}
+//
+//tasks.named('test').configure {
+//    dependsOn('spotlessApply')
+//}
