@@ -1,4 +1,5 @@
 plugins {
+    id 'nva.publication.api.formatting'
     id 'java'
     id 'checkstyle'
     id 'pmd'
@@ -91,35 +92,3 @@ jacocoTestCoverageVerification {
         }
     }
 }
-
-spotless {
-    java {
-        toggleOffOn() // Ignores sections between `spotless:off` / `spotless:on`
-        googleJavaFormat().reflowLongStrings().formatJavadoc(true).reorderImports(true)
-    }
-
-    groovyGradle {
-        target('**/*.gradle')
-        greclipse()
-        leadingTabsToSpaces(4)
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-
-    format 'misc', {
-        target('.gitignore', '.gitattributes', '.editorconfig', '**/*.md')
-        leadingTabsToSpaces(4)
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-    enforceCheck = false // Temporarily disable checking during build until the project is reformatted
-}
-
-// Commented out for now, uncomment when the project is reformatted and ready to enforce the formatting rules
-//tasks.named('build').configure {
-//    dependsOn('spotlessApply')
-//}
-//
-//tasks.named('test').configure {
-//    dependsOn('spotlessApply')
-//}
