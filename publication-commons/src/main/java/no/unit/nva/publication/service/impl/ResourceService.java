@@ -20,6 +20,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Put;
@@ -32,6 +33,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -250,6 +252,16 @@ public class ResourceService extends ServiceWithTransactions {
         transactionItems.addAll(deleteFilesTransactions);
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(transactWriteItemsRequest);
+    }
+
+    public void deleteAllResourceAssociatedEntries(URI customerId, SortableIdentifier resourceIdentifier) {
+        var daoList = readResourceService.fetchAllResourceAssociatedEntries(customerId, resourceIdentifier).stream()
+                          .map(dao -> new Delete().withTableName(tableName).withKey(dao.primaryKey()))
+                          .map(delete -> new TransactWriteItem().withDelete(delete))
+                          .toList();
+        var transactionItems = new ArrayList<>(daoList);
+        var sendTransactionRequest = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        sendTransactionWriteRequest(sendTransactionRequest);
     }
 
     public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {

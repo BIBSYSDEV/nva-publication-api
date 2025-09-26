@@ -18,6 +18,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -1680,6 +1681,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
                           .getS();
 
         assertNotEquals(persistedVersion.toString(), version);
+    }
+
+    @Test
+    void shouldDeleteAllResourceAssociatedResources() throws ApiGatewayException {
+        var userInstance = randomUserInstance();
+        var publication = Resource.fromPublication(randomPublication()).persistNew(resourceService, userInstance);
+        var doiRequest = createDoiRequest(publication);
+        messageService.createMessage(doiRequest, userInstance, randomString());
+
+        resourceService.deleteAllResourceAssociatedEntries(publication.getPublisher().getId(), publication.getIdentifier());
+
+        assertTrue(client.scan(new ScanRequest(RESOURCES_TABLE_NAME).withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME))
+                       .getItems().isEmpty());
     }
 
     private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {
