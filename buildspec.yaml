@@ -34,12 +34,10 @@ phases:
           echo "AWS SAM CLI is not installed, installing now";
           pip3 install aws-sam-cli
         fi
-  pre_build:
+  build:
     commands:
       # Triggering a manual run of tests so that reports end up in the expected folders (sam build doesn't re-run the task)
       - ./gradlew test
-  build:
-    commands:
       - sam build
       - sam package --s3-bucket $S3_BUCKET --output-template-file packaged_raw.yaml
   post_build:
