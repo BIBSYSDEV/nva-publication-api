@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -52,7 +53,6 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
-import no.unit.nva.expansion.model.ExpansionException;
 import no.unit.nva.expansion.model.License;
 import no.unit.nva.expansion.model.License.LicenseType;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
@@ -795,14 +795,44 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    .findFirst().orElseThrow();
     }
 
-    @Test
-    void shouldThrowExpansionExceptionWhenUnexpectedErrorFetchingNviCandidateForPublication()
-        throws ApiGatewayException {
+    @ParameterizedTest
+    @ValueSource(ints = {400, 401, 403, 500})
+    void shouldContinueExpansionWhenNviCandidateResponseHasErrorCode(int statusCode)
+            throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var resourceUpdate = Resource.fromPublication(publication);
-        var expansionService = expansionServiceReturningNviCandidate(publication, randomString(), 200);
+        var failingExpansionService =
+                expansionServiceReturningNviCandidate(
+                        publication, nviCandidateResponse(), statusCode);
 
-        assertThrows(ExpansionException.class, () -> expansionService.expandEntry(resourceUpdate, false));
+        var expandedResource =
+                assertDoesNotThrow(
+                        () -> failingExpansionService.expandEntry(resourceUpdate, false));
+        assertThat(expandedResource.orElseThrow(), instanceOf(ExpandedResource.class));
+        assertThatPublicationIsOnRecoveryQueue(publication);
+    }
+
+    @Test
+    void shouldContinueExpansionWhenNviCandidateResponseIsMalformed() throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var resourceUpdate = Resource.fromPublication(publication);
+        var failingExpansionService =
+                expansionServiceReturningNviCandidate(publication, randomString(), 200);
+
+        var expandedResource =
+                assertDoesNotThrow(
+                        () -> failingExpansionService.expandEntry(resourceUpdate, false));
+        assertThat(expandedResource.orElseThrow(), instanceOf(ExpandedResource.class));
+        assertThatPublicationIsOnRecoveryQueue(publication);
+    }
+
+    private void assertThatPublicationIsOnRecoveryQueue(Publication publication) {
+        var messages = sqsClient.readMessages(1);
+        assertThat(messages.size(), is(1));
+        var message = messages.getFirst();
+        assertEquals(
+                publication.getIdentifier().toString(),
+                message.messageAttributes().get("id").stringValue());
     }
 
     @Test
