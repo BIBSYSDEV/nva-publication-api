@@ -14,11 +14,6 @@ reports:
     files:
       - '*/build/test-results/test/TEST-*.xml'
     file-format: JUNITXML
-  sam-build:
-    files:
-      - '/tmp/*/build/test-results/test/TEST-*.xml'
-      - '/tmp/*/*/build/test-results/test/TEST-*.xml'
-    file-format: JUNITXML
 
 phases:
   install:
