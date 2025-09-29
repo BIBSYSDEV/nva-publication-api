@@ -49,20 +49,14 @@ public class ResourceDeletedEventHandler extends DestinationsEventBridgeEventHan
         var entryUpdate = DataEntryUpdateEvent.fromJson(eventContent);
         var deletedResource = (Resource) entryUpdate.getOldData();
 
-        deletedResource.fetchFileEntries(resourceService)
-            .forEach(this::cascadeDeletion);
-
+        var files = resourceService.fetchFileEntriesForResource(deletedResource);
+        resourceService.deleteAllResourceAssociatedEntries(deletedResource.getCustomerId(),
+                                                           deletedResource.getIdentifier());
+        files.forEach(this::deleteFromS3IfStillPresent);
         return null;
     }
 
-    private void cascadeDeletion(FileEntry fileEntry) {
-        resourceService.deleteFile(fileEntry);
-        logger.info("Deleting file from s3 with key: {} (resourceId: {})", fileEntry.getIdentifier(),
-                    fileEntry.getResourceIdentifier());
-        deleteFromS3IfStillPresent(fileEntry.getIdentifier().toString());
-    }
-
-    private void deleteFromS3IfStillPresent(String key) {
-        resourceStorageS3Driver.deleteFile(UnixPath.of(key));
+    private void deleteFromS3IfStillPresent(FileEntry fileEntry) {
+        resourceStorageS3Driver.deleteFile(UnixPath.of(fileEntry.getIdentifier().toString()));
     }
 }
