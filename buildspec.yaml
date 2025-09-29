@@ -16,7 +16,7 @@ reports:
     file-format: JUNITXML
   sam-build:
     files:
-      - '/tmp/*/build/test-results/test/TEST-*.xml'                                                                                                                  │ │
+      - '/tmp/*/build/test-results/test/TEST-*.xml'
       - '/tmp/*/*/build/test-results/test/TEST-*.xml'
     file-format: JUNITXML
 
