@@ -46,7 +46,7 @@ public class IndexDocumentWrapperLinkedData {
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
     private static final String FRAME_JSON = "frame.json";
     private static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
-        "Failed to fetch NVI candidate for publication with identifier: {}";
+        "Failed to fetch NVI status for publication with identifier: {}";
     private static final String EXCEPTION = "Exception {}:";
     private static final String ID = "id";
     private static final String SCIENTIFIC_INDEX = "scientific-index";
