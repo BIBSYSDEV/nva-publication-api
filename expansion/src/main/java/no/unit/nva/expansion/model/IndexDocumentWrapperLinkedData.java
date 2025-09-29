@@ -46,7 +46,7 @@ public class IndexDocumentWrapperLinkedData {
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
     private static final String FRAME_JSON = "frame.json";
     private static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
-        "Could not fetch nvi candidate for publication with identifier: %s";
+        "Failed to fetch NVI candidate for publication with identifier: {}";
     private static final String EXCEPTION = "Exception {}:";
     private static final String ID = "id";
     private static final String SCIENTIFIC_INDEX = "scientific-index";
@@ -55,6 +55,7 @@ public class IndexDocumentWrapperLinkedData {
     private static final int SUCCESS_FAMILY = 2;
     private static final String TYPE = "type";
     private static final String REPORT_STATUS = "report-status";
+    private static final String CONTENT_TYPE_JSON = "application/json";
     private final RawContentRetriever uriRetriever;
     private final ResourceService resourceService;
     private final QueueClient queueClient;
@@ -100,13 +101,17 @@ public class IndexDocumentWrapperLinkedData {
 
     private JsonNode fetchNviStatus(JsonNode indexDocument) {
         var publicationId = getId(indexDocument);
+        var publicationIdentifier = new SortableIdentifier(indexDocument.get("identifier").asText());
+
         try {
             return fetchNviCandidate(publicationId)
                        .map(this::processNviCandidateResponse)
                        .orElseThrow();
         } catch (Exception e) {
+            logger.error(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationId);
             logger.error(EXCEPTION, e.toString());
-            throw ExpansionException.withMessage(String.format(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationId));
+            createRecoveryMessage(e, publicationIdentifier);
+            return new ObjectNode(null);
         }
     }
 
@@ -121,12 +126,12 @@ public class IndexDocumentWrapperLinkedData {
         } else if (response.statusCode() == SC_NOT_FOUND) {
             return new ObjectNode(null);
         } else {
-            throw new RuntimeException("Unexpected response " + response);
+            throw ExpansionException.withMessage("Unexpected response " + response);
         }
     }
 
     private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {
-        return attempt(() -> uriRetriever.fetchResponse(fetchNviCandidateUri(publicationId), "application/json"))
+        return attempt(() -> uriRetriever.fetchResponse(fetchNviCandidateUri(publicationId), CONTENT_TYPE_JSON))
                    .orElseThrow();
     }
 
@@ -151,15 +156,14 @@ public class IndexDocumentWrapperLinkedData {
             var body = response.body();
             return stringToStream(removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(body));
         } else {
-            createRecoveryMessage(response, documentIdentifier);
+            createRecoveryMessage(ExpansionException.withMessage(response.toString()), documentIdentifier);
             return null;
         }
     }
 
-    private void createRecoveryMessage(
-            HttpResponse<String> response, SortableIdentifier identifier) {
+    private void createRecoveryMessage(Exception exception, SortableIdentifier identifier) {
         RecoveryEntry.create(RecoveryEntry.RESOURCE, identifier)
-                .withException(new Exception(response.toString()))
+                .withException(exception)
                 .persist(queueClient);
     }
 
@@ -193,7 +197,7 @@ public class IndexDocumentWrapperLinkedData {
             var body = response.body();
             return Optional.of(mapToCristinOrganization(body));
         } else {
-            createRecoveryMessage(response, documentIdentifier);
+            createRecoveryMessage(ExpansionException.withMessage(response.toString()), documentIdentifier);
             return Optional.empty();
         }
     }
