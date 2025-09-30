@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import no.unit.nva.clients.ChannelClaimDto;
 import no.unit.nva.clients.ChannelClaimDto.ChannelClaim;
@@ -80,21 +81,40 @@ public class PublishingService {
         return channelClaim.claimedBy().organizationId();
     }
 
+    private static boolean isOutOfScope(List<String> scope, String instanceType) {
+        return !scope.contains(instanceType);
+    }
+
     private void publishResource(UserInstance userInstance, Resource resource)
         throws BadGatewayException, ForbiddenException {
         var publisher = resource.getPublisherWhenDegree();
         if (publisher.isEmpty()) {
             resource.publish(resourceService, userInstance);
+            return;
+        }
+
+        var channelClaim = getChannelClaim(publisher.get());
+        var instanceType = resource.getInstanceType().orElseThrow();
+        if (channelClaim.isEmpty()) {
+            resource.publish(resourceService, userInstance);
+            return;
+        }
+
+        var scope = channelClaim.get().channelClaim().constraint().scope();
+        if (isOutOfScope(scope, instanceType)) {
+            resource.publish(resourceService, userInstance);
+            return;
+        }
+
+        if (everyoneCanPublish(channelClaim.get())) {
+            resource.publish(resourceService, userInstance);
+            return;
+        }
+
+        if (isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
+            resource.publish(resourceService, userInstance);
         } else {
-            var channelClaim = getChannelClaim(publisher.get());
-            var instanceType = resource.getInstanceType().orElseThrow();
-            if (channelClaim.isPresent() && channelClaim.get().channelClaim().constraint().scope().contains(instanceType)) {
-                if (everyoneCanPublish(channelClaim.get()) || isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
-                    resource.publish(resourceService, userInstance);
-                } else {
-                    throw new ForbiddenException();
-                }
-            }
+            throw new ForbiddenException();
         }
     }
 
@@ -123,8 +143,7 @@ public class PublishingService {
                 var organizationId = getOrganizationId(channelClaim.get());
                 var channelClaimIdentifier = getChannelIdentifier(channelClaim.get());
                 FilesApprovalThesis.createForChannelOwningInstitution(resource, userInstance, organizationId,
-                                                                      channelClaimIdentifier,
-                                                                      workflow)
+                                                                      channelClaimIdentifier, workflow)
                     .persistNewTicket(ticketService);
                 return;
             }
