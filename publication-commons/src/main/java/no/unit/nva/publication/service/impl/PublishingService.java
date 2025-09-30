@@ -10,11 +10,14 @@ import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -24,9 +27,12 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PublishingService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PublishingService.class);
     protected static final String CUSTOMER = "customer";
     protected static final String CHANNEL_CLAIM = "channel-claim";
     protected static final String EVERYONE = "Everyone";
@@ -94,12 +100,12 @@ public class PublishingService {
         }
 
         var channelClaim = getChannelClaim(publisher.get());
-        var instanceType = resource.getInstanceType().orElseThrow();
         if (channelClaim.isEmpty()) {
             resource.publish(resourceService, userInstance);
             return;
         }
 
+        var instanceType = resource.getInstanceType().orElseThrow();
         var scope = channelClaim.get().channelClaim().constraint().scope();
         if (isOutOfScope(scope, instanceType)) {
             resource.publish(resourceService, userInstance);
@@ -128,13 +134,15 @@ public class PublishingService {
         throws ApiGatewayException {
         var workflow = getCustomerWorkflow(userInstance);
         if (resource.isDegree()) {
-            handleDegreeResource(userInstance, resource, workflow);
+            var ticket = handleDegreeResource(userInstance, resource, workflow);
+            logPersistedTicket(resource, (FilesApprovalEntry) ticket);
         } else {
-            PublishingRequestCase.create(resource, userInstance, workflow).persistNewTicket(ticketService);
+            var ticket = PublishingRequestCase.create(resource, userInstance, workflow).persistNewTicket(ticketService);
+            logPersistedTicket(resource, (FilesApprovalEntry) ticket);
         }
     }
 
-    private void handleDegreeResource(UserInstance userInstance, Resource resource, PublishingWorkflow workflow)
+    private TicketEntry handleDegreeResource(UserInstance userInstance, Resource resource, PublishingWorkflow workflow)
         throws ApiGatewayException {
         var publisher = resource.getPublisherWhenDegree();
         if (publisher.isPresent()) {
@@ -142,13 +150,18 @@ public class PublishingService {
             if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
                 var organizationId = getOrganizationId(channelClaim.get());
                 var channelClaimIdentifier = getChannelIdentifier(channelClaim.get());
-                FilesApprovalThesis.createForChannelOwningInstitution(resource, userInstance, organizationId,
-                                                                      channelClaimIdentifier, workflow)
-                    .persistNewTicket(ticketService);
-                return;
+                return FilesApprovalThesis.createForChannelOwningInstitution(resource, userInstance, organizationId,
+                                                                             channelClaimIdentifier, workflow)
+                           .persistNewTicket(ticketService);
             }
         }
-        FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow).persistNewTicket(ticketService);
+
+        return FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow).persistNewTicket(ticketService);
+    }
+
+    private static void logPersistedTicket(Resource resource, FilesApprovalEntry ticket) {
+        LOGGER.info("Created ticket {} for resource {} with pending files for approval {}",
+                    ticket.getIdentifier(), resource.getIdentifier(), ticket.getFilesForApproval().stream().map(File::getIdentifier).toList());
     }
 
     private Optional<ChannelClaimDto> getChannelClaim(Publisher publisher) throws BadGatewayException {
