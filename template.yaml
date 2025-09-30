@@ -2412,6 +2412,10 @@ Resources:
           responsePayload:
             topic:
               - "PublicationService.Resource.Deleted"
+              - "PublicationService.PublishingRequest.Deleted"
+              - "PublicationService.FilesApprovalThesis.Deleted"
+              - "PublicationService.GeneralSupportRequest.Deleted"
+              - "PublicationService.DoiRequest.Deleted"
       Targets:
         - Arn: !Ref NewNvaEventBusArn
           Id: "NvaEventBusTarget"

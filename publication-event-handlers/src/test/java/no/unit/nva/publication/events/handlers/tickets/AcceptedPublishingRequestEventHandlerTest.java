@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.model.OperationType;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -720,8 +721,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     private String eventBody(
         TicketEntry pendingPublishingRequest, TicketEntry approvedPublishingRequest) {
-        return new DataEntryUpdateEvent(
-            randomString(), pendingPublishingRequest, approvedPublishingRequest)
+        return new DataEntryUpdateEvent(OperationType.MODIFY.toString(), pendingPublishingRequest, approvedPublishingRequest)
                    .toJsonString();
     }
 
