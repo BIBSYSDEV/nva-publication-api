@@ -270,8 +270,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
         var framedResultNode = indexDocument.asJsonNode();
 
         var contributorsCountNode = (IntNode) framedResultNode.at("/entityDescription")
