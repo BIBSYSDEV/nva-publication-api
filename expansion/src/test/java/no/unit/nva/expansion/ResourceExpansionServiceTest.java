@@ -889,7 +889,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
         var ticket = (PublishingRequestCase) TicketTestUtils.createCompletedTicket(
             publication, PublishingRequestCase.class, ticketService);
-        ticket.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication)).approveFiles()
+        ticket.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication)).complete(publication,
+                                                                                               UserInstance.fromPublication(publication))
             .publishApprovedFiles(resourceService);
         return ticket;
     }
