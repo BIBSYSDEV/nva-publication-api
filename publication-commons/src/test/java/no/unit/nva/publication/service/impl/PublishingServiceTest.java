@@ -29,7 +29,9 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -126,6 +128,49 @@ class PublishingServiceTest extends ResourcesLocalTest {
                                                                                    getPublisherChannelClaimId(persistedPublication),
                                                                                    OWNER_ONLY,
                                                                                    instanceType.getSimpleName()));
+
+        publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
+
+        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService);
+
+        assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
+    }
+
+    @Test
+    void shouldPublishPublicationWhenPublicationToPublishHasNonClaimedPublisher()
+        throws ApiGatewayException {
+        var instanceType = DegreeBachelor.class;
+        var publication = randomPublication(instanceType).copy()
+                              .withStatus(PublicationStatus.DRAFT)
+                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+                              .build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        when(identityServiceClient.getChannelClaim(any())).thenThrow(new NotFoundException("Not found"));
+
+        publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
+
+        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService);
+
+        assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
+    }
+
+    @Test
+    void shouldPublishPublicationWhenPublicationToPublishHasClaimedPublisherButInstanceTypeIsOutOfScope()
+        throws ApiGatewayException {
+        var instanceType = DegreeBachelor.class;
+        var publication = randomPublication(instanceType).copy()
+                              .withStatus(PublicationStatus.DRAFT)
+                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+                              .build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(randomUri(),
+                                                                                   randomUri(), getPublisherChannelClaimId(persistedPublication),
+                                                                                   EVERYONE,
+                                                                                   DegreeMaster.class.getSimpleName()));
 
         publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
 
