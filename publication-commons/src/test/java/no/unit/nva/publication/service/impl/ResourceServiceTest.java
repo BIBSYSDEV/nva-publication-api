@@ -1298,20 +1298,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldApproveApprovedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
         var resourceService = getResourceService(client);
 
-        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
         var userInstance = UserInstance.fromPublication(publication);
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-
-        var file = randomPendingInternalFile();
-        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
 
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
             Resource.fromPublication(publication), userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
             Set.of(file)).persistNewTicket(ticketService);
 
-        publishingRequest.approveFiles().persistUpdate(ticketService);
+        publishingRequest.complete(publication, userInstance).persistUpdate(ticketService);
         publishingRequest.setFinalizedBy(new Username(randomString()));
-        publishingRequest.publishApprovedFiles(resourceService);
+        var completedTicket = (PublishingRequestCase) publishingRequest.fetch(ticketService);
+        completedTicket.publishApprovedFiles(resourceService);
 
         assertInstanceOf(InternalFile.class, FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier())
                                                  .fetch(resourceService)
@@ -1329,7 +1328,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
             Resource.fromPublication(publication), userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
             Set.of(file)).persistNewTicket(ticketService);
-        publishingRequest.approveFiles().close(randomUserInstance()).persistUpdate(ticketService);
+        publishingRequest.complete(publication, userInstance).persistUpdate(ticketService);
         publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
         publishingRequest.publishApprovedFiles(resourceService);
@@ -1895,22 +1894,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return (DoiRequest) DoiRequest.create(Resource.fromPublication(publication),
                                               UserInstance.fromPublication(publication))
                                 .persistNewTicket(ticketService);
-    }
-
-    private void verifyThatTheResourceIsInThePublishedResources(Publication publication) {
-        var publishedResource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
-
-        assertThat(publishedResource.getStatus(), is(equalTo(PUBLISHED)));
-    }
-
-    private void verifyThatTheResourceWasMovedFromTheDrafts(ResourceDao resourceDao) {
-        var expectedEmptyResult = resourceDao.getResource().fetch(resourceService);
-        assertThat(expectedEmptyResult.isEmpty(), is(true));
-    }
-
-    private void assertThatResourceCanBeFoundInDraftResources(ResourceDao resourceDao) {
-        Optional<Resource> savedResource = resourceDao.getResource().fetch(resourceService);
-        assertThat(savedResource.isPresent(), is(true));
     }
 
     private Publication createPublishedResource() throws ApiGatewayException {
