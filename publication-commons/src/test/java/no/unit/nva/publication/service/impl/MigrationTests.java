@@ -5,9 +5,9 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithIdAndAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
@@ -29,16 +29,13 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.contexttypes.Degree;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
@@ -53,7 +50,6 @@ import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
-import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -68,8 +64,10 @@ class MigrationTests extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
-        this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(), uriRetriever,
+        when(customerService.fetchCustomers()).thenReturn(
+            new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
+        this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(),
+                                                   uriRetriever,
                                                    channelClaimClient, customerService, new FakeCristinUnitsUtil());
     }
 
@@ -81,11 +79,11 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiRequest = allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof DoiRequestDao)
-                .map(Dao::getData)
-                .map(entry -> (DoiRequest) entry)
-                .collect(Collectors.toList());
+                             .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
+                             .filter(dao -> dao instanceof DoiRequestDao)
+                             .map(Dao::getData)
+                             .map(entry -> (DoiRequest) entry)
+                             .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(2));
     }
 
@@ -97,12 +95,12 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiRequest = allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof DoiRequestDao)
-                .map(Dao::getData)
-                .map(entry -> (DoiRequest) entry)
-                .filter(entry -> nonNull(entry.getResourceIdentifier()))
-                .collect(Collectors.toList());
+                             .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
+                             .filter(dao -> dao instanceof DoiRequestDao)
+                             .map(Dao::getData)
+                             .map(entry -> (DoiRequest) entry)
+                             .filter(entry -> nonNull(entry.getResourceIdentifier()))
+                             .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(1));
     }
 
@@ -112,10 +110,10 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiRequest = allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof DoiRequestDao)
-                .map(DoiRequestDao.class::cast)
-                .collect(Collectors.toList());
+                             .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
+                             .filter(dao -> dao instanceof DoiRequestDao)
+                             .map(DoiRequestDao.class::cast)
+                             .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(1));
 
         assertThat(doiRequest.getFirst().getIdentifier(), not(nullValue()));
@@ -146,8 +144,8 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var resource = getResourceStream(allMigratedItems)
-                .findFirst()
-                .orElseThrow();
+                           .findFirst()
+                           .orElseThrow();
 
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
     }
@@ -161,8 +159,8 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var resource = getResourceStream(allMigratedItems)
-                .findFirst()
-                .orElseThrow();
+                           .findFirst()
+                           .orElseThrow();
 
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
     }
@@ -183,6 +181,35 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeggingAndEndOfTheTitleByKey() throws NotFoundException {
+        var title = "Some title";
+        var trailingSpacesTitle = "  %s  ".formatted(title);
+        var publication = randomPublication(Textbook.class);
+        publication.getEntityDescription().setMainTitle(trailingSpacesTitle);
+        updatePublication(publication);
+
+        var key = getFirstKey();
+
+        resourceService.refreshResourcesByKeys(List.of(key), new FakeCristinUnitsUtil());
+
+        var migratedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+
+        assertEquals(title, migratedResource.getEntityDescription().getMainTitle());
+    }
+
+    private Map<String, AttributeValue> getFirstKey() {
+        var key =
+            resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList())
+                .getDatabaseEntries()
+                .getFirst()
+                .toDao()
+                .toDynamoFormat();
+
+        key.keySet().removeIf(s-> !Set.of(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME).contains(s));
+        return key;
+    }
+
+    @Test
     void shouldMigrateCuratingInstitutions() throws NotFoundException {
         var affiliationId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var customerCristinId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
@@ -200,31 +227,13 @@ class MigrationTests extends ResourcesLocalTest {
                        .anyMatch(curatingInstitution -> curatingInstitution.id().equals(customerCristinId)));
     }
 
-    private static Degree degreeWithPublisher(Publisher publisher) {
-        return attempt(() ->  new Degree(null, null, null, publisher, List.of(), null))
-                   .orElseThrow();
-    }
-
-    private static Report reportWithPublisher(Publisher publisher) {
-        return attempt(() ->  new Report(null, null, null, publisher, List.of()))
-                   .orElseThrow();
-    }
-
-    private static URI randomPublisherId(UUID channelIdentifier) {
-        return UriWrapper.fromUri(randomUri())
-                   .addChild("publication-channel-v2")
-                   .addChild("publisher")
-                   .addChild(channelIdentifier.toString())
-                   .addChild(randomInteger().toString())
-                   .getUri();
-    }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
         return allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof ResourceDao)
-                .map(Dao::getData)
-                .map(entry -> (Resource) entry);
+                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
+                   .filter(ResourceDao.class::isInstance)
+                   .map(Dao::getData)
+                   .map(Resource.class::cast);
     }
 
     private void saveFileDirectlyToDatabase(String file) {
@@ -241,12 +250,12 @@ class MigrationTests extends ResourcesLocalTest {
     private Publication createPublicationForOldDoiRequestFormatInResources(SortableIdentifier hardCodedIdentifier) {
         var publication = randomPublication();
         publication.getEntityDescription()
-                .getContributors()
-                .forEach(contributor ->
-                        contributor.getAffiliations()
-                                .forEach(affiliation -> ((Organization) affiliation).setId(
-                                        URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")))
-                );
+            .getContributors()
+            .forEach(contributor ->
+                         contributor.getAffiliations()
+                             .forEach(affiliation -> ((Organization) affiliation).setId(
+                                 URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")))
+            );
         publication.setCuratingInstitutions(null);
         publication.setIdentifier(hardCodedIdentifier);
         updatePublication(publication);
