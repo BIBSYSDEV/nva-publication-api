@@ -56,12 +56,18 @@ public abstract class FilesApprovalEntry extends TicketEntry {
     @Override
     public FilesApprovalEntry complete(Publication publication, UserInstance userInstance) {
         var completed = (FilesApprovalEntry) super.complete(publication, userInstance);
-        completed.setApprovedFiles(getFilesForApproval().stream()
-                                 .filter(file -> publication.getFile(file.getIdentifier()).filter(PendingFile.class::isInstance).isPresent())
-                                 .map(this::toApprovedFile)
-                                 .collect(Collectors.toSet()));
+        completed.setApprovedFiles(getPendingFilesToApprove(publication));
         completed.setFilesForApproval(Set.of());
         return completed;
+    }
+
+    private Set<File> getPendingFilesToApprove(Publication publication) {
+        return getFilesForApproval().stream()
+                   .filter(file -> publication.getFile(file.getIdentifier())
+                                       .filter(PendingFile.class::isInstance)
+                                       .isPresent())
+                   .map(this::toApprovedFile)
+                   .collect(Collectors.toSet());
     }
 
     public FilesApprovalEntry applyPublicationChannelClaim(URI organizationId,
