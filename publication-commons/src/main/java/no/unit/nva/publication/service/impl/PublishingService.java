@@ -99,14 +99,14 @@ public class PublishingService {
             return;
         }
 
-        var channelClaim = getChannelClaim(publisher.get());
+        var channelClaim = getChannelClaimDto(publisher.get());
         if (channelClaim.isEmpty()) {
             resource.publish(resourceService, userInstance);
             return;
         }
 
         var instanceType = resource.getInstanceType().orElseThrow();
-        var scope = channelClaim.get().channelClaim().constraint().scope();
+        var scope = channelClaim.map(ChannelClaimDto::channelClaim).map(ChannelClaim::constraint).map(ChannelConstraint::scope).orElse(List.of());
         if (isOutOfScope(scope, instanceType)) {
             resource.publish(resourceService, userInstance);
             return;
@@ -146,7 +146,7 @@ public class PublishingService {
         throws ApiGatewayException {
         var publisher = resource.getPublisherWhenDegree();
         if (publisher.isPresent()) {
-            var channelClaim = getChannelClaim(publisher.get());
+            var channelClaim = getChannelClaimDto(publisher.get());
             if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
                 var organizationId = getOrganizationId(channelClaim.get());
                 var channelClaimIdentifier = getChannelIdentifier(channelClaim.get());
@@ -164,7 +164,7 @@ public class PublishingService {
                     ticket.getIdentifier(), resource.getIdentifier(), ticket.getFilesForApproval().stream().map(File::getIdentifier).toList());
     }
 
-    private Optional<ChannelClaimDto> getChannelClaim(Publisher publisher) throws BadGatewayException {
+    private Optional<ChannelClaimDto> getChannelClaimDto(Publisher publisher) throws BadGatewayException {
         try {
             return Optional.of(identityServiceClient.getChannelClaim(createChannelClaimUri(publisher)));
         } catch (NotFoundException exception) {
