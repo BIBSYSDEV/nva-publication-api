@@ -1,6 +1,7 @@
 package no.unit.nva.model.contexttypes;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -13,6 +14,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 public class Degree extends Book {
 
     public static final String JSON_PROPERTY_COURSE_CODE = "courseCode";
+    public static final String JSON_PROPERTY_COURSE = "course";
     private final Course course;
 
     @JsonCreator
@@ -21,7 +23,8 @@ public class Degree extends Book {
                   @JsonProperty(JSON_PROPERTY_SERIES_NUMBER) String seriesNumber,
                   @JsonProperty(JSON_PROPERTY_PUBLISHER) PublishingHouse publisher,
                   @JsonProperty(JSON_PROPERTY_ISBN_LIST) List<String> isbnList,
-                  @JsonProperty(JSON_PROPERTY_COURSE_CODE) Course course) throws InvalidUnconfirmedSeriesException {
+                  @JsonProperty(JSON_PROPERTY_COURSE) @JsonAlias(JSON_PROPERTY_COURSE_CODE) Course course)
+        throws InvalidUnconfirmedSeriesException {
         super(series, unconfirmedSeriesTitle, seriesNumber, publisher, isbnList, null);
         this.course = course;
     }
