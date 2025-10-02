@@ -121,7 +121,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         var publication = persistedPublication();
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
                                          UserInstance.fromPublication(publication));
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, UserInstance.fromPublication(publication));
         putMessageOnRecoveryQueue(fileEntry.getIdentifier(), FILE);
         recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 

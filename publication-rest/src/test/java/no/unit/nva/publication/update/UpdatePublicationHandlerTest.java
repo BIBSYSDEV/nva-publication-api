@@ -422,8 +422,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication addFileToPublication(Publication savedPublication, File file) {
-        FileEntry.create(file, savedPublication.getIdentifier(), UserInstance.fromPublication(savedPublication))
-            .persist(resourceService);
+        var userInstance = UserInstance.fromPublication(savedPublication);
+        FileEntry.create(file, savedPublication.getIdentifier(), userInstance)
+            .persist(resourceService, userInstance);
         var artifacts = new AssociatedArtifactList(new ArrayList<>(savedPublication.getAssociatedArtifacts()));
         artifacts.add(file.copy().withLicense(randomUri()).buildPendingOpenFile());
         return savedPublication.copy().withAssociatedArtifacts(artifacts).build();
@@ -1829,11 +1830,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                               .withPublisher(Organization.fromUri(customerId))
                               .withAssociatedArtifacts(List.of())
                               .build();
+        var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+                           .persistNew(resourceService, userInstance);
         FileEntry.create(file, resource.getIdentifier(),
-                         UserInstance.fromPublication(publication))
-            .persist(resourceService);
+                         userInstance)
+            .persist(resourceService, userInstance);
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(resource, contributor);

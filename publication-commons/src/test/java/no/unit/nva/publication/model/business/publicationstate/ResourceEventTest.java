@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.publicationstate;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_ASSIGNED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_REJECTED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_REQUESTED;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
@@ -50,6 +52,8 @@ class ResourceEventTest {
                          Arguments.of(MergedResourceEvent.fromImportSource(getImportSource(), randomUserInstance(),
                                                                            Instant.now()), PUBLICATION_MERGED),
                          Arguments.of(UpdatedResourceEvent.create(randomUserInstance(), Instant.now()),
+                                      PUBLICATION_UPDATED),
+                         Arguments.of(UpdatedResourceEvent.create(randomExternalUserInstance(), Instant.now()),
                                       PUBLICATION_UPDATED));
     }
 
@@ -81,6 +85,10 @@ class ResourceEventTest {
 
     private static UserInstance randomUserInstance() {
         return UserInstance.create(randomString(), randomUri());
+    }
+
+    private static UserInstance randomExternalUserInstance() {
+        return UserInstance.createExternalUser(randomResourceOwner(), randomUri(), ThirdPartySystem.OTHER);
     }
 
     private static SortableIdentifier identifier() {
