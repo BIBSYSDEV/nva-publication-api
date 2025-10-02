@@ -76,6 +76,7 @@ import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.PopularScienceArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
+import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
@@ -449,7 +450,7 @@ public final class ReferenceGenerator {
     }
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForFeatureArticle(Builder builder) {
-        return new FeatureArticle.Builder().withPages(generateRange(builder)).build();
+        return new MediaFeatureArticle(builder.getVolume(), builder.getIssue(), builder.getArticleNumber(), generateRange(builder));
     }
 
     private static Range generateRange(Builder builder) {
