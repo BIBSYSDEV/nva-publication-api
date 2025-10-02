@@ -26,8 +26,8 @@ public class DegreeTest {
             }
             """.formatted(fieldName, value);
 
-        var degree = JsonUtils.dtoObjectMapper.readValue(json, Degree.class);
-
+        var book = JsonUtils.dtoObjectMapper.readValue(json, Book.class);
+        var degree = (Degree) book;
         var course = (UnconfirmedCourse) degree.getCourse();
         assertEquals(value, course.code());
     }
