@@ -47,6 +47,7 @@ public record UpdatedResourceEvent(Instant date, User user, URI institution, Sor
                    .withTopic(LogTopic.PUBLICATION_UPDATED)
                    .withTimestamp(date)
                    .withPerformedBy(user)
+                   .withImportSource(importSource)
                    .build();
     }
 }
