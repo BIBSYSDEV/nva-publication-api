@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.publicationstate;
 
+import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
@@ -13,10 +14,12 @@ import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import nva.commons.core.JacocoGenerated;
 
-public record FileUploadedEvent(Instant date, User user, SortableIdentifier identifier, ImportSource importSource) implements FileEvent {
+public record FileUploadedEvent(Instant date, User user, URI institution, SortableIdentifier identifier,
+                                ImportSource importSource) implements FileEvent {
 
     public static FileUploadedEvent create(UserInstance userInstance, Instant timestamp) {
-        return new FileUploadedEvent(timestamp, userInstance.getUser(), SortableIdentifier.next(),
+        return new FileUploadedEvent(timestamp, userInstance.getUser(), userInstance.getTopLevelOrgCristinId(),
+                                     SortableIdentifier.next(),
                                      userInstance.isExternalClient() ? getImportSource(userInstance) : null);
     }
 

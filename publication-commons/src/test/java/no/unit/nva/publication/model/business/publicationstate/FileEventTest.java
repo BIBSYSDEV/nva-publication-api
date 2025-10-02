@@ -23,7 +23,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class FileEventTest {
 
     public static Stream<Arguments> stateProvider() {
-        return Stream.of(Arguments.of(new FileUploadedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
+        return Stream.of(Arguments.of(new FileUploadedEvent(Instant.now(), randomUser(),
+                                                            randomUri(), SortableIdentifier.next(), ImportSource.fromBrageArchive(randomString()))),
                          Arguments.of(
                              new FileApprovedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
                          Arguments.of(new FileRejectedEvent(Instant.now(), randomUser(), SortableIdentifier.next(),
