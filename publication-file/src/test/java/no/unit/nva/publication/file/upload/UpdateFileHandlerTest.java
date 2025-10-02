@@ -93,7 +93,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
         var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
         var file = randomPendingInternalFile();
-        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService, userInstance);
         var request = createRandomUserAuthorizedRequest(file.getIdentifier(), resource.getIdentifier());
 
         handler.handleRequest(request, output, CONTEXT);
@@ -153,7 +153,8 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
         var curator = getDegreeAndFileCuratorFromPublication(publication);
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
         var file = randomOpenFile();
-        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService,
+                                                                          UserInstance.fromPublication(publication));
         var requestBody = randomUpdateFileRequest(file.getIdentifier());
         var request = createRequestForUserWithPermissions(file.getIdentifier(), resource.getIdentifier(), curator,
                                                           requestBody);
