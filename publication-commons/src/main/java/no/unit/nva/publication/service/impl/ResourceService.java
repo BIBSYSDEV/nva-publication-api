@@ -174,15 +174,15 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData) throws BadRequestException {
-        Instant currentTime = clockForTimestamps.instant();
-        Resource newResource = Resource.fromPublication(inputData);
+        var currentTime = clockForTimestamps.instant();
+        var newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(SortableIdentifier.next());
         newResource.setResourceOwner(createResourceOwner(userInstance));
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
         setResourceEvent(userInstance, newResource, currentTime);
-        setStatusOnNewPublication(userInstance, inputData, newResource);
+        setStatusOnNewPublication(userInstance, inputData, newResource, currentTime);
         return insertResource(newResource).toPublication();
     }
 
@@ -595,13 +595,17 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     @JacocoGenerated
-    private void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource)
+    private void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource,
+                                           Instant currentTime)
         throws BadRequestException {
         var status = userInstance.isExternalClient() ? Optional.ofNullable(fromPublication.getStatus())
                                                            .orElse(PublicationStatus.DRAFT) : PublicationStatus.DRAFT;
 
-        if (status == PUBLISHED && !fromPublication.isPublishable()) {
-            throw new BadRequestException(NOT_PUBLISHABLE);
+        if (PUBLISHED.equals(status)) {
+            if (!fromPublication.isPublishable()) {
+                throw new BadRequestException(NOT_PUBLISHABLE);
+            }
+            toResource.setPublishedDate(currentTime);
         }
 
         toResource.setStatus(status);
