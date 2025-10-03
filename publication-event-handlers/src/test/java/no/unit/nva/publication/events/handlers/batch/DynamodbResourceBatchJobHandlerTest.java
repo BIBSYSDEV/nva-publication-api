@@ -1,14 +1,26 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
@@ -23,9 +35,11 @@ import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchDynamoDbKey;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobExecutor;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobHandler;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,9 +50,14 @@ class DynamodbResourceBatchJobHandlerTest {
     private static final String TEST_SORT_KEY = "PROFILE";
     private static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private static final String TEST_JOB_NAME = "TEST_JOB_NAME";
+    private static final String TABLE_NAME_ENV = "TABLE_NAME";
+    private static final String TEST_TABLE_NAME = "test-table";
 
     @Mock
     private DynamodbResourceBatchJobExecutor mockExecutor;
+    
+    @Mock
+    private AmazonDynamoDB mockDynamoDbClient;
     
     @Mock
     private Context context;
@@ -49,7 +68,14 @@ class DynamodbResourceBatchJobHandlerTest {
     void setUp() {
         var handlers = new HashMap<String, DynamodbResourceBatchJobExecutor>();
         handlers.put(TEST_JOB_NAME, mockExecutor);
-        handler = new DynamodbResourceBatchJobHandler(handlers);
+        handler = new DynamodbResourceBatchJobHandler(handlers, mockDynamoDbClient, TEST_TABLE_NAME);
+    }
+    
+    private static Map<String, AttributeValue> createDynamoItem(String pk, String sk) {
+        return Map.of(
+            "PK0", new AttributeValue().withS(pk),
+            "SK0", new AttributeValue().withS(sk)
+        );
     }
     
     @Test
@@ -88,7 +114,8 @@ class DynamodbResourceBatchJobHandlerTest {
     
     @Test
     void shouldReportBatchItemFailureWhenUnsupportedJobType() throws JsonProcessingException {
-        handler = new DynamodbResourceBatchJobHandler(new HashMap<>());
+        handler = new DynamodbResourceBatchJobHandler(new HashMap<>(), AmazonDynamoDBClientBuilder.defaultClient(),
+                                                      new Environment().readEnv(TABLE_NAME_ENV));
         
         var workItem = createWorkItem(
             TEST_JOB_NAME,
@@ -144,10 +171,14 @@ class DynamodbResourceBatchJobHandlerTest {
     
     @Test
     void shouldProcessWorkItemWithGsiKeys() throws JsonProcessingException {
-        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey("AUTHOR#123", "PUBLICATION#2024", "AuthorIndex");
+        var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey("AUTHOR#123", "PUBLICATION#2024", BY_CUSTOMER_RESOURCE_INDEX_NAME);
         var workItem = new BatchWorkItem(dynamoDbKey,
                                          TEST_JOB_NAME,
                                          objectMapper.valueToTree(Map.of("title", "Test Publication")));
+        
+        var queryResult = new QueryResult();
+        queryResult.setItems(List.of(createDynamoItem("Resource:123", "Resource")));
+        when(mockDynamoDbClient.query(any(QueryRequest.class))).thenReturn(queryResult);
         
         var sqsEvent = createSqsEvent(workItem);
         
@@ -155,9 +186,18 @@ class DynamodbResourceBatchJobHandlerTest {
         
         assertThat(response, notNullValue());
         assertThat(response.getBatchItemFailures(), hasSize(0));
-        verify(mockExecutor).executeBatch(any(List.class));
         
-        assertThat(workItem.dynamoDbKey().isGsiQuery(), equalTo(true));
+        verify(mockDynamoDbClient).query(argThat(request ->
+            BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.getIndexName())
+        ));
+        
+        // Verify the executor was called with resolved primary keys
+        ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
+        verify(mockExecutor).executeBatch(captor.capture());
+        
+        var capturedItems = captor.getValue();
+        assertThat(capturedItems, hasSize(1));
+        assertFalse(capturedItems.get(0).dynamoDbKey().isGsiQuery());
     }
     
     @Test
@@ -285,6 +325,195 @@ class DynamodbResourceBatchJobHandlerTest {
         assertThat(tags.size(), equalTo(2));
         assertThat(tags.get(0).asText(), equalTo("published"));
         assertThat(tags.get(1).asText(), equalTo("verified"));
+    }
+    
+    @Test
+    void shouldResolveGsiQueryToPrimaryKeys() throws JsonProcessingException {
+        var gsiKey = new DynamodbResourceBatchDynamoDbKey("Customer:123", "Resource:2024", BY_CUSTOMER_RESOURCE_INDEX_NAME);
+        var workItem = new BatchWorkItem(gsiKey, TEST_JOB_NAME);
+        
+        var queryResult = new QueryResult();
+        queryResult.setItems(List.of(
+            createDynamoItem("Resource:123", "Resource"),
+            createDynamoItem("Resource:456", "Resource")
+        ));
+        
+        when(mockDynamoDbClient.query(any(QueryRequest.class))).thenReturn(queryResult);
+        
+        var sqsEvent = createSqsEvent(workItem);
+        handler.handleRequest(sqsEvent, context);
+        
+        verify(mockDynamoDbClient).query(argThat(request ->
+            BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.getIndexName()) &&
+            TEST_TABLE_NAME.equals(request.getTableName())
+        ));
+        
+        ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
+        verify(mockExecutor).executeBatch(captor.capture());
+        
+        var capturedItems = captor.getValue();
+        assertThat(capturedItems, hasSize(2));
+        assertThat(capturedItems.get(0).dynamoDbKey().partitionKey(), equalTo("Resource:123"));
+        assertThat(capturedItems.get(1).dynamoDbKey().partitionKey(), equalTo("Resource:456"));
+    }
+    
+    @Test
+    void shouldHandleMixedPrimaryAndGsiKeys() throws JsonProcessingException {
+        var primaryWorkItem = new BatchWorkItem(
+            new DynamodbResourceBatchDynamoDbKey(TEST_PARTITION_KEY, TEST_SORT_KEY),
+            TEST_JOB_NAME
+        );
+        var gsiWorkItem = new BatchWorkItem(
+            new DynamodbResourceBatchDynamoDbKey("CristinIdentifier#12345", "Resource:2024", RESOURCE_BY_CRISTIN_ID_INDEX_NAME),
+            TEST_JOB_NAME
+        );
+        
+        var queryResult = new QueryResult();
+        queryResult.setItems(List.of(createDynamoItem("Resource:789", "Resource")));
+        
+        when(mockDynamoDbClient.query(any(QueryRequest.class))).thenReturn(queryResult);
+        
+        var sqsEvent = createSqsEventWithMultipleMessages(List.of(primaryWorkItem, gsiWorkItem));
+        handler.handleRequest(sqsEvent, context);
+        
+        verify(mockDynamoDbClient).query(any(QueryRequest.class));
+        
+        ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
+        verify(mockExecutor).executeBatch(captor.capture());
+        
+        var capturedItems = captor.getValue();
+        assertThat(capturedItems, hasSize(2));
+        assertThat(capturedItems.get(0).dynamoDbKey().partitionKey(), equalTo(TEST_PARTITION_KEY));
+        assertThat(capturedItems.get(1).dynamoDbKey().partitionKey(), equalTo("Resource:789"));
+    }
+    
+    @Test
+    void shouldPropagateExceptionWhenGsiQueryFails() throws JsonProcessingException {
+        var gsiKey = new DynamodbResourceBatchDynamoDbKey(
+            "Customer:999",
+            "Resource:Failed",
+            BY_CUSTOMER_RESOURCE_INDEX_NAME
+        );
+        var workItem = new BatchWorkItem(gsiKey, TEST_JOB_NAME);
+        
+        when(mockDynamoDbClient.query(any(QueryRequest.class)))
+            .thenThrow(new AmazonDynamoDBException("Query failed"));
+        
+        var sqsEvent = createSqsEvent(workItem);
+        var response = handler.handleRequest(sqsEvent, context);
+        
+        assertThat(response.getBatchItemFailures(), hasSize(1));
+        verify(mockExecutor, never()).executeBatch(any(List.class));
+    }
+    
+    @Test
+    void shouldHandleGsiQueryWithPagination() throws JsonProcessingException {
+        var workItem = new BatchWorkItem(
+            new DynamodbResourceBatchDynamoDbKey("Customer:456", "Resource:Article", BY_CUSTOMER_RESOURCE_INDEX_NAME),
+            TEST_JOB_NAME
+        );
+        
+        var firstResult = new QueryResult();
+        firstResult.setItems(List.of(createDynamoItem("Resource:001", "Resource")));
+        firstResult.setLastEvaluatedKey(Map.of("dummy", new AttributeValue().withS("key")));
+        
+        var secondResult = new QueryResult();
+        secondResult.setItems(List.of(createDynamoItem("Resource:002", "Resource")));
+        
+        when(mockDynamoDbClient.query(any(QueryRequest.class)))
+            .thenReturn(firstResult)
+            .thenReturn(secondResult);
+        
+        var sqsEvent = createSqsEvent(workItem);
+        handler.handleRequest(sqsEvent, context);
+        
+        verify(mockDynamoDbClient, times(2)).query(any(QueryRequest.class));
+        
+        ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
+        verify(mockExecutor).executeBatch(captor.capture());
+        
+        var capturedItems = captor.getValue();
+        assertThat(capturedItems, hasSize(2));
+    }
+    
+    @Test
+    void shouldHandleMultipleGsiQueries() throws JsonProcessingException {
+        var gsiKey1 = new DynamodbResourceBatchDynamoDbKey(
+            "Customer:111",
+            "Resource:Type1",
+            BY_CUSTOMER_RESOURCE_INDEX_NAME
+        );
+        var gsiKey2 = new DynamodbResourceBatchDynamoDbKey(
+            "CristinIdentifier#222",
+            "Resource:Type2",
+            RESOURCE_BY_CRISTIN_ID_INDEX_NAME
+        );
+        
+        var workItem1 = new BatchWorkItem(gsiKey1, TEST_JOB_NAME);
+        var workItem2 = new BatchWorkItem(gsiKey2, TEST_JOB_NAME);
+        
+        var queryResult1 = new QueryResult();
+        queryResult1.setItems(List.of(
+            Map.of(
+                "PK0", new AttributeValue().withS("Resource:AAA"),
+                "SK0", new AttributeValue().withS("Resource")
+            )
+        ));
+        
+        var queryResult2 = new QueryResult();
+        queryResult2.setItems(List.of(
+            Map.of(
+                "PK0", new AttributeValue().withS("Resource:BBB"),
+                "SK0", new AttributeValue().withS("Resource")
+            )
+        ));
+        
+        when(mockDynamoDbClient.query(any(QueryRequest.class)))
+            .thenAnswer(invocation -> {
+                QueryRequest request = invocation.getArgument(0);
+                if (BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.getIndexName())) {
+                    return queryResult1;
+                } else if (RESOURCE_BY_CRISTIN_ID_INDEX_NAME.equals(request.getIndexName())) {
+                    return queryResult2;
+                }
+                return new QueryResult();
+            });
+        
+        var sqsEvent = createSqsEventWithMultipleMessages(List.of(workItem1, workItem2));
+        handler.handleRequest(sqsEvent, context);
+        
+        verify(mockDynamoDbClient, times(2)).query(any(QueryRequest.class));
+        
+        ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
+        verify(mockExecutor).executeBatch(captor.capture());
+        
+        var capturedItems = captor.getValue();
+        assertThat(capturedItems, hasSize(2));
+        assertThat(capturedItems.get(0).dynamoDbKey().partitionKey(), equalTo("Resource:AAA"));
+        assertThat(capturedItems.get(1).dynamoDbKey().partitionKey(), equalTo("Resource:BBB"));
+    }
+    
+    @Test
+    void shouldThrowExceptionWhenGsiQueryReturnsNoResults() throws JsonProcessingException {
+        var gsiKey = new DynamodbResourceBatchDynamoDbKey(
+            "Customer:NoResults",
+            "Resource:Empty",
+            BY_CUSTOMER_RESOURCE_INDEX_NAME
+        );
+        var workItem = new BatchWorkItem(gsiKey, TEST_JOB_NAME);
+        
+        var queryResult = new QueryResult();
+        queryResult.setItems(List.of());
+        
+        when(mockDynamoDbClient.query(any(QueryRequest.class)))
+            .thenReturn(queryResult);
+        
+        var sqsEvent = createSqsEvent(workItem);
+        var response = handler.handleRequest(sqsEvent, context);
+        
+        assertThat(response.getBatchItemFailures(), hasSize(1));
+        verify(mockDynamoDbClient).query(any(QueryRequest.class));
+        verify(mockExecutor, never()).executeBatch(any(List.class));
     }
     
     private BatchWorkItem createWorkItem(String jobType, Map<String, Object> parameters) {
