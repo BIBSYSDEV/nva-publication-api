@@ -2963,7 +2963,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobHandler::handleRequest
       CodeUri: publication-event-handlers
       Policies:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
       Timeout: 60 # if changing, also change the visibility timeout of the SQS queue
@@ -2987,4 +2986,34 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${DynamodbResourceBatchJobFunction}
+
+  LoadDynamodbResourceBatchJobHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: no.unit.nva.publication.events.handlers.batch.dynamodb.LoadDynamodbResourceBatchJobHandler::handleRequest
+      CodeUri: publication-event-handlers
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Policies:
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref NvaResourcesTable
+          WORK_QUEUE_URL: !Ref DynamodbResourceBatchJobWorkQueue
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          PROCESSING_ENABLED: 'true'
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail-type: 
+                - PublicationService.DataEntry.LoadDynamodbResourceBatchJob
+
+  LoadDynamodbResourceBatchJobLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${LoadDynamodbResourceBatchJobHandler}
       RetentionInDays: 14
