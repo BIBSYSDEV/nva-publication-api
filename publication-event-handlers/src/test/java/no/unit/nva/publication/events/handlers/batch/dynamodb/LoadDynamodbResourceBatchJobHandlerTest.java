@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -327,6 +328,34 @@ class LoadDynamodbResourceBatchJobHandlerTest {
         
         verifyNoInteractions(dynamoDbClient);
         verifyNoInteractions(sqsClient);
+    }
+    
+    @Test
+    void shouldHandleParallelProcessingFailureGracefully() {
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
+        
+        var items = createTestItems(15);
+        
+        var scanResult = new ScanResult()
+            .withItems(items);
+        
+        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResult);
+        
+        var mockSqsClient = mock(SqsClient.class);
+        when(mockSqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+            .thenThrow(new RuntimeException("Simulated parallel processing error"))
+            .thenReturn(createSuccessResponse(10))
+            .thenReturn(createSuccessResponse(5));
+        
+        var testHandler = new LoadDynamodbResourceBatchJobHandler(
+            dynamoDbClient, mockSqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL,
+            PROCESSING_ENABLED, PARALLEL_THREADS);
+        
+        var response = testHandler.processInput(request, event, context);
+        
+        assertThat(response.itemsProcessed(), is(equalTo(15)));
+        
+        verify(mockSqsClient, atLeast(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
     
     private static SendMessageBatchResponse createSuccessResponse(int count) {
