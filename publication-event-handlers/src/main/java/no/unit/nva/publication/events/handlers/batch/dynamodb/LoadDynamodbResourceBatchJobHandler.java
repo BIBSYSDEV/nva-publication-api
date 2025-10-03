@@ -15,8 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -45,7 +44,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private final AmazonDynamoDB dynamoDbClient;
     private final SqsClient sqsClient;
     private final EventBridgeClient eventBridgeClient;
-    private final ExecutorService executorService;
+    private final ForkJoinPool forkJoinPool;
     private final String tableName;
     private final String queueUrl;
     private final String processingEnabled;
@@ -72,7 +71,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
         this.dynamoDbClient = dynamoDbClient;
         this.sqsClient = sqsClient;
         this.eventBridgeClient = eventBridgeClient;
-        this.executorService = Executors.newFixedThreadPool(parseThreadCount(parallelThreads));
+        this.forkJoinPool = new ForkJoinPool(parseThreadCount(parallelThreads));
         this.tableName = tableName;
         this.queueUrl = queueUrl;
         this.processingEnabled = processingEnabled;
@@ -110,12 +109,19 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
                 return new BatchWorkItem(dynamoDbKey, input.getJobType());
             }).toList();
 
-        var messagesQueued = Lists.partition(workItems, SQS_BATCH_SIZE).stream()
-                                 .map(batch -> CompletableFuture.supplyAsync(
-                                     () -> sendBatchToQueue(batch), executorService))
-                                 .map(CompletableFuture::join)
-                                 .mapToInt(Integer::intValue)
-                                 .sum();
+        var batches = Lists.partition(workItems, SQS_BATCH_SIZE);
+        
+        var messagesQueued = CompletableFuture
+            .supplyAsync(() -> batches.parallelStream()
+                .mapToInt(this::sendBatchToQueue)
+                .sum(), forkJoinPool)
+            .exceptionally(e -> {
+                logger.error("Failed to process batches in parallel, falling back to sequential", e);
+                return batches.stream()
+                    .mapToInt(this::sendBatchToQueue)
+                    .sum();
+            })
+            .join();
 
         logger.info("Processed {} items, queued {} messages", workItems.size(), messagesQueued);
 
