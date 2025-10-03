@@ -2990,6 +2990,7 @@ Resources:
   LoadDynamodbResourceBatchJobHandler:
     Type: AWS::Serverless::Function
     Properties:
+      Description: 'Iterates through all DynamoDB records and queues them for batch processing. Example EventBridge input: {"detail": {"jobType": "REINDEX_RECORD"}}'
       Handler: no.unit.nva.publication.events.handlers.batch.dynamodb.LoadDynamodbResourceBatchJobHandler::handleRequest
       CodeUri: publication-event-handlers
       Timeout: 900
@@ -3003,6 +3004,7 @@ Resources:
           WORK_QUEUE_URL: !Ref DynamodbResourceBatchJobWorkQueue
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           PROCESSING_ENABLED: 'true'
+          PARALLEL_SQS_THREADS: '20'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule

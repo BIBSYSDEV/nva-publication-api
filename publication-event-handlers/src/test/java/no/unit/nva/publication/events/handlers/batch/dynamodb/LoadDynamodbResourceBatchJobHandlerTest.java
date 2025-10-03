@@ -44,7 +44,10 @@ class LoadDynamodbResourceBatchJobHandlerTest {
     private static final String TEST_QUEUE_URL = "https://sqs.test.amazonaws.com/test-queue";
     private static final String TEST_JOB_TYPE = "TEST_JOB";
     private static final String TEST_FUNCTION_ARN = "arn:aws:lambda:region:account:function:test";
-    
+    private static final String PARALLEL_THREADS = "2";
+    private static final String PROCESSING_ENABLED = "true";
+    private static final String PROCESSING_DISABLED = "false";
+
     private AmazonDynamoDB dynamoDbClient;
     private SqsClient sqsClient;
     private EventBridgeClient eventBridgeClient;
@@ -60,10 +63,9 @@ class LoadDynamodbResourceBatchJobHandlerTest {
         context = mock(Context.class);
         event = mock(AwsEventBridgeEvent.class);
 
-        var processingEnabled = "true";
         handler = new LoadDynamodbResourceBatchJobHandler(
             dynamoDbClient, sqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL,
-            processingEnabled);
+            PROCESSING_ENABLED, PARALLEL_THREADS);
     }
 
     @Test
@@ -145,7 +147,7 @@ class LoadDynamodbResourceBatchJobHandlerTest {
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
         
         var disabledHandler = new LoadDynamodbResourceBatchJobHandler(
-            dynamoDbClient, sqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL, "false");
+            dynamoDbClient, sqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL, PROCESSING_DISABLED, PARALLEL_THREADS);
         
         var response = disabledHandler.processInput(request, event, context);
         
