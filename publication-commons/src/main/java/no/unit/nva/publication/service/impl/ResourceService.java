@@ -174,13 +174,18 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData) throws BadRequestException {
-        Instant currentTime = clockForTimestamps.instant();
-        Resource newResource = Resource.fromPublication(inputData);
+        var currentTime = clockForTimestamps.instant();
+        var newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(SortableIdentifier.next());
         newResource.setResourceOwner(createResourceOwner(userInstance));
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
+
+        if (PUBLISHED.equals(newResource.getStatus()) && userInstance.isExternalClient()) {
+            newResource.setPublishedDate(currentTime);
+        }
+
         setResourceEvent(userInstance, newResource, currentTime);
         setStatusOnNewPublication(userInstance, inputData, newResource);
         return insertResource(newResource).toPublication();
