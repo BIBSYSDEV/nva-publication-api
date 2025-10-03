@@ -41,7 +41,7 @@ class MigrateResourceJobTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeggingAndEndOfTheTitle() throws NotFoundException {
+    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeginningAndEndOfTheTitle() throws NotFoundException {
         var title = "Some title";
         var trailingSpacesTitle = "  %s  ".formatted(title);
         var publication = randomPublication(Textbook.class);

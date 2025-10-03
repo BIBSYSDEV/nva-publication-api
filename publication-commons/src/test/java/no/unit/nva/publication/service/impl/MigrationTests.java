@@ -38,6 +38,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DataCompressor;
@@ -166,7 +167,7 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeggingAndEndOfTheTitle() throws NotFoundException {
+    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeginningAndEndOfTheTitle() throws NotFoundException {
         var title = "Some title";
         var trailingSpacesTitle = "  %s  ".formatted(title);
         var publication = randomPublication(Textbook.class);
@@ -181,14 +182,16 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeggingAndEndOfTheTitleByKey() throws NotFoundException {
+    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeginningAndEndOfTheTitleByKey() throws NotFoundException {
         var title = "Some title";
         var trailingSpacesTitle = "  %s  ".formatted(title);
         var publication = randomPublication(Textbook.class);
         publication.getEntityDescription().setMainTitle(trailingSpacesTitle);
         updatePublication(publication);
 
-        var key = getFirstKey();
+        var entries = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList())
+                          .getDatabaseEntries();
+        var key = getFirstKey(entries);
 
         resourceService.refreshResourcesByKeys(List.of(key), new FakeCristinUnitsUtil());
 
@@ -197,15 +200,15 @@ class MigrationTests extends ResourcesLocalTest {
         assertEquals(title, migratedResource.getEntityDescription().getMainTitle());
     }
 
-    private Map<String, AttributeValue> getFirstKey() {
-        var key =
-            resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList())
-                .getDatabaseEntries()
-                .getFirst()
-                .toDao()
-                .toDynamoFormat();
+    private Map<String, AttributeValue> getFirstKey(List<Entity> entries) {
+        var key = entries
+                      .getFirst()
+                      .toDao()
+                      .toDynamoFormat();
 
-        key.keySet().removeIf(s-> !Set.of(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME).contains(s));
+        key.keySet()
+            .removeIf(attributeKey -> !Set.of(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME)
+                                           .contains(attributeKey));
         return key;
     }
 
@@ -226,7 +229,6 @@ class MigrationTests extends ResourcesLocalTest {
         assertTrue(migratedResource.getCuratingInstitutions().stream()
                        .anyMatch(curatingInstitution -> curatingInstitution.id().equals(customerCristinId)));
     }
-
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
         return allMigratedItems.stream()

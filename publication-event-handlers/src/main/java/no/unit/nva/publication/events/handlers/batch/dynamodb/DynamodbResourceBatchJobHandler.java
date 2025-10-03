@@ -137,15 +137,15 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         if (isNull(executor)) {
             logger.error("No executor found for job type: {}", jobType);
             return messages.stream()
-                       .map(m -> createBatchItemFailure(m.message,
-                                                        new UnsupportedOperationException(
-                                                            "Unsupported job type: " + jobType)))
+                       .map(messageWithWorkItem -> createBatchItemFailure(messageWithWorkItem.message,
+                                                                          new UnsupportedOperationException(
+                                                                              "Unsupported job type: " + jobType)))
                        .toList();
         }
 
         try {
             var workItems = messages.stream()
-                                .map(m -> m.workItem)
+                                .map(messageWithWorkItem -> messageWithWorkItem.workItem)
                                 .flatMap(this::resolvePrimaryBatchWorkItems)
                                 .toList();
 
@@ -173,7 +173,6 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         return Stream.of(workItem);
     }
 
-
     @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private Stream<BatchWorkItem> resolvePrimaryKey(BatchWorkItem gsiItem) {
         var resolvedItems = new ArrayList<BatchWorkItem>();
@@ -200,12 +199,10 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
 
             logger.info("Resolved {} primary keys from GSI query for index: {}",
                         resolvedItems.size(), key.indexName());
-
         } catch (Exception e) {
             logger.error("Failed to resolve GSI to primary keys for index: {}", key.indexName(), e);
             throw new RuntimeException("Failed to resolve GSI to primary keys", e);
         }
-
 
         return resolvedItems.stream();
     }
@@ -231,7 +228,7 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
 
     private static List<BatchWorkItem> createWorkItems(BatchWorkItem gsiItem, QueryResult result) {
         return result.getItems().stream()
-                   .map(item ->  createPrimaryKeyWorkFromGsi(gsiItem, item))
+                   .map(item -> createPrimaryKeyWorkFromGsi(gsiItem, item))
                    .toList();
     }
 

@@ -284,12 +284,12 @@ public class ResourceService extends ServiceWithTransactions {
         writeToDynamoInBatches(writeRequests);
     }
 
-    public void refreshResourcesByKeys(List<Map<String, AttributeValue>> keys, CristinUnitsUtil cristinUnitsUtil) {
+    public void refreshResourcesByKeys(Collection<Map<String, AttributeValue>> keys, CristinUnitsUtil cristinUnitsUtil) {
         var entities = getEntities(keys);
         refreshResources(entities, cristinUnitsUtil);
     }
 
-    private List<Entity> getEntities(List<Map<String, AttributeValue>> keys) {
+    private List<Entity> getEntities(Collection<Map<String, AttributeValue>> keys) {
         var batchGetItemRequest = new BatchGetItemRequest().withRequestItems(
             Map.of(tableName, new KeysAndAttributes().withKeys(keys)));
         var batchGetItemResult = client.batchGetItem(batchGetItemRequest);
@@ -680,7 +680,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
     }
 
-    private List<Entity> extractDatabaseEntries(List<Map<String, AttributeValue>> items) {
+    private List<Entity> extractDatabaseEntries(Collection<Map<String, AttributeValue>> items) {
         return items
                    .stream()
                    .filter(ResourceService::isNotLogEntry)
