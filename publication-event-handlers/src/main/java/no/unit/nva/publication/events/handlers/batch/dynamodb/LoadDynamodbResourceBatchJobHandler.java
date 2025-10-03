@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
@@ -185,15 +184,15 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private void sendEventForNextBatch(LoadDynamodbRequest input,
                                        Map<String, AttributeValue> lastEvaluatedKey,
                                        Context context) {
-        LoadDynamodbRequest nextRequest = input.withStartMarker(lastEvaluatedKey);
+        var nextRequest = input.withStartMarker(lastEvaluatedKey);
 
-        PutEventsRequestEntry nextEvent = nextRequest.createNewEventEntry(
+        var nextEvent = nextRequest.createNewEventEntry(
             EVENT_BUS_NAME,
             DETAIL_TYPE,
             context.getInvokedFunctionArn()
         );
 
-        PutEventsRequest putEventsRequest = PutEventsRequest.builder()
+        var putEventsRequest = PutEventsRequest.builder()
                                                 .entries(nextEvent)
                                                 .build();
 
