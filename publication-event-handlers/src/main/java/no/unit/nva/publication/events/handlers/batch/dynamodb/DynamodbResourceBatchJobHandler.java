@@ -47,6 +47,8 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     private static final String TABLE_NAME_ENV = "TABLE_NAME";
 
     private static final DynamodbResourceBatchJobExecutor[] JOBS = {new ReindexRecordJob(), new MigrateResourceJob()};
+    private static final String DEFAULT_TO_ONE_ITEM = "1";
+    private static final String APPROXIMATE_RECEIVE_COUNT = "ApproximateReceiveCount";
 
     private final Map<String, DynamodbResourceBatchJobExecutor> jobHandlers;
     private final AmazonDynamoDB client;
@@ -126,8 +128,8 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
 
     private String getErrorCount(SQSMessage message) {
         return Optional.ofNullable(message.getAttributes())
-                   .map(attrs -> attrs.get("ApproximateReceiveCount"))
-                   .orElse("1");
+                   .map(attrs -> attrs.get(APPROXIMATE_RECEIVE_COUNT))
+                   .orElse(DEFAULT_TO_ONE_ITEM);
     }
 
     private List<SQSBatchResponse.BatchItemFailure> processBatch(String jobType, List<MessageWithWorkItem> messages) {
@@ -146,7 +148,7 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         try {
             var workItems = messages.stream()
                                 .map(messageWithWorkItem -> messageWithWorkItem.workItem)
-                                .flatMap(this::resolvePrimaryBatchWorkItems)
+                                .flatMap(this::resolvePrimaryBatchWorkItemsConditional)
                                 .toList();
 
             executor.executeBatch(workItems);
@@ -165,7 +167,7 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         return JsonUtils.dtoObjectMapper.readValue(body, BatchWorkItem.class);
     }
 
-    private Stream<BatchWorkItem> resolvePrimaryBatchWorkItems(BatchWorkItem workItem) {
+    private Stream<BatchWorkItem> resolvePrimaryBatchWorkItemsConditional(BatchWorkItem workItem) {
         if (workItem.dynamoDbKey().isGsiQuery()) {
             return resolvePrimaryKey(workItem);
         }
@@ -173,18 +175,24 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
         return Stream.of(workItem);
     }
 
-    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private Stream<BatchWorkItem> resolvePrimaryKey(BatchWorkItem gsiItem) {
-        var resolvedItems = new ArrayList<BatchWorkItem>();
+        var resolvedItems = fetchAllItemsByGsi(gsiItem);
 
-        var key = gsiItem.dynamoDbKey();
+        if (resolvedItems.isEmpty()) {
+            throw new NoGsiResultsException(gsiItem.dynamoDbKey());
+        }
 
-        var queryRequest = createGsiQueryRequest(key);
+        logger.info("Resolved {} primary keys from GSI query for index: {}",
+                    resolvedItems.size(), gsiItem.dynamoDbKey().indexName());
+        return resolvedItems.stream();
+    }
 
+    private List<BatchWorkItem> fetchAllItemsByGsi(BatchWorkItem gsiItem) {
+        var queryRequest = createGsiQueryRequest(gsiItem.dynamoDbKey());
         try {
             var result = client.query(queryRequest);
 
-            resolvedItems.addAll(createWorkItems(gsiItem, result));
+            var resolvedItems = new ArrayList<>(createWorkItems(gsiItem, result));
 
             while (nonNull(result.getLastEvaluatedKey()) && !result.getLastEvaluatedKey().isEmpty()) {
                 queryRequest.setExclusiveStartKey(result.getLastEvaluatedKey());
@@ -192,19 +200,11 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
 
                 resolvedItems.addAll(createWorkItems(gsiItem, result));
             }
-
-            if (resolvedItems.isEmpty()) {
-                throw new NoGsiResultsException(key.indexName(), key.partitionKey(), key.sortKey());
-            }
-
-            logger.info("Resolved {} primary keys from GSI query for index: {}",
-                        resolvedItems.size(), key.indexName());
+            return resolvedItems;
         } catch (Exception e) {
-            logger.error("Failed to resolve GSI to primary keys for index: {}", key.indexName(), e);
+            logger.error("Failed to resolve GSI to primary keys for index: {}", gsiItem.dynamoDbKey().indexName(), e);
             throw new RuntimeException("Failed to resolve GSI to primary keys", e);
         }
-
-        return resolvedItems.stream();
     }
 
     private QueryRequest createGsiQueryRequest(DynamodbResourceBatchDynamoDbKey key) {
