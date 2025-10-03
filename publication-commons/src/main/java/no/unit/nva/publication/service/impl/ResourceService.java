@@ -181,13 +181,8 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
-
-        if (PUBLISHED.equals(newResource.getStatus()) && userInstance.isExternalClient()) {
-            newResource.setPublishedDate(currentTime);
-        }
-
         setResourceEvent(userInstance, newResource, currentTime);
-        setStatusOnNewPublication(userInstance, inputData, newResource);
+        setStatusOnNewPublication(userInstance, inputData, newResource, currentTime);
         return insertResource(newResource).toPublication();
     }
 
@@ -600,13 +595,17 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     @JacocoGenerated
-    private void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource)
+    private void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource,
+                                           Instant currentTime)
         throws BadRequestException {
         var status = userInstance.isExternalClient() ? Optional.ofNullable(fromPublication.getStatus())
                                                            .orElse(PublicationStatus.DRAFT) : PublicationStatus.DRAFT;
 
-        if (status == PUBLISHED && !fromPublication.isPublishable()) {
-            throw new BadRequestException(NOT_PUBLISHABLE);
+        if (PUBLISHED.equals(status)) {
+            if (!fromPublication.isPublishable()) {
+                throw new BadRequestException(NOT_PUBLISHABLE);
+            }
+            toResource.setPublishedDate(currentTime);
         }
 
         toResource.setStatus(status);
