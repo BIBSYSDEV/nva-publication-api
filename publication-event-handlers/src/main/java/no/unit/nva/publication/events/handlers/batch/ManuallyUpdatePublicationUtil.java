@@ -1,8 +1,12 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -24,6 +28,8 @@ public final class ManuallyUpdatePublicationUtil {
     private static final String PUBLICATION_CHANNELS_V2_PATH_PARAM = "publication-channels-v2";
     private static final String PUBLISHER = "publisher";
     private static final String SERIAL_PUBLICATION = "serial-publication";
+    public static final String CRISTIN = "cristin";
+    public static final String PERSON = "person";
     private final ResourceService resourceService;
     private final Environment environment;
 
@@ -44,7 +50,37 @@ public final class ManuallyUpdatePublicationUtil {
             case UNCONFIRMED_PUBLISHER -> updateUnconfirmedPublisher(resources, request);
             case UNCONFIRMED_SERIES -> updateUnconfirmedSeries(resources, request);
             case UNCONFIRMED_JOURNAL -> updateUnconfirmedJournal(resources, request);
+            case CONTRIBUTOR_IDENTIFIER -> updateContributorIdentifier(resources, request);
         }
+    }
+
+    private void updateContributorIdentifier(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
+        resources.stream()
+            .filter(resource -> hasContributor(resource, request.oldValue()))
+            .map(resource -> updateContributorIdentifier(resource, request.oldValue(), request.newValue()))
+            .forEach(resource -> resourceService.updateResource(resource, UserInstance.fromPublication(resource.toPublication())));
+    }
+
+    private Resource updateContributorIdentifier(Resource resource, String oldContributorIdentifier,
+                                                 String newContributorIdentifier) {
+        var contributors = new ArrayList<>(resource.getEntityDescription().getContributors());
+        var contributorToUpdate = resource.getEntityDescription().getContributors().stream()
+                                      .filter(contributor -> contributor.getIdentity().getId().toString().contains(oldContributorIdentifier))
+                                      .findFirst()
+                                      .orElseThrow();
+        contributors.remove(contributorToUpdate);
+        contributorToUpdate.getIdentity().setId(createContributorId(newContributorIdentifier));
+        contributors.add(contributorToUpdate);
+        resource.getEntityDescription().setContributors(contributors);
+        return resource;
+    }
+
+    private URI createContributorId(String newContributorIdentifier) {
+        return UriWrapper.fromHost(environment.readEnv(API_HOST))
+                   .addChild(CRISTIN)
+                   .addChild(PERSON)
+                   .addChild(newContributorIdentifier)
+                   .getUri();
     }
 
     private void updateUnconfirmedSeries(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
@@ -75,6 +111,17 @@ public final class ManuallyUpdatePublicationUtil {
                    .map(UnconfirmedSeries::getTitle)
                    .filter(value -> value.equals(seriesTitle))
                    .isPresent();
+    }
+
+    private boolean hasContributor(Resource resource, String contributorIdentifier) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .map(EntityDescription::getContributors)
+                   .stream()
+                   .flatMap(List::stream)
+                   .map(Contributor::getIdentity)
+                   .map(Identity::getId)
+                   .map(URI::toString)
+                   .anyMatch(id -> id.contains(contributorIdentifier));
     }
 
     private void updateUnconfirmedJournal(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {

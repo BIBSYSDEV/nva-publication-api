@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
@@ -8,6 +9,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -22,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -338,6 +341,61 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         });
     }
 
+    @Test
+    void shouldUpdateContributorIdForPublicationsWhereContributorWithProvidedIdIsPresent()
+        throws IOException {
+        var oldContributorIdentifier = randomInteger().toString();
+        var contributorId = createContributorIdentifier(oldContributorIdentifier);
+        var publicationsToUpdate = createMultiplePublicationsWithContributor(randomContributorWithId(contributorId));
+        var newContributorIdentifier = randomInteger().toString();
+        var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, oldContributorIdentifier, newContributorIdentifier);
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var updatedContributorIdentifier = updatedPublication.getEntityDescription().getContributors().stream()
+                                                   .filter(contributor -> contributor.getIdentity().getId().toString().contains(newContributorIdentifier))
+                                                   .findFirst()
+                                                   .orElseThrow();
+            var contributorsToKeepUnchanged = publication.getEntityDescription().getContributors().stream()
+                                           .filter(contributor -> !contributor.getIdentity().getId().toString().contains(oldContributorIdentifier))
+                                           .toList();
+            assertEquals(newContributorIdentifier,
+                         UriWrapper.fromUri(updatedContributorIdentifier.getIdentity().getId()).getLastPathElement());
+            assertEquals(publication.getEntityDescription().getContributors().size(),
+                         updatedPublication.getEntityDescription().getContributors().size());
+            assertTrue(updatedPublication.getEntityDescription().getContributors().containsAll(contributorsToKeepUnchanged));
+        });
+    }
+
+    @Test
+    void shouldNotUpdateContributorIdForPublicationsWhereContributorWithProvidedIdIsNotPresent()
+        throws IOException {
+        var publicationsToUpdate = createMultiplePublicationsWithContributor(randomContributorWithId(randomUri()));
+        var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, randomString(), randomString());
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+
+            assertTrue(updatedPublication.getEntityDescription().getContributors().containsAll(publication.getEntityDescription().getContributors()));
+        });
+    }
+
+    private static URI createContributorIdentifier(String contributorIdentifier) {
+        return UriWrapper.fromUri(randomUri())
+                   .addChild("cristin")
+                   .addChild("person")
+                   .addChild(contributorIdentifier)
+                   .getUri();
+    }
+
     private static String getYear(Publication publication) {
         return publication.getEntityDescription().getPublicationDate().getYear();
     }
@@ -416,6 +474,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
                    .toList();
     }
 
+    private List<Publication> createMultiplePublicationsWithContributor(Contributor contributor) {
+        return IntStream.range(0, 10).boxed()
+                   .map(i -> attempt(() -> createPublicationWithContributor(contributor)).orElseThrow())
+                   .toList();
+    }
+
     private List<Publication> createMultiplePublicationsWithSerialPublication(URI serialPublicationId) {
         return IntStream.range(0, 10).boxed()
                    .map(i -> attempt(() -> createPublicationWithSerialPublication(serialPublicationId)).orElseThrow())
@@ -449,6 +513,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     private Publication createPublicationWithJournal(Periodical periodical) {
         var publication = randomPublication(JournalArticle.class);
         publication.getEntityDescription().getReference().setPublicationContext(periodical);
+        return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                               publication)).orElseThrow();
+    }
+
+    private Publication createPublicationWithContributor(Contributor contributor) {
+        var publication = randomPublication();
+        publication.getEntityDescription().setContributors(List.of(contributor, randomContributorWithId(randomUri()),
+         randomContributorWithId(randomUri())                                                          ));
         return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                publication)).orElseThrow();
     }
