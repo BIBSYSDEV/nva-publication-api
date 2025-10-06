@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static no.unit.nva.publication.events.handlers.batch.Comparator.CONTAINS;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,11 +54,13 @@ public final class ManuallyUpdatePublicationUtil {
             case PUBLISHER -> updateResources(resources, request, this::hasPublisher, this::updatePublisher);
             case SERIAL_PUBLICATION -> updateResources(resources, request, this::hasSerialPublication, this::updateSeriesOrJournal);
             case LICENSE -> updateLicenseFiles(resources, request);
-            case UNCONFIRMED_PUBLISHER -> updateResources(resources, request, this::hasUnconfirmedPublisher,
+            case UNCONFIRMED_PUBLISHER -> updateResources(resources, request,
+                                                          (r, val) -> hasUnconfirmedPublisher(r, val, request.comparator()),
                                                           (r, req) -> updateUnconfirmedToConfirmed(r, req, PUBLISHER, this::createBookWithPublisher));
-            case UNCONFIRMED_SERIES -> updateResources(resources, request, this::hasUnconfirmedSeries,
+            case UNCONFIRMED_SERIES -> updateResources(resources, request, (r, val) -> hasUnconfirmedSeries(r, val, request.comparator()),
                                                        (r, req) -> updateUnconfirmedToConfirmed(r, req, SERIAL_PUBLICATION, this::createBookWithSeries));
-            case UNCONFIRMED_JOURNAL -> updateResources(resources, request, this::hasUnconfirmedJournal, this::updateUnconfirmedJournalToConfirmed);
+            case UNCONFIRMED_JOURNAL -> updateResources(resources, request, (r, val) -> hasUnconfirmedJournal(r, val,
+                                                                                                        request.comparator()), this::updateUnconfirmedJournalToConfirmed);
             case CONTRIBUTOR_IDENTIFIER -> updateResources(resources, request, this::hasContributor, this::updateContributorIdentifier);
         }
     }
@@ -114,14 +117,14 @@ public final class ManuallyUpdatePublicationUtil {
         return resource;
     }
 
-    private boolean hasUnconfirmedPublisher(Resource resource, String publisherName) {
+    private boolean hasUnconfirmedPublisher(Resource resource, String publisherName, Comparator comparator) {
         return getPublishingHouse(resource, UnconfirmedPublisher.class)
                    .map(UnconfirmedPublisher::getName)
-                   .filter(publisherName::equals)
+                   .filter(value -> CONTAINS.equals(comparator) ? value.contains(publisherName) : value.equals(publisherName))
                    .isPresent();
     }
 
-    private boolean hasUnconfirmedSeries(Resource resource, String seriesTitle) {
+    private boolean hasUnconfirmedSeries(Resource resource, String seriesTitle, Comparator comparator) {
         return Optional.of(resource.getEntityDescription().getReference().getPublicationContext())
                    .filter(Book.class::isInstance)
                    .map(Book.class::cast)
@@ -129,16 +132,16 @@ public final class ManuallyUpdatePublicationUtil {
                    .filter(UnconfirmedSeries.class::isInstance)
                    .map(UnconfirmedSeries.class::cast)
                    .map(UnconfirmedSeries::getTitle)
-                   .filter(seriesTitle::equals)
+                   .filter(value -> CONTAINS.equals(comparator) ? value.contains(seriesTitle) : value.equals(seriesTitle))
                    .isPresent();
     }
 
-    private boolean hasUnconfirmedJournal(Resource resource, String journalTitle) {
+    private boolean hasUnconfirmedJournal(Resource resource, String journalTitle, Comparator comparator) {
         return Optional.of(resource.getEntityDescription().getReference().getPublicationContext())
                    .filter(UnconfirmedJournal.class::isInstance)
                    .map(UnconfirmedJournal.class::cast)
                    .map(UnconfirmedJournal::getTitle)
-                   .filter(journalTitle::equals)
+                   .filter(value -> CONTAINS.equals(comparator) ? value.contains(journalTitle) : value.equals(journalTitle))
                    .isPresent();
     }
 

@@ -4,6 +4,8 @@ import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.events.handlers.batch.Comparator.CONTAINS;
+import static no.unit.nva.publication.events.handlers.batch.Comparator.MATCHES;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -87,7 +89,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var newPublisherIdentifier = randomUUID().toString();
         var publisherId = createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
-        var event = createEvent(ManualUpdateType.PUBLISHER, publisherIdentifier, newPublisherIdentifier);
+        var event = createEvent(ManualUpdateType.PUBLISHER, publisherIdentifier, newPublisherIdentifier, MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -110,7 +112,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var serialPublicationId = createChannelIdWithIdentifier(serialPublicationIdentifier, randomInteger().toString(),
                                                                 SERIAL_PUBLICATION);
         var publicationsToUpdate = createMultiplePublicationsWithSerialPublication(serialPublicationId);
-        var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, serialPublicationIdentifier, newSerialPublicationIdentifier);
+        var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, serialPublicationIdentifier, newSerialPublicationIdentifier,
+                                MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -137,7 +140,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var journal = new Journal(createChannelIdWithIdentifier(randomUUID().toString(),
                                                                       randomInteger().toString(), SERIAL_PUBLICATION));
         var publicationsToUpdate = createMultiplePublicationsWithJournal(journal);
-        var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, randomUUID().toString(), randomUUID().toString());
+        var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, randomUUID().toString(), randomUUID().toString(),
+                                MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -157,7 +161,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var publisherIdToKeep = createChannelIdWithIdentifier(randomUUID().toString(), randomInteger().toString(),
                                                               PUBLISHER);
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherIdToKeep));
-        var event = createEvent(ManualUpdateType.PUBLISHER, randomUUID().toString(), randomUUID().toString());
+        var event = createEvent(ManualUpdateType.PUBLISHER, randomUUID().toString(), randomUUID().toString(), MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -177,7 +181,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var license = randomUri();
         var newLicense = randomUri();
         var publicationsToUpdate = createMultiplePublicationsWithLicense(license);
-        var event = createEvent(ManualUpdateType.LICENSE, license.toString(), newLicense.toString());
+        var event = createEvent(ManualUpdateType.LICENSE, license.toString(), newLicense.toString(), MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -200,7 +204,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         throws IOException {
         var license = randomUri();
         var publicationsToUpdate = createMultiplePublicationsWithLicense(license);
-        var event = createEvent(ManualUpdateType.LICENSE, randomString(), randomString());
+        var event = createEvent(ManualUpdateType.LICENSE, randomString(), randomString(), MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -224,7 +228,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var publisherName = randomString();
         var publisherIdentifier = randomUUID().toString();
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(new UnconfirmedPublisher(publisherName));
-        var event = createEvent(ManualUpdateType.UNCONFIRMED_PUBLISHER, publisherName, publisherIdentifier);
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_PUBLISHER, publisherName, publisherIdentifier, MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -240,12 +244,54 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdatePublicationWithUnconfirmedPublisherToConfirmedWhenUpdateTypeIsUnconfirmedPublisherAndPublisherValueContainsProvidedPublisher()
+        throws IOException {
+        var publisherName = randomString();
+        var publisherIdentifier = randomUUID().toString();
+        var publicationsToUpdate =
+            createMultiplePublicationsWithPublisher(new UnconfirmedPublisher(publisherName + randomString()));
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_PUBLISHER, publisherName, publisherIdentifier, CONTAINS);
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var updatedPublisher = (Publisher) getPublisher(updatedPublication);
+            var expectedPublisher = createChannelIdWithIdentifier(publisherIdentifier, getYear(publication), PUBLISHER);
+
+            assertEquals(expectedPublisher, updatedPublisher.getId());
+        });
+    }
+
+    @Test
     void shouldNotUpdatePublicationWithUnconfirmedPublisherToConfirmedWhenProvidedPublisherDoesNotMatchExisting()
         throws IOException {
         var publisherIdentifier = randomUUID().toString();
         var unconfirmedPublisher = new UnconfirmedPublisher(randomString());
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(unconfirmedPublisher);
-        var event = createEvent(ManualUpdateType.UNCONFIRMED_PUBLISHER, randomString(), publisherIdentifier);
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_PUBLISHER, randomString(), publisherIdentifier, MATCHES);
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var updatedPublisher = getPublisher(updatedPublication);
+
+            assertEquals(unconfirmedPublisher, updatedPublisher);
+        });
+    }
+
+    @Test
+    void shouldNotUpdatePublicationWithUnconfirmedPublisherToConfirmedWhenProvidedPublisherDoesNotContainsExisting()
+        throws IOException {
+        var publisherIdentifier = randomUUID().toString();
+        var unconfirmedPublisher = new UnconfirmedPublisher(randomString());
+        var publicationsToUpdate = createMultiplePublicationsWithPublisher(unconfirmedPublisher);
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_PUBLISHER, randomString(), publisherIdentifier, CONTAINS);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -265,7 +311,30 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var seriesTitle = randomString();
         var seriesIdentifier = randomUUID().toString();
         var publicationsToUpdate = createMultiplePublicationsWithSeries(new UnconfirmedSeries(seriesTitle, null, null));
-        var event = createEvent(ManualUpdateType.UNCONFIRMED_SERIES, seriesTitle, seriesIdentifier);
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_SERIES, seriesTitle, seriesIdentifier, MATCHES);
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var updatedBook = (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+            var updatedSeries = (Series) updatedBook.getSeries();
+            var expectedSeriesId = createChannelIdWithIdentifier(seriesIdentifier, getYear(publication), SERIAL_PUBLICATION);
+
+            assertEquals(expectedSeriesId, updatedSeries.getId());
+        });
+    }
+
+    @Test
+    void shouldUpdatePublicationWithUnconfirmedSeriesToConfirmedWhenUpdateTypeIsUnconfirmedSeriesAndValueContainsProvidedSeries()
+        throws IOException, InvalidIssnException {
+        var seriesTitle = randomString();
+        var seriesIdentifier = randomUUID().toString();
+        var publicationsToUpdate = createMultiplePublicationsWithSeries(new UnconfirmedSeries(seriesTitle + randomString(), null,
+                                                                                              null));
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_SERIES, seriesTitle, seriesIdentifier, CONTAINS);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -286,7 +355,26 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         throws IOException, InvalidIssnException {
         var unconfirmedSeries = new UnconfirmedSeries(randomString(), null, null);
         var publicationsToUpdate = createMultiplePublicationsWithSeries(unconfirmedSeries);
-        var event = createEvent(ManualUpdateType.UNCONFIRMED_SERIES, randomString(), randomString());
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_SERIES, randomString(), randomString(), MATCHES);
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var updatedBook = (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+
+            assertEquals(unconfirmedSeries, updatedBook.getSeries());
+        });
+    }
+
+    @Test
+    void shouldNotUpdatePublicationWithUnconfirmedSeriesToConfirmedWhenProvidedSeriesDoesNotContainsExisting()
+        throws IOException, InvalidIssnException {
+        var unconfirmedSeries = new UnconfirmedSeries(randomString(), null, null);
+        var publicationsToUpdate = createMultiplePublicationsWithSeries(unconfirmedSeries);
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_SERIES, randomString(), randomString(), CONTAINS);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -306,7 +394,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var journalTitle = randomString();
         var journalIdentifier = randomUUID().toString();
         var publicationsToUpdate = createMultiplePublicationsWithJournal(new UnconfirmedJournal(journalTitle, null, null));
-        var event = createEvent(ManualUpdateType.UNCONFIRMED_JOURNAL, journalTitle, journalIdentifier);
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_JOURNAL, journalTitle, journalIdentifier, MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -327,7 +415,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         throws IOException, InvalidIssnException {
         var unconfirmedJournal = new UnconfirmedJournal(randomString(), null, null);
         var publicationsToUpdate = createMultiplePublicationsWithJournal(unconfirmedJournal);
-        var event = createEvent(ManualUpdateType.UNCONFIRMED_JOURNAL, randomString(), randomString());
+        var event = createEvent(ManualUpdateType.UNCONFIRMED_JOURNAL, randomString(), randomString(), MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -348,7 +436,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var contributorId = createContributorIdentifier(oldContributorIdentifier);
         var publicationsToUpdate = createMultiplePublicationsWithContributor(randomContributorWithId(contributorId));
         var newContributorIdentifier = randomInteger().toString();
-        var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, oldContributorIdentifier, newContributorIdentifier);
+        var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, oldContributorIdentifier, newContributorIdentifier,
+                                MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -375,7 +464,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     void shouldNotUpdateContributorIdForPublicationsWhereContributorWithProvidedIdIsNotPresent()
         throws IOException {
         var publicationsToUpdate = createMultiplePublicationsWithContributor(randomContributorWithId(randomUri()));
-        var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, randomString(), randomString());
+        var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, randomString(), randomString(), MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -405,10 +494,11 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
                    .map(File.class::cast).toList();
     }
 
-    private static InputStream createEvent(ManualUpdateType type, String oldValue, String newValue) {
+    private static InputStream createEvent(ManualUpdateType type, String oldValue, String newValue,
+                                           Comparator comparator) {
         return IoUtils.stringToStream(new ManuallyUpdatePublicationsRequest(type, oldValue, newValue,
                                                                             Map.of("publisher",
-                                                                                   oldValue)).toJsonString());
+                                                                                   oldValue), comparator).toJsonString());
     }
 
     private static URI createChannelIdWithIdentifier(String channelIdentifier, String year, String type) {
