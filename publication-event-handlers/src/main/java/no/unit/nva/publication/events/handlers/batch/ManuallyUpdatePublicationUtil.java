@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static no.unit.nva.publication.events.handlers.batch.Comparator.CONTAINS;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +33,8 @@ public final class ManuallyUpdatePublicationUtil {
     private static final String PUBLICATION_CHANNELS_V2_PATH_PARAM = "publication-channels-v2";
     private static final String PUBLISHER = "publisher";
     private static final String SERIAL_PUBLICATION = "serial-publication";
-    public static final String CRISTIN = "cristin";
-    public static final String PERSON = "person";
+    private static final String CRISTIN = "cristin";
+    private static final String PERSON = "person";
 
     private final ResourceService resourceService;
     private final Environment environment;
@@ -54,15 +53,33 @@ public final class ManuallyUpdatePublicationUtil {
             case PUBLISHER -> updateResources(resources, request, this::hasPublisher, this::updatePublisher);
             case SERIAL_PUBLICATION -> updateResources(resources, request, this::hasSerialPublication, this::updateSeriesOrJournal);
             case LICENSE -> updateLicenseFiles(resources, request);
-            case UNCONFIRMED_PUBLISHER -> updateResources(resources, request,
-                                                          (r, val) -> hasUnconfirmedPublisher(r, val, request.comparator()),
-                                                          (r, req) -> updateUnconfirmedToConfirmed(r, req, PUBLISHER, this::createBookWithPublisher));
-            case UNCONFIRMED_SERIES -> updateResources(resources, request, (r, val) -> hasUnconfirmedSeries(r, val, request.comparator()),
-                                                       (r, req) -> updateUnconfirmedToConfirmed(r, req, SERIAL_PUBLICATION, this::createBookWithSeries));
-            case UNCONFIRMED_JOURNAL -> updateResources(resources, request, (r, val) -> hasUnconfirmedJournal(r, val,
-                                                                                                        request.comparator()), this::updateUnconfirmedJournalToConfirmed);
+            case UNCONFIRMED_PUBLISHER -> updateResources(resources, request, unconfirmedPublisherFilter(request), updateUnconfirmedPublisher());
+            case UNCONFIRMED_SERIES -> updateResources(resources, request, unconfirmedSeriesFilter(request), updateUnconfirmedSeries());
+            case UNCONFIRMED_JOURNAL -> updateResources(resources, request, unconfirmedJournalFilter(request), this::updateUnconfirmedJournalToConfirmed);
             case CONTRIBUTOR_IDENTIFIER -> updateResources(resources, request, this::hasContributor, this::updateContributorIdentifier);
         }
+    }
+
+    private BiPredicate<Resource, String> unconfirmedJournalFilter(ManuallyUpdatePublicationsRequest request) {
+        return (resource, val) -> unconfirmedJournalFilter(resource, val,
+                                                           request.comparator());
+    }
+
+    private BiFunction<Resource, ManuallyUpdatePublicationsRequest, Resource> updateUnconfirmedSeries() {
+        return (resource, req) -> updateUnconfirmedToConfirmed(resource, req, SERIAL_PUBLICATION,
+                                                               this::createBookWithSeries);
+    }
+
+    private BiPredicate<Resource, String> unconfirmedSeriesFilter(ManuallyUpdatePublicationsRequest request) {
+        return (resource, val) -> unconfirmedSeriesFilter(resource, val, request.comparator());
+    }
+
+    private BiFunction<Resource, ManuallyUpdatePublicationsRequest, Resource> updateUnconfirmedPublisher() {
+        return (resource, req) -> updateUnconfirmedToConfirmed(resource, req, PUBLISHER, this::createBookWithPublisher);
+    }
+
+    private BiPredicate<Resource, String> unconfirmedPublisherFilter(ManuallyUpdatePublicationsRequest request) {
+        return (resource, publisherName) -> unconfirmedPublisherFilter(resource, publisherName, request.comparator());
     }
 
     private void updateResources(List<Resource> resources, ManuallyUpdatePublicationsRequest request,
@@ -81,7 +98,7 @@ public final class ManuallyUpdatePublicationUtil {
     private Resource updateContributorIdentifier(Resource resource, ManuallyUpdatePublicationsRequest request) {
         var contributors = new ArrayList<>(resource.getEntityDescription().getContributors());
         var contributorToUpdate = contributors.stream()
-                                      .filter(c -> c.getIdentity().getId().toString().contains(request.oldValue()))
+                                      .filter(contributor -> contributor.getIdentity().getId().toString().contains(request.oldValue()))
                                       .findFirst()
                                       .orElseThrow();
 
@@ -117,14 +134,21 @@ public final class ManuallyUpdatePublicationUtil {
         return resource;
     }
 
-    private boolean hasUnconfirmedPublisher(Resource resource, String publisherName, Comparator comparator) {
+    private boolean unconfirmedPublisherFilter(Resource resource, String publisherName, Comparator comparator) {
         return getPublishingHouse(resource, UnconfirmedPublisher.class)
                    .map(UnconfirmedPublisher::getName)
-                   .filter(value -> CONTAINS.equals(comparator) ? value.contains(publisherName) : value.equals(publisherName))
+                   .filter(value -> matches(value, publisherName, comparator))
                    .isPresent();
     }
 
-    private boolean hasUnconfirmedSeries(Resource resource, String seriesTitle, Comparator comparator) {
+    private boolean matches(String actual, String expected, Comparator comparator) {
+        return switch (comparator) {
+            case CONTAINS -> actual.contains(expected);
+            case MATCHES -> actual.equals(expected);
+        };
+    }
+
+    private boolean unconfirmedSeriesFilter(Resource resource, String seriesTitle, Comparator comparator) {
         return Optional.of(resource.getEntityDescription().getReference().getPublicationContext())
                    .filter(Book.class::isInstance)
                    .map(Book.class::cast)
@@ -132,16 +156,16 @@ public final class ManuallyUpdatePublicationUtil {
                    .filter(UnconfirmedSeries.class::isInstance)
                    .map(UnconfirmedSeries.class::cast)
                    .map(UnconfirmedSeries::getTitle)
-                   .filter(value -> CONTAINS.equals(comparator) ? value.contains(seriesTitle) : value.equals(seriesTitle))
+                   .filter(value -> matches(value, seriesTitle, comparator))
                    .isPresent();
     }
 
-    private boolean hasUnconfirmedJournal(Resource resource, String journalTitle, Comparator comparator) {
+    private boolean unconfirmedJournalFilter(Resource resource, String journalTitle, Comparator comparator) {
         return Optional.of(resource.getEntityDescription().getReference().getPublicationContext())
                    .filter(UnconfirmedJournal.class::isInstance)
                    .map(UnconfirmedJournal.class::cast)
                    .map(UnconfirmedJournal::getTitle)
-                   .filter(value -> CONTAINS.equals(comparator) ? value.contains(journalTitle) : value.equals(journalTitle))
+                   .filter(value -> matches(value, journalTitle, comparator))
                    .isPresent();
     }
 
@@ -211,8 +235,12 @@ public final class ManuallyUpdatePublicationUtil {
 
     private void updateLicenseFiles(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
         resources.forEach(resource -> resource.getFileEntries().stream()
-                                          .filter(file -> file.getFile().getLicense().toString().equals(request.oldValue()))
+                                          .filter(file -> hasLicense(request.oldValue(), file))
                                           .forEach(file -> updateFileLicense(file, resource, request.newValue())));
+    }
+
+    private static boolean hasLicense(String license, FileEntry file) {
+        return file.getFile().getLicense().toString().equals(license);
     }
 
     private void updateFileLicense(FileEntry fileEntry, Resource resource, String license) {
