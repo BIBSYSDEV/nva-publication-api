@@ -3004,7 +3004,6 @@ Resources:
           WORK_QUEUE_URL: !Ref DynamodbResourceBatchJobWorkQueue
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           PROCESSING_ENABLED: 'true'
-          PARALLEL_SQS_THREADS: '20'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule

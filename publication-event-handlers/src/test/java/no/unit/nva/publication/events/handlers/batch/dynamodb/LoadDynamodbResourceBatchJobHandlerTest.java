@@ -5,6 +5,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,6 +21,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +48,6 @@ class LoadDynamodbResourceBatchJobHandlerTest {
     private static final String TEST_QUEUE_URL = "https://sqs.test.amazonaws.com/test-queue";
     private static final String TEST_JOB_TYPE = "TEST_JOB";
     private static final String TEST_FUNCTION_ARN = "arn:aws:lambda:region:account:function:test";
-    private static final String PARALLEL_THREADS = "2";
     private static final String PROCESSING_ENABLED = "true";
     private static final String PROCESSING_DISABLED = "false";
 
@@ -66,7 +68,7 @@ class LoadDynamodbResourceBatchJobHandlerTest {
 
         handler = new LoadDynamodbResourceBatchJobHandler(
             dynamoDbClient, sqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL,
-            PROCESSING_ENABLED, PARALLEL_THREADS);
+            PROCESSING_ENABLED);
     }
 
     @Test
@@ -148,7 +150,7 @@ class LoadDynamodbResourceBatchJobHandlerTest {
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
         
         var disabledHandler = new LoadDynamodbResourceBatchJobHandler(
-            dynamoDbClient, sqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL, PROCESSING_DISABLED, PARALLEL_THREADS);
+            dynamoDbClient, sqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL, PROCESSING_DISABLED);
         
         var response = disabledHandler.processInput(request, event, context);
         
@@ -349,13 +351,58 @@ class LoadDynamodbResourceBatchJobHandlerTest {
         
         var testHandler = new LoadDynamodbResourceBatchJobHandler(
             dynamoDbClient, mockSqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL,
-            PROCESSING_ENABLED, PARALLEL_THREADS);
+            PROCESSING_ENABLED);
         
         var response = testHandler.processInput(request, event, context);
         
         assertThat(response.itemsProcessed(), is(equalTo(15)));
         
         verify(mockSqsClient, atLeast(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
+    }
+
+    @Test
+    void shouldReturnZeroWhenWorkItemsListIsEmpty() throws Exception {
+        // This test specifically covers lines 166-167: the empty check in sendBatchToQueue
+        // Using reflection to directly test the private method
+        
+        Method sendBatchToQueueMethod = LoadDynamodbResourceBatchJobHandler.class
+            .getDeclaredMethod("sendBatchToQueue", List.class);
+        sendBatchToQueueMethod.setAccessible(true);
+        
+        // Call with empty list to trigger the if condition at line 166
+        Object result = sendBatchToQueueMethod.invoke(handler, Collections.emptyList());
+        
+        // Should return 0 immediately without any SQS interaction
+        assertThat((Integer) result, is(equalTo(0)));
+        
+        // Verify no SQS calls were made
+        verifyNoInteractions(sqsClient);
+    }
+
+    @Test 
+    void shouldHandleSerializationException() throws Exception {
+        // This test specifically covers lines 203-204: the catch block in getSendMessageBatchRequestEntry
+        // Use reflection to test the private method directly with an object that will fail serialization
+        
+        Method getSendMessageBatchRequestEntry = LoadDynamodbResourceBatchJobHandler.class
+            .getDeclaredMethod("getSendMessageBatchRequestEntry", BatchWorkItem.class);
+        getSendMessageBatchRequestEntry.setAccessible(true);
+        
+        // Create a BatchWorkItem with a mock that will cause serialization to fail
+        var mockKey = mock(DynamodbResourceBatchDynamoDbKey.class);
+        // Make the mockKey throw an exception when its properties are accessed during serialization
+        when(mockKey.partitionKey()).thenThrow(new RuntimeException("Serialization trigger"));
+        // No need to stub sortKey() - only partitionKey() will be called and trigger the exception
+        
+        var problematicItem = new BatchWorkItem(mockKey, TEST_JOB_TYPE);
+        
+        // This should trigger the RuntimeException at line 204 wrapped in InvocationTargetException
+        Exception exception = assertThrows(InvocationTargetException.class, 
+            () -> getSendMessageBatchRequestEntry.invoke(handler, problematicItem));
+        
+        // The cause should be the RuntimeException from line 204
+        assertThat(exception.getCause(), instanceOf(RuntimeException.class));
+        assertThat(exception.getCause().getMessage(), containsString("Failed to serialize work item"));
     }
     
     private static SendMessageBatchResponse createSuccessResponse(int count) {

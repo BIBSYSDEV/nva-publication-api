@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -36,7 +34,6 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private static final String TABLE_NAME_ENV = "TABLE_NAME";
     private static final String WORK_QUEUE_URL_ENV = "WORK_QUEUE_URL";
     private static final String PROCESSING_ENABLED_ENV = "PROCESSING_ENABLED";
-    private static final String PARALLEL_SQS_THREADS_ENV = "PARALLEL_SQS_THREADS";
     private static final int SCAN_PAGE_SIZE = 1000;
     private static final int SQS_BATCH_SIZE = 10;
     public static final String DETAIL_TYPE = "PublicationService.DataEntry.LoadDynamodbResourceBatchJob";
@@ -44,7 +41,6 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private final AmazonDynamoDB dynamoDbClient;
     private final SqsClient sqsClient;
     private final EventBridgeClient eventBridgeClient;
-    private final ForkJoinPool forkJoinPool;
     private final String tableName;
     private final String queueUrl;
     private final String processingEnabled;
@@ -56,8 +52,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
              defaultEventBridgeClient(),
              new Environment().readEnv(TABLE_NAME_ENV),
              new Environment().readEnv(WORK_QUEUE_URL_ENV),
-             new Environment().readEnv(PROCESSING_ENABLED_ENV),
-             new Environment().readEnv(PARALLEL_SQS_THREADS_ENV));
+             new Environment().readEnv(PROCESSING_ENABLED_ENV));
     }
 
     public LoadDynamodbResourceBatchJobHandler(AmazonDynamoDB dynamoDbClient,
@@ -65,23 +60,14 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
                                                EventBridgeClient eventBridgeClient,
                                                String tableName,
                                                String queueUrl,
-                                               String processingEnabled,
-                                               String parallelThreads) {
+                                               String processingEnabled) {
         super(LoadDynamodbRequest.class);
         this.dynamoDbClient = dynamoDbClient;
         this.sqsClient = sqsClient;
         this.eventBridgeClient = eventBridgeClient;
-        this.forkJoinPool = new ForkJoinPool(parseThreadCount(parallelThreads));
         this.tableName = tableName;
         this.queueUrl = queueUrl;
         this.processingEnabled = processingEnabled;
-    }
-    
-    private static int parseThreadCount(String parallelThreads) {
-        return Optional.ofNullable(parallelThreads)
-            .filter(s -> !s.isBlank())
-            .map(Integer::parseInt)
-            .orElse(10);
     }
 
     @Override
@@ -111,17 +97,10 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
 
         var batches = Lists.partition(workItems, SQS_BATCH_SIZE);
         
-        var messagesQueued = CompletableFuture
-            .supplyAsync(() -> batches.parallelStream()
-                .mapToInt(this::sendBatchToQueue)
-                .sum(), forkJoinPool)
-            .exceptionally(e -> {
-                logger.error("Failed to process batches in parallel, falling back to sequential", e);
-                return batches.stream()
+
+        var messagesQueued = batches.stream()
                     .mapToInt(this::sendBatchToQueue)
                     .sum();
-            })
-            .join();
 
         logger.info("Processed {} items, queued {} messages", workItems.size(), messagesQueued);
 
