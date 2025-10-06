@@ -62,6 +62,7 @@ import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.ScanResultWrapper;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
@@ -276,6 +277,14 @@ public class ResourceService extends ServiceWithTransactions {
         var values = extractDatabaseEntries(scanResult.getItems());
         var isTruncated = thereAreMorePagesToScan(scanResult);
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
+    }
+
+    public ScanResultWrapper scanResourcesRaw(int pageSize, Map<String, AttributeValue> startMarker,
+                                           List<KeyField> types) {
+        var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types);
+        var scanResult = getClient().scan(scanRequest);
+        var isTruncated = thereAreMorePagesToScan(scanResult);
+        return new ScanResultWrapper(scanResult.getItems(), scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
     public void refreshResources(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {

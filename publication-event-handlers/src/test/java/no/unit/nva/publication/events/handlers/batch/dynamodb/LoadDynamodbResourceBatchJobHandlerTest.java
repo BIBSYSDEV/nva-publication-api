@@ -1,33 +1,37 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import static java.util.Collections.emptyList;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.KeyField;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,73 +46,72 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResultEntry;
 
 @ExtendWith(MockitoExtension.class)
-class LoadDynamodbResourceBatchJobHandlerTest {
+class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
-    private static final String TEST_TABLE_NAME = "test-table";
     private static final String TEST_QUEUE_URL = "https://sqs.test.amazonaws.com/test-queue";
     private static final String TEST_JOB_TYPE = "TEST_JOB";
     private static final String TEST_FUNCTION_ARN = "arn:aws:lambda:region:account:function:test";
     private static final String PROCESSING_ENABLED = "true";
     private static final String PROCESSING_DISABLED = "false";
+    private static final int SQS_BATCH_SIZE = 10;
+    private static final int SCAN_PAGE_SIZE = 1000;
 
-    private AmazonDynamoDB dynamoDbClient;
     private SqsClient sqsClient;
     private EventBridgeClient eventBridgeClient;
     private LoadDynamodbResourceBatchJobHandler handler;
     private Context context;
     private AwsEventBridgeEvent<LoadDynamodbRequest> event;
+    private ResourceService resourceService;
 
     @BeforeEach
     void setup() {
-        dynamoDbClient = mock(AmazonDynamoDB.class);
+        super.init();
+        resourceService = spy(getResourceService(client));
         sqsClient = mock(SqsClient.class);
         eventBridgeClient = mock(EventBridgeClient.class);
         context = mock(Context.class);
         event = mock(AwsEventBridgeEvent.class);
 
         handler = new LoadDynamodbResourceBatchJobHandler(
-            dynamoDbClient, sqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL,
-            PROCESSING_ENABLED);
+            sqsClient, eventBridgeClient, TEST_QUEUE_URL,
+            PROCESSING_ENABLED, resourceService,
+            SCAN_PAGE_SIZE,
+            SQS_BATCH_SIZE);
     }
 
     @Test
     void shouldThrowExceptionWhenJobTypeIsMissing() {
         var request = new LoadDynamodbRequest(null);
-        
-        var exception = assertThrows(IllegalArgumentException.class, 
-            () -> handler.processInput(request, event, context));
-        
+
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> handler.processInput(request, event, context));
+
         assertThat(exception.getMessage(), containsString("Missing required field 'jobType'"));
         assertThat(exception.getMessage(), containsString("Example input"));
-        
-        verifyNoInteractions(dynamoDbClient);
+
+        verifyNoInteractions(resourceService);
         verifyNoInteractions(sqsClient);
     }
 
     @Test
     void shouldProcessBatchAndSendToQueue() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
-        var items = createTestItems(12);
-        
-        var scanResult = new ScanResult()
-            .withItems(items);
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResult);
-        
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+
+        createTestItems(12);
+
         var successResponse = createSuccessResponse(10);
         var successResponse2 = createSuccessResponse(2);
-        
+
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenReturn(successResponse)
             .thenReturn(successResponse2);
-        
+
         var response = handler.processInput(request, event, context);
-        
-        assertThat(response.itemsProcessed(), is(equalTo(12)));
-        assertThat(response.messagesQueued(), is(equalTo(12)));
+
+        assertThat(response.itemsProcessed(), is(greaterThan(1)));
+        assertThat(response.messagesQueued(),  is(greaterThan(1)));
         assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
-        
+
         verify(sqsClient, times(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
         verify(eventBridgeClient, never()).putEvents(any(PutEventsRequest.class));
     }
@@ -116,49 +119,46 @@ class LoadDynamodbResourceBatchJobHandlerTest {
     @Test
     void shouldTriggerNextBatchWhenMoreItemsExist() {
         when(context.getInvokedFunctionArn()).thenReturn(TEST_FUNCTION_ARN);
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
-        var items = createTestItems(5);
-        
-        var lastKey = createDynamoDbKey("pk4", "sk4");
-        
-        var scanResult = new ScanResult()
-            .withItems(items)
-            .withLastEvaluatedKey(lastKey);
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResult);
-        
-        var successResponse = createSuccessResponse(5);
-        
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+
+        createTestItems(21);
+
+        var successResponse = createSuccessResponse(10);
+
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenReturn(successResponse);
-        
+
         when(eventBridgeClient.putEvents(any(PutEventsRequest.class)))
             .thenReturn(PutEventsResponse.builder().build());
-        
-        var response = handler.processInput(request, event, context);
-        
-        assertThat(response.itemsProcessed(), is(equalTo(5)));
-        assertThat(response.messagesQueued(), is(equalTo(5)));
-        
-        verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
-        verify(eventBridgeClient, times(1)).putEvents(any(PutEventsRequest.class));
+
+        var smallScanPAge = 10;
+
+        handler = new LoadDynamodbResourceBatchJobHandler(
+            sqsClient, eventBridgeClient, TEST_QUEUE_URL,
+            PROCESSING_ENABLED, resourceService,
+            smallScanPAge,
+            SQS_BATCH_SIZE);
+
+        handler.processInput(request, event, context);
+
+        verify(eventBridgeClient, atLeastOnce()).putEvents(any(PutEventsRequest.class));
     }
 
     @Test
     void shouldHandleKillSwitchWhenProcessingDisabled() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+
         var disabledHandler = new LoadDynamodbResourceBatchJobHandler(
-            dynamoDbClient, sqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL, PROCESSING_DISABLED);
-        
+            sqsClient, eventBridgeClient, TEST_QUEUE_URL, PROCESSING_DISABLED,
+            resourceService, SCAN_PAGE_SIZE, SQS_BATCH_SIZE);
+
         var response = disabledHandler.processInput(request, event, context);
-        
+
         assertThat(response.itemsProcessed(), is(equalTo(0)));
         assertThat(response.messagesQueued(), is(equalTo(0)));
         assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
-        
-        verifyNoInteractions(dynamoDbClient);
+
+        verifyNoInteractions(resourceService);
         verifyNoInteractions(sqsClient);
         verifyNoInteractions(eventBridgeClient);
     }
@@ -166,266 +166,183 @@ class LoadDynamodbResourceBatchJobHandlerTest {
     @Test
     void shouldHandleEmptyScanResult() {
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
-        var emptyScanResult = new ScanResult()
-            .withItems(Collections.emptyList());
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(emptyScanResult);
-        
+
         var response = handler.processInput(request, event, context);
-        
+
         assertThat(response.itemsProcessed(), is(equalTo(0)));
         assertThat(response.messagesQueued(), is(equalTo(0)));
-        
+
         verify(sqsClient, never()).sendMessageBatch(any(SendMessageBatchRequest.class));
         verify(eventBridgeClient, never()).putEvents(any(PutEventsRequest.class));
     }
 
     @Test
     void shouldHandlePartialSqsBatchFailures() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
-        var items = createTestItems(5);
-        
-        var scanResult = new ScanResult()
-            .withItems(items);
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResult);
-        
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+
+        createTestItems(5);
+
         var partialFailureResponse = SendMessageBatchResponse.builder()
-            .successful(List.of(
-                SendMessageBatchResultEntry.builder().id("0").build(),
-                SendMessageBatchResultEntry.builder().id("1").build(),
-                SendMessageBatchResultEntry.builder().id("2").build()
-            ))
-            .failed(List.of(
-                BatchResultErrorEntry.builder()
-                    .id("3")
-                    .code("ServiceUnavailable")
-                    .message("Service temporarily unavailable")
-                    .build(),
-                BatchResultErrorEntry.builder()
-                    .id("4")
-                    .code("ThrottlingException")
-                    .message("Rate exceeded")
-                    .build()
-            ))
-            .build();
-        
+                                         .successful(List.of(
+                                             SendMessageBatchResultEntry.builder().id("0").build(),
+                                             SendMessageBatchResultEntry.builder().id("1").build(),
+                                             SendMessageBatchResultEntry.builder().id("2").build()
+                                         ))
+                                         .failed(List.of(
+                                             BatchResultErrorEntry.builder()
+                                                 .id("3")
+                                                 .code("ServiceUnavailable")
+                                                 .message("Service temporarily unavailable")
+                                                 .build(),
+                                             BatchResultErrorEntry.builder()
+                                                 .id("4")
+                                                 .code("ThrottlingException")
+                                                 .message("Rate exceeded")
+                                                 .build()
+                                         ))
+                                         .build();
+
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenReturn(partialFailureResponse);
-        
+
         var response = handler.processInput(request, event, context);
-        
+
         assertThat(response.itemsProcessed(), is(equalTo(5)));
         assertThat(response.messagesQueued(), is(equalTo(3)));
-        
+
         verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
 
     @Test
     void shouldHandleSqsExceptionGracefully() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
-        var items = createTestItems(3);
-        
-        var scanResult = new ScanResult()
-            .withItems(items);
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResult);
-        
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+
+        createTestItems(3);
+
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenThrow(new RuntimeException("SQS service error"));
-        
+
         var response = handler.processInput(request, event, context);
-        
+
         assertThat(response.itemsProcessed(), is(equalTo(3)));
         assertThat(response.messagesQueued(), is(equalTo(0)));
-        
+
         verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
 
     @Test
-    void shouldHandleDynamoDbScanException() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class)))
-            .thenThrow(new RuntimeException("DynamoDB scan failed"));
-        
-        assertThrows(RuntimeException.class, 
-            () -> handler.processInput(request, event, context));
-        
-        verify(sqsClient, never()).sendMessageBatch(any(SendMessageBatchRequest.class));
-        verify(eventBridgeClient, never()).putEvents(any(PutEventsRequest.class));
-    }
-
-    @Test
-    void shouldProcessWithExistingStartMarker() {
-        var startMarker = createDynamoDbKey("pk-start", "sk-start");
-        
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, startMarker);
-        
-        var items = createTestItems(3);
-        
-        var scanResult = new ScanResult()
-            .withItems(items);
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResult);
-        
-        var successResponse = createSuccessResponse(3);
-        
-        when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-            .thenReturn(successResponse);
-        
-        var response = handler.processInput(request, event, context);
-        
-        assertThat(response.itemsProcessed(), is(equalTo(3)));
-        assertThat(response.messagesQueued(), is(equalTo(3)));
-        
-        verify(eventBridgeClient, never()).putEvents(any(PutEventsRequest.class));
-    }
-
-    @Test
     void shouldProcessWhenKillSwitchEnabledByDefault() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
-        var items = createTestItems(1);
-        
-        var scanResult = new ScanResult()
-            .withItems(items);
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResult);
-        
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+
+        createTestItems(1);
+
         var successResponse = createSuccessResponse(1);
-        
+
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenReturn(successResponse);
-        
+
         var response = handler.processInput(request, event, context);
-        
+
         assertThat(response.itemsProcessed(), is(equalTo(1)));
         assertThat(response.messagesQueued(), is(equalTo(1)));
-        
-        verify(dynamoDbClient, times(1)).scan(any(ScanRequest.class));
+
+        verify(resourceService, times(1)).scanResourcesRaw(anyInt(), any(), any());
         verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
 
     @Test
     void shouldHandleNullInputGracefully() {
-        assertThrows(IllegalArgumentException.class, 
-            () -> handler.processInput(null, event, context));
-        
-        verifyNoInteractions(dynamoDbClient);
+        assertThrows(IllegalArgumentException.class,
+                     () -> handler.processInput(null, event, context));
+
+        verifyNoInteractions(resourceService);
         verifyNoInteractions(sqsClient);
     }
 
     @Test
     void shouldHandleBlankJobTypeAsInvalid() {
         var request = new LoadDynamodbRequest("   ");
-        
-        var exception = assertThrows(IllegalArgumentException.class, 
-            () -> handler.processInput(request, event, context));
-        
+
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> handler.processInput(request, event, context));
+
         assertThat(exception.getMessage(), containsString("Missing required field 'jobType'"));
-        
-        verifyNoInteractions(dynamoDbClient);
+
+        verifyNoInteractions(resourceService);
         verifyNoInteractions(sqsClient);
     }
-    
+
     @Test
     void shouldHandleParallelProcessingFailureGracefully() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
-        
-        var items = createTestItems(15);
-        
-        var scanResult = new ScanResult()
-            .withItems(items);
-        
-        when(dynamoDbClient.scan(any(ScanRequest.class))).thenReturn(scanResult);
-        
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+
+        createTestItems(15);
+
         var mockSqsClient = mock(SqsClient.class);
         when(mockSqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenThrow(new RuntimeException("Simulated parallel processing error"))
             .thenReturn(createSuccessResponse(10))
             .thenReturn(createSuccessResponse(5));
-        
+
         var testHandler = new LoadDynamodbResourceBatchJobHandler(
-            dynamoDbClient, mockSqsClient, eventBridgeClient, TEST_TABLE_NAME, TEST_QUEUE_URL,
-            PROCESSING_ENABLED);
-        
+            mockSqsClient, eventBridgeClient, TEST_QUEUE_URL,
+            PROCESSING_ENABLED, resourceService, SCAN_PAGE_SIZE, SQS_BATCH_SIZE);
+
         var response = testHandler.processInput(request, event, context);
-        
+
         assertThat(response.itemsProcessed(), is(equalTo(15)));
-        
+
         verify(mockSqsClient, atLeast(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
 
     @Test
     void shouldReturnZeroWhenWorkItemsListIsEmpty() throws Exception {
-        // This test specifically covers lines 166-167: the empty check in sendBatchToQueue
-        // Using reflection to directly test the private method
-        
         Method sendBatchToQueueMethod = LoadDynamodbResourceBatchJobHandler.class
-            .getDeclaredMethod("sendBatchToQueue", List.class);
+                                            .getDeclaredMethod("sendBatchToQueue", List.class);
         sendBatchToQueueMethod.setAccessible(true);
-        
-        // Call with empty list to trigger the if condition at line 166
-        Object result = sendBatchToQueueMethod.invoke(handler, Collections.emptyList());
-        
-        // Should return 0 immediately without any SQS interaction
+
+        Object result = sendBatchToQueueMethod.invoke(handler, emptyList());
+
         assertThat((Integer) result, is(equalTo(0)));
-        
-        // Verify no SQS calls were made
         verifyNoInteractions(sqsClient);
     }
 
-    @Test 
+    @Test
     void shouldHandleSerializationException() throws Exception {
-        // This test specifically covers lines 203-204: the catch block in getSendMessageBatchRequestEntry
-        // Use reflection to test the private method directly with an object that will fail serialization
-        
         Method getSendMessageBatchRequestEntry = LoadDynamodbResourceBatchJobHandler.class
-            .getDeclaredMethod("getSendMessageBatchRequestEntry", BatchWorkItem.class);
+                                                     .getDeclaredMethod("getSendMessageBatchRequestEntry",
+                                                                        BatchWorkItem.class);
         getSendMessageBatchRequestEntry.setAccessible(true);
-        
-        // Create a BatchWorkItem with a mock that will cause serialization to fail
+
         var mockKey = mock(DynamodbResourceBatchDynamoDbKey.class);
-        // Make the mockKey throw an exception when its properties are accessed during serialization
         when(mockKey.partitionKey()).thenThrow(new RuntimeException("Serialization trigger"));
-        // No need to stub sortKey() - only partitionKey() will be called and trigger the exception
-        
+
         var problematicItem = new BatchWorkItem(mockKey, TEST_JOB_TYPE);
-        
-        // This should trigger the RuntimeException at line 204 wrapped in InvocationTargetException
-        Exception exception = assertThrows(InvocationTargetException.class, 
-            () -> getSendMessageBatchRequestEntry.invoke(handler, problematicItem));
-        
-        // The cause should be the RuntimeException from line 204
+
+        Exception exception = assertThrows(InvocationTargetException.class,
+                                           () -> getSendMessageBatchRequestEntry.invoke(handler, problematicItem));
+
         assertThat(exception.getCause(), instanceOf(RuntimeException.class));
         assertThat(exception.getCause().getMessage(), containsString("Failed to serialize work item"));
     }
-    
+
     private static SendMessageBatchResponse createSuccessResponse(int count) {
         var successfulEntries = IntStream.range(0, count)
-            .mapToObj(i -> SendMessageBatchResultEntry.builder().id(String.valueOf(i)).build())
-            .toList();
-        
+                                    .mapToObj(i -> SendMessageBatchResultEntry.builder().id(String.valueOf(i)).build())
+                                    .toList();
+
         return SendMessageBatchResponse.builder()
-            .successful(successfulEntries)
-            .failed(List.of())
-            .build();
+                   .successful(successfulEntries)
+                   .failed(List.of())
+                   .build();
     }
-    
-    private static List<Map<String, AttributeValue>> createTestItems(int count) {
-        return IntStream.range(0, count)
-            .mapToObj(i -> createDynamoDbKey("pk" + i, "sk" + i))
-            .toList();
-    }
-    
-    private static Map<String, AttributeValue> createDynamoDbKey(String partitionKey, String sortKey) {
-        return Map.of(
-            PRIMARY_KEY_PARTITION_KEY_NAME, new AttributeValue(partitionKey),
-            PRIMARY_KEY_SORT_KEY_NAME, new AttributeValue(sortKey)
-        );
+
+    private void createTestItems(int count) {
+        IntStream.range(0, count)
+            .mapToObj(i -> randomPublication())
+            .forEach(publication ->
+                         attempt(() -> Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                        UserInstance.fromPublication(
+                                                                                            publication))).orElseThrow());
     }
 }

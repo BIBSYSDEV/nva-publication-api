@@ -3004,6 +3004,8 @@ Resources:
           WORK_QUEUE_URL: !Ref DynamodbResourceBatchJobWorkQueue
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           PROCESSING_ENABLED: 'true'
+          SCAN_PAGE_SIZE: 1000
+          SQS_BATCH_SIZE: 10
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
