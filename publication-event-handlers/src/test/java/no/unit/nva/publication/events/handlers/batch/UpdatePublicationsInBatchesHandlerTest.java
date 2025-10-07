@@ -620,8 +620,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     private Publication createPublicationWithContributor(Contributor contributor) {
         var publication = randomPublication();
-        publication.getEntityDescription().setContributors(List.of(contributor, randomContributorWithId(randomUri()),
-                                                                   new Contributor.Builder().build(),
+        publication.getEntityDescription().setContributors(List.of(new Contributor.Builder().build(), contributor,
+                                                                   randomContributorWithId(randomUri()),
                                                                    new Contributor.Builder().withIdentity(new Identity.Builder().build()).build()));
         return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                publication)).orElseThrow();
