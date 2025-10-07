@@ -106,10 +106,7 @@ public final class ManuallyUpdatePublicationUtil {
     private Resource updateContributorIdentifier(Resource resource, ManuallyUpdatePublicationsRequest request) {
         var contributors = new ArrayList<>(resource.getEntityDescription().getContributors());
         var contributorToUpdate = contributors.stream()
-                                      .filter(contributor -> contributor.getIdentity()
-                                                                 .getId()
-                                                                 .toString()
-                                                                 .contains(request.oldValue()))
+                                      .filter(contributor -> hasIdentifier(contributor, request.oldValue()))
                                       .findFirst()
                                       .orElseThrow();
 
