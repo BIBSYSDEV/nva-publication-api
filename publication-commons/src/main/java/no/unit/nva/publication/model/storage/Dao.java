@@ -194,7 +194,7 @@ public abstract class Dao
     protected abstract User getOwner();
 
     private static Stream<KeyField> getTypesOrDefault(Collection<KeyField> types) {
-        return types.isEmpty() ? Stream.of(KeyField.values()) : types.stream();
+        return types == null || types.isEmpty() ? Stream.of(KeyField.values()) : types.stream();
     }
 
     private static String toQueryPart(KeyField type) {
