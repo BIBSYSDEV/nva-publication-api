@@ -27,6 +27,7 @@ import java.util.stream.IntStream;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -446,11 +447,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
             var updatedContributorIdentifier = updatedPublication.getEntityDescription().getContributors().stream()
-                                                   .filter(contributor -> contributor.getIdentity().getId().toString().contains(newContributorIdentifier))
+                                                   .filter(contributor -> hasIdentifier(contributor,
+                                                                                        newContributorIdentifier))
                                                    .findFirst()
                                                    .orElseThrow();
             var contributorsToKeepUnchanged = publication.getEntityDescription().getContributors().stream()
-                                           .filter(contributor -> !contributor.getIdentity().getId().toString().contains(oldContributorIdentifier))
+                                           .filter(contributor -> !hasIdentifier(contributor, oldContributorIdentifier))
                                            .toList();
             assertEquals(newContributorIdentifier,
                          UriWrapper.fromUri(updatedContributorIdentifier.getIdentity().getId()).getLastPathElement());
@@ -475,6 +477,15 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
             assertTrue(updatedPublication.getEntityDescription().getContributors().containsAll(publication.getEntityDescription().getContributors()));
         });
+    }
+
+    private static boolean hasIdentifier(Contributor contributor, String oldContributorIdentifier) {
+        return Optional.ofNullable(contributor)
+                   .map(Contributor::getIdentity)
+                   .map(Identity::getId)
+                   .map(URI::toString)
+                   .map(oldContributorIdentifier::contains)
+                   .isPresent();
     }
 
     private static URI createContributorIdentifier(String contributorIdentifier) {
@@ -610,7 +621,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     private Publication createPublicationWithContributor(Contributor contributor) {
         var publication = randomPublication();
         publication.getEntityDescription().setContributors(List.of(contributor, randomContributorWithId(randomUri()),
-         randomContributorWithId(randomUri())                                                          ));
+                                                                   new Contributor.Builder().build(),
+                                                                   new Contributor.Builder().withIdentity(new Identity.Builder().build()).build()));
         return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                publication)).orElseThrow();
     }

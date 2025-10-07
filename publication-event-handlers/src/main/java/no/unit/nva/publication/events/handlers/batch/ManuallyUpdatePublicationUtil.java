@@ -51,18 +51,26 @@ public final class ManuallyUpdatePublicationUtil {
     public void update(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
         switch (request.type()) {
             case PUBLISHER -> updateResources(resources, request, this::hasPublisher, this::updatePublisher);
-            case SERIAL_PUBLICATION -> updateResources(resources, request, this::hasSerialPublication, this::updateSeriesOrJournal);
+            case SERIAL_PUBLICATION ->
+                updateResources(resources, request, this::hasSerialPublication, this::updateSeriesOrJournal);
             case LICENSE -> updateLicenseFiles(resources, request);
-            case UNCONFIRMED_PUBLISHER -> updateResources(resources, request, unconfirmedPublisherFilter(request), updateUnconfirmedPublisher());
-            case UNCONFIRMED_SERIES -> updateResources(resources, request, unconfirmedSeriesFilter(request), updateUnconfirmedSeries());
-            case UNCONFIRMED_JOURNAL -> updateResources(resources, request, unconfirmedJournalFilter(request), this::updateUnconfirmedJournalToConfirmed);
-            case CONTRIBUTOR_IDENTIFIER -> updateResources(resources, request, this::hasContributor, this::updateContributorIdentifier);
+            case UNCONFIRMED_PUBLISHER ->
+                updateResources(resources, request, unconfirmedPublisherFilter(request), updateUnconfirmedPublisher());
+            case UNCONFIRMED_SERIES ->
+                updateResources(resources, request, unconfirmedSeriesFilter(request), updateUnconfirmedSeries());
+            case UNCONFIRMED_JOURNAL -> updateResources(resources, request, unconfirmedJournalFilter(request),
+                                                        this::updateUnconfirmedJournalToConfirmed);
+            case CONTRIBUTOR_IDENTIFIER ->
+                updateResources(resources, request, this::hasContributor, this::updateContributorIdentifier);
         }
     }
 
+    private static boolean hasLicense(String license, FileEntry file) {
+        return file.getFile().getLicense().toString().equals(license);
+    }
+
     private BiPredicate<Resource, String> unconfirmedJournalFilter(ManuallyUpdatePublicationsRequest request) {
-        return (resource, val) -> unconfirmedJournalFilter(resource, val,
-                                                           request.comparator());
+        return (resource, val) -> unconfirmedJournalFilter(resource, val, request.comparator());
     }
 
     private BiFunction<Resource, ManuallyUpdatePublicationsRequest, Resource> updateUnconfirmedSeries() {
@@ -91,14 +99,17 @@ public final class ManuallyUpdatePublicationUtil {
                                        .toList();
 
         logUpdate(request, publicationsToUpdate);
-        publicationsToUpdate.forEach(resource ->
-                                         resourceService.updateResource(resource, UserInstance.fromPublication(resource.toPublication())));
+        publicationsToUpdate.forEach(resource -> resourceService.updateResource(resource, UserInstance.fromPublication(
+            resource.toPublication())));
     }
 
     private Resource updateContributorIdentifier(Resource resource, ManuallyUpdatePublicationsRequest request) {
         var contributors = new ArrayList<>(resource.getEntityDescription().getContributors());
         var contributorToUpdate = contributors.stream()
-                                      .filter(contributor -> contributor.getIdentity().getId().toString().contains(request.oldValue()))
+                                      .filter(contributor -> contributor.getIdentity()
+                                                                 .getId()
+                                                                 .toString()
+                                                                 .contains(request.oldValue()))
                                       .findFirst()
                                       .orElseThrow();
 
@@ -135,8 +146,7 @@ public final class ManuallyUpdatePublicationUtil {
     }
 
     private boolean unconfirmedPublisherFilter(Resource resource, String publisherName, Comparator comparator) {
-        return getPublishingHouse(resource, UnconfirmedPublisher.class)
-                   .map(UnconfirmedPublisher::getName)
+        return getPublishingHouse(resource, UnconfirmedPublisher.class).map(UnconfirmedPublisher::getName)
                    .filter(value -> matches(value, publisherName, comparator))
                    .isPresent();
     }
@@ -174,10 +184,17 @@ public final class ManuallyUpdatePublicationUtil {
                    .map(EntityDescription::getContributors)
                    .stream()
                    .flatMap(List::stream)
+                   .anyMatch(contributor -> hasIdentifier(contributor, contributorId));
+    }
+
+    private boolean hasIdentifier(Contributor contributor, String contributorIdentifier) {
+        return Optional.ofNullable(contributor)
                    .map(Contributor::getIdentity)
                    .map(Identity::getId)
-                   .map(URI::toString)
-                   .anyMatch(id -> id.contains(contributorId));
+                   .map(UriWrapper::fromUri)
+                   .map(UriWrapper::getLastPathElement)
+                   .filter(contributorIdentifier::equals)
+                   .isPresent();
     }
 
     private boolean hasSerialPublication(Resource resource, String value) {
@@ -204,21 +221,20 @@ public final class ManuallyUpdatePublicationUtil {
 
     private Resource updatePublisher(Resource resource, ManuallyUpdatePublicationsRequest request) {
         var book = (Book) resource.getEntityDescription().getReference().getPublicationContext();
-        var publisherUri = getPublishingHouse(resource, Publisher.class)
-                               .map(Publisher::getId)
+        var publisherUri = getPublishingHouse(resource, Publisher.class).map(Publisher::getId)
                                .map(URI::toString)
                                .map(uri -> uri.replace(request.oldValue(), request.newValue()))
                                .map(URI::create)
                                .orElseThrow();
 
-        resource.getEntityDescription().getReference()
+        resource.getEntityDescription()
+            .getReference()
             .setPublicationContext(book.copy().withPublisher(new Publisher(publisherUri)).build());
         return resource;
     }
 
     private boolean hasPublisher(Resource resource, String publisher) {
-        return getPublishingHouse(resource, Publisher.class)
-                   .map(Publisher::getId)
+        return getPublishingHouse(resource, Publisher.class).map(Publisher::getId)
                    .map(URI::toString)
                    .filter(uri -> uri.contains(publisher))
                    .isPresent();
@@ -234,17 +250,17 @@ public final class ManuallyUpdatePublicationUtil {
     }
 
     private void updateLicenseFiles(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
-        resources.forEach(resource -> resource.getFileEntries().stream()
+        resources.forEach(resource -> resource.getFileEntries()
+                                          .stream()
                                           .filter(file -> hasLicense(request.oldValue(), file))
                                           .forEach(file -> updateFileLicense(file, resource, request.newValue())));
     }
 
-    private static boolean hasLicense(String license, FileEntry file) {
-        return file.getFile().getLicense().toString().equals(license);
-    }
-
     private void updateFileLicense(FileEntry fileEntry, Resource resource, String license) {
-        var updatedFile = fileEntry.getFile().copy().withLicense(URI.create(license)).build(fileEntry.getFile().getClass());
+        var updatedFile = fileEntry.getFile()
+                              .copy()
+                              .withLicense(URI.create(license))
+                              .build(fileEntry.getFile().getClass());
         fileEntry.update(updatedFile, UserInstance.fromPublication(resource.toPublication()), resourceService);
     }
 
@@ -261,7 +277,7 @@ public final class ManuallyUpdatePublicationUtil {
     }
 
     private void logUpdate(ManuallyUpdatePublicationsRequest request, List<Resource> resources) {
-        logger.info("Updating {} from {} to {} for {} resources",
-                    request.type(), request.oldValue(), request.newValue(), resources.size());
+        logger.info("Updating {} from {} to {} for {} resources", request.type(), request.oldValue(),
+                    request.newValue(), resources.size());
     }
 }
