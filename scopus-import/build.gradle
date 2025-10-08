@@ -40,7 +40,7 @@ dependencies {
     testImplementation project(":brage-import")
     testImplementation project(":brage-import")
     testImplementation project(":publication-testing")
-
+    testImplementation project(":publication-model-testing")
 }
 
 test {
@@ -52,6 +52,7 @@ test {
     environment "PIA_USERNAME_KEY", "someUserNameKey"
     environment "PIA_PASSWORD_KEY", "somePasswordNameKey"
     environment "TABLE_NAME", "nonExistingTable"
+    environment "RESOURCES_TABLE_NAME", "resourcesNonExistingTable"
     environment "SCOPUS_IMPORT_BUCKET", "someBucket"
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"

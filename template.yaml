@@ -1335,6 +1335,7 @@ Resources:
         Variables:
           API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaImportCandidatesTable
+          RESOURCES_TABLE_NAME: !Ref NvaResourcesTable
           PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
           PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
           PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
