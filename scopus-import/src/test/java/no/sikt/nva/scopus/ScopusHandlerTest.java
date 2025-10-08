@@ -202,7 +202,6 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
@@ -1222,21 +1221,44 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistImportCandidateWithStatusImportedWhenThereAlreadyExistsPublicationWithMatchingScopusIdentifier()
-        throws IOException, BadRequestException {
-        var publication = randomPublication();
+    void shouldPersistImportCandidateWithStatusImportedWhenThereExistsPublicationWithMatchingScopusIdentifier()
+        throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
-        publication.setAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid())));
-        var existingPublication = resourcesService.createPublication(UserInstance.create(randomString(), randomUri()),
-                                                                     publication);
+        var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
+
+        var existingPublication = persistPublicationWithScopusIdentifier(scopusIdentifier);
         var handler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                          nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
-                          mockedSearchService(List.of(existingPublication)));
+                                        nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
+                                        mockedSearchService(List.of(existingPublication)));
         createEmptyPiaMock();
         var event = createNewScopusPublicationEvent();
         var importCandidate = handler.handleRequest(event, CONTEXT);
 
         assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
+    }
+
+    @Test
+    void shouldPersistImportCandidateWithStatusImportedWhenThereAreMultiplePublicationWithTheSameScopusIdentifier()
+        throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+        var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
+        var existingPublications =
+            IntStream.of(3).mapToObj(i -> persistPublicationWithScopusIdentifier(scopusIdentifier)).toList();
+        var handler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
+                                        nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
+                                        mockedSearchService(existingPublications));
+        createEmptyPiaMock();
+        var event = createNewScopusPublicationEvent();
+        var importCandidate = handler.handleRequest(event, CONTEXT);
+
+        assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
+    }
+
+    private Publication persistPublicationWithScopusIdentifier(ScopusIdentifier scopusIdentifier) {
+        var publication = randomPublication();
+        publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
+        return attempt(() -> resourcesService.createPublication(UserInstance.create(randomString(), randomUri()),
+                                                                publication)).orElseThrow();
     }
 
     void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {

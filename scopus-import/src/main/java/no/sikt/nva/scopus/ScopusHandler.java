@@ -16,6 +16,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import no.scopus.generated.DocTp;
@@ -68,6 +69,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     private static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String URI_ATTRIBUTE = "uri";
     public static final String PUBLICATION = "publication";
+    public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     private final S3Client s3Client;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
@@ -115,24 +117,36 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
         var s3Uri = UriWrapper.fromUri(message.getMessageAttributes().get(URI_ATTRIBUTE).getStringValue()).getUri();
         return attempt(() -> createImportCandidate(s3Uri))
                    .map(this::updateExistingIfNeeded)
-                   .map(this::updateToImportedIfNeeded)
+                   .map(this::injectImportedStatusWhenPublicationWithTheSameScopusIdentifierExists)
                    .flatMap(this::persistOrUpdateInDatabase)
                    .map(this::storeSuccessReport)
                    .orElseThrow(fail -> handleSavingError(fail, s3Uri));
     }
 
-    private ImportCandidate updateToImportedIfNeeded(ImportCandidate importCandidate) {
+    private ImportCandidate injectImportedStatusWhenPublicationWithTheSameScopusIdentifierExists(ImportCandidate importCandidate) {
         var scopusIdentifier = getScopusIdentifier(importCandidate);
-        var publicationWithScopusIdentifier = searchService.searchPublicationsByParam(Map.of("scopusIdentifier", scopusIdentifier)).stream()
-                                                  .filter(resource -> hasScopusIdentifier(resource, scopusIdentifier))
-                                                  .findFirst();
-            publicationWithScopusIdentifier.ifPresent(resource -> importCandidate.setImportStatus(
-            ImportStatusFactory.createImported(new Username(RESOURCE_OWNER_SIKT), UriWrapper.fromHost(API_HOST)
-                                                                                      .addChild(PUBLICATION)
-                                                                                      .addChild(
-                                                                                          resource.toString())
-                                                                                      .getUri())));
+        fetchPublicationsWithScopusIdentifier(scopusIdentifier)
+            .ifPresent(resource -> setStatusImported(importCandidate, resource));
         return importCandidate;
+    }
+
+    private static void setStatusImported(ImportCandidate importCandidate, Resource resource) {
+        importCandidate.setImportStatus(ImportStatusFactory.createImported(new Username(RESOURCE_OWNER_SIKT), createPublicationId(
+            resource)));
+    }
+
+    private static URI createPublicationId(Resource resource) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(PUBLICATION)
+                   .addChild(
+                       resource.toString())
+                   .getUri();
+    }
+
+    private Optional<Resource> fetchPublicationsWithScopusIdentifier(String scopusIdentifier) {
+        return searchService.searchPublicationsByParam(Map.of(SCOPUS_IDENTIFIER, scopusIdentifier)).stream()
+                   .filter(resource -> hasScopusIdentifier(resource, scopusIdentifier))
+                   .findFirst();
     }
 
     private boolean hasScopusIdentifier(Resource resource, String scopusIdentifier) {
