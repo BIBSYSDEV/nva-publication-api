@@ -167,13 +167,17 @@ public class FramedJsonGenerator {
                            nva:entityDescription ?entityDescription .
               {
                 SELECT (COUNT(?contributor) AS ?contributorsCount) WHERE {
+                  ?publication a nva:Publication ;
+                               nva:entityDescription ?entityDescription .
                   ?entityDescription nva:contributor ?contributor .
                 }
               }
               {
                 SELECT ?contributorsPreview WHERE {
+                  ?publication a nva:Publication ;
+                               nva:entityDescription ?entityDescription .
                   ?entityDescription nva:contributor ?contributorsPreview .
-                  ?contributor nva:sequence ?sequence .
+                  ?contributorsPreview nva:sequence ?sequence .
                 } ORDER BY ASC(?sequence) LIMIT 10
               }
             }

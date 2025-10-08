@@ -40,7 +40,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import com.google.common.net.MediaType;
@@ -259,6 +258,36 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10ContributorsExcludingParentPublicationContributors()
+        throws BadRequestException, JsonProcessingException {
+        var publication = randomPublication(AcademicChapter.class);
+
+        var contributors = IntStream.range(0, 20)
+                               .mapToObj(i -> contributorWithSequence(randomInteger()))
+                               .toList();
+
+        publication.getEntityDescription().setContributors(contributors);
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        var framedResultNode = indexDocument.asJsonNode();
+
+        var contributorsCountNode = framedResultNode.at("/entityDescription")
+                                        .at("/contributorsCount");
+
+        var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
+                                                      .at("/contributorsPreview");
+
+        var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
+                                            .map(node -> objectMapper.convertValue(node, Contributor.class))
+                                            .toList();
+
+        assertThat(actualContributorsPreview.size(), is(equalTo(10)));
+        assertThat(Integer.parseInt(contributorsCountNode.asText()), is(equalTo(20)));
+    }
+
+    @Test
     void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10Contributors() throws Exception {
         var publication = randomPublication();
 
@@ -273,7 +302,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
         var framedResultNode = indexDocument.asJsonNode();
 
-        var contributorsCountNode = (IntNode) framedResultNode.at("/entityDescription")
+        var contributorsCountNode = framedResultNode.at("/entityDescription")
                                                   .at("/contributorsCount");
 
         var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
@@ -284,7 +313,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                             .toList();
 
         assertThat(actualContributorsPreview.size(), is(equalTo(10)));
-        assertThat(contributorsCountNode.intValue(), is(equalTo(20)));
+        assertThat(Integer.parseInt(contributorsCountNode.asText()), is(equalTo(20)));
     }
 
     @Test
@@ -300,8 +329,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource).asJsonNode();
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
         var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, HARD_CODED_TOP_LEVEL_ORG_URI.toString());
 

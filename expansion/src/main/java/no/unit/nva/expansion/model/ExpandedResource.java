@@ -196,16 +196,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return objectNode;
     }
 
-    private static void injectContributorCount(ObjectNode json) {
-        var contributors = json.at(CONTRIBUTORS_PTR);
-        if (!contributors.isMissingNode() && contributors.isArray()) {
-            var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
-            if (!entityDescription.isMissingNode() && entityDescription.isObject()) {
-                entityDescription.put(CONTRIBUTORS_COUNT, contributors.size());
-            }
-        }
-    }
-
     /**
      * Injects a join field into the JSON document, intended to be used by OpenSearch. The join
      * field is used to create a relationship between parent and child documents, where all

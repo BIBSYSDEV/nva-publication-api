@@ -57,6 +57,9 @@
     "@container": "@set",
     "@id": "concertProgramme"
   },
+  "contributorsCount": {
+    "@type": "xsd:integer"
+  },
   "contributorCristinIds": {
     "@container": "@set",
     "@id": "contributorCristinId",
