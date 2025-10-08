@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.model.OperationType;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -56,7 +57,6 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -197,7 +197,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         pendingPublishingRequest.setWorkflow(publishingWorkflow);
         var approvedPublishingRequest =
             pendingPublishingRequest
-                .approveFiles()
                 .complete(publication, USER_INSTANCE)
                 .persistNewTicket(ticketService);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
@@ -381,7 +380,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var pendingPublishingRequest =
             (PublishingRequestCase) persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest = pendingPublishingRequest.approveFiles()
+        var approvedPublishingRequest = pendingPublishingRequest
                                             .complete(publication, USER_INSTANCE)
                                             .persistNewTicket(ticketService);
         var handlerThrowingException =
@@ -651,8 +650,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                 Resource.fromPublication(publication),
                 userInstance,
                 REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                Set.of(file))
-                                           .approveFiles().complete(publication, userInstance)
+                Set.of(file)).complete(publication, userInstance)
                                            .persistNewTicket(ticketService);
     }
 
@@ -720,8 +718,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     private String eventBody(
         TicketEntry pendingPublishingRequest, TicketEntry approvedPublishingRequest) {
-        return new DataEntryUpdateEvent(
-            randomString(), pendingPublishingRequest, approvedPublishingRequest)
+        return new DataEntryUpdateEvent(OperationType.MODIFY.toString(), pendingPublishingRequest, approvedPublishingRequest)
                    .toJsonString();
     }
 

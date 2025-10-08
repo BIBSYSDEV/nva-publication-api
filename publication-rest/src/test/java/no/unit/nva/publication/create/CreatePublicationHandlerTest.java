@@ -25,6 +25,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.AssertionsKt.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -225,6 +226,21 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(publicationResponse.getStatus(), is(equalTo(status)));
+    }
+
+    @Test
+    void shouldSetPublishedDateWhenMachineUserPersistsPublicationWithStatusPublished()
+        throws Exception {
+        var request = createEmptyPublicationRequest();
+        request.setStatus(PublicationStatus.PUBLISHED);
+        request.setEntityDescription(randomPublishableEntityDescription());
+        var inputStream = requestFromExternalClient(request);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponseElevatedUser.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+        var publicationResponse = actual.getBodyObject(PublicationResponseElevatedUser.class);
+        assertNotNull(publicationResponse.getPublishedDate());
     }
 
     @Test

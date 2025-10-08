@@ -275,8 +275,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication, USER_INSTANCE);
-        var request = createCompleteTicketHttpRequest(completedTicket,
-                                                      completedTicket.getCustomerId());
+        var request = createCompleteTicketHttpRequest(completedTicket.getCustomerId(),
+                                                      getResourceIdentifier(completedTicket),
+                                                      completedTicket.getIdentifier(),
+                                                      publication.getResourceOwner().getOwnerAffiliation(),
+                                                      completedTicket.getStatus());
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
@@ -289,7 +292,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = createPersistedDoiRequestWithOwnerAffiliation(publication, randomUri());
         var completedTicket = ticket.complete(publication, USER_INSTANCE);
         var customer = randomUri();
-        var request = createCompleteTicketHttpRequest(completedTicket, customer, AccessRight.MANAGE_DOI);
+        var request = createCompleteTicketHttpRequest(customer, getResourceIdentifier(completedTicket),
+                                                      completedTicket.getIdentifier(),
+                                                      publication.getResourceOwner().getOwnerAffiliation(),
+                                                      completedTicket.getStatus(), AccessRight.MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
@@ -560,8 +566,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
             PublicationStatus.DRAFT, resourceService);
         var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(publication);
         var closedTicket = ticket.complete(publication, USER_INSTANCE);
-        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
-                                                          ticket.getCustomerId(),
+        var httpRequest = createCompleteTicketHttpRequest(ticket.getCustomerId(), getResourceIdentifier(closedTicket),
+                                                          closedTicket.getIdentifier(),
+                                                          publication.getResourceOwner().getOwnerAffiliation(),
+                                                          closedTicket.getStatus(),
                                                           MANAGE_RESOURCES_STANDARD,
                                                           MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
@@ -585,8 +593,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                        .persistNew(resourceService, UserInstance.fromPublication(publication));
         var ticket = persistFilesApprovalThesisContainingExistingPendingOpenFiles(persistedPublication);
         var closedTicket = ticket.complete(persistedPublication, USER_INSTANCE);
-        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
-                                                          ticket.getCustomerId(),
+        var httpRequest = createCompleteTicketHttpRequest(ticket.getCustomerId(), getResourceIdentifier(closedTicket),
+                                                          closedTicket.getIdentifier(),
+                                                          publication.getResourceOwner().getOwnerAffiliation(),
+                                                          closedTicket.getStatus(),
                                                           MANAGE_RESOURCES_STANDARD,
                                                           MANAGE_DEGREE);
         handler.handleRequest(httpRequest, output, CONTEXT);
@@ -617,8 +627,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    containsInAnyOrder(expectedFilesForApproval));
 
         var completedTicket = ticket.complete(publication, USER_INSTANCE);
-        var httpRequest = createCompleteTicketHttpRequest(completedTicket,
-                                                          ticket.getCustomerId(),
+        var httpRequest = createCompleteTicketHttpRequest(ticket.getCustomerId(),
+                                                          getResourceIdentifier(completedTicket),
+                                                          completedTicket.getIdentifier(),
+                                                          publication.getResourceOwner().getOwnerAffiliation(),
+                                                          completedTicket.getStatus(),
                                                           MANAGE_RESOURCES_STANDARD,
                                                           MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
@@ -677,20 +690,21 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                      publication);
         var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(persistedPublication);
-        var closedTicket = ticket.complete(persistedPublication, USER_INSTANCE);
-        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
-                                                          ticket.getCustomerId(),
+        var httpRequest = createCompleteTicketHttpRequest(ticket.getCustomerId(), ticket.getResourceIdentifier(),
+                                                          ticket.getIdentifier(),
+                                                          publication.getResourceOwner().getOwnerAffiliation(),
+                                                          COMPLETED,
                                                           MANAGE_RESOURCES_STANDARD,
                                                           MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
 
     @Test
-    void shouldReturnConflictWhenApprovingPublishingRequestContainingFileThatIsMissingMandatoryFieldsAndValidFile()
+    void shouldReturnBadRequestWhenApprovingPublishingRequestContainingFileThatIsMissingMandatoryFieldsAndValidFile()
         throws ApiGatewayException, IOException {
         var publication =
             randomPublication().copy().withAssociatedArtifacts(
@@ -698,16 +712,17 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                      publication);
         var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(persistedPublication);
-        var closedTicket = ticket.complete(persistedPublication, USER_INSTANCE);
-        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
-                                                          ticket.getCustomerId(),
+        var httpRequest = createCompleteTicketHttpRequest(ticket.getCustomerId(), getResourceIdentifier(ticket),
+                                                          ticket.getIdentifier(),
+                                                          publication.getResourceOwner().getOwnerAffiliation(),
+                                                          COMPLETED,
                                                           MANAGE_RESOURCES_STANDARD,
                                                           MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
     }
 
     @Test
@@ -910,7 +925,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream authorizedUserCompletesTicket(TicketEntry ticket) throws JsonProcessingException {
-        return createCompleteTicketHttpRequest(ticket, ticket.getCustomerId(), MANAGE_RESOURCES_STANDARD,
+        return createCompleteTicketHttpRequest(ticket.getCustomerId(), getResourceIdentifier(ticket),
+                                               ticket.getIdentifier(),
+                                               ticket.getOwnerAffiliation(), ticket.getStatus(),
+                                               MANAGE_RESOURCES_STANDARD,
                                                AccessRight.MANAGE_DOI,
                                                MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT);
     }
@@ -943,22 +961,28 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .collect(Collectors.toSet());
     }
 
-    private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, URI customer, AccessRight... accessRights)
+    private InputStream createCompleteTicketHttpRequest(URI customer,
+                                                        SortableIdentifier resourceIdentifier,
+                                                        SortableIdentifier ticketIdentifier, URI ownerAffiliation,
+                                                        TicketStatus status,
+                                                        AccessRight... accessRights)
         throws JsonProcessingException {
-        var publication = ticket.toPublication(resourceService);
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(
-                TicketDto.fromTicket(ticket, Collections.emptyList(), Collections.emptyList(),
-                                     mock(TicketPermissions.class)))
+        return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withBody(
+                new UpdateTicketRequest(status, null, null))
                    .withAccessRights(customer, accessRights)
                    .withCurrentCustomer(customer)
                    .withUserName(USER_INSTANCE.getUsername())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
-                                              ticket.getResourceIdentifier().toString(),
+                                              resourceIdentifier.toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
-                                              ticket.getIdentifier().toString()))
+                                              ticketIdentifier.toString()))
                    .withPersonCristinId(randomUri())
-                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
+                   .withTopLevelCristinOrgId(ownerAffiliation)
                    .build();
+    }
+
+    private static SortableIdentifier getResourceIdentifier(TicketEntry ticket) {
+        return ticket.getResourceIdentifier();
     }
 
     private InputStream authorizedUserInputMalformedIdentifier(String publicationIdentifier, String ticketIdentifier)

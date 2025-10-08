@@ -3,7 +3,6 @@ package no.unit.nva.publication.file.upload;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.publication.model.business.UserInstanceFixture.getDegreeAndFileCuratorFromPublication;
@@ -235,7 +234,7 @@ class FileServiceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         var userInstance = UserInstance.create(new User(randomString()), randomUri());
         var file = randomHiddenFile();
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService, UserInstance.fromPublication(publication));
 
         assertThrows(ForbiddenException.class,
                      () -> fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), userInstance, file));
@@ -258,7 +257,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var file = randomHiddenFile();
-        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = file.copy()
                               .withLicense(randomUri())
@@ -284,7 +283,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var file = randomPendingInternalFile();
-        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = file.toPendingOpenFile();
 
@@ -307,7 +306,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);
-        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = originalFile.copy().build(updatedClazz);
 
@@ -325,7 +324,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);
-        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = originalFile.copy().build(updatedClazz);
 
@@ -342,7 +341,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile();
-        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = originalFile.copy().withIdentifier(UUID.randomUUID()).buildHiddenFile();
 

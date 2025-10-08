@@ -48,9 +48,10 @@ class DeleteFileEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldDeleteFileFromS3AndDatabaseWhenFileEntryHasBeenDeleted() throws IOException {
+        var userInstance = UserInstance.create(randomString(), randomUri());
         var fileEntry = FileEntry.create(randomOpenFile(), SortableIdentifier.next(),
-                                         UserInstance.create(randomString(), randomUri()));
-        fileEntry.persist(resourceService);
+                                         userInstance);
+        fileEntry.persist(resourceService, userInstance);
 
         var persistedStorageS3Driver = new S3Driver(s3Client,
                                                     new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"));

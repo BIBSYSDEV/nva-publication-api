@@ -2,8 +2,10 @@ package no.unit.nva.publication.log.service;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.publication.model.business.ThirdPartySystem.OTHER;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.FILE_UPLOADED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
@@ -29,6 +31,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
@@ -114,7 +117,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     void shouldCreateLogEntryWhenFileEventIsPresent() throws BadRequestException {
         var publication = createPublication();
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), UserInstance.fromPublication(publication));
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, UserInstance.fromPublication(publication));
         fileEntry.approve(resourceService, new User(randomString()));
 
         logEntryService.persistLogEntry(fileEntry);
@@ -131,7 +134,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
         var publication = createPublication();
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), UserInstance.fromPublication(publication));
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, UserInstance.fromPublication(publication));
         fileEntry.approve(resourceService, new User(randomString()));
 
         logEntryService.persistLogEntry(fileEntry);
@@ -163,7 +166,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         var publication = createPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
         fileEntry.updateFromImport(randomOpenFile(), userInstance, ImportSource.fromBrageArchive(randomString()));
         fileEntry.toDao().updateExistingEntry(client);
         var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
@@ -171,6 +174,19 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
         assertEquals(LogTopic.FILE_TYPE_UPDATED_BY_IMPORT, logEntries.getFirst().topic());
+    }
+
+    @Test
+    void shouldPersistFileUploadedLogEntryForThirdParty() throws BadRequestException {
+        var publication = createPublication();
+        var userInstance = UserInstance.createExternalUser(randomResourceOwner(), randomUri(), OTHER);
+        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance);
+        fileEntry.persist(resourceService, userInstance);
+        var updatedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+        logEntryService.persistLogEntry(updatedFileEntry);
+        var logEntry = (FileLogEntry) Resource.fromPublication(publication).fetchLogEntries(resourceService).getFirst();
+        assertEquals(FILE_UPLOADED, logEntry.topic());
+        assertNotNull(logEntry.importSource());
     }
 
     @Test

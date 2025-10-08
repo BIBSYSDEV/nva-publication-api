@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.publicationstate;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -13,6 +14,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogUser;
@@ -23,7 +25,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class FileEventTest {
 
     public static Stream<Arguments> stateProvider() {
-        return Stream.of(Arguments.of(new FileUploadedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
+        return Stream.of(Arguments.of(new FileUploadedEvent(Instant.now(), randomUser(),
+                                                            randomUri(), SortableIdentifier.next(), ImportSource.fromBrageArchive(randomString()))),
+                         Arguments.of(FileUploadedEvent.create(UserInstance.createExternalUser(randomResourceOwner(), randomUri(), ThirdPartySystem.OTHER), Instant.now())),
                          Arguments.of(
                              new FileApprovedEvent(Instant.now(), randomUser(), SortableIdentifier.next())),
                          Arguments.of(new FileRejectedEvent(Instant.now(), randomUser(), SortableIdentifier.next(),

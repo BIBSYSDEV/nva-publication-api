@@ -135,7 +135,6 @@ import no.unit.nva.publication.model.business.publicationstate.MergedResourceEve
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
-import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
@@ -1105,7 +1104,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         var persistedFile = fileEntry.fetch(resourceService);
 
@@ -1122,7 +1121,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
         fileEntry.delete(resourceService);
 
         assertEquals(Optional.empty(), fileEntry.fetch(resourceService));
@@ -1138,7 +1137,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
         fileEntry.softDelete(resourceService, new User(randomString()));
 
         assertInstanceOf(FileDeletedEvent.class, fileEntry.fetch(resourceService).orElseThrow().getFileEvent());
@@ -1154,7 +1153,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         var updatedFile = file.copy().withLicense(randomUri()).buildHiddenFile();
         fileEntry.update(updatedFile, userInstance, resourceService);
@@ -1171,7 +1170,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(randomHiddenFile(), resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         var newOwnerAffiliation = randomUri();
         var originalModifiedDate = fileEntry.getModifiedDate();
@@ -1193,7 +1192,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         persistedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
 
@@ -1210,7 +1209,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
         var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
 
         var fetchedQueryObject = FileEntry.queryObject(file.getIdentifier(), persistedPublication.getIdentifier())
@@ -1230,7 +1229,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         var resource = Resource.fromPublication(persistedPublication).fetch(resourceService);
 
@@ -1247,7 +1246,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         fileEntry.reject(resourceService, new User(randomString()));
 
@@ -1268,7 +1267,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resourceIdentifier = persistedPublication.getIdentifier();
 
         var fileEntry = FileEntry.create(file, resourceIdentifier, userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         fileEntry.approve(resourceService, new User(randomString()));
 
@@ -1287,7 +1286,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var file = randomPendingOpenFile();
         var resourceIdentifier = persistedPublication.getIdentifier();
 
-        FileEntry.create(file, resourceIdentifier, userInstance).persist(resourceService);
+        FileEntry.create(file, resourceIdentifier, userInstance).persist(resourceService, userInstance);
 
         var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
 
@@ -1298,20 +1297,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldApproveApprovedFilesWhenShouldUseNewFilesIsPresent() throws ApiGatewayException {
         var resourceService = getResourceService(client);
 
-        var publication = randomPublication().copy().withAssociatedArtifacts(new ArrayList<>()).build();
+        var file = randomPendingInternalFile();
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(file)).build();
         var userInstance = UserInstance.fromPublication(publication);
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-
-        var file = randomPendingInternalFile();
-        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
 
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
             Resource.fromPublication(publication), userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
             Set.of(file)).persistNewTicket(ticketService);
 
-        publishingRequest.approveFiles().persistUpdate(ticketService);
+        publishingRequest.complete(publication, userInstance).persistUpdate(ticketService);
         publishingRequest.setFinalizedBy(new Username(randomString()));
-        publishingRequest.publishApprovedFiles(resourceService);
+        var completedTicket = (PublishingRequestCase) publishingRequest.fetch(ticketService);
+        completedTicket.publishApprovedFiles(resourceService);
 
         assertInstanceOf(InternalFile.class, FileEntry.queryObject(file.getIdentifier(), publication.getIdentifier())
                                                  .fetch(resourceService)
@@ -1329,7 +1327,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
             Resource.fromPublication(publication), userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
             Set.of(file)).persistNewTicket(ticketService);
-        publishingRequest.approveFiles().close(randomUserInstance()).persistUpdate(ticketService);
+        publishingRequest.complete(publication, userInstance).persistUpdate(ticketService);
         publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
         publishingRequest.publishApprovedFiles(resourceService);
@@ -1351,7 +1349,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var file = randomPendingInternalFile();
-        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, publication.getIdentifier(), userInstance).persist(resourceService, userInstance);
 
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
             Resource.fromPublication(publication), UserInstance.create(randomString(), randomUri()),
@@ -1396,7 +1394,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         var resourceWithFileEntry = Resource.resourceQueryObject(resource.getIdentifier())
                                         .fetch(resourceService)
@@ -1464,7 +1462,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var openFile = randomOpenFile();
         var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         var pendingFile = openFile.copy().buildPendingInternalFile();
 
@@ -1482,7 +1480,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var openFile = randomOpenFile();
         var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         var hiddenFile = openFile.copy().buildHiddenFile();
 
@@ -1542,7 +1540,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var openFile = randomOpenFile();
         var fileEntry = FileEntry.create(openFile, resource.getIdentifier(), userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
 
         var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
         var persistedResult = client.getItem(new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
@@ -1567,7 +1565,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
         var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
         fileEntry.delete(resourceService);
 
         assertDoesNotThrow(() -> resourceService.refreshFile(fileEntry.getIdentifier()));
@@ -1895,22 +1893,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return (DoiRequest) DoiRequest.create(Resource.fromPublication(publication),
                                               UserInstance.fromPublication(publication))
                                 .persistNewTicket(ticketService);
-    }
-
-    private void verifyThatTheResourceIsInThePublishedResources(Publication publication) {
-        var publishedResource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
-
-        assertThat(publishedResource.getStatus(), is(equalTo(PUBLISHED)));
-    }
-
-    private void verifyThatTheResourceWasMovedFromTheDrafts(ResourceDao resourceDao) {
-        var expectedEmptyResult = resourceDao.getResource().fetch(resourceService);
-        assertThat(expectedEmptyResult.isEmpty(), is(true));
-    }
-
-    private void assertThatResourceCanBeFoundInDraftResources(ResourceDao resourceDao) {
-        Optional<Resource> savedResource = resourceDao.getResource().fetch(resourceService);
-        assertThat(savedResource.isPresent(), is(true));
     }
 
     private Publication createPublishedResource() throws ApiGatewayException {

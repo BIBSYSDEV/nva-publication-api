@@ -127,9 +127,10 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
                               .persistNew(resourceService, UserInstance.fromPublication(pub));
 
         for (int i = 0; i < 101; i++) {
+            var userInstance = UserInstance.create(randomString(), randomUri());
             FileEntry.create(randomOpenFile(),
                              publication.getIdentifier(),
-                             UserInstance.create(randomString(), randomUri())).persist(resourceService);
+                             userInstance).persist(resourceService, userInstance);
         }
 
         var request = createRequestWithUserWithPermissionsToPublishPublication(publication);

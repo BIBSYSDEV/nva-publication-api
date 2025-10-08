@@ -92,7 +92,7 @@ public class FileService {
 
         validateUploadPermissions(userInstance, resource);
 
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService, userInstance);
         return file;
     }
 
