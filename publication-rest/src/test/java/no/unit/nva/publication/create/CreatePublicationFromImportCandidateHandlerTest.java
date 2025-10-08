@@ -641,7 +641,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withIdentifier(SortableIdentifier.next())
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(List.of(new FundingBuilder().build()))
+                   .withFundings(Set.of(new FundingBuilder().build()))
                    .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of(File.builder()

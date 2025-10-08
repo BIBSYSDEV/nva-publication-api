@@ -77,12 +77,10 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate.Builder;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
-import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -348,7 +346,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                    .withIdentifier(SortableIdentifier.next())
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(List.of(new FundingBuilder().withId(randomUri()).build()))
+                   .withFundings(Set.of(new FundingBuilder().withId(randomUri()).build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
@@ -606,10 +604,5 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
             return requestCase;
         }
-    }
-
-    private static UserInstance randomUserInstance() {
-        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
-                                List.of(), UserClientType.INTERNAL);
     }
 }

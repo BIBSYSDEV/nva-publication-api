@@ -5,8 +5,6 @@ import static no.unit.nva.expansion.ResourceExpansionServiceImpl.API_HOST;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUri;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
-import static no.unit.nva.expansion.model.ExpandedResource.extractUris;
-import static no.unit.nva.expansion.model.ExpandedResource.fundingNodes;
 import static no.unit.nva.expansion.model.ExpandedResource.isAcademicChapter;
 import static no.unit.nva.expansion.model.ExpandedResource.isPublicationContextTypeAnthology;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
@@ -16,7 +14,6 @@ import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -47,34 +44,18 @@ import org.slf4j.LoggerFactory;
 public class IndexDocumentWrapperLinkedData {
 
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
-    private static final String CRISTIN_VERSION = "; version=2023-05-26";
-    private static final String MEDIA_TYPE_JSON_LD_V2 = APPLICATION_JSON_LD.toString() + CRISTIN_VERSION;
-    private static final String SOURCE = "source";
     private static final String FRAME_JSON = "frame.json";
-    private static final String CONTEXT = "@context";
-    @Deprecated
-    private static final String contextAsString =
-        "{\n"
-        + "  \"@vocab\": \"https://nva.sikt.no/ontology/publication#\",\n"
-        + "  \"id\": \"@id\",\n"
-        + "  \"type\": \"@type\",\n"
-        + "  \"name\": {\n"
-        + "    \"@id\": \"label\",\n"
-        + "    \"@container\": \"@language\"\n"
-        + "  }\n"
-        + "}\n";
-    private static final JsonNode CONTEXT_NODE = attempt(() -> objectMapper.readTree(contextAsString)).get();
     private static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
-        "Could not fetch nvi candidate for publication with identifier: %s";
+        "Failed to fetch NVI status for publication with identifier: {}";
     private static final String EXCEPTION = "Exception {}:";
     private static final String ID = "id";
     private static final String SCIENTIFIC_INDEX = "scientific-index";
     private static final String PUBLICATION = "publication";
     private static final int ONE_HUNDRED = 100;
     private static final int SUCCESS_FAMILY = 2;
-    private static final int CLIENT_ERROR_FAMILY = 4;
     private static final String TYPE = "type";
     private static final String REPORT_STATUS = "report-status";
+    private static final String CONTENT_TYPE_JSON = "application/json";
     private final RawContentRetriever uriRetriever;
     private final ResourceService resourceService;
     private final QueueClient queueClient;
@@ -89,7 +70,7 @@ public class IndexDocumentWrapperLinkedData {
     public String toFramedJsonLd(JsonNode indexDocument) {
         var frame = SearchIndexFrame.getFrameWithContext(Path.of(FRAME_JSON));
         var inputStreams = getInputStreams(indexDocument);
-        return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
+        return new FramedJsonGenerator(inputStreams, frame, uriRetriever).getFramedJson();
     }
 
     //TODO: parallelize
@@ -110,7 +91,6 @@ public class IndexDocumentWrapperLinkedData {
         fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument), indexDocument));
-        inputStreams.addAll(fetchFundingSourcesAddingContext(indexDocument));
         inputStreams.removeIf(Objects::isNull);
         return inputStreams;
     }
@@ -121,13 +101,17 @@ public class IndexDocumentWrapperLinkedData {
 
     private JsonNode fetchNviStatus(JsonNode indexDocument) {
         var publicationId = getId(indexDocument);
+        var publicationIdentifier = new SortableIdentifier(indexDocument.get("identifier").asText());
+
         try {
             return fetchNviCandidate(publicationId)
                        .map(this::processNviCandidateResponse)
                        .orElseThrow();
         } catch (Exception e) {
+            logger.error(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationId);
             logger.error(EXCEPTION, e.toString());
-            throw ExpansionException.withMessage(String.format(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationId));
+            createRecoveryMessage(e, publicationIdentifier);
+            return new ObjectNode(null);
         }
     }
 
@@ -142,12 +126,12 @@ public class IndexDocumentWrapperLinkedData {
         } else if (response.statusCode() == SC_NOT_FOUND) {
             return new ObjectNode(null);
         } else {
-            throw new RuntimeException("Unexpected response " + response);
+            throw ExpansionException.withMessage("Unexpected response " + response);
         }
     }
 
     private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {
-        return attempt(() -> uriRetriever.fetchResponse(fetchNviCandidateUri(publicationId), "application/json"))
+        return attempt(() -> uriRetriever.fetchResponse(fetchNviCandidateUri(publicationId), CONTENT_TYPE_JSON))
                    .orElseThrow();
     }
 
@@ -155,100 +139,38 @@ public class IndexDocumentWrapperLinkedData {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(value, NviCandidateResponse.class)).orElseThrow();
     }
 
-    @Deprecated
-    private Collection<? extends InputStream> fetchFundingSourcesAddingContext(JsonNode indexDocument) {
-        return fetchFundingSources(indexDocument).stream()
-                   .map(IoUtils::stringToStream)
-                   .map(this::addPotentiallyMissingContext)
-                   .toList();
-    }
-
-    private Collection<String> fetchFundingSources(JsonNode indexDocument) {
-        return extractUris(fundingNodes(indexDocument), SOURCE).stream()
-                   .map(uri -> extractResponseBody(uri, fetch(uri)))
-                   .toList();
-    }
-
-    private String extractResponseBody(URI uri, HttpResponse<String> response) {
-        if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
-            return response.body();
-        } else if (isClientError(response)) {
-            logger.warn("Client error when fetching funding source: {}. Response body: {}", uri, response.body());
-            return FundingSource.withId(uri).toJsonString();
-        } else {
-            throw new RuntimeException("Unexpected response " + response);
-        }
-    }
-
-    private boolean isClientError(HttpResponse<String> response) {
-        return response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY;
-    }
-
-    @Deprecated
-    private InputStream addPotentiallyMissingContext(InputStream inputStream) {
-        return attempt(() -> objectMapper.readTree(inputStream))
-                   .toOptional()
-                   .filter(this::hasNoContextNode)
-                   .map(this::injectContext)
-                   .map(JsonNode::toString)
-                   .map(IoUtils::stringToStream)
-                   .orElseGet(() -> resetInputStream(inputStream));
-    }
-
-    private InputStream resetInputStream(InputStream inputStream) {
-        try {
-            inputStream.reset();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return inputStream;
-    }
-
-    private JsonNode injectContext(JsonNode jsonNode) {
-        return ((ObjectNode) jsonNode).set(CONTEXT, CONTEXT_NODE);
-    }
-
-    private boolean hasNoContextNode(JsonNode jsonNode) {
-        return !jsonNode.has(CONTEXT);
-    }
-
-    private Collection<? extends InputStream> fetchAll(Collection<URI> uris, JsonNode indexDocument) {
+    private Collection<? extends InputStream> fetchAll(
+            Collection<URI> uris, JsonNode indexDocument) {
+        var documentIdentifier = new SortableIdentifier(indexDocument.get("identifier").asText());
         return uris.stream()
-                   .filter(Objects::nonNull)
-                   .map(this::fetch)
-                   .map(response -> processResponse(response, indexDocument))
-                   .toList();
+                .filter(Objects::nonNull)
+                .map(this::fetch)
+                .map(response -> processResponse(response, documentIdentifier))
+                .filter(Objects::nonNull)
+                .toList();
     }
 
-    private InputStream processResponse(HttpResponse<String> response, JsonNode indexDocument) {
+    private InputStream processResponse(
+            HttpResponse<String> response, SortableIdentifier documentIdentifier) {
         if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             var body = response.body();
             return stringToStream(removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(body));
-        } else if (response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY) {
-            var identifier = new SortableIdentifier(indexDocument.get("identifier").asText());
-            logger.info("Request for publication channel <{}> returned 404", response.uri());
-            RecoveryEntry.create(RecoveryEntry.RESOURCE, identifier)
-                .withException(new Exception(response.toString()))
-                .persist(queueClient);
+        } else {
+            createRecoveryMessage(ExpansionException.withMessage(response.toString()), documentIdentifier);
             return null;
         }
-        throw new RuntimeException("Unexpected response " + response);
+    }
+
+    private void createRecoveryMessage(Exception exception, SortableIdentifier identifier) {
+        RecoveryEntry.create(RecoveryEntry.RESOURCE, identifier)
+                .withException(exception)
+                .persist(queueClient);
     }
 
     private String removeTypeToIgnoreWhatTheWorldDefinesThisResourceAs(String body) {
         var objectNode = (ObjectNode) attempt(() -> objectMapper.readTree(body)).orElseThrow();
         objectNode.remove(TYPE);
         return attempt(() -> objectMapper.writeValueAsString(objectNode)).orElseThrow();
-    }
-
-    private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
-        return extractAffiliationUris(indexDocument)
-                   .stream()
-                   .distinct()
-                   .map(this::fetchOrganization)
-                   .map(CristinOrganization::toJsonString)
-                   .map(IoUtils::stringToStream)
-                   .toList();
     }
 
     private Optional<InputStream> fetchAnthologyContent(JsonNode indexDocument) {
@@ -259,7 +181,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private Optional<InputStream> getAnthology(JsonNode indexDocument) {
         return extractPublicationContextUri(indexDocument)
-                   .map(uri -> new ExpandedParentPublication(uriRetriever, resourceService)
+                   .map(uri -> new ExpandedParentPublication(uriRetriever, resourceService, queueClient)
                                    .getExpandedParentPublication(uri))
                    .map(IoUtils::stringToStream);
     }
@@ -268,8 +190,32 @@ public class IndexDocumentWrapperLinkedData {
         return uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString()).orElseThrow();
     }
 
-    private CristinOrganization fetchOrganization(URI externalReference) {
-        var rawContent = uriRetriever.getRawContent(externalReference, MEDIA_TYPE_JSON_LD_V2).orElseThrow();
-        return attempt(() -> objectMapper.readValue(rawContent, CristinOrganization.class)).orElseThrow();
+    private Optional<CristinOrganization> fetchOrganization(
+            URI externalReference, SortableIdentifier documentIdentifier) {
+        var response = fetch(externalReference);
+        if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
+            var body = response.body();
+            return Optional.of(mapToCristinOrganization(body));
+        } else {
+            createRecoveryMessage(ExpansionException.withMessage(response.toString()), documentIdentifier);
+            return Optional.empty();
+        }
+    }
+
+    private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
+        var documentIdentifier = new SortableIdentifier(indexDocument.get("identifier").asText());
+        return extractAffiliationUris(indexDocument).stream()
+                .distinct()
+                .map(organizationId -> fetchOrganization(organizationId, documentIdentifier))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(CristinOrganization::toJsonString)
+                .map(IoUtils::stringToStream)
+                .toList();
+    }
+
+    private CristinOrganization mapToCristinOrganization(String response) {
+        return attempt(() -> objectMapper.readValue(response, CristinOrganization.class))
+                .orElseThrow();
     }
 }

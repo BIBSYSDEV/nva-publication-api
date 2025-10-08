@@ -29,6 +29,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -51,7 +52,8 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
     @JacocoGenerated
     public AcceptedPublishingRequestEventHandler() {
         this(ResourceService.defaultService(),
-             new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, new UriRetriever()),
+             new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, new UriRetriever(),
+                               CristinUnitsUtil.defaultInstance()),
              S3Driver.defaultS3Client().build());
     }
 

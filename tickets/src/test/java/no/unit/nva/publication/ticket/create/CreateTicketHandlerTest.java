@@ -53,6 +53,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.model.utils.CustomerSummary;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.DoiRequestDto;
@@ -98,8 +99,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
+        cristinUnitsUtil = new FakeCristinUnitsUtil();
         ticketResolver = new TicketResolver(resourceService, ticketService);
-        messageService = new MessageService(client, new UriRetriever());
+        messageService = new MessageService(client, new UriRetriever(), cristinUnitsUtil);
         this.handler = new CreateTicketHandler(ticketResolver, messageService, new Environment());
     }
 

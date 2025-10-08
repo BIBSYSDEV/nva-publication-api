@@ -41,7 +41,7 @@ public final class ResourceBuilder {
     private URI handle;
     private Set<AdditionalIdentifierBase> additionalIdentifiers;
     private List<URI> subjects;
-    private List<Funding> fundings;
+    private Set<Funding> fundings;
     private String rightsHolder;
     private ImportStatus importStatus;
     private List<PublicationNoteBase> publicationNotes;
@@ -139,7 +139,7 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public ResourceBuilder withFundings(List<Funding> fundings) {
+    public ResourceBuilder withFundings(Set<Funding> fundings) {
         this.fundings = fundings;
         return this;
     }

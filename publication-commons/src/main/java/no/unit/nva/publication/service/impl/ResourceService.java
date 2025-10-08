@@ -19,9 +19,12 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.BatchGetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -32,6 +35,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -119,15 +123,16 @@ public class ResourceService extends ServiceWithTransactions {
     private final ChannelClaimClient channelClaimClient;
     private final CounterService counterService;
     private final CustomerService customerService;
+    private final CristinUnitsUtil cristinUnitsUtil;
 
     public ResourceService(AmazonDynamoDB dynamoDBClient,
                            String tableName, Clock clock,
                            RawContentRetriever uriRetriever,
                            ChannelClaimClient channelClaimClient,
-                           CustomerService customerService) {
+                           CustomerService customerService,
+                           CristinUnitsUtil cristinUnitsUtil) {
         super(dynamoDBClient);
-        
-        
+
         requireNonNull(dynamoDBClient, "DynamoDbClient is missing!");
         requireNonNull(tableName, "Table name is missing!");
         requireNonNull(uriRetriever, "UriRetriever is missing!");
@@ -137,13 +142,14 @@ public class ResourceService extends ServiceWithTransactions {
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.uriRetriever = uriRetriever;
+        this.cristinUnitsUtil = cristinUnitsUtil;
         this.counterService = new CristinIdentifierCounterService(dynamoDBClient, this.tableName);
         this.channelClaimClient = channelClaimClient;
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.customerService = customerService;
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService, uriRetriever, channelClaimClient,
-                                                               customerService);
+                                                               customerService, cristinUnitsUtil);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
@@ -163,20 +169,25 @@ public class ResourceService extends ServiceWithTransactions {
     public static ResourceService defaultService(String tableName) {
         var uriRetriever = new UriRetriever();
         return new ResourceService(defaultDynamoDbClient(), tableName, Clock.systemDefaultZone(), uriRetriever,
-                                   ChannelClaimClient.create(uriRetriever), new CustomerService(uriRetriever));
+                                   ChannelClaimClient.create(uriRetriever), new CustomerService(uriRetriever),
+                                   CristinUnitsUtil.defaultInstance());
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData) throws BadRequestException {
-        Instant currentTime = clockForTimestamps.instant();
-        Resource newResource = Resource.fromPublication(inputData);
+        var currentTime = clockForTimestamps.instant();
+        var newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(SortableIdentifier.next());
         newResource.setResourceOwner(createResourceOwner(userInstance));
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
-        newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
-        setStatusOnNewPublication(userInstance, inputData, newResource);
+        setResourceEvent(userInstance, newResource, currentTime);
+        setStatusOnNewPublication(userInstance, inputData, newResource, currentTime);
         return insertResource(newResource).toPublication();
+    }
+
+    private static void setResourceEvent(UserInstance userInstance, Resource newResource, Instant currentTime) {
+        newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
     }
 
     public Resource importResource(Resource resource, ImportSource importSource) {
@@ -227,7 +238,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void refreshFile(SortableIdentifier identifier) {
-        FileEntry.queryObject(identifier).fetch(this).orElseThrow().toDao().updateExistingEntry(client);
+        FileEntry.queryObject(identifier).fetch(this)
+            .ifPresent(fileEntry -> fileEntry.toDao().updateExistingEntry(client));
     }
 
     // TODO: Should we delete all tickets for delete draft publication?
@@ -243,6 +255,16 @@ public class ResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
 
+    public void deleteAllResourceAssociatedEntries(URI customerId, SortableIdentifier resourceIdentifier) {
+        var daoList = readResourceService.fetchAllResourceAssociatedEntries(customerId, resourceIdentifier).stream()
+                          .map(dao -> new Delete().withTableName(tableName).withKey(dao.primaryKey()))
+                          .map(delete -> new TransactWriteItem().withDelete(delete))
+                          .toList();
+        var transactionItems = new ArrayList<>(daoList);
+        var sendTransactionRequest = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        sendTransactionWriteRequest(sendTransactionRequest);
+    }
+
     public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier) {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
     }
@@ -251,7 +273,7 @@ public class ResourceService extends ServiceWithTransactions {
                                                List<KeyField> types) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types);
         var scanResult = getClient().scan(scanRequest);
-        var values = extractDatabaseEntries(scanResult);
+        var values = extractDatabaseEntries(scanResult.getItems());
         var isTruncated = thereAreMorePagesToScan(scanResult);
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
@@ -260,6 +282,19 @@ public class ResourceService extends ServiceWithTransactions {
         final var refreshedEntries = refreshAndMigrate(dataEntries, cristinUnitsUtil);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
+    }
+
+    public void refreshResourcesByKeys(Collection<Map<String, AttributeValue>> keys, CristinUnitsUtil cristinUnitsUtil) {
+        var entities = getEntities(keys);
+        refreshResources(entities, cristinUnitsUtil);
+    }
+
+    private List<Entity> getEntities(Collection<Map<String, AttributeValue>> keys) {
+        var batchGetItemRequest = new BatchGetItemRequest().withRequestItems(
+            Map.of(tableName, new KeysAndAttributes().withKeys(keys)));
+        var batchGetItemResult = client.batchGetItem(batchGetItemRequest);
+        var items = batchGetItemResult.getResponses().get(tableName);
+        return extractDatabaseEntries(items);
     }
 
     public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
@@ -330,9 +365,9 @@ public class ResourceService extends ServiceWithTransactions {
             return dataEntry;
         } catch (Exception e) {
             logger.error("Could not migrate data entry: {}, {}. Error: {}",
-                        dataEntry.getType(),
-                        dataEntry.getIdentifier(),
-                        e.getMessage());
+                         dataEntry.getType(),
+                         dataEntry.getIdentifier(),
+                         e.getMessage());
             throw new RuntimeException("Could not migrate data entry: " + dataEntry.getIdentifier(), e);
         }
     }
@@ -341,7 +376,8 @@ public class ResourceService extends ServiceWithTransactions {
                                      CristinUnitsUtil cristinUnitsUtil) {
         // Migrating curating institutions
         var curatingInstitutions = new CuratingInstitutionsUtil(uriRetriever, customerService)
-            .getCuratingInstitutionsCached(resource.getEntityDescription(), cristinUnitsUtil);
+                                       .getCuratingInstitutionsCached(resource.getEntityDescription(),
+                                                                      cristinUnitsUtil);
         resource.setCuratingInstitutions(curatingInstitutions);
         return resource;
     }
@@ -502,7 +538,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     private Resource insertImportedResource(Resource resource, ImportSource importSource) {
         if (resource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(resource);
+            setCuratingInstitutions(resource, cristinUnitsUtil);
         }
 
         mutateResourceIfMissingCristinIdentifier(resource);
@@ -516,7 +552,6 @@ public class ResourceService extends ServiceWithTransactions {
                                             .map(FileEntry::toDao)
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();
-
 
         var transactions = new ArrayList<TransactWriteItem>();
         transactions.addAll(fileTransactionWriteItems);
@@ -561,20 +596,27 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     @JacocoGenerated
-    private void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource)
+    private void setStatusOnNewPublication(UserInstance userInstance, Publication fromPublication, Resource toResource,
+                                           Instant currentTime)
         throws BadRequestException {
         var status = userInstance.isExternalClient() ? Optional.ofNullable(fromPublication.getStatus())
                                                            .orElse(PublicationStatus.DRAFT) : PublicationStatus.DRAFT;
 
-        if (status == PUBLISHED && !fromPublication.isPublishable()) {
-            throw new BadRequestException(NOT_PUBLISHABLE);
+        if (PUBLISHED.equals(status)) {
+            if (!fromPublication.isPublishable()) {
+                throw new BadRequestException(NOT_PUBLISHABLE);
+            }
+            toResource.setPublishedDate(currentTime);
         }
 
         toResource.setStatus(status);
     }
 
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
-        return dataEntries.stream().map(attempt(dataEntry -> migrate(dataEntry, cristinUnitsUtil))).map(Try::orElseThrow).toList();
+        return dataEntries.stream()
+                   .map(attempt(dataEntry -> migrate(dataEntry, cristinUnitsUtil)))
+                   .map(Try::orElseThrow)
+                   .toList();
     }
 
     private Organization createOrganization(UserInstance userInstance) {
@@ -643,8 +685,8 @@ public class ResourceService extends ServiceWithTransactions {
                    .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
     }
 
-    private List<Entity> extractDatabaseEntries(ScanResult response) {
-        return response.getItems()
+    private List<Entity> extractDatabaseEntries(Collection<Map<String, AttributeValue>> items) {
+        return items
                    .stream()
                    .filter(ResourceService::isNotLogEntry)
                    .map(value -> parseAttributeValuesMap(value, Dao.class))
@@ -667,7 +709,7 @@ public class ResourceService extends ServiceWithTransactions {
         var transactions = new ArrayList<TransactWriteItem>();
 
         if (resource.getCuratingInstitutions().isEmpty()) {
-            setCuratingInstitutions(resource);
+            setCuratingInstitutions(resource, cristinUnitsUtil);
         }
 
         mutateResourceIfMissingCristinIdentifier(resource);
@@ -691,10 +733,10 @@ public class ResourceService extends ServiceWithTransactions {
         return resource;
     }
 
-    private void setCuratingInstitutions(Resource newResource) {
+    private void setCuratingInstitutions(Resource newResource, CristinUnitsUtil cristinUnitsUtil) {
         newResource.setCuratingInstitutions(
-            new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsOnline(
-                newResource.toPublication()));
+            new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutions(
+                newResource.toPublication().getEntityDescription(), cristinUnitsUtil));
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {

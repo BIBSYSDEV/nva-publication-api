@@ -1,6 +1,8 @@
 package no.unit.nva.publication.fetch;
 
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
+import static com.google.common.net.HttpHeaders.ETAG;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.MediaType.ANY_TEXT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
@@ -26,6 +28,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -56,6 +59,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
     public static final String DO_NOT_REDIRECT_QUERY_PARAM = "doNotRedirect";
+    public static final String NO_BODY = "";
     private final IdentityServiceClient identityServiceClient;
     private final ResourceService resourceService;
     private final RawContentRetriever authorizedBackendUriRetriever;
@@ -104,11 +108,27 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var resource = fetchResource(identifier);
 
+        if (!userIsAuthenticated(requestInfo) && eTagMatches(requestInfo, resource)) {
+            statusCode = HttpURLConnection.HTTP_NOT_MODIFIED;
+            return FetchPublicationHandler.NO_BODY;
+        }
+
         return switch (resource.getStatus()) {
             case DRAFT, PUBLISHED -> producePublicationResponse(requestInfo, resource);
             case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
             default -> throwNotFoundException();
         };
+    }
+
+    private boolean userIsAuthenticated(RequestInfo requestInfo) {
+        return !requestInfo.getAccessRights().isEmpty();
+    }
+
+    private boolean eTagMatches(RequestInfo requestInfo, Resource resource) {
+        var eTagFromIfNoneMatchHeader = RequestUtil.getETagFromIfNoneMatchHeader(requestInfo);
+        var version = resource.getVersion().toString();
+
+        return eTagFromIfNoneMatchHeader.isPresent() && eTagFromIfNoneMatchHeader.get().equals(version);
     }
 
     private boolean shouldRedirectToDuplicate(RequestInfo requestInfo, Resource resource) {
@@ -183,16 +203,21 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         String response = null;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
 
+        var headers = new ConcurrentHashMap<String, String>();
+
         if (APPLICATION_DATACITE_XML.equals(contentType)) {
             response = createDataCiteMetadata(resource);
         } else if (SCHEMA_ORG.equals(contentType)) {
             response = createSchemaOrgRepresentation(resource);
         } else if (contentType.is(ANY_TEXT_TYPE) || XHTML_UTF_8.equals(contentType)) {
             statusCode = HTTP_SEE_OTHER;
-            addAdditionalHeaders(() -> Map.of(LOCATION, landingPageLocation(resource.getIdentifier()).toString()));
+            headers.put(LOCATION, landingPageLocation(resource.getIdentifier()).toString());
         } else {
+            headers.put(ETAG, resource.getVersion().toString());
+            headers.put(ACCESS_CONTROL_EXPOSE_HEADERS, ETAG);
             response = createPublicationResponse(requestInfo, resource);
         }
+        addAdditionalHeaders(() -> headers);
         return response;
     }
 
@@ -204,6 +229,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String createPublicationResponse(RequestInfo requestInfo, Resource resource) {
         var response = PublicationResponseFactory.create(resource, requestInfo, identityServiceClient);
+        addAdditionalHeaders(() -> Map.of(ETAG, resource.getVersion().toString()));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
     }
 

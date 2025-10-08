@@ -1,14 +1,16 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.List;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -59,7 +61,7 @@ class UserInstanceTest {
         var username = randomString();
         var httpRequest = new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                               .withCurrentCustomer(customerId)
-                              .withNvaUsername(username)
+                              .withUserName(username)
                               .build();
         var requestInfo = RequestInfo.fromRequest(httpRequest);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
@@ -70,8 +72,7 @@ class UserInstanceTest {
     @Test
     void userInstanceCreatedFromTicketShouldHaveAllFieldsPresentExceptPersonIdAndAccessRights() {
         var resource = Resource.fromPublication(randomPublication());
-        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), randomUri(),
-                                            List.of(), UserClientType.INTERNAL);
+        var userInstance = UserInstance.createExternalUser(randomResourceOwner(), randomUri(), ThirdPartySystem.OTHER);
         var ticket = DoiRequest.create(resource, userInstance);
 
         var userInstanceFromTicket = UserInstance.fromTicket(ticket);
@@ -81,5 +82,19 @@ class UserInstanceTest {
         assertEquals(userInstance.getUsername(), userInstanceFromTicket.getUsername());
 
         assertEquals(resource.getCustomerId(), userInstanceFromTicket.getCustomerId());
+    }
+
+    @Test
+    void shouldReturnThirdPartySystemWhenExternalClient() {
+        var userInstance = UserInstance.createExternalUser(randomResourceOwner(), randomUri(), ThirdPartySystem.OTHER);
+
+        assertEquals(ThirdPartySystem.OTHER, userInstance.getThirdPartySystem().orElseThrow());
+    }
+
+    @Test
+    void shouldReturnEmptyThirdPartySystemWhenNonExternalClient() {
+        var userInstance = UserInstance.create(new User(randomString()), randomUri());
+
+        assertTrue(userInstance.getThirdPartySystem().isEmpty());
     }
 }

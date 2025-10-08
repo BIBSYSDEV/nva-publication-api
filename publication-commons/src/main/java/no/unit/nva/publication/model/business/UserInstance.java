@@ -27,13 +27,12 @@ public class UserInstance implements JsonSerializable {
     private final URI personAffiliation;
     private final URI personCristinId;
     private final List<AccessRight> accessRights;
-    @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
-
-    private UserClientType userClientType;
+    private final UserClientType userClientType;
+    private final ThirdPartySystem thirdPartySystem;
 
     public UserInstance(String userIdentifier, URI customerId, URI topLevelOrgCristinId, URI personAffiliation,
                         URI personCristinId,
-                        List<AccessRight> accessRights, UserClientType userClientType) {
+                        List<AccessRight> accessRights, UserClientType userClientType, ThirdPartySystem thirdPartySystem) {
         this.user = new User(userIdentifier);
         this.customerId = customerId;
         this.topLevelOrgCristinId = topLevelOrgCristinId;
@@ -41,39 +40,41 @@ public class UserInstance implements JsonSerializable {
         this.personCristinId = personCristinId;
         this.accessRights = accessRights == null ? List.of() : accessRights;
         this.userClientType = userClientType;
+        this.thirdPartySystem = thirdPartySystem;
     }
 
     public static UserInstance create(User user, URI customerId) {
         return new UserInstance(user.toString(), customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null, null,
-                                UserClientType.INTERNAL);
+                                UserClientType.INTERNAL, null);
     }
 
     public static UserInstance create(String userIdentifier, URI customerId) {
         return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null, null,
-                                UserClientType.INTERNAL);
+                                UserClientType.INTERNAL, null);
     }
 
     public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId,
                                       List<AccessRight> accessRights, URI topLevelOrgCristinId) {
         return new UserInstance(userIdentifier, customerId, topLevelOrgCristinId, null, personCristinId, accessRights,
-                                UserClientType.INTERNAL);
+                                UserClientType.INTERNAL, null);
     }
 
     public static UserInstance create(ResourceOwner resourceOwner, URI customerId) {
+        return create(resourceOwner, customerId, UserClientType.INTERNAL, null);
+    }
+
+    public static UserInstance create(ResourceOwner resourceOwner, URI customerId, UserClientType userClientType,
+                                      ThirdPartySystem thirdPartySystem) {
         return new UserInstance(resourceOwner.getOwner().getValue(), customerId,
-                                resourceOwner.getOwnerAffiliation(), null, null, null, UserClientType.INTERNAL);
+                                resourceOwner.getOwnerAffiliation(), null, null, null, userClientType, thirdPartySystem);
     }
 
-    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI customerId) {
-        var userInstance = create(resourceOwner, customerId);
-        userInstance.userClientType = UserClientType.EXTERNAL;
-        return userInstance;
+    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI customerId, ThirdPartySystem thirdPartySystem) {
+        return create(resourceOwner, customerId, UserClientType.EXTERNAL, thirdPartySystem);
     }
 
-    public static UserInstance createBackendUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
-        var userInstance = create(resourceOwner, topLevelOrgCristinId);
-        userInstance.userClientType = UserClientType.BACKEND;
-        return userInstance;
+    public static UserInstance createBackendUser(ResourceOwner resourceOwner, URI customerId) {
+        return create(resourceOwner, customerId, UserClientType.BACKEND, null);
     }
 
     public boolean isExternalClient() {
@@ -92,7 +93,7 @@ public class UserInstance implements JsonSerializable {
         var topLevelOrgCristinId = requestInfo.getTopLevelOrgCristinId().orElse(null);
         var personAffiliation = attempt(requestInfo::getPersonAffiliation).orElse(failure -> null);
         return new UserInstance(userName, customerId, topLevelOrgCristinId, personAffiliation, personCristinId,
-                                accessRights, UserClientType.INTERNAL);
+                                accessRights, UserClientType.INTERNAL, null);
     }
 
     public static UserInstance fromPublication(Publication publication) {
@@ -100,7 +101,7 @@ public class UserInstance implements JsonSerializable {
             Username::getValue).orElse(null),
                                 Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null),
                                 Optional.ofNullable(publication.getResourceOwner()).map(ResourceOwner::getOwnerAffiliation).orElse(null),
-                                null, null, List.of(), UserClientType.INTERNAL);
+                                null, null, List.of(), UserClientType.INTERNAL, null);
     }
 
     public static UserInstance fromMessage(Message message) {
@@ -109,7 +110,7 @@ public class UserInstance implements JsonSerializable {
 
     public static UserInstance fromTicket(TicketEntry ticket) {
         return new UserInstance(ticket.getOwner().toString(), ticket.getCustomerId(), ticket.getOwnerAffiliation(),
-                                ticket.getResponsibilityArea(), null, List.of(), UserClientType.INTERNAL);
+                                ticket.getResponsibilityArea(), null, List.of(), UserClientType.INTERNAL, null);
     }
 
     public boolean isSender(Message message) {
@@ -146,24 +147,31 @@ public class UserInstance implements JsonSerializable {
         return accessRights;
     }
 
+    public Optional<ThirdPartySystem> getThirdPartySystem() {
+        return isExternalClient() ? Optional.ofNullable(thirdPartySystem) : Optional.empty();
+    }
+
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof UserInstance that)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        return Objects.equals(getCustomerId(), that.getCustomerId()) &&
-               Objects.equals(getUser(), that.getUser()) &&
-               Objects.equals(getTopLevelOrgCristinId(), that.getTopLevelOrgCristinId()) &&
-               Objects.equals(getPersonAffiliation(), that.getPersonAffiliation()) &&
-               Objects.equals(getPersonCristinId(), that.getPersonCristinId()) &&
-               Objects.equals(getAccessRights(), that.getAccessRights()) && userClientType == that.userClientType;
+        UserInstance that = (UserInstance) o;
+        return Objects.equals(customerId, that.customerId)
+               && Objects.equals(user, that.user)
+               && Objects.equals(topLevelOrgCristinId, that.topLevelOrgCristinId)
+               && Objects.equals(personAffiliation, that.personAffiliation)
+               && Objects.equals(personCristinId, that.personCristinId)
+               && Objects.equals(accessRights, that.accessRights)
+               && userClientType == that.userClientType
+               && thirdPartySystem == that.thirdPartySystem;
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getCustomerId(), getUser(), getTopLevelOrgCristinId(), getPersonAffiliation(),
-                            getPersonCristinId(), getAccessRights(), userClientType);
+        return Objects.hash(customerId, user, topLevelOrgCristinId, personAffiliation, personCristinId, accessRights,
+                            userClientType, thirdPartySystem);
     }
 }

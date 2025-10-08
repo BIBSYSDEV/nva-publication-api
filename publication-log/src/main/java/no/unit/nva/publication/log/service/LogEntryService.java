@@ -1,5 +1,6 @@
 package no.unit.nva.publication.log.service;
 
+import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
@@ -15,10 +16,13 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,7 +87,10 @@ public class LogEntryService {
     }
 
     private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {
-        if (resourceEvent instanceof ImportedResourceEvent || resourceEvent instanceof MergedResourceEvent) {
+        if (resourceEvent instanceof ImportedResourceEvent
+            || resourceEvent instanceof MergedResourceEvent
+            || resourceEvent instanceof CreatedResourceEvent event && nonNull(event.importSource())
+            || resourceEvent instanceof UpdatedResourceEvent updatedResourceEvent && nonNull(updatedResourceEvent.importSource())) {
             var organization = fetchOrganization(resourceEvent.institution());
             return resourceEvent.toLogEntry(resource.getIdentifier(), organization);
         } else {
@@ -102,6 +109,9 @@ public class LogEntryService {
         var fileEvent = fileEntry.getFileEvent();
         if (fileEvent instanceof ImportEvent importEvent) {
             var organization = fetchOrganization(importEvent.institution());
+            fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
+        } else if (fileEvent instanceof FileUploadedEvent fileUploadedEvent && nonNull(fileUploadedEvent.importSource())) {
+            var organization = fetchOrganization(fileUploadedEvent.institution());
             fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
         } else {
             var user = createUser(fileEvent.user(), null);

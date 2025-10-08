@@ -1,5 +1,7 @@
 package no.unit.nva.publication.update;
 
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static com.google.common.net.HttpHeaders.ETAG;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
@@ -12,6 +14,7 @@ import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
@@ -36,7 +39,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
-import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
+import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
@@ -47,6 +50,7 @@ import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.PreconditionFailedException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -67,6 +71,7 @@ public class UpdatePublicationHandler
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    public static final String ETAG_DOES_NOT_MATCH_MESSAGE = "The provided ETag does not match the current state of the resource.";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -133,12 +138,22 @@ public class UpdatePublicationHandler
                                                Context context)
         throws ApiGatewayException {
         var identifierInPath = RequestUtil.getIdentifier(requestInfo);
+        var etag = RequestUtil.getETagFromIfMatchHeader(requestInfo);
 
         var existingResource = fetchResource(identifierInPath);
 
+        if (etag.isPresent()) {
+            logger.info("ETag provided {} for resource {}", etag.get(), identifierInPath);
+            if (!existingResource.getVersion().toString().equals(etag.get())) {
+                throw new PreconditionFailedException(ETAG_DOES_NOT_MATCH_MESSAGE);
+            }
+        } else {
+            logger.info("No ETag provided for resource {}", identifierInPath);
+        }
+
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissions.create(existingResource, userInstance);
-        var updatedPublication = switch (input) {
+        var updatedResource = switch (input) {
             case UpdateRequest request -> updatePublication(request,
                                                                   identifierInPath,
                                                                   existingResource,
@@ -157,8 +172,13 @@ public class UpdatePublicationHandler
 
             default -> throw new BadRequestException("Unknown input body type");
         };
+        addEtagHeaderForUpdatedPublication(updatedResource);
+        return PublicationResponseFactory.create(updatedResource, requestInfo, identityServiceClient);
+    }
 
-        return PublicationResponseFactory.create(updatedPublication, requestInfo, identityServiceClient);
+    private void addEtagHeaderForUpdatedPublication(Resource updatedResource) {
+        addAdditionalHeaders(() -> Map.of(ETAG, updatedResource.getVersion().toString(), ACCESS_CONTROL_EXPOSE_HEADERS,
+                                          ETAG));
     }
 
     private Resource updatePublication(UpdateRequest input, SortableIdentifier identifierInPath,
@@ -168,7 +188,7 @@ public class UpdatePublicationHandler
         validateRequest(identifierInPath, input);
 
         var resourceUpdate = input.generateUpdate(existingResource);
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, resourceUpdate.getPublisher().getId());
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
         authorizeFileEntries(existingResource, userInstance, getUpdatedFiles(existingResource, resourceUpdate));
 
         var updatedFiles = resourceUpdate.getFiles();
@@ -177,7 +197,7 @@ public class UpdatePublicationHandler
             throw new ForbiddenException();
         }
 
-        setRrsOnFiles(resourceUpdate, existingResource, customer, userInstance.getUsername(), permissionStrategy);
+        setRrsOnFiles(resourceUpdate, existingResource, customer, userInstance);
 
         new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
             .resolve(existingResource, resourceUpdate);
@@ -311,11 +331,9 @@ public class UpdatePublicationHandler
     }
 
     private void setRrsOnFiles(Resource updatedResource, Resource existingResource, Customer customer,
-                               String actingUser, PublicationPermissions permissionStrategy)
-        throws BadRequestException, UnauthorizedException {
-        RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingResource, updatedResource,
-                                                                customer.getRightsRetentionStrategy(), actingUser,
-                                                                permissionStrategy).handle();
+                               UserInstance userInstance) {
+        new FileRightsRetentionService(customer.getRightsRetentionStrategy(), userInstance)
+            .applyRightsRetention(updatedResource, existingResource);
     }
 
     private JavaHttpClientCustomerApiClient getCustomerApiClient() {

@@ -148,8 +148,8 @@ public final class PublicationGenerator {
         return List.of(randomResearchProject());
     }
 
-    public static List<Funding> randomFundings() {
-        return List.of(randomUnconfirmedFunding(), randomConfirmedFunding());
+    public static Set<Funding> randomFundings() {
+        return Set.of(randomUnconfirmedFunding(), randomConfirmedFunding());
     }
 
     public static Funding randomConfirmedFunding() {
@@ -312,11 +312,15 @@ public final class PublicationGenerator {
     }
 
     private static PublicationNoteBase randomUnpublishingNote() {
-        return new UnpublishingNote(randomString(), new Username(randomString()), randomInstant());
+        return new UnpublishingNote(randomString(), randomUsername(), randomInstant());
     }
 
-    private static ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(new Username(randomString()), randomUri());
+    private static Username randomUsername() {
+        return new Username(randomString());
+    }
+
+    public static ResourceOwner randomResourceOwner() {
+        return new ResourceOwner(randomUsername(), randomUri());
     }
 
     private static String randomWord() {

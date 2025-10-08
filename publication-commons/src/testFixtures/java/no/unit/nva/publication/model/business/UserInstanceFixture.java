@@ -17,6 +17,6 @@ public class UserInstanceFixture {
                                 publication.getPublisher().getId(),
                                 topLevelOrgCristinId,
                                 null, null, List.of(MANAGE_DEGREE, MANAGE_RESOURCE_FILES,
-                                                    MANAGE_RESOURCES_STANDARD), UserClientType.INTERNAL);
+                                                    MANAGE_RESOURCES_STANDARD), UserClientType.INTERNAL, null);
     }
 }

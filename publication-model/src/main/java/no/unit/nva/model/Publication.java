@@ -1,5 +1,6 @@
 package no.unit.nva.model;
 
+import static java.util.Collections.emptySet;
 import static java.util.Objects.hash;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -93,7 +94,7 @@ public class Publication
     }
 
     public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
-        return nonNull(additionalIdentifiers) ? additionalIdentifiers : Collections.emptySet();
+        return nonNull(additionalIdentifiers) ? additionalIdentifiers : emptySet();
     }
 
     public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
@@ -241,12 +242,12 @@ public class Publication
     }
 
     @Override
-    public List<Funding> getFundings() {
-        return nonNull(fundings) ? fundings : Collections.emptyList();
+    public Set<Funding> getFundings() {
+        return nonNull(fundings) ? fundings : emptySet();
     }
 
     @Override
-    public void setFundings(List<Funding> fundings) {
+    public void setFundings(Set<Funding> fundings) {
         this.fundings = new FundingList(fundings);
     }
 
@@ -397,7 +398,7 @@ public class Publication
     }
 
     public Set<CuratingInstitution> getCuratingInstitutions() {
-        return nonNull(curatingInstitutions) ? curatingInstitutions : Collections.emptySet();
+        return nonNull(curatingInstitutions) ? curatingInstitutions : emptySet();
     }
 
     public void setCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
@@ -533,7 +534,7 @@ public class Publication
             return this;
         }
 
-        public Builder withFundings(List<Funding> fundings) {
+        public Builder withFundings(Set<Funding> fundings) {
             publication.setFundings(fundings);
             return this;
         }

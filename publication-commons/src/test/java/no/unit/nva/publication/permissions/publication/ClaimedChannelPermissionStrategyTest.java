@@ -20,6 +20,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.Institution;
 import no.unit.nva.publication.permissions.PermissionsTestUtils.InstitutionSuite;
@@ -1232,7 +1233,6 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
 
     private static Stream<Arguments> argumentsForCurator() {
         final var operations = Set.of(UPDATE,
-                                      PublicationOperation.UPDATE_FILES,
                                       PublicationOperation.UNPUBLISH,
                                       PublicationOperation.UPLOAD_FILE,
                                       PublicationOperation.PARTIAL_UPDATE);
@@ -1250,7 +1250,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
     }
 
     private static UserInstance createExternalUser(Resource resource) {
-        return UserInstance.createExternalUser(resource.toPublication().getResourceOwner(), randomUri());
+        return UserInstance.createExternalUser(resource.toPublication().getResourceOwner(), randomUri(), ThirdPartySystem.OTHER);
     }
 
     private RequestInfo toRequestInfo(User user) throws JsonProcessingException {

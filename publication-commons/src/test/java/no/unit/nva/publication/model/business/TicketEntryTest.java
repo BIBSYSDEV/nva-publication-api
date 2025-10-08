@@ -3,6 +3,8 @@ package no.unit.nva.publication.model.business;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.publication.TestingUtils.randomUserInstance;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -89,13 +91,13 @@ class TicketEntryTest {
     }
 
     @Test
-    void shouldMoveFilesForApprovalToApprovedFilesWhenPublishingRequestApproveFiles() {
-        var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
-        var ticket = PublishingRequestCase.create(
-            Resource.fromPublication(publication), UserInstance.fromPublication(publication), PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        ticket.withFilesForApproval(Set.of(randomPendingOpenFile())).approveFiles();
+    void shouldMoveFilesForApprovalToApprovedFilesWhenCompletingPublishingRequest() {
+        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(randomPendingOpenFile())).build();
+        var userInstance = UserInstance.fromPublication(publication);
+        var ticket = PublishingRequestCase.create(Resource.fromPublication(publication), userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var completed = ticket.complete(publication, userInstance);
 
-        assertThat(ticket.getApprovedFiles().size(), is(equalTo(1)));
+        assertThat(completed.getApprovedFiles().size(), is(equalTo(1)));
     }
 
     @Test
@@ -136,7 +138,7 @@ class TicketEntryTest {
         var resource = Resource.fromPublication(randomPublication());
         var userInstance = randomUserInstance();
 
-        var publishingRequestCase = PublishingRequestCase.create(resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        var publishingRequestCase = PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY);
 
         assertEquals(userInstance.getTopLevelOrgCristinId(), publishingRequestCase.getOwnerAffiliation());
         assertEquals(userInstance.getPersonAffiliation(), publishingRequestCase.getResponsibilityArea());
@@ -149,7 +151,7 @@ class TicketEntryTest {
         var userInstance = randomUserInstance();
         var files = Set.of(randomPendingOpenFile());
         var publishingRequestCase = PublishingRequestCase.createWithFilesForApproval(resource, userInstance,
-                                                                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY, files);
+                                                                 REGISTRATOR_PUBLISHES_METADATA_ONLY, files);
 
         assertTrue(publishingRequestCase.getFilesForApproval().containsAll(files));
     }
@@ -215,8 +217,12 @@ class TicketEntryTest {
         assertNull(ticket.getAssignee());
     }
 
-    private static UserInstance randomUserInstance() {
-        return new UserInstance(randomString(), randomUri(), randomUri(), randomUri(),
-                                randomUri(), List.of(), UserClientType.INTERNAL);
+    @Test
+    void withFilesForApprovalShouldSetFilesForApproval() {
+        var ticket = new PublishingRequestCase();
+        var filesForApproval = Set.of(randomPendingOpenFile());
+        ticket.withFilesForApproval(filesForApproval);
+
+        assertEquals(filesForApproval, ticket.getFilesForApproval());
     }
 }

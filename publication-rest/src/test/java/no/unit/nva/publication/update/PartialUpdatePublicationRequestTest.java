@@ -8,10 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
-import nva.commons.apigateway.exceptions.ForbiddenException;
 import org.junit.jupiter.api.Test;
 
 class PartialUpdatePublicationRequestTest {
@@ -71,6 +71,6 @@ class PartialUpdatePublicationRequestTest {
     }
 
     private static PartialUpdatePublicationRequest emptyRequestWithIdentifier(SortableIdentifier identifier) {
-        return new PartialUpdatePublicationRequest(identifier, List.of(), List.of(), empty());
+        return new PartialUpdatePublicationRequest(identifier, Set.of(), List.of(), empty());
     }
 }

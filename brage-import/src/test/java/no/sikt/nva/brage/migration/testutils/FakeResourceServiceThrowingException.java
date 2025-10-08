@@ -9,6 +9,7 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.utils.CustomerService;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 public class FakeResourceServiceThrowingException extends ResourceService {
@@ -18,7 +19,8 @@ public class FakeResourceServiceThrowingException extends ResourceService {
 
     public FakeResourceServiceThrowingException(AmazonDynamoDB client) {
         super(client, FAKE_TABLE_NAME, Clock.systemDefaultZone(),
-              mock(UriRetriever.class), mock(ChannelClaimClient.class), mock(CustomerService.class));
+              mock(UriRetriever.class), mock(ChannelClaimClient.class), mock(CustomerService.class),
+              new FakeCristinUnitsUtil());
     }
 
     @Override

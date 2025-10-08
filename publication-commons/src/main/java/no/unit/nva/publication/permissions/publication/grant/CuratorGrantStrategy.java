@@ -5,7 +5,6 @@ import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.Resource;
@@ -30,7 +29,6 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
         }
 
         return switch (permission) {
-            case UPDATE_FILES -> hasAccessRight(MANAGE_RESOURCE_FILES);
             case UPDATE,
                  PARTIAL_UPDATE,
                  SUPPORT_REQUEST_CREATE,
@@ -39,8 +37,7 @@ public final class CuratorGrantStrategy extends PublicationStrategyBase implemen
                  UPLOAD_FILE -> isCurator();
             case UNPUBLISH -> isPublished() && (hasApprovedFiles() ? canApproveFiles() : isCurator());
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
-            case PUBLISHING_REQUEST_APPROVE,
-                 READ_HIDDEN_FILES, APPROVE_FILES -> canApproveFiles();
+            case READ_HIDDEN_FILES, APPROVE_FILES -> canApproveFiles();
             case SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);
             default -> false;
         };

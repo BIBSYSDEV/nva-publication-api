@@ -1,20 +1,17 @@
 package no.unit.nva.model.funding;
 
+import static java.util.Objects.isNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-
 import nva.commons.core.JacocoGenerated;
 
-import static java.util.Objects.isNull;
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ConfirmedFunding extends UnconfirmedFunding {
+public class ConfirmedFunding extends UnconfirmedFunding implements Funding {
 
     private final URI id;
 

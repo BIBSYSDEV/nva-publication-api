@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
+import java.util.Map;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -28,6 +29,14 @@ public final class DatabaseConstants {
     public static final String BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME = "SK3";
     public static final String RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME = "PK4";
     public static final String RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME = "SK4";
+
+    // Map of GSI names to their corresponding partition and sort keys
+    public static final Map<String, DynamoDbKey> GSI_KEY_PAIRS = Map.of(
+        GSI_1_INDEX_NAME, new DynamoDbKey(GSI_1_PARTITION_KEY_NAME, GSI_1_SORT_KEY_NAME),
+        BY_CUSTOMER_RESOURCE_INDEX_NAME, new DynamoDbKey(BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME, BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME),
+        BY_TYPE_AND_IDENTIFIER_INDEX_NAME, new DynamoDbKey(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME, BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME),
+        RESOURCE_BY_CRISTIN_ID_INDEX_NAME, new DynamoDbKey(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
+    );
     
     public static final String CUSTOMER_INDEX_FIELD_PREFIX = "Customer";
     public static final String RESOURCE_INDEX_FIELD_PREFIX = "Resource";
@@ -70,4 +79,6 @@ public final class DatabaseConstants {
             DEFAULT_RESOURCES_TABLE_NAME
         );
     }
+
+    public record DynamoDbKey(String partitionKey, String sortKey) {}
 }

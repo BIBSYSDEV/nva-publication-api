@@ -65,8 +65,9 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
             username);
         var file = createPendingOpenFileWithRrs(null);
-        FileEntry.create(file, persistedPublication.getIdentifier(), UserInstance.fromPublication(persistedPublication))
-            .persist(resourceService);
+        var userInstance = UserInstance.fromPublication(persistedPublication);
+        FileEntry.create(file, persistedPublication.getIdentifier(), userInstance)
+            .persist(resourceService, userInstance);
         file.setRightsRetentionStrategy(userSetRrs);
         var update = persistedPublication.copy().withAssociatedArtifacts(List.of(file)).build();
         var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);

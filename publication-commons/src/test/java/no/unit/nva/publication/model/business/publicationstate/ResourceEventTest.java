@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.publicationstate;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_ASSIGNED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_REJECTED;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.DOI_REQUESTED;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
@@ -30,13 +32,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ResourceEventTest {
 
     public static Stream<Arguments> resourceEventProvider() {
-        return Stream.of(Arguments.of(new CreatedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
+        return Stream.of(Arguments.of(new CreatedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()
+                                          , null),
+                                      PUBLICATION_CREATED),
+                         Arguments.of(new CreatedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()
+                                          , ImportSource.fromSource(Source.OTHER)),
                                       PUBLICATION_CREATED), Arguments.of(
-                             new PublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
-                             PUBLICATION_PUBLISHED),
-                         Arguments.of(
-                             new UnpublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
-                             PUBLICATION_UNPUBLISHED),
+                new PublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
+                PUBLICATION_PUBLISHED), Arguments.of(
+                new UnpublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
+                PUBLICATION_UNPUBLISHED),
                          Arguments.of(new DeletedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
                                       PUBLICATION_DELETED), Arguments.of(
                 new RepublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
@@ -46,8 +51,10 @@ class ResourceEventTest {
                          Arguments.of(DoiReservedEvent.create(randomUserInstance(), Instant.now()), DOI_RESERVED),
                          Arguments.of(MergedResourceEvent.fromImportSource(getImportSource(), randomUserInstance(),
                                                                            Instant.now()), PUBLICATION_MERGED),
-                         Arguments.of(UpdatedResourceEvent.create(randomUserInstance(),
-                                                                           Instant.now()), PUBLICATION_UPDATED));
+                         Arguments.of(UpdatedResourceEvent.create(randomUserInstance(), Instant.now()),
+                                      PUBLICATION_UPDATED),
+                         Arguments.of(UpdatedResourceEvent.create(randomExternalUserInstance(), Instant.now()),
+                                      PUBLICATION_UPDATED));
     }
 
     public static Stream<Arguments> ticketEventProvider() {
@@ -78,6 +85,10 @@ class ResourceEventTest {
 
     private static UserInstance randomUserInstance() {
         return UserInstance.create(randomString(), randomUri());
+    }
+
+    private static UserInstance randomExternalUserInstance() {
+        return UserInstance.createExternalUser(randomResourceOwner(), randomUri(), ThirdPartySystem.OTHER);
     }
 
     private static SortableIdentifier identifier() {
