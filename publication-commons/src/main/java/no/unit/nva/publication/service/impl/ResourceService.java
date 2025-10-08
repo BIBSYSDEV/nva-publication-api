@@ -279,7 +279,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .toList();
     }
 
-    public List<Resource> getResourcesByScopusIdentifier(ScopusIdentifier scopusIdentifier) {
+    public List<Publication> getPublicationsByScopusIdentifier(ScopusIdentifier scopusIdentifier) {
         return readResourceService.getPublicationsByScopusIdentifier(scopusIdentifier.value())
                    .stream()
                    .map(Resource::fromPublication)
@@ -287,6 +287,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .map(readResourceService::getResourceByIdentifier)
                    .filter(Optional::isPresent)
                    .map(Optional::get)
+                   .map(Resource::toPublication)
                    .toList();
     }
 
