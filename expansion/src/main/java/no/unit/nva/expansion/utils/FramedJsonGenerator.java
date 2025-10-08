@@ -163,8 +163,6 @@ public class FramedJsonGenerator {
               ?entityDescription nva:contributorsPreview ?contributorsPreview ;
                                  nva:contributorsCount ?contributorsCount .
             } WHERE {
-              ?publication a nva:Publication ;
-                           nva:entityDescription ?entityDescription .
               {
                 SELECT (COUNT(?contributor) AS ?contributorsCount) WHERE {
                   ?publication a nva:Publication ;
@@ -173,7 +171,7 @@ public class FramedJsonGenerator {
                 }
               }
               {
-                SELECT ?contributorsPreview WHERE {
+                SELECT ?contributorsPreview ?entityDescription WHERE {
                   ?publication a nva:Publication ;
                                nva:entityDescription ?entityDescription .
                   ?entityDescription nva:contributor ?contributorsPreview .

@@ -77,7 +77,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
     private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
     private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
-    public static final String CONTRIBUTORS_COUNT = "contributorsCount";
 
     @JsonAnySetter
     private final Map<String, Object> allFields;
