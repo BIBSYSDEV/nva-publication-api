@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
@@ -40,7 +41,7 @@ public class UpdatePublicationRequest
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
-    private List<Funding> fundings;
+    private Set<Funding> fundings;
     private String rightsHolder;
     private List<ImportDetail> importDetails;
 
@@ -146,13 +147,13 @@ public class UpdatePublicationRequest
 
     @Override
     @JacocoGenerated
-    public List<Funding> getFundings() {
+    public Set<Funding> getFundings() {
         return fundings;
     }
 
     @Override
     @JacocoGenerated
-    public void setFundings(List<Funding> fundings) {
+    public void setFundings(Set<Funding> fundings) {
         this.fundings = fundings;
     }
 

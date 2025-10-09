@@ -34,7 +34,7 @@ public class CreatePublicationRequest implements WithMetadata, WithContext {
     private List<ResearchProject> projects;
     private List<URI> subjects;
     private Set<AdditionalIdentifierBase> additionalIdentifiers;
-    private List<Funding> fundings;
+    private Set<Funding> fundings;
     @Size(min = 1, max = 256)
     @Pattern(regexp = "^[\\p{L}\\d][\\p{L}\\d\\s]*\\S$")
     private String rightsHolder;
@@ -132,13 +132,13 @@ public class CreatePublicationRequest implements WithMetadata, WithContext {
 
     @Override
     @JacocoGenerated
-    public List<Funding> getFundings() {
+    public Set<Funding> getFundings() {
         return fundings;
     }
 
     @Override
     @JacocoGenerated
-    public void setFundings(List<Funding> fundings) {
+    public void setFundings(Set<Funding> fundings) {
         this.fundings = fundings;
     }
 

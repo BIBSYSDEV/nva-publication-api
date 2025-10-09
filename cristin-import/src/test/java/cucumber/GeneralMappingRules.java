@@ -31,7 +31,6 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinContributor;
@@ -46,17 +45,17 @@ import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.role.Role;
@@ -491,7 +490,7 @@ public class GeneralMappingRules {
                                                                                               String id) {
         var nvaFundings = scenarioContext.getNvaEntry().getFundings();
         assertThat(nvaFundings, hasSize(1));
-        assertThat(nvaFundings.get(0), allOf(is(instanceOf(ConfirmedFunding.class)),
+        assertThat(nvaFundings.stream().findFirst().orElseThrow(), allOf(is(instanceOf(ConfirmedFunding.class)),
                                              hasProperty("identifier", equalTo(identifier)),
                                              hasProperty("id", equalTo(UriWrapper.fromUri(id).getUri()))));
     }

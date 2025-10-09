@@ -3,6 +3,7 @@ package no.unit.nva.expansion.model;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -15,6 +16,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.queue.QueueClient;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
@@ -29,10 +32,12 @@ class ExpandedParentPublicationTest extends ResourcesLocalTest {
     public static final String PUBLICATION_PATH = "publication";
     private FakeUriRetriever fakeUriRetriever;
     private ResourceService resourceService;
+    private QueueClient queueClient;
 
     @BeforeEach
     void setUp() {
         super.init();
+        queueClient = new FakeSqsClient();
         this.fakeUriRetriever = FakeUriRetriever.newInstance();
         this.resourceService = getResourceService(client);
     }
@@ -40,7 +45,7 @@ class ExpandedParentPublicationTest extends ResourcesLocalTest {
     @Test
     void shouldThrowRuntimeExceptionWhenParentPublicationDoesNotExists() {
         var publicationId = randomPublicationId();
-        var parent = new ExpandedParentPublication(fakeUriRetriever, resourceService);
+        var parent = new ExpandedParentPublication(fakeUriRetriever, resourceService, queueClient);
 
         assertThrows(RuntimeException.class, () -> parent.getExpandedParentPublication(publicationId),
                      "Parent publication not found " + publicationId);
@@ -50,7 +55,7 @@ class ExpandedParentPublicationTest extends ResourcesLocalTest {
     void shouldThrowRuntimeExceptionWhenParentPublicationHasInvalidExternalReferences() throws BadRequestException {
         var publication = persistedParentPublication();
         var publicationId = toPublicationId(publication.getIdentifier());
-        var parent = new ExpandedParentPublication(fakeUriRetriever, resourceService);
+        var parent = new ExpandedParentPublication(fakeUriRetriever, resourceService, queueClient);
 
         assertThrows(RuntimeException.class, () -> parent.getExpandedParentPublication(publicationId));
     }
@@ -64,8 +69,25 @@ class ExpandedParentPublicationTest extends ResourcesLocalTest {
             Optional.of(FakeHttpResponse.create(emptyJsonBody(), 404)));
 
         assertDoesNotThrow(
-            () -> new ExpandedParentPublication(mockedUriRetriever, resourceService).getExpandedParentPublication(
+            () -> new ExpandedParentPublication(mockedUriRetriever, resourceService, queueClient).getExpandedParentPublication(
                 publicationId));
+    }
+
+    @Test
+    void shouldPersistRecoveryEntryWhenExternalReferenceReturnsResponseWithStatusCode4XX() throws BadRequestException {
+        var publication = persistedParentPublication();
+        var publicationId = toPublicationId(publication.getIdentifier());
+        var mockedUriRetriever = mock(UriRetriever.class);
+        when(mockedUriRetriever.fetchResponse(any(), any())).thenReturn(
+            Optional.of(FakeHttpResponse.create(emptyJsonBody(), 404)));
+
+        new ExpandedParentPublication(mockedUriRetriever, resourceService, queueClient).getExpandedParentPublication(
+            publicationId);
+
+        var fakeSqsClient = (FakeSqsClient) queueClient;
+        var sqsMessageIdentifierAttribute = fakeSqsClient.getDeliveredMessages().getFirst().messageAttributes().get("id");
+
+        assertEquals(publication.getIdentifier().toString(), sqsMessageIdentifierAttribute.stringValue());
     }
 
     private static URI randomPublicationId() {

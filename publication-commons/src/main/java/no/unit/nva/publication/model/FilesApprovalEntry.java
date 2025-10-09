@@ -56,8 +56,18 @@ public abstract class FilesApprovalEntry extends TicketEntry {
     @Override
     public FilesApprovalEntry complete(Publication publication, UserInstance userInstance) {
         var completed = (FilesApprovalEntry) super.complete(publication, userInstance);
-        completed.emptyFilesForApproval();
+        completed.setApprovedFiles(getPendingFilesToApprove(publication));
+        completed.setFilesForApproval(Set.of());
         return completed;
+    }
+
+    private Set<File> getPendingFilesToApprove(Publication publication) {
+        return getFilesForApproval().stream()
+                   .filter(file -> publication.getFile(file.getIdentifier())
+                                       .filter(PendingFile.class::isInstance)
+                                       .isPresent())
+                   .map(this::toApprovedFile)
+                   .collect(Collectors.toSet());
     }
 
     public FilesApprovalEntry applyPublicationChannelClaim(URI organizationId,
@@ -89,7 +99,6 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
     protected FilesApprovalEntry completeAndApproveFiles(Resource resource, UserInstance userInstance) {
         this.setAssignee(new Username(userInstance.getUsername()));
-        this.approveFiles();
         return this.complete(resource.toPublication(), userInstance);
     }
 
@@ -147,16 +156,6 @@ public abstract class FilesApprovalEntry extends TicketEntry {
                                                    getFinalizedBy().getValue()))));
     }
 
-    protected void emptyFilesForApproval() {
-        this.setFilesForApproval(Set.of());
-    }
-
-    public FilesApprovalEntry approveFiles() {
-        this.approvedFiles = getFilesForApproval().stream().map(this::toApprovedFile).collect(Collectors.toSet());
-        this.filesForApproval = Set.of();
-        return this;
-    }
-
     public FilesApprovalEntry withFilesForApproval(Collection<File> filesForApproval) {
         setFilesForApproval(filesForApproval);
         return this;
@@ -164,10 +163,6 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
     private File toApprovedFile(File file) {
         return file instanceof PendingFile<?, ?> pendingFile ? pendingFile.approve() : file;
-    }
-
-    public boolean fileIsApproved(File file) {
-        return getApprovedFiles().stream().map(File::getIdentifier).toList().contains(file.getIdentifier());
     }
 
     protected boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow) {

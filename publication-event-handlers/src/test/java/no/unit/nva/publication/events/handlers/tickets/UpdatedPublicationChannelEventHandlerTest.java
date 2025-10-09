@@ -331,7 +331,7 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
                                             topLevelOrganizationId, userAffiliationOrganizationId,
                                             personId,
                                             accessRights,
-                                            UserClientType.INTERNAL);
+                                            UserClientType.INTERNAL, null);
         return FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
                                                             userInstance,
                                                             REGISTRATOR_PUBLISHES_METADATA_ONLY);

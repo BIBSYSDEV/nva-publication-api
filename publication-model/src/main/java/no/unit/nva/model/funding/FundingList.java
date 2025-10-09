@@ -1,25 +1,22 @@
 package no.unit.nva.model.funding;
 
+import static java.util.Collections.emptySet;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Objects;
-import java.util.Spliterator;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-public class FundingList implements List<Funding> {
+public class FundingList implements Set<Funding> {
 
-    private final List<Funding> fundings;
+    private final Set<Funding> fundings;
 
-    public FundingList(List<Funding> fundings) {
-        this.fundings = Objects.nonNull(fundings) ? fundings : Collections.emptyList();
+    public FundingList(Collection<Funding> fundings) {
+        this.fundings = Objects.nonNull(fundings) ? new HashSet<>(fundings) : emptySet();
     }
 
     @Override
@@ -63,18 +60,8 @@ public class FundingList implements List<Funding> {
     }
 
     @Override
-    public void add(int index, Funding element) {
-        fundings.add(index, element);
-    }
-
-    @Override
     public boolean remove(Object o) {
         return fundings.remove(o);
-    }
-
-    @Override
-    public Funding remove(int index) {
-        return fundings.remove(index);
     }
 
     @Override
@@ -88,11 +75,6 @@ public class FundingList implements List<Funding> {
     }
 
     @Override
-    public boolean addAll(int index, Collection<? extends Funding> c) {
-        return fundings.addAll(index, c);
-    }
-
-    @Override
     public boolean removeAll(Collection<?> c) {
         return fundings.removeAll(c);
     }
@@ -100,16 +82,6 @@ public class FundingList implements List<Funding> {
     @Override
     public boolean retainAll(Collection<?> c) {
         return fundings.retainAll(c);
-    }
-
-    @Override
-    public void replaceAll(UnaryOperator<Funding> operator) {
-        fundings.replaceAll(operator);
-    }
-
-    @Override
-    public void sort(Comparator<? super Funding> c) {
-        fundings.sort(c);
     }
 
     @Override
@@ -125,46 +97,6 @@ public class FundingList implements List<Funding> {
     @Override
     public int hashCode() {
         return fundings.hashCode();
-    }
-
-    @Override
-    public Funding get(int index) {
-        return fundings.get(index);
-    }
-
-    @Override
-    public Funding set(int index, Funding element) {
-        return fundings.set(index, element);
-    }
-
-    @Override
-    public int indexOf(Object o) {
-        return fundings.indexOf(o);
-    }
-
-    @Override
-    public int lastIndexOf(Object o) {
-        return fundings.lastIndexOf(o);
-    }
-
-    @Override
-    public ListIterator<Funding> listIterator() {
-        return fundings.listIterator();
-    }
-
-    @Override
-    public ListIterator<Funding> listIterator(int index) {
-        return fundings.listIterator(index);
-    }
-
-    @Override
-    public List<Funding> subList(int fromIndex, int toIndex) {
-        return fundings.subList(fromIndex, toIndex);
-    }
-
-    @Override
-    public Spliterator<Funding> spliterator() {
-        return fundings.spliterator();
     }
 
     @Override

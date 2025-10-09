@@ -1,12 +1,14 @@
 package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
+import com.google.common.net.HttpHeaders;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.RequestInfo;
@@ -81,6 +83,14 @@ public final class RequestUtil {
         return attempt(requestInfo::getUserName).orElseThrow(fail -> new UnauthorizedException());
     }
 
+    public static Optional<String> getETagFromIfMatchHeader(RequestInfo requestInfo) {
+        return requestInfo.getHeaderOptional(HttpHeaders.IF_MATCH);
+    }
+
+    public static Optional<String> getETagFromIfNoneMatchHeader(RequestInfo requestInfo) {
+        return requestInfo.getHeaderOptional(HttpHeaders.IF_NONE_MATCH);
+    }
+
     private static UserInstance createClientCredentialUserInstance(RequestInfo requestInfo,
                                                                    IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
@@ -93,9 +103,13 @@ public final class RequestUtil {
             client.getCristinUrgUri()
         );
 
+        var thirdPartySystem = requestInfo.getHeaderOptional("System").map(
+            ThirdPartySystem::fromValue).orElse(null);
+
+
         return requestInfo.clientIsInternalBackend()
                    ? UserInstance.createBackendUser(resourceOwner, client.getCustomerUri())
-                   : UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
+                   : UserInstance.createExternalUser(resourceOwner, client.getCustomerUri(), thirdPartySystem);
     }
 
     private static UserInstance createDataportenUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
@@ -106,7 +120,7 @@ public final class RequestUtil {
         var personAffiliation = attempt(requestInfo::getPersonAffiliation).orElse(failure -> null);
         var accessRights = requestInfo.getAccessRights();
         return new UserInstance(owner, customerId, topLevelOrg, personAffiliation, personCristinId, accessRights,
-                                UserClientType.INTERNAL);
+                                UserClientType.INTERNAL, null);
     }
 
     public static UserInstance createUserInstanceFromRequest(RequestInfo requestInfo,

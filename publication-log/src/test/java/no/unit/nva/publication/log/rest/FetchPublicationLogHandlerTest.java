@@ -155,7 +155,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
 
         var userInstance = UserInstance.fromPublication(publication);
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance);
-        fileEntry.persist(resourceService);
+        fileEntry.persist(resourceService, userInstance);
         fileEntry.getFileEvent().toLogEntry(fileEntry, user).persist(resourceService);
 
         var doiRequest = (DoiRequest) DoiRequest.create(Resource.fromPublication(publication), userInstance)

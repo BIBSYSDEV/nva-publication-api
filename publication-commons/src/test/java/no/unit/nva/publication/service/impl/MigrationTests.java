@@ -5,9 +5,9 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithIdAndAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
@@ -16,7 +16,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
@@ -30,18 +29,16 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.contexttypes.Degree;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DataCompressor;
@@ -50,40 +47,29 @@ import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.model.utils.CustomerSummary;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
-import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.stubbing.Answer;
-import software.amazon.awssdk.core.ResponseBytes;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 class MigrationTests extends ResourcesLocalTest {
 
-    public static final String CRISTIN_UNITS_S3_URI = "s3://some-bucket/some-key";
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
     protected static final URI CRISTIN_ID = URI.create("https" +
                                                        "://api.dev" +
                                                        ".nva.aws.unit.no/cristin/organization/20754.0.0.0");
-    private S3Client s3Client;
     private ResourceService resourceService;
 
     @BeforeEach
     public void init() {
         super.init();
-        this.s3Client = mock(S3Client.class);
-        when(s3Client.utilities()).thenReturn(S3Client.create().utilities());
-        when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
-                (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
-        this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(), uriRetriever,
-                                                   channelClaimClient, customerService);
+        when(customerService.fetchCustomers()).thenReturn(
+            new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
+        this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(),
+                                                   uriRetriever,
+                                                   channelClaimClient, customerService, new FakeCristinUnitsUtil());
     }
 
     @Test
@@ -94,11 +80,11 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiRequest = allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof DoiRequestDao)
-                .map(Dao::getData)
-                .map(entry -> (DoiRequest) entry)
-                .collect(Collectors.toList());
+                             .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
+                             .filter(dao -> dao instanceof DoiRequestDao)
+                             .map(Dao::getData)
+                             .map(entry -> (DoiRequest) entry)
+                             .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(2));
     }
 
@@ -110,12 +96,12 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiRequest = allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof DoiRequestDao)
-                .map(Dao::getData)
-                .map(entry -> (DoiRequest) entry)
-                .filter(entry -> nonNull(entry.getResourceIdentifier()))
-                .collect(Collectors.toList());
+                             .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
+                             .filter(dao -> dao instanceof DoiRequestDao)
+                             .map(Dao::getData)
+                             .map(entry -> (DoiRequest) entry)
+                             .filter(entry -> nonNull(entry.getResourceIdentifier()))
+                             .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(1));
     }
 
@@ -125,10 +111,10 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiRequest = allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof DoiRequestDao)
-                .map(DoiRequestDao.class::cast)
-                .collect(Collectors.toList());
+                             .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
+                             .filter(dao -> dao instanceof DoiRequestDao)
+                             .map(DoiRequestDao.class::cast)
+                             .collect(Collectors.toList());
         assertThat(doiRequest, hasSize(1));
 
         assertThat(doiRequest.getFirst().getIdentifier(), not(nullValue()));
@@ -159,8 +145,8 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var resource = getResourceStream(allMigratedItems)
-                .findFirst()
-                .orElseThrow();
+                           .findFirst()
+                           .orElseThrow();
 
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
     }
@@ -174,14 +160,14 @@ class MigrationTests extends ResourcesLocalTest {
         migrateResources();
         var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var resource = getResourceStream(allMigratedItems)
-                .findFirst()
-                .orElseThrow();
+                           .findFirst()
+                           .orElseThrow();
 
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
     }
 
     @Test
-    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeggingAndEndOfTheTitle() throws NotFoundException {
+    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeginningAndEndOfTheTitle() throws NotFoundException {
         var title = "Some title";
         var trailingSpacesTitle = "  %s  ".formatted(title);
         var publication = randomPublication(Textbook.class);
@@ -193,6 +179,37 @@ class MigrationTests extends ResourcesLocalTest {
         var migratedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
 
         assertEquals(title, migratedResource.getEntityDescription().getMainTitle());
+    }
+
+    @Test
+    void shouldMigrateMainTitleByRemovingWhitespacesAtTheBeginningAndEndOfTheTitleByKey() throws NotFoundException {
+        var title = "Some title";
+        var trailingSpacesTitle = "  %s  ".formatted(title);
+        var publication = randomPublication(Textbook.class);
+        publication.getEntityDescription().setMainTitle(trailingSpacesTitle);
+        updatePublication(publication);
+
+        var entries = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList())
+                          .getDatabaseEntries();
+        var key = getFirstKey(entries);
+
+        resourceService.refreshResourcesByKeys(List.of(key), new FakeCristinUnitsUtil());
+
+        var migratedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+
+        assertEquals(title, migratedResource.getEntityDescription().getMainTitle());
+    }
+
+    private Map<String, AttributeValue> getFirstKey(List<Entity> entries) {
+        var key = entries
+                      .getFirst()
+                      .toDao()
+                      .toDynamoFormat();
+
+        key.keySet()
+            .removeIf(attributeKey -> !Set.of(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME)
+                                           .contains(attributeKey));
+        return key;
     }
 
     @Test
@@ -213,31 +230,12 @@ class MigrationTests extends ResourcesLocalTest {
                        .anyMatch(curatingInstitution -> curatingInstitution.id().equals(customerCristinId)));
     }
 
-    private static Degree degreeWithPublisher(Publisher publisher) {
-        return attempt(() ->  new Degree(null, null, null, publisher, List.of(), null))
-                   .orElseThrow();
-    }
-
-    private static Report reportWithPublisher(Publisher publisher) {
-        return attempt(() ->  new Report(null, null, null, publisher, List.of()))
-                   .orElseThrow();
-    }
-
-    private static URI randomPublisherId(UUID channelIdentifier) {
-        return UriWrapper.fromUri(randomUri())
-                   .addChild("publication-channel-v2")
-                   .addChild("publisher")
-                   .addChild(channelIdentifier.toString())
-                   .addChild(randomInteger().toString())
-                   .getUri();
-    }
-
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
         return allMigratedItems.stream()
-                .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
-                .filter(dao -> dao instanceof ResourceDao)
-                .map(Dao::getData)
-                .map(entry -> (Resource) entry);
+                   .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
+                   .filter(ResourceDao.class::isInstance)
+                   .map(Dao::getData)
+                   .map(Resource.class::cast);
     }
 
     private void saveFileDirectlyToDatabase(String file) {
@@ -254,12 +252,12 @@ class MigrationTests extends ResourcesLocalTest {
     private Publication createPublicationForOldDoiRequestFormatInResources(SortableIdentifier hardCodedIdentifier) {
         var publication = randomPublication();
         publication.getEntityDescription()
-                .getContributors()
-                .forEach(contributor ->
-                        contributor.getAffiliations()
-                                .forEach(affiliation -> ((Organization) affiliation).setId(
-                                        URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")))
-                );
+            .getContributors()
+            .forEach(contributor ->
+                         contributor.getAffiliations()
+                             .forEach(affiliation -> ((Organization) affiliation).setId(
+                                 URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")))
+            );
         publication.setCuratingInstitutions(null);
         publication.setIdentifier(hardCodedIdentifier);
         updatePublication(publication);
@@ -275,14 +273,6 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries(), new CristinUnitsUtil(s3Client,
-                                                                                                  CRISTIN_UNITS_S3_URI));
-    }
-
-    public static ResponseBytes getUnitsResponseBytes() {
-        var result = IoUtils.stringFromResources(Path.of("cristinUnits/units-norway.json"));
-        var httpResponse = mock(ResponseBytes.class);
-        when(httpResponse.asUtf8String()).thenReturn(result);
-        return httpResponse;
+        resourceService.refreshResources(scanResources.getDatabaseEntries(), new FakeCristinUnitsUtil());
     }
 }

@@ -265,14 +265,14 @@ public class CristinMapper extends CristinMappingModule {
                                     cristinLocale.getOwnerCode().equalsIgnoreCase(cristinObject.getOwnerCodeCreated()));
     }
 
-    private List<Funding> extractFundings() {
+    private Set<Funding> extractFundings() {
         return Optional.ofNullable(cristinObject.getCristinGrants())
                    .map(this::mapToNvaFunding).orElse(null);
     }
 
-    private List<Funding> mapToNvaFunding(List<CristinGrant> grants) {
-        return grants.stream().map(CristinGrant::toNvaFunding)
-                   .toList();
+    private Set<Funding> mapToNvaFunding(List<CristinGrant> grants) {
+        return new HashSet<>(grants.stream().map(CristinGrant::toNvaFunding)
+                   .toList());
     }
 
     private void validateDoesNotHaveEmptyFields(Publication publication) {

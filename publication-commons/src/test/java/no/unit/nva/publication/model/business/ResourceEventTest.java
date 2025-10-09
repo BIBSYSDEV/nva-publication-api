@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,10 +16,10 @@ import no.unit.nva.publication.model.business.publicationstate.DeletedResourceEv
 import no.unit.nva.publication.model.business.publicationstate.DoiReservedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,7 +29,7 @@ public class ResourceEventTest {
     public static Stream<Arguments> stateProvider() {
         return Stream.of(Arguments.of(
                              new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
-                                                      SortableIdentifier.next())),
+                                                      SortableIdentifier.next(), null)),
                          Arguments.of(new UnpublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
                                                                    SortableIdentifier.next())), Arguments.of(
                 new PublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
@@ -45,7 +46,11 @@ public class ResourceEventTest {
                                                                   Instant.now())),
                          Arguments.of(
                              UpdatedResourceEvent.create(UserInstance.create(randomString(), randomUri()),
-                                                         Instant.now())));
+                                                         Instant.now())),
+                         Arguments.of(
+                             CreatedResourceEvent.create(UserInstance.createExternalUser(randomResourceOwner(),
+                                                                                                     randomUri(), ThirdPartySystem.OTHER),
+                                                                     Instant.now())));
     }
 
     @ParameterizedTest

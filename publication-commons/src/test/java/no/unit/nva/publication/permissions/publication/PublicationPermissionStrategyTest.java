@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
-import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -24,7 +23,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -172,7 +170,7 @@ class PublicationPermissionStrategyTest {
         assertThat(
             PublicationPermissions.create(Resource.fromPublication(publication), RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
-                .getAllAllowedActions(), hasItems(UPDATE, UNPUBLISH, UPDATE_FILES));
+                .getAllAllowedActions(), hasItems(UPDATE, UNPUBLISH));
     }
 
     @Test
@@ -195,25 +193,6 @@ class PublicationPermissionStrategyTest {
         assertThat(appender.getMessages(), containsString(contributorName));
         assertThat(appender.getMessages(), containsString(publication.getIdentifier().toString()));
         assertThat(appender.getMessages(), containsString("ContributorGrantStrategy"));
-    }
-
-    @Test
-    void isPublishingCuratorOnPublicationShouldReturnTrueWhenUserHasManagePublicationFilesAccessRight()
-        throws JsonProcessingException, UnauthorizedException {
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var personCristinId = randomUri();
-        var topLevelCristinOrgId = randomUri();
-
-        var allAccessRights = List.of(AccessRight.values());
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, personCristinId, topLevelCristinOrgId);
-        var publication = createPublication(resourceOwner, editorInstitution, topLevelCristinOrgId);
-
-        assertTrue(
-            PublicationPermissions.create(Resource.fromPublication(publication), RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient))
-                .isPublishingCuratorOnPublication());
     }
 
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {

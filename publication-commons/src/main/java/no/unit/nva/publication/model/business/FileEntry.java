@@ -109,10 +109,10 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         return fileEntry;
     }
 
-    public void persist(ResourceService resourceService) {
+    public void persist(ResourceService resourceService, UserInstance userInstance) {
         var now = Instant.now();
         this.modifiedDate = now;
-        this.setFileEvent(FileUploadedEvent.create(getOwner(), now));
+        this.setFileEvent(FileUploadedEvent.create(userInstance, now));
         resourceService.persistFile(this);
     }
 

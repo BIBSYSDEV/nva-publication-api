@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static java.util.Collections.emptySet;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -341,11 +342,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         publication.setAssociatedArtifacts(AssociatedArtifactList.empty());
         publication.setEntityDescription(null);
         publication.setDoi(null);
-        publication.setAdditionalIdentifiers(Collections.emptySet());
-        publication.setFundings(Collections.emptyList());
+        publication.setAdditionalIdentifiers(emptySet());
+        publication.setFundings(emptySet());
         publication.setDuplicateOf(null);
         publication.setHandle(null);
-        publication.setCuratingInstitutions(Collections.emptySet());
+        publication.setCuratingInstitutions(emptySet());
         publication.setImportDetails(Collections.emptyList());
         publication.setIndexedDate(null);
         publication.setLink(null);

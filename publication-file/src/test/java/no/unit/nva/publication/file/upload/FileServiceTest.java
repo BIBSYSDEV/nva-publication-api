@@ -53,10 +53,10 @@ import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadReque
 import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstanceFixture;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.UserInstanceFixture;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -234,7 +234,7 @@ class FileServiceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         var userInstance = UserInstance.create(new User(randomString()), randomUri());
         var file = randomHiddenFile();
-        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), userInstance).persist(resourceService, UserInstance.fromPublication(publication));
 
         assertThrows(ForbiddenException.class,
                      () -> fileService.updateFile(file.getIdentifier(), resource.getIdentifier(), userInstance, file));
@@ -257,7 +257,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var file = randomHiddenFile();
-        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = file.copy()
                               .withLicense(randomUri())
@@ -283,7 +283,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var file = randomPendingInternalFile();
-        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(file, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = file.toPendingOpenFile();
 
@@ -306,7 +306,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);
-        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = originalFile.copy().build(updatedClazz);
 
@@ -324,7 +324,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile().copy().build(clazz);
-        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = originalFile.copy().build(updatedClazz);
 
@@ -341,7 +341,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
         var originalFile = randomHiddenFile();
-        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService);
+        FileEntry.create(originalFile, resource.getIdentifier(), curator).persist(resourceService, UserInstance.fromPublication(publication));
 
         var updatedFile = originalFile.copy().withIdentifier(UUID.randomUUID()).buildHiddenFile();
 
@@ -398,7 +398,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var completeMultipartUploadResult = mockCompleteMultipartUpload();
         var request = new ExternalCompleteUploadRequest(randomString(), randomString(), List.of(), fileType, null, null,
                                                         null);
-        var userInstance = constructExternalClient(publication);
+        var userInstance = externalUserInstance(publication);
         fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
 
         var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
@@ -418,7 +418,7 @@ class FileServiceTest extends ResourcesLocalTest {
         mockCompleteMultipartUpload();
         var request = new ExternalCompleteUploadRequest(randomString(), randomString(), List.of(), "PendingOpenFile",
                                                         null, null, null);
-        var userInstance = constructExternalClient(publication);
+        var userInstance = externalUserInstance(publication);
 
         assertThrows(BadRequestException.class,
                      () -> fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance));
@@ -443,12 +443,6 @@ class FileServiceTest extends ResourcesLocalTest {
                      NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
     }
 
-    private static UserInstance constructExternalClient(Publication publication) {
-        return new UserInstance(randomString(), publication.getPublisher().getId(), randomUri(), randomUri(), randomUri(),
-                                List.of(),
-                                UserClientType.EXTERNAL);
-    }
-
     private static File constructExpectedFile(CompleteMultipartUploadResult completeMultipartUploadResult,
                                               UserInstance userInstance, FileEntry fileEntry) {
         return new UploadedFile(UUID.fromString(completeMultipartUploadResult.getKey()), FILE_NAME, CONTENT_TYPE,
@@ -463,9 +457,7 @@ class FileServiceTest extends ResourcesLocalTest {
     }
 
     private UserInstance externalUserInstance(Publication resource) {
-        return new UserInstance(randomString(), resource.getPublisher().getId(), randomUri(), randomUri(), randomUri(),
-                                List.of(),
-                                UserClientType.EXTERNAL);
+        return UserInstance.createExternalUser(resource.getResourceOwner(), resource.getPublisher().getId(), ThirdPartySystem.OTHER);
     }
 
     private void mockCustomerResponse(UserInstance userInstance) {

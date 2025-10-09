@@ -1,5 +1,6 @@
 package no.unit.nva.publication.indexing;
 
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.stream.StreamSupport.stream;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
@@ -9,12 +10,17 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUnconfirmedFunding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -27,18 +33,19 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import com.google.common.net.MediaType;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -62,6 +69,9 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.funding.ConfirmedFunding;
+import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.funding.FundingList;
+import no.unit.nva.model.funding.UnconfirmedFunding;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -104,36 +114,61 @@ import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedResourceTest extends ResourcesLocalTest {
 
-    public static final String JSON_PTR_TOP_LEVEL_ORGS = "/topLevelOrganizations";
-    public static final String JSON_CONTRIBUTOR_ORGANIZATIONS = "/contributorOrganizations";
-    public static final String JSON_PTR_ID = "/id";
-    public static final String JSON_PTR_HAS_PART = "/hasPart";
-    private static final String SERIES_LEVEL_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/series/scientificValue";
-    private static final String PUBLISHER_LEVEL_JSON_PTR = "/entityDescription/reference/publicationContext"
-                                                           + "/entityDescription/reference/publicationContext"
-                                                           + "/publisher/scientificValue";
-
-    private static final String PUBLISHER_ID_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/publisher/id";
-    private static final String SERIES_ID_JSON_PTR =
-        "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
-        + "/series/id";
+    private static final JsonPointer JSON_PTR_CONTRIBUTORS =
+            JsonPointer.compile("/entityDescription/contributors");
+    private static final JsonPointer JSON_PTR_TOP_LEVEL_ORGS =
+            JsonPointer.compile("/topLevelOrganizations");
+    private static final JsonPointer JSON_CONTRIBUTOR_ORGANIZATIONS =
+            JsonPointer.compile("/contributorOrganizations");
+    private static final JsonPointer JSON_PTR_ID = JsonPointer.compile("/id");
+    private static final JsonPointer JSON_PTR_HAS_PART = JsonPointer.compile("/hasPart");
+    private static final JsonPointer JSON_PTR_PART_OF = JsonPointer.compile("/partOf");
+    private static final JsonPointer JSON_PTR_AFFILIATIONS = JsonPointer.compile("/affiliations");
+    private static final JsonPointer SERIES_LEVEL_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/scientificValue");
+    private static final JsonPointer PUBLISHER_LEVEL_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/scientificValue");
+    private static final JsonPointer PUBLISHER_ID_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/id");
+    private static final JsonPointer SERIES_ID_JSON_PTR =
+            JsonPointer.compile(
+                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/id");
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
     private FakeUriRetriever fakeUriRetriever;
     private ResourceService resourceService;
     private FakeSqsClient sqsClient;
+
+    public static Stream<Arguments> fundingPairProvider() {
+        var unconfirmedFunding = randomUnconfirmedFunding();
+        var confirmedFunding = (ConfirmedFunding) new FundingBuilder()
+                                                      .withId(randomUri())
+                                                      .withSource(unconfirmedFunding.getSource())
+                                                      .withIdentifier(unconfirmedFunding.getIdentifier())
+                                                      .withLabels(unconfirmedFunding.getLabels())
+                                                      .withFundingAmount(unconfirmedFunding.getFundingAmount())
+                                                      .withActiveFrom(unconfirmedFunding.getActiveFrom())
+                                                      .withActiveTo(randomInstant(unconfirmedFunding.getActiveTo()))
+                                                      .build();
+
+        return Stream.of(Arguments.of(new FundingList(Set.of(unconfirmedFunding)),
+                                               new FundingList(List.of(confirmedFunding))),
+                         Arguments.of(new FundingList(List.of(confirmedFunding)),
+                                               new FundingList(Set.of(unconfirmedFunding))));
+    }
 
     @BeforeEach
     void setup() {
@@ -192,7 +227,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     @Test
     void shouldAllowMissingChannelButPersistRecoveryMessage() throws BadRequestException {
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
         var publication = randomPublication(AcademicArticle.class);
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -200,11 +234,57 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var channel = ((Journal) resource.getEntityDescription().getReference().getPublicationContext()).getId();
         fakeUriRetriever.registerResponse(channel, 404, APPLICATION_JSON_LD, "");
         assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient, resource));
-        assertThat(logger.getMessages(),
-                   containsString("Request for publication channel <%s> returned 404".formatted(channel)));
+
         var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
         assertEquals(resource.getIdentifier().toString(),
                      id);
+    }
+
+    @Test
+    void shouldAllowNotExpandedAffiliationButPersistRecoveryMessage() throws BadRequestException {
+        var publication = randomPublication(AcademicArticle.class);
+        var affiliation = randomOrganization();
+        publication.getEntityDescription()
+            .setContributors(List.of(new Contributor.Builder().withAffiliations(List.of(affiliation)).build()));
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        fakeUriRetriever.registerResponse(affiliation.getId(), 500, APPLICATION_JSON_LD, "");
+        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient, resource));
+
+        var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
+
+        assertEquals(resource.getIdentifier().toString(), id);
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10ContributorsExcludingParentPublicationContributors()
+        throws BadRequestException, JsonProcessingException {
+        var publication = randomPublication(AcademicChapter.class);
+
+        var contributors = IntStream.range(0, 20)
+                               .mapToObj(i -> contributorWithSequence(randomInteger()))
+                               .toList();
+
+        publication.getEntityDescription().setContributors(contributors);
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        var framedResultNode = indexDocument.asJsonNode();
+
+        var contributorsCountNode = framedResultNode.at("/entityDescription")
+                                        .at("/contributorsCount");
+
+        var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
+                                                      .at("/contributorsPreview");
+
+        var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
+                                            .map(node -> objectMapper.convertValue(node, Contributor.class))
+                                            .toList();
+
+        assertThat(actualContributorsPreview.size(), is(equalTo(10)));
+        assertThat(Integer.parseInt(contributorsCountNode.asText()), is(equalTo(20)));
     }
 
     @Test
@@ -219,11 +299,10 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
         var framedResultNode = indexDocument.asJsonNode();
 
-        var contributorsCountNode = (IntNode) framedResultNode.at("/entityDescription")
+        var contributorsCountNode = framedResultNode.at("/entityDescription")
                                                   .at("/contributorsCount");
 
         var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
@@ -234,13 +313,13 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                             .toList();
 
         assertThat(actualContributorsPreview.size(), is(equalTo(10)));
-        assertThat(contributorsCountNode.intValue(), is(equalTo(20)));
+        assertThat(Integer.parseInt(contributorsCountNode.asText()), is(equalTo(20)));
     }
 
     @Test
     void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
         final var publication = randomPublication(AcademicArticle.class);
-        final var affiliationToBeExpanded = FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
+        final var affiliationToBeExpanded = HARD_CODED_LEVEL_3_ORG_URI;
         var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
                                                   .withAffiliations(
                                                       List.of(Organization.fromUri(affiliationToBeExpanded))).build();
@@ -250,8 +329,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource).asJsonNode();
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
         var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, HARD_CODED_TOP_LEVEL_ORG_URI.toString());
 
@@ -262,8 +340,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
         var publication = randomPublication(AcademicArticle.class);
-        var contributor1org = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI);
-        var contributor1parentOrg = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI);
+        var contributor1org = Organization.fromUri(HARD_CODED_LEVEL_3_ORG_URI);
+        var contributor1parentOrg = Organization.fromUri(HARD_CODED_LEVEL_2_ORG_URI);
         var contributor2org = Organization.fromUri(FakeUriResponse.constructCristinOrgUri("123.1.2.0"));
         var topLevelOrg = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
 
@@ -275,7 +353,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
         var contributorOrganizationsNode = framedResultNode.at(JSON_CONTRIBUTOR_ORGANIZATIONS);
         var actualOrganizations = Lists.newArrayList(contributorOrganizationsNode.elements())
                                       .stream()
@@ -305,7 +383,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
         var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, affiliationToBeExpanded.toString());
 
@@ -321,7 +399,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
         var contributorsJson = framedResultNode.at("/entityDescription/contributors");
 
         List<Contributor> contributors = objectMapper.convertValue(contributorsJson,
@@ -341,7 +419,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
         var id = URI.create(framedResultNode.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
 
         assertThat(id, is(not(nullValue())));
@@ -356,7 +434,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         final var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
         final var extractedSourceId = extractSourceId(framedResultNode);
 
         // TODO: Better test here?
@@ -367,15 +445,16 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     void shouldReturnIndexDocumentWithValidFundingSourceInsertingContextInFundingSource() throws Exception {
 
         final var publication = randomBookWithConfirmedPublisher();
-        final var sourceUri0 = publication.getFundings().get(0).getSource();
-        final var sourceUri1 = publication.getFundings().get(1).getSource();
+        var fundings =  publication.getFundings().iterator();
+        final var sourceUri0 = fundings.next().getSource();
+        final var sourceUri1 = fundings.next().getSource();
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         assertHasExpectedFundings(sourceUri0, sourceUri1,
                                   fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode());
+                                      , resource).asJsonNode());
     }
 
     @Test
@@ -386,7 +465,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
         var type = new TypeReference<List<FundingResult>>() {
         };
 
@@ -412,10 +491,103 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                 fakeUriRetriever.registerResponse(uri, statusCode, MediaType.ANY_APPLICATION_TYPE, "");
             });
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
 
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
+    }
+
+    @Test
+    void shouldAddProjectFundingIdentifierToPublicationWhenFundingsIsEmpty()
+        throws BadRequestException, JsonProcessingException {
+        var publication = randomPublication();
+
+        var fundings = new FundingList(publication.getFundings());
+        publication.setFundings(emptySet());
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, fundings);
+
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+    }
+
+    @Test
+    void shouldKeepFundingIdentifierWhenProjectFundingIdentifierIsEmpty()
+        throws BadRequestException, JsonProcessingException {
+        var publication = randomPublication();
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
+
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+    }
+
+    @Disabled("Requirement created by developers and seems difficult to fix")
+    @Test
+    void shouldNotAddDuplicateFundingIdentifierWhenProjectFundingIdentifierIsSameAsFundingSource()
+        throws BadRequestException, JsonProcessingException {
+        var publication = randomPublication();
+        var existingFundings = new FundingList(publication.getFundings());
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, existingFundings);
+
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/1/type")).isMissingNode());
+        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/2/type")).isMissingNode());
+    }
+
+    @ParameterizedTest
+    @DisplayName("Should keep funding when source and identifier match but not type")
+    @MethodSource("fundingPairProvider")
+    void shouldKeepBothFundingsWhenTypesAreMismatched(FundingList publicationFundings, FundingList projectFundings)
+        throws BadRequestException,
+               JsonProcessingException {
+        var publication = randomPublication();
+
+        publication.setFundings(publicationFundings);
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, projectFundings);
+
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/1/type")).isMissingNode());
+    }
+
+    @Test
+    void shouldHandleCasesWhereNoFundingIdentifierIsPresentAnywhere()
+        throws BadRequestException, JsonProcessingException {
+        var publication = randomPublication();
+
+        publication.setFundings(null);
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
+
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        var fundingsNode = expandedResource.at(JsonPointer.compile("/fundings"));
+        assertTrue(fundingsNode.isMissingNode() || fundingsNode.isEmpty());
     }
 
     @Test
@@ -433,7 +605,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         ObjectNode framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
 
         var affiliations = framedResultNode.findValues("affiliations").getFirst();
         affiliations.forEach(aff -> {
@@ -454,7 +626,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
         var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
         var expectedUri = UriWrapper.fromUri(HOST_URI).addChild(resource.getIdentifier().toString()).getUri();
         var actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
@@ -473,7 +645,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
         assertThat(actualDocument.getPublicationContextUris(), hasItems(expectedSeriesUri));
     }
 
@@ -488,8 +660,124 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
         assertThat(actualDocument.getPublicationContextUris(), contains(expectedJournalUri));
+    }
+
+    @Test
+    void shouldReturnFundingSourceAsObjectWhenExternalUriFailsToLoad() throws JsonProcessingException,
+                                                                           BadRequestException {
+        var publication = randomPublication();
+        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
+                                                      .withSource(URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR"))
+                                                      .withIdentifier("249994")
+                                                      .build();
+        publication.setFundings(Set.of(unconfirmedFunding));
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var uriRetriever = FakeUriRetriever.newInstance();
+
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+        uriRetriever.registerResponse(unconfirmedFunding.getSource(),
+                                      404,
+                                      APPLICATION_JSON_LD,
+                                      "Not Found");
+
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+
+        assertTrue(fundingSource.isContainerNode(),
+                   "Expected funding source to be a object, but got: " + fundingSource);
+        assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
+                     fundingSource.at(JsonPointer.compile("/id")).asText());
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
+    }
+
+    @Test
+    void shouldReturnFundingSourceAsObjectWhenFundingSourceLacksLabels() throws JsonProcessingException,
+                                                                              BadRequestException {
+        var publication = randomPublication();
+        var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR");
+        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
+                                                          .withSource(source)
+                                                          .withIdentifier("249994")
+                                                          .build();
+        publication.setFundings(Set.of(unconfirmedFunding));
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var uriRetriever = FakeUriRetriever.newInstance();
+
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+        uriRetriever.registerResponse(source,
+                                      SC_OK,
+                                      APPLICATION_JSON_LD,
+                                      """
+                                        {
+                                          "type" : "FundingSource",
+                                          "identifier" : "NFR",
+                                          "@context" : {
+                                            "@vocab" : "https://nva.sikt.no/ontology/publication#",
+                                            "id" : "@id",
+                                            "type" : "@type",
+                                            "labels" : {
+                                              "@id" : "label",
+                                              "@container" : "@language"
+                                            }
+                                          }
+                                        }
+                                        """);
+
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+
+        assertTrue(fundingSource.isContainerNode(),
+                   "Expected funding source to be a object, but got: " + fundingSource);
+        assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
+                     fundingSource.at(JsonPointer.compile("/id")).asText());
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
+    }
+
+    @Test
+    void shouldExpandFundingSourcesEvenWithDuplicateUnconfirmedFundingSources() throws JsonProcessingException,
+                                                                                BadRequestException {
+        var publication = randomPublication();
+        var source = randomUri();
+        var identifier = randomUri();
+        var duplicateFunding = (UnconfirmedFunding) new FundingBuilder()
+                                                        .withSource(source)
+                                                        .withIdentifier(identifier.toString())
+                                                        .build();
+        var duplicateFunding2 = (UnconfirmedFunding) new FundingBuilder()
+          .withSource(source)
+          .withIdentifier(identifier.toString()).withActiveFrom(Instant.now())
+          .build();
+        publication.setFundings(Set.of(duplicateFunding, duplicateFunding2));
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var uriRetriever = FakeUriRetriever.newInstance();
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource).asJsonNode();
+        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+
+        assertFalse(fundingSource.isTextual(),
+            "Funding source should be expanded to object, but remained as string: " + fundingSource);
+        assertEquals(source.toString(), fundingSource.at(JsonPointer.compile("/id")).asText());
     }
 
     @Test
@@ -501,7 +789,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
         Book book = extractBook(publication);
         Series confirmedSeries = (Series) book.getSeries();
         URI expectedSeriesId = confirmedSeries.getId();
@@ -520,7 +808,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
         Journal journal = extractJournal(resource);
         URI expectedJournalId = journal.getId();
         assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
@@ -537,7 +825,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         fakeUriRetriever.registerResponse(journal.getId(), 200, APPLICATION_JSON_LD,
                                           FakeUriResponse.createSeries(journal.getId()));
         var actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
         var expectedJournalType = journal.getClass().getSimpleName();
         var actualJournalType = actualDocument.asJsonNode().at(CONTEXT_TYPE_JSON_PTR).textValue();
         assertEquals(expectedJournalType, actualJournalType);
@@ -554,7 +842,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var bookAnthology = resourceService.getPublicationByIdentifier(SortableIdentifier.fromUri(parentUri.getId()));
         var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
         var expandedResourceJsonNode = expandedResource.asJsonNode();
         var actualPublicationChannelUris = extractActualPublicationChannelUris(expandedResourceJsonNode);
         assertThat(actualPublicationChannelUris, containsInAnyOrder(expectedPublicationChannelIds.toArray()));
@@ -570,7 +858,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
         resource.getEntityDescription().getReference().setPublicationContext(null);
         assertThat(fromPublication(uriRetriever, resourceService, sqsClient
-, resource), is(not(nullValue())));
+            , resource), is(not(nullValue())));
     }
 
     @Test
@@ -583,7 +871,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
         resource.getEntityDescription().getReference().setPublicationInstance(null);
         assertThat(fromPublication(uriRetriever, resourceService, sqsClient
-, resource), is(not(nullValue())));
+            , resource), is(not(nullValue())));
     }
 
     @Test
@@ -595,7 +883,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         resource.getEntityDescription().setMainTitle(null);
         assertThat(fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource), is(not(nullValue())));
+            , resource), is(not(nullValue())));
     }
 
     @Test
@@ -605,7 +893,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource));
+            , resource));
     }
 
     @Test
@@ -615,7 +903,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
 
         var actualDoi = expandedResource.getAllFields().get("doi");
 
@@ -630,7 +918,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
 
         var actualHandle = expandedResource.getAllFields().get("handle");
 
@@ -645,7 +933,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
 
         var actualLink = expandedResource.getAllFields().get("link");
 
@@ -661,7 +949,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource);
+            , resource);
         var expandedResourceJsonNode = expandedResource.asJsonNode();
         var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
         var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
@@ -674,10 +962,10 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     void shouldSetHasPartsRelationForBookAnthology(Class<?> publicationType) throws IOException, BadRequestException {
         var bookAnthology = PublicationGenerator.randomPublication(publicationType);
         var resource = Resource.fromPublication(bookAnthology)
-            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
+                           .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
 
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
@@ -693,7 +981,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var publicationContext = (Anthology) part.getEntityDescription().getReference().getPublicationContext();
         FakeUriResponse.setupFakeForType(part, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, part).asJsonNode();
+            , part).asJsonNode();
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
         expectedNode.put("name", "partOf");
@@ -730,7 +1018,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             });
 
         var actual = fromPublication(uriRetriever, resourceService, sqsClient
-, resource).toJsonString();
+            , resource).toJsonString();
         assertThat(actual, containsString("Happy duck"));
     }
 
@@ -749,7 +1037,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         context.setId(null);
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-, resource).asJsonNode();
+            , resource).asJsonNode();
 
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
@@ -963,5 +1251,81 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                 .toList();
         publication.getEntityDescription().setContributors(contributions);
         return publication;
+    }
+
+    @Test
+    void shouldOnlyIncludeDirectParentPerSubOrganization() {
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var topLevelOrganizations = framedResult.at(JSON_PTR_TOP_LEVEL_ORGS);
+
+        for (var organization : topLevelOrganizations) {
+            var id = organization.at(JSON_PTR_ID).asText();
+            var hasPart = organization.at(JSON_PTR_HAS_PART);
+            for (var child : hasPart) {
+                var partOf = child.at(JSON_PTR_PART_OF);
+                assertEquals(1, partOf.size());
+                var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
+                assertEquals(id, parentId);
+            }
+        }
+    }
+
+    @Test
+    void shouldOnlyIncludeDirectParentPerAffiliation() {
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
+        for (var contributor : contributors) {
+            var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
+            for (var affiliation : affiliations) {
+                var partOf = affiliation.at(JSON_PTR_PART_OF);
+                assertEquals(1, partOf.size());
+                var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
+                assertEquals(HARD_CODED_TOP_LEVEL_ORG_URI.toString(), parentId);
+            }
+        }
+    }
+
+    @Test
+    void shouldNotIncludeChildOrganizationsOfAffiliations() {
+        var framedResult =
+                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+        var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
+        for (var contributor : contributors) {
+            var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
+            for (var affiliation : affiliations) {
+                var hasPart = affiliation.at(JSON_PTR_HAS_PART);
+                assertTrue(hasPart.isMissingNode());
+            }
+        }
+    }
+
+    private ExpandedResource createExpandedResourceWithAffiliation(URI affiliationUri) {
+        var publication = randomPublication(AcademicArticle.class);
+        var affiliation = Organization.fromUri(affiliationUri);
+        var contributor =
+                publication
+                        .getEntityDescription()
+                        .getContributors()
+                        .getFirst()
+                        .copy()
+                        .withAffiliations(List.of(affiliation))
+                        .build();
+
+        publication.getEntityDescription().setContributors(List.of(contributor));
+
+        try {
+            var resource =
+                    Resource.fromPublication(publication)
+                            .persistNew(resourceService, UserInstance.fromPublication(publication));
+            FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+            return fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

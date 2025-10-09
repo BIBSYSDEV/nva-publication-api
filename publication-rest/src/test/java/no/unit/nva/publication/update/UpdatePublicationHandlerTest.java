@@ -1,5 +1,97 @@
 package no.unit.nva.publication.update;
 
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.ETAG;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_PRECON_FAILED;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static java.util.Objects.nonNull;
+import static java.util.UUID.randomUUID;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
+import static no.unit.nva.model.PublicationOperation.DELETE;
+import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
+import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.model.testing.PublicationGenerator.randomFundings;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
+import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
+import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
+import static no.unit.nva.publication.delete.DeletePublicationHandler.LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS;
+import static no.unit.nva.publication.delete.DeletePublicationHandler.NVA_PUBLICATION_DELETE_SOURCE;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
+import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
+import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_NVI_CANDIDATES;
+import static nva.commons.apigateway.AccessRight.MANAGE_OWN_RESOURCES;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
+import static nva.commons.apigateway.AccessRight.SUPPORT;
+import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
+import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
+import static org.apache.http.HttpStatus.SC_ACCEPTED;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -7,6 +99,20 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.auth.uriretriever.UriRetriever;
@@ -14,14 +120,33 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.*;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
+import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
-import no.unit.nva.model.associatedartifacts.file.*;
-import no.unit.nva.model.instancetypes.degree.*;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
@@ -33,7 +158,15 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -66,62 +199,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static java.net.HttpURLConnection.*;
-import static java.util.Objects.nonNull;
-import static java.util.UUID.randomUUID;
-import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
-import static no.unit.nva.model.PublicationOperation.DELETE;
-import static no.unit.nva.model.PublicationOperation.UPDATE;
-import static no.unit.nva.model.PublicationStatus.*;
-import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
-import static no.unit.nva.model.testing.PublicationGenerator.*;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.*;
-import static no.unit.nva.publication.CustomerApiStubs.*;
-import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
-import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
-import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
-import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
-import static no.unit.nva.publication.delete.DeletePublicationHandler.LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS;
-import static no.unit.nva.publication.delete.DeletePublicationHandler.NVA_PUBLICATION_DELETE_SOURCE;
-import static no.unit.nva.publication.model.business.TicketStatus.*;
-import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.testutils.HandlerRequestBuilder.*;
-import static no.unit.nva.testutils.RandomDataGenerator.*;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.AccessRight.*;
-import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static org.apache.http.HttpStatus.*;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 @WireMockTest(httpsEnabled = true)
 class UpdatePublicationHandlerTest extends ResourcesLocalTest {
@@ -262,6 +339,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ETAG));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_EXPOSE_HEADERS));
 
         final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
@@ -343,8 +422,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication addFileToPublication(Publication savedPublication, File file) {
-        FileEntry.create(file, savedPublication.getIdentifier(), UserInstance.fromPublication(savedPublication))
-            .persist(resourceService);
+        var userInstance = UserInstance.fromPublication(savedPublication);
+        FileEntry.create(file, savedPublication.getIdentifier(), userInstance)
+            .persist(resourceService, userInstance);
         var artifacts = new AssociatedArtifactList(new ArrayList<>(savedPublication.getAssociatedArtifacts()));
         artifacts.add(file.copy().withLicense(randomUri()).buildPendingOpenFile());
         return savedPublication.copy().withAssociatedArtifacts(artifacts).build();
@@ -414,6 +494,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .thenReturn(publication.getPublisher().getId());
         when(getExternalClientResponse.getActingUser())
             .thenReturn(publication.getResourceOwner().getOwner().getValue());
+        when(getExternalClientResponse.getCristinUrgUri())
+            .thenReturn(publication.getResourceOwner().getOwnerAffiliation());
 
         var event = externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
@@ -435,10 +517,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationUpdate = updateTitle(savedPublication);
 
         when(getExternalClientResponse.getCustomerUri())
-            .thenReturn(randomUri());
+            .thenReturn(customerId);
         when(getExternalClientResponse.getActingUser())
             .thenReturn(randomString());
-
+        stubCustomerResponseAcceptingFilesForAllTypes(customerId);
         var event = backendClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
@@ -803,7 +885,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             persistPublication(nonDegreePublication
                                    .withEntityDescription(entityDescription)
                                    .withCuratingInstitutions(mockCuratingInstitutions(contributors))).build();
-        var customerId = ((Organization) contributor.getAffiliations().getFirst()).getId();
         var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().getFirst()).getId();
         when(uriRetriever.getRawContent(eq(topLevelCristinOrgId), any())).thenReturn(
             Optional.of(String.format("""
@@ -942,6 +1023,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .thenReturn(publication.getPublisher().getId());
         when(getExternalClientResponse.getActingUser())
             .thenReturn(publication.getResourceOwner().getOwner().getValue());
+        when(getExternalClientResponse.getCristinUrgUri())
+            .thenReturn(publication.getResourceOwner().getOwnerAffiliation());
 
         var inputStream = externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -1022,7 +1105,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                        .withId(customerId)
                                                        .build()).build();
 
-        var owner = getOwner(randomPublication);
+        var owner = UserInstance.fromPublication(publication);
 
         var contributorTopLevelCristinId = owner.getTopLevelOrgCristinId();
 
@@ -1034,10 +1117,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var resourceWithRrs = resourceService.getResourceByIdentifier(publicationWithRrs.getIdentifier());
 
         resourceWithRrs.getFileEntries()
-            .forEach(file -> {
+            .forEach(file ->
                 file.getFile().setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
-                    OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));
-            });
+                    OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null))
+            );
 
         var request = curatorWithAccessRightsUpdatesPublication(resourceWithRrs.toPublication(), customerId,
                                                                 contributorTopLevelCristinId,
@@ -1052,13 +1135,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actualPublishedFile.getRightsRetentionStrategy(),
                    allOf(instanceOf(OverriddenRightsRetentionStrategy.class),
                          hasProperty("overriddenBy", is(notNullValue()))));
-    }
-
-    private UserInstance getOwner(Publication randomPublication) {
-        return new UserInstance(randomPublication.getResourceOwner().getOwner().getValue(),
-                                customerId,
-                                randomPublication.getResourceOwner().getOwnerAffiliation(),
-                                null, null, List.of(), UserClientType.INTERNAL);
     }
 
     @Test
@@ -1686,7 +1762,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationWithFile(publication, newUnpublishedFile);
 
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
-        var input = contributorsUpdatesPublication(publication, cristinId, randomUri());
+        var input = contributorsUpdatesPublication(publication, cristinId, randomUri(), customerId);
         updatePublicationHandler.handleRequest(input, output, context);
 
         var publishingRequest = getPublishingRequestCase(publication);
@@ -1706,17 +1782,18 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
             customerId, PUBLISHED, resourceService);
         persistPublishingRequestContainingExistingUnpublishedFiles(publication);
-        var updatedPublication = updateTitle(publication);
+        var publicationUpdate = updateTitle(publication);
 
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
-        var input = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
+        var input = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId,
                                                               publication.getResourceOwner().getOwnerAffiliation(),
                                                               SUPPORT, MANAGE_OWN_RESOURCES, MANAGE_NVI_CANDIDATES,
                                                               MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(input, output, context);
 
         var publishingRequest = getPublishingRequestCase(publication);
-        var unpublishedFile = getUnpublishedFiles(publication).getFirst();
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        var unpublishedFile = getUnpublishedFiles(updatedPublication).getFirst();
         assertThat(publishingRequest.getFilesForApproval(), hasItem(unpublishedFile));
     }
 
@@ -1753,11 +1830,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                               .withPublisher(Organization.fromUri(customerId))
                               .withAssociatedArtifacts(List.of())
                               .build();
+        var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+                           .persistNew(resourceService, userInstance);
         FileEntry.create(file, resource.getIdentifier(),
-                         UserInstance.fromPublication(publication))
-            .persist(resourceService);
+                         userInstance)
+            .persist(resourceService, userInstance);
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(resource, contributor);
@@ -1772,7 +1850,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                    WiremockHttpClient.create());
         handler.handleRequest(input, output, context);
 
-        assertEquals(updatedFile,
+        assertNotEquals(file,
                      FileEntry.queryObject(file.getIdentifier(), resource.getIdentifier())
                          .fetch(resourceService).orElseThrow().getFile());
     }
@@ -1934,7 +2012,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void partialUpdateShouldNotValidateFilesNotPresentInRequest()
-        throws BadRequestException, IOException, NotFoundException {
+        throws BadRequestException, IOException {
         var existingFile = randomHiddenFile();
         var publication = randomPublication(JournalArticle.class);
         publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(existingFile)));
@@ -1952,6 +2030,47 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
 
         assertEquals(HTTP_OK, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnPreconditionFailedWhenIfMatchHeaderIsProvidedButVersionOfResourcesIsOutdated()
+        throws BadRequestException, IOException {
+        var publication = randomPublicationWithPublisher(customerId, JournalArticle.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+
+        var partialUpdateRequest = new PartialUpdatePublicationRequest(persistedPublication.getIdentifier(), null, null, AssociatedArtifactList.empty());
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        resourceService.refreshResource(resource.getIdentifier());
+        var input = request(userInstance, partialUpdateRequest, persistedPublication.getIdentifier(),
+                            Map.of("If-Match", resource.getVersion().toString()));
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals("The provided ETag does not match the current state of the resource.",
+                     response.getBodyObject(Problem.class).getDetail());
+        assertEquals(HTTP_PRECON_FAILED, response.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnOkWithUpdatedETagWhenIfMatchHeaderIsProvidedAndVersionOfResourceMatches()
+        throws BadRequestException, IOException {
+        var publication = randomPublicationWithPublisher(customerId, JournalArticle.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+
+        var partialUpdateRequest = new PartialUpdatePublicationRequest(persistedPublication.getIdentifier(), null, null, AssociatedArtifactList.empty());
+        var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        var version = resource.getVersion().toString();
+        var input = request(userInstance, partialUpdateRequest, persistedPublication.getIdentifier(),
+                            Map.of("If-Match", version));
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertEquals(HTTP_OK, response.getStatusCode());
+        assertNotEquals(version, response.getHeaders().get("ETag"));
     }
 
     private void persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
@@ -2323,18 +2442,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream contributorsUpdatesPublication(Publication publicationUpdate,
                                                        URI cristinId,
-                                                       URI topLevelCristinOrgId)
+                                                       URI topLevelCristinOrgId,
+                                                       URI customerId)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withUserName(randomString())
                    .withPathParameters(pathParameters)
-                   .withCurrentCustomer(randomUri())
+                   .withCurrentCustomer(customerId)
                    .withPersonCristinId(cristinId)
                    .withBody(publicationUpdate)
                    .withAccessRights(customerId, MANAGE_OWN_RESOURCES)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .build();
+    }
+
+    private URI randomCustomerId() {
+        return UriWrapper.fromHost(ENVIRONMENT.readEnv(API_HOST_KEY)).addChild("customer").addChild(randomUUID().toString()).getUri();
     }
 
     private InputStream contributorUpdatesPublicationWithoutHavingRights(Publication publicationUpdate)
@@ -2383,6 +2507,21 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withTopLevelCristinOrgId(userInstance.getTopLevelOrgCristinId())
                    .withPersonCristinId(Optional.ofNullable(userInstance.getPersonCristinId()).orElse(randomUri()))
                    .withPathParameters(pathParameters)
+                   .build();
+    }
+
+    private InputStream request(UserInstance userInstance, PublicationRequest publicationRequest,
+                                SortableIdentifier publicationIdentifier, Map<String, String> headers)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
+        return new HandlerRequestBuilder<PublicationRequest>(restApiMapper)
+                   .withUserName(userInstance.getUsername())
+                   .withCurrentCustomer(userInstance.getCustomerId())
+                   .withBody(publicationRequest)
+                   .withTopLevelCristinOrgId(userInstance.getTopLevelOrgCristinId())
+                   .withPersonCristinId(Optional.ofNullable(userInstance.getPersonCristinId()).orElse(randomUri()))
+                   .withPathParameters(pathParameters)
+                   .withHeaders(headers)
                    .build();
     }
 
@@ -2436,7 +2575,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withTopLevelCristinOrgId(randomUri())
                    .withPersonCristinId(randomUri())
                    .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
+                   .withCurrentCustomer(customerId)
                    .withPathParameters(pathParameters)
                    .build();
     }

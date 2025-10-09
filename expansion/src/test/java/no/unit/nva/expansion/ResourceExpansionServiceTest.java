@@ -9,6 +9,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFileWithLicense;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
@@ -27,6 +28,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -50,7 +53,6 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
-import no.unit.nva.expansion.model.ExpansionException;
 import no.unit.nva.expansion.model.License;
 import no.unit.nva.expansion.model.License.LicenseType;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
@@ -83,12 +85,13 @@ import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -400,8 +403,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldUseResourceOwnerAffiliationWhenTicketHasNoOwnerAffiliation(Class<? extends TicketEntry> ticketType,
                                                                           PublicationStatus status) throws Exception {
-        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), null, null,
-                                            UserClientType.EXTERNAL);
+        var userInstance = UserInstance.createExternalUser(randomResourceOwner(), randomUri(), ThirdPartySystem.OTHER);
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, userInstance, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
 
@@ -793,14 +795,44 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    .findFirst().orElseThrow();
     }
 
-    @Test
-    void shouldThrowExpansionExceptionWhenUnexpectedErrorFetchingNviCandidateForPublication()
-        throws ApiGatewayException {
+    @ParameterizedTest
+    @ValueSource(ints = {400, 401, 403, 500})
+    void shouldContinueExpansionWhenNviCandidateResponseHasErrorCode(int statusCode)
+            throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var resourceUpdate = Resource.fromPublication(publication);
-        var expansionService = expansionServiceReturningNviCandidate(publication, randomString(), 200);
+        var failingExpansionService =
+                expansionServiceReturningNviCandidate(
+                        publication, nviCandidateResponse(), statusCode);
 
-        assertThrows(ExpansionException.class, () -> expansionService.expandEntry(resourceUpdate, false));
+        var expandedResource =
+                assertDoesNotThrow(
+                        () -> failingExpansionService.expandEntry(resourceUpdate, false));
+        assertThat(expandedResource.orElseThrow(), instanceOf(ExpandedResource.class));
+        assertThatPublicationIsOnRecoveryQueue(publication);
+    }
+
+    @Test
+    void shouldContinueExpansionWhenNviCandidateResponseIsMalformed() throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var resourceUpdate = Resource.fromPublication(publication);
+        var failingExpansionService =
+                expansionServiceReturningNviCandidate(publication, randomString(), 200);
+
+        var expandedResource =
+                assertDoesNotThrow(
+                        () -> failingExpansionService.expandEntry(resourceUpdate, false));
+        assertThat(expandedResource.orElseThrow(), instanceOf(ExpandedResource.class));
+        assertThatPublicationIsOnRecoveryQueue(publication);
+    }
+
+    private void assertThatPublicationIsOnRecoveryQueue(Publication publication) {
+        var messages = sqsClient.readMessages(1);
+        assertThat(messages.size(), is(1));
+        var message = messages.getFirst();
+        assertEquals(
+                publication.getIdentifier().toString(),
+                message.messageAttributes().get("id").stringValue());
     }
 
     @Test
@@ -815,19 +847,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(expandedTicket.orElseThrow(), instanceOf(ExpandedUnpublishRequest.class));
     }
 
-    // TODO: Handle redirects where id's received back in response matches with the requested resource
     @Test
-    void shouldThrowExpansionExceptionWhenFetchingPublicationChannelReturnsRedirect()
-        throws ApiGatewayException {
+    void shouldPersistRecoveryMessageWhenFetchingPublicationChannelReturnsRedirect()
+        throws ApiGatewayException, JsonProcessingException {
         var publication = randomPublication(JournalArticle.class);
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                                     UserInstance.fromPublication(
                                                                                         publication));
         FakeUriResponse.setupFakeForType(persistedPublication, fakeUriRetriever, resourceService, true);
 
-        assertThrows(RuntimeException.class,
-                     () -> expansionService.expandEntry(Resource.fromPublication(persistedPublication),
-                                                        false));
+        expansionService.expandEntry(Resource.fromPublication(persistedPublication), false);
+        var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
+
+        assertEquals(persistedPublication.getIdentifier().toString(), id);
     }
 
     private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,
@@ -837,7 +869,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         FakeUriResponse.setUpNviResponse(fakeUriRetriever, statusCode, publication, responseBody);
 
         return new ResourceExpansionServiceImpl(resourceService,
-                                                new TicketService(client, fakeUriRetriever),
+                                                new TicketService(client, fakeUriRetriever, cristinUnitsUtil),
                                                 fakeUriRetriever,
                                                 fakeUriRetriever, sqsClient);
     }
@@ -857,7 +889,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
         var ticket = (PublishingRequestCase) TicketTestUtils.createCompletedTicket(
             publication, PublishingRequestCase.class, ticketService);
-        ticket.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication)).approveFiles()
+        ticket.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication)).complete(publication,
+                                                                                               UserInstance.fromPublication(publication))
             .publishApprovedFiles(resourceService);
         return ticket;
     }
@@ -1046,6 +1079,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketService = getTicketService();
         fakeUriRetriever = FakeUriRetriever.newInstance();
         sqsClient = new FakeSqsClient();
+        cristinUnitsUtil = new FakeCristinUnitsUtil();
         expansionService = new ResourceExpansionServiceImpl(resourceService,
                                                             ticketService,
                                                             fakeUriRetriever,

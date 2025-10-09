@@ -3,6 +3,7 @@ package no.unit.nva.model;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
@@ -75,21 +76,22 @@ public class Reference {
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Reference)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Reference that = (Reference) o;
-        return Objects.equals(getPublicationContext(), that.getPublicationContext())
-                && Objects.equals(getDoi(), that.getDoi())
-                && Objects.equals(getPublicationInstance(), that.getPublicationInstance());
+        Reference reference = (Reference) o;
+        return Objects.equals(publicationContext, reference.getPublicationContext())
+               && Objects.equals(Optional.ofNullable(publicationContext).map(PublicationContext::getClass),
+                                 Optional.ofNullable(reference.getPublicationContext()).map(PublicationContext::getClass))
+               && Objects.equals(doi, reference.doi)
+               && Objects.equals(publicationInstance, reference.getPublicationInstance())
+               && Objects.equals(Optional.ofNullable(publicationInstance).map(PublicationInstance::getClass),
+                      Optional.ofNullable(reference.getPublicationInstance()).map(PublicationInstance::getClass));
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getPublicationContext(), getDoi(), getPublicationInstance());
+        return Objects.hash(publicationContext, doi, publicationInstance);
     }
 }

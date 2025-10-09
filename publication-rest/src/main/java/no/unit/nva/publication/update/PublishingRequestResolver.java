@@ -117,7 +117,6 @@ public final class PublishingRequestResolver {
         throws ApiGatewayException {
         return customerAllowsPublishingMetadataAndFiles()
                    ? publishingRequest
-                         .approveFiles()
                          .persistAutoComplete(ticketService, newImage.toPublication(), userInstance)
                    : publishingRequest.persistNewTicket(ticketService);
     }
@@ -210,7 +209,6 @@ public final class PublishingRequestResolver {
         if (customerAllowsPublishingMetadataAndFiles()) {
             filesApprovalEntry
                 .withFilesForApproval(files)
-                .approveFiles()
                 .complete(newImage.toPublication(), userInstance)
                 .persistUpdate(ticketService);
         } else {

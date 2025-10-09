@@ -4,21 +4,16 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
-import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.stream.Collectors;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
-import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -35,7 +30,6 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -65,7 +59,6 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         "User {} updates assignee to {} for publication {}";
     public static final String UPDATE_FORBIDDEN_MESSAGE =
         "Updating ticket {} for publication {} is forbidden for user {}";
-    public static final String FILES_MISSING_MANDATORY_FIELDS_MESSAGE = "Files missing mandatory fields: %s";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
@@ -236,9 +229,6 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         if (ticket instanceof DoiRequest) {
             doiTicketSideEffects(ticketRequest, requestUtils);
         }
-        if (ticket instanceof FilesApprovalEntry filesApprovalEntry) {
-            fileApprovalEntrySideEffects(filesApprovalEntry, ticketRequest);
-        }
         var username = requestUtils.username();
         logger.info(TICKET_STATUS_UPDATE_MESSAGE,
                     username,
@@ -246,39 +236,6 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
                     ticketRequest.status(),
                     ticket.getResourceIdentifier());
         ticketService.updateTicketStatus(ticket, ticketRequest.status(), requestUtils.toUserInstance());
-    }
-
-    private void fileApprovalEntrySideEffects(FilesApprovalEntry ticket,
-                                              UpdateTicketRequest ticketRequest) throws ConflictException {
-
-        if (COMPLETED.equals(ticketRequest.status())) {
-            validateFilesForApproval(ticket);
-            ticket.approveFiles().persistUpdate(ticketService);
-        }
-    }
-
-    private void validateFilesForApproval(FilesApprovalEntry ticket) throws ConflictException {
-        if (filesForApprovalAreNotApprovable(ticket)) {
-            var fileIdsMissingMandatoryFields = getFileIdsMissingMandatoryFields(ticket);
-            throw new ConflictException(FILES_MISSING_MANDATORY_FIELDS_MESSAGE
-                                            .formatted(fileIdsMissingMandatoryFields));
-        }
-    }
-
-    private static String getFileIdsMissingMandatoryFields(FilesApprovalEntry ticket) {
-        return ticket.getFilesForApproval().stream()
-                   .map(PendingFile.class::cast)
-                   .filter(PendingFile::isNotApprovable)
-                   .map(File.class::cast)
-                   .map(File::getIdentifier)
-                   .map(String::valueOf)
-                   .collect(Collectors.joining(","));
-    }
-
-    private static boolean filesForApprovalAreNotApprovable(FilesApprovalEntry ticket) {
-        return ticket.getFilesForApproval().stream()
-                   .map(PendingFile.class::cast)
-                   .anyMatch(PendingFile::isNotApprovable);
     }
 
     private TicketEntry fetchTicket(RequestUtils requestUtils)

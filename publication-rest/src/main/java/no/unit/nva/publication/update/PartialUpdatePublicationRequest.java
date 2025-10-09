@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.ResearchProject;
@@ -20,13 +21,13 @@ import nva.commons.core.JacocoGenerated;
 public final class PartialUpdatePublicationRequest implements PublicationRequest, UpdateRequest {
 
     private final SortableIdentifier identifier;
-    private final List<Funding> fundings;
+    private final Set<Funding> fundings;
     private final List<ResearchProject> projects;
     private final AssociatedArtifactList associatedArtifacts;
 
     @JsonCreator
     public PartialUpdatePublicationRequest(@JsonProperty("identifier") SortableIdentifier identifier,
-                                           @JsonProperty("fundings") List<Funding> fundings,
+                                           @JsonProperty("fundings") Set<Funding> fundings,
                                            @JsonProperty("projects") List<ResearchProject> projects,
                                            @JsonProperty("associatedArtifacts") AssociatedArtifactList associatedArtifacts) {
         this.identifier = identifier;
@@ -35,7 +36,7 @@ public final class PartialUpdatePublicationRequest implements PublicationRequest
         this.associatedArtifacts = associatedArtifacts;
     }
 
-    public List<Funding> getFundings() {
+    public Set<Funding> getFundings() {
         return fundings;
     }
 

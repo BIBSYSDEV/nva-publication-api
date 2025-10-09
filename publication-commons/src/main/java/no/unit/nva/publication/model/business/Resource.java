@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DELETED;
@@ -117,7 +118,7 @@ public class Resource implements Entity {
     @JsonProperty
     private List<URI> subjects;
     @JsonProperty
-    private List<Funding> fundings;
+    private Set<Funding> fundings;
     @JsonProperty
     private String rightsHolder;
     @JsonProperty
@@ -136,6 +137,8 @@ public class Resource implements Entity {
     private List<FileEntry> files;
     @JsonIgnore
     private List<PublicationChannel> publicationChannels;
+    @JsonProperty
+    private UUID version;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -292,6 +295,14 @@ public class Resource implements Entity {
 
     public Stream<FileEntry> fetchFileEntries(ResourceService resourceService) {
         return resourceService.fetchFileEntriesForResource(this);
+    }
+
+    public UUID getVersion() {
+        return version;
+    }
+
+    public void setVersion(UUID version) {
+        this.version = version;
     }
 
     private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {
@@ -531,7 +542,7 @@ public class Resource implements Entity {
     }
 
     public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
-        return nonNull(additionalIdentifiers) ? additionalIdentifiers : Collections.emptySet();
+        return nonNull(additionalIdentifiers) ? additionalIdentifiers : emptySet();
     }
 
     public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
@@ -570,7 +581,7 @@ public class Resource implements Entity {
     }
 
     public Set<CuratingInstitution> getCuratingInstitutions() {
-        return nonNull(this.curatingInstitutions) ? this.curatingInstitutions : Collections.emptySet();
+        return nonNull(this.curatingInstitutions) ? this.curatingInstitutions : emptySet();
     }
 
     public void setCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
@@ -823,11 +834,11 @@ public class Resource implements Entity {
         this.subjects = subjects;
     }
 
-    public List<Funding> getFundings() {
-        return nonNull(fundings) ? fundings : Collections.emptyList();
+    public Set<Funding> getFundings() {
+        return nonNull(fundings) ? fundings : emptySet();
     }
 
-    public void setFundings(List<Funding> fundings) {
+    public void setFundings(Collection<Funding> fundings) {
         this.fundings = new FundingList(fundings);
     }
 
@@ -848,7 +859,7 @@ public class Resource implements Entity {
     @JsonIgnore
     public Optional<CristinIdentifier> getCristinIdentifier() {
         return Optional.ofNullable(additionalIdentifiers)
-                       .orElse(Collections.emptySet())
+                       .orElse(emptySet())
                        .stream()
                        .filter(CristinIdentifier.class::isInstance)
                        .map(CristinIdentifier.class::cast)

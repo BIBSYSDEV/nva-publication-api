@@ -127,7 +127,8 @@ public class RequestUtilsTest {
                                                     requestInfo.getTopLevelOrgCristinId().orElseThrow(),
                                                     requestInfo.getPersonAffiliation(), requestInfo.getPersonCristinId(),
                                                     requestInfo.getAccessRights(),
-                                                    UserClientType.INTERNAL);
+                                                    UserClientType.INTERNAL,
+                                                    null);
         var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo).toUserInstance();
         Assertions.assertEquals(createdUserInstance, expectedUserInstance);
     }

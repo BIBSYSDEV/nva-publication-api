@@ -113,7 +113,7 @@ public class ResourceDao extends Dao
         return getResource().getPublisher().getId();
     }
 
-    //TODO: cover when refactoring to ticket system is completed
+    //TODO: cover when refactoring to ticket importSource is completed
     @JacocoGenerated
     @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
@@ -265,7 +265,9 @@ public class ResourceDao extends Dao
 
     @JsonIgnore
     public Resource getResource() {
-        return (Resource) getData();
+        var resource = (Resource) getData();
+        resource.setVersion(getVersion());
+        return resource;
     }
 
     @Override

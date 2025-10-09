@@ -131,7 +131,7 @@ public class CristinImportPublicationMerger {
                    .build();
     }
 
-    private List<Funding> determineFundings() {
+    private Set<Funding> determineFundings() {
         if (existingPublication.getFundings().isEmpty()) {
             return bragePublicationRepresentation.publication().getFundings();
         }
@@ -141,8 +141,8 @@ public class CristinImportPublicationMerger {
         return existingPublication.getFundings();
     }
 
-    private List<Funding> mergeFundings() {
-        var fundings = new ArrayList<>(existingPublication.getFundings());
+    private Set<Funding> mergeFundings() {
+        var fundings = new HashSet<>(existingPublication.getFundings());
         fundings.addAll(bragePublicationRepresentation.publication().getFundings());
         return fundings;
     }
