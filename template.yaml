@@ -3004,6 +3004,7 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           PROCESSING_ENABLED: 'true'
           SCAN_PAGE_SIZE: 1000
+          TOTAL_SEGMENTS: 10
           SQS_BATCH_SIZE: 10
       Events:
         EventBridgeEvent:
