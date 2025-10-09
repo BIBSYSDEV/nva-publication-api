@@ -1655,24 +1655,23 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFetchResourceByScopusIdentifier() throws BadRequestException {
+    void shouldFetchPublicationByScopusIdentifier() throws BadRequestException {
         var publication = randomPublication();
         var scopusIdentifier = ScopusIdentifier.fromValue(randomString());
         publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
         var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
                                                              UserInstance.fromPublication(publication));
 
-        var resourceByScopusIdentifier = resourceService.getResourcesByScopusIdentifier(scopusIdentifier).getFirst();
-        var expectedResource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
+        var publicationByScopusIdentifier = resourceService.getPublicationsByScopusIdentifier(scopusIdentifier).getFirst();
 
-        assertEquals(expectedResource, resourceByScopusIdentifier);
+        assertEquals(persistedPublication, publicationByScopusIdentifier);
     }
 
     @Test
     void shouldReturnEmptyListWhenNoPublicationWithProvidedScopusIdentifier() {
         var scopusIdentifier = ScopusIdentifier.fromValue(randomString());
 
-        assertEquals(Collections.emptyList(), resourceService.getResourcesByScopusIdentifier(scopusIdentifier));
+        assertEquals(Collections.emptyList(), resourceService.getPublicationsByScopusIdentifier(scopusIdentifier));
     }
 
     @Test
