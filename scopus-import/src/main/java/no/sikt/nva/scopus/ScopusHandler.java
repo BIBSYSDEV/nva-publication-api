@@ -17,6 +17,9 @@ import java.net.http.HttpClient.Redirect;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.time.ZoneId;
+import java.time.temporal.WeekFields;
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import no.scopus.generated.DocTp;
@@ -26,7 +29,6 @@ import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.conversion.files.TikaUtils;
-import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
@@ -120,7 +122,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
                    .map(this::injectImportedStatusWhenPublicationWithTheSameScopusIdentifierExists)
                    .flatMap(this::persistOrUpdateInDatabase)
                    .map(this::storeSuccessReport)
-                   .orElseThrow(fail -> handleSavingError(fail, s3Uri));
+                   .orElse(fail -> handleSavingError(fail, s3Uri));
     }
 
     private ImportCandidate injectImportedStatusWhenPublicationWithTheSameScopusIdentifierExists(ImportCandidate importCandidate) {
@@ -225,10 +227,10 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
                    .orElse(null);
     }
 
-    private RuntimeException handleSavingError(Failure<ImportCandidate> fail, URI s3Uri) {
+    private ImportCandidate handleSavingError(Failure<ImportCandidate> fail, URI s3Uri) {
         loggError(s3Uri, fail);
         saveReportToS3(fail, s3Uri);
-        return ExceptionMapper.castToCorrectRuntimeException(fail.getException());
+        return null;
     }
 
     private void loggError(URI s3Uri, Failure<ImportCandidate> fail) {
@@ -253,11 +255,17 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     private UriWrapper constructErrorFileUri(URI s3Uri, Exception exception) {
         return UriWrapper.fromUri(ERROR_BUCKET_PATH
                                   + PATH_SEPERATOR
-                                  + Instant.now().toString()
+                                  + getWeekOfTheYear()
                                   + PATH_SEPERATOR
                                   + exception.getClass().getSimpleName()
                                   + PATH_SEPERATOR
                                   + UriWrapper.fromUri(s3Uri).getLastPathElement());
+    }
+
+    private static String getWeekOfTheYear() {
+        var now = Instant.now().atZone(ZoneId.systemDefault());
+        return "%s-%s".formatted(String.valueOf(now.get(WeekFields.of(Locale.getDefault()).weekOfYear())),
+                                 String.valueOf(now.getYear()));
     }
 
     private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate) throws BadRequestException {
