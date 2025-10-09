@@ -15,9 +15,11 @@ import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.publication.model.ScanResultWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -79,12 +81,10 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
         if (!isProcessingEnabled()) {
             logger.warn("Processing is disabled via {} environment variable. Stopping execution.",
                         PROCESSING_ENABLED_ENV);
-            return new LoadDynamodbResponse(0, 0, input.getJobType());
+            return new LoadDynamodbResponse(0, 0, input.jobType());
         }
 
         if (!input.isSegmentedScan()) {
-            logger.info("Initiating parallel scan with {} segments for job type: {}", totalSegments,
-                        input.getJobType());
             return initiateParallelScan(input, context);
         }
 
@@ -92,11 +92,14 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     }
 
     private LoadDynamodbResponse initiateParallelScan(LoadDynamodbRequest input, Context context) {
+        logger.info("Initiating parallel scan with {} segments for job type: {}", totalSegments,
+                    input.jobType());
+
         for (int segment = 0; segment < totalSegments; segment++) {
             var segmentRequest = new LoadDynamodbRequest(
-                input.getJobType(),
+                input.jobType(),
                 null,
-                input.getTypes(),
+                input.types(),
                 segment,
                 totalSegments
             );
@@ -106,54 +109,65 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
             var putEventsRequest = PutEventsRequest.builder().entries(segmentEvent).build();
             eventBridgeClient.putEvents(putEventsRequest);
 
-            logger.info("Created segment {} of {} for job type: {}", segment, totalSegments, input.getJobType());
+            logger.info("Created segment {} of {} for job type: {}", segment, totalSegments, input.jobType());
         }
 
-        logger.info("Initiated {} parallel segment scans for job type: {}", totalSegments, input.getJobType());
-        return new LoadDynamodbResponse(0, 0, input.getJobType());
+        logger.info("Initiated {} parallel segment scans for job type: {}", totalSegments, input.jobType());
+
+        return new LoadDynamodbResponse(0, 0, input.jobType());
     }
 
     private LoadDynamodbResponse processSegment(LoadDynamodbRequest input, Context context) {
         logger.info("Processing segment {} of {} for job type: {}, starting from marker: {}",
-                    input.getSegment(), input.getTotalSegments(), input.getJobType(), input.getStartMarker());
+                    input.segment(), input.totalSegments(), input.jobType(), input.startMarker());
 
-        var scan = resourceService.scanResourcesRaw(scanPageSize, input.getStartMarker(), input.getTypes(),
-                                                    input.getSegment(), input.getTotalSegments());
+        var scan = resourceService.scanResourcesRaw(scanPageSize, input.startMarker(), input.types(),
+                                                    input.segment(), input.totalSegments());
 
-        var workItems = scan.items().stream().map(item -> {
-            var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
-                                                                   item.get(PRIMARY_KEY_SORT_KEY_NAME).getS());
-            return new BatchWorkItem(dynamoDbKey, input.getJobType());
-        }).toList();
+        var workItems = createWorkItems(input, scan);
 
-        var batches = Lists.partition(workItems, sqsBatchSize);
+        var messagesQueued = queueWorkItems(workItems);
 
-        var messagesQueued = batches.stream().mapToInt(this::sendBatchToQueue).sum();
-
-        logger.info("Segment {} processed {} items, queued {} messages", input.getSegment(), workItems.size(),
+        logger.info("Segment {} processed {} items, queued {} messages", input.segment(), workItems.size(),
                     messagesQueued);
 
         if (scan.isTruncated()) {
             sendEventForNextBatch(input, scan.nextKey(), context);
         } else {
-            logger.info("Completed segment {} of {} for job type: {}", input.getSegment(), input.getTotalSegments(),
-                        input.getJobType());
+            logger.info("Completed segment {} of {} for job type: {}", input.segment(), input.totalSegments(),
+                        input.jobType());
         }
 
-        return new LoadDynamodbResponse(workItems.size(), messagesQueued, input.getJobType());
+        return new LoadDynamodbResponse(workItems.size(), messagesQueued, input.jobType());
+    }
+
+    private int queueWorkItems(List<BatchWorkItem> workItems) {
+        var batches = Lists.partition(workItems, sqsBatchSize);
+
+        return batches.stream().mapToInt(this::sendBatchToQueue).sum();
+    }
+
+    private static List<BatchWorkItem> createWorkItems(LoadDynamodbRequest input, ScanResultWrapper scan) {
+        return scan.items().stream().map(item -> {
+            var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
+                                                                   item.get(PRIMARY_KEY_SORT_KEY_NAME).getS());
+            return new BatchWorkItem(dynamoDbKey, input.jobType());
+        }).toList();
     }
 
     private void validateInput(LoadDynamodbRequest input) {
-        if (input == null || input.getJobType() == null || input.getJobType().isBlank()) {
-            throw new IllegalArgumentException(
+        Optional.ofNullable(input)
+            .map(LoadDynamodbRequest::jobType)
+            .filter(StringUtils::isNotBlank)
+            .orElseThrow(() -> new IllegalArgumentException(
                 "Missing required field 'jobType'. This lambda requires a jobType to be specified in the input. "
-                + "Example input: {\"jobType\": \"REINDEX_RECORD\"}");
-        }
+                + "Example input: {\"jobType\": \"REINDEX_RECORD\"}"));
     }
 
     private boolean isProcessingEnabled() {
-        var enabled = Optional.of(processingEnabled).orElse("true");
-        return "true".equalsIgnoreCase(enabled);
+        return Optional.ofNullable(processingEnabled)
+                   .map(Boolean::parseBoolean)
+                   .orElse(true);
     }
 
     private int sendBatchToQueue(List<BatchWorkItem> workItems) {

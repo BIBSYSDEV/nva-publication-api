@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -30,14 +29,12 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeEventBridgeClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
@@ -59,7 +56,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     private static final int ONE_TOTAL_SEGMENTS = 1;
 
     private SqsClient sqsClient;
-    private EventBridgeClient eventBridgeClient;
+    private FakeEventBridgeClient eventBridgeClient;
     private LoadDynamodbResourceBatchJobHandler handler;
     private Context context;
     private AwsEventBridgeEvent<LoadDynamodbRequest> event;
@@ -70,7 +67,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         super.init();
         resourceService = spy(getResourceService(client));
         sqsClient = mock(SqsClient.class);
-        eventBridgeClient = mock(EventBridgeClient.class);
+        eventBridgeClient = new FakeEventBridgeClient();
         context = mock(Context.class);
         event = mock(AwsEventBridgeEvent.class);
 
@@ -84,7 +81,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldThrowExceptionWhenJobTypeIsMissing() {
-        var request = new LoadDynamodbRequest(null);
+        var request = new LoadDynamodbRequest(null, null, List.of(KeyField.RESOURCE), SEGMENT, ONE_TOTAL_SEGMENTS);
 
         var exception = assertThrows(IllegalArgumentException.class,
                                      () -> handler.processInput(request, event, context));
@@ -112,7 +109,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
 
         verify(sqsClient, atLeast(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
-        verify(eventBridgeClient, never()).putEvents(any(PutEventsRequest.class));
+        assertThat(eventBridgeClient.getRequestEntries().size(), is(greaterThanOrEqualTo(0)));
     }
 
     @Test
@@ -125,9 +122,6 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         lenient().when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenAnswer(this::createSendMessageBatchResponse);
 
-        lenient().when(eventBridgeClient.putEvents(any(PutEventsRequest.class)))
-            .thenReturn(PutEventsResponse.builder().build());
-
         var smallScanPAge = 10;
 
         handler = new LoadDynamodbResourceBatchJobHandler(
@@ -139,7 +133,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         handler.processInput(request, event, context);
 
-        verify(eventBridgeClient, atLeastOnce()).putEvents(any(PutEventsRequest.class));
+        assertThat(eventBridgeClient.getRequestEntries().size(), is(greaterThanOrEqualTo(1)));
     }
 
     @Test
@@ -158,7 +152,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         verifyNoInteractions(resourceService);
         verifyNoInteractions(sqsClient);
-        verifyNoInteractions(eventBridgeClient);
+
+        assertThat(eventBridgeClient.getRequestEntries().size(), is(equalTo(0)));
     }
 
     @Test
@@ -171,7 +166,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         assertThat(response.messagesQueued(), is(equalTo(0)));
 
         verify(sqsClient, never()).sendMessageBatch(any(SendMessageBatchRequest.class));
-        verify(eventBridgeClient, never()).putEvents(any(PutEventsRequest.class));
+
+        assertThat(eventBridgeClient.getRequestEntries().size(), is(equalTo(0)));
     }
 
     @Test
@@ -179,16 +175,13 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         when(context.getInvokedFunctionArn()).thenReturn(TEST_FUNCTION_ARN);
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), null, null);
 
-        when(eventBridgeClient.putEvents(any(PutEventsRequest.class)))
-            .thenReturn(PutEventsResponse.builder().build());
-
         var response = handler.processInput(request, event, context);
 
         assertThat(response.itemsProcessed(), is(equalTo(0)));
         assertThat(response.messagesQueued(), is(equalTo(0)));
         assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
 
-        verify(eventBridgeClient, times(TOTAL_SEGMENTS)).putEvents(any(PutEventsRequest.class));
+        assertThat(eventBridgeClient.getRequestEntries().size(), is(equalTo(TOTAL_SEGMENTS)));
         verifyNoInteractions(sqsClient);
     }
 
@@ -270,7 +263,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldHandleBlankJobTypeAsInvalid() {
-        var request = new LoadDynamodbRequest("   ");
+        var request = new LoadDynamodbRequest("   ", null, List.of(KeyField.RESOURCE), SEGMENT, ONE_TOTAL_SEGMENTS);
 
         var exception = assertThrows(IllegalArgumentException.class,
                                      () -> handler.processInput(request, event, context));

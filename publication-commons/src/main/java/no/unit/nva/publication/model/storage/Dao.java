@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.storage.DataCompressor.compressDaoData;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
@@ -194,7 +195,7 @@ public abstract class Dao
     protected abstract User getOwner();
 
     private static Stream<KeyField> getTypesOrDefault(Collection<KeyField> types) {
-        return types == null || types.isEmpty() ? Stream.of(KeyField.values()) : types.stream();
+        return isNull(types) || types.isEmpty() ? Stream.of(KeyField.values()) : types.stream();
     }
 
     private static String toQueryPart(KeyField type) {

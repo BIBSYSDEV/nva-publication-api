@@ -271,7 +271,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker,
-                                               List<KeyField> types) {
+                                               Collection<KeyField> types) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types);
         var scanResult = getClient().scan(scanRequest);
         var values = extractDatabaseEntries(scanResult.getItems());
@@ -280,12 +280,12 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public ScanResultWrapper scanResourcesRaw(int pageSize, Map<String, AttributeValue> startMarker,
-                                           List<KeyField> types) {
+                                              Collection<KeyField> types) {
         return scanResourcesRaw(pageSize, startMarker, types, null, null);
     }
 
     public ScanResultWrapper scanResourcesRaw(int pageSize, Map<String, AttributeValue> startMarker,
-                                           List<KeyField> types, Integer segment, Integer totalSegments) {
+                                              Collection<KeyField> types, Integer segment, Integer totalSegments) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types, segment,
                                                                          totalSegments);
         var scanResult = getClient().scan(scanRequest);
@@ -690,13 +690,13 @@ public class ResourceService extends ServiceWithTransactions {
 
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
                                                                        Map<String, AttributeValue> startMarker,
-                                                                       List<KeyField> types) {
+                                                                       Collection<KeyField> types) {
         return createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types, null, null);
     }
 
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
                                                                        Map<String, AttributeValue> startMarker,
-                                                                       List<KeyField> types,
+                                                                       Collection<KeyField> types,
                                                                        Integer segment,
                                                                        Integer totalSegments) {
         var scanRequest = new ScanRequest().withTableName(tableName)
@@ -707,7 +707,7 @@ public class ResourceService extends ServiceWithTransactions {
                               .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
                               .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
 
-        if (segment != null && totalSegments != null) {
+        if (nonNull(segment) && nonNull(totalSegments)) {
             scanRequest.withSegment(segment).withTotalSegments(totalSegments);
         }
 
