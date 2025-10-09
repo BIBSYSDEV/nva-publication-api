@@ -207,17 +207,17 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     private UriWrapper constructErrorFileUri(URI s3Uri, Exception exception) {
         return UriWrapper.fromUri(ERROR_BUCKET_PATH
                                   + PATH_SEPERATOR
-                                  + getWeekNumber()
+                                  + getWeekOfTheYear()
                                   + PATH_SEPERATOR
                                   + exception.getClass().getSimpleName()
                                   + PATH_SEPERATOR
                                   + UriWrapper.fromUri(s3Uri).getLastPathElement());
     }
 
-    private static int getWeekNumber() {
-        return Instant.now()
-                   .atZone(ZoneId.systemDefault())
-                   .get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
+    private static String getWeekOfTheYear() {
+        var now = Instant.now().atZone(ZoneId.systemDefault());
+        return "%s-%s".formatted(String.valueOf(now.get(WeekFields.of(Locale.getDefault()).weekOfYear())),
+                                 String.valueOf(now.getYear()));
     }
 
     private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate) throws BadRequestException {
