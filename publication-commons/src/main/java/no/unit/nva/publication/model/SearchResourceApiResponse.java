@@ -1,6 +1,8 @@
 package no.unit.nva.publication.model;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Collections;
 import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
@@ -23,5 +25,10 @@ public record SearchResourceApiResponse(int totalHits, List<ResourceWithId> hits
     @JacocoGenerated
     public boolean containsSingleHit() {
         return this.totalHits == SINGLE_HIT;
+    }
+
+    @Override
+    public List<ResourceWithId> hits() {
+        return nonNull(hits) ? hits : Collections.emptyList();
     }
 }

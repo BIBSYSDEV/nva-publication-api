@@ -26,12 +26,14 @@ import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
 import static no.unit.nva.language.LanguageConstants.MULTIPLE;
 import static no.unit.nva.language.LanguageConstants.NORWEGIAN;
 import static no.unit.nva.language.LanguageConstants.UNDEFINED_LANGUAGE;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static no.unit.nva.testutils.TestHeaders.APPLICATION_JSON;
 import static nva.commons.core.StringUtils.isNotBlank;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -57,6 +59,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -180,11 +184,16 @@ import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.ResourceWithId;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.SearchService;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -249,13 +258,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private PublicationChannelConnection publicationChannelConnection;
     private NvaCustomerConnection nvaCustomerConnection;
     private ScopusGenerator scopusData;
-    private ResourceService resourceService;
+    private ResourceService importCandidateService;
     private ScopusUpdater scopusUpdater;
     private ScopusFileConverter scopusFileConverter;
     private UriRetriever uriRetriever;
     private AuthorizedBackendUriRetriever authorizedBackendUriRetriever;
 
     private TestAppender appender;
+    private ResourceService resourcesService;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
@@ -264,7 +274,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     @BeforeEach
     public void init(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException, URISyntaxException {
-        super.init();
+        var environment = new Environment();
+        var importCandidateTable = environment.readEnv("TABLE_NAME");
+        var resourcesTable = environment.readEnv("RESOURCES_TABLE_NAME");
+        super.init(importCandidateTable, resourcesTable);
         appender = LogUtils.getTestingAppenderForRootLogger();
         appender.start();
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
@@ -282,15 +295,43 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
         publicationChannelConnection = new PublicationChannelConnection(authorizedBackendUriRetriever);
         nvaCustomerConnection = mockCustomerConnection();
-        resourceService = getResourceService(client);
+        importCandidateService = getResourceService(client, importCandidateTable);
+        resourcesService = getResourceService(client, resourcesTable);
         uriRetriever = mock(UriRetriever.class);
-        scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
-        var environment = mock(Environment.class);
-        when(environment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
-        scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, environment, mockedTikaUtils());
+        scopusUpdater = new ScopusUpdater(importCandidateService, uriRetriever);
+        var mockedEnvironment = mock(Environment.class);
+        when(mockedEnvironment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, mockedEnvironment, mockedTikaUtils());
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
+                                          nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
+                                          mockedSearchService(Collections.emptyList()));
         scopusData = new ScopusGenerator();
+    }
+
+    private SearchService mockedSearchService(List<Publication> publications) {
+        var hits = publications.stream()
+                       .map(ScopusHandlerTest::toResourceWithId)
+                       .toList();
+        var searchUriWithoutScopusIdentifier = UriWrapper.fromHost(new Environment().readEnv(API_HOST))
+                      .addChild("search")
+                      .addChild("resources")
+                      .addQueryParameter("scopusIdentifier", null)
+                      .toString();
+        when(uriRetriever.fetchResponse(argThat((uri) -> nonNull(uri) && uri.toString().contains(searchUriWithoutScopusIdentifier)),
+                                        eq(APPLICATION_JSON))).thenReturn(
+            Optional.of(FakeHttpResponse.create("""
+                                                    {
+                                                      "totalHits": 0,
+                                                      "hits": %s
+                                                    }
+                                                    """.formatted(hits), 200)));
+        return SearchService.create(uriRetriever, resourcesService);
+    }
+
+    private static ResourceWithId toResourceWithId(Publication publication) {
+        return new ResourceWithId(UriWrapper.fromUri(PublicationGenerator.randomUri())
+                                      .addChild(publication.getIdentifier().toString())
+                                      .getUri());
     }
 
     private TikaUtils mockedTikaUtils() throws IOException, URISyntaxException {
@@ -316,7 +357,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
+                                          nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
+                                          mockedSearchService(Collections.emptyList()));
         scopusHandler.handleRequest(event, CONTEXT);
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
@@ -1150,7 +1192,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
                                         this.publicationChannelConnection, nvaCustomerConnection,
                                         fakeResourceServiceThrowingException,
-                                        scopusUpdater, scopusFileConverter);
+                                        scopusUpdater, scopusFileConverter, mockedSearchService(Collections.emptyList()));
         assertNull(handler.handleRequest(event, CONTEXT));
         assertNotNull(extractErrorReportFromS3Client());
     }
@@ -1172,6 +1214,47 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         assertThat(importCandidate.getImportStatus(), is(equalTo(existingImportCandidate.getImportStatus())));
         assertThat(importCandidate.getEntityDescription(),
                    is(not(equalTo(existingImportCandidate.getEntityDescription()))));
+    }
+
+    @Test
+    void shouldPersistImportCandidateWithStatusImportedWhenThereExistsPublicationWithMatchingScopusIdentifier()
+        throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+        var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
+
+        var existingPublication = persistPublicationWithScopusIdentifier(scopusIdentifier);
+        var handler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
+                                        nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
+                                        mockedSearchService(List.of(existingPublication)));
+        createEmptyPiaMock();
+        var event = createNewScopusPublicationEvent();
+        var importCandidate = handler.handleRequest(event, CONTEXT);
+
+        assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
+    }
+
+    @Test
+    void shouldPersistImportCandidateWithStatusImportedWhenThereAreMultiplePublicationWithTheSameScopusIdentifier()
+        throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+        var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
+        var existingPublications =
+            IntStream.of(3).mapToObj(i -> persistPublicationWithScopusIdentifier(scopusIdentifier)).toList();
+        var handler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
+                                        nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
+                                        mockedSearchService(existingPublications));
+        createEmptyPiaMock();
+        var event = createNewScopusPublicationEvent();
+        var importCandidate = handler.handleRequest(event, CONTEXT);
+
+        assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
+    }
+
+    private Publication persistPublicationWithScopusIdentifier(ScopusIdentifier scopusIdentifier) {
+        var publication = randomPublication();
+        publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
+        return attempt(() -> resourcesService.createPublication(UserInstance.create(randomString(), randomUri()),
+                                                                publication)).orElseThrow();
     }
 
     void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {
@@ -1330,7 +1413,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private ImportCandidate createPersistedImportCandidate() {
         var importCandidate = randomImportCandidate();
-        return resourceService.persistImportCandidate(importCandidate);
+        return importCandidateService.persistImportCandidate(importCandidate);
     }
 
     private ImportCandidate randomImportCandidate() {
