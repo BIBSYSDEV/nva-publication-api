@@ -1666,7 +1666,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.identifiers.HandleIdentifierEventHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
       Timeout: 900
       Environment:
         Variables:
@@ -1680,6 +1679,9 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt HandleWorkQueue.Arn
+            BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 2
 
   HandleWorkQueue:
     Type: AWS::SQS::Queue
