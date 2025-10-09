@@ -55,6 +55,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     private static final String PROCESSING_DISABLED = "false";
     private static final int SQS_BATCH_SIZE = 10;
     private static final int SCAN_PAGE_SIZE = 1000;
+    private static final int TOTAL_SEGMENTS = 10;
+    private static final int SEGMENT = 0;
 
     private SqsClient sqsClient;
     private EventBridgeClient eventBridgeClient;
@@ -76,7 +78,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
             sqsClient, eventBridgeClient, TEST_QUEUE_URL,
             PROCESSING_ENABLED, resourceService,
             SCAN_PAGE_SIZE,
-            SQS_BATCH_SIZE);
+            SQS_BATCH_SIZE,
+            TOTAL_SEGMENTS);
     }
 
     @Test
@@ -95,31 +98,29 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldProcessBatchAndSendToQueue() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+        var request = getRequest();
 
-        createTestItems(12);
+        createTestItems(120);
 
         var successResponse = createSuccessResponse(10);
-        var successResponse2 = createSuccessResponse(2);
 
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-            .thenReturn(successResponse)
-            .thenReturn(successResponse2);
+            .thenReturn(successResponse);
 
         var response = handler.processInput(request, event, context);
 
-        assertThat(response.itemsProcessed(), is(greaterThan(1)));
-        assertThat(response.messagesQueued(),  is(greaterThan(1)));
+        assertThat(response.itemsProcessed(), is(greaterThan(10)));
+        assertThat(response.messagesQueued(),  is(greaterThan(10)));
         assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
 
-        verify(sqsClient, times(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
+        verify(sqsClient, atLeast(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
         verify(eventBridgeClient, never()).putEvents(any(PutEventsRequest.class));
     }
 
     @Test
     void shouldTriggerNextBatchWhenMoreItemsExist() {
         when(context.getInvokedFunctionArn()).thenReturn(TEST_FUNCTION_ARN);
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+        var request = getRequest();
 
         createTestItems(21);
 
@@ -137,7 +138,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
             sqsClient, eventBridgeClient, TEST_QUEUE_URL,
             PROCESSING_ENABLED, resourceService,
             smallScanPAge,
-            SQS_BATCH_SIZE);
+            SQS_BATCH_SIZE,
+            TOTAL_SEGMENTS);
 
         handler.processInput(request, event, context);
 
@@ -146,11 +148,11 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldHandleKillSwitchWhenProcessingDisabled() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+        var request = getRequest();
 
         var disabledHandler = new LoadDynamodbResourceBatchJobHandler(
             sqsClient, eventBridgeClient, TEST_QUEUE_URL, PROCESSING_DISABLED,
-            resourceService, SCAN_PAGE_SIZE, SQS_BATCH_SIZE);
+            resourceService, SCAN_PAGE_SIZE, SQS_BATCH_SIZE, TOTAL_SEGMENTS);
 
         var response = disabledHandler.processInput(request, event, context);
 
@@ -165,7 +167,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldHandleEmptyScanResult() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE);
+        var request = getRequest();
 
         var response = handler.processInput(request, event, context);
 
@@ -177,27 +179,38 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldHandlePartialSqsBatchFailures() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+    void shouldInitiateParallelScan() {
+        when(context.getInvokedFunctionArn()).thenReturn(TEST_FUNCTION_ARN);
+        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), null, null);
 
-        createTestItems(5);
+        when(eventBridgeClient.putEvents(any(PutEventsRequest.class)))
+            .thenReturn(PutEventsResponse.builder().build());
+
+        var response = handler.processInput(request, event, context);
+
+        assertThat(response.itemsProcessed(), is(equalTo(0)));
+        assertThat(response.messagesQueued(), is(equalTo(0)));
+        assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
+
+        verify(eventBridgeClient, times(10)).putEvents(any(PutEventsRequest.class));
+        verifyNoInteractions(sqsClient);
+    }
+
+    @Test
+    void shouldHandlePartialSqsBatchFailures() {
+        var request = getRequest();
+
+        createTestItems(50);
 
         var partialFailureResponse = SendMessageBatchResponse.builder()
                                          .successful(List.of(
-                                             SendMessageBatchResultEntry.builder().id("0").build(),
-                                             SendMessageBatchResultEntry.builder().id("1").build(),
-                                             SendMessageBatchResultEntry.builder().id("2").build()
+                                             SendMessageBatchResultEntry.builder().id("0").build()
                                          ))
                                          .failed(List.of(
                                              BatchResultErrorEntry.builder()
-                                                 .id("3")
+                                                 .id("1")
                                                  .code("ServiceUnavailable")
                                                  .message("Service temporarily unavailable")
-                                                 .build(),
-                                             BatchResultErrorEntry.builder()
-                                                 .id("4")
-                                                 .code("ThrottlingException")
-                                                 .message("Rate exceeded")
                                                  .build()
                                          ))
                                          .build();
@@ -207,47 +220,47 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         var response = handler.processInput(request, event, context);
 
-        assertThat(response.itemsProcessed(), is(equalTo(5)));
-        assertThat(response.messagesQueued(), is(equalTo(3)));
+        assertThat(response.itemsProcessed(), is(greaterThan(0)));
+        assertThat(response.messagesQueued(), is(greaterThan(0)));
 
-        verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
+        verify(sqsClient, atLeast(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
 
     @Test
     void shouldHandleSqsExceptionGracefully() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+        var request = getRequest();
 
-        createTestItems(3);
+        createTestItems(50);
 
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenThrow(new RuntimeException("SQS service error"));
 
         var response = handler.processInput(request, event, context);
 
-        assertThat(response.itemsProcessed(), is(equalTo(3)));
+        assertThat(response.itemsProcessed(), is(greaterThan(0)));
         assertThat(response.messagesQueued(), is(equalTo(0)));
 
-        verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
+        verify(sqsClient, atLeast(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
 
     @Test
     void shouldProcessWhenKillSwitchEnabledByDefault() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+        var request = getRequest();
 
-        createTestItems(1);
+        createTestItems(50);
 
-        var successResponse = createSuccessResponse(1);
+        var successResponse = createSuccessResponse(10);
 
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenReturn(successResponse);
 
         var response = handler.processInput(request, event, context);
 
-        assertThat(response.itemsProcessed(), is(equalTo(1)));
-        assertThat(response.messagesQueued(), is(equalTo(1)));
+        assertThat(response.itemsProcessed(), is(greaterThan(0)));
+        assertThat(response.messagesQueued(), is(greaterThan(0)));
 
-        verify(resourceService, times(1)).scanResourcesRaw(anyInt(), any(), any());
-        verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
+        verify(resourceService, times(1)).scanResourcesRaw(anyInt(), any(), any(), any(), any());
+        verify(sqsClient, atLeast(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
 
     @Test
@@ -274,7 +287,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldHandleParallelProcessingFailureGracefully() {
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE));
+        var request = getRequest();
 
         createTestItems(15);
 
@@ -286,13 +299,17 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         var testHandler = new LoadDynamodbResourceBatchJobHandler(
             mockSqsClient, eventBridgeClient, TEST_QUEUE_URL,
-            PROCESSING_ENABLED, resourceService, SCAN_PAGE_SIZE, SQS_BATCH_SIZE);
+            PROCESSING_ENABLED, resourceService, SCAN_PAGE_SIZE, SQS_BATCH_SIZE, TOTAL_SEGMENTS);
 
         var response = testHandler.processInput(request, event, context);
 
-        assertThat(response.itemsProcessed(), is(equalTo(15)));
+        assertThat(response.itemsProcessed(), is(greaterThan(0)));
 
-        verify(mockSqsClient, atLeast(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
+        verify(mockSqsClient, atLeast(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
+    }
+
+    private static LoadDynamodbRequest getRequest() {
+        return new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), SEGMENT, TOTAL_SEGMENTS);
     }
 
     @Test

@@ -33,6 +33,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private static final String PROCESSING_ENABLED_ENV = "PROCESSING_ENABLED";
     private static final String SCAN_PAGE_SIZE_ENV = "SCAN_PAGE_SIZE";
     private static final String SQS_BATCH_SIZE_ENV = "SQS_BATCH_SIZE";
+    private static final String TOTAL_SEGMENTS_ENV = "TOTAL_SEGMENTS";
     public static final String DETAIL_TYPE = "PublicationService.DataEntry.LoadDynamodbResourceBatchJob";
 
     private final SqsClient sqsClient;
@@ -42,20 +43,23 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private final ResourceService resourceService;
     private final int scanPageSize;
     private final int sqsBatchSize;
+    private final int totalSegments;
 
     @JacocoGenerated
     public LoadDynamodbResourceBatchJobHandler() {
         this(SqsClient.create(), defaultEventBridgeClient(), new Environment().readEnv(WORK_QUEUE_URL_ENV),
              new Environment().readEnv(PROCESSING_ENABLED_ENV), ResourceService.defaultService(),
              parseInt(new Environment().readEnv(SCAN_PAGE_SIZE_ENV)),
-             parseInt(new Environment().readEnv(SQS_BATCH_SIZE_ENV)));
+             parseInt(new Environment().readEnv(SQS_BATCH_SIZE_ENV)),
+             parseInt(new Environment().readEnv(TOTAL_SEGMENTS_ENV)));
     }
 
     public LoadDynamodbResourceBatchJobHandler(SqsClient sqsClient,
                                                EventBridgeClient eventBridgeClient, String queueUrl,
                                                String processingEnabled, ResourceService resourceService,
                                                int scanPageSize,
-                                               int sqsBatchSize) {
+                                               int sqsBatchSize,
+                                               int totalSegments) {
         super(LoadDynamodbRequest.class);
         this.resourceService = resourceService;
         this.sqsClient = sqsClient;
@@ -64,6 +68,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
         this.processingEnabled = processingEnabled;
         this.scanPageSize = scanPageSize;
         this.sqsBatchSize = sqsBatchSize;
+        this.totalSegments = totalSegments;
     }
 
     @Override
@@ -77,10 +82,43 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
             return new LoadDynamodbResponse(0, 0, input.getJobType());
         }
 
-        logger.info("Processing batch with job type: {}, starting from marker: {}", input.getJobType(),
-                    input.getStartMarker());
+        if (!input.isSegmentedScan()) {
+            logger.info("Initiating parallel scan with {} segments for job type: {}", totalSegments,
+                        input.getJobType());
+            return initiateParallelScan(input, context);
+        }
 
-        var scan = resourceService.scanResourcesRaw(scanPageSize, input.getStartMarker(), input.getTypes());
+        return processSegment(input, context);
+    }
+
+    private LoadDynamodbResponse initiateParallelScan(LoadDynamodbRequest input, Context context) {
+        for (int segment = 0; segment < totalSegments; segment++) {
+            var segmentRequest = new LoadDynamodbRequest(
+                input.getJobType(),
+                null,
+                input.getTypes(),
+                segment,
+                totalSegments
+            );
+
+            var segmentEvent = segmentRequest.createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE,
+                                                                  context.getInvokedFunctionArn());
+            var putEventsRequest = PutEventsRequest.builder().entries(segmentEvent).build();
+            eventBridgeClient.putEvents(putEventsRequest);
+
+            logger.info("Created segment {} of {} for job type: {}", segment, totalSegments, input.getJobType());
+        }
+
+        logger.info("Initiated {} parallel segment scans for job type: {}", totalSegments, input.getJobType());
+        return new LoadDynamodbResponse(0, 0, input.getJobType());
+    }
+
+    private LoadDynamodbResponse processSegment(LoadDynamodbRequest input, Context context) {
+        logger.info("Processing segment {} of {} for job type: {}, starting from marker: {}",
+                    input.getSegment(), input.getTotalSegments(), input.getJobType(), input.getStartMarker());
+
+        var scan = resourceService.scanResourcesRaw(scanPageSize, input.getStartMarker(), input.getTypes(),
+                                                    input.getSegment(), input.getTotalSegments());
 
         var workItems = scan.items().stream().map(item -> {
             var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
@@ -92,12 +130,14 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
 
         var messagesQueued = batches.stream().mapToInt(this::sendBatchToQueue).sum();
 
-        logger.info("Processed {} items, queued {} messages", workItems.size(), messagesQueued);
+        logger.info("Segment {} processed {} items, queued {} messages", input.getSegment(), workItems.size(),
+                    messagesQueued);
 
         if (scan.isTruncated()) {
             sendEventForNextBatch(input, scan.nextKey(), context);
         } else {
-            logger.info("Completed loading entire table for job type: {}", input.getJobType());
+            logger.info("Completed segment {} of {} for job type: {}", input.getSegment(), input.getTotalSegments(),
+                        input.getJobType());
         }
 
         return new LoadDynamodbResponse(workItems.size(), messagesQueued, input.getJobType());
