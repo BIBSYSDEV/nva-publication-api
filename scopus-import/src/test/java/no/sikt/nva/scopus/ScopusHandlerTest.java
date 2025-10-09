@@ -53,8 +53,8 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -66,7 +66,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.MessageAttribute;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -136,8 +135,6 @@ import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
-import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
-import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.sikt.nva.scopus.utils.ContentWrapper;
 import no.sikt.nva.scopus.utils.CristinGenerator;
@@ -208,7 +205,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -321,7 +317,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
                                           nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
-        assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(event, CONTEXT));
+        scopusHandler.handleRequest(event, CONTEXT);
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
 
@@ -447,18 +443,17 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnPublicationWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithInvalidIssn()
+    void shouldReturnPublicationWithUnconfirmedPublicationContextWhenScopusXmlWithInvalidIssn()
         throws IOException {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         scopusData.clearIssn();
         scopusData.addIssn(INVALID_ISSN, ISSN_TYPE_PRINT);
         var event = createNewScopusPublicationEvent();
-        Executable action = () -> scopusHandler.handleRequest(event, CONTEXT);
-        var exception = assertThrows(RuntimeException.class, action);
+        scopusHandler.handleRequest(event, CONTEXT);
         var expectedMessage = "no.unit.nva.model.exceptions.InvalidIssnException: The ISSN";
-        var actualMessage = exception.getMessage();
-        assertThat(actualMessage, containsString(expectedMessage));
+        var report = extractErrorReportFromS3Client();
+        assertThat(report, containsString(expectedMessage));
     }
 
     @Test
@@ -696,8 +691,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, getSrctype(), getEid());
         var event = createNewScopusPublicationEvent();
-        assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(event, CONTEXT));
-        assertThat(appender.getMessages(), containsString(expectedMessage));
+        scopusHandler.handleRequest(event, CONTEXT);
+        var report = extractErrorReportFromS3Client();
+
+        assertThat(report, containsString(expectedMessage));
     }
 
     @Test
@@ -705,12 +702,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
         var event = createNewScopusPublicationEvent();
-        Executable action = () -> scopusHandler.handleRequest(event, CONTEXT);
-        assertThrows(UnsupportedSrcTypeException.class, action);
-        var actualReport = extractActualReportFromS3Client();
-        var input = actualReport.get("input").asText();
-        assertThat(input, is(equalTo(scopusData.toXml())));
+        scopusHandler.handleRequest(event, CONTEXT);
+        var errorReportInput = extractInputFromErrorReportFromS3Client();
+        assertThat(errorReportInput, is(equalTo(scopusData.toXml())));
     }
+
 
     @Test
     void shouldSaveSuccessReportInS3() throws IOException {
@@ -891,18 +887,18 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should not generate publication when CitationType is:{0}")
     @EnumSource(value = CitationtypeAtt.class, names = {"AR", "BK", "CH", "CP", "ED", "ER", "LE", "NO", "RE",
         "SH"}, mode = Mode.EXCLUDE)
-    void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
+    void shouldNotCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.create(citationtypeAtt);
-        // eid is chosen because it seems to match the file name in the bucket.
         var eid = getEid();
         var event = createNewScopusPublicationEvent();
         var expectedMessage = String.format(
             PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE,
             citationtypeAtt.value(), eid);
-        assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(event, CONTEXT));
-        assertThat(appender.getMessages(), containsString(expectedMessage));
+        assertNull(scopusHandler.handleRequest(event, CONTEXT));
+        var report = extractErrorReportFromS3Client();
+        assertTrue(report.contains(expectedMessage));
     }
 
     @Test
@@ -914,7 +910,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var eid = getEid();
         var event = createNewScopusPublicationEvent();
         var expectedMessage = String.format(PublicationInstanceCreator.MISSING_CITATION_TYPE_MESSAGE, eid);
-        assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(event, CONTEXT));
+
+        assertNull(scopusHandler.handleRequest(event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
 
@@ -1154,7 +1151,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                         this.publicationChannelConnection, nvaCustomerConnection,
                                         fakeResourceServiceThrowingException,
                                         scopusUpdater, scopusFileConverter);
-        assertThrows(RuntimeException.class, () -> handler.handleRequest(event, CONTEXT));
+        assertNull(handler.handleRequest(event, CONTEXT));
+        assertNotNull(extractErrorReportFromS3Client());
     }
 
     @Test
@@ -1845,12 +1843,20 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return createSqsEvent(UriWrapper.fromUri(uri).toS3bucketPath().toString());
     }
 
-    private JsonNode extractActualReportFromS3Client()
+    private String extractErrorReportFromS3Client()
         throws JsonProcessingException {
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
         var uri = s3Driver.listAllFiles(UnixPath.of("ERROR")).getFirst();
         var content = s3Driver.getFile(uri);
-        return JsonUtils.dtoObjectMapper.readTree(content);
+        return JsonUtils.dtoObjectMapper.writeValueAsString(content);
+    }
+
+    private String extractInputFromErrorReportFromS3Client()
+        throws JsonProcessingException {
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
+        var uri = s3Driver.listAllFiles(UnixPath.of("ERROR")).getFirst();
+        var content = s3Driver.getFile(uri);
+        return JsonUtils.dtoObjectMapper.readTree(content).get("input").asText();
     }
 
     private static class FakeS3ClientThrowingException extends FakeS3Client {
