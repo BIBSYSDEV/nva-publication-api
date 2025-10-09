@@ -131,15 +131,14 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private static void setStatusImported(ImportCandidate importCandidate, Resource resource) {
-        importCandidate.setImportStatus(ImportStatusFactory.createImported(new Username(RESOURCE_OWNER_SIKT), createPublicationId(
-            resource)));
+        importCandidate.setImportStatus(ImportStatusFactory.createImported(new Username(RESOURCE_OWNER_SIKT),
+                                                                           createPublicationId(resource)));
     }
 
     private static URI createPublicationId(Resource resource) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(PUBLICATION)
-                   .addChild(
-                       resource.toString())
+                   .addChild(resource.getIdentifier().toString())
                    .getUri();
     }
 

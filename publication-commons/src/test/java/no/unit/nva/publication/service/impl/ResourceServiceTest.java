@@ -1661,7 +1661,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var scopusIdentifier = ScopusIdentifier.fromValue(randomString());
 
         assertEquals(Collections.emptyList(), resourceService.getPublicationsByScopusIdentifier(scopusIdentifier));
-        assertEquals(Collections.emptyList(), resourceService.getPublicationsByScopusIdentifier(scopusIdentifier));
     }
 
     @Test
