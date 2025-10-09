@@ -1663,6 +1663,36 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertEquals(Collections.emptyList(), resourceService.getPublicationsByScopusIdentifier(scopusIdentifier));
     }
 
+    @Test
+    void resourceVersionShouldNotBeWrittenBackToDatabase() throws BadRequestException {
+        var publication = Resource.fromPublication(randomPublication()).persistNew(resourceService, randomUserInstance());
+        var persistedVersion = Resource.fromPublication(publication).fetch(resourceService).orElseThrow().getVersion();
+
+        resourceService.refreshResource(publication.getIdentifier());
+
+        var version = super.client.scan(new ScanRequest(RESOURCES_TABLE_NAME)).getItems().stream()
+                          .filter(attribute -> attribute.get("type").getS().equals("Resource"))
+                          .findFirst()
+                          .orElseThrow()
+                          .get("version")
+                          .getS();
+
+        assertNotEquals(persistedVersion.toString(), version);
+    }
+
+    @Test
+    void shouldDeleteAllResourceAssociatedResources() throws ApiGatewayException {
+        var userInstance = randomUserInstance();
+        var publication = Resource.fromPublication(randomPublication()).persistNew(resourceService, userInstance);
+        var doiRequest = createDoiRequest(publication);
+        messageService.createMessage(doiRequest, userInstance, randomString());
+
+        resourceService.deleteAllResourceAssociatedEntries(publication.getPublisher().getId(), publication.getIdentifier());
+
+        assertTrue(client.scan(new ScanRequest(RESOURCES_TABLE_NAME).withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME))
+                       .getItems().isEmpty());
+    }
+
     private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {
         GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
         DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
