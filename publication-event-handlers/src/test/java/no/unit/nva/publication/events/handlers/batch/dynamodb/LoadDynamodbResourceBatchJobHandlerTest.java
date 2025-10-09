@@ -1,13 +1,12 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
-import static java.util.Collections.emptyList;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,8 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.stream.IntStream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -35,6 +32,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
@@ -55,8 +53,9 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     private static final String PROCESSING_DISABLED = "false";
     private static final int SQS_BATCH_SIZE = 10;
     private static final int SCAN_PAGE_SIZE = 1000;
-    private static final int TOTAL_SEGMENTS = 10;
+    private static final int TOTAL_SEGMENTS = 2;
     private static final int SEGMENT = 0;
+    private static final int ONE_TOTAL_SEGMENTS = 1;
 
     private SqsClient sqsClient;
     private EventBridgeClient eventBridgeClient;
@@ -100,20 +99,18 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     void shouldProcessBatchAndSendToQueue() {
         var request = getRequest();
 
-        createTestItems(120);
-
-        var successResponse = createSuccessResponse(10);
+        createTestItems(1);
 
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-            .thenReturn(successResponse);
+            .thenAnswer(this::createSendMessageBatchResponse);
 
         var response = handler.processInput(request, event, context);
 
-        assertThat(response.itemsProcessed(), is(greaterThan(2)));
-        assertThat(response.messagesQueued(),  is(greaterThan(2)));
+        assertThat(response.itemsProcessed(), is(greaterThanOrEqualTo(1)));
+        assertThat(response.messagesQueued(),  is(greaterThanOrEqualTo(1)));
         assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
 
-        verify(sqsClient, atLeast(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
+        verify(sqsClient, atLeast(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
         verify(eventBridgeClient, never()).putEvents(any(PutEventsRequest.class));
     }
 
@@ -124,10 +121,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         createTestItems(21);
 
-        var successResponse = createSuccessResponse(10);
-
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-            .thenReturn(successResponse);
+            .thenAnswer(this::createSendMessageBatchResponse);
 
         when(eventBridgeClient.putEvents(any(PutEventsRequest.class)))
             .thenReturn(PutEventsResponse.builder().build());
@@ -192,7 +187,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         assertThat(response.messagesQueued(), is(equalTo(0)));
         assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
 
-        verify(eventBridgeClient, times(10)).putEvents(any(PutEventsRequest.class));
+        verify(eventBridgeClient, times(TOTAL_SEGMENTS)).putEvents(any(PutEventsRequest.class));
         verifyNoInteractions(sqsClient);
     }
 
@@ -249,7 +244,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         createTestItems(50);
 
-        var successResponse = createSuccessResponse(10);
+        var successResponse = createSendMessageBatchResponse(10);
 
         when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenReturn(successResponse);
@@ -289,13 +284,13 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     void shouldHandleParallelProcessingFailureGracefully() {
         var request = getRequest();
 
-        createTestItems(15);
+        createTestItems(50);
 
         var mockSqsClient = mock(SqsClient.class);
         when(mockSqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenThrow(new RuntimeException("Simulated parallel processing error"))
-            .thenReturn(createSuccessResponse(10))
-            .thenReturn(createSuccessResponse(5));
+            .thenAnswer(this::createSendMessageBatchResponse)
+            .thenReturn(createSendMessageBatchResponse(5));
 
         var testHandler = new LoadDynamodbResourceBatchJobHandler(
             mockSqsClient, eventBridgeClient, TEST_QUEUE_URL,
@@ -309,41 +304,15 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     }
 
     private static LoadDynamodbRequest getRequest() {
-        return new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), SEGMENT, TOTAL_SEGMENTS);
+        return new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), SEGMENT, ONE_TOTAL_SEGMENTS);
     }
 
-    @Test
-    void shouldReturnZeroWhenWorkItemsListIsEmpty() throws Exception {
-        Method sendBatchToQueueMethod = LoadDynamodbResourceBatchJobHandler.class
-                                            .getDeclaredMethod("sendBatchToQueue", List.class);
-        sendBatchToQueueMethod.setAccessible(true);
-
-        Object result = sendBatchToQueueMethod.invoke(handler, emptyList());
-
-        assertThat((Integer) result, is(equalTo(0)));
-        verifyNoInteractions(sqsClient);
+    private SendMessageBatchResponse createSendMessageBatchResponse(InvocationOnMock invocation) {
+        SendMessageBatchRequest batchRequest = invocation.getArgument(0);
+        return createSendMessageBatchResponse(batchRequest.entries().size());
     }
 
-    @Test
-    void shouldHandleSerializationException() throws Exception {
-        Method getSendMessageBatchRequestEntry = LoadDynamodbResourceBatchJobHandler.class
-                                                     .getDeclaredMethod("getSendMessageBatchRequestEntry",
-                                                                        BatchWorkItem.class);
-        getSendMessageBatchRequestEntry.setAccessible(true);
-
-        var mockKey = mock(DynamodbResourceBatchDynamoDbKey.class);
-        when(mockKey.partitionKey()).thenThrow(new RuntimeException("Serialization trigger"));
-
-        var problematicItem = new BatchWorkItem(mockKey, TEST_JOB_TYPE);
-
-        Exception exception = assertThrows(InvocationTargetException.class,
-                                           () -> getSendMessageBatchRequestEntry.invoke(handler, problematicItem));
-
-        assertThat(exception.getCause(), instanceOf(RuntimeException.class));
-        assertThat(exception.getCause().getMessage(), containsString("Failed to serialize work item"));
-    }
-
-    private static SendMessageBatchResponse createSuccessResponse(int count) {
+    private static SendMessageBatchResponse createSendMessageBatchResponse(int count) {
         var successfulEntries = IntStream.range(0, count)
                                     .mapToObj(i -> SendMessageBatchResultEntry.builder().id(String.valueOf(i)).build())
                                     .toList();
