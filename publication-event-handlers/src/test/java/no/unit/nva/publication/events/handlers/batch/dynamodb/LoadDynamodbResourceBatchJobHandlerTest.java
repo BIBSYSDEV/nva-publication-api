@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -121,10 +122,10 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         createTestItems(21);
 
-        when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+        lenient().when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
             .thenAnswer(this::createSendMessageBatchResponse);
 
-        when(eventBridgeClient.putEvents(any(PutEventsRequest.class)))
+        lenient().when(eventBridgeClient.putEvents(any(PutEventsRequest.class)))
             .thenReturn(PutEventsResponse.builder().build());
 
         var smallScanPAge = 10;
