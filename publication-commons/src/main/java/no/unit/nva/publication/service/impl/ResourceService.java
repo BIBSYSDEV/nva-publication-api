@@ -280,14 +280,14 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public ScanResultWrapper scanResourcesRaw(int pageSize, Map<String, AttributeValue> startMarker,
-                                           List<KeyField> types) {
+                                              List<KeyField> types) {
         return scanResourcesRaw(pageSize, startMarker, types, null, null);
     }
 
     public ScanResultWrapper scanResourcesRaw(int pageSize, Map<String, AttributeValue> startMarker,
-                                           List<KeyField> types, Integer segment, Integer totalSegments) {
-        var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types, segment,
-                                                                         totalSegments);
+                                              List<KeyField> types, Integer segment, Integer totalSegments) {
+        var scanRequest = createPrimaryIndexScanRequestThatFiltersOutIdentityEntries(
+            pageSize, startMarker, types, segment, totalSegments);
         var scanResult = getClient().scan(scanRequest);
         var isTruncated = thereAreMorePagesToScan(scanResult);
         return new ScanResultWrapper(scanResult.getItems(), scanResult.getLastEvaluatedKey(), isTruncated);
@@ -299,7 +299,8 @@ public class ResourceService extends ServiceWithTransactions {
         writeToDynamoInBatches(writeRequests);
     }
 
-    public void refreshResourcesByKeys(Collection<Map<String, AttributeValue>> keys, CristinUnitsUtil cristinUnitsUtil) {
+    public void refreshResourcesByKeys(Collection<Map<String, AttributeValue>> keys,
+                                       CristinUnitsUtil cristinUnitsUtil) {
         var entities = getEntities(keys);
         refreshResources(entities, cristinUnitsUtil);
     }
@@ -691,16 +692,21 @@ public class ResourceService extends ServiceWithTransactions {
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
                                                                        Map<String, AttributeValue> startMarker,
                                                                        List<KeyField> types) {
-        return createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types, null, null);
+        return new ScanRequest().withTableName(tableName)
+                              .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                              .withLimit(pageSize)
+                              .withExclusiveStartKey(startMarker)
+                              .withFilterExpression(Dao.scanFilterExpressionForDataEntries(types))
+                              .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
+                              .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
     }
 
-    private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
-                                                                       Map<String, AttributeValue> startMarker,
-                                                                       List<KeyField> types,
-                                                                       Integer segment,
-                                                                       Integer totalSegments) {
+    private ScanRequest createPrimaryIndexScanRequestThatFiltersOutIdentityEntries(int pageSize,
+                                                                                   Map<String, AttributeValue> startMarker,
+                                                                                   List<KeyField> types,
+                                                                                   Integer segment,
+                                                                                   Integer totalSegments) {
         var scanRequest = new ScanRequest().withTableName(tableName)
-                              .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
                               .withLimit(pageSize)
                               .withExclusiveStartKey(startMarker)
                               .withFilterExpression(Dao.scanFilterExpressionForDataEntries(types))
