@@ -1,60 +1,60 @@
 {
   "type" : "Publication",
   "identifier" : "c443030e-9d56-43d8-afd1-8c89105af555",
-  "status" : "PUBLISHED_METADATA",
+  "status" : "DRAFT_FOR_DELETION",
   "resourceOwner" : {
-    "owner" : "D73NMwYYzIcr9ZqL9o",
-    "ownerAffiliation" : "https://www.example.org/f4bbe536-5663-43d1-9992-480e4725f0f9"
+    "owner" : "LORCkbz30tHrpHOkTTH",
+    "ownerAffiliation" : "https://www.example.org/fd3e53ba-c300-4a97-a09c-c4ab78efcfe7"
   },
   "publisher" : {
     "type" : "Organization",
-    "id" : "https://www.example.org/4ff6a9a2-bef2-466a-844e-0276c1197bbe"
+    "id" : "https://localhost/customer/yp9VFrQMZy0LXp5sg"
   },
-  "createdDate" : "1975-02-18T01:47:34.557Z",
-  "modifiedDate" : "2023-03-04T13:58:04.466Z",
-  "publishedDate" : "2023-10-16T07:12:27.656Z",
-  "indexedDate" : "2007-07-31T19:01:52.926Z",
-  "handle" : "https://www.example.org/e85b7bfb-6ab7-49c6-9bcf-936194be5afd",
-  "doi" : "https://doi.org/10.1234/et",
-  "link" : "https://www.example.org/1e692bc4-b143-4a64-89fe-76a093b5bed8",
+  "createdDate" : "1997-08-22T11:47:59.035Z",
+  "modifiedDate" : "1994-04-24T17:59:15.713Z",
+  "publishedDate" : "1975-06-09T10:31:03.336Z",
+  "indexedDate" : "2002-10-02T10:02:23.997Z",
+  "handle" : "https://www.example.org/943cd1bb-692b-44c6-86c8-4307b0378883",
+  "doi" : "https://doi.org/10.1234/excepturi",
+  "link" : "https://www.example.org/8797e3fb-59ed-441a-806a-8060a2b5fc05",
   "entityDescription" : {
     "type" : "EntityDescription",
-    "mainTitle" : "aeWQgBcWIY01t",
+    "mainTitle" : "Ku9CL2MZI7gn",
     "alternativeTitles" : {
-      "fr" : "6aSIvIdyvljMv"
+      "cs" : "UXW6YpuRrQR0RFi"
     },
     "language" : "http://lexvo.org/id/iso639-3/und",
     "publicationDate" : {
       "type" : "PublicationDate",
-      "year" : "7OO0u3mm2oTj9rG",
-      "month" : "oNTgLjjIkl",
-      "day" : "2AVXTV1hMfJegRrr1e5"
+      "year" : "tEXg3KwSG9YW",
+      "month" : "LgoEBSNWYd",
+      "day" : "LgFsu6dfVte6Q2H"
     },
     "contributors" : [ {
       "type" : "Contributor",
       "identity" : {
         "type" : "Identity",
-        "id" : "https://localhost/person/2b899097-46a2-4087-ad4b-efd9f8184832",
-        "name" : "E3ND3FY5xH5f6iah",
-        "nameType" : "Personal",
-        "orcId" : "lmLglnQMY6WC",
-        "verificationStatus" : "Verified",
+        "id" : "https://example.org/person/361426dd-3986-408d-9124-bfbc6ff5af05",
+        "name" : "n79zI3LEIwam5tZrQ",
+        "nameType" : "Organizational",
+        "orcId" : "vR0qkyZMyCXFopJw5CY",
+        "verificationStatus" : "NotVerified",
         "additionalIdentifiers" : [ {
           "type" : "AdditionalIdentifier",
-          "sourceName" : "x88UDzijeq4T",
-          "value" : "K16Ak6jpcbFln"
+          "sourceName" : "TobssphV3FK9c",
+          "value" : "wbRFzRtYcdYNe"
         }, {
           "type" : "AdditionalIdentifier",
-          "sourceName" : "zAnL5rh6b4B1gH40",
-          "value" : "mKQVJehqceOlIIjYZf"
+          "sourceName" : "Etn4nx2ErsGz",
+          "value" : "p42NvF7SVTcYcg"
         } ]
       },
       "affiliations" : [ {
         "type" : "Organization",
-        "id" : "https://localhost/organization/f75b53b4-dcae-4745-af22-6d6581a5cff9"
+        "id" : "https://example.org/organization/a493fa94-07b0-4e7d-9dff-55e71890d86c"
       } ],
       "role" : {
-        "type" : "RegistrationAuthority"
+        "type" : "ExhibitionDesigner"
       },
       "sequence" : 1,
       "correspondingAuthor" : false
@@ -62,91 +62,92 @@
       "type" : "Contributor",
       "identity" : {
         "type" : "Identity",
-        "id" : "https://localhost/person/eaa5edd8-5794-4abc-b312-371a42b788e7",
-        "name" : "DMXcqtqGkFiQguFNlv",
-        "nameType" : "Personal",
-        "orcId" : "buB0CRyMra7",
-        "verificationStatus" : "NotVerified",
+        "id" : "https://example.org/person/f710f31b-4421-4682-ad70-a33daf747ed4",
+        "name" : "v2CFDCZnCPETb",
+        "nameType" : "Organizational",
+        "orcId" : "Qtae8OjiK2j",
+        "verificationStatus" : "Verified",
         "additionalIdentifiers" : [ {
           "type" : "AdditionalIdentifier",
-          "sourceName" : "ccfro2B7DfIvsZ7tuRw",
-          "value" : "i1z0YKMi5MZhWG65Q1f"
+          "sourceName" : "o9PSBwNb2TF",
+          "value" : "D12y118VgbtbVK0W"
         }, {
           "type" : "AdditionalIdentifier",
-          "sourceName" : "5gsNAv5OVsvS",
-          "value" : "g8pvgKjdCxkgl0st"
+          "sourceName" : "bnNKCU7hPTSRek",
+          "value" : "YuHujjf7VNcE9bg7Q"
         } ]
       },
       "affiliations" : [ {
         "type" : "Organization",
-        "id" : "https://localhost/organization/85a52052-2e84-4e68-ad43-c256d1ef4c1a"
+        "id" : "https://example.org/organization/c1ae1b77-4b7b-4547-b6ec-886aae11d7ce"
       } ],
       "role" : {
-        "type" : "Dramaturge"
+        "type" : "Supervisor"
       },
       "sequence" : 2,
       "correspondingAuthor" : false
     } ],
     "alternativeAbstracts" : {
-      "af" : "Il7XVVqSH0h1obE2n"
+      "en" : "19uR6OPv1ayeb9QY"
     },
-    "npiSubjectHeading" : "Lki1y4xwL9",
-    "tags" : [ "BF4P1imISpAtyDI6Xy1" ],
-    "description" : "5O7E1fGoqfaH5kW57fa",
+    "npiSubjectHeading" : "9IZABOojg4jwnQQWKQb",
+    "tags" : [ "aGWYNLjIcqxtk" ],
+    "description" : "IH2WMaCRXrPMvpI3",
     "reference" : {
       "type" : "Reference",
       "publicationContext" : {
         "type" : "Artistic"
       },
-      "doi" : "https://www.example.org/97ca0e5d-1663-4345-9b22-cd71a6574023",
+      "doi" : "https://www.example.org/ea4f3fde-45a0-4679-bb86-40786a9a1224",
       "publicationInstance" : {
         "type" : "MovingPicture",
         "subtype" : {
-          "type" : "InteractiveFilm"
+          "type" : "MovingPictureOther",
+          "description" : "6vxD4tuUt14bngA"
         },
-        "description" : "tioaLyyYOHnaEhhbeq",
+        "description" : "vXnFK2ylumZjm",
         "outputs" : [ {
           "type" : "Broadcast",
           "publisher" : {
             "type" : "UnconfirmedPublisher",
-            "name" : "omUKISDdBB6",
+            "name" : "xtWJYsTHmK6",
             "valid" : true
           },
           "date" : {
             "type" : "Instant",
-            "value" : "1975-04-15T02:07:15.217Z"
+            "value" : "1992-06-04T17:06:55.396Z"
           },
-          "sequence" : 874214670
+          "sequence" : 1154632189
         }, {
           "type" : "CinematicRelease",
           "place" : {
             "type" : "UnconfirmedPlace",
-            "name" : "IzMpL1NAwEpoTWpsb2",
-            "country" : "aO148OuKFeh"
+            "name" : "SkKkOMvkE7Qrb",
+            "country" : "pEHTMbhfuv2"
           },
           "date" : {
             "type" : "Instant",
-            "value" : "2015-11-01T13:45:12.727Z"
+            "value" : "1998-04-03T10:18:07.599Z"
           },
-          "sequence" : 1711203836
+          "sequence" : 1484125636
         }, {
           "type" : "OtherRelease",
-          "description" : "uQsiDx2l7yEZXj5t1x",
+          "description" : "nbX2PbB7FQT7GL8",
           "place" : {
             "type" : "UnconfirmedPlace",
-            "name" : "2xutzatNx27R6",
-            "country" : "hRpU96p4ufH1e2"
+            "name" : "j9b90jIWz4BSUq",
+            "country" : "nrlTBm5r25OT"
           },
           "publisher" : {
             "type" : "UnconfirmedPublisher",
-            "name" : "63XhCEuyj8nDqh0oMZ",
+            "name" : "VAdGkyEMDf",
             "valid" : true
           },
           "date" : {
             "type" : "Instant",
-            "value" : "1976-02-04T18:42:55.300Z"
+            "value" : "1990-03-08T04:26:38.799Z"
           },
-          "sequence" : 2089961405
+          "sequence" : 1374280894
         } ],
         "duration" : {
           "type" : "NullDuration"
@@ -156,153 +157,190 @@
         }
       }
     },
-    "metadataSource" : "https://www.example.org/97b1522d-6bce-40bf-9d37-088d53485230",
-    "abstract" : "RKVafj6ivgu4qCefN5"
+    "metadataSource" : "https://www.example.org/f3939d8a-1952-45ed-8f63-08cbdb15932f",
+    "abstract" : "RLb4hzZLLNd5"
   },
   "projects" : [ {
     "type" : "ResearchProject",
-    "id" : "https://localhost/project/2c085387-3342-419c-8d15-666c4f931277",
-    "name" : "Y2KVSTAu0xaGUBH",
+    "id" : "https://example.org/project/b6d769b7-c742-4f19-8fe5-904993d6cc3f",
+    "name" : "brX11GCWr81H",
     "approvals" : [ {
       "type" : "Approval",
-      "approvalDate" : "1986-02-26T00:18:13.453Z",
-      "approvedBy" : "REK",
-      "approvalStatus" : "NOTAPPLIED",
-      "applicationCode" : "YWwNddogy6tmLuOr"
+      "approvalDate" : "2015-06-18T11:19:18.139Z",
+      "approvedBy" : "NMA",
+      "approvalStatus" : "REJECTION",
+      "applicationCode" : "78vD83gYcSjGS"
     } ]
   } ],
   "fundings" : [ {
     "type" : "UnconfirmedFunding",
-    "source" : "https://localhost/funding-sources/b447d7e7-69fc-44b1-9ec3-2ccca261874e",
-    "identifier" : "dgsAqbUAxF",
+    "source" : "https://example.org/funding-sources/19878341-7ab1-4a7e-8e46-9a486f2c4c74",
+    "identifier" : "NWzNEJMrm7gXXA",
     "labels" : {
-      "pl" : "RI15978OadtVdkh"
+      "it" : "XjnSbqm4037hgiZ"
     },
     "fundingAmount" : {
-      "currency" : "GBP",
-      "amount" : 502426836
+      "currency" : "NOK",
+      "amount" : 1250550639
     },
-    "activeFrom" : "2014-02-21T09:33:40.252Z",
-    "activeTo" : "2018-09-14T19:42:53.485Z"
+    "activeFrom" : "1980-06-21T06:10:44.561Z",
+    "activeTo" : "2004-01-15T11:54:40.498Z"
   }, {
     "type" : "ConfirmedFunding",
-    "source" : "https://localhost/funding-sources/d664096c-a690-4ff4-898c-83346f999d18",
-    "id" : "https://localhost/verified-funding/9952e010-a5c4-4fc7-8183-431656bcaba4",
-    "identifier" : "SGk1aExBzicIaq4L",
+    "source" : "https://example.org/funding-sources/7aad25a0-1fc9-46ee-a014-b38c4b5237b6",
+    "id" : "https://example.org/verified-funding/be5de9dc-e13a-4d73-b1ef-cc8bc959b173",
+    "identifier" : "6wUhkFCHuwAr3eE6Geh",
     "labels" : {
-      "fr" : "kxX7BCwMVsR1NSEYYaR"
+      "cs" : "kjkiReO27zEWbGpNTL0"
     },
     "fundingAmount" : {
-      "currency" : "GBP",
-      "amount" : 1207305694
+      "currency" : "NOK",
+      "amount" : 1888098594
     },
-    "activeFrom" : "2009-02-24T23:24:28.220Z",
-    "activeTo" : "2024-11-02T19:50:31.823Z"
+    "activeFrom" : "2021-08-19T22:20:50.825Z",
+    "activeTo" : "2023-06-29T10:19:14.393Z"
   } ],
   "additionalIdentifiers" : [ {
-    "type" : "ScopusIdentifier",
-    "value" : "IqfONV2MZwtUJM1KkzG",
-    "sourceName" : "lfzzste84egxqzr@bt4bsxjm63tuhydxb"
-  }, {
     "type" : "HandleIdentifier",
-    "value" : "https://www.example.org/ae6a3a7b-6de5-4c93-a26b-2becbc5c8161",
-    "sourceName" : "qmvjn5vdxy2ovtvp@hgq5ap1xdbb"
+    "sourceName" : "hdhmnnyiwbs@33pat6aivs45",
+    "value" : "https://www.example.org/76d009d7-4c05-482e-9ba0-c2b0fa055d97"
   }, {
-    "type" : "AdditionalIdentifier",
-    "sourceName" : "Bxd3v8JGPX9NFopKv",
-    "value" : "K5gziBKtRUKCOIvf5"
+    "type" : "ScopusIdentifier",
+    "sourceName" : "whh7luesd4t@unkuislj8o2i0l",
+    "value" : "RcqXRQkV4PNdi0"
   }, {
     "type" : "CristinIdentifier",
-    "value" : "577187525",
-    "sourceName" : "2fnxambcl0kkmq2c@ptghd8wdguddg"
+    "sourceName" : "cristin@oejffcwbol1",
+    "value" : "148969737"
+  }, {
+    "type" : "AdditionalIdentifier",
+    "sourceName" : "ihJdvrhH3UO",
+    "value" : "VrK5MO1BWgfkbJ4BB"
   } ],
-  "subjects" : [ "https://www.example.org/ea5f08f4-6106-45ae-ac12-ac196431fe0f" ],
+  "subjects" : [ "https://www.example.org/8c2842fc-4522-4936-a053-99bddc4f435f" ],
   "associatedArtifacts" : [ {
-    "type" : "PublishedFile",
-    "identifier" : "8a1d6dbf-0abe-46e7-a25d-041b81db7083",
-    "name" : "lNWL1E4KZcUey9J",
-    "mimeType" : "0cVZnmOZzRzc",
-    "size" : 1803334121,
-    "license" : "https://www.example.com/ls2cjt0txeantkzsdnf",
-    "administrativeAgreement" : false,
-    "publisherVersion" : "AcceptedVersion",
+    "type" : "PendingOpenFile",
+    "identifier" : "aa5d25ce-ce80-428d-bed0-06c781ba6749",
+    "name" : "WoH1TF39ApuueRW",
+    "mimeType" : "fC2O28sYYPN8WgL",
+    "size" : 1168404245,
+    "license" : "https://www.example.com/Af7I2X3t5xYF",
+    "publisherVersion" : "PublishedVersion",
+    "embargoDate" : "2025-09-16T15:44:01.955829Z",
     "rightsRetentionStrategy" : {
       "type" : "NullRightsRetentionStrategy",
-      "configuredType" : "Unknown"
+      "configuredType" : "NullRightsRetentionStrategy"
     },
-    "legalNote" : "UwliIwBO7dNqnEXKmm",
-    "publishedDate" : "2011-11-03T23:21:43.462Z",
+    "legalNote" : "raAuHPcbWqpYUH",
     "uploadDetails" : {
       "type" : "UserUploadDetails",
-      "uploadedBy" : "341628338@v2Mt2L2ObZCuqDcYl",
-      "uploadedDate" : "2004-02-10T00:53:45.628Z"
-    },
-    "visibleForNonOwner" : true
+      "uploadedBy" : "qQ7INQQrxfOgDo4j9d",
+      "uploadedDate" : "2025-09-16T15:44:01.956334Z"
+    }
   }, {
     "type" : "OpenFile",
-    "identifier" : "b6fb0256-24a8-4a6a-9bd6-0db8fa81c075",
-    "name" : "XHq4cVEj02Gsr0OdjZY",
-    "mimeType" : "Lk1at4Hnp2K",
-    "size" : 459171439,
-    "license" : "https://www.example.com/y1d8gf5rp6q1h",
-    "administrativeAgreement" : false,
+    "identifier" : "923109d9-7335-4536-818b-afcb827bd38f",
+    "name" : "AicG8ahjsoBHht",
+    "mimeType" : "5bsHCMsjidD",
+    "size" : 1628004716,
+    "license" : "https://www.example.com/e2Z7WQkjKave",
     "publisherVersion" : "PublishedVersion",
-    "embargoDate" : "2024-11-13T07:44:08.522756Z",
+    "embargoDate" : "2025-09-16T15:44:01.956950Z",
     "rightsRetentionStrategy" : {
       "type" : "NullRightsRetentionStrategy",
       "configuredType" : "NullRightsRetentionStrategy"
     },
-    "legalNote" : "WVhawiLz8XIw",
-    "publishedDate" : "2024-11-13T07:44:08.522798Z",
+    "legalNote" : "Qm02vUrkN66GIisQps",
+    "publishedDate" : "2025-09-16T15:44:01.957441Z",
     "uploadDetails" : {
       "type" : "UserUploadDetails",
-      "uploadedBy" : "tcHTUQKntMWBAM",
-      "uploadedDate" : "2024-11-13T07:44:08.522797Z"
+      "uploadedBy" : "eRDkqlunFT",
+      "uploadedDate" : "2025-09-16T15:44:01.957433Z"
+    }
+  }, {
+    "type" : "PendingInternalFile",
+    "identifier" : "1c7a42f9-4bd3-4b52-b2c1-f8b4e5fac7a8",
+    "name" : "3eKwSgU3HFvu",
+    "mimeType" : "iphmfk15P2EtdF2c",
+    "size" : 375056362,
+    "license" : "https://www.example.com/xC5kHOeyftU",
+    "publisherVersion" : "PublishedVersion",
+    "embargoDate" : "2025-09-16T15:44:01.958004Z",
+    "rightsRetentionStrategy" : {
+      "type" : "NullRightsRetentionStrategy",
+      "configuredType" : "NullRightsRetentionStrategy"
     },
-    "visibleForNonOwner" : true
+    "legalNote" : "qh6OvUDJlACO",
+    "uploadDetails" : {
+      "type" : "UserUploadDetails",
+      "uploadedBy" : "QhlAMzBkEw",
+      "uploadedDate" : "2025-09-16T15:44:01.958488Z"
+    }
   }, {
     "type" : "InternalFile",
-    "identifier" : "eb1a831e-f3fe-46b7-a7d0-ebff4b5d551d",
-    "name" : "vz5tFMhLGJz",
-    "mimeType" : "8TArhzFSArPUJlK",
-    "size" : 1963802598,
-    "license" : "https://www.example.com/nhgmfbebglhnz",
-    "administrativeAgreement" : false,
+    "identifier" : "1c74559c-5ea4-435e-9b9d-98fad927d4b4",
+    "name" : "OeMraYPZzGJxC9BD",
+    "mimeType" : "zV8EUAjehewDxBAzM",
+    "size" : 145665587,
+    "license" : "https://www.example.com/EeU4SGucocHrBjjl8zp",
     "publisherVersion" : "PublishedVersion",
-    "embargoDate" : "2024-11-13T07:44:08.522847Z",
+    "embargoDate" : "2025-09-16T15:44:01.960712Z",
     "rightsRetentionStrategy" : {
       "type" : "NullRightsRetentionStrategy",
       "configuredType" : "NullRightsRetentionStrategy"
     },
-    "legalNote" : "4Sh2lo1fLpZ9VT",
-    "publishedDate" : "2024-11-13T07:44:08.522887Z",
+    "legalNote" : "h1J0Ymz9Uo3uAgwwY",
+    "publishedDate" : "2025-09-16T15:44:01.961367Z",
     "uploadDetails" : {
       "type" : "UserUploadDetails",
-      "uploadedBy" : "wZTmeq4FpzXMmNelRi",
-      "uploadedDate" : "2024-11-13T07:44:08.522887Z"
-    },
-    "visibleForNonOwner" : false
+      "uploadedBy" : "LQRYV7aSok",
+      "uploadedDate" : "2025-09-16T15:44:01.961357Z"
+    }
   }, {
     "type" : "AssociatedLink",
-    "id" : "https://www.example.com/5wo1gmLWsEhM",
-    "name" : "ucLm140KsM",
-    "description" : "kQ0l1FlD6qyNMGvbr"
+    "id" : "https://www.example.com/NEp9s3iFf31FSqH",
+    "name" : "NAYJKijpGLMqNm",
+    "description" : "QFQQtkT3jv",
+    "relation" : "sameAs"
+  }, {
+    "type" : "HiddenFile",
+    "identifier" : "e6ca25ef-8390-4603-be9e-413c42ba152d",
+    "name" : "oy0Ww7GAuD5Kns",
+    "mimeType" : "DrF6HacHiOc1ny2ukP5",
+    "size" : 2058092200,
+    "license" : "https://www.example.com/PvAQGhlEnrCCgi6ACF",
+    "publisherVersion" : "PublishedVersion",
+    "embargoDate" : "2025-09-16T15:44:02.002762Z",
+    "rightsRetentionStrategy" : {
+      "type" : "NullRightsRetentionStrategy",
+      "configuredType" : "NullRightsRetentionStrategy"
+    },
+    "legalNote" : "VAUPHj40nWaKYak",
+    "uploadDetails" : {
+      "type" : "UserUploadDetails",
+      "uploadedBy" : "Fgsh7pH5pxc",
+      "uploadedDate" : "2025-09-16T15:44:02.003275Z"
+    }
   } ],
-  "rightsHolder" : "OsHYH8hYiQ0cL",
-  "duplicateOf" : "https://www.example.org/2f736824-f01e-43cc-9388-23d752789c91",
+  "rightsHolder" : "gJTE9PZWbFlwoZ3",
+  "duplicateOf" : "https://www.example.org/5534b058-24d2-4ecb-97f6-9b9274cee180",
   "publicationNotes" : [ {
     "type" : "PublicationNote",
-    "note" : "NqjuzA9Jwk6xzL2A"
+    "note" : "li59Ndz9NbW9pTbtm"
   }, {
     "type" : "UnpublishingNote",
-    "note" : "BFTZN2hZ61Jsd",
-    "createdBy" : "IYyEjgYOhKh1s",
-    "createdDate" : "2009-08-02T02:00:45.695Z"
+    "note" : "jL7fXnXOfUpsiHSJlHb",
+    "createdBy" : "KjZU49ogsBI",
+    "createdDate" : "2007-09-27T01:34:40.223Z"
   } ],
   "curatingInstitutions" : [ {
-    "id" : "https://www.example.org/8db62349-6964-4eb0-b6cf-b09acec77b30",
-    "contributorCristinIds" : [ "https://www.example.org/436450d7-d4ce-4d37-b716-76212f30866a" ]
+    "id" : "https://example.org/organization/c1ae1b77-4b7b-4547-b6ec-886aae11d7ce",
+    "contributorCristinIds" : [ "https://example.org/person/f710f31b-4421-4682-ad70-a33daf747ed4" ]
+  }, {
+    "id" : "https://example.org/organization/a493fa94-07b0-4e7d-9dff-55e71890d86c",
+    "contributorCristinIds" : [ "https://example.org/person/361426dd-3986-408d-9124-bfbc6ff5af05" ]
   } ],
   "importDetails" : [ ],
+  "pendingOpenFileCount" : 1,
   "modelVersion" : "0.23.3"
 }
