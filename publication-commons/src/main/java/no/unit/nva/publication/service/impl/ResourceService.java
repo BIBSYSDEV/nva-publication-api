@@ -62,6 +62,7 @@ import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.ScanResultWrapper;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
@@ -270,12 +271,26 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker,
-                                               List<KeyField> types) {
+                                               Collection<KeyField> types) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types);
         var scanResult = getClient().scan(scanRequest);
         var values = extractDatabaseEntries(scanResult.getItems());
         var isTruncated = thereAreMorePagesToScan(scanResult);
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
+    }
+
+    public ScanResultWrapper scanResourcesRaw(int pageSize, Map<String, AttributeValue> startMarker,
+                                              Collection<KeyField> types) {
+        return scanResourcesRaw(pageSize, startMarker, types, null, null);
+    }
+
+    public ScanResultWrapper scanResourcesRaw(int pageSize, Map<String, AttributeValue> startMarker,
+                                              Collection<KeyField> types, Integer segment, Integer totalSegments) {
+        var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types, segment,
+                                                                         totalSegments);
+        var scanResult = getClient().scan(scanRequest);
+        var isTruncated = thereAreMorePagesToScan(scanResult);
+        return new ScanResultWrapper(scanResult.getItems(), scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
     public void refreshResources(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
@@ -675,14 +690,28 @@ public class ResourceService extends ServiceWithTransactions {
 
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
                                                                        Map<String, AttributeValue> startMarker,
-                                                                       List<KeyField> types) {
-        return new ScanRequest().withTableName(tableName)
-                   .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                   .withLimit(pageSize)
-                   .withExclusiveStartKey(startMarker)
-                   .withFilterExpression(Dao.scanFilterExpressionForDataEntries(types))
-                   .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
-                   .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
+                                                                       Collection<KeyField> types) {
+        return createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types, null, null);
+    }
+
+    private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
+                                                                       Map<String, AttributeValue> startMarker,
+                                                                       Collection<KeyField> types,
+                                                                       Integer segment,
+                                                                       Integer totalSegments) {
+        var scanRequest = new ScanRequest().withTableName(tableName)
+                              .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                              .withLimit(pageSize)
+                              .withExclusiveStartKey(startMarker)
+                              .withFilterExpression(Dao.scanFilterExpressionForDataEntries(types))
+                              .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
+                              .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
+
+        if (nonNull(segment) && nonNull(totalSegments)) {
+            scanRequest.withSegment(segment).withTotalSegments(totalSegments);
+        }
+
+        return scanRequest;
     }
 
     private List<Entity> extractDatabaseEntries(Collection<Map<String, AttributeValue>> items) {

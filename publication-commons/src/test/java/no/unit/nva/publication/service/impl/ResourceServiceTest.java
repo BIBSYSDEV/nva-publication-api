@@ -19,6 +19,7 @@ import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeVa
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -41,6 +42,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -1588,6 +1590,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                         new LogOrganization(randomUri(), randomString(), Map.of())));
         assertDoesNotThrow(() -> resourceService.scanResources(BIG_PAGE, ListingResult.empty().getStartMarker(),
                                                                Collections.emptyList()));
+    }
+
+    @Test
+    void scanResourcesRawShouldReturnRawItems() throws BadRequestException {
+        createPersistedPublicationWithDoi();
+        var result = resourceService.scanResourcesRaw(BIG_PAGE, null, Collections.emptyList());
+
+        assertFalse(result.items().isEmpty());
+        assertTrue(result.items().stream().allMatch(item -> item.containsKey(PRIMARY_KEY_PARTITION_KEY_NAME)));
     }
 
     @Test
