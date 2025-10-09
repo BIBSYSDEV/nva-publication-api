@@ -2,6 +2,7 @@ package no.unit.nva.publication.model;
 
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Collections;
 import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
@@ -28,6 +29,6 @@ public record SearchResourceApiResponse(int totalHits, List<ResourceWithId> hits
 
     @Override
     public List<ResourceWithId> hits() {
-        return nonNull(hits) ? hits : List.of();
+        return nonNull(hits) ? hits : Collections.emptyList();
     }
 }
