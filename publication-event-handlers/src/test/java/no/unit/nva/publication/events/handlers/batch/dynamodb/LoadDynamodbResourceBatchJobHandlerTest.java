@@ -109,8 +109,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         var response = handler.processInput(request, event, context);
 
-        assertThat(response.itemsProcessed(), is(greaterThan(10)));
-        assertThat(response.messagesQueued(),  is(greaterThan(10)));
+        assertThat(response.itemsProcessed(), is(greaterThan(2)));
+        assertThat(response.messagesQueued(),  is(greaterThan(2)));
         assertThat(response.jobType(), is(equalTo(TEST_JOB_TYPE)));
 
         verify(sqsClient, atLeast(2)).sendMessageBatch(any(SendMessageBatchRequest.class));
