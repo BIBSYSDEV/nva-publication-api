@@ -65,7 +65,6 @@ public class FramedJsonGenerator {
         addTopLevelOrganizations(model);
         addContributorOrganizations(model);
         addSubUnitsToTopLevelAffiliation(model);
-        addContributorPreviewAndCount(model);
         model.add(constructFundingsFromProjects(model));
         return model;
     }
@@ -154,36 +153,4 @@ public class FramedJsonGenerator {
             return model.add(hasPartNodes);
         }
     }
-
-    private Model addContributorPreviewAndCount(Model model) {
-        var query = """
-            PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
-
-            CONSTRUCT {
-              ?entityDescription nva:contributorsPreview ?contributorsPreview ;
-                                 nva:contributorsCount ?contributorsCount .
-            } WHERE {
-              {
-                SELECT (COUNT(?contributor) AS ?contributorsCount) WHERE {
-                  ?publication a nva:Publication ;
-                               nva:entityDescription ?entityDescription .
-                  ?entityDescription nva:contributor ?contributor .
-                }
-              }
-              {
-                SELECT ?contributorsPreview ?entityDescription WHERE {
-                  ?publication a nva:Publication ;
-                               nva:entityDescription ?entityDescription .
-                  ?entityDescription nva:contributor ?contributorsPreview .
-                  ?contributorsPreview nva:sequence ?sequence .
-                } ORDER BY ASC(?sequence) LIMIT 10
-              }
-            }
-            """;
-        try (var qexec = QueryExecutionFactory.create(query, model)) {
-            var contributorPreview = qexec.execConstruct();
-            return model.add(contributorPreview);
-        }
-    }
-
 }
