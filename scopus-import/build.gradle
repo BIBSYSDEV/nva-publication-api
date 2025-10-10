@@ -24,6 +24,7 @@ dependencies {
     implementation libs.nva.logutils
     implementation libs.nva.auth
     implementation libs.nva.identifiers
+    implementation libs.nva.clients
 
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events

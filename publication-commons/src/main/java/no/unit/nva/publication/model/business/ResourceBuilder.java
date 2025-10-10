@@ -50,6 +50,7 @@ public final class ResourceBuilder {
     private List<ImportDetail> importDetails;
     private ResourceEvent resourceEvent;
     private List<PublicationChannel> publicationChannels;
+    private List<URI> associatedCustomers;
 
     ResourceBuilder() {
     }
@@ -184,6 +185,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withAssociatedCustomers(List<URI> associatedCustomers) {
+        this.associatedCustomers = associatedCustomers;
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -212,6 +218,7 @@ public final class ResourceBuilder {
         resource.setImportDetails(importDetails);
         resource.setResourceEvent(resourceEvent);
         resource.setPublicationChannels(publicationChannels);
+        resource.setAssociatedCustomers(associatedCustomers);
         return resource;
     }
 }

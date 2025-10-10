@@ -816,7 +816,6 @@ public final class ScopusGenerator {
     }
 
     private HeadTp randomHeadTpWithContributorsFromCollaborationTp(int numberOfContributors) {
-        var correspondenceTp = new CorrespondenceTp();
         var authorGroupTp = new AuthorGroupTp();
         generateContributorsForCollaborationTp(numberOfContributors, authorGroupTp);
         var affiliationTp = new AffiliationTp();
@@ -824,6 +823,7 @@ public final class ScopusGenerator {
         authorGroupTp.setAffiliation(affiliationTp);
         var head = new HeadTp();
         head.getAuthorGroup().add(authorGroupTp);
+        var correspondenceTp = new CorrespondenceTp();
         head.getCorrespondence().add(correspondenceTp);
         head.setCitationTitle(randomCitationTitle());
         head.setAbstracts(abstractsTp);

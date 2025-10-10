@@ -39,11 +39,6 @@ public class CristinConnection {
     private final HttpClient httpClient;
     private final Environment environment;
 
-    public CristinConnection(HttpClient httpClient) {
-        this.httpClient = httpClient;
-        this.environment = new Environment();
-    }
-
     public CristinConnection(HttpClient httpClient, Environment environment) {
         this.httpClient = httpClient;
         this.environment = environment;
@@ -51,7 +46,7 @@ public class CristinConnection {
 
     @JacocoGenerated
     public CristinConnection() {
-        this(HttpClient.newBuilder().build());
+        this(HttpClient.newBuilder().build(), new Environment());
     }
 
     public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
@@ -105,7 +100,7 @@ public class CristinConnection {
         return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + environment.readEnv(API_HOST))
                    .addChild(CRISTIN)
                    .addChild(PERSON)
-                   .addChild(orcId)
+                   .addChild(UriWrapper.fromUri(orcId).getLastPathElement())
                    .getUri();
     }
 

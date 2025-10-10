@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -30,8 +31,11 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
     public static final String IMPORT_STATUS = "importStatus";
+    public static final String ASSOCIATED_CUSTOMERS_FIELD = "associatedCustomers";
     @JsonProperty(IMPORT_STATUS)
     private ImportStatus importStatus;
+    @JsonProperty(ASSOCIATED_CUSTOMERS_FIELD)
+    private List<URI> associatedCustomers;
 
     public ImportCandidate() {
         super();
@@ -62,6 +66,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withImportStatus(getImportStatus())
                    .withRightsHolder(getRightsHolder())
                    .withCuratingInstitutions(getCuratingInstitutions())
+                   .withAssociatedCustomers(getAssociatedCustomers())
                    .withImportDetails(getImportDetails());
     }
 
@@ -72,24 +77,21 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
     @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getImportStatus());
-    }
-
-    @JacocoGenerated
-    @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ImportCandidate that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-        ImportCandidate that = (ImportCandidate) o;
-        return Objects.equals(getImportStatus(), that.getImportStatus());
+        return Objects.equals(getImportStatus(), that.getImportStatus()) && Objects.equals(
+            getAssociatedCustomers(), that.getAssociatedCustomers());
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getImportStatus(), getAssociatedCustomers());
     }
 
     @Override
@@ -103,6 +105,14 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
     public void setImportStatus(ImportStatus importStatus) {
         this.importStatus = importStatus;
+    }
+
+    public List<URI> getAssociatedCustomers() {
+        return nonNull(associatedCustomers) ? associatedCustomers : List.of();
+    }
+
+    public void setAssociatedCustomers(List<URI> associatedCustomers) {
+        this.associatedCustomers = associatedCustomers;
     }
 
     public Publication toPublication() {
@@ -260,8 +270,14 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
+        public Builder withAssociatedCustomers(List<URI> associatedCustomers) {
+            this.importCandidate.setAssociatedCustomers(associatedCustomers);
+            return this;
+        }
+
         public ImportCandidate build() {
             return importCandidate;
         }
+
     }
 }

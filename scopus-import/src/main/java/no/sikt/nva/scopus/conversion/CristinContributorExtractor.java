@@ -1,7 +1,9 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.conversion.ContributorExtractor.extractAdditionalIdentifiers;
+import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static nva.commons.core.StringUtils.isNotBlank;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +20,7 @@ import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
@@ -28,6 +31,7 @@ public final class CristinContributorExtractor {
     public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
     public static final String LAST_NAME_CRISTIN_FIELD_NAME = "LastName";
     public static final String ORCID_FIELD_NAME = "orcid";
+    public static final String SCOPUS_AUID = "scopus-auid";
 
     @JacocoGenerated
     private CristinContributorExtractor() {
@@ -58,6 +62,14 @@ public final class CristinContributorExtractor {
         return identity;
     }
 
+    private static List<AdditionalIdentifier> extractAdditionalIdentifiers(AuthorTp authorTp) {
+        return isNotBlank(authorTp.getAuid()) ? List.of(createAuidAdditionalIdentifier(authorTp)) : emptyList();
+    }
+
+    private static AdditionalIdentifier createAuidAdditionalIdentifier(AuthorTp authorTp) {
+        return new AdditionalIdentifier(SCOPUS_AUID, authorTp.getAuid());
+    }
+
     private static String extractOrcId(CristinPerson cristinPerson, AuthorTp authorTp) {
         return extractOrcIdFromCristinPerson(cristinPerson)
                    .or(() -> extractOrcIdFromAuthorTp(authorTp))
@@ -65,7 +77,15 @@ public final class CristinContributorExtractor {
     }
 
     private static Optional<String> extractOrcIdFromAuthorTp(AuthorTp authorTp) {
-        return Optional.ofNullable(ContributorExtractor.getOrcidAsUriString(authorTp));
+        return Optional.ofNullable(authorTp)
+                   .map(AuthorTp::getOrcid)
+                   .map(CristinContributorExtractor::craftOrcidUriString);
+    }
+
+    private static String craftOrcidUriString(String potentiallyMalformedOrcidString) {
+        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL)
+                   ? potentiallyMalformedOrcidString
+                   : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
     }
 
     private static Optional<String> extractOrcIdFromCristinPerson(CristinPerson cristinPerson) {

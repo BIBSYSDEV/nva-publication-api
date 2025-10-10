@@ -101,7 +101,9 @@ class DaoTest extends ResourcesLocalTest {
     protected static final String RESOURCE_PUBLICATION_CHANNELS = "resource.publicationChannels";
     public static final String RESOURCE_IMPORT_DETAILS = "resource.importDetails";
     public static final String IMPORT_DETAILS = ".importDetails";
-    public static final String DATA_IMPORT_DETAILS1 = "data.importDetails";
+    public static final String DATA_IMPORT_DETAILS = "data.importDetails";
+    public static final String RESOURCE_ASSOCIATED_CUSTOMERS = "resource.associatedCustomers";
+    public static final String DATA_ASSOCIATED_CUSTOMERS = "data.associatedCustomers";
     public static final Set<String> IGNORED_FIELDS = Set.of(DATA_OWNER_AFFILIATION,
                                                             DATA_RESPONSIBILITY_AREA,
                                                             DATA_ASSIGNEE,
@@ -119,7 +121,9 @@ class DaoTest extends ResourcesLocalTest {
                                                             RESOURCE_PUBLICATION_CHANNELS,
                                                             RESOURCE_IMPORT_DETAILS,
                                                             IMPORT_DETAILS,
-                                                            DATA_IMPORT_DETAILS1);
+                                                            DATA_IMPORT_DETAILS,
+                                                            RESOURCE_ASSOCIATED_CUSTOMERS,
+                                                            DATA_ASSOCIATED_CUSTOMERS);
 
     public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
