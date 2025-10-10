@@ -1,14 +1,12 @@
 package no.sikt.nva.scopus.conversion;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.CristinContributorExtractor.generateContributorFromCristinPerson;
 import static nva.commons.core.StringUtils.isNotBlank;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,13 +15,13 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
+import no.scopus.generated.DocTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.AuthorIdentifiers;
 import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.role.Role;
@@ -45,259 +43,142 @@ public class ContributorExtractor {
         this.cristinPersonRetriever = new CristinPersonRetriever(cristinConnection, piaConnection);
     }
 
-    public static String getOrcidAsUriString(AuthorTp authorTp) {
-        return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
+    public ContributorsOrganizationsWrapper generateContributors(DocTp document) {
+        var bibrecord = document.getItem().getItem().getBibrecord().getHead();
+        return generateContributors(bibrecord.getCorrespondence(), bibrecord.getAuthorGroup());
     }
 
     public ContributorsOrganizationsWrapper generateContributors(List<CorrespondenceTp> correspondenceTps,
                                                                  List<AuthorGroupTp> authorGroupTps) {
-        var cristinAffiliationsAuthorgroupsTps = affiliationGenerator.getCorporations(authorGroupTps);
+        var corporationsWithAuthors = affiliationGenerator.getCorporations(authorGroupTps);
         var cristinPersons = cristinPersonRetriever.retrieveCristinPersons(authorGroupTps);
+        var correspondencePerson = getCorrespondencePerson(correspondenceTps);
 
-        var contributors = cristinAffiliationsAuthorgroupsTps.stream()
-                               .map(corporationWithContributors -> generateContributorsFromAuthorGroup(corporationWithContributors, cristinPersons, emptyList(), correspondenceTps))
-                               .reduce(emptyList(), this::mergeContributorLists);
+        var contributors = corporationsWithAuthors.stream()
+                               .flatMap(corp -> processAuthorGroup(corp, cristinPersons, correspondencePerson).stream())
+                               .toList();
 
-        var cristinTopLevelOrganizations = getCristinOrganizations(cristinAffiliationsAuthorgroupsTps);
+        var topLevelOrgs = extractTopLevelOrganizations(corporationsWithAuthors);
 
-        return new ContributorsOrganizationsWrapper(contributors, cristinTopLevelOrganizations);
+        return new ContributorsOrganizationsWrapper(contributors, topLevelOrgs);
     }
 
-    protected static List<AdditionalIdentifier> extractAdditionalIdentifiers(AuthorTp authorTp) {
-        return isNotBlank(authorTp.getAuid()) ? List.of(createAuidAdditionalIdentifier(authorTp)) : emptyList();
-    }
-
-    private static AdditionalIdentifier createAuidAdditionalIdentifier(AuthorTp authorTp) {
-        return new AdditionalIdentifier(SCOPUS_AUID, authorTp.getAuid());
-    }
-
-    private static String craftOrcidUriString(String potentiallyMalformedOrcidString) {
-        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL)
-                   ? potentiallyMalformedOrcidString
-                   : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
-    }
-
-    private static List<URI> getCristinOrganizations(List<CorporationWithContributors> corporationWithContributors) {
-        return corporationWithContributors.stream()
-                   .map(CorporationWithContributors::getCristinOrganizations)
-                   .flatMap(Collection::stream)
-                   .filter(Objects::nonNull)
-                   .map(CristinOrganization::getTopLevelOrgId)
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .toList();
-    }
-
-    private List<Contributor> mergeContributorLists(List<Contributor> existing, List<Contributor> newContributors) {
-        var result = new ArrayList<>(existing);
-        result.addAll(newContributors);
-        return result;
-    }
-
-    private List<Contributor> generateContributorsFromAuthorGroup(
-        CorporationWithContributors corporationWithContributors,
-        Map<AuthorIdentifiers, CristinPerson> cristinPersons,
-        List<Contributor> existingContributors, List<CorrespondenceTp> correspondenceTps) {
-
+    private List<Contributor> processAuthorGroup(CorporationWithContributors corporationWithContributors,
+                                                 Map<AuthorIdentifiers, CristinPerson> cristinPersons,
+                                                 PersonalnameType correspondencePerson) {
         return corporationWithContributors.getScopusAuthors()
                    .getAuthorOrCollaboration()
                    .stream()
-                   .map(authorOrCollaboration ->
-                            processAuthorOrCollaboration(authorOrCollaboration, corporationWithContributors,
-                                                         cristinPersons, existingContributors, correspondenceTps))
-                   .reduce(existingContributors, this::mergeContributorLists);
-    }
-
-    private List<Contributor> processAuthorOrCollaboration(
-        Object authorOrCollaboration,
-        CorporationWithContributors corporationWithContributors,
-        Map<AuthorIdentifiers, CristinPerson> cristinPersons,
-        List<Contributor> existingContributors,
-        List<CorrespondenceTp> correspondenceTps) {
-
-        var existingContributor = findExistingContributor(authorOrCollaboration, existingContributors);
-
-        if (existingContributor.isPresent()) {
-            return updateExistingContributor(existingContributor.get(), corporationWithContributors,
-                                             existingContributors);
-        } else {
-            var newContributor = createContributor(authorOrCollaboration, corporationWithContributors, cristinPersons, correspondenceTps);
-            return addContributor(newContributor, existingContributors);
-        }
-    }
-
-    private List<Contributor> addContributor(Contributor contributor, List<Contributor> existingContributors) {
-        var result = new ArrayList<>(existingContributors);
-        result.add(contributor);
-        return result;
-    }
-
-    private List<Contributor> updateExistingContributor(
-        Contributor existingContributor,
-        CorporationWithContributors corporationWithContributors,
-        List<Contributor> existingContributors) {
-
-        if (isNull(existingContributor.getIdentity().getId())) {
-            var newAffiliations = corporationWithContributors.toCorporations();
-            if (!newAffiliations.isEmpty()) {
-                return replaceContributor(existingContributor,
-                                          enrichContributorWithAffiliations(existingContributor, newAffiliations),
-                                          existingContributors);
-            }
-        }
-        return existingContributors;
-    }
-
-    private List<Contributor> replaceContributor(Contributor oldContributor,
-                                                 Contributor newContributor,
-                                                 List<Contributor> existingContributors) {
-        return existingContributors.stream()
-                   .map(contributor -> contributor.equals(oldContributor) ? newContributor : contributor)
+                   .map(authorOrCollaboration -> createContributor(authorOrCollaboration, corporationWithContributors,
+                                                                   cristinPersons, correspondencePerson))
                    .toList();
-    }
-
-    private Contributor enrichContributorWithAffiliations(Contributor existingContributor,
-                                                          List<Corporation> newAffiliations) {
-        var affiliations = new ArrayList<>(existingContributor.getAffiliations());
-        affiliations.addAll(newAffiliations);
-
-        return new Contributor.Builder()
-                   .withIdentity(existingContributor.getIdentity())
-                   .withAffiliations(affiliations.stream().distinct().toList())
-                   .withRole(existingContributor.getRole())
-                   .withSequence(existingContributor.getSequence())
-                   .withCorrespondingAuthor(existingContributor.isCorrespondingAuthor())
-                   .build();
-    }
-
-    private Optional<Contributor> findExistingContributor(Object authorOrCollaboration,
-                                                          List<Contributor> contributors) {
-        return contributors.stream()
-                   .filter(contributor -> matchesAuthorOrCollaboration(contributor, authorOrCollaboration))
-                   .findAny();
-    }
-
-    private boolean matchesAuthorOrCollaboration(Contributor contributor, Object authorOrCollaboration) {
-        return authorOrCollaboration instanceof AuthorTp authorTp
-                   ? isSamePerson(authorTp, contributor)
-                   : isSameSequenceElement((CollaborationTp) authorOrCollaboration, contributor);
-    }
-
-    private boolean isSameSequenceElement(CollaborationTp collaboration, Contributor contributor) {
-        return collaboration.getSeq().equals(contributor.getSequence().toString());
-    }
-
-    private boolean isSamePerson(AuthorTp author, Contributor contributor) {
-        if (author.getSeq().equals(contributor.getSequence().toString())) {
-            return true;
-        } else if (nonNull(author.getOrcid()) && nonNull(contributor.getIdentity().getOrcId())) {
-            return craftOrcidUriString(author.getOrcid()).equals(contributor.getIdentity().getOrcId());
-        }
-        return false;
     }
 
     private Contributor createContributor(Object authorOrCollaboration,
                                           CorporationWithContributors corporationWithContributors,
-                                          Map<AuthorIdentifiers, CristinPerson> cristinPersons, List<CorrespondenceTp> correspondenceTps) {
-        return authorOrCollaboration instanceof AuthorTp authorTp
-                   ? createContributorFromAuthorTp(authorTp, corporationWithContributors, cristinPersons, correspondenceTps)
-                   : createContributorFromCollaborationTp((CollaborationTp) authorOrCollaboration,
-                                                          corporationWithContributors, correspondenceTps);
+                                          Map<AuthorIdentifiers, CristinPerson> cristinPersons,
+                                          PersonalnameType correspondencePerson) {
+        return switch (authorOrCollaboration) {
+            case AuthorTp author ->
+                createFromAuthor(author, corporationWithContributors, cristinPersons, correspondencePerson);
+            case CollaborationTp collaboration ->
+                createFromCollaboration(collaboration, corporationWithContributors, correspondencePerson);
+            default -> throw new IllegalArgumentException("Unknown type: " + authorOrCollaboration.getClass());
+        };
     }
 
-    private Contributor createContributorFromAuthorTp(
-        AuthorTp author,
-        CorporationWithContributors corporationWithContributors,
-        Map<AuthorIdentifiers, CristinPerson> cristinPersons, List<CorrespondenceTp> correspondenceTps) {
-
-        var cristinOrganizations = corporationWithContributors.getCristinOrganizations();
+    private Contributor createFromAuthor(AuthorTp author, CorporationWithContributors corporationWithContributors,
+                                         Map<AuthorIdentifiers, CristinPerson> cristinPersons,
+                                         PersonalnameType correspondencePerson) {
         var authorIdentifiers = new AuthorIdentifiers(author.getAuid(), author.getOrcid());
 
         return Optional.ofNullable(cristinPersons.get(authorIdentifiers))
-                   .map(cristinPerson -> generateContributorFromCristinPerson(
-                       cristinPerson, author, getCorrespondencePerson(correspondenceTps), cristinOrganizations))
-                   .orElseGet(() -> buildContributorFromAuthorTp(corporationWithContributors, author, correspondenceTps));
+                   .map(cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author,
+                                                                              correspondencePerson,
+                                                                              corporationWithContributors.getCristinOrganizations()))
+                   .orElseGet(() -> buildFromScopusAuthor(author, corporationWithContributors, correspondencePerson));
     }
 
-    private Contributor buildContributorFromAuthorTp(CorporationWithContributors corporationWithContributors,
-                                                     AuthorTp author, List<CorrespondenceTp> correspondenceTps) {
-        return new Contributor.Builder()
-                   .withIdentity(generateIdentityFromAuthorTp(author))
+    private Contributor buildFromScopusAuthor(AuthorTp author, CorporationWithContributors corporationWithContributors,
+                                              PersonalnameType correspondencePerson) {
+        return new Contributor.Builder().withIdentity(createIdentity(author))
                    .withAffiliations(corporationWithContributors.toCorporations())
                    .withRole(new RoleType(Role.CREATOR))
-                   .withSequence(getSequenceNumber(author))
-                   .withCorrespondingAuthor(isCorrespondingAuthor(author, getCorrespondencePerson(correspondenceTps)))
+                   .withSequence(Integer.parseInt(author.getSeq()))
+                   .withCorrespondingAuthor(isCorrespondingAuthor(author, correspondencePerson))
                    .build();
     }
 
-    private Contributor createContributorFromCollaborationTp(
-        CollaborationTp collaboration,
-        CorporationWithContributors corporationWithContributors,
-        List<CorrespondenceTp> correspondenceTps) {
-
-        return new Contributor.Builder()
-                   .withIdentity(generateIdentity(collaboration))
+    private Contributor createFromCollaboration(CollaborationTp collaboration,
+                                                CorporationWithContributors corporationWithContributors,
+                                                PersonalnameType correspondencePerson) {
+        return new Contributor.Builder().withIdentity(
+                new Identity.Builder().withName(collaboration.getIndexedName()).build())
                    .withAffiliations(corporationWithContributors.toCorporations())
                    .withRole(new RoleType(Role.OTHER))
-                   .withSequence(getSequenceNumber(collaboration))
-                   .withCorrespondingAuthor(isCorrespondingAuthor(collaboration, getCorrespondencePerson(correspondenceTps)))
+                   .withSequence(Integer.parseInt(collaboration.getSeq()))
+                   .withCorrespondingAuthor(isCorrespondingAuthor(collaboration, correspondencePerson))
                    .build();
     }
 
-    private Identity generateIdentity(CollaborationTp collaboration) {
-        return new Identity.Builder()
-                   .withName(determineContributorName(collaboration))
+    private Identity createIdentity(AuthorTp authorTp) {
+        return new Identity.Builder().withName(getAuthorName(authorTp))
+                   .withOrcId(getOrcidUri(authorTp))
+                   .withAdditionalIdentifiers(getAdditionalIdentifier(authorTp))
                    .build();
     }
 
-    private Identity generateIdentityFromAuthorTp(AuthorTp authorTp) {
-        var identity = new Identity();
-        identity.setName(determineContributorName(authorTp));
-        identity.setOrcId(getOrcidAsUriString(authorTp));
-        identity.setAdditionalIdentifiers(extractAdditionalIdentifiers(authorTp));
-        return identity;
+    private String getAuthorName(AuthorTp author) {
+        return nonNull(author.getPreferredName()) ? author.getPreferredName().getGivenName()
+                                                    + StringUtils.SPACE
+                                                    + author.getPreferredName().getSurname()
+                   : author.getGivenName() + StringUtils.SPACE + author.getSurname();
+    }
+
+    private String getOrcidUri(AuthorTp authorTp) {
+        return isNotBlank(authorTp.getOrcid()) ? normalizeOrcid(authorTp.getOrcid()) : null;
+    }
+
+    private String normalizeOrcid(String orcid) {
+        return orcid.contains(ORCID_DOMAIN_URL) ? orcid : ORCID_DOMAIN_URL + orcid;
+    }
+
+    private List<AdditionalIdentifier> getAdditionalIdentifier(AuthorTp authorTp) {
+        return Optional.ofNullable(authorTp)
+                   .map(AuthorTp::getAuid)
+                   .filter(StringUtils::isNotBlank)
+                   .map(id -> new AdditionalIdentifier(SCOPUS_AUID, id))
+                   .map(List::of)
+                   .orElseGet(Collections::emptyList);
     }
 
     private PersonalnameType getCorrespondencePerson(List<CorrespondenceTp> correspondenceTps) {
         return correspondenceTps.stream()
-                   .map(this::extractPersonalNameType)
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
+                   .map(CorrespondenceTp::getPerson)
+                   .filter(Objects::nonNull)
                    .findFirst()
                    .orElse(null);
     }
 
-    private Optional<PersonalnameType> extractPersonalNameType(CorrespondenceTp correspondenceTp) {
-        return Optional.ofNullable(correspondenceTp.getPerson());
-    }
-
     private boolean isCorrespondingAuthor(CollaborationTp collaboration, PersonalnameType correspondencePerson) {
-        return nonNull(correspondencePerson)
-               && collaboration.getIndexedName().equals(correspondencePerson.getIndexedName());
+        return nonNull(correspondencePerson) && collaboration.getIndexedName()
+                                                    .equals(correspondencePerson.getIndexedName());
     }
 
     private boolean isCorrespondingAuthor(AuthorTp author, PersonalnameType correspondencePerson) {
-        return nonNull(correspondencePerson)
-               && author.getIndexedName().equals(correspondencePerson.getIndexedName());
+        return nonNull(correspondencePerson) && author.getIndexedName().equals(correspondencePerson.getIndexedName());
     }
 
-    private int getSequenceNumber(CollaborationTp collaborationTp) {
-        return Integer.parseInt(collaborationTp.getSeq());
+    private List<URI> extractTopLevelOrganizations(List<CorporationWithContributors> corporationsWithContributors) {
+        return corporationsWithContributors.stream()
+                   .map(CorporationWithContributors::getCristinOrganizations)
+                   .flatMap(Collection::stream)
+                   .map(CristinOrganization::getTopLevelOrgId)
+                   .flatMap(Optional::stream)
+                   .toList();
     }
 
-    private int getSequenceNumber(AuthorTp authorTp) {
-        return Integer.parseInt(authorTp.getSeq());
-    }
+    public record ContributorsOrganizationsWrapper(List<Contributor> contributors, List<URI> topLevelOrgs) {
 
-    private String determineContributorName(AuthorTp author) {
-        return nonNull(author.getPreferredName())
-                   ? author.getPreferredName().getGivenName() + StringUtils.SPACE + author.getPreferredName().getSurname()
-                   : author.getGivenName() + StringUtils.SPACE + author.getSurname();
     }
-
-    private String determineContributorName(CollaborationTp collaborationTp) {
-        return collaborationTp.getIndexedName();
-    }
-
-    public record ContributorsOrganizationsWrapper(List<Contributor> contributors, List<URI> topLevelOrgs) {}
 }

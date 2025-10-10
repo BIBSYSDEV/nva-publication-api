@@ -278,7 +278,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, mockedEnvironment, mockedTikaUtils());
         contributorExtractor = mock(ContributorExtractor.class);
         var organization = randomUri();
-        when(contributorExtractor.generateContributors(any(), any()))
+        when(contributorExtractor.generateContributors(any()))
             .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomContributor()), List.of(organization)));
         identityServiceClient = mock(IdentityServiceClient.class);
         when(attempt(identityServiceClient::getAllCustomers).orElseThrow())

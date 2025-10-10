@@ -20,13 +20,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
-import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationLanguageTp;
 import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -184,7 +182,7 @@ public class ScopusConverter {
     }
 
     private List<Contributor> getContributors() {
-        var contributorsOrganizationsWrapper = contributorExtractor.generateContributors(extractCorrespondence(), extractAuthorGroup());
+        var contributorsOrganizationsWrapper = contributorExtractor.generateContributors(docTp);
         var cristinTopLevelOrgs = contributorsOrganizationsWrapper.topLevelOrgs();
         var customerList = attempt(identityServiceClient::getAllCustomers).orElseThrow();
 
@@ -347,13 +345,5 @@ public class ScopusConverter {
 
     private ScopusIdentifier extractScopusIdentifier() {
         return ScopusIdentifier.fromValue(docTp.getMeta().getEid());
-    }
-
-    private List<AuthorGroupTp> extractAuthorGroup() {
-        return extractHead().getAuthorGroup();
-    }
-
-    private List<CorrespondenceTp> extractCorrespondence() {
-        return extractHead().getCorrespondence();
     }
 }

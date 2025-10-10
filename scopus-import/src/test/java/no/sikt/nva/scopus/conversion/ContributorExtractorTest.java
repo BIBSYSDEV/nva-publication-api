@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -107,8 +108,7 @@ public class ContributorExtractorTest {
 
         mockCristinPersonWithoutAffiliation(authorTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -127,8 +127,7 @@ public class ContributorExtractorTest {
         mockCristinPersonWithoutAffiliation(authorTp);
         mockOtherCristinOrganization(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -147,8 +146,7 @@ public class ContributorExtractorTest {
         mockCristinPersonWithoutAffiliation(authorTp);
         mockNorwegianCristinOrganization(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -163,8 +161,7 @@ public class ContributorExtractorTest {
 
         mockCristinOrganizationBadRequest(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -179,8 +176,7 @@ public class ContributorExtractorTest {
 
         mockPiaAndCristinAffiliation(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -198,8 +194,7 @@ public class ContributorExtractorTest {
         var expectedContributorName = mockCristinPersonByOrcId(orcId);
         mockPiaAndCristinAffiliation(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -216,8 +211,7 @@ public class ContributorExtractorTest {
 
         mockPiaAndCristinAffiliation(authorGroupTp);
 
-        var nvaContributor = contributorExtractorFromDocument()
-                                 .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var nvaContributor = contributorExtractorFromDocument().generateContributors(document)
                                  .contributors()
                                  .getFirst();
 
@@ -235,8 +229,7 @@ public class ContributorExtractorTest {
         mockCristinPersonWithoutAffiliation(authorTp);
         mockPiaAndCristinAffiliation(authorGroupTp);
 
-        var nvaContributor = contributorExtractorFromDocument()
-                                 .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var nvaContributor = contributorExtractorFromDocument().generateContributors(document)
                                  .contributors()
                                  .getFirst();
 
@@ -251,8 +244,7 @@ public class ContributorExtractorTest {
 
         mockCristinOrganizationBadRequest(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -269,8 +261,7 @@ public class ContributorExtractorTest {
 
         mockCristinPersonWithoutOrcId(authorTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -287,8 +278,7 @@ public class ContributorExtractorTest {
 
         mockCristinPersonWithoutOrcId(authorTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -305,22 +295,18 @@ public class ContributorExtractorTest {
         var cristinPerson = mockCristinPersonWithSingleActiveAffiliation(authorTp);
         mockPiaAndCristinAffiliation(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var expectedAffiliations = cristinPerson.getAffiliations().stream()
-                                       .filter(Affiliation::isActive)
-                                       .toList();
+        var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
         var actualOrganizations = contributor.getAffiliations();
 
         var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
         assertThat(actualOrganizations.size(), is(equalTo(expectedAffiliations.size())));
         assertThat(id, is(equalTo(expectedAffiliations.getFirst().getOrganization())));
     }
-
 
     @Test
     void shouldReplaceContributorIdentityWithCristinDataVerifiedByAuthorId() {
@@ -331,10 +317,7 @@ public class ContributorExtractorTest {
         var cristinPerson = mockCristinPersonWithSingleActiveAffiliation(authorTp);
         mockPiaAndCristinAffiliation(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
-                              .contributors()
-                              .getFirst();
+        var contributor = contributorExtractorFromDocument().generateContributors(document).contributors().getFirst();
 
         assertThatContributorHasCorrectCristinPersonData(contributor, Map.of(cristinPerson, authorTp));
     }
@@ -350,9 +333,7 @@ public class ContributorExtractorTest {
 
         getAuthorGroup(document).forEach(this::mockPiaAndCristinAffiliation);
 
-        var contributors = contributorExtractorFromDocument()
-                               .generateContributors(getCorrespondence(document), getAuthorGroup(document))
-                               .contributors();
+        var contributors = contributorExtractorFromDocument().generateContributors(document).contributors();
 
         authors.forEach(author -> {
             var matchingContributor = contributors.stream()
@@ -366,13 +347,6 @@ public class ContributorExtractorTest {
             }
             assertThat(matchingContributor.getSequence(), is(equalTo(Integer.parseInt(author.getSeq()))));
         });
-    }
-
-    private static String getOrcid(AuthorTp author) {
-        return author.getOrcid().contains(ORCID_HOST_NAME) ? author.getOrcid() :
-                                                                                   UriWrapper.fromHost(ORCID_HOST_NAME)
-                                                                                       .addChild(author.getOrcid())
-                                                                                       .toString();
     }
 
     @Test
@@ -397,9 +371,7 @@ public class ContributorExtractorTest {
         authors.forEach(author -> mockPiaAuthorEmptyResponse(author.getAuid()));
         getAuthorGroup(document).forEach(this::mockPiaAndCristinAffiliation);
 
-        var contributors = contributorExtractorFromDocument()
-                               .generateContributors(getCorrespondence(document), getAuthorGroup(document))
-                               .contributors();
+        var contributors = contributorExtractorFromDocument().generateContributors(document).contributors();
 
         // Verify authors
         authors.forEach(author -> {
@@ -429,17 +401,14 @@ public class ContributorExtractorTest {
         createEmptyPiaMock();
         getAuthorGroup(document).forEach(this::mockPiaAndCristinAffiliation);
 
-        var contributors = contributorExtractorFromDocument()
-                               .generateContributors(getCorrespondence(document), getAuthorGroup(document))
-                               .contributors();
+        var contributors = contributorExtractorFromDocument().generateContributors(document).contributors();
 
         var correspondingContributor = contributors.stream()
                                            .filter(Contributor::isCorrespondingAuthor)
                                            .findFirst()
                                            .orElseThrow(() -> new AssertionError("No corresponding author found"));
 
-        assertThat(correspondingContributor.getIdentity().getName(),
-                   startsWith(correspondingAuthorTp.getGivenName()));
+        assertThat(correspondingContributor.getIdentity().getName(), startsWith(correspondingAuthorTp.getGivenName()));
         assertThat(correspondingContributor.isCorrespondingAuthor(), is(true));
     }
 
@@ -455,8 +424,7 @@ public class ContributorExtractorTest {
 
         getAuthorGroup(document).forEach(this::mockPiaAndCristinAffiliation);
 
-        contributorExtractorFromDocument()
-            .generateContributors(getCorrespondence(document), getAuthorGroup(document));
+        contributorExtractorFromDocument().generateContributors(document);
 
         assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
     }
@@ -473,8 +441,7 @@ public class ContributorExtractorTest {
 
         getAuthorGroup(document).forEach(this::mockPiaAndCristinAffiliation);
 
-        contributorExtractorFromDocument()
-            .generateContributors(getCorrespondence(document), getAuthorGroup(document));
+        contributorExtractorFromDocument().generateContributors(document);
 
         assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
     }
@@ -491,8 +458,7 @@ public class ContributorExtractorTest {
 
         var organization = mockSearchOrganizationByNameResponse(institutionName);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -515,8 +481,7 @@ public class ContributorExtractorTest {
         mockSearchOrganizationEmptyResponse(orgName);
         var organization = mockSearchOrganizationByNameResponse(affiliationCountry);
 
-        var contributor = contributorExtractorFromDocument()
-                              .generateContributors(getCorrespondence(document), getAuthorGroup(document))
+        var contributor = contributorExtractorFromDocument().generateContributors(document)
                               .contributors()
                               .stream()
                               .collect(SingletonCollector.collect());
@@ -525,32 +490,24 @@ public class ContributorExtractorTest {
         assertThat(id, is(equalTo(organization.id())));
     }
 
-    private void mockPiaAffiliationEmptyResponse(String afid) {
-        var response = PiaResponseGenerator.convertAffiliationsToJson(List.of());
-        stubFor(WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
-                    .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + afid))
-                    .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
+    @Test
+    void shouldThrowIllegalArgumentExceptionWhenAuthorOrCollaborationIsUnknownType() {
+        var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
+        var authorGroupTp = getAuthorGroup(document).getFirst();
+
+        authorGroupTp.getAuthorOrCollaboration().clear();
+        authorGroupTp.getAuthorOrCollaboration().add(new Object());
+
+        mockPiaAndCristinAffiliation(authorGroupTp);
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> contributorExtractorFromDocument().generateContributors(getCorrespondence(document),
+                                                                                   getAuthorGroup(document)));
     }
 
-    private CristinOrganization mockSearchOrganizationByNameResponse(String organizationName) {
-        var organization = new CristinOrganization(
-            randomUri(), randomUri(), randomString(),
-            List.of(), randomString(),
-            Map.of(randomString(), organizationName)
-        );
-        var responseBody = new SearchOrganizationResponse(List.of(organization), 1).toJsonString();
-        stubFor(WireMock.get(urlPathEqualTo("/cristin/organization"))
-                    .withQueryParam("query", WireMock.equalTo(organizationName))
-                    .willReturn(aResponse().withBody(responseBody).withStatus(HTTP_OK)));
-        mockCustomerListResponse(organization.id());
-        return organization;
-    }
-
-    private void mockSearchOrganizationEmptyResponse(String organizationName) {
-        var responseBody = new SearchOrganizationResponse(List.of(), 0).toJsonString();
-        stubFor(WireMock.get(urlPathEqualTo("/cristin/organization"))
-                    .withQueryParam("query", WireMock.equalTo(organizationName))
-                    .willReturn(aResponse().withBody(responseBody).withStatus(HTTP_OK)));
+    private static String getOrcid(AuthorTp author) {
+        return author.getOrcid().contains(ORCID_HOST_NAME) ? author.getOrcid()
+                   : UriWrapper.fromHost(ORCID_HOST_NAME).addChild(author.getOrcid()).toString();
     }
 
     private static String getOrganizationName(DocTp document) {
@@ -568,6 +525,70 @@ public class ContributorExtractorTest {
                    .toString();
     }
 
+    private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
+        return expectedCristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
+    }
+
+    private static AuthorTp getFirstAuthor(DocTp document) {
+        return (AuthorTp) document.getItem()
+                              .getItem()
+                              .getBibrecord()
+                              .getHead()
+                              .getAuthorGroup()
+                              .getFirst()
+                              .getAuthorOrCollaboration()
+                              .getFirst();
+    }
+
+    private static String getOrcidFromScopusDocument(DocTp document) {
+        return getFirstAuthor(document).getOrcid();
+    }
+
+    private static List<AuthorGroupTp> getAuthorGroup(DocTp document) {
+        return document.getItem().getItem().getBibrecord().getHead().getAuthorGroup();
+    }
+
+    private static List<CorrespondenceTp> getCorrespondence(DocTp document) {
+        return document.getItem().getItem().getBibrecord().getHead().getCorrespondence();
+    }
+
+    private static AuthorTp createRandomAuthorTp() {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(randomString());
+        authorTp.setSeq(String.valueOf(1));
+        var personalnameType = randomPersonalnameType();
+        authorTp.setPreferredName(personalnameType);
+        authorTp.setIndexedName(personalnameType.getIndexedName());
+        authorTp.setGivenName(personalnameType.getGivenName());
+        authorTp.setSurname(personalnameType.getSurname());
+        return authorTp;
+    }
+
+    private void mockPiaAffiliationEmptyResponse(String afid) {
+        var response = PiaResponseGenerator.convertAffiliationsToJson(List.of());
+        stubFor(WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
+                    .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + afid))
+                    .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
+    }
+
+    private CristinOrganization mockSearchOrganizationByNameResponse(String organizationName) {
+        var organization = new CristinOrganization(randomUri(), randomUri(), randomString(), List.of(), randomString(),
+                                                   Map.of(randomString(), organizationName));
+        var responseBody = new SearchOrganizationResponse(List.of(organization), 1).toJsonString();
+        stubFor(WireMock.get(urlPathEqualTo("/cristin/organization"))
+                    .withQueryParam("query", WireMock.equalTo(organizationName))
+                    .willReturn(aResponse().withBody(responseBody).withStatus(HTTP_OK)));
+        mockCustomerListResponse(organization.id());
+        return organization;
+    }
+
+    private void mockSearchOrganizationEmptyResponse(String organizationName) {
+        var responseBody = new SearchOrganizationResponse(List.of(), 0).toJsonString();
+        stubFor(WireMock.get(urlPathEqualTo("/cristin/organization"))
+                    .withQueryParam("query", WireMock.equalTo(organizationName))
+                    .willReturn(aResponse().withBody(responseBody).withStatus(HTTP_OK)));
+    }
+
     private void createEmptyPiaMock() {
         stubFor(WireMock.get(urlMatching("/sentralimport/authors"))
                     .willReturn(aResponse().withBody("[]").withStatus(HTTP_OK)));
@@ -581,8 +602,9 @@ public class ContributorExtractorTest {
     }
 
     private String determineAuthorName(AuthorTp author) {
-        return author.getPreferredName() != null
-                   ? author.getPreferredName().getGivenName() + StringUtils.SPACE + author.getPreferredName().getSurname()
+        return author.getPreferredName() != null ? author.getPreferredName().getGivenName()
+                                                   + StringUtils.SPACE
+                                                   + author.getPreferredName().getSurname()
                    : author.getGivenName() + StringUtils.SPACE + author.getSurname();
     }
 
@@ -671,10 +693,6 @@ public class ContributorExtractorTest {
         return ContributorExtractor.LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
     }
 
-    private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
-        return expectedCristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
-    }
-
     private Optional<CristinPerson> getPersonByCristinNumber(Collection<CristinPerson> cristinCristinPeople,
                                                              URI cristinId) {
         return cristinCristinPeople.stream().filter(person -> cristinId.equals(person.getId())).findFirst();
@@ -701,10 +719,7 @@ public class ContributorExtractorTest {
     private void mockCristinPersonWithoutAffiliation(AuthorTp authorTp) {
         var cristinId = randomInteger();
         var cristinPerson = CristinGenerator.generateCristinPersonWithoutAffiliations(
-            UriWrapper.fromUri("/cristin/person/" + cristinId).getUri(),
-            randomString(),
-            randomString()
-        );
+            UriWrapper.fromUri("/cristin/person/" + cristinId).getUri(), randomString(), randomString());
 
         mockPiaAuthorResponse(authorTp.getAuid(), cristinId);
         mockGetCristinPersonApiCall(cristinId.toString(), CristinGenerator.convertPersonToJson(cristinPerson));
@@ -713,10 +728,7 @@ public class ContributorExtractorTest {
     private void mockCristinPersonWithoutOrcId(AuthorTp authorTp) {
         var cristinId = randomInteger();
         var cristinPerson = CristinGenerator.generateCristinPersonWithoutOrcId(
-            UriWrapper.fromUri("/cristin/person/" + cristinId).getUri(),
-            randomString(),
-            randomString()
-        );
+            UriWrapper.fromUri("/cristin/person/" + cristinId).getUri(), randomString(), randomString());
 
         mockPiaAuthorResponse(authorTp.getAuid(), cristinId);
         mockGetCristinPersonApiCall(cristinId.toString(), CristinGenerator.convertPersonToJson(cristinPerson));
@@ -725,10 +737,7 @@ public class ContributorExtractorTest {
     private CristinPerson mockCristinPersonWithSingleActiveAffiliation(AuthorTp authorTp) {
         var cristinId = randomInteger();
         var cristinPerson = CristinGenerator.generateCristinPersonWithSingleActiveAffiliation(
-            UriWrapper.fromUri("/cristin/person/" + cristinId).getUri(),
-            randomString(),
-            randomString()
-        );
+            UriWrapper.fromUri("/cristin/person/" + cristinId).getUri(), randomString(), randomString());
 
         mockPiaAuthorResponse(authorTp.getAuid(), cristinId);
         mockGetCristinPersonApiCall(cristinId.toString(), CristinGenerator.convertPersonToJson(cristinPerson));
@@ -742,9 +751,8 @@ public class ContributorExtractorTest {
         var cristinPerson = CristinGenerator.generateCristinPerson(randomUri(), firstname, surname);
 
         stubFor(WireMock.get(urlPathEqualTo("/cristin/person/" + UriWrapper.fromUri(orcId).getLastPathElement()))
-                    .willReturn(aResponse()
-                                    .withBody(CristinGenerator.convertPersonToJson(cristinPerson))
-                                    .withStatus(HTTP_OK)));
+                    .willReturn(
+                        aResponse().withBody(CristinGenerator.convertPersonToJson(cristinPerson)).withStatus(HTTP_OK)));
 
         return "%s %s".formatted(firstname, surname);
     }
@@ -806,8 +814,7 @@ public class ContributorExtractorTest {
     }
 
     private void mockSearchCristinOrganizationApiCall(CristinOrganization cristinOrganization, String countryName) {
-        var responseBody =
-            new SearchOrganizationResponse(List.of(cristinOrganization), 1).toJsonString();
+        var responseBody = new SearchOrganizationResponse(List.of(cristinOrganization), 1).toJsonString();
         stubFor(WireMock.get(urlPathEqualTo("/cristin/organization"))
                     .withQueryParam("query", WireMock.equalTo(countryName))
                     .willReturn(aResponse().withBody(responseBody).withStatus(HTTP_OK)));
@@ -834,7 +841,8 @@ public class ContributorExtractorTest {
                     .willReturn(aResponse().withStatus(HTTP_BAD_REQUEST)));
     }
 
-    private void createPiaAffiliationMock(List<no.sikt.nva.scopus.conversion.model.pia.Affiliation> affiliations, String afid) {
+    private void createPiaAffiliationMock(List<no.sikt.nva.scopus.conversion.model.pia.Affiliation> affiliations,
+                                          String afid) {
         var response = PiaResponseGenerator.convertAffiliationsToJson(affiliations);
         stubFor(WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
                     .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + afid))
@@ -844,29 +852,6 @@ public class ContributorExtractorTest {
     private void mockGetCristinPersonApiCall(String cristinId, String response) {
         stubFor(WireMock.get(urlPathEqualTo("/cristin/person/" + cristinId))
                     .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
-    }
-
-    private static AuthorTp getFirstAuthor(DocTp document) {
-        return (AuthorTp) document.getItem()
-                              .getItem()
-                              .getBibrecord()
-                              .getHead()
-                              .getAuthorGroup()
-                              .getFirst()
-                              .getAuthorOrCollaboration()
-                              .getFirst();
-    }
-
-    private static String getOrcidFromScopusDocument(DocTp document) {
-        return getFirstAuthor(document).getOrcid();
-    }
-
-    private static List<AuthorGroupTp> getAuthorGroup(DocTp document) {
-        return document.getItem().getItem().getBibrecord().getHead().getAuthorGroup();
-    }
-
-    private static List<CorrespondenceTp> getCorrespondence(DocTp document) {
-        return document.getItem().getItem().getBibrecord().getHead().getCorrespondence();
     }
 
     private AuthorGroupTp createAuthorWithAuid(String auid) {
@@ -885,18 +870,6 @@ public class ContributorExtractorTest {
         authorGp.setAffiliation(affiliationTp);
         authorGp.getAuthorOrCollaboration().add(authorTp);
         return authorGp;
-    }
-
-    private static AuthorTp createRandomAuthorTp() {
-        var authorTp = new AuthorTp();
-        authorTp.setAuid(randomString());
-        authorTp.setSeq(String.valueOf(1));
-        var personalnameType = randomPersonalnameType();
-        authorTp.setPreferredName(personalnameType);
-        authorTp.setIndexedName(personalnameType.getIndexedName());
-        authorTp.setGivenName(personalnameType.getGivenName());
-        authorTp.setSurname(personalnameType.getSurname());
-        return authorTp;
     }
 
     private ContributorExtractor contributorExtractorFromDocument() {
