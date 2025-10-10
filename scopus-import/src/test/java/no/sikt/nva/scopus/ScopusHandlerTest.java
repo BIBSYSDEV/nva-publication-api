@@ -188,6 +188,7 @@ import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.stubs.WiremockHttpClient;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
@@ -357,6 +358,17 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(event, CONTEXT);
         var actualAdditionalIdentifiers = publication.getAdditionalIdentifiers();
         assertThat(actualAdditionalIdentifiers, hasItem(expectedAdditionalIdentifier));
+    }
+
+    @Test
+    void shouldPersistAssociatedCustomerWhenPersistingImportCandidate() throws IOException, NotFoundException {
+        createEmptyPiaMock();
+        var event = createNewScopusPublicationEvent();
+        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
+
+        var persistedImportCandidate = importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+
+        assertThat(persistedImportCandidate.getAssociatedCustomers(), is(not(emptyIterable())));
     }
 
     @Test

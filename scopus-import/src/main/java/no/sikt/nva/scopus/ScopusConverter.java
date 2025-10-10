@@ -116,16 +116,18 @@ public class ScopusConverter {
     }
 
     public ImportCandidate generateImportCandidate() {
+        var contributorsWithCustomers = getContributors();
         return new ImportCandidate.Builder()
                    .withPublisher(createOrganization())
                    .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
-                   .withEntityDescription(generateEntityDescription())
+                   .withEntityDescription(generateEntityDescription(contributorsWithCustomers.contributors()))
                    .withCreatedDate(Instant.now())
                    .withModifiedDate(Instant.now())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
+                   .withAssociatedCustomers(contributorsWithCustomers.associatedCustomerUris())
                    .build();
     }
 
@@ -169,19 +171,19 @@ public class ScopusConverter {
         return docTp.getItem().getItem().getBibrecord().getHead();
     }
 
-    private EntityDescription generateEntityDescription() {
+    private EntityDescription generateEntityDescription(List<Contributor> contributors) {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
-        entityDescription.setContributors(getContributors());
+        entityDescription.setContributors(contributors);
         entityDescription.setTags(generateTags());
         entityDescription.setPublicationDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
         return entityDescription;
     }
 
-    private List<Contributor> getContributors() {
+    private ContributorsWithCustomers getContributors() {
         var contributorsOrganizationsWrapper = contributorExtractor.generateContributors(docTp);
         var cristinTopLevelOrgs = contributorsOrganizationsWrapper.topLevelOrgs();
         var customerList = attempt(identityServiceClient::getAllCustomers).orElseThrow();
@@ -190,13 +192,17 @@ public class ScopusConverter {
         if (associatedCustomers.isEmpty()) {
             throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + cristinTopLevelOrgs);
         }
-        return contributorsOrganizationsWrapper.contributors();
+        var customerUris = associatedCustomers.stream().map(CustomerDto::id).toList();
+        return new ContributorsWithCustomers(contributorsOrganizationsWrapper.contributors(), customerUris);
     }
 
-    private static   List<CustomerDto> getAssociatedCustomers(CustomerList customerList, List<URI> cristinTopLevelOrgs) {
+    private static List<CustomerDto> getAssociatedCustomers(CustomerList customerList, List<URI> cristinTopLevelOrgs) {
         return customerList.customers().stream()
                    .filter(customer -> cristinTopLevelOrgs.contains(customer.cristinId()))
                    .toList();
+    }
+
+    private record ContributorsWithCustomers(List<Contributor> contributors, List<URI> associatedCustomerUris) {
     }
 
     private List<CitationLanguageTp> extractCitationLanguages() {
