@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
@@ -44,6 +45,10 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
         }
 
         return this;
+    }
+
+    public Optional<URI> getTopLevelOrgId() {
+        return Optional.ofNullable(getTopLevelOrg()).map(CristinOrganization::id);
     }
 
     public boolean containsLabelWithValue(String label) {

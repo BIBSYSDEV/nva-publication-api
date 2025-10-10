@@ -11,15 +11,12 @@ import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IMPORT_BUCKET;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
-import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_PASSWORD_KEY;
-import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_REST_API_ENV_KEY;
-import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_SECRETS_NAME_ENV_KEY;
-import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_USERNAME_KEY;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.sikt.nva.scopus.conversion.files.ScopusFileConverter.CROSSREF_URI_ENV_VAR_NAME;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.createWithOneAuthorGroupAndAffiliation;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.randomYear;
+import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCustomer;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
@@ -38,17 +35,14 @@ import static nva.commons.core.StringUtils.isNotBlank;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
@@ -118,9 +112,7 @@ import no.scopus.generated.UpwOaLocationsType;
 import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
-import no.sikt.nva.scopus.conversion.CristinConnection;
-import no.sikt.nva.scopus.conversion.NvaCustomerConnection;
-import no.sikt.nva.scopus.conversion.PiaConnection;
+import no.sikt.nva.scopus.conversion.ContributorExtractor.ContributorsOrganizationsWrapper;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
@@ -135,9 +127,7 @@ import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Start;
 import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse.PublicationChannelHit;
-import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
-import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.sikt.nva.scopus.utils.ContentWrapper;
@@ -147,6 +137,8 @@ import no.sikt.nva.scopus.utils.PiaResponseGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.clients.CustomerList;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
@@ -154,7 +146,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -185,7 +176,6 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
@@ -197,7 +187,6 @@ import no.unit.nva.publication.service.impl.SearchService;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
 import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
@@ -207,7 +196,6 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
-import nva.commons.secrets.SecretsReader;
 import org.apache.tika.io.TikaInputStream;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
@@ -247,16 +235,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
-    private static final String PIA_SECRET_NAME = "someSecretName";
-    private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
-    private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
-    private PiaConnection piaConnection;
-    private CristinConnection cristinConnection;
+    private ContributorExtractor contributorExtractor;
     private PublicationChannelConnection publicationChannelConnection;
-    private NvaCustomerConnection nvaCustomerConnection;
+    private IdentityServiceClient identityServiceClient;
     private ScopusGenerator scopusData;
     private ResourceService importCandidateService;
     private ScopusUpdater scopusUpdater;
@@ -280,21 +264,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         super.init(importCandidateTable, resourcesTable);
         appender = LogUtils.getTestingAppenderForRootLogger();
         appender.start();
-        var fakeSecretsManagerClient = new FakeSecretsManagerClient();
-        fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
-        fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWORD_SECRET_KEY, randomString());
-        fakeSecretsManagerClient.putPlainTextSecret("someSecret",
-                                                    String.valueOf(new BackendClientCredentials("id", "secret")));
-        var secretsReader = new SecretsReader(fakeSecretsManagerClient);
         s3Client = new FakeS3cClientWithHeadSupport();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         var httpClient = WiremockHttpClient.create();
-        var piaEnvironment = createPiaConnectionEnvironment(wireMockRuntimeInfo);
-        piaConnection = new PiaConnection(httpClient, secretsReader, piaEnvironment);
-        cristinConnection = new CristinConnection(httpClient);
         authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
         publicationChannelConnection = new PublicationChannelConnection(authorizedBackendUriRetriever);
-        nvaCustomerConnection = mockCustomerConnection();
         importCandidateService = getResourceService(client, importCandidateTable);
         resourcesService = getResourceService(client, resourcesTable);
         uriRetriever = mock(UriRetriever.class);
@@ -302,10 +276,21 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var mockedEnvironment = mock(Environment.class);
         when(mockedEnvironment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, mockedEnvironment, mockedTikaUtils());
-        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
-                                          mockedSearchService(Collections.emptyList()));
+        contributorExtractor = mock(ContributorExtractor.class);
+        var organization = randomUri();
+        when(contributorExtractor.generateContributors(any(), any()))
+            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomContributor()), List.of(organization)));
+        identityServiceClient = mock(IdentityServiceClient.class);
+        when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
+            .thenReturn(customerList(organization));
+        scopusHandler = new ScopusHandler(s3Client, publicationChannelConnection,
+                                          identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
+                                          mockedSearchService(Collections.emptyList()), contributorExtractor);
         scopusData = new ScopusGenerator();
+    }
+
+    private CustomerList customerList(URI organization) {
+        return new CustomerList(List.of(randomCustomer(organization)));
     }
 
     private SearchService mockedSearchService(List<Publication> publications) {
@@ -356,9 +341,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var event = createSqsEvent(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
-                                          mockedSearchService(Collections.emptyList()));
+        scopusHandler = new ScopusHandler(s3Client, publicationChannelConnection,
+                                          identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
+                                          mockedSearchService(Collections.emptyList()), contributorExtractor);
         scopusHandler.handleRequest(event, CONTEXT);
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
@@ -446,18 +431,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(event, CONTEXT);
         var actualMainTitle = publication.getEntityDescription().getMainTitle();
         assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
-    }
-
-    @Test
-    void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
-        createEmptyPiaMock();
-        var authors = keepOnlyTheAuthors();
-        var collaborations = keepOnlyTheCollaborations();
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
-        authors.forEach(author -> checkContributor(author, actualContributors));
-        collaborations.forEach(collaboration -> checkCollaboration(collaboration, actualContributors));
     }
 
     @Test
@@ -958,16 +931,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldExtractAuthorOrcidAndSequenceNumber() throws IOException {
-        createEmptyPiaMock();
-        var authors = keepOnlyTheAuthors();
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
-        authors.forEach(author -> assertIsSameAuthor(author, actualContributors));
-    }
-
-    @Test
     void shouldExtractCitationTypesToBookMonographPublicationInstance() throws IOException {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.BK);
@@ -1013,20 +976,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         assertThat(actualPublicationInstance.getPages().getEnd(), is(expectedPages));
     }
 
-    @Test
-    void shouldExtractCorrespondingAuthor() throws IOException {
-        createEmptyPiaMock();
-        var authors = keepOnlyTheAuthors();
-        var correspondingAuthorTp = authors.getFirst();
-        scopusData.setCorrespondence(correspondingAuthorTp);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContributors = publication.getEntityDescription().getContributors();
-        var actualCorrespondingContributor = getCorrespondingContributor(actualPublicationContributors);
-        assertThat(actualCorrespondingContributor.getIdentity().getName(),
-                   startsWith(correspondingAuthorTp.getGivenName()));
-    }
-
     @ParameterizedTest(name = "Should have entityDescription with language:{1}")
     @MethodSource("providedLanguagesAndExpectedOutput")
     void shouldExtractLanguage(List<LanguageDescription> languageCodes, URI expectedLanguageUri) throws IOException {
@@ -1036,25 +985,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(event, CONTEXT);
         var actualLanguageUri = publication.getEntityDescription().getLanguage();
         assertEquals(expectedLanguageUri, actualLanguageUri);
-    }
-
-    @Test
-    void shouldReplaceContributorIdentityWithCristinDataVerifiedByAuthorId() throws IOException {
-        var authorTypesMappableToCristin = keepOnlyAuthorsWithAuthorId();
-        var piaCristinIdAndAuthors = new HashMap<CristinPerson, AuthorTp>();
-        authorTypesMappableToCristin.forEach(authorTp -> piaCristinIdAndAuthors.put(randomCristinPerson(), authorTp));
-        generatePiaResponseAndCristinPersons(piaCristinIdAndAuthors);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributorsWithScopusAuid =
-            publication.getEntityDescription()
-                .getContributors().stream()
-                .filter(this::hasScopusAuid)
-                .sorted(Comparator.comparingInt(Contributor::getSequence))
-                .toList();
-        assertThat(actualContributorsWithScopusAuid, hasSize(authorTypesMappableToCristin.size()));
-        actualContributorsWithScopusAuid.forEach(
-            contributor -> assertThatContributorHasCorrectCristinPersonData(contributor, piaCristinIdAndAuthors));
     }
 
     @Test
@@ -1085,17 +1015,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         publication.getEntityDescription()
             .getContributors()
             .forEach(contributor -> hasBeenFetchedFromCristin(contributor, piaCristinIdAndAuthors.keySet()));
-    }
-
-    @Test
-    void shouldFetchOrganizationFromPiaAndCristinAndAttachToContributorAffiliationList() throws IOException {
-        scopusData = createWithOneAuthorGroupAndAffiliation(generateAuthorGroup());
-        var cristinAffiliationId = randomString();
-        mockAffiliationResponse(cristinAffiliationId, getAuthorGroup());
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
-        actualContributors.forEach(contributor -> hasAffiliationWithId(contributor, cristinAffiliationId));
     }
 
     @Test
@@ -1169,30 +1088,15 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldHandlePiaConnectionException() throws IOException {
-        mockedPiaException();
-        var event = createNewScopusPublicationEvent();
-        scopusHandler.handleRequest(event, CONTEXT);
-        assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
-    }
-
-    @Test
-    void shouldHandlePiaBadRequest() throws IOException {
-        mockedPiaBadRequest();
-        var event = createNewScopusPublicationEvent();
-        scopusHandler.handleRequest(event, CONTEXT);
-        assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
-    }
-
-    @Test
     void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
         throws IOException {
         var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         var event = createNewScopusPublicationEvent();
-        var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
-                                        this.publicationChannelConnection, nvaCustomerConnection,
+        var handler = new ScopusHandler(this.s3Client,
+                                        this.publicationChannelConnection, identityServiceClient,
                                         fakeResourceServiceThrowingException,
-                                        scopusUpdater, scopusFileConverter, mockedSearchService(Collections.emptyList()));
+                                        scopusUpdater, scopusFileConverter,
+                                        mockedSearchService(Collections.emptyList()), contributorExtractor);
         assertNull(handler.handleRequest(event, CONTEXT));
         assertNotNull(extractErrorReportFromS3Client());
     }
@@ -1223,9 +1127,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
 
         var existingPublication = persistPublicationWithScopusIdentifier(scopusIdentifier);
-        var handler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                        nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
-                                        mockedSearchService(List.of(existingPublication)));
+        var handler = new ScopusHandler(s3Client, publicationChannelConnection,
+                                        identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
+                                        mockedSearchService(List.of(existingPublication)),
+                                        contributorExtractor);
         createEmptyPiaMock();
         var event = createNewScopusPublicationEvent();
         var importCandidate = handler.handleRequest(event, CONTEXT);
@@ -1240,9 +1145,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
         var existingPublications =
             IntStream.of(3).mapToObj(i -> persistPublicationWithScopusIdentifier(scopusIdentifier)).toList();
-        var handler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                        nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
-                                        mockedSearchService(existingPublications));
+        var handler = new ScopusHandler(s3Client, publicationChannelConnection,
+                                        identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
+                                        mockedSearchService(existingPublications), contributorExtractor);
         createEmptyPiaMock();
         var event = createNewScopusPublicationEvent();
         var importCandidate = handler.handleRequest(event, CONTEXT);
@@ -1262,12 +1167,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         if (nonNull(contributorId)) {
             assertThat(cristinIds, hasItem(toCristinIdentifier(contributorId)));
         }
-    }
-
-    private static NvaCustomerConnection mockCustomerConnection() {
-        var customerConnection = mock(NvaCustomerConnection.class);
-        when(customerConnection.atLeastOneNvaCustomerPresent(any())).thenReturn(true);
-        return customerConnection;
     }
 
     private static String toCrossrefResponse(UriWrapper downloadUrl) {
@@ -1341,18 +1240,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
             List.of(ExpandedImportCandidate
                         .fromImportCandidate(importCandidate, mock(AuthorizedBackendUriRetriever.class))), 1)));
-    }
-
-    private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
-        return expectedCristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
-    }
-
-    private boolean hasScopusAuid(Contributor contributor) {
-        return contributor.getIdentity()
-                   .getAdditionalIdentifiers()
-                   .stream()
-                   .anyMatch(additionalIdentifier ->
-                                 "scopus-auid".equals(additionalIdentifier.sourceName()));
     }
 
     private String getEid() {
@@ -1553,49 +1440,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return s3Driver.getFile(uri);
     }
 
-    private Environment createPiaConnectionEnvironment(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var environment = mock(Environment.class);
-        when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(
-            wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""));
-        when(environment.readEnv(API_HOST)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""));
-        when(environment.readEnv(PIA_USERNAME_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);
-        when(environment.readEnv(PIA_PASSWORD_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);
-        when(environment.readEnv(PIA_SECRETS_NAME_ENV_KEY)).thenReturn(PIA_SECRET_NAME);
-        return environment;
-    }
-
-    private void generatePiaResponseAndCristinPersons(HashMap<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
-        generatePiaAuthorResponse(piaCristinIdAndAuthors);
-        generateCristinPersonsResponse(piaCristinIdAndAuthors.keySet());
-    }
-
-    private void generateCristinPersonsResponse(Collection<CristinPerson> cristinPersons) {
-        cristinPersons.forEach(person -> mockCristinPerson(UriWrapper.fromUri(person.getId()).getLastPathElement(),
-                                                           CristinGenerator.convertPersonToJson(person)));
-    }
-
     private void generateCristinPersonsResponse(ArrayList<CristinPerson> cristinCristinPeople, Integer cristinId) {
         var cristinPerson = CristinGenerator.generateCristinPerson(
             UriWrapper.fromUri("/cristin/person/" + cristinId.toString()).getUri(), randomString(), randomString());
         cristinCristinPeople.add(cristinPerson);
         mockCristinPerson(cristinId.toString(), CristinGenerator.convertPersonToJson(cristinPerson));
-    }
-
-    private CristinPerson randomCristinPerson() {
-        return CristinGenerator.generateCristinPerson(
-            UriWrapper.fromUri("/cristin/person/" + randomInteger().toString()).getUri(),
-            randomString(),
-            randomString());
-    }
-
-    private void generatePiaAuthorResponse(HashMap<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
-
-        piaCristinIdAndAuthors
-            .entrySet()
-            .stream()
-            .map(entry -> PiaResponseGenerator.generateAuthors(entry.getValue().getAuid(),
-                                                               getCristinIdentifier(entry.getKey())))
-            .forEach(this::createPiaAuthorMock);
     }
 
     private void generatePiaAuthorResponse(ArrayList<List<Author>> authors,
@@ -1606,10 +1455,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         createPiaAuthorMock(authorList);
     }
 
-    private int getCristinIdentifier(CristinPerson person) {
-        return Integer.parseInt(UriWrapper.fromUri(person.getId()).getLastPathElement());
-    }
-
     private void generatePiaAndCristinAffiliationResponse(AuthorGroupTp authorGroupTp, String cristinOrganizationId) {
         var affiliation = PiaResponseGenerator.generateAffiliation(cristinOrganizationId, List.of(1).iterator());
         createPiaAffiliationMock(List.of(affiliation), authorGroupTp.getAffiliation().getAfid());
@@ -1617,10 +1462,18 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private void generateCristinOrganizationResponse(String cristinOrganizationId) {
-        URI cristinOrgUri = UriWrapper.fromUri("cristin/organization/" + cristinOrganizationId).getUri();
-        var cristinOrganization = CristinGenerator.generateCristinOrganization(cristinOrgUri);
+        var cristinOrgUri = UriWrapper.fromUri("cristin/organization/" + cristinOrganizationId).getUri();
+        var cristinOrganization = CristinGenerator.generateCristinOrganization(cristinOrgUri, randomString());
         var organization = attempt(() -> CristinGenerator.convertOrganizationToJson(cristinOrganization)).orElseThrow();
         mockCristinOrganization(cristinOrganizationId, organization);
+        mockCustomerListResponse(cristinOrgUri);
+    }
+
+    private void mockCustomerListResponse(URI cristinOrganizationId) {
+        var customerList = new CustomerList(List.of(randomCustomer(cristinOrganizationId)));
+        var responseBody = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(customerList)).orElseThrow();
+        stubFor(WireMock.get(urlPathEqualTo("/customers"))
+                    .willReturn(aResponse().withBody(responseBody).withStatus(HTTP_OK)));
     }
 
     private ContentWrapper createContentWithSupAndInfTags() {
@@ -1659,66 +1512,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                            .map(AdditionalIdentifierBase::value)
                            .collect(SingletonCollector.collectOrElse(""));
         return authorTp.getAuid().equals(authorId);
-    }
-
-    private void assertThatContributorHasCorrectCristinPersonData(Contributor contributor,
-                                                                  Map<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
-        var actualCristinId = contributor.getIdentity().getId();
-        assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
-        var expectedCristinPerson = getPersonByCristinNumber(piaCristinIdAndAuthors.keySet(),
-                                                             actualCristinId).orElseThrow();
-        var expectedName = calculateExpectedNameFromCristinPerson(expectedCristinPerson);
-
-        assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
-
-        assertThat(contributor.getAffiliations(), hasSize(getActiveAffiliations(expectedCristinPerson).size()));
-
-        assertThat(contributor.getIdentity().getVerificationStatus(),
-                   anyOf(equalTo(ContributorVerificationStatus.VERIFIED),
-                         equalTo(ContributorVerificationStatus.NOT_VERIFIED)));
-
-        var actualOrganizationFromAffiliation = contributor.getAffiliations()
-                                                    .stream()
-                                                    .filter(Organization.class::isInstance)
-                                                    .map(Organization.class::cast)
-                                                    .map(Organization::getId)
-                                                    .collect(Collectors.toList());
-        var expectedOrganizationFromAffiliation = expectedCristinPerson.getAffiliations()
-                                                      .stream()
-                                                      .filter(Affiliation::isActive)
-                                                      .map(Affiliation::getOrganization)
-                                                      .toList();
-
-        assertThat(actualOrganizationFromAffiliation, containsInAnyOrder(
-            expectedOrganizationFromAffiliation.stream().map(Matchers::equalTo).collect(Collectors.toList())));
-    }
-
-    private String calculateExpectedNameFromCristinPerson(CristinPerson cristinPerson) {
-        return cristinPerson.getNames()
-                   .stream()
-                   .filter(this::isFirstName)
-                   .findFirst()
-                   .map(TypedValue::getValue)
-                   .orElse(StringUtils.EMPTY_STRING) + StringUtils.SPACE + cristinPerson.getNames()
-                                                                               .stream()
-                                                                               .filter(this::isSurname)
-                                                                               .findFirst()
-                                                                               .map(TypedValue::getValue)
-                                                                               .orElse(StringUtils.EMPTY_STRING);
-    }
-
-    private boolean isFirstName(TypedValue typedValue) {
-        return ContributorExtractor.FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
-    }
-
-    private boolean isSurname(TypedValue nameType) {
-        return ContributorExtractor.LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
-    }
-
-    @NotNull
-    private Optional<CristinPerson> getPersonByCristinNumber(Collection<CristinPerson> cristinCristinPeople,
-                                                             URI cristinId) {
-        return cristinCristinPeople.stream().filter(person -> cristinId.equals(person.getId())).findFirst();
     }
 
     private void mockCristinPerson(String cristinPersonId, String response) {
@@ -1877,26 +1670,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .collect(Collectors.toList());
     }
 
-    private Set<AuthorTp> keepOnlyAuthorsWithAuthorId() {
-        return keepOnlyTheAuthors().stream()
-                   .filter(authorTp -> StringUtils.isNotBlank(authorTp.getAuid()))
-
-                   .collect(Collectors.toSet());
-    }
-
-    private List<CollaborationTp> keepOnlyTheCollaborations() {
-        return keepOnlyTheCollaborationsAndAuthors().stream()
-                   .filter(this::isCollaborationTp)
-                   .map(collaboration -> (CollaborationTp) collaboration)
-                   .collect(Collectors.toList());
-    }
-
     private boolean isAuthorTp(Object object) {
         return object instanceof AuthorTp;
-    }
-
-    private boolean isCollaborationTp(Object object) {
-        return object instanceof CollaborationTp;
     }
 
     private List<Object> keepOnlyTheCollaborationsAndAuthors() {

@@ -105,7 +105,7 @@ public class CristinConnection {
         return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + environment.readEnv(API_HOST))
                    .addChild(CRISTIN)
                    .addChild(PERSON)
-                   .addChild(orcId)
+                   .addChild(UriWrapper.fromUri(orcId).getLastPathElement())
                    .getUri();
     }
 

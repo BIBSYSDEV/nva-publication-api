@@ -1,5 +1,10 @@
 package no.sikt.nva.scopus.conversion;
 
+import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCristinOrganization;
+import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCustomer;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomContributorWithAffiliationId;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -7,10 +12,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.util.List;
 import no.scopus.generated.OpenAccessType;
 import no.sikt.nva.scopus.ScopusConverter;
+import no.sikt.nva.scopus.conversion.ContributorExtractor.ContributorsOrganizationsWrapper;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
+import no.unit.nva.clients.CustomerList;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import org.junit.jupiter.api.Test;
@@ -76,14 +85,22 @@ public class ScopusConverterTest {
     }
 
     private static ImportCandidate generateImportCandidate(ScopusGenerator generator) {
-        var customerConnection = mock(NvaCustomerConnection.class);
-        var converter = new ScopusConverter(generator.getDocument(), mock(PiaConnection.class),
-                                            mock(CristinConnection.class), mock(PublicationChannelConnection.class),
-                                            customerConnection,
-                                            mock(ScopusFileConverter.class));
-        when(customerConnection.atLeastOneNvaCustomerPresent(any())).thenReturn(true);
-        var candidate = converter.generateImportCandidate();
-        return candidate;
+        var identityServiceClient = mock(IdentityServiceClient.class);
+        var cristinConnection = mock(CristinConnection.class);
+        var contributorExtractor = mock(ContributorExtractor.class);
+        var affiliationId = randomUri();
+        when(contributorExtractor.generateContributors(any(), any()))
+            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomContributorWithAffiliationId(affiliationId)), List.of(affiliationId)));
+        var converter = new ScopusConverter(generator.getDocument(),
+                                            mock(PublicationChannelConnection.class),
+                                            identityServiceClient,
+                                            mock(ScopusFileConverter.class),
+                                            contributorExtractor);
+        when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
+            .thenReturn(new CustomerList(List.of(randomCustomer(affiliationId))));
+        when(cristinConnection.fetchCristinOrganizationByCristinId(any()))
+            .thenReturn(randomCristinOrganization());
+        return converter.generateImportCandidate();
     }
 
     private static void setNullTitle(ScopusGenerator generator) {
