@@ -8,6 +8,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
@@ -62,16 +64,17 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private final String importCandidateStorageBucket;
     private final ResourceService candidateService;
     private final ResourceService publicationService;
+    private final IdentityServiceClient identityServiceClient;
     private final S3Client ss3Client;
     private final PiaClient piaClient;
 
     @JacocoGenerated
-    public CreatePublicationFromImportCandidateHandler() {
-        this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment());
+    public CreatePublicationFromImportCandidateHandler(IdentityServiceClient identityServiceClient) {
+        this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment(), identityServiceClient);
     }
 
     public CreatePublicationFromImportCandidateHandler(
-        ImportCandidateHandlerConfigs configs, Environment environment) {
+        ImportCandidateHandlerConfigs configs, Environment environment, IdentityServiceClient identityServiceClient) {
         super(ImportCandidate.class, environment);
         this.candidateService = configs.importCandidateService();
         this.publicationService = configs.publicationService();
@@ -79,6 +82,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         this.persistedStorageBucket = configs.persistedStorageBucket();
         this.importCandidateStorageBucket = configs.importCandidateStorageBucket();
         this.piaClient = new PiaClient(configs.piaClientConfig());
+        this.identityServiceClient = identityServiceClient;
     }
 
     @Override
@@ -138,13 +142,27 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                                             RequestInfo requestInfo)
         throws NotFoundException, UnauthorizedException {
         var rawImportCandidate = candidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        var inputWithOwner = injectOrganizationAndOwner(requestInfo, importCandidate, rawImportCandidate);
-        var publication = Resource.fromImportCandidate(inputWithOwner)
-                              .importResource(publicationService, ImportSource.fromSource(Source.SCOPUS))
+        var importCandidateToImport = injectOrganizationAndOwner(requestInfo, importCandidate, rawImportCandidate);
+        var resourceToImport = Resource.fromImportCandidate(importCandidateToImport);
+
+        if (!resourceToImport.getFiles().isEmpty() && !filesCanBePublishedWithoutApproval(importCandidate)) {
+            resourceToImport.setAssociatedArtifacts(setAssociatedArtifactsToPending);
+        }
+
+
+        var publication = resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS))
                               .toPublication();
+
         copyArtifacts(publication, rawImportCandidate);
         updatePiaContributors(importCandidate, rawImportCandidate);
+
         return publication;
+    }
+
+    private boolean filesCanBePublishedWithoutApproval(ImportCandidate importCandidate) {
+        return importCandidate.getAssociatedCustomers().stream()
+                   .map(uri -> attempt(() -> identityServiceClient.getCustomerById(uri)).orElseThrow())
+                   .anyMatch(CustomerDto::autoPublishScopusImportFiles);
     }
 
     private void updatePiaContributors(ImportCandidate input, ImportCandidate rawImportCandidate) {
