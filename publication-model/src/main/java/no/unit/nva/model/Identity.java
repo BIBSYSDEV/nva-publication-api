@@ -35,17 +35,8 @@ public class Identity {
         return id;
     }
 
-    /**
-     * Set URI id while silently removing anonymous nodes.
-     *
-     * @param id a URI or anonymous node.
-     */
-    public void setId(Object id) {
-        if (id instanceof URI uri) {
-            this.id = uri;
-        } else if (id instanceof String string && string.startsWith("https://")) {
-            this.id = URI.create(string);
-        }
+    public void setId(URI id) {
+        this.id = id;
     }
 
     public String getName() {

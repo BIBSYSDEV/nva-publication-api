@@ -1666,7 +1666,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.identifiers.HandleIdentifierEventHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
       Timeout: 900
       Environment:
         Variables:
@@ -1680,6 +1679,9 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt HandleWorkQueue.Arn
+            BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 2
 
   HandleWorkQueue:
     Type: AWS::SQS::Queue
@@ -2964,7 +2966,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobHandler::handleRequest
       CodeUri: publication-event-handlers
       Policies:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
       Timeout: 60 # if changing, also change the visibility timeout of the SQS queue
@@ -2977,15 +2978,48 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt DynamodbResourceBatchJobWorkQueue.Arn
-            BatchSize: 10
+            BatchSize: 5
             MaximumBatchingWindowInSeconds: 5
             FunctionResponseTypes:
               - ReportBatchItemFailures
             ScalingConfig:
-              MaximumConcurrency: 10
+              MaximumConcurrency: 2
 
   DynamodbResourceBatchJobLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${DynamodbResourceBatchJobFunction}
+
+  LoadDynamodbResourceBatchJobHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: 'Iterates through all DynamoDB records and queues them for batch processing. Example EventBridge input: {"detail": {"jobType": "REINDEX_RECORD"}}'
+      Handler: no.unit.nva.publication.events.handlers.batch.dynamodb.LoadDynamodbResourceBatchJobHandler::handleRequest
+      CodeUri: publication-event-handlers
+      Timeout: 900
+      Policies:
+        - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref NvaResourcesTable
+          WORK_QUEUE_URL: !Ref DynamodbResourceBatchJobWorkQueue
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          PROCESSING_ENABLED: 'true'
+          SCAN_PAGE_SIZE: 1000
+          TOTAL_SEGMENTS: 10
+          SQS_BATCH_SIZE: 10
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail-type: 
+                - PublicationService.DataEntry.LoadDynamodbResourceBatchJob
+
+  LoadDynamodbResourceBatchJobLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${LoadDynamodbResourceBatchJobHandler}
       RetentionInDays: 14

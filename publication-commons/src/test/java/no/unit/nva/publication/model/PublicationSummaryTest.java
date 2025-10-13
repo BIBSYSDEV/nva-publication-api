@@ -38,7 +38,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
     private static final int MAX_SIZE_CONTRIBUTOR_LIST = 10;
 
     @BeforeEach
-    void setup() {
+    public void setup() {
         super.init();
     }
 
