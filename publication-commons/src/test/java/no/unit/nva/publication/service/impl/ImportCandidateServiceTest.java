@@ -55,7 +55,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     void shouldUpdateImportStatus() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         resourceService.updateImportStatus(importCandidate.getIdentifier(),
-                                           ImportStatusFactory.createImported(null, null));
+                                           ImportStatusFactory.createImported(randomString(), SortableIdentifier.next()));
         var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
         assertThat(fetchedPublication.getImportStatus().candidateStatus(), equalTo(IMPORTED));
     }
@@ -72,7 +72,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     void shouldThrowBadMethodExpectedWhenDeletingImportCandidateWithStatusImported() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         resourceService.updateImportStatus(importCandidate.getIdentifier(),
-                                           ImportStatusFactory.createImported(null, null));
+                                           ImportStatusFactory.createImported(randomString(), SortableIdentifier.next()));
         assertThrows(BadMethodException.class,
                      () -> resourceService.deleteImportCandidate(importCandidate));
     }
@@ -107,8 +107,8 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenUpdatingImportedImportCandidate() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         resourceService.updateImportStatus(importCandidate.getIdentifier(),
-                                           ImportStatusFactory.createImported(new Username(randomString()),
-                                                                              randomUri()));
+                                           ImportStatusFactory.createImported(randomString(),
+                                                                              SortableIdentifier.next()));
         var updatedImportCandidate = update(importCandidate);
         assertThrows(BadRequestException.class, () -> resourceService.updateImportCandidate(updatedImportCandidate));
     }

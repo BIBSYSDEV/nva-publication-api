@@ -645,7 +645,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     private ImportCandidate createImportedPersistedImportCandidate() throws NotFoundException {
         var candidate = createImportCandidate();
-        candidate.setImportStatus(ImportStatusFactory.createImported(randomPerson(), randomUri()));
+        candidate.setImportStatus(ImportStatusFactory.createImported(randomString(), SortableIdentifier.next()));
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }

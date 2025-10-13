@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 public class ImportCandidateTest {
 
     public static Stream<Arguments> importStatuses() {
-        return Stream.of(Arguments.of(ImportStatusFactory.createImported(randomPerson(), randomUri())),
+        return Stream.of(Arguments.of(ImportStatusFactory.createImported(randomString(), SortableIdentifier.next())),
                 Arguments.of(ImportStatusFactory.createNotApplicable(randomPerson(), randomString())));
     }
 
