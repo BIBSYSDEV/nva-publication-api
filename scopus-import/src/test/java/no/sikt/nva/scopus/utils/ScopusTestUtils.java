@@ -21,7 +21,7 @@ public class ScopusTestUtils {
                                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(), randomBoolean(),
                                randomBoolean(), randomBoolean(), Collections.emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(),
-                                                                       RandomDataGenerator.randomUri()));
+                                                                       RandomDataGenerator.randomUri()), randomBoolean());
     }
 
     public static CristinOrganization randomCristinOrganization() {

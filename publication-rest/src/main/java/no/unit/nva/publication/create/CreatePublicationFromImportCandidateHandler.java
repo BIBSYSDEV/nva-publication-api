@@ -1,40 +1,39 @@
 package no.unit.nva.publication.create;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
-import static java.util.Objects.isNull;
+import static java.util.function.Predicate.not;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
-import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
-import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.create.pia.ContributorUpdateService;
 import no.unit.nva.publication.create.pia.PiaClient;
 import no.unit.nva.publication.exception.NotAuthorizedException;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -43,8 +42,6 @@ import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 
 public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandler<ImportCandidate,
                                                                                       PublicationResponse> {
@@ -60,28 +57,28 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     public static final String PUBLICATION = "publication";
     public static final String RESOURCE_IS_NOT_PUBLISHABLE = "Resource is not publishable";
 
-    private final String persistedStorageBucket;
-    private final String importCandidateStorageBucket;
     private final ResourceService candidateService;
     private final ResourceService publicationService;
+    private final TicketService ticketService;
     private final IdentityServiceClient identityServiceClient;
-    private final S3Client ss3Client;
     private final PiaClient piaClient;
+    private final AssociatedArtifactsMover associatedArtifactsMover;
 
     @JacocoGenerated
-    public CreatePublicationFromImportCandidateHandler(IdentityServiceClient identityServiceClient) {
-        this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment(), identityServiceClient);
+    public CreatePublicationFromImportCandidateHandler() {
+        this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment(), TicketService.defaultService(),
+             IdentityServiceClient.prepare());
     }
 
     public CreatePublicationFromImportCandidateHandler(
-        ImportCandidateHandlerConfigs configs, Environment environment, IdentityServiceClient identityServiceClient) {
+        ImportCandidateHandlerConfigs configs, Environment environment, TicketService ticketService, IdentityServiceClient identityServiceClient) {
         super(ImportCandidate.class, environment);
         this.candidateService = configs.importCandidateService();
         this.publicationService = configs.publicationService();
-        this.ss3Client = configs.s3Client();
-        this.persistedStorageBucket = configs.persistedStorageBucket();
-        this.importCandidateStorageBucket = configs.importCandidateStorageBucket();
+        this.associatedArtifactsMover = new AssociatedArtifactsMover(configs.s3Client(),
+                                                                     configs.importCandidateStorageBucket(), configs.persistedStorageBucket());
         this.piaClient = new PiaClient(configs.piaClientConfig());
+        this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;
     }
 
@@ -89,7 +86,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     protected void validateRequest(ImportCandidate importCandidate, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         validateAccessRight(requestInfo);
-        validateImportCandidate(importCandidate);
+        ImportCandidateValidator.validate(importCandidate);
     }
 
     @Override
@@ -105,16 +102,12 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return HTTP_CREATED;
     }
 
-    private static ImportStatus toImportStatus(RequestInfo requestInfo, URI uri) throws UnauthorizedException {
-        return ImportStatusFactory.createImported(new Username(requestInfo.getUserName()), uri);
+    private static ImportStatus toImportStatus(String username, URI uri) {
+        return ImportStatusFactory.createImported(new Username(username), uri);
     }
 
     private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
         return !requestInfo.userIsAuthorized(AccessRight.MANAGE_IMPORT);
-    }
-
-    private static boolean hasDifferentCristinId(Contributor rawContributor, Contributor contributor) {
-        return !Objects.equals(rawContributor.getIdentity().getId(), contributor.getIdentity().getId());
     }
 
     private URI toPublicationUriIdentifier(Publication publication) {
@@ -125,111 +118,78 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private Publication importCandidate(ImportCandidate input, RequestInfo requestInfo)
-        throws NotFoundException, UnauthorizedException {
+        throws ApiGatewayException {
         var nvaPublication = createNvaPublicationFromImportCandidateAndUserInput(input, requestInfo);
-        updateImportCandidate(input, requestInfo, nvaPublication);
-        return publicationService.getPublicationByIdentifier(nvaPublication.getIdentifier());
-    }
-
-    private void updateImportCandidate(ImportCandidate input, RequestInfo requestInfo, Publication nvaPublication)
-        throws NotFoundException, UnauthorizedException {
-        var nvaPublicationUri = toPublicationUriIdentifier(nvaPublication);
-        candidateService.updateImportStatus(input.getIdentifier(), toImportStatus(requestInfo,
-                                                                                  nvaPublicationUri));
+        candidateService.updateImportStatus(input.getIdentifier(), toImportStatus(requestInfo.getUserName(), toPublicationUriIdentifier(nvaPublication)));
+        return nvaPublication;
     }
 
     private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate importCandidate,
                                                                             RequestInfo requestInfo)
-        throws NotFoundException, UnauthorizedException {
+        throws ApiGatewayException {
         var rawImportCandidate = candidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        var importCandidateToImport = injectOrganizationAndOwner(requestInfo, importCandidate, rawImportCandidate);
+        var importCandidateToImport = updateCandidateFromRequest(requestInfo, importCandidate, rawImportCandidate);
         var resourceToImport = Resource.fromImportCandidate(importCandidateToImport);
 
-        if (!resourceToImport.getFiles().isEmpty() && !filesCanBePublishedWithoutApproval(importCandidate)) {
-            resourceToImport.setAssociatedArtifacts(setAssociatedArtifactsToPending);
+        if (hasFiles(resourceToImport)) {
+            var customer = customerRequiringFileApproval(importCandidate);
+            if (customer.isPresent()) {
+                resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
+                var importedResource = resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS));
+                createAndPersistFileApprovalTicket(requestInfo, customer.get(), importedResource);
+                return finalizeImport(importedResource, importCandidate, rawImportCandidate);
+            }
         }
 
+        var importedResource = resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS));
+        return finalizeImport(importedResource, importCandidate, rawImportCandidate);
+    }
 
-        var publication = resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS))
-                              .toPublication();
+    private void createAndPersistFileApprovalTicket(RequestInfo requestInfo, CustomerDto customer,
+                                                    Resource importedResource)
+        throws ApiGatewayException {
+        var userInstanceFromCustomer = createUserInstanceFromCustomer(requestInfo, customer);
+        var fileApproval = PublishingRequestCase.createWithFilesForApproval(
+            importedResource,
+            userInstanceFromCustomer,
+            PublishingWorkflow.lookUp(customer.publicationWorkflow()),
+            importedResource.getPendingFiles()
+        );
+        fileApproval.persistNewTicket(ticketService);
+    }
 
-        copyArtifacts(publication, rawImportCandidate);
-        updatePiaContributors(importCandidate, rawImportCandidate);
-
+    private Publication finalizeImport(Resource importedResource, ImportCandidate importCandidate, ImportCandidate rawImportCandidate) {
+        var publication = importedResource.toPublication();
+        associatedArtifactsMover.moveAssociatedArtifacts(publication, rawImportCandidate);
+        new ContributorUpdateService(piaClient).updatePiaContributors(importCandidate, rawImportCandidate);
         return publication;
     }
 
-    private boolean filesCanBePublishedWithoutApproval(ImportCandidate importCandidate) {
+    private static UserInstance createUserInstanceFromCustomer(RequestInfo requestInfo, CustomerDto customer)
+        throws UnauthorizedException {
+        var resourceOwner = new ResourceOwner(new Username(requestInfo.getUserName()), customer.cristinId());
+        return UserInstance.create(resourceOwner, customer.id());
+    }
+
+    private AssociatedArtifactList convertFilesToPending(Resource resource) {
+        var associatedArtifacts = resource.getAssociatedArtifacts().stream()
+                                      .map(associatedArtifact -> associatedArtifact instanceof File file ? file.toPendingOpenFile() : associatedArtifact)
+                                      .toList();
+        return new AssociatedArtifactList(associatedArtifacts);
+    }
+
+    private static boolean hasFiles(Resource resourceToImport) {
+        return !resourceToImport.getFiles().isEmpty();
+    }
+
+    private Optional<CustomerDto> customerRequiringFileApproval(ImportCandidate importCandidate) {
         return importCandidate.getAssociatedCustomers().stream()
                    .map(uri -> attempt(() -> identityServiceClient.getCustomerById(uri)).orElseThrow())
-                   .anyMatch(CustomerDto::autoPublishScopusImportFiles);
+                   .filter(not(CustomerDto::autoPublishScopusImportFiles))
+                   .findFirst();
     }
 
-    private void updatePiaContributors(ImportCandidate input, ImportCandidate rawImportCandidate) {
-        var rawImportCandidateContributors = rawImportCandidate.getEntityDescription().getContributors();
-        var contributorsNeedingUpdate =
-            input.getEntityDescription()
-                .getContributors()
-                .stream()
-                .filter(contributor -> changeInCristinIdentifier(contributor, rawImportCandidateContributors))
-                .toList();
-        piaClient.updateContributor(contributorsNeedingUpdate, getScopusIdentifier(rawImportCandidate));
-    }
-
-    private boolean changeInCristinIdentifier(Contributor contributor,
-                                              List<Contributor> rawImportCandidateContributors) {
-        return rawImportCandidateContributors.stream()
-                   .anyMatch(rawContributor -> hasSameAuidButDifferentCristinId(rawContributor,
-                                                                                contributor));
-    }
-
-    private boolean hasSameAuidButDifferentCristinId(Contributor rawContributor, Contributor contributor) {
-        return hasDifferentCristinId(rawContributor, contributor)
-               && hasSameAuid(rawContributor, contributor);
-    }
-
-    private boolean hasSameAuid(Contributor rawContributor, Contributor contributor) {
-        var userAuid = extractAuid(contributor);
-        var rawAuid = extractAuid(rawContributor);
-        return Objects.equals(userAuid, rawAuid);
-    }
-
-    private AdditionalIdentifierBase extractAuid(Contributor contributor) {
-        return contributor.getIdentity().getAdditionalIdentifiers().stream().filter(
-            additionalIdentifier -> "scopus-auid".equals(additionalIdentifier.sourceName())
-        ).findFirst().orElse(null);
-    }
-
-    private void copyArtifacts(Publication publication, ImportCandidate importCandidate) {
-        importCandidate.getAssociatedArtifacts().stream()
-            .filter(File.class::isInstance)
-            .filter(file -> wasKeptByImporter((File) file, publication))
-            .map(File.class::cast)
-            .forEach(
-                a -> copyS3file(importCandidateStorageBucket, persistedStorageBucket, a.getIdentifier().toString()));
-    }
-
-    private boolean wasKeptByImporter(File file, Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .anyMatch(publicationFile -> isSameFile(publicationFile, file));
-    }
-
-    private boolean isSameFile(File a, File b) {
-        return a.getIdentifier().equals(b.getIdentifier());
-    }
-
-    private void copyS3file(String source, String destination, String key) {
-        ss3Client.copyObject(CopyObjectRequest.builder()
-                                 .sourceBucket(source)
-                                 .sourceKey(key)
-                                 .destinationBucket(destination)
-                                 .destinationKey(key)
-                                 .build());
-    }
-
-    private ImportCandidate injectOrganizationAndOwner(RequestInfo requestInfo,
+    private ImportCandidate updateCandidateFromRequest(RequestInfo requestInfo,
                                                        ImportCandidate userInput,
                                                        ImportCandidate databaseVersion)
         throws UnauthorizedException {
@@ -251,18 +211,6 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                    .build();
     }
 
-    private void validateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
-        if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().candidateStatus())) {
-            throw new BadRequestException(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE);
-        }
-        if (isNull(getScopusIdentifier(importCandidate))) {
-            throw new BadRequestException(RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE);
-        }
-        if (!importCandidate.isPublishable()) {
-            throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHABLE);
-        }
-    }
-
     private BadGatewayException rollbackAndThrowException(Failure<PublicationResponse> failure, ImportCandidate input) {
         LOGGER.error("Import failed with exception: {}", failure.getException().getMessage());
         return attempt(() -> rollbackImportStatusUpdate(input))
@@ -273,16 +221,6 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         if (notAuthorizedToProcessImportCandidates(requestInfo)) {
             throw new NotAuthorizedException();
         }
-    }
-
-    private String getScopusIdentifier(ImportCandidate importCandidate) {
-        return importCandidate.getAdditionalIdentifiers()
-                   .stream()
-                   .filter(ScopusIdentifier.class::isInstance)
-                   .map(ScopusIdentifier.class::cast)
-                   .map(ScopusIdentifier::value)
-                   .findFirst()
-                   .orElse(null);
     }
 
     private BadGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)

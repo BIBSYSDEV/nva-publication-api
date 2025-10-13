@@ -8,12 +8,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_PROCESS_WENT_WRONG;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -27,8 +29,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,11 +49,14 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -64,6 +73,7 @@ import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.funding.FundingBuilder;
@@ -72,6 +82,8 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.create.pia.PiaClientConfig;
 import no.unit.nva.publication.create.pia.PiaUpdateRequest;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
@@ -80,9 +92,11 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactor
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -109,12 +123,14 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     public static final String SOME_PERSISTED_BUCKET = "some-persisted-bucket";
     public static final String SOME_CANDIDATE_BUCKET = "some-candidate-bucket";
     public static final String IMPORT_CANDIDATES_TABLE = "import-candidates-table";
-    public static final String PUBLICATIONS_TABLE = "publications-table";
     public static final String ACCEPT = "Accept";
+    private static final String PUBLICATIONS_TABLE = new Environment().readEnv("TABLE_NAME");
     private ByteArrayOutputStream output;
     private Context context;
     private ResourceService importCandidateService;
     private ResourceService publicationService;
+    private TicketService ticketService;
+    private IdentityServiceClient identityServiceClient;
     private CreatePublicationFromImportCandidateHandler handler;
     private S3Client s3Client;
 
@@ -128,6 +144,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
         importCandidateService = getResourceService(client, IMPORT_CANDIDATES_TABLE);
         publicationService = getResourceService(client, PUBLICATIONS_TABLE);
+        this.ticketService = getTicketService();
         this.context = context;
         output = new ByteArrayOutputStream();
         piaClientConfig = createPiaConfig(wireMockRuntimeInfo);
@@ -135,9 +152,11 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     SOME_CANDIDATE_BUCKET,
                                                     importCandidateService,
                                                     publicationService,
+                                                    ticketService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
+        this.identityServiceClient = mock(IdentityServiceClient.class);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, identityServiceClient);
         mockPostAuidWriting();
     }
 
@@ -192,7 +211,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     @Test
     void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(
-        @Mock ResourceService resourceService, WireMockRuntimeInfo wireMockRuntimeInfo)
+        @Mock ResourceService resourceService)
         throws IOException, ApiGatewayException {
 
         publicationService = resourceService;
@@ -200,9 +219,10 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     SOME_CANDIDATE_BUCKET,
                                                     importCandidateService,
                                                     publicationService,
+                                                    ticketService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, identityServiceClient);
         when(publicationService.importResource(any(), any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
@@ -229,10 +249,11 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     SOME_CANDIDATE_BUCKET,
                                                     importCandidateService,
                                                     publicationService,
+                                                    ticketService,
                                                     s3Client,
                                                     piaClientConfig
         );
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, identityServiceClient);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenThrow(new TransactionFailedException(new Exception()));
 
@@ -275,9 +296,10 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     SOME_CANDIDATE_BUCKET,
                                                     importCandidateService,
                                                     publicationService,
+                                                    ticketService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment());
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, identityServiceClient);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenCallRealMethod()
             .thenThrow(new NotFoundException(""));
@@ -464,6 +486,60 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 
         assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
+    }
+
+    @Test
+    void shouldPersistPublishingRequestWhenImportingCandidateWithFilesAndCustomerRequiresApproval()
+        throws IOException, NotFoundException {
+        var candidate = createImportCandidate();
+        var file = randomOpenFile();
+        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+        var customerRequiringApproval = randomUri();
+        candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        var request = createRequest(importCandidate);
+
+        when(identityServiceClient.getCustomerById(customerRequiringApproval))
+            .thenReturn(randomCustomer(customerRequiringApproval, false));
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+                           .fetch(publicationService)
+                           .orElseThrow();
+
+        var publishingRequest =
+            (PublishingRequestCase) publicationService.fetchAllTicketsForResource(resource).findFirst().orElseThrow();
+
+        var fileFromApproval = publishingRequest.getFilesForApproval().stream().findFirst().orElseThrow();
+
+        assertThat(fileFromApproval.getIdentifier(), is(equalTo(file.getIdentifier())));
+        assertInstanceOf(PendingOpenFile.class, fileFromApproval);
+        assertInstanceOf(PendingOpenFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
+    }
+
+    @Test
+    void shouldPublishFileWhenImportingCandidateWithFilesAndNoneOfCustomerRequiresApproval()
+        throws IOException, NotFoundException {
+        var candidate = createImportCandidate();
+        var file = randomOpenFile();
+        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+        var customerAllowingPublishing = randomUri();
+        candidate.setAssociatedCustomers(List.of(customerAllowingPublishing));
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        var request = createRequest(importCandidate);
+
+        when(identityServiceClient.getCustomerById(eq(customerAllowingPublishing)))
+            .thenReturn(randomCustomer(customerAllowingPublishing, true));
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+                           .fetch(publicationService)
+                           .orElseThrow();
+
+        assertTrue(publicationService.fetchAllTicketsForResource(resource).toList().isEmpty());
+        assertInstanceOf(OpenFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
@@ -671,5 +747,22 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withRole(new RoleType(Role.ACTOR))
                    .withSequence(1)
                    .build();
+    }
+
+    private CustomerDto randomCustomer(URI customerId, boolean autoPublishScopusImportFiles) {
+        return new CustomerDto(customerId,
+                               UUID.randomUUID(),
+                               randomString(),
+                               randomString(),
+                               randomString(),
+                               RandomDataGenerator.randomUri(),
+                               PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               randomBoolean(),
+                               Collections.emptyList(),
+                               new CustomerDto.RightsRetentionStrategy(randomString(),
+                                                                       RandomDataGenerator.randomUri()),
+                               autoPublishScopusImportFiles);
     }
 }
