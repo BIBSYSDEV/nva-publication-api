@@ -169,7 +169,7 @@ public class ContributorExtractor {
         return nonNull(correspondencePerson) && author.getIndexedName().equals(correspondencePerson.getIndexedName());
     }
 
-    private List<URI> extractTopLevelOrganizations(List<CorporationWithContributors> corporationsWithContributors) {
+    private Collection<URI> extractTopLevelOrganizations(Collection<CorporationWithContributors> corporationsWithContributors) {
         return corporationsWithContributors.stream()
                    .map(CorporationWithContributors::getCristinOrganizations)
                    .flatMap(Collection::stream)
@@ -178,7 +178,7 @@ public class ContributorExtractor {
                    .toList();
     }
 
-    public record ContributorsOrganizationsWrapper(List<Contributor> contributors, List<URI> topLevelOrgs) {
+    public record ContributorsOrganizationsWrapper(List<Contributor> contributors, Collection<URI> topLevelOrgs) {
 
     }
 }

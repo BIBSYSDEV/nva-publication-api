@@ -14,6 +14,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -196,7 +197,8 @@ public class ScopusConverter {
         return new ContributorsWithCustomers(contributorsOrganizationsWrapper.contributors(), customerUris);
     }
 
-    private static List<CustomerDto> getAssociatedCustomers(CustomerList customerList, List<URI> cristinTopLevelOrgs) {
+    private static Collection<CustomerDto> getAssociatedCustomers(CustomerList customerList,
+                                                         Collection<URI> cristinTopLevelOrgs) {
         return customerList.customers().stream()
                    .filter(customer -> cristinTopLevelOrgs.contains(customer.cristinId()))
                    .toList();

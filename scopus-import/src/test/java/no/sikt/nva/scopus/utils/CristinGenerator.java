@@ -74,7 +74,8 @@ public class CristinGenerator {
 
     public static CristinOrganization generateOtherCristinOrganization(URI cristinId) {
         return new CristinOrganization(cristinId, randomUri(), randomString(), List.of(), "NO",
-                                       Map.of(randomString(), "Andre institusjoner"));
+                                       Map.of(randomString(), "Andre institusjoner",
+                                              "EN", "University"));
     }
 
     public static CristinOrganization generateCristinOrganization(URI cristinId, String country) {

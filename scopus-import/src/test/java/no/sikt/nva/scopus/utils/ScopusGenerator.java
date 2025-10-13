@@ -82,7 +82,6 @@ import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 
 public final class ScopusGenerator {
 
@@ -280,7 +279,7 @@ public final class ScopusGenerator {
         return head;
     }
 
-    private static @NotNull AffiliationTp randomAffiliationTp() {
+    private static AffiliationTp randomAffiliationTp() {
         var organization = randomOrganizationTp();
         var affiliationTp = new AffiliationTp();
         affiliationTp.setCountry(randomString());
@@ -289,9 +288,9 @@ public final class ScopusGenerator {
         return affiliationTp;
     }
 
-    private static @NotNull OrganizationTp randomOrganizationTp() {
+    private static OrganizationTp randomOrganizationTp() {
         var organization = new OrganizationTp();
-        organization.getContent().add(randomString());
+        organization.getContent().add("Department of Justice and Public Safety");
         return organization;
     }
 
@@ -592,7 +591,7 @@ public final class ScopusGenerator {
 
     private static OrganizationTp randomOrganization() {
         OrganizationTp organizationTp = new OrganizationTp();
-        organizationTp.getContent().add(randomString());
+        organizationTp.getContent().add("Organization of Sovereign Republic of Kongo");
         return organizationTp;
     }
 
