@@ -1,10 +1,8 @@
 package no.sikt.nva.scopus.conversion.model;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
-import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -15,11 +13,9 @@ import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.UnconfirmedOrganization;
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 
 public class CorporationWithContributors {
 
@@ -29,13 +25,6 @@ public class CorporationWithContributors {
 
     private List<CristinOrganization> cristinOrganizations;
     private URI cristinOrganizationId;
-
-    public static String guessTheLanguageOfTheInputStringAsIso6391Code(String textToBeGuessedLanguageCodeFrom) {
-        var detector = new OptimaizeLangDetector().loadModels();
-        var result = detector.detect(textToBeGuessedLanguageCodeFrom);
-        return result.isReasonablyCertain() ? getIso6391LanguageCodeForSupportedNvaLanguage(result.getLanguage())
-                   : ENGLISH.getIso6391Code();
-    }
 
     public AuthorGroupTp getScopusAuthors() {
         return scopusAuthors;
@@ -85,11 +74,6 @@ public class CorporationWithContributors {
                    .collect(Collectors.joining(AFFILIATION_DELIMITER));
     }
 
-    private static String getIso6391LanguageCodeForSupportedNvaLanguage(String possiblyUnsupportedLanguageIso6391code) {
-        var language = LanguageMapper.getLanguageByIso6391Code(possiblyUnsupportedLanguageIso6391code);
-        return nonNull(language.getIso6391Code()) ? language.getIso6391Code() : ENGLISH.getIso6391Code();
-    }
-
     private List<Corporation> generateCorporationFromCristinOrganization() {
         return cristinOrganizations.stream()
                    .map(cristinOrganization -> new Organization.Builder().withId(cristinOrganization.id()).build())
@@ -100,7 +84,7 @@ public class CorporationWithContributors {
     private List<Corporation> generateCorporationFromAuthorGroupTp() {
         var name = getOrganizationNameFromAuthorGroup();
         var labels = name.isPresent() && !name.get().isEmpty() ? name.map(
-            organizationName -> Map.of(guessTheLanguageOfTheInputStringAsIso6391Code(organizationName),
+            organizationName -> Map.of(LanguageUtil.guessTheLanguageOfTheInputStringAsIso6391Code(organizationName),
                                        organizationName))
                          : extractCountryNameAsAffiliation();
         return isNotNorway(labels.orElse(Map.of())) && name.isPresent() && !name.get().isBlank()
@@ -111,7 +95,8 @@ public class CorporationWithContributors {
     private Optional<Map<String, String>> extractCountryNameAsAffiliation() {
         return Optional.ofNullable(scopusAuthors.getAffiliation())
                    .map(AffiliationTp::getCountry)
-                   .map(country -> Map.of(guessTheLanguageOfTheInputStringAsIso6391Code(country), country));
+                   .map(country -> Map.of(LanguageUtil.guessTheLanguageOfTheInputStringAsIso6391Code(country),
+                                          country));
     }
 
     private Optional<String> getOrganizationNameFromAuthorGroup() {

@@ -50,7 +50,7 @@ public final class ResourceBuilder {
     private List<ImportDetail> importDetails;
     private ResourceEvent resourceEvent;
     private List<PublicationChannel> publicationChannels;
-    private List<URI> associatedCustomers;
+    private Collection<URI> associatedCustomers;
 
     ResourceBuilder() {
     }
@@ -185,7 +185,7 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public ResourceBuilder withAssociatedCustomers(List<URI> associatedCustomers) {
+    public ResourceBuilder withAssociatedCustomers(Collection<URI> associatedCustomers) {
         this.associatedCustomers = associatedCustomers;
         return this;
     }

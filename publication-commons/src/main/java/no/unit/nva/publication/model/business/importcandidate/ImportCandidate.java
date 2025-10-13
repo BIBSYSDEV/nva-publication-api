@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,8 +34,8 @@ import nva.commons.core.JacocoGenerated;
 public class ImportCandidate extends Publication implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
-    public static final String IMPORT_STATUS = "importStatus";
-    public static final String ASSOCIATED_CUSTOMERS_FIELD = "associatedCustomers";
+    private static final String IMPORT_STATUS = "importStatus";
+    private static final String ASSOCIATED_CUSTOMERS_FIELD = "associatedCustomers";
     @JsonProperty(IMPORT_STATUS)
     private ImportStatus importStatus;
     @JsonProperty(ASSOCIATED_CUSTOMERS_FIELD)
@@ -109,12 +111,16 @@ public class ImportCandidate extends Publication implements JsonSerializable {
         this.importStatus = importStatus;
     }
 
-    public List<URI> getAssociatedCustomers() {
-        return nonNull(associatedCustomers) ? associatedCustomers : List.of();
+    public Collection<URI> getAssociatedCustomers() {
+        return nonNull(associatedCustomers)
+                   ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                   : new ArrayList<>();
     }
 
-    public void setAssociatedCustomers(List<URI> associatedCustomers) {
-        this.associatedCustomers = associatedCustomers;
+    public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
+        this.associatedCustomers = nonNull(associatedCustomers)
+                                       ? new ArrayList<>(associatedCustomers)
+                                       : new ArrayList<>();
     }
 
     public Publication toPublication() {
@@ -280,7 +286,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
-        public Builder withAssociatedCustomers(List<URI> associatedCustomers) {
+        public Builder withAssociatedCustomers(Collection<URI> associatedCustomers) {
             this.importCandidate.setAssociatedCustomers(associatedCustomers);
             return this;
         }
