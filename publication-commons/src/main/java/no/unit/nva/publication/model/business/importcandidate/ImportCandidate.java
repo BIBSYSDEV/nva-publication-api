@@ -5,15 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
@@ -22,6 +21,7 @@ import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
@@ -109,16 +109,16 @@ public class ImportCandidate extends Publication implements JsonSerializable {
         this.importStatus = importStatus;
     }
 
-    public Collection<URI> getAssociatedCustomers() {
+    public List<URI> getAssociatedCustomers() {
         return nonNull(associatedCustomers)
                    ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                   : new ArrayList<>();
+                   : Collections.emptyList();
     }
 
     public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
         this.associatedCustomers = nonNull(associatedCustomers)
-                                       ? new ArrayList<>(associatedCustomers)
-                                       : new ArrayList<>();
+                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                                       : Collections.emptyList();
     }
 
     public Publication toPublication() {

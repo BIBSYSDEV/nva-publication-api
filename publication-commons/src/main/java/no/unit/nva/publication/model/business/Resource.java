@@ -124,7 +124,7 @@ public class Resource implements Entity {
     @JsonProperty
     private ImportStatus importStatus;
     @JsonProperty
-    private Collection<URI> associatedCustomers;
+    private List<URI> associatedCustomers;
     @JsonProperty
     private List<PublicationNoteBase> publicationNotes;
     @JsonProperty
@@ -307,14 +307,16 @@ public class Resource implements Entity {
         this.version = version;
     }
 
-    public Collection<URI> getAssociatedCustomers() {
-        return nonNull(associatedCustomers) ? new ArrayList<>(associatedCustomers) : new ArrayList<>();
+    public List<URI> getAssociatedCustomers() {
+        return nonNull(associatedCustomers)
+                   ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                   : Collections.emptyList();
     }
 
     public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
         this.associatedCustomers = nonNull(associatedCustomers)
-                                       ? new ArrayList<>(associatedCustomers)
-                                       : new ArrayList<>();
+                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                                       : Collections.emptyList();
     }
 
     private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {

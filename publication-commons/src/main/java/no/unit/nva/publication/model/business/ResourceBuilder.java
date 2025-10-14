@@ -1,10 +1,13 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
@@ -50,7 +53,7 @@ public final class ResourceBuilder {
     private List<ImportDetail> importDetails;
     private ResourceEvent resourceEvent;
     private List<PublicationChannel> publicationChannels;
-    private Collection<URI> associatedCustomers;
+    private List<URI> associatedCustomers;
 
     ResourceBuilder() {
     }
@@ -186,7 +189,9 @@ public final class ResourceBuilder {
     }
 
     public ResourceBuilder withAssociatedCustomers(Collection<URI> associatedCustomers) {
-        this.associatedCustomers = associatedCustomers;
+        this.associatedCustomers = nonNull(associatedCustomers)
+                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                                       : Collections.emptyList();
         return this;
     }
 
