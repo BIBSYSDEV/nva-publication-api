@@ -3,10 +3,11 @@ package no.sikt.nva.scopus.conversion;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.CristinContributorExtractor.generateContributorFromCristinPerson;
-import static nva.commons.core.StringUtils.isNotBlank;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,6 +35,7 @@ public class ContributorExtractor {
     public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
     public static final String LAST_NAME_CRISTIN_FIELD_NAME = "LastName";
     public static final String SCOPUS_AUID = "scopus-auid";
+    public static final String FULL_NAME_PATTERN = "%s %s";
 
     private final AffiliationGenerator affiliationGenerator;
     private final CristinPersonRetriever cristinPersonRetriever;
@@ -54,13 +56,55 @@ public class ContributorExtractor {
         var cristinPersons = cristinPersonRetriever.retrieveCristinPersons(authorGroupTps);
         var correspondencePerson = getCorrespondencePerson(correspondenceTps);
 
-        var contributors = corporationsWithAuthors.stream()
+        var allContributors = corporationsWithAuthors.stream()
                                .flatMap(corp -> processAuthorGroup(corp, cristinPersons, correspondencePerson).stream())
                                .toList();
+
+        var contributors = deduplicateContributors(allContributors);
 
         var topLevelOrgs = extractTopLevelOrganizations(corporationsWithAuthors);
 
         return new ContributorsOrganizationsWrapper(contributors, topLevelOrgs);
+    }
+
+    private List<Contributor> deduplicateContributors(List<Contributor> contributors) {
+        var contributorMap = new LinkedHashMap<String, Contributor>();
+
+        for (Contributor contributor : contributors) {
+            var key = getContributorKey(contributor);
+
+            if (contributorMap.containsKey(key)) {
+                var existing = contributorMap.get(key);
+                if (Optional.ofNullable(existing).map(Contributor::getIdentity).map(Identity::getId).isEmpty()) {
+                    var mergedContributor = mergeAffiliations(existing, contributor);
+                    contributorMap.put(key, mergedContributor);
+                }
+            } else {
+                contributorMap.put(key, contributor);
+            }
+        }
+
+        return new ArrayList<>(contributorMap.values());
+    }
+
+    private String getContributorKey(Contributor contributor) {
+        if (Optional.ofNullable(contributor).map(Contributor::getIdentity).map(Identity::getOrcId).isPresent()) {
+            return contributor.getIdentity().getOrcId();
+        }
+        return Optional.ofNullable(contributor).map(Contributor::getSequence).map(String::valueOf).orElse(null);
+    }
+
+    private Contributor mergeAffiliations(Contributor existing, Contributor newContributor) {
+        var mergedAffiliations = new ArrayList<>(existing.getAffiliations());
+        mergedAffiliations.addAll(newContributor.getAffiliations());
+
+        return new Contributor.Builder()
+                .withIdentity(existing.getIdentity())
+                .withAffiliations(mergedAffiliations.stream().distinct().toList())
+                .withRole(existing.getRole())
+                .withSequence(existing.getSequence())
+                .withCorrespondingAuthor(existing.isCorrespondingAuthor())
+                .build();
     }
 
     private List<Contributor> processAuthorGroup(CorporationWithContributors corporationWithContributors,
@@ -123,24 +167,28 @@ public class ContributorExtractor {
 
     private Identity createIdentity(AuthorTp authorTp) {
         return new Identity.Builder().withName(getAuthorName(authorTp))
-                   .withOrcId(getOrcidUri(authorTp))
+                   .withOrcId(getOrcidUri(authorTp).orElse(null))
                    .withAdditionalIdentifiers(getAdditionalIdentifier(authorTp))
                    .build();
     }
 
     private String getAuthorName(AuthorTp author) {
-        return nonNull(author.getPreferredName()) ? author.getPreferredName().getGivenName()
-                                                    + StringUtils.SPACE
-                                                    + author.getPreferredName().getSurname()
-                   : author.getGivenName() + StringUtils.SPACE + author.getSurname();
+        return nonNull(author.getPreferredName())
+                   ? FULL_NAME_PATTERN.formatted(author.getPreferredName().getGivenName(), author.getPreferredName().getSurname())
+                   : FULL_NAME_PATTERN.formatted(author.getGivenName(), author.getSurname());
     }
 
-    private String getOrcidUri(AuthorTp authorTp) {
-        return isNotBlank(authorTp.getOrcid()) ? normalizeOrcid(authorTp.getOrcid()) : null;
+    private Optional<String> getOrcidUri(AuthorTp authorTp) {
+        return Optional.ofNullable(authorTp)
+                   .map(AuthorTp::getOrcid)
+                   .filter(StringUtils::isNotBlank)
+                   .map(this::normalizeOrcid);
     }
 
     private String normalizeOrcid(String orcid) {
-        return orcid.contains(ORCID_DOMAIN_URL) ? orcid : ORCID_DOMAIN_URL + orcid;
+        return orcid.contains(ORCID_DOMAIN_URL)
+                   ? orcid
+                   : ORCID_DOMAIN_URL + orcid;
     }
 
     private List<AdditionalIdentifier> getAdditionalIdentifier(AuthorTp authorTp) {

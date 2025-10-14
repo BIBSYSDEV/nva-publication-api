@@ -78,20 +78,20 @@ import org.junit.jupiter.api.Test;
 @WireMockTest(httpsEnabled = true)
 public class ContributorExtractorTest {
 
-    public static final String ORCID_HOST_NAME = "orcid.org";
+    private static final String ORCID_HOST_NAME = "orcid.org";
     private static final String PIA_SECRET_NAME = "someSecretName";
     private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
     private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
-    public static final String USA = "United States of America";
-    public static final String ENGLISH_ORGANIZATION_NAME = "Department of justice";
-    public static final String CRISTIN_PERSON = "/cristin/person/";
-    public static final String THREE_PARAMS_PATTERN = "/%s/%s/%s";
-    public static final String APPLICATION_JSON = "application/json";
-    public static final String QUERY = "query";
-    public static final String CUSTOMERS = "/customers";
-    public static final String CRISTIN = "cristin";
-    public static final String ORGANIZATION = "organization";
-    public static final String TWO_PARAMS_PATTERN = "/%s/%s";
+    private static final String USA = "United States of America";
+    private static final String ENGLISH_ORGANIZATION_NAME = "Department of justice";
+    private static final String CRISTIN_PERSON = "/cristin/person/";
+    private static final String THREE_PARAMS_PATTERN = "/%s/%s/%s";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String QUERY = "query";
+    private static final String CUSTOMERS = "/customers";
+    private static final String CRISTIN = "cristin";
+    private static final String ORGANIZATION = "organization";
+    private static final String TWO_PARAMS_PATTERN = "/%s/%s";
 
     private CristinConnection cristinConnection;
     private PiaConnection piaConnection;
@@ -514,6 +514,113 @@ public class ContributorExtractorTest {
                                                                                    getAuthorGroup(document)));
     }
 
+    @Test
+    void shouldDeduplicateContributorsByOrcidAcrossMultipleAuthorGroups() {
+        var sharedOrcid = randomString();
+        var sharedAuid = randomString();
+
+        var authorGroup1 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "NO", "1");
+        var authorGroup2 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "SE", "1");
+
+        mockPiaAuthorEmptyResponse(sharedAuid);
+        mockPiaAndCristinAffiliation(authorGroup1);
+        mockPiaAndCristinAffiliation(authorGroup2);
+
+        var correspondenceTps = List.<CorrespondenceTp>of();
+        var authorGroupTps = List.of(authorGroup1, authorGroup2);
+
+        var result = contributorExtractorFromDocument().generateContributors(correspondenceTps, authorGroupTps);
+
+        assertThat(result.contributors(), hasSize(1));
+
+        var contributor = result.contributors().getFirst();
+        assertThat(contributor.getIdentity().getOrcId(), containsString(sharedOrcid));
+
+        assertThat(contributor.getAffiliations().size(), is(2));
+    }
+
+    @Test
+    void shouldDeduplicateContributorsBySequenceNumberWhenNoOrcid() {
+        var sharedAuid = randomString();
+        var sequenceNumber = "1";
+
+        var author1 = createAuthorWithoutOrcid(sharedAuid, sequenceNumber);
+        var author2 = createAuthorWithoutOrcid(sharedAuid, sequenceNumber);
+
+        var authorGroup1 = createAuthorGroupWithCustomAuthor(author1, "NO");
+        var authorGroup2 = createAuthorGroupWithCustomAuthor(author2, "SE");
+
+        mockPiaAuthorEmptyResponse(sharedAuid);
+        mockPiaAndCristinAffiliation(authorGroup1);
+        mockPiaAndCristinAffiliation(authorGroup2);
+
+        var correspondenceTps = List.<CorrespondenceTp>of();
+        var authorGroupTps = List.of(authorGroup1, authorGroup2);
+
+        var result = contributorExtractorFromDocument().generateContributors(correspondenceTps, authorGroupTps);
+
+        assertThat(result.contributors(), hasSize(1));
+
+        var contributor = result.contributors().getFirst();
+        assertThat(contributor.getSequence(), is(Integer.parseInt(sequenceNumber)));
+
+        assertThat(contributor.getAffiliations().size(), is(2));
+    }
+
+    @Test
+    void shouldNotMergeAffiliationsWhenContributorHasCristinId() {
+        var sharedOrcid = randomString();
+        var sharedAuid = randomString();
+
+        var authorGroup1 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "NO", "1");
+        var authorGroup2 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "SE", "1");
+
+        var firstAuthor = (AuthorTp) authorGroup1.getAuthorOrCollaboration().getFirst();
+
+        var cristinPerson = mockCristinPersonWithSingleActiveAffiliation(firstAuthor);
+        mockPiaAndCristinAffiliation(authorGroup1);
+        mockPiaAndCristinAffiliation(authorGroup2);
+
+        var correspondenceTps = List.<CorrespondenceTp>of();
+        var authorGroupTps = List.of(authorGroup1, authorGroup2);
+
+        var result = contributorExtractorFromDocument().generateContributors(correspondenceTps, authorGroupTps);
+
+        assertThat(result.contributors(), hasSize(1));
+
+        var contributor = result.contributors().getFirst();
+        assertThat(contributor.getIdentity().getId(), is(equalTo(cristinPerson.getId())));
+
+        assertThat(contributor.getAffiliations(), hasSize(1));
+    }
+
+    @Test
+    void shouldMergeAffiliationsOnlyForNonCristinContributors() {
+        var sharedAuid = randomString();
+        var sequenceNumber = "1";
+
+        var author1 = createAuthorWithoutOrcid(sharedAuid, sequenceNumber);
+        var author2 = createAuthorWithoutOrcid(sharedAuid, sequenceNumber);
+
+        var authorGroup1 = createAuthorGroupWithCustomAuthor(author1, "NO");
+        var authorGroup2 = createAuthorGroupWithCustomAuthor(author2, "SE");
+
+        mockPiaAuthorEmptyResponse(sharedAuid);
+        mockPiaAndCristinAffiliation(authorGroup1);
+        mockPiaAndCristinAffiliation(authorGroup2);
+
+        var correspondenceTps = List.<CorrespondenceTp>of();
+        var authorGroupTps = List.of(authorGroup1, authorGroup2);
+
+        var result = contributorExtractorFromDocument().generateContributors(correspondenceTps, authorGroupTps);
+
+        var contributor = result.contributors().getFirst();
+
+        assertThat(contributor.getIdentity().getId(), is(nullValue()));
+
+        assertThat(contributor.getAffiliations().size(), is(2));
+    }
+
     private static String getOrcid(AuthorTp author) {
         return author.getOrcid().contains(ORCID_HOST_NAME) ? author.getOrcid()
                    : UriWrapper.fromHost(ORCID_HOST_NAME).addChild(author.getOrcid()).toString();
@@ -885,6 +992,53 @@ public class ContributorExtractorTest {
         affiliationTp.setCountry(country);
         var organizationTp = new OrganizationTp();
         organizationTp.getContent().add(ENGLISH_ORGANIZATION_NAME);
+        affiliationTp.getOrganization().add(organizationTp);
+
+        var authorGp = new AuthorGroupTp();
+        authorGp.setAffiliation(affiliationTp);
+        authorGp.getAuthorOrCollaboration().add(authorTp);
+        return authorGp;
+    }
+
+    private AuthorGroupTp createAuthorGroupWithAuthor(String auid, String orcid, String country, String sequence) {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(auid);
+        authorTp.setOrcid(orcid);
+        authorTp.setSurname(randomString());
+        authorTp.setGivenName(randomString());
+        authorTp.setIndexedName(randomString());
+        authorTp.setSeq(sequence);
+
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setAfid(randomString());
+        affiliationTp.setCountry(country);
+        var organizationTp = new OrganizationTp();
+        organizationTp.getContent().add(randomString());
+        affiliationTp.getOrganization().add(organizationTp);
+
+        var authorGp = new AuthorGroupTp();
+        authorGp.setAffiliation(affiliationTp);
+        authorGp.getAuthorOrCollaboration().add(authorTp);
+        return authorGp;
+    }
+
+    private AuthorTp createAuthorWithoutOrcid(String auid, String sequence) {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(auid);
+        authorTp.setOrcid(null);
+        authorTp.setSurname(randomString());
+        authorTp.setGivenName(randomString());
+        authorTp.setIndexedName(randomString());
+        authorTp.setSeq(sequence);
+        return authorTp;
+    }
+
+    private AuthorGroupTp createAuthorGroupWithCustomAuthor(AuthorTp authorTp, String country) {
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setAfid(randomString());
+        affiliationTp.setCountry(country);
+        var organizationTp = new OrganizationTp();
+        organizationTp.getContent().add(randomString());
         affiliationTp.getOrganization().add(organizationTp);
 
         var authorGp = new AuthorGroupTp();
