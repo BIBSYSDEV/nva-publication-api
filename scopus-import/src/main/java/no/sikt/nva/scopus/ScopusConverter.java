@@ -204,7 +204,7 @@ public class ScopusConverter {
                    .toList();
     }
 
-    private record ContributorsWithCustomers(List<Contributor> contributors, List<URI> associatedCustomerUris) {
+    private record ContributorsWithCustomers(List<Contributor> contributors, Collection<URI> associatedCustomerUris) {
     }
 
     private List<CitationLanguageTp> extractCitationLanguages() {

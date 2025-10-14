@@ -78,20 +78,20 @@ import org.junit.jupiter.api.Test;
 @WireMockTest(httpsEnabled = true)
 public class ContributorExtractorTest {
 
-    public static final String ORCID_HOST_NAME = "orcid.org";
+    private static final String ORCID_HOST_NAME = "orcid.org";
     private static final String PIA_SECRET_NAME = "someSecretName";
     private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
     private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
-    public static final String USA = "United States of America";
-    public static final String ENGLISH_ORGANIZATION_NAME = "Department of justice";
-    public static final String CRISTIN_PERSON = "/cristin/person/";
-    public static final String THREE_PARAMS_PATTERN = "/%s/%s/%s";
-    public static final String APPLICATION_JSON = "application/json";
-    public static final String QUERY = "query";
-    public static final String CUSTOMERS = "/customers";
-    public static final String CRISTIN = "cristin";
-    public static final String ORGANIZATION = "organization";
-    public static final String TWO_PARAMS_PATTERN = "/%s/%s";
+    private static final String USA = "United States of America";
+    private static final String ENGLISH_ORGANIZATION_NAME = "Department of justice";
+    private static final String CRISTIN_PERSON = "/cristin/person/";
+    private static final String THREE_PARAMS_PATTERN = "/%s/%s/%s";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String QUERY = "query";
+    private static final String CUSTOMERS = "/customers";
+    private static final String CRISTIN = "cristin";
+    private static final String ORGANIZATION = "organization";
+    private static final String TWO_PARAMS_PATTERN = "/%s/%s";
 
     private CristinConnection cristinConnection;
     private PiaConnection piaConnection;

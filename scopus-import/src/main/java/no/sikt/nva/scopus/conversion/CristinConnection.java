@@ -25,17 +25,17 @@ import org.slf4j.LoggerFactory;
 
 public class CristinConnection {
 
-    public static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
-    public static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
-    public static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
-    public static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
-    public static final String CRISTIN = "cristin";
-    public static final String PERSON = "person";
+    private static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
+    private static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
+    private static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
+    private static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
+    private static final String CRISTIN = "cristin";
+    private static final String PERSON = "person";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
-    public static final String API_HOST = "API_HOST";
-    public static final String ORGANIZATION = "organization";
-    public static final String APPLICATION_JSON = "application/json";
-    public static final String QUERY = "query";
+    private static final String API_HOST = "API_HOST";
+    private static final String ORGANIZATION = "organization";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String QUERY = "query";
     private final HttpClient httpClient;
     private final Environment environment;
 
