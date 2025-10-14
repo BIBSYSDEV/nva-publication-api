@@ -12,7 +12,7 @@ import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
-import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
+import no.sikt.nva.scopus.conversion.model.AuthorGroupWithCristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.paralleliseutils.ParallelizeListProcessing;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
@@ -29,7 +29,7 @@ public class AffiliationGenerator {
         this.cristinConnection = cristinConnection;
     }
 
-    public List<CorporationWithContributors> getCorporations(List<AuthorGroupTp> authorGroupList) {
+    public List<AuthorGroupWithCristinOrganization> getCorporations(List<AuthorGroupTp> authorGroupList) {
         var corporations = getCorporationsIds(authorGroupList);
         return fillCristinOrganizationData(corporations);
     }
@@ -57,24 +57,24 @@ public class AffiliationGenerator {
         return list -> list.size() == 1 ? Optional.of(list.getFirst()) : Optional.empty();
     }
 
-    private List<CorporationWithContributors> getCorporationsIds(List<AuthorGroupTp> authorGroupList) {
+    private List<AuthorGroupWithCristinOrganization> getCorporationsIds(List<AuthorGroupTp> authorGroupList) {
         return ParallelizeListProcessing.runAsVirtualNetworkingCallingThreads(authorGroupList, this::retrieveCristinId);
     }
 
-    private CorporationWithContributors retrieveCristinId(AuthorGroupTp authorGroupTp) {
-        var corporation = new CorporationWithContributors();
+    private AuthorGroupWithCristinOrganization retrieveCristinId(AuthorGroupTp authorGroupTp) {
+        var corporation = new AuthorGroupWithCristinOrganization();
         corporation.setScopusAuthors(authorGroupTp);
         corporation.setCristinOrganizationId(getCristinOrganizationUri(authorGroupTp).orElse(null));
         return corporation;
     }
 
-    private List<CorporationWithContributors> fillCristinOrganizationData(
-        List<CorporationWithContributors> corporations) {
+    private List<AuthorGroupWithCristinOrganization> fillCristinOrganizationData(
+        List<AuthorGroupWithCristinOrganization> corporations) {
         return ParallelizeListProcessing.runAsVirtualNetworkingCallingThreads(corporations,
                                                                               this::addCristinOrganisationData);
     }
 
-    private CorporationWithContributors addCristinOrganisationData(CorporationWithContributors corporation) {
+    private AuthorGroupWithCristinOrganization addCristinOrganisationData(AuthorGroupWithCristinOrganization corporation) {
         var cristinOrganization = fetchCristinOrganizationsById(corporation)
             .or(() -> searchForCristinOrganizationByName(corporation))
             .or(() -> searchForCountry(corporation));
@@ -87,21 +87,22 @@ public class AffiliationGenerator {
     //Countries are stored as organizations in Cristin, we use the same endpoint
     //for fetching countries as we do with organizations
     private Optional<CristinOrganization> searchForCountry(
-        CorporationWithContributors corporation) {
+        AuthorGroupWithCristinOrganization corporation) {
         return Optional.ofNullable(corporation.getScopusAuthors())
                    .map(AuthorGroupTp::getAffiliation)
                    .map(AffiliationTp::getCountry)
                    .flatMap(this::searchCristinOrganization);
     }
 
-    private Optional<CristinOrganization> searchForCristinOrganizationByName(CorporationWithContributors corporation) {
+    private Optional<CristinOrganization> searchForCristinOrganizationByName(
+        AuthorGroupWithCristinOrganization corporation) {
         return extractOrganizationNames(corporation.getScopusAuthors()).stream()
                    .map(this::searchCristinOrganization)
                    .flatMap(Optional::stream)
                    .findFirst();
     }
 
-    private Optional<CristinOrganization> fetchCristinOrganizationsById(CorporationWithContributors corporation) {
+    private Optional<CristinOrganization> fetchCristinOrganizationsById(AuthorGroupWithCristinOrganization corporation) {
         return Optional.ofNullable(cristinConnection.fetchCristinOrganizationByCristinId(
             corporation.getCristinOrganizationId()))
                    .filter(this::isValidOrganization);

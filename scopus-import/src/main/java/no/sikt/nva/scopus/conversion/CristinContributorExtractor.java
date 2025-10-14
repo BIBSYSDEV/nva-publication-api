@@ -190,7 +190,11 @@ public final class CristinContributorExtractor {
     }
 
     private static boolean isCorrespondingAuthor(AuthorTp author, PersonalnameType correspondencePerson) {
-        return author.getIndexedName().equals(getIndexedName(correspondencePerson));
+        return getIndexedName(author).isPresent() && getIndexedName(author).get().equals(getIndexedName(correspondencePerson));
+    }
+
+    private static Optional<String> getIndexedName(AuthorTp author) {
+        return Optional.ofNullable(author).map(AuthorTp::getIndexedName);
     }
 
     private static String getIndexedName(PersonalnameType correspondencePerson) {

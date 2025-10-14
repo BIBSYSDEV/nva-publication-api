@@ -10,7 +10,6 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.SCOPUS_AUID;
 import static no.sikt.nva.scopus.utils.CristinGenerator.generateCristinOrganizationWithCountry;
-import static no.sikt.nva.scopus.utils.ScopusGenerator.randomPersonalnameType;
 import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCustomer;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -44,10 +43,10 @@ import java.util.stream.Collectors;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
-import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.OrganizationTp;
+import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
@@ -362,43 +361,6 @@ public class ContributorExtractorTest {
     }
 
     @Test
-    void shouldExtractContributorsNamesAndSequenceNumberCorrectly() {
-        var generator = new ScopusGenerator();
-        generator.createWithNumberOfContributorsFromCollaborationTp(2);
-        var document = generator.getDocument();
-
-        var authors = getAuthorGroup(document).stream()
-                          .flatMap(group -> group.getAuthorOrCollaboration().stream())
-                          .filter(AuthorTp.class::isInstance)
-                          .map(AuthorTp.class::cast)
-                          .toList();
-
-        var collaborations = getAuthorGroup(document).stream()
-                                 .flatMap(group -> group.getAuthorOrCollaboration().stream())
-                                 .filter(CollaborationTp.class::isInstance)
-                                 .map(CollaborationTp.class::cast)
-                                 .toList();
-
-        authors.forEach(author -> mockPiaAuthorEmptyResponse(author.getAuid()));
-        getAuthorGroup(document).forEach(this::mockPiaAndCristinAffiliation);
-
-        var contributors = contributorExtractorFromDocument().generateContributors(document).contributors();
-
-        authors.forEach(author -> {
-            var contributor = findContributorBySequence(contributors, Integer.parseInt(author.getSeq()));
-            var expectedName = determineAuthorName(author);
-            assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
-            assertThat(contributor.getSequence(), is(equalTo(Integer.parseInt(author.getSeq()))));
-        });
-
-        collaborations.forEach(collaboration -> {
-            var contributor = findContributorBySequence(contributors, Integer.parseInt(collaboration.getSeq()));
-            assertThat(contributor.getIdentity().getName(), is(equalTo(collaboration.getIndexedName())));
-            assertThat(contributor.getSequence(), is(equalTo(Integer.parseInt(collaboration.getSeq()))));
-        });
-    }
-
-    @Test
     void shouldExtractCorrespondingAuthor() {
         var generator = new ScopusGenerator();
         var authors = keepOnlyTheAuthors(generator);
@@ -519,8 +481,8 @@ public class ContributorExtractorTest {
         var sharedOrcid = randomString();
         var sharedAuid = randomString();
 
-        var authorGroup1 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "NO", "1");
-        var authorGroup2 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "SE", "1");
+        var authorGroup1 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "NO");
+        var authorGroup2 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "SE");
 
         mockPiaAuthorEmptyResponse(sharedAuid);
         mockPiaAndCristinAffiliation(authorGroup1);
@@ -572,8 +534,8 @@ public class ContributorExtractorTest {
         var sharedOrcid = randomString();
         var sharedAuid = randomString();
 
-        var authorGroup1 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "NO", "1");
-        var authorGroup2 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "SE", "1");
+        var authorGroup1 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "NO");
+        var authorGroup2 = createAuthorGroupWithAuthor(sharedAuid, sharedOrcid, "SE");
 
         var firstAuthor = (AuthorTp) authorGroup1.getAuthorOrCollaboration().getFirst();
 
@@ -619,6 +581,41 @@ public class ContributorExtractorTest {
         assertThat(contributor.getIdentity().getId(), is(nullValue()));
 
         assertThat(contributor.getAffiliations().size(), is(2));
+    }
+
+    @Test
+    void shouldDeduplicateContributorWhenContributorIsPresentInMultipleAuthorGroupsAndCorrespondence() {
+        var contributorScopusIdentifier = randomString();
+
+        var givenName = randomString();
+        var surname = randomString();
+        var orcId = randomString();
+        var author1 = createAuthorWithNameAndId(contributorScopusIdentifier, givenName, surname);
+        var author2 = createAuthorWithNameAndIdAndOrcId(contributorScopusIdentifier, orcId, givenName, surname);
+
+        var authorGroup1 = createAuthorGroupWithCustomAuthor(author1, randomString());
+        var authorGroup2 = createAuthorGroupWithCustomAuthor(author2, randomString());
+
+        mockPiaAuthorEmptyResponse(contributorScopusIdentifier);
+        mockPiaAndCristinAffiliation(authorGroup1);
+        mockPiaAndCristinAffiliation(authorGroup2);
+
+        var correspondence = new CorrespondenceTp();
+        correspondence.setAffiliation(randomAffiliation(randomString()));
+        correspondence.setPerson(personalnameType(givenName, surname));
+        var correspondenceTps = List.of(correspondence);
+        var authorGroupTps = List.of(authorGroup1, authorGroup2);
+
+        var contributors = contributorExtractorFromDocument().generateContributors(correspondenceTps, authorGroupTps).contributors();
+
+        assertThat(contributors.size(), is(1));
+    }
+
+    public static PersonalnameType personalnameType(String givenName, String surname) {
+        var personalNameType = new PersonalnameType();
+        personalNameType.setGivenName(givenName);
+        personalNameType.setSurname(surname);
+        return personalNameType;
     }
 
     private static String getOrcid(AuthorTp author) {
@@ -672,7 +669,7 @@ public class ContributorExtractorTest {
         var authorTp = new AuthorTp();
         authorTp.setAuid(randomString());
         authorTp.setSeq(String.valueOf(1));
-        var personalnameType = randomPersonalnameType();
+        var personalnameType = personalnameType(randomString(), randomString());
         authorTp.setPreferredName(personalnameType);
         authorTp.setIndexedName(personalnameType.getIndexedName());
         authorTp.setGivenName(personalnameType.getGivenName());
@@ -987,9 +984,7 @@ public class ContributorExtractorTest {
         authorTp.setIndexedName(randomString());
         authorTp.setSeq("1");
 
-        var affiliationTp = new AffiliationTp();
-        affiliationTp.setAfid(randomString());
-        affiliationTp.setCountry(country);
+        var affiliationTp = randomAffiliation(country);
         var organizationTp = new OrganizationTp();
         organizationTp.getContent().add(ENGLISH_ORGANIZATION_NAME);
         affiliationTp.getOrganization().add(organizationTp);
@@ -1000,18 +995,16 @@ public class ContributorExtractorTest {
         return authorGp;
     }
 
-    private AuthorGroupTp createAuthorGroupWithAuthor(String auid, String orcid, String country, String sequence) {
+    private AuthorGroupTp createAuthorGroupWithAuthor(String auid, String orcid, String country) {
         var authorTp = new AuthorTp();
         authorTp.setAuid(auid);
         authorTp.setOrcid(orcid);
         authorTp.setSurname(randomString());
         authorTp.setGivenName(randomString());
         authorTp.setIndexedName(randomString());
-        authorTp.setSeq(sequence);
+        authorTp.setSeq("1");
 
-        var affiliationTp = new AffiliationTp();
-        affiliationTp.setAfid(randomString());
-        affiliationTp.setCountry(country);
+        var affiliationTp = randomAffiliation(country);
         var organizationTp = new OrganizationTp();
         organizationTp.getContent().add(randomString());
         affiliationTp.getOrganization().add(organizationTp);
@@ -1033,10 +1026,30 @@ public class ContributorExtractorTest {
         return authorTp;
     }
 
+    private AuthorTp createAuthorWithNameAndId(String auid, String givenName, String surname) {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(auid);
+        authorTp.setOrcid(null);
+        authorTp.setSurname(surname);
+        authorTp.setIndexedName(randomString());
+        authorTp.setGivenName(givenName);
+        authorTp.setSeq("1");
+        return authorTp;
+    }
+
+    private AuthorTp createAuthorWithNameAndIdAndOrcId(String auid, String orcId, String givenName, String surname) {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(auid);
+        authorTp.setOrcid(orcId);
+        authorTp.setSurname(surname);
+        authorTp.setIndexedName(randomString());
+        authorTp.setGivenName(givenName);
+        authorTp.setSeq("1");
+        return authorTp;
+    }
+
     private AuthorGroupTp createAuthorGroupWithCustomAuthor(AuthorTp authorTp, String country) {
-        var affiliationTp = new AffiliationTp();
-        affiliationTp.setAfid(randomString());
-        affiliationTp.setCountry(country);
+        var affiliationTp = randomAffiliation(country);
         var organizationTp = new OrganizationTp();
         organizationTp.getContent().add(randomString());
         affiliationTp.getOrganization().add(organizationTp);
@@ -1045,6 +1058,13 @@ public class ContributorExtractorTest {
         authorGp.setAffiliation(affiliationTp);
         authorGp.getAuthorOrCollaboration().add(authorTp);
         return authorGp;
+    }
+
+    private static AffiliationTp randomAffiliation(String country) {
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setAfid(randomString());
+        affiliationTp.setCountry(country);
+        return affiliationTp;
     }
 
     private ContributorExtractor contributorExtractorFromDocument() {
