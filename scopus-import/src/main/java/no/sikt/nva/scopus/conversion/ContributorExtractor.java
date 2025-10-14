@@ -5,8 +5,10 @@ import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.CristinContributorExtractor.generateContributorFromCristinPerson;
 import static nva.commons.core.StringUtils.isNotBlank;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -54,13 +56,55 @@ public class ContributorExtractor {
         var cristinPersons = cristinPersonRetriever.retrieveCristinPersons(authorGroupTps);
         var correspondencePerson = getCorrespondencePerson(correspondenceTps);
 
-        var contributors = corporationsWithAuthors.stream()
+        var allContributors = corporationsWithAuthors.stream()
                                .flatMap(corp -> processAuthorGroup(corp, cristinPersons, correspondencePerson).stream())
                                .toList();
+
+        var contributors = deduplicateContributors(allContributors);
 
         var topLevelOrgs = extractTopLevelOrganizations(corporationsWithAuthors);
 
         return new ContributorsOrganizationsWrapper(contributors, topLevelOrgs);
+    }
+
+    private List<Contributor> deduplicateContributors(List<Contributor> contributors) {
+        var contributorMap = new LinkedHashMap<String, Contributor>();
+
+        for (Contributor contributor : contributors) {
+            var key = getContributorKey(contributor);
+
+            if (contributorMap.containsKey(key)) {
+                var existing = contributorMap.get(key);
+                if (Optional.ofNullable(existing).map(Contributor::getIdentity).map(Identity::getId).isEmpty()) {
+                    var mergedContributor = mergeAffiliations(existing, contributor);
+                    contributorMap.put(key, mergedContributor);
+                }
+            } else {
+                contributorMap.put(key, contributor);
+            }
+        }
+
+        return new ArrayList<>(contributorMap.values());
+    }
+
+    private String getContributorKey(Contributor contributor) {
+        if (Optional.ofNullable(contributor).map(Contributor::getIdentity).map(Identity::getOrcId).isPresent()) {
+            return contributor.getIdentity().getOrcId();
+        }
+        return Optional.ofNullable(contributor).map(Contributor::getSequence).map(String::valueOf).orElse(null);
+    }
+
+    private Contributor mergeAffiliations(Contributor existing, Contributor newContributor) {
+        var mergedAffiliations = new ArrayList<>(existing.getAffiliations());
+        mergedAffiliations.addAll(newContributor.getAffiliations());
+
+        return new Contributor.Builder()
+                .withIdentity(existing.getIdentity())
+                .withAffiliations(mergedAffiliations.stream().distinct().toList())
+                .withRole(existing.getRole())
+                .withSequence(existing.getSequence())
+                .withCorrespondingAuthor(existing.isCorrespondingAuthor())
+                .build();
     }
 
     private List<Contributor> processAuthorGroup(CorporationWithContributors corporationWithContributors,
