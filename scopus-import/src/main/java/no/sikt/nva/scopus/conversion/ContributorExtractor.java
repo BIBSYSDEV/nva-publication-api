@@ -3,7 +3,6 @@ package no.sikt.nva.scopus.conversion;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.CristinContributorExtractor.generateContributorFromCristinPerson;
-import static nva.commons.core.StringUtils.isNotBlank;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +35,7 @@ public class ContributorExtractor {
     public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
     public static final String LAST_NAME_CRISTIN_FIELD_NAME = "LastName";
     public static final String SCOPUS_AUID = "scopus-auid";
+    public static final String FULL_NAME_PATTERN = "%s %s";
 
     private final AffiliationGenerator affiliationGenerator;
     private final CristinPersonRetriever cristinPersonRetriever;
@@ -167,24 +167,28 @@ public class ContributorExtractor {
 
     private Identity createIdentity(AuthorTp authorTp) {
         return new Identity.Builder().withName(getAuthorName(authorTp))
-                   .withOrcId(getOrcidUri(authorTp))
+                   .withOrcId(getOrcidUri(authorTp).orElse(null))
                    .withAdditionalIdentifiers(getAdditionalIdentifier(authorTp))
                    .build();
     }
 
     private String getAuthorName(AuthorTp author) {
-        return nonNull(author.getPreferredName()) ? author.getPreferredName().getGivenName()
-                                                    + StringUtils.SPACE
-                                                    + author.getPreferredName().getSurname()
-                   : author.getGivenName() + StringUtils.SPACE + author.getSurname();
+        return nonNull(author.getPreferredName())
+                   ? FULL_NAME_PATTERN.formatted(author.getPreferredName().getGivenName(), author.getPreferredName().getSurname())
+                   : FULL_NAME_PATTERN.formatted(author.getGivenName(), author.getSurname());
     }
 
-    private String getOrcidUri(AuthorTp authorTp) {
-        return isNotBlank(authorTp.getOrcid()) ? normalizeOrcid(authorTp.getOrcid()) : null;
+    private Optional<String> getOrcidUri(AuthorTp authorTp) {
+        return Optional.ofNullable(authorTp)
+                   .map(AuthorTp::getOrcid)
+                   .filter(StringUtils::isNotBlank)
+                   .map(this::normalizeOrcid);
     }
 
     private String normalizeOrcid(String orcid) {
-        return orcid.contains(ORCID_DOMAIN_URL) ? orcid : ORCID_DOMAIN_URL + orcid;
+        return orcid.contains(ORCID_DOMAIN_URL)
+                   ? orcid
+                   : ORCID_DOMAIN_URL + orcid;
     }
 
     private List<AdditionalIdentifier> getAdditionalIdentifier(AuthorTp authorTp) {
