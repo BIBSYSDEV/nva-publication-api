@@ -110,15 +110,15 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                                               rawImportCandidate);
 
         if (!resourceToImport.getFiles().isEmpty()) {
-            var customer = customerRequiringFileApproval(importCandidate);
-            if (customer.isPresent()) {
+            var customerRequiringApproval = customerRequiringFileApproval(importCandidate);
+            if (customerRequiringApproval.isPresent()) {
                 resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
                 var importedResource = resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS));
-                var userInstanceFromCustomer = createUserInstanceFromCustomer(requestInfo, customer.get());
+                var userInstanceFromCustomer = createUserInstanceFromCustomer(requestInfo, customerRequiringApproval.get());
                 var fileApproval = PublishingRequestCase.createWithFilesForApproval(
                     importedResource,
                     userInstanceFromCustomer,
-                    PublishingWorkflow.lookUp(customer.get().publicationWorkflow()),
+                    PublishingWorkflow.lookUp(customerRequiringApproval.get().publicationWorkflow()),
                     importedResource.getPendingFiles()
                 );
                 fileApproval.persistNewTicket(ticketService);

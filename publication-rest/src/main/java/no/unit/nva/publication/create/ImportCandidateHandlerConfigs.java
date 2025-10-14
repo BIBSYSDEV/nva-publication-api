@@ -19,7 +19,7 @@ public record ImportCandidateHandlerConfigs(String persistedStorageBucket,
     public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     public static final String IMPORT_CANDIDATES_STORAGE_BUCKET = "IMPORT_CANDIDATES_STORAGE_BUCKET";
     public static final String IMPORT_CANDIDATES_TABLE_NAME = "IMPORT_CANDIDATES_TABLE_NAME";
-    public static final String RESOURCE_TABLE_NAME = "RESOURCE_TABLE_NAME";
+    public static final String RESOURCE_TABLE_NAME = "TABLE_NAME";
 
     @JacocoGenerated
     public static ImportCandidateHandlerConfigs getDefaultsConfigs() {
