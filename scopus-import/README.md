@@ -34,19 +34,22 @@ The `AffiliationGenerator` resolves Scopus affiliations to Cristin organizations
    - Returns verified Norwegian institutions
 
 2. **Cristin Search by Organization Id** (fallback)
-    - Extracts organization name from Scopus XML
-    - Fetches organization from Cristin API by id
+    - Fetches organization from Cristin API by id fetched from PIA
+    - Used when PIA responded with organization
    
 3. **Cristin Search by Organization Name** (fallback)
    - Extracts organization name from Scopus XML
-   - Searches Cristin API for matching institution
+   - Searches in Cristin API for matching institution
+   - Used when PIA did not respond with organization
 
 4. **Cristin Search by Country** (fallback)
    - Uses affiliation country from Scopus data
    - Finds country-level organization in Cristin
+   - Used when PIA did not respond with organization
 
 5. **No Affiliation** (final fallback)
    - If all searches fail, contributor will have empty affiliations
+   - Used when PIA did not respond with organization and all searches failed
 
 ### 2. Author Enrichment
 
