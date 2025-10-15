@@ -75,7 +75,7 @@ public class ContributorExtractor {
 
             if (contributorMap.containsKey(key)) {
                 var existing = contributorMap.get(key);
-                if (Optional.ofNullable(existing).map(Contributor::getIdentity).map(Identity::getId).isEmpty()) {
+                if (nonNull(existing) && hasNoId(existing)) {
                     var mergedContributor = mergeContributors(existing, contributor);
                     contributorMap.put(key, mergedContributor);
                 }
@@ -85,6 +85,10 @@ public class ContributorExtractor {
         }
 
         return new ArrayList<>(contributorMap.values());
+    }
+
+    private static boolean hasNoId(Contributor existing) {
+        return Optional.of(existing).map(Contributor::getIdentity).map(Identity::getId).isEmpty();
     }
 
     private Optional<String> getContributorKey(Contributor contributor) {
