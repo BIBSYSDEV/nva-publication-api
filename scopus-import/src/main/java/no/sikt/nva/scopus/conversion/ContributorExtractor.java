@@ -76,7 +76,7 @@ public class ContributorExtractor {
             if (contributorMap.containsKey(key)) {
                 var existing = contributorMap.get(key);
                 if (Optional.ofNullable(existing).map(Contributor::getIdentity).map(Identity::getId).isEmpty()) {
-                    var mergedContributor = mergeAffiliations(existing, contributor);
+                    var mergedContributor = mergeContributors(existing, contributor);
                     contributorMap.put(key, mergedContributor);
                 }
             } else {
@@ -106,17 +106,28 @@ public class ContributorExtractor {
                    .findFirst();
     }
 
-    private Contributor mergeAffiliations(Contributor existing, Contributor newContributor) {
+    private Contributor mergeContributors(Contributor existing, Contributor newContributor) {
         var mergedAffiliations = new ArrayList<>(existing.getAffiliations());
         mergedAffiliations.addAll(newContributor.getAffiliations());
-
+        var mergedIdentity = mergeIdentities(existing.getIdentity(), newContributor.getIdentity());
         return new Contributor.Builder()
-                .withIdentity(existing.getIdentity())
+                .withIdentity(mergedIdentity)
                 .withAffiliations(mergedAffiliations.stream().distinct().toList())
                 .withRole(existing.getRole())
                 .withSequence(existing.getSequence())
                 .withCorrespondingAuthor(existing.isCorrespondingAuthor())
                 .build();
+    }
+
+    private Identity mergeIdentities(Identity identity, Identity duplicatedIdentity) {
+        return new Identity.Builder()
+                   .withName(identity.getName())
+                   .withAdditionalIdentifiers(identity.getAdditionalIdentifiers())
+                   .withOrcId(Optional.ofNullable(identity.getOrcId()).orElse(duplicatedIdentity.getOrcId()))
+                   .withVerificationStatus(identity.getVerificationStatus())
+                   .withAdditionalIdentifiers(identity.getAdditionalIdentifiers())
+                   .withNameType(identity.getNameType())
+                   .build();
     }
 
     private List<Contributor> processAuthorGroup(AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,

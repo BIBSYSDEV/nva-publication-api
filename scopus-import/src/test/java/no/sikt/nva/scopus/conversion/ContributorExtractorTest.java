@@ -611,6 +611,34 @@ public class ContributorExtractorTest {
         assertThat(contributors.size(), is(1));
     }
 
+    @Test
+    void shouldKeepOrcIdWhenDeduplicatingContributorAndOnlyOneHasOrcId() {
+        var contributorScopusIdentifier = randomString();
+
+        var givenName = randomString();
+        var surname = randomString();
+        var orcId = randomString();
+        var author1 = createAuthorWithNameAndId(contributorScopusIdentifier, givenName, surname);
+        var author2 = createAuthorWithNameAndIdAndOrcId(contributorScopusIdentifier, orcId, givenName, surname);
+
+        var authorGroup1 = createAuthorGroupWithCustomAuthor(author1, randomString());
+        var authorGroup2 = createAuthorGroupWithCustomAuthor(author2, randomString());
+
+        mockPiaAuthorEmptyResponse(contributorScopusIdentifier);
+        mockPiaAndCristinAffiliation(authorGroup1);
+        mockPiaAndCristinAffiliation(authorGroup2);
+
+        var correspondence = new CorrespondenceTp();
+        correspondence.setAffiliation(randomAffiliation(randomString()));
+        correspondence.setPerson(personalnameType(givenName, surname));
+        var correspondenceTps = List.of(correspondence);
+        var authorGroupTps = List.of(authorGroup1, authorGroup2);
+
+        var contributors = contributorExtractorFromDocument().generateContributors(correspondenceTps, authorGroupTps).contributors();
+
+        assertThat(contributors.size(), is(1));
+    }
+
     public static PersonalnameType personalnameType(String givenName, String surname) {
         var personalNameType = new PersonalnameType();
         personalNameType.setGivenName(givenName);
