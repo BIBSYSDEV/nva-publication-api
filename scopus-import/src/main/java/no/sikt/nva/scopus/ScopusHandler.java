@@ -15,11 +15,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.time.Instant;
-import java.util.Map;
-import java.util.Optional;
 import java.time.ZoneId;
 import java.time.temporal.WeekFields;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import no.scopus.generated.DocTp;
@@ -32,6 +34,8 @@ import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Reference;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
@@ -73,6 +77,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     public static final String URI_ATTRIBUTE = "uri";
     public static final String PUBLICATION = "publication";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
+    public static final String DOI = "doi";
     private final S3Client s3Client;
     private final ContributorExtractor contributorExtractor;
     private final PublicationChannelConnection publicationChannelConnection;
@@ -122,15 +127,16 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
         var s3Uri = UriWrapper.fromUri(message.getMessageAttributes().get(URI_ATTRIBUTE).getStringValue()).getUri();
         return attempt(() -> createImportCandidate(s3Uri))
                    .map(this::updateExistingIfNeeded)
-                   .map(this::injectImportedStatusWhenPublicationWithTheSameScopusIdentifierExists)
+                   .map(this::injectImportedStatusWhenTheSamePublicationExists)
                    .flatMap(this::persistOrUpdateInDatabase)
                    .map(this::storeSuccessReport)
                    .orElse(fail -> handleSavingError(fail, s3Uri));
     }
 
-    private ImportCandidate injectImportedStatusWhenPublicationWithTheSameScopusIdentifierExists(ImportCandidate importCandidate) {
+    private ImportCandidate injectImportedStatusWhenTheSamePublicationExists(ImportCandidate importCandidate) {
         var scopusIdentifier = getScopusIdentifier(importCandidate);
         fetchPublicationsWithScopusIdentifier(scopusIdentifier)
+            .or(() -> fetchPublicationsWithDoi(importCandidate))
             .ifPresent(resource -> setStatusImported(importCandidate, resource));
         return importCandidate;
     }
@@ -148,9 +154,34 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private Optional<Resource> fetchPublicationsWithScopusIdentifier(String scopusIdentifier) {
-        return searchService.searchPublicationsByParam(Map.of(SCOPUS_IDENTIFIER, scopusIdentifier)).stream()
+        return getResourcesByParam(SCOPUS_IDENTIFIER, scopusIdentifier).stream()
                    .filter(resource -> hasScopusIdentifier(resource, scopusIdentifier))
                    .findFirst();
+    }
+
+    private List<Resource> getResourcesByParam(String param, String value) {
+        return attempt(() -> searchService.searchPublicationsByParam(Map.of(param, value)))
+                   .orElse(failure -> Collections.<Resource>emptyList());
+    }
+
+    private Optional<Resource> fetchPublicationsWithDoi(ImportCandidate importCandidate) {
+        return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
+                      .map(Reference::getDoi)
+                      .flatMap(this::searchPublicationByDoi);
+    }
+
+    private Optional<Resource> searchPublicationByDoi(URI uri) {
+        return getResourcesByParam(DOI, uri.toString()).stream()
+                   .filter(resource -> hasDoi(resource, uri))
+                   .findFirst();
+    }
+
+    private boolean hasDoi(Resource resource, URI doi) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getDoi)
+                   .map(doi::equals)
+                   .orElse(false);
     }
 
     private boolean hasScopusIdentifier(Resource resource, String scopusIdentifier) {
