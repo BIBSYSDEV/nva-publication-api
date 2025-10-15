@@ -17,7 +17,7 @@ import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.UnconfirmedOrganization;
 
-public class CorporationWithContributors {
+public class AuthorGroupWithCristinOrganization {
 
     private static final String NORWAY = "norway";
 
@@ -102,15 +102,15 @@ public class CorporationWithContributors {
     private Optional<String> getOrganizationNameFromAuthorGroup() {
         return Optional.ofNullable(scopusAuthors.getAffiliation())
                    .map(AffiliationType::getOrganization)
-                   .map(CorporationWithContributors::toOrganizationName);
+                   .map(AuthorGroupWithCristinOrganization::toOrganizationName);
     }
 
     public static class Builder {
 
-        private final CorporationWithContributors corporation;
+        private final AuthorGroupWithCristinOrganization corporation;
 
         public Builder() {
-            this.corporation = new CorporationWithContributors();
+            this.corporation = new AuthorGroupWithCristinOrganization();
         }
 
         public Builder withAuthorGroupTp(AuthorGroupTp authorGroupTp) {
@@ -128,7 +128,7 @@ public class CorporationWithContributors {
             return this;
         }
 
-        public CorporationWithContributors build() {
+        public AuthorGroupWithCristinOrganization build() {
             return corporation;
         }
     }
