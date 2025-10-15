@@ -25,8 +25,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import no.scopus.generated.DocTp;
+import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
-import no.sikt.nva.scopus.conversion.NvaCustomerConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
@@ -36,6 +36,7 @@ import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
@@ -78,10 +79,9 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     public static final String DOI = "doi";
     private final S3Client s3Client;
-    private final PiaConnection piaConnection;
-    private final CristinConnection cristinConnection;
+    private final ContributorExtractor contributorExtractor;
     private final PublicationChannelConnection publicationChannelConnection;
-    private final NvaCustomerConnection nvaCustomerConnection;
+    private final IdentityServiceClient identityServiceClient;
     private final ResourceService importCandidateService;
     private final ScopusUpdater scopusUpdater;
     private final ScopusFileConverter scopusFileConverter;
@@ -91,31 +91,34 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
 
     @JacocoGenerated
     public ScopusHandler() {
-        this(S3Driver.defaultS3Client().build(), defaultPiaConnection(), defaultCristinConnection(),
+        this(S3Driver.defaultS3Client().build(),
              new PublicationChannelConnection(getAuthorizedBackendUriRetriever()),
-             new NvaCustomerConnection(getAuthorizedBackendUriRetriever()),
+             IdentityServiceClient.prepare(),
              ResourceService.defaultService(),
              new ScopusUpdater(ResourceService.defaultService(),
                                getAuthorizedBackendUriRetriever()),
              new ScopusFileConverter(defaultHttpClientWithRedirect(),
                                      S3Driver.defaultS3Client().build(),
                                      new TikaUtils()),
-             SearchService.create(new UriRetriever(), ResourceService.defaultService(new Environment().readEnv("RESOURCES_TABLE_NAME"))));
+             SearchService.create(new UriRetriever(), ResourceService.defaultService(new Environment().readEnv(
+                 "RESOURCES_TABLE_NAME"))),
+             new ContributorExtractor( defaultPiaConnection(), defaultCristinConnection()));
     }
 
-    public ScopusHandler(S3Client s3Client, PiaConnection piaConnection, CristinConnection cristinConnection,
+    public ScopusHandler(S3Client s3Client,
                          PublicationChannelConnection publicationChannelConnection,
-                         NvaCustomerConnection nvaCustomerConnection, ResourceService importCandidateService,
-                         ScopusUpdater scopusUpdater, ScopusFileConverter scopusFileConverter, SearchService searchService) {
+                         IdentityServiceClient identityServiceClient, ResourceService importCandidateService,
+                         ScopusUpdater scopusUpdater, ScopusFileConverter scopusFileConverter,
+                         SearchService searchService,
+                         ContributorExtractor contributorExtractor) {
         this.s3Client = s3Client;
-        this.piaConnection = piaConnection;
-        this.cristinConnection = cristinConnection;
         this.publicationChannelConnection = publicationChannelConnection;
-        this.nvaCustomerConnection = nvaCustomerConnection;
+        this.identityServiceClient = identityServiceClient;
         this.importCandidateService = importCandidateService;
         this.scopusUpdater = scopusUpdater;
         this.scopusFileConverter = scopusFileConverter;
         this.searchService = searchService;
+        this.contributorExtractor = contributorExtractor;
     }
 
     @Override
@@ -358,9 +361,10 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private ImportCandidate generateImportCandidate(DocTp docTp) {
-        var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection,
-                                                  publicationChannelConnection, nvaCustomerConnection,
-                                                  scopusFileConverter);
+        var scopusConverter = new ScopusConverter(docTp,
+                                                  publicationChannelConnection, identityServiceClient,
+                                                  scopusFileConverter,
+                                                  contributorExtractor);
         return scopusConverter.generateImportCandidate();
     }
 

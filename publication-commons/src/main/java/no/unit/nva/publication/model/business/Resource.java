@@ -124,6 +124,8 @@ public class Resource implements Entity {
     @JsonProperty
     private ImportStatus importStatus;
     @JsonProperty
+    private List<URI> associatedCustomers;
+    @JsonProperty
     private List<PublicationNoteBase> publicationNotes;
     @JsonProperty
     private URI duplicateOf;
@@ -305,6 +307,18 @@ public class Resource implements Entity {
         this.version = version;
     }
 
+    public List<URI> getAssociatedCustomers() {
+        return nonNull(associatedCustomers)
+                   ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                   : Collections.emptyList();
+    }
+
+    public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
+        this.associatedCustomers = nonNull(associatedCustomers)
+                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                                       : Collections.emptyList();
+    }
+
     private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {
         return getInstanceType()
                    .map(claimedPublicationChannel::instanceTypeIsWithinScope)
@@ -410,6 +424,7 @@ public class Resource implements Entity {
                    .withDuplicateOf(importCandidate.getDuplicateOf())
                    .withCuratingInstitutions(importCandidate.getCuratingInstitutions())
                    .withImportDetails(importCandidate.getImportDetails())
+                   .withAssociatedCustomers(importCandidate.getAssociatedCustomers())
                    .build();
     }
 
@@ -645,6 +660,7 @@ public class Resource implements Entity {
                    .withDuplicateOf(getDuplicateOf())
                    .withCuratingInstitutions(getCuratingInstitutions())
                    .withImportDetails(getImportDetails())
+                   .withAssociatedCustomers(getAssociatedCustomers())
                    .build();
     }
 
