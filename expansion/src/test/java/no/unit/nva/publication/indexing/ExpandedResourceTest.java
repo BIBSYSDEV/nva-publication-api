@@ -8,10 +8,12 @@ import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
+import static no.unit.nva.model.testing.PublicationGenerator.randomMonetaryAmount;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUnconfirmedFunding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.RandomUtils.randomLabels;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
@@ -722,6 +724,39 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
+    }
+
+    @Test
+    void shouldReturnFundingSourceAsObjectWhenLackingIdentifier() throws JsonProcessingException,
+                                                                         BadRequestException {
+        var publication = randomPublication();
+        var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER");
+        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
+                                                          .withSource(source)
+                                                          .withFundingAmount(randomMonetaryAmount())
+                                                          .withLabels(randomLabels())
+                                                          // no identifier
+                                                          .build();
+        publication.setFundings(Set.of(unconfirmedFunding));
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var uriRetriever = FakeUriRetriever.newInstance();
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+
+        assertTrue(fundingSource.isContainerNode(),
+                   "Expected funding source to be a object, but got: " + fundingSource);
+        assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER",
+                     fundingSource.at(JsonPointer.compile("/id")).asText());
+
+        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
     }
 
     @Test

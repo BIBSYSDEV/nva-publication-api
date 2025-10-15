@@ -185,7 +185,7 @@ public final class PublicationGenerator {
                    .build();
     }
 
-    private static MonetaryAmount randomMonetaryAmount() {
+    public static MonetaryAmount randomMonetaryAmount() {
         var monetaryAmount = new MonetaryAmount();
 
         monetaryAmount.setCurrency(randomCurrency());
