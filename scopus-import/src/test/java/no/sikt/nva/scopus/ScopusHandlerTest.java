@@ -312,12 +312,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var hits = publications.stream()
                        .map(ScopusHandlerTest::toResourceWithId)
                        .toList();
-        var searchUriWithoutScopusIdentifier = UriWrapper.fromHost(new Environment().readEnv(API_HOST))
-                      .addChild("search")
-                      .addChild("resources")
-                      .addQueryParameter("scopusIdentifier", null)
-                      .toString();
-        when(uriRetriever.fetchResponse(argThat((uri) -> nonNull(uri) && uri.toString().contains(searchUriWithoutScopusIdentifier)),
+        when(uriRetriever.fetchResponse(argThat((uri) -> nonNull(uri) && uri.toString().contains(searchUriWithParam("scopusIdentifier").toString())),
                                         eq(APPLICATION_JSON))).thenReturn(
             Optional.of(FakeHttpResponse.create("""
                                                     {
@@ -325,7 +320,24 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                                       "hits": %s
                                                     }
                                                     """.formatted(hits), 200)));
+        when(uriRetriever.fetchResponse(argThat((uri) -> nonNull(uri) && uri.toString().contains(searchUriWithParam("doi").toString())),
+                                        eq(APPLICATION_JSON))).thenReturn(
+            Optional.of(FakeHttpResponse.create("""
+                                                    {
+                                                      "totalHits": 0,
+                                                      "hits": %s
+                                                    }
+                                                    """.formatted(hits), 200)));
+
         return SearchService.create(uriRetriever, resourcesService);
+    }
+
+    private static URI searchUriWithParam(String searchParam) {
+        return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
+                   .addChild("search")
+                   .addChild("resources")
+                   .addQueryParameter(searchParam, null)
+                   .getUri();
     }
 
     private static ResourceWithId toResourceWithId(Publication publication) {
@@ -1250,9 +1262,69 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
     }
 
+    @Test
+    void shouldPersistImportCandidateWithStatusImportedWhenThereArePublicationsWithTheSameDoi()
+        throws IOException {
+        var doi = randomDoi();
+        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(doi);
+        var existingPublications =
+            IntStream.of(3).mapToObj(i -> persistPublicationWithDoi(doi)).toList();
+        var handler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
+                                        nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
+                                        mockedSearchServiceDoiLookup(existingPublications, doi, 200));
+        createEmptyPiaMock();
+        var event = createNewScopusPublicationEvent();
+        var importCandidate = handler.handleRequest(event, CONTEXT);
+
+        assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
+    }
+
+    @Test
+    void shouldPersistImportCandidateWhenSearchServiceIsDown()
+        throws IOException {
+        var doi = randomDoi();
+        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(doi);
+        var existingPublications =
+            IntStream.of(3).mapToObj(i -> persistPublicationWithDoi(doi)).toList();
+        var handler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
+                                        nvaCustomerConnection, importCandidateService, scopusUpdater, scopusFileConverter,
+                                        mockedSearchServiceDoiLookup(existingPublications, doi, 502));
+        createEmptyPiaMock();
+        var event = createNewScopusPublicationEvent();
+        var importCandidate = handler.handleRequest(event, CONTEXT);
+
+        assertEquals(CandidateStatus.NOT_IMPORTED, importCandidate.getImportStatus().candidateStatus());
+    }
+
+    private SearchService mockedSearchServiceDoiLookup(List<Publication> publications, URI doi, int statusCode) {
+        var hits = publications.stream()
+                       .map(ScopusHandlerTest::toResourceWithId)
+                       .toList();
+        var searchUriWithoutDoi = UriWrapper.fromHost(new Environment().readEnv(API_HOST))
+                                                   .addChild("search")
+                                                   .addChild("resources")
+                                                   .addQueryParameter("doi", doi.toString())
+                                                   .getUri();
+        when(uriRetriever.fetchResponse(eq(searchUriWithoutDoi), eq(APPLICATION_JSON)))
+            .thenReturn(Optional.of(FakeHttpResponse.create("""
+                                                    {
+                                                      "totalHits": %s,
+                                                      "hits": %s
+                                                    }
+                                                    """.formatted(hits.size(), hits), statusCode)));
+        return SearchService.create(uriRetriever, resourcesService);
+    }
+
     private Publication persistPublicationWithScopusIdentifier(ScopusIdentifier scopusIdentifier) {
         var publication = randomPublication();
         publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
+        return attempt(() -> resourcesService.createPublication(UserInstance.create(randomString(), randomUri()),
+                                                                publication)).orElseThrow();
+    }
+
+    private Publication persistPublicationWithDoi(URI doi) {
+        var publication = randomPublication();
+        publication.getEntityDescription().getReference().setDoi(doi);
         return attempt(() -> resourcesService.createPublication(UserInstance.create(randomString(), randomUri()),
                                                                 publication)).orElseThrow();
     }
