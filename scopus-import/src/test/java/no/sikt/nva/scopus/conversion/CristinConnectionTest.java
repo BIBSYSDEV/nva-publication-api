@@ -5,8 +5,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static no.sikt.nva.scopus.conversion.CristinConnection.CRISTIN_ORGANIZATION_RESPONSE_ERROR;
-import static no.sikt.nva.scopus.conversion.CristinConnection.CRISTIN_PERSON_RESPONSE_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,7 +50,7 @@ class CristinConnectionTest {
         mockCristinPersonBadRequest();
         var actualPerson = cristinConnection.getCristinPersonByCristinId(randomPersonUri);
         assertThat(actualPerson.isEmpty(), is((true)));
-        assertThat(appender.getMessages(), containsString(CRISTIN_PERSON_RESPONSE_ERROR));
+        assertThat(appender.getMessages(), containsString("Could not fetch cristin person"));
     }
 
     @Test
@@ -62,7 +60,7 @@ class CristinConnectionTest {
         mockCristinOrganizationBadRequest();
         var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationUri);
         assertThat(actualOrganization, is(nullValue()));
-        assertThat(appender.getMessages(), containsString(CRISTIN_ORGANIZATION_RESPONSE_ERROR));
+        assertThat(appender.getMessages(), containsString("Could not fetch cristin organization"));
     }
 
     @Test

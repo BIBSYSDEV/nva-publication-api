@@ -199,9 +199,7 @@ public class PiaConnection {
 
     private RuntimeException logExceptionAndThrowRuntimeError(Exception exception, String message) {
         logger.info(message);
-        return exception instanceof RuntimeException runtimeException
-                   ? runtimeException
-                   : new RuntimeException(exception);
+        return new RuntimeException(exception);
     }
 
     private String getBodyFromResponse(HttpResponse<String> response) {

@@ -1,8 +1,8 @@
 package no.sikt.nva.scopus.conversion;
 
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
-import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -25,24 +25,19 @@ import org.slf4j.LoggerFactory;
 
 public class CristinConnection {
 
-    public static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
-    public static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
-    public static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
-    public static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
-    public static final String ACCEPT = "Accept";
-    public static final String CRISTIN_VERSION = "; version=2023-05-26";
-    public static final String CRISTIN = "cristin";
-    public static final String PERSON = "person";
+    private static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
+    private static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
+    private static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
+    private static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
+    private static final String CRISTIN = "cristin";
+    private static final String PERSON = "person";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
-    public static final String API_HOST = "API_HOST";
-    public static final String ORGANIZATION = "organization";
+    private static final String API_HOST = "API_HOST";
+    private static final String ORGANIZATION = "organization";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String QUERY = "query";
     private final HttpClient httpClient;
     private final Environment environment;
-
-    public CristinConnection(HttpClient httpClient) {
-        this.httpClient = httpClient;
-        this.environment = new Environment();
-    }
 
     public CristinConnection(HttpClient httpClient, Environment environment) {
         this.httpClient = httpClient;
@@ -51,7 +46,7 @@ public class CristinConnection {
 
     @JacocoGenerated
     public CristinConnection() {
-        this(HttpClient.newBuilder().build());
+        this(HttpClient.newBuilder().build(), new Environment());
     }
 
     public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
@@ -64,7 +59,7 @@ public class CristinConnection {
 
     public CristinOrganization fetchCristinOrganizationByCristinId(URI cristinOrgId) {
         return isNull(cristinOrgId) ? null
-                   : attempt(() -> createOrganizationRequest(cristinOrgId))
+                   : attempt(() -> createRequest(cristinOrgId))
                          .map(this::getCristinResponse)
                          .map(this::getBodyFromOrganizationResponse)
                          .map(this::convertToOrganization)
@@ -97,7 +92,7 @@ public class CristinConnection {
         return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + environment.readEnv(API_HOST))
                    .addChild(CRISTIN)
                    .addChild(ORGANIZATION)
-                   .addQueryParameter("query", organization)
+                   .addQueryParameter(QUERY, organization)
                    .getUri();
     }
 
@@ -105,7 +100,7 @@ public class CristinConnection {
         return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + environment.readEnv(API_HOST))
                    .addChild(CRISTIN)
                    .addChild(PERSON)
-                   .addChild(orcId)
+                   .addChild(UriWrapper.fromUri(orcId).getLastPathElement())
                    .getUri();
     }
 
@@ -145,14 +140,6 @@ public class CristinConnection {
     }
 
     private HttpRequest createRequest(URI uri) {
-        return HttpRequest.newBuilder().uri(uri).GET().build();
-    }
-
-    private HttpRequest createOrganizationRequest(URI uri) {
-        return HttpRequest.newBuilder()
-                   .uri(uri)
-                   .header(ACCEPT, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION)
-                   .GET()
-                   .build();
+        return HttpRequest.newBuilder().headers(CONTENT_TYPE, APPLICATION_JSON).uri(uri).GET().build();
     }
 }

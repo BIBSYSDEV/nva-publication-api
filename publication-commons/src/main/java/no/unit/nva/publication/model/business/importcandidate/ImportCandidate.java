@@ -1,16 +1,18 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
@@ -19,6 +21,7 @@ import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
@@ -29,9 +32,12 @@ import nva.commons.core.JacocoGenerated;
 public class ImportCandidate extends Publication implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
-    public static final String IMPORT_STATUS = "importStatus";
+    private static final String IMPORT_STATUS = "importStatus";
+    private static final String ASSOCIATED_CUSTOMERS_FIELD = "associatedCustomers";
     @JsonProperty(IMPORT_STATUS)
     private ImportStatus importStatus;
+    @JsonProperty(ASSOCIATED_CUSTOMERS_FIELD)
+    private List<URI> associatedCustomers;
 
     public ImportCandidate() {
         super();
@@ -62,6 +68,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withImportStatus(getImportStatus())
                    .withRightsHolder(getRightsHolder())
                    .withCuratingInstitutions(getCuratingInstitutions())
+                   .withAssociatedCustomers(getAssociatedCustomers())
                    .withImportDetails(getImportDetails());
     }
 
@@ -72,24 +79,21 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
     @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getImportStatus());
-    }
-
-    @JacocoGenerated
-    @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ImportCandidate that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-        ImportCandidate that = (ImportCandidate) o;
-        return Objects.equals(getImportStatus(), that.getImportStatus());
+        return Objects.equals(getImportStatus(), that.getImportStatus()) && Objects.equals(
+            getAssociatedCustomers(), that.getAssociatedCustomers());
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getImportStatus(), getAssociatedCustomers());
     }
 
     @Override
@@ -103,6 +107,18 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
     public void setImportStatus(ImportStatus importStatus) {
         this.importStatus = importStatus;
+    }
+
+    public List<URI> getAssociatedCustomers() {
+        return nonNull(associatedCustomers)
+                   ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                   : Collections.emptyList();
+    }
+
+    public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
+        this.associatedCustomers = nonNull(associatedCustomers)
+                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                                       : Collections.emptyList();
     }
 
     public Publication toPublication() {
@@ -260,8 +276,14 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
+        public Builder withAssociatedCustomers(Collection<URI> associatedCustomers) {
+            this.importCandidate.setAssociatedCustomers(associatedCustomers);
+            return this;
+        }
+
         public ImportCandidate build() {
             return importCandidate;
         }
+
     }
 }

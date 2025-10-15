@@ -62,6 +62,15 @@ public final class EntityDescriptionBuilder {
                    .build();
     }
 
+    public static Contributor randomContributorWithAffiliationId(URI affiliationId) {
+        return new Contributor.Builder()
+                   .withAffiliations(List.of(Organization.fromUri(affiliationId)))
+                   .withSequence(randomInteger())
+                   .withRole(randomRole())
+                   .withIdentity(randomIdentity())
+                   .build();
+    }
+
     private static Map<String, String> randomAlternativeTitles() {
         return Map.of(RandomLanguageUtil.randomBcp47CompatibleLanguage(), randomString());
     }

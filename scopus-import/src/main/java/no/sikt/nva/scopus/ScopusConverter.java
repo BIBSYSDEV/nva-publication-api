@@ -14,19 +14,18 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
-import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationLanguageTp;
 import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -37,14 +36,16 @@ import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
-import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.LanguageExtractor;
-import no.sikt.nva.scopus.conversion.NvaCustomerConnection;
-import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
+import no.sikt.nva.scopus.exception.MissingNvaContributorException;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.CustomerList;
+import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -74,22 +75,22 @@ public class ScopusConverter {
                                                                    "test", "0baf8fcb-b18d-4c09-88bb-956b4f659103",
                                                                    "prod", "22139870-8d31-4df9-bc45-14eb68287c4a");
     public static final String CUSTOMER = "customer";
+    public static final String MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE =
+        "None of contributors belongs to NVA customer, all contributors affiliations: ";
     private final DocTp docTp;
-    private final PiaConnection piaConnection;
-    private final CristinConnection cristinConnection;
-    private final NvaCustomerConnection nvaCustomerConnection;
+    private final IdentityServiceClient identityServiceClient;
     private final PublicationChannelConnection publicationChannelConnection;
+    private final ContributorExtractor contributorExtractor;
     private final ScopusFileConverter scopusFileConverter;
 
-    public ScopusConverter(DocTp docTp, PiaConnection piaConnection, CristinConnection cristinConnection,
+    public ScopusConverter(DocTp docTp,
                            PublicationChannelConnection publicationChannelConnection,
-                           NvaCustomerConnection nvaCustomerConnection,
-                           ScopusFileConverter scopusFileConverter) {
+                           IdentityServiceClient identityServiceClient,
+                           ScopusFileConverter scopusFileConverter, ContributorExtractor contributorExtractor1) {
+        this.contributorExtractor = contributorExtractor1;
         this.docTp = docTp;
-        this.piaConnection = piaConnection;
-        this.cristinConnection = cristinConnection;
         this.publicationChannelConnection = publicationChannelConnection;
-        this.nvaCustomerConnection = nvaCustomerConnection;
+        this.identityServiceClient = identityServiceClient;
         this.scopusFileConverter = scopusFileConverter;
     }
 
@@ -116,16 +117,18 @@ public class ScopusConverter {
     }
 
     public ImportCandidate generateImportCandidate() {
+        var contributorsWithCustomers = getContributors();
         return new ImportCandidate.Builder()
                    .withPublisher(createOrganization())
                    .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
-                   .withEntityDescription(generateEntityDescription())
+                   .withEntityDescription(generateEntityDescription(contributorsWithCustomers.contributors()))
                    .withCreatedDate(Instant.now())
                    .withModifiedDate(Instant.now())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
+                   .withAssociatedCustomers(contributorsWithCustomers.associatedCustomerUris())
                    .build();
     }
 
@@ -169,18 +172,39 @@ public class ScopusConverter {
         return docTp.getItem().getItem().getBibrecord().getHead();
     }
 
-    private EntityDescription generateEntityDescription() {
+    private EntityDescription generateEntityDescription(List<Contributor> contributors) {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
-        entityDescription.setContributors(
-            new ContributorExtractor(extractCorrespondence(), extractAuthorGroup(), piaConnection,
-                                     cristinConnection, nvaCustomerConnection).generateContributors());
+        entityDescription.setContributors(contributors);
         entityDescription.setTags(generateTags());
         entityDescription.setPublicationDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
         return entityDescription;
+    }
+
+    private ContributorsWithCustomers getContributors() {
+        var contributorsOrganizationsWrapper = contributorExtractor.generateContributors(docTp);
+        var cristinTopLevelOrgs = contributorsOrganizationsWrapper.topLevelOrgs();
+        var customerList = attempt(identityServiceClient::getAllCustomers).orElseThrow();
+
+        var associatedCustomers = getAssociatedCustomers(customerList, cristinTopLevelOrgs);
+        if (associatedCustomers.isEmpty()) {
+            throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + cristinTopLevelOrgs);
+        }
+        var customerUris = associatedCustomers.stream().map(CustomerDto::id).toList();
+        return new ContributorsWithCustomers(contributorsOrganizationsWrapper.contributors(), customerUris);
+    }
+
+    private static Collection<CustomerDto> getAssociatedCustomers(CustomerList customerList,
+                                                         Collection<URI> cristinTopLevelOrgs) {
+        return customerList.customers().stream()
+                   .filter(customer -> cristinTopLevelOrgs.contains(customer.cristinId()))
+                   .toList();
+    }
+
+    private record ContributorsWithCustomers(List<Contributor> contributors, Collection<URI> associatedCustomerUris) {
     }
 
     private List<CitationLanguageTp> extractCitationLanguages() {
@@ -329,13 +353,5 @@ public class ScopusConverter {
 
     private ScopusIdentifier extractScopusIdentifier() {
         return ScopusIdentifier.fromValue(docTp.getMeta().getEid());
-    }
-
-    private List<AuthorGroupTp> extractAuthorGroup() {
-        return extractHead().getAuthorGroup();
-    }
-
-    private List<CorrespondenceTp> extractCorrespondence() {
-        return extractHead().getCorrespondence();
     }
 }

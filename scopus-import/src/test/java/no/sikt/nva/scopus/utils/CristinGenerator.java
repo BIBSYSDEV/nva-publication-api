@@ -74,16 +74,18 @@ public class CristinGenerator {
 
     public static CristinOrganization generateOtherCristinOrganization(URI cristinId) {
         return new CristinOrganization(cristinId, randomUri(), randomString(), List.of(), "NO",
-                                       Map.of(randomString(), "Andre institusjoner"));
+                                       Map.of(randomString(), "Andre institusjoner",
+                                              "EN", "University"));
     }
 
-    public static CristinOrganization generateCristinOrganization(URI cristinId) {
-        return new CristinOrganization(cristinId, randomUri(), randomString(), List.of(), randomString(),
-                                       randomLabels());
+    public static CristinOrganization generateCristinOrganization(URI cristinId, String country) {
+        return new CristinOrganization(cristinId, randomUri(), randomString(), List.of(
+            new CristinOrganization(cristinId, randomUri(), randomString(), List.of(), country, randomLabels(
+                randomString()))), randomString(), randomLabels(country));
     }
 
     public static CristinOrganization generateCristinOrganizationWithCountry(String country) {
-        return new CristinOrganization(randomUri(), randomUri(), randomString(), List.of(), country, randomLabels());
+        return new CristinOrganization(randomUri(), randomUri(), randomString(), List.of(), country, randomLabels(country));
     }
 
     public static String convertOrganizationToJson(CristinOrganization organization) throws JsonProcessingException {
@@ -117,12 +119,13 @@ public class CristinGenerator {
     }
 
     private static Role randomRole() {
-        return new Role(UriWrapper.fromUri(randomString()).getUri(), randomLabels());
+        return new Role(UriWrapper.fromUri(randomString()).getUri(), randomLabels(randomString()));
     }
 
-    private static Map<String, String> randomLabels() {
+    private static Map<String, String> randomLabels(String country) {
         var mapWithLabels = new HashMap<String, String>();
         mapWithLabels.put(randomString(), randomString());
+        mapWithLabels.put(randomString(), country);
         return mapWithLabels;
     }
 }
