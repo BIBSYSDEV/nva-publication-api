@@ -2,12 +2,14 @@ package no.unit.nva.publication.create.pia;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 
 public class ContributorUpdateService {
-    
+
+    private static final String SCOPUS_AUTHOR_ID = "scopus-auid";
     private final PiaClient piaClient;
 
     public ContributorUpdateService(PiaClient piaClient) {
@@ -38,12 +40,11 @@ public class ContributorUpdateService {
         return cristinIdsDiffer && auidsMatch;
     }
 
-    private AdditionalIdentifierBase extractAuid(Contributor contributor) {
+    private Optional<AdditionalIdentifier> extractAuid(Contributor contributor) {
         return contributor.getIdentity()
             .getAdditionalIdentifiers()
             .stream()
-            .filter(id -> "scopus-auid".equals(id.sourceName()))
-            .findFirst()
-            .orElse(null);
+            .filter(id -> SCOPUS_AUTHOR_ID.equals(id.sourceName()))
+            .findFirst();
     }
 }

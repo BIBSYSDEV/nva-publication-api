@@ -23,10 +23,9 @@ public class AssociatedArtifactsMover {
         importCandidate.getAssociatedArtifacts()
             .stream()
             .filter(File.class::isInstance)
-            .filter(file -> wasKeptByImporter((File) file, publication))
             .map(File.class::cast)
-            .forEach(
-                a -> copyS3file(a.getIdentifier()));
+            .filter(file -> wasKeptByImporter(file, publication))
+            .forEach(a -> copyS3file(a.getIdentifier()));
     }
 
     private boolean wasKeptByImporter(File file, Publication publication) {
