@@ -731,12 +731,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                                                          BadRequestException {
         var publication = randomPublication();
         var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER");
-        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
-                                                          .withSource(source)
-                                                          .withFundingAmount(randomMonetaryAmount())
-                                                          .withLabels(randomLabels())
-                                                          // no identifier
-                                                          .build();
+        var unconfirmedFunding = createUnconfirmedFundingWithoutIdentifier(source);
         publication.setFundings(Set.of(unconfirmedFunding));
 
         var resource = Resource.fromPublication(publication)
@@ -754,6 +749,14 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                    "Expected funding source to be a object, but got: " + fundingSource);
         assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER",
                      fundingSource.at(JsonPointer.compile("/id")).asText());
+    }
+
+    private static UnconfirmedFunding createUnconfirmedFundingWithoutIdentifier(URI source) {
+        return (UnconfirmedFunding) new FundingBuilder()
+                                        .withSource(source)
+                                        .withFundingAmount(randomMonetaryAmount())
+                                        .withLabels(randomLabels())
+                                        .build();
     }
 
     @Test
