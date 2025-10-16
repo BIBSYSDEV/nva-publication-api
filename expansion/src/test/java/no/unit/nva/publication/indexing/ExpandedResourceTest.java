@@ -8,12 +8,10 @@ import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
-import static no.unit.nva.model.testing.PublicationGenerator.randomMonetaryAmount;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUnconfirmedFunding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.model.testing.RandomUtils.randomLabels;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
 import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
@@ -57,6 +55,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -731,7 +730,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                                                          BadRequestException {
         var publication = randomPublication();
         var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER");
-        var unconfirmedFunding = createUnconfirmedFundingWithoutIdentifier(source);
+        var unconfirmedFunding = createMinimumUnconfirmedFunding(source);
         publication.setFundings(Set.of(unconfirmedFunding));
 
         var resource = Resource.fromPublication(publication)
@@ -744,18 +743,24 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                    .asJsonNode();
 
         var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
-
-        assertTrue(fundingSource.isContainerNode(),
-                   "Expected funding source to be a object, but got: " + fundingSource);
-        assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER",
-                     fundingSource.at(JsonPointer.compile("/id")).asText());
+        var expectedFundingSource = """
+            {
+              "id": "%s",
+              "type": "FundingSource",
+              "identifier": "NFR",
+              "labels": {
+                "en": "Research Council of Norway (RCN)",
+                "nb": "Norges forskningsråd"
+              }
+            }
+            """.formatted(source);
+        var expected = JsonUtils.dtoObjectMapper.readTree(expectedFundingSource);
+        assertEquals(expected, fundingSource);
     }
 
-    private static UnconfirmedFunding createUnconfirmedFundingWithoutIdentifier(URI source) {
+    private static UnconfirmedFunding createMinimumUnconfirmedFunding(URI source) {
         return (UnconfirmedFunding) new FundingBuilder()
                                         .withSource(source)
-                                        .withFundingAmount(randomMonetaryAmount())
-                                        .withLabels(randomLabels())
                                         .build();
     }
 
