@@ -779,7 +779,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateImportStatus() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        var expectedStatus = ImportStatusFactory.createImported(randomPerson(), randomUri());
+        var expectedStatus = ImportStatusFactory.createImported(randomString(), SortableIdentifier.next());
         resourceService.updateImportStatus(importCandidate.getIdentifier(), expectedStatus);
         var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
         assertThat(fetchedPublication.getImportStatus(), is(equalTo(expectedStatus)));

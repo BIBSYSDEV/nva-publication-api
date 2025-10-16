@@ -9,7 +9,6 @@ import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadGatewayException;
@@ -39,7 +38,7 @@ public class ScopusUpdater {
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate)
         throws NotFoundException {
-        var existingImportCandidate = fetchImportCandidate(getScopusIdentifier(importCandidate));
+        var existingImportCandidate = fetchImportCandidate(importCandidate.getScopusIdentifier().orElse(null));
         if (nonNull(existingImportCandidate)) {
             var persistedImportcandidate = resourceService
                                                .getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
@@ -102,15 +101,6 @@ public class ScopusUpdater {
                    .map(this::toExpandedImportCandidate)
                    .map(this::toImportCandidate)
                    .orElse(failure -> null);
-    }
-
-    private String getScopusIdentifier(ImportCandidate importCandidate) {
-        return importCandidate.getAdditionalIdentifiers().stream()
-                   .filter(ScopusIdentifier.class::isInstance)
-                   .map(ScopusIdentifier.class::cast)
-                   .map(ScopusIdentifier::value)
-                   .findFirst()
-                   .orElse(null);
     }
 
     private Optional<String> getResponseBody(URI uri) {

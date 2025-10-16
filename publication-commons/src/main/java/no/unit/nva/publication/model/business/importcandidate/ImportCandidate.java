@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -22,13 +23,14 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ImportCandidate extends Publication implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
@@ -125,6 +127,14 @@ public class ImportCandidate extends Publication implements JsonSerializable {
         return this.copy()
                    .withStatus(PublicationStatus.PUBLISHED)
                    .build();
+    }
+
+    public Optional<String> getScopusIdentifier() {
+        return getAdditionalIdentifiers().stream()
+                   .filter(ScopusIdentifier.class::isInstance)
+                   .map(ScopusIdentifier.class::cast)
+                   .map(ScopusIdentifier::value)
+                   .findFirst();
     }
 
     public static final class Builder {

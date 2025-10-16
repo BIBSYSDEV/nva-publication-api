@@ -47,14 +47,13 @@ public class PiaResponseGenerator {
     }
 
     public static List<Affiliation> generateAffiliations(String cristinId) {
-        var uniqueRandomIntegers = generateUniqueRandomIntegers();
         var affiliationsWithoutNullValues = IntStream.range(0, randomInteger(20) + 1)
                                                 .boxed()
-                                                .map(i -> generateAffiliation(cristinId, uniqueRandomIntegers))
+                                                .map(i -> generateAffiliation(cristinId, generateUniqueRandomIntegers()))
                                                 .collect(Collectors.toList());
         var affiliationsWithoutUnit = IntStream.range(0, randomInteger(20) + 1)
                                           .boxed()
-                                          .map(i -> generateAffiliationWithoutUnit(cristinId, uniqueRandomIntegers))
+                                          .map(i -> generateAffiliationWithoutUnit(cristinId, generateUniqueRandomIntegers()))
                                           .collect(Collectors.toList());
         var affiliationsWithoutCount = IntStream.range(0, randomInteger(20) + 1)
                                            .boxed()
@@ -62,7 +61,7 @@ public class PiaResponseGenerator {
                                            .collect(Collectors.toList());
         var affiliationsWithoutId = IntStream.range(0, randomInteger(20) + 1)
                                         .boxed()
-                                        .map(i -> generateAffiliationWithoutId(cristinId, uniqueRandomIntegers))
+                                        .map(i -> generateAffiliationWithoutId(cristinId, generateUniqueRandomIntegers()))
                                         .collect(Collectors.toList());
         return Stream.of(affiliationsWithoutNullValues, affiliationsWithoutCount, affiliationsWithoutUnit,
                          affiliationsWithoutId).flatMap(Collection::stream).collect(Collectors.toList());

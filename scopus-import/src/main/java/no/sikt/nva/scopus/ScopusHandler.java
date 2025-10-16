@@ -2,7 +2,6 @@ package no.sikt.nva.scopus;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConverter.API_HOST;
 import static no.sikt.nva.scopus.ScopusConverter.RESOURCE_OWNER_SIKT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -37,7 +36,6 @@ import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.Resource;
@@ -75,7 +73,6 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String URI_ATTRIBUTE = "uri";
-    public static final String PUBLICATION = "publication";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     public static final String DOI = "doi";
     private final S3Client s3Client;
@@ -142,15 +139,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private static void setStatusImported(ImportCandidate importCandidate, Resource resource) {
-        importCandidate.setImportStatus(ImportStatusFactory.createImported(new Username(RESOURCE_OWNER_SIKT),
-                                                                           createPublicationId(resource)));
-    }
-
-    private static URI createPublicationId(Resource resource) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(PUBLICATION)
-                   .addChild(resource.getIdentifier().toString())
-                   .getUri();
+        importCandidate.setImportStatus(ImportStatusFactory.createImported(RESOURCE_OWNER_SIKT, resource.getIdentifier()));
     }
 
     private Optional<Resource> fetchPublicationsWithScopusIdentifier(String scopusIdentifier) {

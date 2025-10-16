@@ -29,7 +29,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -288,6 +287,6 @@ class PublishingServiceTest extends ResourcesLocalTest {
                                workflow, randomBoolean(),
                                randomBoolean(), randomBoolean(), Collections.emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(),
-                                                                       RandomDataGenerator.randomUri()));
+                                                                       RandomDataGenerator.randomUri()), randomBoolean());
     }
 }
