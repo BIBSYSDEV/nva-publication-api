@@ -14,9 +14,9 @@ CONSTRUCT {
   nva:label ?sourceLabel .
 } WHERE {
   [] nva:funding|project:funding ?funding .
-  ?funding a ?rawType ;
-  nva:source|project:source ?source ;
-  nva:identifier|project:identifier ?identifier .
+  ?funding a ?rawType .
+  OPTIONAL { ?funding nva:source|project:source ?source . }
+  OPTIONAL { ?funding nva:identifier|project:identifier ?identifier . }
   OPTIONAL { ?funding nva:label|project:label ?label . }
   OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
   OPTIONAL { ?source nva:activeTo ?activeTo . }

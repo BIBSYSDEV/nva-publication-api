@@ -55,6 +55,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -722,6 +723,45 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
+    }
+
+    @Test
+    void shouldReturnFundingSourceAsObjectWhenLackingIdentifier() throws JsonProcessingException,
+                                                                         BadRequestException {
+        var publication = randomPublication();
+        var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER");
+        var unconfirmedFunding = createMinimumUnconfirmedFunding(source);
+        publication.setFundings(Set.of(unconfirmedFunding));
+
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var uriRetriever = FakeUriRetriever.newInstance();
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+                                   .asJsonNode();
+
+        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+        var expectedFundingSource = """
+            {
+              "id": "%s",
+              "type": "FundingSource",
+              "identifier": "NFR",
+              "labels": {
+                "en": "Research Council of Norway (RCN)",
+                "nb": "Norges forskningsråd"
+              }
+            }
+            """.formatted(source);
+        var expected = JsonUtils.dtoObjectMapper.readTree(expectedFundingSource);
+        assertEquals(expected, fundingSource);
+    }
+
+    private static UnconfirmedFunding createMinimumUnconfirmedFunding(URI source) {
+        return (UnconfirmedFunding) new FundingBuilder()
+                                        .withSource(source)
+                                        .build();
     }
 
     @Test
