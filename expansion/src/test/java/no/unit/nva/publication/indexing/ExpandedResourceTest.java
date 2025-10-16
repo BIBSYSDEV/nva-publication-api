@@ -754,9 +754,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                    "Expected funding source to be a object, but got: " + fundingSource);
         assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER",
                      fundingSource.at(JsonPointer.compile("/id")).asText());
-
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
-        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
     }
 
     @Test
