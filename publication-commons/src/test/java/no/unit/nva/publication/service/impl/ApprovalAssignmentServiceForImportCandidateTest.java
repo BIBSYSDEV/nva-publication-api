@@ -135,6 +135,33 @@ class ApprovalAssignmentServiceForImportCandidateTest {
         assertEquals(correspondenceCustomer.customerId, customerDto.id());
     }
 
+    @Test
+    void shouldReturnLowestSequenceCorrespondenceContributorCustomerWhenMultipleCorrespondenceContributorsExist()
+        throws Exception {
+        var lowestSequenceCorrespondenceCustomer = new CustomerSetup();
+        var higherSequenceCorrespondenceCustomer = new CustomerSetup();
+        var nonCorrespondenceCustomer = new CustomerSetup();
+
+        mockCustomer(lowestSequenceCorrespondenceCustomer);
+        mockCustomer(higherSequenceCorrespondenceCustomer);
+        mockCustomer(nonCorrespondenceCustomer);
+
+        var importCandidate = createImportCandidate(
+            List.of(
+                lowestSequenceCorrespondenceCustomer.customerId,
+                higherSequenceCorrespondenceCustomer.customerId,
+                nonCorrespondenceCustomer.customerId
+            ),
+            createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
+            createContributor(higherSequenceCorrespondenceCustomer.cristinId, true, 3),
+            createContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
+        );
+
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).orElseThrow();
+
+        assertEquals(lowestSequenceCorrespondenceCustomer.customerId, customerDto.id());
+    }
+
     private static Contributor createNonCorrespondenceContributorWithoutSequence(URI cristinId,
                                                                                  boolean correspondingAuthor) {
         return new Contributor.Builder()

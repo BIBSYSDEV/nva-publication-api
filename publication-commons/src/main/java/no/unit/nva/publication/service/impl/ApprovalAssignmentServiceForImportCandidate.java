@@ -43,8 +43,15 @@ public class ApprovalAssignmentServiceForImportCandidate {
     }
 
     private Optional<CustomerDto> getCustomerForCorrespondenceContributor(Collection<CustomerDto> customers, ImportCandidate importCandidate) {
-        return getCorrespondenceContributor(importCandidate)
-                   .flatMap(contributor -> getCustomerForContributor(contributor, customers));
+        return importCandidate.getEntityDescription()
+                   .getContributors().stream()
+                   .filter(Contributor::isCorrespondingAuthor)
+                   .sorted(Comparator.comparing(Contributor::getSequence,
+                                                Comparator.nullsLast(Comparator.naturalOrder())))
+                   .map(contributor -> getCustomerForContributor(contributor, customers))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .findFirst();
     }
 
     private Optional<CustomerDto> getCustomerForContributor(Contributor contributor, Collection<CustomerDto> customers) {
@@ -81,13 +88,6 @@ public class ApprovalAssignmentServiceForImportCandidate {
 
     private static String extractOrganizationNumber(URI organizationId) {
         return UriWrapper.fromUri(organizationId).getLastPathElement().split(CRISTIN_ID_SEPARATOR)[0];
-    }
-
-    private Optional<Contributor> getCorrespondenceContributor(ImportCandidate importCandidate) {
-        return importCandidate.getEntityDescription()
-                   .getContributors().stream()
-                   .filter(Contributor::isCorrespondingAuthor)
-                   .findFirst();
     }
 
     private static boolean oneOfCustomersAllowsPublishingWithoutApproval(ArrayList<CustomerDto> customers) {
