@@ -43,7 +43,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenAssociatedCustomerAreEmtpy() {
+    void shouldThrowExceptionWhenAssociatedCustomersAreEmpty() {
         var importCandidate = createImportCandidateWithoutCustomers();
 
         var exception = assertThrows(ApprovalAssignmentException.class,
@@ -89,7 +89,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     }
 
     @Test
-    void shouldCustomerFoundWhenCustomerIsFound() throws Exception {
+    void shouldReturnCustomerFoundWhenCustomerIsFound() throws Exception {
         var customer = new CustomerSetup();
         mockCustomer(customer);
 
