@@ -15,6 +15,7 @@ import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 
@@ -57,7 +58,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
             return AssignmentServiceResult.noApprovalNeeded(customerDto.get());
         }
 
-        return AssignmentServiceResult.customerFound(getResponsibleCustomer(importCandidate, customers));
+        return AssignmentServiceResult.customerFound(getResponsibleCustomerContributorPair(importCandidate, customers));
     }
 
     private static Map<String, CustomerDto> customerByTopLevelInstitutionIdentifierMap(List<CustomerDto> customers) {
@@ -111,7 +112,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         return customers.stream().filter(CustomerDto::autoPublishScopusImportFiles).findFirst();
     }
 
-    private CustomerDto getResponsibleCustomer(ImportCandidate importCandidate, List<CustomerDto> customers)
+    private CustomerContributorPair getResponsibleCustomerContributorPair(ImportCandidate importCandidate, List<CustomerDto> customers)
         throws ApprovalAssignmentException {
         var customerMap = customerByTopLevelInstitutionIdentifierMap(customers);
 
@@ -124,7 +125,8 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                    .orElseThrow(() -> new ApprovalAssignmentException(NO_CONTRIBUTOR_MESSAGE));
     }
 
-    private Optional<CustomerDto> findMatchingCustomer(Contributor contributor, Map<String, CustomerDto> customerMap) {
+    private Optional<CustomerContributorPair> findMatchingCustomer(Contributor contributor,
+                                                                   Map<String, CustomerDto> customerMap) {
         return contributor.getAffiliations()
                    .stream()
                    .filter(Organization.class::isInstance)
@@ -134,7 +136,8 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                    .map(ApprovalAssignmentServiceForImportCandidateFiles::extractTopLevelOrganizationPart)
                    .map(customerMap::get)
                    .filter(Objects::nonNull)
-                   .findFirst();
+                   .findFirst()
+                   .map(customer -> new CustomerContributorPair(customer, contributor));  // ✅ Create pair here
     }
 
     private List<CustomerDto> fetchAllAssociatedCustomers(ImportCandidate importCandidate)
@@ -156,7 +159,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
     }
 
     public enum AssignmentServiceStatus {
-        NO_APPROVAL_NEEDED, CUSTOMER_FOUND
+        NO_APPROVAL_NEEDED, APPROVAL_NEEDED
     }
 
     public static class ApprovalAssignmentException extends Exception {
@@ -170,27 +173,34 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
 
         private final AssignmentServiceStatus status;
         private final String reason;
-        private final CustomerDto customerDto;
+        private final CustomerDto customer;
 
         private AssignmentServiceResult(AssignmentServiceStatus status, String reason, CustomerDto customerDto) {
             this.status = status;
             this.reason = reason;
-            this.customerDto = customerDto;
+            this.customer = customerDto;
         }
 
         public static AssignmentServiceResult noApprovalNeeded(CustomerDto customerDto) {
-            var reason = "Customer %s allows auto publishing".formatted(customerDto.cristinId());
+            var reason = "Customer %s allows auto publishing".formatted(customerDto);
             return new AssignmentServiceResult(AssignmentServiceStatus.NO_APPROVAL_NEEDED, reason, null);
         }
 
-        public static AssignmentServiceResult customerFound(CustomerDto customer) {
-            Objects.requireNonNull(customer, "Customer required when status is CUSTOMER_FOUND");
-            var reason = "Customer %s requires approval".formatted(customer.cristinId());
-            return new AssignmentServiceResult(AssignmentServiceStatus.CUSTOMER_FOUND, reason, customer);
+        public static AssignmentServiceResult customerFound(CustomerContributorPair customerContributorPair) {
+            Objects.requireNonNull(customerContributorPair, "Customer required when status is CUSTOMER_FOUND");
+            var reason = "Customer %s requires approval based on contributor %s"
+                    .formatted(customerContributorPair.customerDto().cristinId(),
+                               getContributorId(customerContributorPair.contributor()));
+            return new AssignmentServiceResult(AssignmentServiceStatus.APPROVAL_NEEDED, reason,
+                                               customerContributorPair.customerDto());
         }
 
-        public Optional<CustomerDto> getCustomerDto() {
-            return Optional.ofNullable(customerDto);
+        private static URI getContributorId(Contributor contributor) {
+            return Optional.ofNullable(contributor).map(Contributor::getIdentity).map(Identity::getId).orElse(null);
+        }
+
+        public CustomerDto getCustomer() {
+            return customer;
         }
 
         public AssignmentServiceStatus getStatus() {
@@ -201,4 +211,6 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
             return reason;
         }
     }
+
+    public record CustomerContributorPair(CustomerDto customerDto, Contributor contributor) {}
 }

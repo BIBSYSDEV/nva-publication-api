@@ -97,6 +97,20 @@ class PiaConnectionTest {
         assertThat(affiliationUri, is(equalTo(Optional.empty())));
     }
 
+    @Test
+    void shouldReturnFirstAffiliationWhenAllAffiliationsHaveInvalidCount() {
+        var affiliationId = randomString();
+        var affiliationsWithInvalidData = List.of(
+            PiaResponseGenerator.generateAffiliationWithoutCount(affiliationId),
+            PiaResponseGenerator.generateAffiliationWithoutUnit(affiliationId, List.of(1).iterator())
+        );
+        var response = PiaResponseGenerator.convertAffiliationsToJson(affiliationsWithInvalidData);
+        mockedPiaAffiliationIdSearch(affiliationId, response);
+        var affiliationUri = piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
+
+        assertThat(affiliationUri.toString(), containsString(affiliationsWithInvalidData.getFirst().getUnitIdentifier()));
+    }
+
     private void mockedPiaAffiliationIdSearch(String affiliationId, String response) {
 
         stubFor(

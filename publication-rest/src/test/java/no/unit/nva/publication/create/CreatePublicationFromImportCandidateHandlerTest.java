@@ -32,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.CustomerDto;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -91,6 +90,10 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceResult;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.CustomerContributorPair;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -130,7 +133,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     private ResourceService importCandidateService;
     private ResourceService publicationService;
     private TicketService ticketService;
-    private IdentityServiceClient identityServiceClient;
+    private ApprovalAssignmentServiceForImportCandidateFiles approvalService;
     private CreatePublicationFromImportCandidateHandler handler;
     private S3Client s3Client;
 
@@ -139,7 +142,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     @BeforeEach
     public void setUp(@Mock Context context, @Mock S3Client s3Client,
-                      WireMockRuntimeInfo wireMockRuntimeInfo) {
+                      WireMockRuntimeInfo wireMockRuntimeInfo) throws ApprovalAssignmentException {
         this.s3Client = s3Client;
         super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
         importCandidateService = getResourceService(client, IMPORT_CANDIDATES_TABLE);
@@ -155,8 +158,10 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     ticketService,
                                                     s3Client,
                                                     piaClientConfig);
-        this.identityServiceClient = mock(IdentityServiceClient.class);
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, identityServiceClient);
+        this.approvalService = mock(ApprovalAssignmentServiceForImportCandidateFiles.class);
+        lenient().when(approvalService.determineCustomerResponsibleForApproval(any()))
+            .thenReturn(AssignmentServiceResult.noApprovalNeeded(randomCustomer(randomUri(), true)));
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, approvalService);
         mockPostAuidWriting();
     }
 
@@ -222,7 +227,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     ticketService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, identityServiceClient);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
+                                                                  approvalService);
         when(publicationService.importResource(any(), any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
@@ -253,7 +259,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     s3Client,
                                                     piaClientConfig
         );
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, identityServiceClient);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
+                                                                  approvalService);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenThrow(new TransactionFailedException(new Exception()));
 
@@ -299,7 +306,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     ticketService,
                                                     s3Client,
                                                     piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, identityServiceClient);
+        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
+                                                                  approvalService);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenCallRealMethod()
             .thenThrow(new NotFoundException(""));
@@ -490,7 +498,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     @Test
     void shouldPersistPublishingRequestWhenImportingCandidateWithFilesAndCustomerRequiresApproval()
-        throws IOException, NotFoundException {
+        throws IOException, ApprovalAssignmentException {
         var candidate = createImportCandidate();
         var file = randomOpenFile();
         candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
@@ -499,8 +507,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         var request = createRequest(importCandidate);
 
-        when(identityServiceClient.getCustomerById(customerRequiringApproval))
-            .thenReturn(randomCustomer(customerRequiringApproval, false));
+        when(approvalService.determineCustomerResponsibleForApproval(importCandidate))
+            .thenReturn(AssignmentServiceResult.customerFound(new CustomerContributorPair(randomCustomer(customerRequiringApproval, false), randomContributor())));
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -520,7 +528,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     @Test
     void shouldPublishFileWhenImportingCandidateWithFilesAndNoneOfCustomerRequiresApproval()
-        throws IOException, NotFoundException {
+        throws IOException, ApprovalAssignmentException {
         var candidate = createImportCandidate();
         var file = randomOpenFile();
         candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
@@ -529,8 +537,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         var request = createRequest(importCandidate);
 
-        when(identityServiceClient.getCustomerById(eq(customerAllowingPublishing)))
-            .thenReturn(randomCustomer(customerAllowingPublishing, true));
+        when(approvalService.determineCustomerResponsibleForApproval(importCandidate))
+            .thenReturn(AssignmentServiceResult.noApprovalNeeded(randomCustomer(customerAllowingPublishing, true)));
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
