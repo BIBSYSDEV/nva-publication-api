@@ -2,11 +2,12 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.CUSTOMER_FOUND;
+import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
@@ -16,28 +17,39 @@ import java.util.List;
 import java.util.UUID;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidate.ApprovalAssignmentException;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ApprovalAssignmentServiceForImportCandidateTest {
+class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
-    private ApprovalAssignmentServiceForImportCandidate service;
+    private ApprovalAssignmentServiceForImportCandidateFiles service;
     private IdentityServiceClient identityServiceClient;
 
     @BeforeEach
     void setUp() {
         identityServiceClient = mock(IdentityServiceClient.class);
-        service = new ApprovalAssignmentServiceForImportCandidate(identityServiceClient);
+        service = new ApprovalAssignmentServiceForImportCandidateFiles(identityServiceClient);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAssociatedCustomerAreEmtpy() {
+        var importCandidate = createImportCandidateWithoutCustomers();
+
+        var exception = assertThrows(ApprovalAssignmentException.class,
+                                     () -> service.determineCustomerResponsibleForApproval(importCandidate));
+
+        assertEquals("No customers for import candidate " + importCandidate.getIdentifier(), exception.getMessage());
     }
 
     @Test
@@ -53,14 +65,41 @@ class ApprovalAssignmentServiceForImportCandidateTest {
     }
 
     @Test
-    void shouldReturnEmptyWhenCustomerAllowsAutoPublishing() throws Exception {
+    void shouldThrowExceptionWhenNoContributorForCustomerExist() throws Exception {
+        var customer = new CustomerSetup();
+        mockCustomer(customer);
+
+        var importCandidate = createImportCandidate(
+            List.of(customer.customerId),
+            createContributor(createCristinId(), true, 1));
+
+        assertThrows(ApprovalAssignmentException.class,
+                     () -> service.determineCustomerResponsibleForApproval(importCandidate));
+    }
+
+    @Test
+    void shouldReturnNoApprovalNeededWhenCustomerAllowsAutoPublishing() throws Exception {
         var customerId = randomUri();
         mockCustomer(customerId, randomUri(), true);
         var importCandidate = createImportCandidate(customerId);
 
         var result = service.determineCustomerResponsibleForApproval(importCandidate);
 
-        assertTrue(result.isEmpty());
+        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+    }
+
+    @Test
+    void shouldCustomerFoundWhenCustomerIsFound() throws Exception {
+        var customer = new CustomerSetup();
+        mockCustomer(customer);
+
+        var importCandidate = createImportCandidate(
+            List.of(customer.customerId),
+            createContributor(customer.cristinId, true, 1));
+
+        var result = service.determineCustomerResponsibleForApproval(importCandidate).getStatus();
+
+        assertEquals(CUSTOMER_FOUND, result);
     }
 
     @Test
@@ -76,7 +115,8 @@ class ApprovalAssignmentServiceForImportCandidateTest {
             createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
             createContributor(correspondenceCustomer.cristinId, true, 2));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).orElseThrow();
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomerDto()
+                              .orElseThrow();
 
         assertEquals(correspondenceCustomer.customerId, customerDto.id());
     }
@@ -94,7 +134,8 @@ class ApprovalAssignmentServiceForImportCandidateTest {
             createContributor(otherCustomer.cristinId, false, 2),
             createContributor(lowestSequenceCustomer.cristinId, false, 1));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).orElseThrow();
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomerDto()
+                              .orElseThrow();
 
         assertEquals(lowestSequenceCustomer.customerId, customerDto.id());
     }
@@ -114,7 +155,7 @@ class ApprovalAssignmentServiceForImportCandidateTest {
 
         var customerDto = service.determineCustomerResponsibleForApproval(importCandidate);
 
-        assertEquals(firstCustomer.customerId, customerDto.orElseThrow().id());
+        assertEquals(firstCustomer.customerId, customerDto.getCustomerDto().orElseThrow().id());
     }
 
     @Test
@@ -130,7 +171,7 @@ class ApprovalAssignmentServiceForImportCandidateTest {
             createContributor(otherCustomer.cristinId, false, 1),
             createNonCorrespondenceContributorWithoutSequence(correspondenceCustomer.cristinId, true));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).orElseThrow();
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomerDto().orElseThrow();
 
         assertEquals(correspondenceCustomer.customerId, customerDto.id());
     }
@@ -157,7 +198,7 @@ class ApprovalAssignmentServiceForImportCandidateTest {
             createContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
         );
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).orElseThrow();
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomerDto().orElseThrow();
 
         assertEquals(lowestSequenceCorrespondenceCustomer.customerId, customerDto.id());
     }
@@ -203,8 +244,17 @@ class ApprovalAssignmentServiceForImportCandidateTest {
     }
 
     private ImportCandidate createImportCandidate(URI customerId) {
-        return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
+        return new ImportCandidate.Builder()
+                   .withIdentifier(SortableIdentifier.next())
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedCustomers(List.of(customerId))
+                   .build();
+    }
+
+    private ImportCandidate createImportCandidateWithoutCustomers() {
+        return new ImportCandidate.Builder()
+                   .withIdentifier(SortableIdentifier.next())
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .build();
     }
 
