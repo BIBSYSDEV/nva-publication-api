@@ -4,6 +4,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 
@@ -20,7 +22,8 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
 
     private static final String FETCH_CUSTOMER_EXCEPTION_MESSAGE = "Could not fetch customer with id %s";
     private static final String NO_CUSTOMERS_EXCEPTION_MESSAGE = "No customers for import candidate %s";
-    private static final String NO_CONTRIBUTOR_MESSAGE = "No contributor to create approval";
+    private static final String NO_CONTRIBUTORS_EXCEPTION_MESSAGE = "Import candidate is missing contributors";
+    private static final String NO_CONTRIBUTOR_MESSAGE = "No contributor matching customer found to create approval";
     private static final String URI_PATH_SEPARATOR = "/";
     private static final String CRISTIN_ID_SEPARATOR = ".";
     private static final int START_OF_STRING = 0;
@@ -49,8 +52,9 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         validateImportCandidateForCustomersPresence(importCandidate);
         var customers = fetchAllAssociatedCustomers(importCandidate);
 
-        if (oneOfCustomersAllowsPublishingWithoutApproval(customers)) {
-            return AssignmentServiceResult.noApprovalNeeded();
+        var customerDto = findAnyCustomerAllowingAutoApproval(customers);
+        if (customerDto.isPresent()) {
+            return AssignmentServiceResult.noApprovalNeeded(customerDto.get());
         }
 
         return AssignmentServiceResult.customerFound(getResponsibleCustomer(importCandidate, customers));
@@ -70,6 +74,16 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
             var message = NO_CUSTOMERS_EXCEPTION_MESSAGE.formatted(importCandidate.getIdentifier());
             throw new ApprovalAssignmentException(message);
         }
+        if (getContributors(importCandidate).isEmpty()) {
+            throw new ApprovalAssignmentException(NO_CONTRIBUTORS_EXCEPTION_MESSAGE);
+        }
+    }
+
+    private static List<Contributor> getContributors(ImportCandidate importCandidate) {
+        return Optional.ofNullable(importCandidate)
+                   .map(ImportCandidate::getEntityDescription)
+                   .map(EntityDescription::getContributors)
+                   .orElse(Collections.emptyList());
     }
 
     private static String extractTopLevelCristinInstitutionIdentifier(CustomerDto customerDto) {
@@ -93,16 +107,15 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                    .thenComparing(Contributor::getSequence, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
-    private static boolean oneOfCustomersAllowsPublishingWithoutApproval(Collection<CustomerDto> customers) {
-        return customers.stream().anyMatch(CustomerDto::autoPublishScopusImportFiles);
+    private Optional<CustomerDto> findAnyCustomerAllowingAutoApproval(Collection<CustomerDto> customers) {
+        return customers.stream().filter(CustomerDto::autoPublishScopusImportFiles).findFirst();
     }
 
     private CustomerDto getResponsibleCustomer(ImportCandidate importCandidate, List<CustomerDto> customers)
         throws ApprovalAssignmentException {
         var customerMap = customerByTopLevelInstitutionIdentifierMap(customers);
 
-        return importCandidate.getEntityDescription()
-                   .getContributors()
+        return getContributors(importCandidate)
                    .stream()
                    .sorted(compareByCorrespondingAuthorAndSequence())
                    .map(contributor -> findMatchingCustomer(contributor, customerMap))
@@ -156,20 +169,24 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
     public static final class AssignmentServiceResult {
 
         private final AssignmentServiceStatus status;
+        private final String reason;
         private final CustomerDto customerDto;
 
-        private AssignmentServiceResult(AssignmentServiceStatus status, CustomerDto customerDto) {
+        private AssignmentServiceResult(AssignmentServiceStatus status, String reason, CustomerDto customerDto) {
             this.status = status;
+            this.reason = reason;
             this.customerDto = customerDto;
         }
 
-        public static AssignmentServiceResult noApprovalNeeded() {
-            return new AssignmentServiceResult(AssignmentServiceStatus.NO_APPROVAL_NEEDED, null);
+        public static AssignmentServiceResult noApprovalNeeded(CustomerDto customerDto) {
+            var reason = "Customer %s allows auto publishing".formatted(customerDto.cristinId());
+            return new AssignmentServiceResult(AssignmentServiceStatus.NO_APPROVAL_NEEDED, reason, null);
         }
 
         public static AssignmentServiceResult customerFound(CustomerDto customer) {
             Objects.requireNonNull(customer, "Customer required when status is CUSTOMER_FOUND");
-            return new AssignmentServiceResult(AssignmentServiceStatus.CUSTOMER_FOUND, customer);
+            var reason = "Customer %s requires approval".formatted(customer.cristinId());
+            return new AssignmentServiceResult(AssignmentServiceStatus.CUSTOMER_FOUND, reason, customer);
         }
 
         public Optional<CustomerDto> getCustomerDto() {
@@ -178,6 +195,10 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
 
         public AssignmentServiceStatus getStatus() {
             return status;
+        }
+
+        public String getReason() {
+            return reason;
         }
     }
 }

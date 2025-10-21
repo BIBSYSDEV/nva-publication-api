@@ -8,6 +8,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
@@ -78,6 +79,17 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     }
 
     @Test
+    void shouldThrowExceptionWhenNoContributors() throws Exception {
+        var customer = new CustomerSetup();
+        mockCustomer(customer);
+
+        var importCandidate = createImportCandidate(List.of(customer.customerId));
+
+        assertThrows(ApprovalAssignmentException.class,
+                     () -> service.determineCustomerResponsibleForApproval(importCandidate));
+    }
+
+    @Test
     void shouldReturnNoApprovalNeededWhenCustomerAllowsAutoPublishing() throws Exception {
         var customerId = randomUri();
         mockCustomer(customerId, randomUri(), true);
@@ -86,6 +98,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         var result = service.determineCustomerResponsibleForApproval(importCandidate);
 
         assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+        assertTrue(result.getReason().contains("allows auto publishing"));
     }
 
     @Test
@@ -248,6 +261,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                    .withIdentifier(SortableIdentifier.next())
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedCustomers(List.of(customerId))
+                   .withEntityDescription(randomEntityDescription(JournalArticle.class))
                    .build();
     }
 
