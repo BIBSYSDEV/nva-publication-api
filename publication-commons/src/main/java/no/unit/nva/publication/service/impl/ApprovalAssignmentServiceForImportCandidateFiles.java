@@ -171,8 +171,8 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
 
     public static final class AssignmentServiceResult {
 
-        public static final String FOUND_REASON_TEMPLATE =
-            "Customer %s requires approval based on contributor %s because of correspondence %s and sequence %s";
+        private static final String FOUND_REASON_TEMPLATE =
+            "Customer %s requires approval based on contributor %s because of corresponding author %s and sequence %s";
         private final AssignmentServiceStatus status;
         private final String reason;
         private final CustomerDto customer;
@@ -198,7 +198,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         private static String createReason(CustomerContributorPair customerContributorPair) {
             return FOUND_REASON_TEMPLATE.formatted(customerContributorPair.customerDto().cristinId(),
                                                    getContributorId(customerContributorPair.contributor()),
-                                                   getCorrespondence(customerContributorPair.contributor()),
+                                                   isCorrespondingAuthor(customerContributorPair.contributor()),
                                                    getSequence(customerContributorPair.contributor()));
         }
 
@@ -206,7 +206,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
             return Optional.ofNullable(contributor).map(Contributor::getIdentity).map(Identity::getId).orElse(null);
         }
 
-        private static boolean getCorrespondence(Contributor contributor) {
+        private static boolean isCorrespondingAuthor(Contributor contributor) {
             return Optional.ofNullable(contributor).map(Contributor::isCorrespondingAuthor).orElse(false);
         }
 
