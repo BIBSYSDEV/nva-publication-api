@@ -7,8 +7,10 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -26,6 +28,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.GodClass")
 public final class ManuallyUpdatePublicationUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(ManuallyUpdatePublicationUtil.class);
@@ -35,6 +38,7 @@ public final class ManuallyUpdatePublicationUtil {
     private static final String SERIAL_PUBLICATION = "serial-publication";
     private static final String CRISTIN = "cristin";
     private static final String PERSON = "person";
+    public static final String ORGANIZATION = "organization";
 
     private final ResourceService resourceService;
     private final Environment environment;
@@ -62,7 +66,58 @@ public final class ManuallyUpdatePublicationUtil {
                                                         this::updateUnconfirmedJournalToConfirmed);
             case CONTRIBUTOR_IDENTIFIER ->
                 updateResources(resources, request, this::hasContributor, this::updateContributorIdentifier);
+            case CONTRIBUTOR_AFFILIATION -> updateResources(resources, request, this::hasContributorWithAffiliation,
+                                                              this::updateContributorAffiliation);
         }
+    }
+
+    private Resource updateContributorAffiliation(Resource resource,
+                                                  ManuallyUpdatePublicationsRequest request) {
+        var updatedContributors = resource.getEntityDescription().getContributors().stream()
+                                      .map(contributor -> updateContributor(contributor, request))
+                                      .toList();
+
+        resource.getEntityDescription().setContributors(updatedContributors);
+        return resource;
+    }
+
+    private Contributor updateContributor(Contributor contributor,
+                                          ManuallyUpdatePublicationsRequest request) {
+        var updatedAffiliations = contributor.getAffiliations().stream()
+                                      .map(corporation -> updateAffiliation(corporation, request))
+                                      .toList();
+
+        return contributor.copy().withAffiliations(updatedAffiliations).build();
+    }
+
+    private Corporation updateAffiliation(Corporation corporation,
+                                          ManuallyUpdatePublicationsRequest request) {
+        if (corporation instanceof Organization organization
+            && hasAffiliationIdentifier(organization, request.oldValue())) {
+            return Organization.fromUri(buildUri(CRISTIN, ORGANIZATION, request.newValue()));
+        }
+        return corporation;
+    }
+
+    private boolean hasContributorWithAffiliation(Resource resource, String affiliationIdentifier) {
+        return resource.getEntityDescription().getContributors().stream()
+                   .anyMatch(contributor -> hasAffiliation(contributor, affiliationIdentifier));
+    }
+
+    private boolean hasAffiliation(Contributor contributor, String affiliationIdentifier) {
+        return contributor.getAffiliations().stream()
+                   .filter(Organization.class::isInstance)
+                   .map(Organization.class::cast)
+                   .anyMatch(organization -> hasAffiliationIdentifier(organization, affiliationIdentifier));
+    }
+
+    private boolean hasAffiliationIdentifier(Organization organization, String affiliationIdentifier) {
+        return Optional.ofNullable(organization)
+                   .map(Organization::getId)
+                   .map(UriWrapper::fromUri)
+                   .map(UriWrapper::getLastPathElement)
+                   .filter(affiliationIdentifier::equals)
+                   .isPresent();
     }
 
     private static boolean hasLicense(String license, FileEntry file) {

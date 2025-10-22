@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -10,6 +11,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +31,9 @@ import java.util.stream.IntStream;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -68,6 +74,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     private static final Context CONTEXT = mock(Context.class);
     public static final String SERIAL_PUBLICATION = "serial-publication";
     public static final String PUBLISHER = "publisher";
+    public static final String CRISTIN = "cristin";
+    public static final String ORGANIZATION = "organization";
+    public static final String API_HOST = new Environment().readEnv("API_HOST");
     private ManuallyUpdatePublicationsHandler handler;
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
@@ -239,7 +248,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
             var updatedPublication = getPublicationByIdentifier(publication);
             var updatedPublisher = (Publisher) getPublisher(updatedPublication);
             var expectedPublisher = createChannelIdWithIdentifier(publisherIdentifier, getYear(publication), PUBLISHER);
-            
+
             assertEquals(expectedPublisher, updatedPublisher.getId());
         });
     }
@@ -446,16 +455,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
-            var updatedContributorIdentifier = updatedPublication.getEntityDescription().getContributors().stream()
-                                                   .filter(contributor -> hasIdentifier(contributor,
-                                                                                        newContributorIdentifier))
-                                                   .findFirst()
-                                                   .orElseThrow();
+            var updatedContributorIdentifier = getContributorWithIdentifier(updatedPublication, newContributorIdentifier);
             var contributorsToKeepUnchanged = publication.getEntityDescription().getContributors().stream()
                                            .filter(contributor -> !hasIdentifier(contributor, oldContributorIdentifier))
                                            .toList();
             assertEquals(newContributorIdentifier,
-                         UriWrapper.fromUri(updatedContributorIdentifier.getIdentity().getId()).getLastPathElement());
+                         getContributorIdentifier(updatedContributorIdentifier));
             assertEquals(publication.getEntityDescription().getContributors().size(),
                          updatedPublication.getEntityDescription().getContributors().size());
             assertTrue(updatedPublication.getEntityDescription().getContributors().containsAll(contributorsToKeepUnchanged));
@@ -479,6 +484,104 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         });
     }
 
+    @Test
+    void shouldUpdateContributorAffiliationIdentifier() throws IOException {
+        var affiliationIdentifier = randomString();
+        var affiliationId = affiliationId(affiliationIdentifier);
+        var publicationsToUpdate =
+            createMultiplePublicationsWithContributor(randomContributorWithAffiliation(affiliationId));
+
+        var newAffiliationIdentifier = randomString();
+        var event = createEvent(ManualUpdateType.CONTRIBUTOR_AFFILIATION, affiliationIdentifier, newAffiliationIdentifier, null);
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var contributors = updatedPublication.getEntityDescription().getContributors();
+            var newAffiliationId = URI.create(affiliationId.toString().replace(affiliationIdentifier, newAffiliationIdentifier));
+            var updatedContributorAffiliation = contributors.stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(List::stream)
+                .filter(corporation -> corporation instanceof Organization organization && organization.getId().equals(newAffiliationId))
+                .findFirst()
+                .orElseThrow();
+            assertEquals(Organization.fromUri(newAffiliationId), updatedContributorAffiliation);
+        });
+    }
+
+    @Test
+    void shouldNotUpdateContributorWhenContributorDoesNotHaveAffiliationWithIdentifier() throws IOException {
+        var publicationsToKeepUnchanged =
+            createMultiplePublicationsWithContributor(randomContributorWithAffiliation(randomUri()));
+
+        var event = createEvent(ManualUpdateType.CONTRIBUTOR_AFFILIATION, randomString(), randomString(), null);
+
+        mockSearchApiResponseWithPublications(publicationsToKeepUnchanged);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToKeepUnchanged.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            assertEquals(publication, updatedPublication);
+        });
+    }
+
+    @Test
+    void shouldUpdateSingleAffiliationWithoutModifyingOthers() throws IOException {
+        var affiliationIdentifier = randomString();
+        var affiliationId = affiliationId(affiliationIdentifier);
+        var contributor = randomContributorWithAffiliation(affiliationId);
+        var publicationsToUpdate =
+            createMultiplePublicationsWithContributor(contributor);
+
+        var newAffiliationIdentifier = randomString();
+        var event = createEvent(ManualUpdateType.CONTRIBUTOR_AFFILIATION, affiliationIdentifier, newAffiliationIdentifier, null);
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+            var updatedContributor = getContributorWithIdentifier(updatedPublication, getContributorIdentifier(contributor));
+            var updatedAffiliations = updatedContributor.getAffiliations();
+            var expectedAffiliations = createExpectedAffiliations(contributor, affiliationId, newAffiliationIdentifier);
+
+            assertThat(updatedAffiliations, hasItems(expectedAffiliations.toArray(Corporation[]::new)));
+        });
+    }
+
+    private static URI affiliationId(String affiliationIdentifier) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(CRISTIN)
+                   .addChild(ORGANIZATION)
+                   .addChild(affiliationIdentifier)
+                   .getUri();
+    }
+
+    private static ArrayList<Corporation> createExpectedAffiliations(Contributor contributor, URI oldAffiliationId,
+                                                                     String newAffiliationIdentifier) {
+        var affiliations = new ArrayList<>(contributor.getAffiliations());
+        affiliations.remove(Organization.fromUri(oldAffiliationId));
+        affiliations.add(Organization.fromUri(UriWrapper.fromUri(oldAffiliationId).replacePathElementByIndexFromEnd(0,
+                                                                                               newAffiliationIdentifier).getUri()));
+        return affiliations;
+    }
+
+    private static String getContributorIdentifier(Contributor contributorToUpdateAffiliationsFor) {
+        return UriWrapper.fromUri(contributorToUpdateAffiliationsFor.getIdentity().getId()).getLastPathElement();
+    }
+
+    private static Contributor getContributorWithIdentifier(Publication publication, String contributorIdentifier) {
+        return publication.getEntityDescription().getContributors().stream()
+                   .filter(contributor -> hasIdentifier(contributor, contributorIdentifier))
+                   .findFirst()
+                   .orElseThrow();
+    }
+
     private static boolean hasIdentifier(Contributor contributor, String oldContributorIdentifier) {
         return Optional.ofNullable(contributor)
                    .map(Contributor::getIdentity)
@@ -490,7 +593,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     private static URI createContributorIdentifier(String contributorIdentifier) {
         return UriWrapper.fromUri(randomUri())
-                   .addChild("cristin")
+                   .addChild(CRISTIN)
                    .addChild("person")
                    .addChild(contributorIdentifier)
                    .getUri();
@@ -513,7 +616,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     private static URI createChannelIdWithIdentifier(String channelIdentifier, String year, String type) {
-        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+        return UriWrapper.fromHost(API_HOST)
                    .addChild("publication-channels-v2")
                    .addChild(type)
                    .addChild(channelIdentifier)

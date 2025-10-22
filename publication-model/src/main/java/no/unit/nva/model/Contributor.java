@@ -1,9 +1,11 @@
 package no.unit.nva.model;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.util.SerializationUtils.nullListAsEmpty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +52,7 @@ public class Contributor {
     }
 
     public List<Corporation> getAffiliations() {
-        return affiliations;
+        return nonNull(affiliations) ? affiliations : Collections.emptyList();
     }
 
     public Integer getSequence() {

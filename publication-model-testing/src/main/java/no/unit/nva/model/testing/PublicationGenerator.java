@@ -39,6 +39,7 @@ import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -256,6 +257,16 @@ public final class PublicationGenerator {
                    .withRole(new RoleType(Role.OTHER))
                    .withIdentity(new Identity.Builder().withId(contributorId).build())
                    .withAffiliations(List.of(new Organization.Builder().withId(affiliationId).build()))
+                   .build();
+    }
+
+    public static Contributor randomContributorWithAffiliation(URI affiliationId) {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(Role.OTHER))
+                   .withIdentity(new Identity.Builder().withId(randomUri()).build())
+                   .withAffiliations(List.of(Organization.fromUri(affiliationId),
+                                             Organization.fromUri(randomUri()),
+                                             new UnconfirmedOrganization(randomString())))
                    .build();
     }
 
