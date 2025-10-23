@@ -38,7 +38,7 @@ public final class ManuallyUpdatePublicationUtil {
     private static final String SERIAL_PUBLICATION = "serial-publication";
     private static final String CRISTIN = "cristin";
     private static final String PERSON = "person";
-    public static final String ORGANIZATION = "organization";
+    private static final String ORGANIZATION = "organization";
 
     private final ResourceService resourceService;
     private final Environment environment;

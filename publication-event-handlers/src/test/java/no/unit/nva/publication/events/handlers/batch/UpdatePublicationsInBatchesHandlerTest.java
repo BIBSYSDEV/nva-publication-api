@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static java.util.UUID.randomUUID;
-import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -11,8 +10,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,9 +27,7 @@ import java.util.stream.IntStream;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -72,11 +66,10 @@ import org.junit.jupiter.api.Test;
 class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     private static final Context CONTEXT = mock(Context.class);
-    public static final String SERIAL_PUBLICATION = "serial-publication";
-    public static final String PUBLISHER = "publisher";
-    public static final String CRISTIN = "cristin";
-    public static final String ORGANIZATION = "organization";
-    public static final String API_HOST = new Environment().readEnv("API_HOST");
+    private static final String SERIAL_PUBLICATION = "serial-publication";
+    private static final String PUBLISHER = "publisher";
+    private static final String CRISTIN = "cristin";
+    private static final String API_HOST = new Environment().readEnv("API_HOST");
     private ManuallyUpdatePublicationsHandler handler;
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
@@ -122,8 +115,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         var serialPublicationId = createChannelIdWithIdentifier(serialPublicationIdentifier, randomInteger().toString(),
                                                                 SERIAL_PUBLICATION);
         var publicationsToUpdate = createMultiplePublicationsWithSerialPublication(serialPublicationId);
-        var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, serialPublicationIdentifier, newSerialPublicationIdentifier,
-                                MATCHES);
+        var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, serialPublicationIdentifier,
+                                newSerialPublicationIdentifier, MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -131,24 +124,22 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
-            var updatedPublicationContext = updatedPublication.getEntityDescription().getReference().getPublicationContext();
+            var updatedPublicationContext = updatedPublication.getEntityDescription()
+                                                .getReference()
+                                                .getPublicationContext();
             var updatedChannelId = getSerialPublicationId(updatedPublicationContext);
-            var expectedJournal = serialPublicationId.toString().replace(serialPublicationIdentifier, newSerialPublicationIdentifier);
+            var expectedJournal = serialPublicationId.toString()
+                                      .replace(serialPublicationIdentifier, newSerialPublicationIdentifier);
 
             assertEquals(URI.create(expectedJournal), updatedChannelId);
         });
     }
 
-    private static URI getSerialPublicationId(PublicationContext updatedPublicationContext) {
-        return updatedPublicationContext instanceof Book book ? ((Series) book.getSeries()).getId()
-                   : ((Journal) updatedPublicationContext).getId();
-    }
-
     @Test
     void shouldNotUpdatePublicationJournalIdWhenUpdateTypeIsSerialPublicationAndPublicationAndRequestHaveDifferentSerialPublications()
         throws IOException {
-        var journal = new Journal(createChannelIdWithIdentifier(randomUUID().toString(),
-                                                                      randomInteger().toString(), SERIAL_PUBLICATION));
+        var journal = new Journal(
+            createChannelIdWithIdentifier(randomUUID().toString(), randomInteger().toString(), SERIAL_PUBLICATION));
         var publicationsToUpdate = createMultiplePublicationsWithJournal(journal);
         var event = createEvent(ManualUpdateType.SERIAL_PUBLICATION, randomUUID().toString(), randomUUID().toString(),
                                 MATCHES);
@@ -159,7 +150,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
-            var publicationContext = (Journal) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+            var publicationContext = (Journal) updatedPublication.getEntityDescription()
+                                                   .getReference()
+                                                   .getPublicationContext();
 
             assertEquals(journal, publicationContext);
         });
@@ -258,8 +251,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         throws IOException {
         var publisherName = randomString();
         var publisherIdentifier = randomUUID().toString();
-        var publicationsToUpdate =
-            createMultiplePublicationsWithPublisher(new UnconfirmedPublisher(publisherName + randomString()));
+        var publicationsToUpdate = createMultiplePublicationsWithPublisher(
+            new UnconfirmedPublisher(publisherName + randomString()));
         var event = createEvent(ManualUpdateType.UNCONFIRMED_PUBLISHER, publisherName, publisherIdentifier, CONTAINS);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
@@ -331,7 +324,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
             var updatedPublication = getPublicationByIdentifier(publication);
             var updatedBook = (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
             var updatedSeries = (Series) updatedBook.getSeries();
-            var expectedSeriesId = createChannelIdWithIdentifier(seriesIdentifier, getYear(publication), SERIAL_PUBLICATION);
+            var expectedSeriesId = createChannelIdWithIdentifier(seriesIdentifier, getYear(publication),
+                                                                 SERIAL_PUBLICATION);
 
             assertEquals(expectedSeriesId, updatedSeries.getId());
         });
@@ -342,8 +336,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         throws IOException, InvalidIssnException {
         var seriesTitle = randomString();
         var seriesIdentifier = randomUUID().toString();
-        var publicationsToUpdate = createMultiplePublicationsWithSeries(new UnconfirmedSeries(seriesTitle + randomString(), null,
-                                                                                              null));
+        var publicationsToUpdate = createMultiplePublicationsWithSeries(
+            new UnconfirmedSeries(seriesTitle + randomString(), null, null));
         var event = createEvent(ManualUpdateType.UNCONFIRMED_SERIES, seriesTitle, seriesIdentifier, CONTAINS);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
@@ -354,7 +348,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
             var updatedPublication = getPublicationByIdentifier(publication);
             var updatedBook = (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
             var updatedSeries = (Series) updatedBook.getSeries();
-            var expectedSeriesId = createChannelIdWithIdentifier(seriesIdentifier, getYear(publication), SERIAL_PUBLICATION);
+            var expectedSeriesId = createChannelIdWithIdentifier(seriesIdentifier, getYear(publication),
+                                                                 SERIAL_PUBLICATION);
 
             assertEquals(expectedSeriesId, updatedSeries.getId());
         });
@@ -403,7 +398,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         throws IOException, InvalidIssnException {
         var journalTitle = randomString();
         var journalIdentifier = randomUUID().toString();
-        var publicationsToUpdate = createMultiplePublicationsWithJournal(new UnconfirmedJournal(journalTitle, null, null));
+        var publicationsToUpdate = createMultiplePublicationsWithJournal(
+            new UnconfirmedJournal(journalTitle, null, null));
         var event = createEvent(ManualUpdateType.UNCONFIRMED_JOURNAL, journalTitle, journalIdentifier, MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
@@ -412,9 +408,11 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
-            var updatedJournal = (Journal) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+            var updatedJournal = (Journal) updatedPublication.getEntityDescription()
+                                               .getReference()
+                                               .getPublicationContext();
             var expectedJournalId = createChannelIdWithIdentifier(journalIdentifier, getYear(publication),
-                                                                   SERIAL_PUBLICATION);
+                                                                  SERIAL_PUBLICATION);
 
             assertEquals(expectedJournalId, updatedJournal.getId());
         });
@@ -433,21 +431,22 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
-            var updatedJournal = (UnconfirmedJournal) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+            var updatedJournal = (UnconfirmedJournal) updatedPublication.getEntityDescription()
+                                                          .getReference()
+                                                          .getPublicationContext();
 
             assertEquals(unconfirmedJournal, updatedJournal);
         });
     }
 
     @Test
-    void shouldUpdateContributorIdForPublicationsWhereContributorWithProvidedIdIsPresent()
-        throws IOException {
+    void shouldUpdateContributorIdForPublicationsWhereContributorWithProvidedIdIsPresent() throws IOException {
         var oldContributorIdentifier = randomInteger().toString();
         var contributorId = createContributorIdentifier(oldContributorIdentifier);
         var publicationsToUpdate = createMultiplePublicationsWithContributor(randomContributorWithId(contributorId));
         var newContributorIdentifier = randomInteger().toString();
-        var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, oldContributorIdentifier, newContributorIdentifier,
-                                MATCHES);
+        var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, oldContributorIdentifier,
+                                newContributorIdentifier, MATCHES);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -455,21 +454,24 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
-            var updatedContributorIdentifier = getContributorWithIdentifier(updatedPublication, newContributorIdentifier);
-            var contributorsToKeepUnchanged = publication.getEntityDescription().getContributors().stream()
-                                           .filter(contributor -> !hasIdentifier(contributor, oldContributorIdentifier))
-                                           .toList();
-            assertEquals(newContributorIdentifier,
-                         getContributorIdentifier(updatedContributorIdentifier));
+            var updatedContributorIdentifier = getContributorWithIdentifier(updatedPublication,
+                                                                            newContributorIdentifier);
+            var contributorsToKeepUnchanged = publication.getEntityDescription()
+                                                  .getContributors()
+                                                  .stream()
+                                                  .filter(contributor -> !hasIdentifier(contributor,
+                                                                                        oldContributorIdentifier))
+                                                  .toList();
+            assertEquals(newContributorIdentifier, getContributorIdentifier(updatedContributorIdentifier));
             assertEquals(publication.getEntityDescription().getContributors().size(),
                          updatedPublication.getEntityDescription().getContributors().size());
-            assertTrue(updatedPublication.getEntityDescription().getContributors().containsAll(contributorsToKeepUnchanged));
+            assertTrue(
+                updatedPublication.getEntityDescription().getContributors().containsAll(contributorsToKeepUnchanged));
         });
     }
 
     @Test
-    void shouldNotUpdateContributorIdForPublicationsWhereContributorWithProvidedIdIsNotPresent()
-        throws IOException {
+    void shouldNotUpdateContributorIdForPublicationsWhereContributorWithProvidedIdIsNotPresent() throws IOException {
         var publicationsToUpdate = createMultiplePublicationsWithContributor(randomContributorWithId(randomUri()));
         var event = createEvent(ManualUpdateType.CONTRIBUTOR_IDENTIFIER, randomString(), randomString(), MATCHES);
 
@@ -480,95 +482,15 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
 
-            assertTrue(updatedPublication.getEntityDescription().getContributors().containsAll(publication.getEntityDescription().getContributors()));
+            assertTrue(updatedPublication.getEntityDescription()
+                           .getContributors()
+                           .containsAll(publication.getEntityDescription().getContributors()));
         });
     }
 
-    @Test
-    void shouldUpdateContributorAffiliationIdentifier() throws IOException {
-        var affiliationIdentifier = randomString();
-        var affiliationId = affiliationId(affiliationIdentifier);
-        var publicationsToUpdate =
-            createMultiplePublicationsWithContributor(randomContributorWithAffiliation(affiliationId));
-
-        var newAffiliationIdentifier = randomString();
-        var event = createEvent(ManualUpdateType.CONTRIBUTOR_AFFILIATION, affiliationIdentifier, newAffiliationIdentifier, null);
-
-        mockSearchApiResponseWithPublications(publicationsToUpdate);
-
-        handler.handleRequest(event, output, CONTEXT);
-
-        publicationsToUpdate.forEach(publication -> {
-            var updatedPublication = getPublicationByIdentifier(publication);
-            var contributors = updatedPublication.getEntityDescription().getContributors();
-            var newAffiliationId = URI.create(affiliationId.toString().replace(affiliationIdentifier, newAffiliationIdentifier));
-            var updatedContributorAffiliation = contributors.stream()
-                .map(Contributor::getAffiliations)
-                .flatMap(List::stream)
-                .filter(corporation -> corporation instanceof Organization organization && organization.getId().equals(newAffiliationId))
-                .findFirst()
-                .orElseThrow();
-            assertEquals(Organization.fromUri(newAffiliationId), updatedContributorAffiliation);
-        });
-    }
-
-    @Test
-    void shouldNotUpdateContributorWhenContributorDoesNotHaveAffiliationWithIdentifier() throws IOException {
-        var publicationsToKeepUnchanged =
-            createMultiplePublicationsWithContributor(randomContributorWithAffiliation(randomUri()));
-
-        var event = createEvent(ManualUpdateType.CONTRIBUTOR_AFFILIATION, randomString(), randomString(), null);
-
-        mockSearchApiResponseWithPublications(publicationsToKeepUnchanged);
-
-        handler.handleRequest(event, output, CONTEXT);
-
-        publicationsToKeepUnchanged.forEach(publication -> {
-            var updatedPublication = getPublicationByIdentifier(publication);
-            assertEquals(publication, updatedPublication);
-        });
-    }
-
-    @Test
-    void shouldUpdateSingleAffiliationWithoutModifyingOthers() throws IOException {
-        var affiliationIdentifier = randomString();
-        var affiliationId = affiliationId(affiliationIdentifier);
-        var contributor = randomContributorWithAffiliation(affiliationId);
-        var publicationsToUpdate =
-            createMultiplePublicationsWithContributor(contributor);
-
-        var newAffiliationIdentifier = randomString();
-        var event = createEvent(ManualUpdateType.CONTRIBUTOR_AFFILIATION, affiliationIdentifier, newAffiliationIdentifier, null);
-
-        mockSearchApiResponseWithPublications(publicationsToUpdate);
-
-        handler.handleRequest(event, output, CONTEXT);
-
-        publicationsToUpdate.forEach(publication -> {
-            var updatedPublication = getPublicationByIdentifier(publication);
-            var updatedContributor = getContributorWithIdentifier(updatedPublication, getContributorIdentifier(contributor));
-            var updatedAffiliations = updatedContributor.getAffiliations();
-            var expectedAffiliations = createExpectedAffiliations(contributor, affiliationId, newAffiliationIdentifier);
-
-            assertThat(updatedAffiliations, hasItems(expectedAffiliations.toArray(Corporation[]::new)));
-        });
-    }
-
-    private static URI affiliationId(String affiliationIdentifier) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(CRISTIN)
-                   .addChild(ORGANIZATION)
-                   .addChild(affiliationIdentifier)
-                   .getUri();
-    }
-
-    private static ArrayList<Corporation> createExpectedAffiliations(Contributor contributor, URI oldAffiliationId,
-                                                                     String newAffiliationIdentifier) {
-        var affiliations = new ArrayList<>(contributor.getAffiliations());
-        affiliations.remove(Organization.fromUri(oldAffiliationId));
-        affiliations.add(Organization.fromUri(UriWrapper.fromUri(oldAffiliationId).replacePathElementByIndexFromEnd(0,
-                                                                                               newAffiliationIdentifier).getUri()));
-        return affiliations;
+    private static URI getSerialPublicationId(PublicationContext updatedPublicationContext) {
+        return updatedPublicationContext instanceof Book book ? ((Series) book.getSeries()).getId()
+                   : ((Journal) updatedPublicationContext).getId();
     }
 
     private static String getContributorIdentifier(Contributor contributorToUpdateAffiliationsFor) {
@@ -576,7 +498,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     private static Contributor getContributorWithIdentifier(Publication publication, String contributorIdentifier) {
-        return publication.getEntityDescription().getContributors().stream()
+        return publication.getEntityDescription()
+                   .getContributors()
+                   .stream()
                    .filter(contributor -> hasIdentifier(contributor, contributorIdentifier))
                    .findFirst()
                    .orElseThrow();
@@ -604,15 +528,18 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     private static List<File> getFiles(Publication updatedPublication) {
-        return updatedPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance)
-                   .map(File.class::cast).toList();
+        return updatedPublication.getAssociatedArtifacts()
+                   .stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .toList();
     }
 
     private static InputStream createEvent(ManualUpdateType type, String oldValue, String newValue,
                                            Comparator comparator) {
-        return IoUtils.stringToStream(new ManuallyUpdatePublicationsRequest(type, oldValue, newValue,
-                                                                            Map.of("publisher",
-                                                                                   oldValue), comparator).toJsonString());
+        return IoUtils.stringToStream(
+            new ManuallyUpdatePublicationsRequest(type, oldValue, newValue, Map.of("publisher", oldValue),
+                                                  comparator).toJsonString());
     }
 
     private static URI createChannelIdWithIdentifier(String channelIdentifier, String year, String type) {
@@ -673,19 +600,22 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     private List<Publication> createMultiplePublicationsWithJournal(Periodical periodical) {
-        return IntStream.range(0, 10).boxed()
+        return IntStream.range(0, 10)
+                   .boxed()
                    .map(i -> attempt(() -> createPublicationWithJournal(periodical)).orElseThrow())
                    .toList();
     }
 
     private List<Publication> createMultiplePublicationsWithContributor(Contributor contributor) {
-        return IntStream.range(0, 10).boxed()
+        return IntStream.range(0, 10)
+                   .boxed()
                    .map(i -> attempt(() -> createPublicationWithContributor(contributor)).orElseThrow())
                    .toList();
     }
 
     private List<Publication> createMultiplePublicationsWithSerialPublication(URI serialPublicationId) {
-        return IntStream.range(0, 10).boxed()
+        return IntStream.range(0, 10)
+                   .boxed()
                    .map(i -> attempt(() -> createPublicationWithSerialPublication(serialPublicationId)).orElseThrow())
                    .toList();
     }
@@ -723,23 +653,21 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     private Publication createPublicationWithContributor(Contributor contributor) {
         var publication = randomPublication();
-        publication.getEntityDescription().setContributors(List.of(new Contributor.Builder().build(), contributor,
-                                                                   randomContributorWithId(randomUri()),
-                                                                   new Contributor.Builder().withIdentity(new Identity.Builder().build()).build()));
+        publication.getEntityDescription()
+            .setContributors(
+                List.of(new Contributor.Builder().build(), contributor, randomContributorWithId(randomUri()),
+                        new Contributor.Builder().withIdentity(new Identity.Builder().build()).build()));
         return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                publication)).orElseThrow();
     }
 
     private Publication createPublicationWithSeries(BookSeries bookSeries) {
         var publication = randomPublication(AcademicMonograph.class);
-        var seriesTitle = bookSeries instanceof UnconfirmedSeries unconfirmedSeries
-                              ? unconfirmedSeries.getTitle()
-                              : randomString();
-        var publicationContext = attempt(() -> new Book(bookSeries, seriesTitle, randomString(),
-                                          null, List.of(), Revision.UNREVISED)).orElseThrow();
-        publication.getEntityDescription()
-            .getReference()
-            .setPublicationContext(publicationContext);
+        var seriesTitle =
+            bookSeries instanceof UnconfirmedSeries unconfirmedSeries ? unconfirmedSeries.getTitle() : randomString();
+        var publicationContext = attempt(
+            () -> new Book(bookSeries, seriesTitle, randomString(), null, List.of(), Revision.UNREVISED)).orElseThrow();
+        publication.getEntityDescription().getReference().setPublicationContext(publicationContext);
         return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
                                                                publication)).orElseThrow();
     }
