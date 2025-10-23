@@ -2,6 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
+import static no.scopus.generated.CitationtypeAtt.ER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
@@ -26,6 +27,8 @@ import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationLanguageTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CitationTypeTp;
+import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -313,7 +316,10 @@ public class ScopusConverter {
     }
 
     private String extractMainTitle() {
-        return getMainTitleTextTp().map(this::extractMainTitleContent).orElse(null);
+        return getOriginalMainTitleTextTp()
+                   .or(this::getNonOriginalMainTitleTextTpWhenErCitationType)
+                   .map(this::extractMainTitleContent)
+                   .orElse(null);
     }
 
     private String extractMainTitleContent(TitletextTp titletextTp) {
@@ -336,15 +342,52 @@ public class ScopusConverter {
                                                        .getUri() : null;
     }
 
-    private Optional<TitletextTp> getMainTitleTextTp() {
+    private Optional<TitletextTp> getOriginalMainTitleTextTp() {
         return Optional.ofNullable(extractHead())
                    .map(HeadTp::getCitationTitle)
                    .map(CitationTitleTp::getTitletext)
                    .flatMap(text -> text.stream().filter(this::isTitleOriginal).findFirst());
     }
 
+    /**
+     * Gets the non-original main title for ER (Errata/Corrigendum) citation type.
+     * <p>
+     * ER citation type (mapped to JournalCorrigendum in NVA) does not have an "original"
+     * title type in Scopus, so we use the non-original title as the main title.
+     * </p>
+     */
+    private Optional<TitletextTp> getNonOriginalMainTitleTextTpWhenErCitationType() {
+        var citationtypeAtt = getCitationtypeAtt();
+        return citationtypeAtt.isPresent() && ER.equals(citationtypeAtt.get())
+                   ? getNonOriginalMainTitleTextTp()
+                   : Optional.empty();
+    }
+
+    private Optional<TitletextTp> getNonOriginalMainTitleTextTp() {
+        return Optional.ofNullable(extractHead())
+            .map(HeadTp::getCitationTitle)
+            .map(CitationTitleTp::getTitletext)
+            .flatMap(text -> text.stream().filter(this::isTitleNonOriginal).findFirst());
+    }
+
+    private Optional<CitationtypeAtt> getCitationtypeAtt() {
+        return docTp.getItem()
+                   .getItem()
+                   .getBibrecord()
+                   .getHead()
+                   .getCitationInfo()
+                   .getCitationType()
+                   .stream()
+                   .findFirst()
+                   .map(CitationTypeTp::getCode);
+    }
+
     private boolean isTitleOriginal(TitletextTp titletextTp) {
         return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.Y);
+    }
+
+    private boolean isTitleNonOriginal(TitletextTp titletextTp) {
+        return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.N);
     }
 
     private Set<AdditionalIdentifierBase> generateAdditionalIdentifiers() {
