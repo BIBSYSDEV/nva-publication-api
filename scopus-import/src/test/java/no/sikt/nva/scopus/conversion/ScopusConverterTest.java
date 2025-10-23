@@ -121,22 +121,22 @@ public class ScopusConverterTest {
     }
 
     @Test
-    void shouldMapNonOriginalTitleForCitationTypeErWhenOriginalTitleIsMissing() {
-        var nonOriginalTitle = randomString();
-        var scopusDocument = createScopusDocumentWithCitationTypeAndNonOriginalTitle(nonOriginalTitle);
+    void shouldMapCitationTitleForCitationTypeErWhenOriginalTitleIsMissing() {
+        var citationTitle = randomString();
+        var scopusDocument = createScopusDocumentWithCitationTypeAndCitationTitle(citationTitle);
         var importCandidate = generateImportCandidate(scopusDocument);
 
-        assertEquals(nonOriginalTitle, importCandidate.getEntityDescription().getMainTitle());
+        assertEquals(citationTitle, importCandidate.getEntityDescription().getMainTitle());
     }
 
-    private static ScopusGenerator createScopusDocumentWithCitationTypeAndNonOriginalTitle(String nonOriginalTitle) {
+    private static ScopusGenerator createScopusDocumentWithCitationTypeAndCitationTitle(String nonOriginalTitle) {
         var scopusGenerator = ScopusGenerator.create(CitationtypeAtt.ER);
-        var citationTitle = new CitationTitleTp();
+        var title = new CitationTitleTp();
         var titletextTp = new TitletextTp();
         titletextTp.setOriginal(YesnoAtt.N);
         titletextTp.getContent().add(nonOriginalTitle);
-        citationTitle.getTitletext().add(titletextTp);
-        scopusGenerator.getDocument().getItem().getItem().getBibrecord().getHead().setCitationTitle(citationTitle);
+        title.getTitletext().add(titletextTp);
+        scopusGenerator.getDocument().getItem().getItem().getBibrecord().getHead().setCitationTitle(title);
         return scopusGenerator;
     }
 

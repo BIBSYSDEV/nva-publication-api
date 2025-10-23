@@ -317,7 +317,7 @@ public class ScopusConverter {
 
     private String extractMainTitle() {
         return getOriginalMainTitleTextTp()
-                   .or(this::getNonOriginalMainTitleTextTpWhenErCitationType)
+                   .or(this::getCitationTextTpWhenErCitationType)
                    .map(this::extractMainTitleContent)
                    .orElse(null);
     }
@@ -350,20 +350,19 @@ public class ScopusConverter {
     }
 
     /**
-     * Gets the non-original main title for ER (Errata/Corrigendum) citation type.
-     * <p>
-     * ER citation type (mapped to JournalCorrigendum in NVA) does not have an "original"
-     * title type in Scopus, so we use the non-original title as the main title.
-     * </p>
+     * Extracts the title for Errata/Corrigendum (Scopus: ER) type. Because this type is
+     * a commentary on another document, the concept of "original title" becomes ambiguous,
+     * so the ER type (mapped to JournalCorrigendum in NVA) does not have an "original
+     * title" type in Scopus, but rather a "citation title" which we use as the main title.
      */
-    private Optional<TitletextTp> getNonOriginalMainTitleTextTpWhenErCitationType() {
+    private Optional<TitletextTp> getCitationTextTpWhenErCitationType() {
         var citationtypeAtt = getCitationtypeAtt();
         return citationtypeAtt.isPresent() && ER.equals(citationtypeAtt.get())
-                   ? getNonOriginalMainTitleTextTp()
+                   ? getCitationTitleTextTp()
                    : Optional.empty();
     }
 
-    private Optional<TitletextTp> getNonOriginalMainTitleTextTp() {
+    private Optional<TitletextTp> getCitationTitleTextTp() {
         return Optional.ofNullable(extractHead())
             .map(HeadTp::getCitationTitle)
             .map(CitationTitleTp::getTitletext)
