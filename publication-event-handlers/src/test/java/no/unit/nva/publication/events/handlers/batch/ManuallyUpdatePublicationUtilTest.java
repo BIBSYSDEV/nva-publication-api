@@ -5,7 +5,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWi
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.handlers.batch.ManualUpdateType.CONTRIBUTOR_AFFILIATION;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
@@ -32,11 +31,8 @@ import org.junit.jupiter.api.Test;
 
 class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
-    private static final String CRISTIN = "cristin";
-    private static final String ORGANIZATION = "organization";
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
-    private static final String NEW_AFFILIATION_ID = randomString();
-    private static final String OLD_AFFILIATION_ID = randomString();
+    private static final URI NEW_AFFILIATION_ID = randomUri();
+    private static final URI OLD_AFFILIATION_ID = randomUri();
 
     private ManuallyUpdatePublicationUtil publicationUtil;
     private ResourceService resourceService;
@@ -50,7 +46,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     @Test
     void updateWithContributorAffiliationShouldUpdateAllMatchingAffiliations() {
-        var resources = createResourcesWithContributor(createContributorWithAffiliation(OLD_AFFILIATION_ID));
+        var resources = createResourcesWithContributor(randomContributorWithAffiliation(OLD_AFFILIATION_ID));
         var updateRequest = createAffiliationUpdateRequest();
 
         publicationUtil.update(resources, updateRequest);
@@ -60,7 +56,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     @Test
     void updateWithNonMatchingAffiliationShouldNotModifyContributor() {
-        var contributorWithRandomAffiliation = createContributorWithAffiliation(randomString());
+        var contributorWithRandomAffiliation = randomContributorWithAffiliation(randomUri());
         var resources = createResourcesWithContributor(contributorWithRandomAffiliation);
         var updateRequest = createAffiliationUpdateRequest();
 
@@ -71,7 +67,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     @Test
     void updateWithMultipleAffiliationsShouldUpdateOnlyAffiliationProvidedInRequest() {
-        var contributor = randomContributorWithAffiliation(buildAffiliationUri(OLD_AFFILIATION_ID));
+        var contributor = randomContributorWithAffiliation(OLD_AFFILIATION_ID);
         var originalAffiliations = copyAffiliations(contributor);
         var resources = createResourcesWithContributor(contributor);
         var updateRequest = createAffiliationUpdateRequest();
@@ -87,10 +83,6 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     private void assertResourceIsUnchanged(Resource resource) {
         assertEquals(resource.toPublication(), resource.fetch(resourceService).orElseThrow().toPublication());
-    }
-
-    private Contributor createContributorWithAffiliation(String affiliationId) {
-        return randomContributorWithAffiliation(buildAffiliationUri(affiliationId));
     }
 
     private List<Resource> createResourcesWithContributor(Contributor contributor) {
@@ -110,13 +102,9 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     private ManuallyUpdatePublicationsRequest createAffiliationUpdateRequest() {
         return new ManuallyUpdatePublicationsRequest(CONTRIBUTOR_AFFILIATION,
-                                                     OLD_AFFILIATION_ID,
-                                                     NEW_AFFILIATION_ID, Map.of(),
+                                                     OLD_AFFILIATION_ID.toString(),
+                                                     NEW_AFFILIATION_ID.toString(), Map.of(),
                                                      null);
-    }
-
-    private URI buildAffiliationUri(String affiliationId) {
-        return UriWrapper.fromHost(API_HOST).addChild(CRISTIN).addChild(ORGANIZATION).addChild(affiliationId).getUri();
     }
 
     private Publication savePublication(Publication publication) {
@@ -127,21 +115,20 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     private void assertAffiliationWasUpdated(Resource resource) {
         var updatedResource = resource.fetch(resourceService).orElseThrow();
         var updatedContributor = findContributorWithAffiliation(updatedResource);
-        var updatedAffiliation = getAffiliationsWithIdentifier(updatedContributor).getFirst();
-        var expectedAffiliation = Organization.fromUri(buildAffiliationUri(NEW_AFFILIATION_ID));
+        var updatedAffiliation = getAffiliationsWithId(updatedContributor).getFirst();
+        var expectedAffiliation = Organization.fromUri(NEW_AFFILIATION_ID);
         assertEquals(expectedAffiliation, updatedAffiliation);
     }
 
     private void assertContainsUpdatedAffiliation(Contributor contributor) {
-        var expectedAffiliation = Organization.fromUri(buildAffiliationUri(NEW_AFFILIATION_ID));
+        var expectedAffiliation = Organization.fromUri(NEW_AFFILIATION_ID);
         assertThat(contributor.getAffiliations(), hasItem(expectedAffiliation));
     }
 
     private void assertOtherAffiliationsUnchanged(Contributor updatedContributor,
                                                   List<Corporation> originalAffiliations) {
         var unchangedOriginalAffiliations = originalAffiliations.stream()
-                                                .filter(
-                                                    affiliation -> !hasAffiliationId(affiliation, OLD_AFFILIATION_ID))
+                                                .filter(affiliation -> !hasAffiliationId(affiliation, OLD_AFFILIATION_ID))
                                                 .toList();
 
         unchangedOriginalAffiliations.forEach(
@@ -160,12 +147,12 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     private Contributor findContributorWithAffiliation(Resource resource) {
         return resource.getEntityDescription().getContributors().stream()
-                   .filter(contributor -> !getAffiliationsWithIdentifier(contributor).isEmpty())
+                   .filter(contributor -> !getAffiliationsWithId(contributor).isEmpty())
                    .findFirst()
                    .orElseThrow();
     }
 
-    private List<Corporation> getAffiliationsWithIdentifier(Contributor contributor) {
+    private List<Corporation> getAffiliationsWithId(Contributor contributor) {
         return contributor.getAffiliations()
                    .stream()
                    .filter(affiliation -> hasAffiliationId(affiliation, NEW_AFFILIATION_ID))
@@ -186,11 +173,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
                    .orElse(false);
     }
 
-    private boolean hasAffiliationId(Corporation corporation, String affiliationId) {
-        if (!(corporation instanceof Organization organization)) {
-            return false;
-        }
-        return UriWrapper.fromUri(organization.getId()).getLastPathElement().equals(affiliationId);
+    private boolean hasAffiliationId(Corporation corporation, URI organizationId) {
+        return corporation instanceof Organization organization && organization.getId().equals(organizationId);
     }
 
     private List<Corporation> copyAffiliations(Contributor contributor) {

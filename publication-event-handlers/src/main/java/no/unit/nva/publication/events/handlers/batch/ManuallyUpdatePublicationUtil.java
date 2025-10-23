@@ -38,8 +38,6 @@ public final class ManuallyUpdatePublicationUtil {
     private static final String SERIAL_PUBLICATION = "serial-publication";
     private static final String CRISTIN = "cristin";
     private static final String PERSON = "person";
-    private static final String ORGANIZATION = "organization";
-
     private final ResourceService resourceService;
     private final Environment environment;
 
@@ -66,7 +64,7 @@ public final class ManuallyUpdatePublicationUtil {
                                                         this::updateUnconfirmedJournalToConfirmed);
             case CONTRIBUTOR_IDENTIFIER ->
                 updateResources(resources, request, this::hasContributor, this::updateContributorIdentifier);
-            case CONTRIBUTOR_AFFILIATION -> updateResources(resources, request, this::hasContributorWithAffiliation,
+            case CONTRIBUTOR_AFFILIATION -> updateResources(resources, request, this::hasContributorWithOrganization,
                                                               this::updateContributorAffiliation);
         }
     }
@@ -90,34 +88,22 @@ public final class ManuallyUpdatePublicationUtil {
         return contributor.copy().withAffiliations(updatedAffiliations).build();
     }
 
-    private Corporation updateAffiliation(Corporation corporation,
-                                          ManuallyUpdatePublicationsRequest request) {
-        if (corporation instanceof Organization organization
-            && hasAffiliationIdentifier(organization, request.oldValue())) {
-            return Organization.fromUri(buildUri(CRISTIN, ORGANIZATION, request.newValue()));
+    private Corporation updateAffiliation(Corporation corporation, ManuallyUpdatePublicationsRequest request) {
+        var organizationToReplace = Organization.fromUri(URI.create(request.oldValue()));
+        if (corporation instanceof Organization organization && organization.equals(organizationToReplace)) {
+            return Organization.fromUri(URI.create(request.newValue()));
         }
         return corporation;
     }
 
-    private boolean hasContributorWithAffiliation(Resource resource, String affiliationIdentifier) {
+    private boolean hasContributorWithOrganization(Resource resource, String organizationId) {
+        var organization = Organization.fromUri(URI.create(organizationId));
         return resource.getEntityDescription().getContributors().stream()
-                   .anyMatch(contributor -> hasAffiliation(contributor, affiliationIdentifier));
+                   .anyMatch(contributor -> hasAffiliation(contributor, organization));
     }
 
-    private boolean hasAffiliation(Contributor contributor, String affiliationIdentifier) {
-        return contributor.getAffiliations().stream()
-                   .filter(Organization.class::isInstance)
-                   .map(Organization.class::cast)
-                   .anyMatch(organization -> hasAffiliationIdentifier(organization, affiliationIdentifier));
-    }
-
-    private boolean hasAffiliationIdentifier(Organization organization, String affiliationIdentifier) {
-        return Optional.ofNullable(organization)
-                   .map(Organization::getId)
-                   .map(UriWrapper::fromUri)
-                   .map(UriWrapper::getLastPathElement)
-                   .filter(affiliationIdentifier::equals)
-                   .isPresent();
+    private boolean hasAffiliation(Contributor contributor, Organization organization) {
+        return contributor.getAffiliations().stream().anyMatch(organization::equals);
     }
 
     private static boolean hasLicense(String license, FileEntry file) {
