@@ -2,6 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
+import static no.scopus.generated.CitationtypeAtt.ER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
@@ -26,6 +27,8 @@ import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationLanguageTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CitationTypeTp;
+import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -313,7 +316,10 @@ public class ScopusConverter {
     }
 
     private String extractMainTitle() {
-        return getMainTitleTextTp().map(this::extractMainTitleContent).orElse(null);
+        return getOriginalMainTitleTextTp()
+                   .or(this::getCitationTextTpWhenErCitationType)
+                   .map(this::extractMainTitleContent)
+                   .orElse(null);
     }
 
     private String extractMainTitleContent(TitletextTp titletextTp) {
@@ -336,15 +342,51 @@ public class ScopusConverter {
                                                        .getUri() : null;
     }
 
-    private Optional<TitletextTp> getMainTitleTextTp() {
+    private Optional<TitletextTp> getOriginalMainTitleTextTp() {
         return Optional.ofNullable(extractHead())
                    .map(HeadTp::getCitationTitle)
                    .map(CitationTitleTp::getTitletext)
                    .flatMap(text -> text.stream().filter(this::isTitleOriginal).findFirst());
     }
 
+    /**
+     * Extracts the title for Errata/Corrigendum (Scopus: ER) type. Because this type is
+     * a commentary on another document, the concept of "original title" becomes ambiguous,
+     * so the ER type (mapped to JournalCorrigendum in NVA) does not have an "original
+     * title" type in Scopus, but rather a "citation title" which we use as the main title.
+     */
+    private Optional<TitletextTp> getCitationTextTpWhenErCitationType() {
+        var citationtypeAtt = getCitationtypeAtt();
+        return citationtypeAtt.isPresent() && ER.equals(citationtypeAtt.get())
+                   ? getCitationTitleTextTp()
+                   : Optional.empty();
+    }
+
+    private Optional<TitletextTp> getCitationTitleTextTp() {
+        return Optional.ofNullable(extractHead())
+            .map(HeadTp::getCitationTitle)
+            .map(CitationTitleTp::getTitletext)
+            .flatMap(text -> text.stream().filter(this::isTitleNonOriginal).findFirst());
+    }
+
+    private Optional<CitationtypeAtt> getCitationtypeAtt() {
+        return docTp.getItem()
+                   .getItem()
+                   .getBibrecord()
+                   .getHead()
+                   .getCitationInfo()
+                   .getCitationType()
+                   .stream()
+                   .findFirst()
+                   .map(CitationTypeTp::getCode);
+    }
+
     private boolean isTitleOriginal(TitletextTp titletextTp) {
         return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.Y);
+    }
+
+    private boolean isTitleNonOriginal(TitletextTp titletextTp) {
+        return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.N);
     }
 
     private Set<AdditionalIdentifierBase> generateAdditionalIdentifiers() {

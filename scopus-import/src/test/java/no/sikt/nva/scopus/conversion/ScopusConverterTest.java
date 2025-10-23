@@ -4,6 +4,7 @@ import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCristinOrganization
 import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCustomer;
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomContributorWithAffiliationId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -14,7 +15,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.util.List;
+import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.OpenAccessType;
+import no.scopus.generated.TitletextTp;
+import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConverter;
 import no.sikt.nva.scopus.conversion.ContributorExtractor.ContributorsOrganizationsWrapper;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
@@ -113,6 +118,26 @@ public class ScopusConverterTest {
         );
 
         assertThrows(MissingNvaContributorException.class, converter::generateImportCandidate);
+    }
+
+    @Test
+    void shouldMapCitationTitleForCitationTypeErWhenOriginalTitleIsMissing() {
+        var citationTitle = randomString();
+        var scopusDocument = createScopusDocumentWithCitationTypeAndCitationTitle(citationTitle);
+        var importCandidate = generateImportCandidate(scopusDocument);
+
+        assertEquals(citationTitle, importCandidate.getEntityDescription().getMainTitle());
+    }
+
+    private static ScopusGenerator createScopusDocumentWithCitationTypeAndCitationTitle(String nonOriginalTitle) {
+        var scopusGenerator = ScopusGenerator.create(CitationtypeAtt.ER);
+        var title = new CitationTitleTp();
+        var titletextTp = new TitletextTp();
+        titletextTp.setOriginal(YesnoAtt.N);
+        titletextTp.getContent().add(nonOriginalTitle);
+        title.getTitletext().add(titletextTp);
+        scopusGenerator.getDocument().getItem().getItem().getBibrecord().getHead().setCitationTitle(title);
+        return scopusGenerator;
     }
 
     private static ImportCandidate generateImportCandidate(ScopusGenerator generator) {
