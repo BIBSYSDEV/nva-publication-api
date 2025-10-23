@@ -1,10 +1,8 @@
 package no.unit.nva.publication.create;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
-import static java.util.function.Predicate.not;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -22,6 +20,9 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
@@ -29,6 +30,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -52,18 +54,19 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private final ResourceService candidateService;
     private final ResourceService publicationService;
     private final TicketService ticketService;
-    private final IdentityServiceClient identityServiceClient;
+    private final ApprovalAssignmentServiceForImportCandidateFiles approvalService;
     private final PiaClient piaClient;
     private final AssociatedArtifactsMover associatedArtifactsMover;
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
         this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment(), TicketService.defaultService(),
-             IdentityServiceClient.prepare());
+             new ApprovalAssignmentServiceForImportCandidateFiles(IdentityServiceClient.prepare()));
     }
 
     public CreatePublicationFromImportCandidateHandler(
-        ImportCandidateHandlerConfigs configs, Environment environment, TicketService ticketService, IdentityServiceClient identityServiceClient) {
+        ImportCandidateHandlerConfigs configs, Environment environment, TicketService ticketService,
+        ApprovalAssignmentServiceForImportCandidateFiles approvalService) {
         super(ImportCandidate.class, environment);
         this.candidateService = configs.importCandidateService();
         this.publicationService = configs.publicationService();
@@ -71,7 +74,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                                      configs.importCandidateStorageBucket(), configs.persistedStorageBucket());
         this.piaClient = new PiaClient(configs.piaClientConfig());
         this.ticketService = ticketService;
-        this.identityServiceClient = identityServiceClient;
+        this.approvalService = approvalService;
     }
 
     @Override
@@ -95,7 +98,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private Publication importCandidate(ImportCandidate input, RequestInfo requestInfo)
-        throws ApiGatewayException {
+        throws ApiGatewayException, ApprovalAssignmentException {
         var nvaPublication = createNvaPublicationFromImportCandidateAndUserInput(input, requestInfo);
         candidateService.updateImportStatus(input.getIdentifier(),
                                             ImportStatusFactory.createImported(requestInfo.getUserName(), nvaPublication.getIdentifier()));
@@ -104,30 +107,48 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate importCandidate,
                                                                             RequestInfo requestInfo)
-        throws ApiGatewayException {
+        throws ApiGatewayException, ApprovalAssignmentException {
         var rawImportCandidate = candidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
         var resourceToImport = ImportCandidateEnricher.createResourceToImport(requestInfo, importCandidate,
                                                                               rawImportCandidate);
 
-        if (!resourceToImport.getFiles().isEmpty()) {
-            var customerRequiringApproval = customerRequiringFileApproval(importCandidate);
-            if (customerRequiringApproval.isPresent()) {
-                resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
-                var importedResource = resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS));
-                var userInstanceFromCustomer = createUserInstanceFromCustomer(requestInfo, customerRequiringApproval.get());
-                var fileApproval = PublishingRequestCase.createWithFilesForApproval(
-                    importedResource,
-                    userInstanceFromCustomer,
-                    PublishingWorkflow.lookUp(customerRequiringApproval.get().publicationWorkflow()),
-                    importedResource.getPendingFiles()
-                );
-                fileApproval.persistNewTicket(ticketService);
-                return finalizeImport(importedResource, importCandidate, rawImportCandidate);
-            }
-        }
+        var importedResource = !resourceToImport.getFiles().isEmpty()
+                                   ? handleResourceWithFiles(resourceToImport, importCandidate, requestInfo)
+                                   : resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS));
 
-        var importedResource = resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS));
         return finalizeImport(importedResource, importCandidate, rawImportCandidate);
+    }
+
+    private Resource handleResourceWithFiles(Resource resourceToImport,
+                                             ImportCandidate importCandidate,
+                                             RequestInfo requestInfo)
+        throws ApiGatewayException, ApprovalAssignmentException {
+        var serviceResult = approvalService.determineCustomerResponsibleForApproval(importCandidate);
+        LOGGER.info(serviceResult.getReason());
+
+        return switch (serviceResult.getStatus()) {
+            case APPROVAL_NEEDED -> createPublicationWithFilesApprovalTicket(resourceToImport, serviceResult, requestInfo);
+            case NO_APPROVAL_NEEDED -> resourceToImport.importResource(publicationService,
+                                                                       ImportSource.fromSource(Source.SCOPUS));
+        };
+    }
+
+    private Resource createPublicationWithFilesApprovalTicket(Resource resourceToImport,
+                                                              AssignmentServiceResult serviceResult,
+                                                              RequestInfo requestInfo)
+        throws ApiGatewayException {
+        resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
+        var importedResource = resourceToImport.importResource(publicationService,
+                                                               ImportSource.fromSource(Source.SCOPUS));
+        var userInstance = createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer());
+        var fileApproval = PublishingRequestCase.createWithFilesForApproval(
+            importedResource,
+            userInstance,
+            PublishingWorkflow.lookUp(serviceResult.getCustomer().publicationWorkflow()),
+            importedResource.getPendingFiles()
+        );
+        fileApproval.persistNewTicket(ticketService);
+        return importedResource;
     }
 
     private Publication finalizeImport(Resource importedResource, ImportCandidate importCandidate, ImportCandidate rawImportCandidate) {
@@ -150,17 +171,17 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return new AssociatedArtifactList(associatedArtifacts);
     }
 
-    private Optional<CustomerDto> customerRequiringFileApproval(ImportCandidate importCandidate) {
-        return importCandidate.getAssociatedCustomers().stream()
-                   .map(uri -> attempt(() -> identityServiceClient.getCustomerById(uri)).orElseThrow())
-                   .filter(not(CustomerDto::autoPublishScopusImportFiles))
-                   .findFirst();
-    }
-
-    private BadGatewayException rollbackAndThrowException(Failure<PublicationResponse> failure, ImportCandidate input) {
+    private ApiGatewayException rollbackAndThrowException(Failure<PublicationResponse> failure, ImportCandidate input) {
         LOGGER.error("Import failed with exception: {}", failure.getException().getMessage());
         return attempt(() -> rollbackImportStatusUpdate(input))
-                   .orElse(fail -> new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE));
+                   .orElse(fail -> throwException(fail.getException()));
+    }
+
+    private static ApiGatewayException throwException(Exception exception) {
+        if (exception instanceof ApprovalAssignmentException) {
+            return new BadRequestException(exception.getMessage());
+        }
+        return new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE);
     }
 
     private void validateAccessRight(RequestInfo requestInfo) throws NotAuthorizedException {
@@ -169,7 +190,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         }
     }
 
-    private BadGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)
+    private ApiGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)
         throws NotFoundException {
         candidateService.updateImportStatus(importCandidate.getIdentifier(), ImportStatusFactory.createNotImported());
         return new BadGatewayException(IMPORT_PROCESS_WENT_WRONG);

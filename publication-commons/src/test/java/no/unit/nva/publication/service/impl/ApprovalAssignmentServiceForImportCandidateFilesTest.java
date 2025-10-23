@@ -2,7 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.CUSTOMER_FOUND;
+import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.APPROVAL_NEEDED;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -112,7 +112,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
         var result = service.determineCustomerResponsibleForApproval(importCandidate).getStatus();
 
-        assertEquals(CUSTOMER_FOUND, result);
+        assertEquals(APPROVAL_NEEDED, result);
     }
 
     @Test
@@ -128,8 +128,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
             createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
             createContributor(correspondenceCustomer.cristinId, true, 2));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomerDto()
-                              .orElseThrow();
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
 
         assertEquals(correspondenceCustomer.customerId, customerDto.id());
     }
@@ -147,8 +146,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
             createContributor(otherCustomer.cristinId, false, 2),
             createContributor(lowestSequenceCustomer.cristinId, false, 1));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomerDto()
-                              .orElseThrow();
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
 
         assertEquals(lowestSequenceCustomer.customerId, customerDto.id());
     }
@@ -168,7 +166,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
         var customerDto = service.determineCustomerResponsibleForApproval(importCandidate);
 
-        assertEquals(firstCustomer.customerId, customerDto.getCustomerDto().orElseThrow().id());
+        assertEquals(firstCustomer.customerId, customerDto.getCustomer().id());
     }
 
     @Test
@@ -184,7 +182,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
             createContributor(otherCustomer.cristinId, false, 1),
             createNonCorrespondenceContributorWithoutSequence(correspondenceCustomer.cristinId, true));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomerDto().orElseThrow();
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
 
         assertEquals(correspondenceCustomer.customerId, customerDto.id());
     }
@@ -211,7 +209,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
             createContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
         );
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomerDto().orElseThrow();
+        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
 
         assertEquals(lowestSequenceCorrespondenceCustomer.customerId, customerDto.id());
     }
