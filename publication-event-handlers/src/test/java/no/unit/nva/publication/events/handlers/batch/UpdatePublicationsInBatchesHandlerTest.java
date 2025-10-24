@@ -454,8 +454,8 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
         publicationsToUpdate.forEach(publication -> {
             var updatedPublication = getPublicationByIdentifier(publication);
-            var updatedContributorIdentifier = getContributorWithIdentifier(updatedPublication,
-                                                                            newContributorIdentifier);
+            var updatedContributorIdentifier = findContributorByIdentifier(updatedPublication,
+                                                                           newContributorIdentifier);
             var contributorsToKeepUnchanged = publication.getEntityDescription()
                                                   .getContributors()
                                                   .stream()
@@ -493,11 +493,11 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
                    : ((Journal) updatedPublicationContext).getId();
     }
 
-    private static String getContributorIdentifier(Contributor contributorToUpdateAffiliationsFor) {
-        return UriWrapper.fromUri(contributorToUpdateAffiliationsFor.getIdentity().getId()).getLastPathElement();
+    private static String getContributorIdentifier(Contributor contributor) {
+        return UriWrapper.fromUri(contributor.getIdentity().getId()).getLastPathElement();
     }
 
-    private static Contributor getContributorWithIdentifier(Publication publication, String contributorIdentifier) {
+    private static Contributor findContributorByIdentifier(Publication publication, String contributorIdentifier) {
         return publication.getEntityDescription()
                    .getContributors()
                    .stream()
