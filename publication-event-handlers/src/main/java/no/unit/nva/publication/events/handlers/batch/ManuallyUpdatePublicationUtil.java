@@ -7,8 +7,10 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -26,6 +28,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.GodClass")
 public final class ManuallyUpdatePublicationUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(ManuallyUpdatePublicationUtil.class);
@@ -35,7 +38,6 @@ public final class ManuallyUpdatePublicationUtil {
     private static final String SERIAL_PUBLICATION = "serial-publication";
     private static final String CRISTIN = "cristin";
     private static final String PERSON = "person";
-
     private final ResourceService resourceService;
     private final Environment environment;
 
@@ -62,7 +64,46 @@ public final class ManuallyUpdatePublicationUtil {
                                                         this::updateUnconfirmedJournalToConfirmed);
             case CONTRIBUTOR_IDENTIFIER ->
                 updateResources(resources, request, this::hasContributor, this::updateContributorIdentifier);
+            case CONTRIBUTOR_AFFILIATION -> updateResources(resources, request, this::hasContributorWithOrganization,
+                                                              this::updateContributorAffiliation);
         }
+    }
+
+    private Resource updateContributorAffiliation(Resource resource,
+                                                  ManuallyUpdatePublicationsRequest request) {
+        var updatedContributors = resource.getEntityDescription().getContributors().stream()
+                                      .map(contributor -> updateContributor(contributor, request))
+                                      .toList();
+
+        resource.getEntityDescription().setContributors(updatedContributors);
+        return resource;
+    }
+
+    private Contributor updateContributor(Contributor contributor,
+                                          ManuallyUpdatePublicationsRequest request) {
+        var updatedAffiliations = contributor.getAffiliations().stream()
+                                      .map(corporation -> updateAffiliation(corporation, request))
+                                      .toList();
+
+        return contributor.copy().withAffiliations(updatedAffiliations).build();
+    }
+
+    private Corporation updateAffiliation(Corporation corporation, ManuallyUpdatePublicationsRequest request) {
+        var organizationToReplace = Organization.fromUri(URI.create(request.oldValue()));
+        if (corporation instanceof Organization organization && organization.equals(organizationToReplace)) {
+            return Organization.fromUri(URI.create(request.newValue()));
+        }
+        return corporation;
+    }
+
+    private boolean hasContributorWithOrganization(Resource resource, String organizationId) {
+        var organization = Organization.fromUri(URI.create(organizationId));
+        return resource.getEntityDescription().getContributors().stream()
+                   .anyMatch(contributor -> hasAffiliation(contributor, organization));
+    }
+
+    private boolean hasAffiliation(Contributor contributor, Organization organization) {
+        return contributor.getAffiliations().stream().anyMatch(organization::equals);
     }
 
     private static boolean hasLicense(String license, FileEntry file) {
