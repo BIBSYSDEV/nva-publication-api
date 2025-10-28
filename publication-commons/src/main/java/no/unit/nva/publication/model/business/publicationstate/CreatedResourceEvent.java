@@ -36,7 +36,7 @@ public record CreatedResourceEvent(Instant date, User user, URI institution, Sor
     private static Source toSource(ThirdPartySystem thirdPartySystem) {
         return switch (thirdPartySystem) {
             case INSPERA -> Source.INSPERA;
-            case WISE_FLOW -> Source.CRISTIN;
+            case WISE_FLOW -> Source.WISE_FLOW;
             case OTHER -> Source.OTHER;
         };
     }
