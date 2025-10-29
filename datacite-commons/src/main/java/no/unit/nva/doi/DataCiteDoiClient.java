@@ -15,17 +15,14 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.DoiRequest;
 import no.unit.nva.doi.model.DoiResponse;
 import no.unit.nva.doi.model.ReserveDoiRequest;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.BackendClientCredentials;
-import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UriWrapper;
@@ -60,30 +57,30 @@ public class DataCiteDoiClient implements DoiClient {
     }
 
     @Override
-    public URI generateDraftDoi(Resource resource) {
-        return attempt(() -> sendDraftDoiRequest(resource))
+    public URI generateDraftDoi(URI requestingCustomer) {
+        return attempt(() -> sendDraftDoiRequest(requestingCustomer))
                    .map(this::validateResponse)
                    .map(this::convertResponseToDoi)
                    .orElseThrow();
     }
 
     @Override
-    public URI createFindableDoi(Publication publication) {
-        return attempt(() -> sendFindableDoiRequest(publication))
+    public URI createFindableDoi(URI requestingCustomer, Publication publication) {
+        return attempt(() -> sendFindableDoiRequest(requestingCustomer, publication))
                    .map(this::validateResponse)
                    .map(this::convertResponseToDoi)
                    .orElseThrow();
     }
 
     @Override
-    public void deleteDraftDoi(Publication publication) {
+    public void deleteDraftDoi(URI requestingCustomer, Publication publication) {
         attempt(() -> sendDeleteDraftDoiRequest(publication))
             .map(this::validateDeleteResponse)
             .orElseThrow();
     }
 
-    private static BodyPublisher withDraftDoiRequestBody(Resource resource) throws JsonProcessingException {
-        var doiRequest = new ReserveDoiRequest(resource.getPublisher().getId());
+    private static BodyPublisher withDraftDoiRequestBody(URI requestingCustomer) throws JsonProcessingException {
+        var doiRequest = new ReserveDoiRequest(requestingCustomer);
         var body = JsonUtils.dtoObjectMapper.writeValueAsString(doiRequest);
         return BodyPublishers.ofString(body);
     }
@@ -123,19 +120,19 @@ public class DataCiteDoiClient implements DoiClient {
         return doiResponse.getDoi();
     }
 
-    private HttpResponse<String> sendFindableDoiRequest(Publication publication)
+    private HttpResponse<String> sendFindableDoiRequest(URI requestingCustomer, Publication publication)
         throws IOException, InterruptedException, BadRequestException {
         var request = HttpRequest.newBuilder()
-                          .POST(withDoiRequestBody(publication))
+                          .POST(withDoiRequestBody(requestingCustomer, publication))
                           .uri(constructFindableDoiUri());
         var authorizedBackendClient = getAuthorizedBackendClient(fetchCredentials());
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
-    private HttpResponse<String> sendDraftDoiRequest(Resource resource) throws IOException,
-                                                                                     InterruptedException {
+    private HttpResponse<String> sendDraftDoiRequest(URI requestingCustomer) throws IOException,
+                                                                                    InterruptedException {
         var request = HttpRequest.newBuilder()
-                          .POST(withDraftDoiRequestBody(resource))
+                          .POST(withDraftDoiRequestBody(requestingCustomer))
                           .uri(constructDraftDoiUri());
         var authorizedBackendClient = getAuthorizedBackendClient(fetchCredentials());
         return authorizedBackendClient.send(request, BodyHandlers.ofString(StandardCharsets.UTF_8));
@@ -171,15 +168,16 @@ public class DataCiteDoiClient implements DoiClient {
         return urlEncode(String.valueOf(publication.getPublisher().getId()));
     }
 
-    private BodyPublisher withDoiRequestBody(Publication publication) throws BadRequestException {
+    private BodyPublisher withDoiRequestBody(URI requestingCustomer, Publication publication) throws BadRequestException {
         var doiRequest =
             new DoiRequest.Builder()
                 .withDoi(publication.getDoi())
-                .withCustomerId(Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null))
+                .withCustomerId(requestingCustomer)
                 .withPublicationId(inferPublicationId(publication))
                 .build();
-        logger.info("DoiRequest: {}", doiRequest.toJsonString());
-        return BodyPublishers.ofString(doiRequest.toJsonString());
+        var jsonString = doiRequest.toJsonString();
+        logger.info("DoiRequest: {}", jsonString);
+        return BodyPublishers.ofString(jsonString);
     }
 
     private URI inferPublicationId(Publication publication) {

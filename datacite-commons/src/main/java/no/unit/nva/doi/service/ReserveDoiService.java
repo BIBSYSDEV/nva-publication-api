@@ -31,7 +31,7 @@ public class ReserveDoiService {
         throws ApiGatewayException {
         var resource = fetchResource(resourceIdentifier);
         ReserveDoiRequestValidator.validateRequest(userInstance, resource);
-        return attempt(() -> reserveDoiClient.generateDraftDoi(resource))
+        return attempt(() -> reserveDoiClient.generateDraftDoi(userInstance.getCustomerId()))
                    .map(doi -> updatePublicationWithDoi(resource, doi, userInstance))
                    .orElseThrow(failure -> new BadGatewayException(BAD_RESPONSE_ERROR_MESSAGE));
     }
