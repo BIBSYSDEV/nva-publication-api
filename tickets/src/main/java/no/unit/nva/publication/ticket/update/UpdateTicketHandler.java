@@ -337,23 +337,25 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         throws NotFoundException, BadMethodException, BadGatewayException {
         var status = input.status();
         var publication = getResource(requestUtils.publicationIdentifier()).toPublication();
+        var requestingCustomer = requestUtils.customerId();
         if (TicketStatus.COMPLETED.equals(status)) {
-            findableDoiTicketSideEffects(publication);
+            findableDoiTicketSideEffects(requestingCustomer, publication);
         }
         if (CLOSED.equals(status) && hasDoi(publication)) {
-            deleteDoiTicketSideEffects(publication);
+            deleteDoiTicketSideEffects(requestingCustomer, publication);
         }
     }
 
-    private void findableDoiTicketSideEffects(Publication publication)
+    private void findableDoiTicketSideEffects(URI requestingCustomer, Publication publication)
         throws BadMethodException, BadGatewayException {
         publicationSatisfiesDoiRequirements(publication);
-        createFindableDoiAndPersistDoiOnPublication(publication);
+        createFindableDoiAndPersistDoiOnPublication(requestingCustomer, publication);
     }
 
-    private void createFindableDoiAndPersistDoiOnPublication(Publication publication) throws BadGatewayException {
+    private void createFindableDoiAndPersistDoiOnPublication(URI requestingCustomer,
+                                                             Publication publication) throws BadGatewayException {
         try {
-            var doi = doiClient.createFindableDoi(publication);
+            var doi = doiClient.createFindableDoi(requestingCustomer, publication);
             updatePublication(publication, doi);
         } catch (Exception e) {
             logger.error(EXCEPTION_MESSAGE, e.getMessage());
@@ -365,8 +367,8 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
         return nonNull(publication.getDoi());
     }
 
-    private void deleteDoiTicketSideEffects(Publication publication) {
-        doiClient.deleteDraftDoi(publication);
+    private void deleteDoiTicketSideEffects(URI requestingCustomer, Publication publication) {
+        doiClient.deleteDraftDoi(requestingCustomer, publication);
         publication.setDoi(null);
         resourceService.updatePublication(publication);
     }

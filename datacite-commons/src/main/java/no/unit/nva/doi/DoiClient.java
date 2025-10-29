@@ -2,14 +2,13 @@ package no.unit.nva.doi;
 
 import java.net.URI;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.model.business.Resource;
 
 public interface DoiClient {
 
-    URI generateDraftDoi(Resource publication);
+    URI generateDraftDoi(URI requestingCustomer);
 
-    URI createFindableDoi(Publication publication);
+    URI createFindableDoi(URI requestingCustomer, Publication publication);
 
-    void deleteDraftDoi(Publication publication);
+    void deleteDraftDoi(URI requestingCustomer, Publication publication);
 
 }

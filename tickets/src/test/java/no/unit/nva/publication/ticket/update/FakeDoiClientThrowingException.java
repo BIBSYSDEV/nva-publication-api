@@ -8,17 +8,17 @@ import no.unit.nva.publication.model.business.Resource;
 public class FakeDoiClientThrowingException implements DoiClient {
 
     @Override
-    public URI generateDraftDoi(Resource resource) {
+    public URI generateDraftDoi(URI requestingCustomer) {
         throw new RuntimeException("I dont work");
     }
 
     @Override
-    public URI createFindableDoi(Publication publication) {
+    public URI createFindableDoi(URI requestingCustomer, Publication publication) {
         throw new RuntimeException("I dont work");
     }
 
     @Override
-    public void deleteDraftDoi(Publication publication) {
+    public void deleteDraftDoi(URI requestingCustomer, Publication publication) {
         throw new RuntimeException("I dont work");
     }
 }
