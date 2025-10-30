@@ -364,6 +364,8 @@ Resources:
     Type: "AWS::SQS::Queue"
   ResourceExpansionHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  AcceptedPublishingRequestHandlerDLQ:
+    Type: "AWS::SQS::Queue"
   ImportCandidateBatchScanDLQ:
     Type: "AWS::SQS::Queue"
   ImportCandidateExpansionHandlerDLQ:
@@ -1658,6 +1660,11 @@ Resources:
                   topic:
                     - "PublicationService.PublishingRequest.Update"
                     - "PublicationService.FilesApprovalThesis.Update"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt AcceptedPublishingRequestHandlerDLQ.Arn
 
   HandleIdentifierEventHandler:
     DependsOn: EventsLambdaManagedPolicy
@@ -1707,6 +1714,24 @@ Resources:
       Dimensions:
         - Name: QueueName
           Value: !GetAtt HandleDLQ.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
+  AcceptedPublishingRequestHandlerDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: AcceptedPublishingRequestHandlerDLQ in publication-api
+      AlarmDescription: If this alarm is triggered, then check sqs messages on publication-api AcceptedPublishingRequestHandlerDLQ
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AcceptedPublishingRequestHandlerDLQ.QueueName
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1

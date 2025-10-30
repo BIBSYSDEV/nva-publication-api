@@ -51,6 +51,7 @@ import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -71,6 +72,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -459,6 +461,22 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                    is(equalTo(newOwnerAffiliation)));
     }
 
+    @Test
+    void shouldNotUpdateFileOwnershipAffiliationWhenOldTicketIsNullAndReceivingCompletedTicket()
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithFiles(randomPendingOpenFile(), randomPendingOpenFile());
+        var publishingRequest = completedPublishingRequest(publication).persistNewTicket(ticketService);
+
+        handler.handleRequest(createEvent(null, publishingRequest), outputStream, CONTEXT);
+
+        Resource.fromPublication(publication).fetchFileEntries(resourceService)
+            .forEach(fileEntry -> fileOwnerIsUnchanged(fileEntry, publication));
+    }
+
+    private static void fileOwnerIsUnchanged(FileEntry fileEntry, Publication publication) {
+        Assertions.assertEquals(publication.getResourceOwner().getOwnerAffiliation(), fileEntry.getOwnerAffiliation());
+    }
+
     private static URI getActualOwnerAffiliation(Resource resource, File file) {
         return resource.getFileEntry(new SortableIdentifier(file.getIdentifier().toString()))
                    .orElseThrow()
@@ -485,24 +503,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
         assertThat(getActualOwnerAffiliation(updatedPublication, fileToPublish),
                    is(not(equalTo(publishingRequest.getReceivingOrganizationDetails().topLevelOrganizationId()))));
-    }
-
-    @Test
-    void shouldTriggerUpdateFilesFromPublishingRequestWhenNewTicket()
-        throws ApiGatewayException, IOException {
-        var file = randomPendingOpenFile();
-        var publication = createPublicationWithFiles(file);
-        var publishingRequest = pendingPublishingRequest(publication, Set.of(file)).persistNewTicket(ticketService);
-
-        var event = createEvent(null, publishingRequest);
-
-        handler.handleRequest(event, outputStream, CONTEXT);
-
-        var updatedPublication =
-            resourceService.getResourceByIdentifier(publication.getIdentifier());
-
-        assertThat(getActualOwnerAffiliation(updatedPublication, file),
-                   is(equalTo(publishingRequest.getReceivingOrganizationDetails().topLevelOrganizationId())));
     }
 
     @Test
@@ -750,6 +750,12 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                                randomUri());
         return PublishingRequestCase.createWithFilesForApproval(Resource.fromPublication(publication), userInstance,
                                                                 REGISTRATOR_PUBLISHES_METADATA_ONLY, files);
+    }
+
+    private PublishingRequestCase completedPublishingRequest(Publication publication) {
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication);
+        return PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
     }
 
     private FilesApprovalThesis pendingFilesApprovalThesis(Publication publication) {

@@ -65,7 +65,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
     }
 
-    // TODO: hasEffectiveChanges method should be implemented in a predecessor eventHandler.
     @Override
     protected Void processInputPayload(EventReference input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
@@ -77,8 +76,7 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
         if (hasStatusChange(dataEntryUpdateEvent)) {
             handleStatusChanges(updatedTicket);
-        }
-        if (hasReceiverChange(dataEntryUpdateEvent)) {
+        } else if (hasReceiverChange(dataEntryUpdateEvent)) {
             handleFileOwnershipAffiliationChange(oldTicket, updatedTicket);
         }
         return null;
@@ -201,7 +199,9 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         var newReceiver = getNewReceiverTopLevel(updateEvent);
         var oldReceiver = getOldReceiverTopLevel(updateEvent);
 
-        return newReceiver.isPresent() && !newReceiver.equals(oldReceiver);
+        return newReceiver.isPresent()
+               && oldReceiver.isPresent()
+               && !newReceiver.equals(oldReceiver);
     }
 
     private void handleCompletedPublishingRequest(FilesApprovalEntry entry) {
