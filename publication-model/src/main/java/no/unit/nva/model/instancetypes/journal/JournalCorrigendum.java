@@ -3,6 +3,7 @@ package no.unit.nva.model.instancetypes.journal;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
+import java.util.Objects;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 
@@ -38,6 +39,24 @@ public class JournalCorrigendum extends JournalNonPeerReviewedContent {
 
     private JournalCorrigendum(Builder builder) {
         this(builder.volume, builder.issue, builder.articleNumber, builder.pages, builder.corrigendumFor);
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof JournalCorrigendum that)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        return Objects.equals(getCorrigendumFor(), that.getCorrigendumFor());
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getCorrigendumFor());
     }
 
     @JacocoGenerated
