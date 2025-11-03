@@ -27,4 +27,14 @@ public class BackendClientCredentials {
     public String getSecret() {
         return secret;
     }
+
+    @Override
+    public String toString() {
+        return """
+               {
+                 "backendClientId": "%s",
+                 "backendClientSecret": "%s"
+               }
+               """.formatted(id, secret);
+    }
 }
