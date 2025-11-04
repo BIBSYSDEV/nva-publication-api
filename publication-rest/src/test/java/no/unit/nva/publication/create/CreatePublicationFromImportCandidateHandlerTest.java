@@ -16,7 +16,6 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -64,7 +63,6 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -75,7 +73,6 @@ import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
-import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.create.pia.PiaClientConfig;
@@ -184,7 +181,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldCreatePublicationWithValuesFromRequestBodyAndNotPersistedImportCandidate()
         throws NotFoundException, IOException {
         var persistedImportCandidate = createPersistedImportCandidate();
-        var importCandidateRequestBody = persistedImportCandidate.copyImportCandidate().withDoi(randomDoi()).build();
+        var importCandidateRequestBody = persistedImportCandidate.copy().withAssociatedArtifacts(List.of()).build();
         var request = createRequest(importCandidateRequestBody);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -192,8 +189,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var updatedImportCandidate = importCandidateService
                                          .getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getDoi(), is(equalTo(persistedImportCandidate.getDoi())));
-        assertThat(publication.getDoi(), is(equalTo(importCandidateRequestBody.getDoi())));
+        assertThat(updatedImportCandidate.getAssociatedArtifacts(), is(equalTo(persistedImportCandidate.getAssociatedArtifacts())));
+        assertThat(publication.getAssociatedArtifacts(), is(equalTo(importCandidateRequestBody.getAssociatedArtifacts())));
     }
 
     @Test
@@ -346,7 +343,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     @Test
     void shouldCreateNvaResourceBasedOnUserInput() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
-        var userInput = importCandidate.copyImportCandidate().build();
+        var userInput = importCandidate.copy().build();
         var userInputContributor = randomContributor();
         userInput.getEntityDescription().setContributors(List.of(userInputContributor));
         var request = createRequest(userInput);
@@ -366,7 +363,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                                                fileNotKeptByImporter);
         var importCandidate = createPersistedImportCandidate(importCandidateAssociatedArtifactList);
         var userInput = importCandidate
-                            .copyImportCandidate()
+                            .copy()
                             .withAssociatedArtifacts(
                                 new AssociatedArtifactList(fileKeptByImporter, fileAddedByImporter))
                             .build();
@@ -397,7 +394,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldThrowBadRequestExceptionWhenTryingToImportCandideWithoutTitle()
         throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
-        var userInput = importCandidate.copyImportCandidate().build();
+        var userInput = importCandidate.copy().build();
         userInput.getEntityDescription().setMainTitle(null);
         var request = createRequest(userInput);
         handler.handleRequest(request, output, context);
@@ -713,19 +710,10 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         return new ImportCandidate.Builder()
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
-                   .withLink(randomUri())
-                   .withDoi(randomDoi())
-                   .withIndexedDate(Instant.now())
-                   .withPublishedDate(Instant.now())
-                   .withHandle(randomUri())
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withSubjects(List.of(randomUri()))
                    .withIdentifier(SortableIdentifier.next())
-                   .withRightsHolder(randomString())
-                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(Set.of(new FundingBuilder().build()))
                    .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of(File.builder()

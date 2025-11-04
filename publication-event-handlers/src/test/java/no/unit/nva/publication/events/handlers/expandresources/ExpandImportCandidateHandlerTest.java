@@ -1,7 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,11 +34,10 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
@@ -164,7 +163,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     private ImportCandidate updatedVersionOfImportCandidate(ImportCandidate oldImage) {
-        oldImage.setDoi(randomDoi());
+        oldImage.setAssociatedArtifacts(new AssociatedArtifactList(randomAssociatedArtifacts()));
         return oldImage;
     }
 
@@ -180,18 +179,10 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         return new ImportCandidate.Builder()
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
-                   .withLink(randomUri())
-                   .withIndexedDate(Instant.now())
-                   .withPublishedDate(Instant.now())
-                   .withHandle(randomUri())
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withSubjects(List.of(randomUri()))
                    .withIdentifier(SortableIdentifier.next())
-                   .withRightsHolder(randomString())
-                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(Set.of(new FundingBuilder().withId(randomUri()).build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())

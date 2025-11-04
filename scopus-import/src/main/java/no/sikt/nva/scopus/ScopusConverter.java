@@ -52,7 +52,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -128,7 +127,6 @@ public class ScopusConverter {
                    .withEntityDescription(generateEntityDescription(contributorsWithCustomers.contributors()))
                    .withCreatedDate(Instant.now())
                    .withModifiedDate(Instant.now())
-                   .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
                    .withAssociatedCustomers(contributorsWithCustomers.associatedCustomerUris())

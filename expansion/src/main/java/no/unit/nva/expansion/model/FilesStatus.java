@@ -2,7 +2,7 @@ package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.List;
-import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 
 public enum FilesStatus {
@@ -16,8 +16,8 @@ public enum FilesStatus {
         this.value = value;
     }
 
-    public static FilesStatus fromPublication(Publication publication) {
-        var files = getFiles(publication);
+    public static FilesStatus fromAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
+        var files = getFiles(associatedArtifacts);
         if (noFiles(files) || !containsVisibleForNonOwnerFile(files)) {
             return NO_FILES;
         } else {
@@ -38,9 +38,8 @@ public enum FilesStatus {
         return files.stream().anyMatch(File::isVisibleForNonOwner);
     }
 
-    private static List<File> getFiles(Publication publication) {
-        return publication.getAssociatedArtifacts()
-                   .stream()
+    private static List<File> getFiles(AssociatedArtifactList associatedArtifacts) {
+        return associatedArtifacts.stream()
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .toList();

@@ -85,12 +85,21 @@ public final class FakeUriResponse {
         fakeFundingResponses(fakeUriRetriever, publication);
         fakeProjectResponses(fakeUriRetriever, publication, emptySet());
         fakeContextResponses(publication, fakeUriRetriever, resourceService, publicationContextRedirects);
-        if (publication instanceof ImportCandidate) {
-            createFakeCustomerApiResponse(fakeUriRetriever);
-        } else {
-            resourceService.updateResource(Resource.fromPublication(publication),
-                                           UserInstance.fromPublication(publication));
-        }
+        resourceService.updateResource(Resource.fromPublication(publication),
+                                       UserInstance.fromPublication(publication));
+
+    }
+
+    public static void setupFakeForType(ImportCandidate importCandidate, FakeUriRetriever fakeUriRetriever,
+                                        ResourceService resourceService, boolean publicationContextRedirects) {
+        var publication = importCandidate.toPublication();
+        fakeContributorResponses(publication, fakeUriRetriever);
+        fakeOwnerResponse(fakeUriRetriever, importCandidate.getResourceOwner().getOwnerAffiliation());
+        fakePendingNviResponse(fakeUriRetriever, publication);
+        fakeFundingResponses(fakeUriRetriever, publication);
+        fakeProjectResponses(fakeUriRetriever, publication, emptySet());
+        fakeContextResponses(publication, fakeUriRetriever, resourceService, publicationContextRedirects);
+        createFakeCustomerApiResponse(fakeUriRetriever);
     }
 
     public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
