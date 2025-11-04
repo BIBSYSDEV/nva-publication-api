@@ -144,7 +144,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
                    .withPrintIssn(extractPrintIssn(importCandidate))
                    .withOnlineIssn(extractOnlineIssn(importCandidate))
-                   .withHasFile(FilesStatus.fromPublication(importCandidate))
+                   .withHasFile(FilesStatus.fromAssociatedArtifacts(importCandidate.getAssociatedArtifacts()))
                    .build();
     }
 

@@ -7,31 +7,27 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass", "PMD.CouplingBetweenObjects"})
-public class ImportCandidate extends Publication implements JsonSerializable {
+public class ImportCandidate implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
     private static final String IMPORT_STATUS = "importStatus";
@@ -40,43 +36,84 @@ public class ImportCandidate extends Publication implements JsonSerializable {
     private ImportStatus importStatus;
     @JsonProperty(ASSOCIATED_CUSTOMERS_FIELD)
     private List<URI> associatedCustomers;
+    private SortableIdentifier identifier;
+    private ResourceOwner resourceOwner;
+    private Organization publisher;
+    private Instant createdDate;
+    private Instant modifiedDate;
+    private EntityDescription entityDescription;
+    private AssociatedArtifactList associatedArtifacts;
+    private Set<AdditionalIdentifierBase> additionalIdentifiers;
 
     public ImportCandidate() {
-        super();
     }
 
-    public Builder copyImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(getImportStatus())
-                   .withIdentifier(getIdentifier())
-                   .withStatus(getStatus())
-                   .withResourceOwner(getResourceOwner())
-                   .withPublisher(getPublisher())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withPublishedDate(getPublishedDate())
-                   .withIndexedDate(getIndexedDate())
-                   .withHandle(getHandle())
-                   .withDoi(getDoi())
-                   .withLink(getLink())
-                   .withEntityDescription(getEntityDescription())
-                   .withProjects(getProjects())
-                   .withFundings(getFundings())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withAssociatedArtifacts(getAssociatedArtifacts())
-                   .withSubjects(getSubjects())
-                   .withFundings(getFundings())
-                   .withPublicationNotes(getPublicationNotes())
-                   .withImportStatus(getImportStatus())
-                   .withRightsHolder(getRightsHolder())
-                   .withCuratingInstitutions(getCuratingInstitutions())
-                   .withAssociatedCustomers(getAssociatedCustomers())
-                   .withImportDetails(getImportDetails());
+    public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
+        return additionalIdentifiers;
     }
 
-    @Override
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
+        this.additionalIdentifiers = additionalIdentifiers;
+    }
+
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+
     public PublicationStatus getStatus() {
         return null;
+    }
+
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
+    }
+
+    public ResourceOwner getResourceOwner() {
+        return resourceOwner;
+    }
+
+    public void setResourceOwner(ResourceOwner resourceOwner) {
+        this.resourceOwner = resourceOwner;
+    }
+
+    public Organization getPublisher() {
+        return publisher;
+    }
+
+    public void setPublisher(Organization publisher) {
+        this.publisher = publisher;
+    }
+
+    public SortableIdentifier getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(SortableIdentifier identifier) {
+        this.identifier = identifier;
+    }
+
+    public EntityDescription getEntityDescription() {
+        return entityDescription;
+    }
+
+    public void setEntityDescription(EntityDescription entityDescription) {
+        this.entityDescription = entityDescription;
+    }
+
+    public AssociatedArtifactList getAssociatedArtifacts() {
+        return associatedArtifacts;
+    }
+
+    public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
+        this.associatedArtifacts = associatedArtifacts;
     }
 
     @JacocoGenerated
@@ -85,22 +122,43 @@ public class ImportCandidate extends Publication implements JsonSerializable {
         if (!(o instanceof ImportCandidate that)) {
             return false;
         }
-        if (!super.equals(o)) {
-            return false;
-        }
-        return Objects.equals(getImportStatus(), that.getImportStatus()) && Objects.equals(
-            getAssociatedCustomers(), that.getAssociatedCustomers());
+        return Objects.equals(getImportStatus(), that.getImportStatus())
+               && Objects.equals(getAssociatedCustomers(), that.getAssociatedCustomers())
+               && Objects.equals(getIdentifier(), that.getIdentifier())
+               && Objects.equals(getResourceOwner(), that.getResourceOwner())
+               && Objects.equals(getPublisher(), that.getPublisher())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getEntityDescription(), that.getEntityDescription())
+               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
+               && new HashSet<>(getAssociatedArtifacts()).containsAll(that.getAssociatedArtifacts());
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), getImportStatus(), getAssociatedCustomers());
+        return Objects.hash(getImportStatus(), getAssociatedCustomers(), getIdentifier(), getResourceOwner(),
+                            getPublisher(), getCreatedDate(), getModifiedDate(), getEntityDescription(),
+                            getAssociatedArtifacts(), getAdditionalIdentifiers());
     }
 
     @Override
     public String toString() {
         return this.toJsonString();
+    }
+
+    public Builder copy() {
+        return new ImportCandidate.Builder()
+                   .withIdentifier(getIdentifier())
+                   .withResourceOwner(getResourceOwner())
+                   .withPublisher(getPublisher())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withEntityDescription(getEntityDescription())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withAssociatedArtifacts(getAssociatedArtifacts())
+                   .withImportStatus(getImportStatus())
+                   .withAssociatedCustomers(getAssociatedCustomers());
     }
 
     public ImportStatus getImportStatus() {
@@ -112,19 +170,26 @@ public class ImportCandidate extends Publication implements JsonSerializable {
     }
 
     public List<URI> getAssociatedCustomers() {
-        return nonNull(associatedCustomers)
-                   ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+        return nonNull(associatedCustomers) ? associatedCustomers.stream().filter(Objects::nonNull).toList()
                    : Collections.emptyList();
     }
 
     public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
-        this.associatedCustomers = nonNull(associatedCustomers)
-                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                                       : Collections.emptyList();
+        this.associatedCustomers =
+            nonNull(associatedCustomers) ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+                : Collections.emptyList();
     }
 
     public Publication toPublication() {
-        return this.copy()
+        return new Publication.Builder()
+                   .withIdentifier(getIdentifier())
+                   .withPublisher(getPublisher())
+                   .withResourceOwner(getResourceOwner())
+                   .withCreatedDate(getCreatedDate())
+                   .withModifiedDate(getModifiedDate())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withEntityDescription(getEntityDescription())
+                   .withAssociatedArtifacts(getAssociatedArtifacts())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .build();
     }
@@ -145,32 +210,6 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             importCandidate = new ImportCandidate();
         }
 
-        public Builder withPublication(Publication publication) {
-            importCandidate.setIdentifier(publication.getIdentifier());
-            importCandidate.setStatus(publication.getStatus());
-            importCandidate.setPublisher(publication.getPublisher());
-            importCandidate.setCreatedDate(publication.getCreatedDate());
-            importCandidate.setModifiedDate(publication.getModifiedDate());
-            importCandidate.setPublishedDate(publication.getPublishedDate());
-            importCandidate.setIndexedDate(publication.getIndexedDate());
-            importCandidate.setHandle(publication.getHandle());
-            importCandidate.setDoi(publication.getDoi());
-            importCandidate.setLink(publication.getLink());
-            importCandidate.setEntityDescription(publication.getEntityDescription());
-            importCandidate.setAssociatedArtifacts(publication.getAssociatedArtifacts());
-            importCandidate.setProjects(publication.getProjects());
-            importCandidate.setFundings(publication.getFundings());
-            importCandidate.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
-            importCandidate.setSubjects(publication.getSubjects());
-            importCandidate.setResourceOwner(publication.getResourceOwner());
-            importCandidate.setRightsHolder(publication.getRightsHolder());
-            importCandidate.setPublicationNotes(publication.getPublicationNotes());
-            importCandidate.setDuplicateOf(publication.getDuplicateOf());
-            importCandidate.setCuratingInstitutions(publication.getCuratingInstitutions());
-            importCandidate.setImportDetails(publication.getImportDetails());
-            return this;
-        }
-
         public Builder withImportStatus(ImportStatus importStatus) {
             importCandidate.setImportStatus(importStatus);
             return this;
@@ -178,11 +217,6 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
         public Builder withIdentifier(SortableIdentifier identifier) {
             importCandidate.setIdentifier(identifier);
-            return this;
-        }
-
-        public Builder withStatus(PublicationStatus status) {
-            importCandidate.setStatus(status);
             return this;
         }
 
@@ -201,31 +235,6 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
-        public Builder withPublishedDate(Instant publishedDate) {
-            importCandidate.setPublishedDate(publishedDate);
-            return this;
-        }
-
-        public Builder withIndexedDate(Instant indexedDate) {
-            importCandidate.setIndexedDate(indexedDate);
-            return this;
-        }
-
-        public Builder withHandle(URI handle) {
-            importCandidate.setHandle(handle);
-            return this;
-        }
-
-        public Builder withDoi(URI doi) {
-            importCandidate.setDoi(doi);
-            return this;
-        }
-
-        public Builder withLink(URI link) {
-            importCandidate.setLink(link);
-            return this;
-        }
-
         public Builder withEntityDescription(EntityDescription entityDescription) {
             importCandidate.setEntityDescription(entityDescription);
             return this;
@@ -236,53 +245,13 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
-        public Builder withProjects(List<ResearchProject> projects) {
-            importCandidate.setProjects(projects);
-            return this;
-        }
-
-        public Builder withFundings(Set<Funding> fundings) {
-            importCandidate.setFundings(fundings);
-            return this;
-        }
-
         public Builder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
             importCandidate.setAdditionalIdentifiers(additionalIdentifiers);
             return this;
         }
 
-        public Builder withSubjects(List<URI> subjects) {
-            importCandidate.setSubjects(subjects);
-            return this;
-        }
-
         public Builder withResourceOwner(ResourceOwner randomResourceOwner) {
             importCandidate.setResourceOwner(randomResourceOwner);
-            return this;
-        }
-
-        public Builder withPublicationNotes(List<PublicationNoteBase> publicationNotes) {
-            this.importCandidate.setPublicationNotes(publicationNotes);
-            return this;
-        }
-
-        public Builder withRightsHolder(String rightsHolder) {
-            this.importCandidate.setRightsHolder(rightsHolder);
-            return this;
-        }
-
-        public Builder withDuplicateOf(URI duplicateOf) {
-            this.importCandidate.setDuplicateOf(duplicateOf);
-            return this;
-        }
-
-        public Builder withCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
-            this.importCandidate.setCuratingInstitutions(curatingInstitutions);
-            return this;
-        }
-
-        public Builder withImportDetails(List<ImportDetail> importDetails) {
-            this.importCandidate.setImportDetails(importDetails);
             return this;
         }
 
@@ -294,6 +263,5 @@ public class ImportCandidate extends Publication implements JsonSerializable {
         public ImportCandidate build() {
             return importCandidate;
         }
-
     }
 }

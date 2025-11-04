@@ -86,7 +86,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
-        var originalPublication = fetchExistingResource(publication).toPublication();
+        var originalPublication = fetchExistingResource(Resource.fromPublication(publication)).toPublication();
         if (originalPublication.getStatus().equals(publication.getStatus())) {
             return updatePublicationIncludingStatus(publication);
         }
@@ -94,7 +94,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public Publication updatePublicationDraftToDraftForDeletion(Publication publication) throws NotFoundException {
-        var persistedPublication = attempt(() -> fetchExistingResource(publication)).map(Resource::toPublication)
+        var persistedPublication =
+            attempt(() -> fetchExistingResource(Resource.fromPublication(publication))).map(Resource::toPublication)
                                        .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
         if (persistedPublication.getStatus().equals(DRAFT)) {
             publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
@@ -133,7 +134,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public Resource updateResourceFromImport(Resource resource, UserInstance userInstance, ImportSource importSource) {
-        var persistedResource = fetchExistingResource(resource.toPublication());
+        var persistedResource = fetchExistingResource(resource);
 
         if (resource.hasEffectiveChanges(persistedResource)) {
             resource.setCreatedDate(persistedResource.getCreatedDate());
@@ -209,7 +210,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public Resource updateResource(Resource resource, UserInstance userInstance) {
-        var persistedResource = fetchExistingResource(resource.toPublication());
+        var persistedResource = fetchExistingResource(resource);
 
         if (resource.hasEffectiveChanges(persistedResource)) {
             resource.setCreatedDate(persistedResource.getCreatedDate());
@@ -228,7 +229,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
-        var existingResource = fetchExistingResource(importCandidate);
+        var existingResource = fetchExistingResource(Resource.fromImportCandidate(importCandidate));
         if (isNotImported(existingResource)) {
             var resource = Resource.fromImportCandidate(importCandidate);
             resource.setCreatedDate(existingResource.getCreatedDate());
@@ -406,8 +407,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return Resource.fromImportCandidate(importCandidate);
     }
 
-    private Resource fetchExistingResource(Publication publication) {
-        return attempt(() -> readResourceService.getResourceByIdentifier(publication.getIdentifier())).map(
+    private Resource fetchExistingResource(Resource resource) {
+        return attempt(() -> readResourceService.getResourceByIdentifier(resource.getIdentifier())).map(
             Optional::orElseThrow).orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 

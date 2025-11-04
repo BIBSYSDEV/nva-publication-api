@@ -89,7 +89,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -741,28 +740,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
         assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
-                   is(equalTo(topLevelId)));
-    }
-
-    @Test
-    void shouldNotSetCuratingInstitutionsWhenUpdatingImportCandidateWhenContributorsAreUnchanged()
-        throws ApiGatewayException {
-        var importCandidate = randomImportCandidate();
-        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
-        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
-
-        var affiliation = (new Organization.Builder()).withId(orgId).build();
-
-        importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        importCandidate.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, Set.of(randomUri()))));
-
-        var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
-        persistedImportCandidate.setAssociatedArtifacts(AssociatedArtifactList.empty());
-
-        var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
-
-        verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -1764,16 +1741,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder().withStatus(PublicationStatus.PUBLISHED)
+        return new ImportCandidate.Builder()
                    .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withLink(randomUri())
-                   .withDoi(randomDoi())
-                   .withHandle(randomUri())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withSubjects(List.of(randomUri()))
-                   .withRightsHolder(randomString())
-                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(Set.of())
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of(randomOpenFile()))

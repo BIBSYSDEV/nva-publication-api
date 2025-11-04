@@ -1,8 +1,8 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.importcandidate.CandidateStatus.IMPORTED;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,15 +15,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -84,18 +83,20 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         resourceService.updateImportCandidate(updatedImportCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
 
-        assertEquals(fetchedImportCandidate,
-                     updatedImportCandidate.copyImportCandidate().withModifiedDate(fetchedImportCandidate.getModifiedDate()).build());
+        var expectedImportCandidate = updatedImportCandidate.copy()
+                                    .withModifiedDate(fetchedImportCandidate.getModifiedDate())
+                                    .build();
+        assertEquals(expectedImportCandidate, fetchedImportCandidate);
     }
 
     @Test
     void shouldOverwriteFilesWhenUpdatingExistingNotImportedImportCandidate() throws BadRequestException,
                                                                                  NotFoundException {
         var file = randomOpenFile();
-        var importCandidate = randomImportCandidate().copyImportCandidate().withAssociatedArtifacts(List.of(file)).build();
+        var importCandidate = randomImportCandidate().copy().withAssociatedArtifacts(List.of(file)).build();
         var existingImportCandidate = resourceService.persistImportCandidate(importCandidate);
         var newFile = randomOpenFile();
-        var updatedImportCandidate = existingImportCandidate.copyImportCandidate().withAssociatedArtifacts(List.of(newFile)).build();
+        var updatedImportCandidate = existingImportCandidate.copy().withAssociatedArtifacts(List.of(newFile)).build();
         resourceService.updateImportCandidate(updatedImportCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(existingImportCandidate.getIdentifier());
 
@@ -126,22 +127,14 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     }
 
     private ImportCandidate update(ImportCandidate importCandidate) {
-        importCandidate.setHandle(randomUri());
+        importCandidate.setAssociatedArtifacts(new AssociatedArtifactList(randomAssociatedArtifacts()));
         return importCandidate;
     }
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                   .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withLink(randomUri())
-                   .withDoi(randomDoi())
-                   .withHandle(randomUri())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withSubjects(List.of(randomUri()))
-                   .withRightsHolder(randomString())
-                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(Set.of())
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
