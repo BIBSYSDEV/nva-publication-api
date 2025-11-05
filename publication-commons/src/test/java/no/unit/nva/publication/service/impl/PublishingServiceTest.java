@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -50,6 +51,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 class PublishingServiceTest extends ResourcesLocalTest {
@@ -278,18 +280,31 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistDoiRequestWhenPublishingPublicationWithDoi() throws ApiGatewayException {
-        var userInstance = UserInstance.create(randomString(), randomUri());
-        var publication = resourceService.createPublication(userInstance, randomPublication());
+        var resource = persistResource(Resource.fromPublication(randomPublication().copy().withStatus(DRAFT).build()));
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
 
-        publishingService.publishResource(publication.getIdentifier(), userInstance);
+        publishingService.publishResource(resource.getIdentifier(), userInstance);
 
-        var doiRequest = getPersistedDoiRequest(publication);
+        var doiRequest = getPersistedDoiRequest(resource);
 
         assertTrue(doiRequest.isPresent());
     }
 
-    private Optional<DoiRequest> getPersistedDoiRequest(Publication publication) {
-        return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
+    @Test
+    void shouldNotPersistDoiRequestWhenPublishingPublicationAlreadyPublishedPublication() throws ApiGatewayException {
+        var resource =
+            persistResource(Resource.fromPublication(randomPublication().copy().withStatus(PUBLISHED).build()));
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+
+        publishingService.publishResource(resource.getIdentifier(), userInstance);
+
+        var doiRequest = getPersistedDoiRequest(resource);
+
+        assertTrue(doiRequest.isEmpty());
+    }
+
+    private Optional<DoiRequest> getPersistedDoiRequest(Resource resource) {
+        return resourceService.fetchAllTicketsForResource(resource)
                    .filter(DoiRequest.class::isInstance)
                    .map(DoiRequest.class::cast)
                    .findFirst();

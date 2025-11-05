@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 public class PublishingService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PublishingService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PublishingService.class);Œ
     protected static final String CUSTOMER = "customer";
     protected static final String CHANNEL_CLAIM = "channel-claim";
     protected static final String EVERYONE = "Everyone";
@@ -60,6 +61,9 @@ public class PublishingService {
     public void publishResource(SortableIdentifier resourceIdentifier, UserInstance userInstance)
         throws ApiGatewayException {
         var resource = getResource(resourceIdentifier);
+        if (PUBLISHED.equals(resource.getStatus())) {
+            return;
+        }
         validatePermissions(resource, userInstance);
 
         publishResource(userInstance, resource);
