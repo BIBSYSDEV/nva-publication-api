@@ -9,7 +9,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -279,18 +278,18 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistDoiRequestWhenPublishingPublicationWithDoi() throws ApiGatewayException {
-        var publication = randomPublication();
-        var resource = persistResource(Resource.fromPublication(publication));
+        var userInstance = UserInstance.create(randomString(), randomUri());
+        var publication = resourceService.createPublication(userInstance, randomPublication());
 
-        publishingService.publishResource(resource.getIdentifier(), UserInstance.fromPublication(publication));
+        publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var doiRequest = getPersistedDoiRequest(resource);
+        var doiRequest = getPersistedDoiRequest(publication);
 
         assertTrue(doiRequest.isPresent());
     }
 
-    private Optional<DoiRequest> getPersistedDoiRequest(Resource resource) {
-        return resourceService.fetchAllTicketsForResource(resource)
+    private Optional<DoiRequest> getPersistedDoiRequest(Publication publication) {
+        return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
                    .filter(DoiRequest.class::isInstance)
                    .map(DoiRequest.class::cast)
                    .findFirst();
