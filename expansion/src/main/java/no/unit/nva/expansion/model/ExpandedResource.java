@@ -48,6 +48,8 @@ import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 @JsonTypeName(ExpandedResource.TYPE)
@@ -79,6 +81,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final String CONTRIBUTORS_COUNT = "contributorsCount";
     public static final String CONTRIBUTORS_PREVIEW = "contributorsPreview";
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExpandedResource.class);
+
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -92,7 +96,12 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, resourceService, queueClient, documentWithId);
         var jsonWithAddedFields = addFields(enrichedJson, publication);
-        return attempt(() -> objectMapper.treeToValue(jsonWithAddedFields, ExpandedResource.class)).orElseThrow();
+        try {
+            return objectMapper.treeToValue(jsonWithAddedFields, ExpandedResource.class);
+        } catch (JsonProcessingException exception) {
+            LOGGER.error("Failed to parse expanded resource from JSON: {}", jsonWithAddedFields);
+            throw exception;
+        }
     }
 
     public static List<URI> extractPublicationContextUris(JsonNode indexDocument) {

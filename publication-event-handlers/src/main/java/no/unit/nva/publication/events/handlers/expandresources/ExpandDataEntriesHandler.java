@@ -96,6 +96,10 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
         var dataEntryUpdateEvent = readDataEntryUpdateEventFromS3(input);
+        logger.info(
+                "Handling update event with action={} and topic={}",
+                dataEntryUpdateEvent.getAction(),
+                dataEntryUpdateEvent.getTopic());
         return attempt(() -> processDataEntryUpdateEvent(dataEntryUpdateEvent))
                    .orElse(failure -> persistRecoveryMessage(failure, dataEntryUpdateEvent));
     }
@@ -179,8 +183,8 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private DataEntryUpdateEvent readDataEntryUpdateEventFromS3(EventReference input) {
+        logger.info("Reading update event from S3 for input: {}", input.toJsonString());
         var dataEntryUpdateEventAsString = s3DriverEventsBucket.readEvent(input.getUri());
-        logger.info("Handling event from s3: {}", dataEntryUpdateEventAsString);
         return DataEntryUpdateEvent.fromJson(dataEntryUpdateEventAsString);
     }
 
