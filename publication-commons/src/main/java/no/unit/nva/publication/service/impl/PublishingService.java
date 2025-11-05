@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 public class PublishingService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PublishingService.class);Œ
+    private static final Logger LOGGER = LoggerFactory.getLogger(PublishingService.class);
     protected static final String CUSTOMER = "customer";
     protected static final String CHANNEL_CLAIM = "channel-claim";
     protected static final String EVERYONE = "Everyone";
