@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.tickets;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -20,7 +19,6 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.FilesApprovalEntry;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.ReceivingOrganizationDetails;
@@ -38,7 +36,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class AcceptedPublishingRequestEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    private static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
     private static final String PUBLISHING_FILES_MESSAGE =
         "Publishing files for publication {} via approved " + "publishing request {}";
@@ -82,10 +79,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         return null;
     }
 
-    private static boolean hasDoi(Resource resource) {
-        return nonNull(resource.getDoi());
-    }
-
     private static Optional<String> getOldStatus(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent).map(DataEntryUpdateEvent::getOldData).map(Entity::getStatusString);
     }
@@ -112,7 +105,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     private void handleStatusChanges(FilesApprovalEntry updatedTicket) {
         switch (updatedTicket.getStatus()) {
-            case PENDING -> handlePendingPublishingRequest(updatedTicket);
             case COMPLETED -> handleCompletedPublishingRequest(updatedTicket);
             case CLOSED -> handleClosedPublishingRequest(updatedTicket);
             default -> {
@@ -166,24 +158,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
                 fileEntry -> fileEntry.updateOwnerAffiliation(resourceService, newOwnerAffiliation));
     }
 
-    private void handlePendingPublishingRequest(FilesApprovalEntry entry) {
-        var resource = fetchResource(entry.getResourceIdentifier());
-        if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(entry.getWorkflow())) {
-            publishResource(resource, entry);
-            refreshPublishingRequestAfterPublishingMetadata(entry);
-        }
-        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(entry));
-    }
-
-    /**
-     * Is needed in order to populate publication status changes in search-index when publication is being published.
-     *
-     * @param publishingRequest to refresh
-     */
-    private void refreshPublishingRequestAfterPublishingMetadata(FilesApprovalEntry publishingRequest) {
-        publishingRequest.persistUpdate(ticketService);
-    }
-
     private void handleClosedPublishingRequest(FilesApprovalEntry publishingRequestCase) {
         publishingRequestCase.rejectRejectedFiles(resourceService);
     }
@@ -215,8 +189,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
         }
 
         logger.info(PUBLISHING_FILES_MESSAGE, resource.getIdentifier(), filesApprovalEntry.getIdentifier());
-
-        createDoiRequestIfNeeded(resource.getIdentifier(), UserInstance.fromTicket(filesApprovalEntry));
     }
 
     private void publishWhenPublicationStatusDraft(Resource resource, FilesApprovalEntry filesApprovalEntry) {
@@ -249,31 +221,6 @@ public class AcceptedPublishingRequestEventHandler extends DestinationsEventBrid
 
     private Resource fetchResource(SortableIdentifier resourceIdentifier) {
         return Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow();
-    }
-
-    /**
-     * Creating DoiRequest for a sortableIdentifier necessarily owned by sortableIdentifier owner institution and not
-     * the institution that requests the doi.
-     *
-     * @param resourceIdentifier to create a DoiRequest for
-     * @param userInstance
-     */
-    private void createDoiRequestIfNeeded(SortableIdentifier resourceIdentifier, UserInstance userInstance) {
-        var resource = Resource.resourceQueryObject(resourceIdentifier).fetch(resourceService).orElseThrow();
-        if (hasDoi(resource) && !doiRequestExists(resource)) {
-            var doiRequest = DoiRequest.create(resource, userInstance);
-            attempt(() -> doiRequest.persistNewTicket(ticketService)).orElseThrow();
-            logger.info(DOI_REQUEST_CREATION_MESSAGE, resource.getIdentifier());
-        }
-    }
-
-    private boolean doiRequestExists(Resource resource) {
-        return fetchDoiRequest(resource).isPresent();
-    }
-
-    private Optional<DoiRequest> fetchDoiRequest(Resource resource) {
-        return ticketService.fetchTicketByResourceIdentifier(resource.getCustomerId(), resource.getIdentifier(),
-                                                             DoiRequest.class);
     }
 
     private FilesApprovalEntry parseNewInput(DataEntryUpdateEvent dataEntryUpdateEvent) {

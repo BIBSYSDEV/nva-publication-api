@@ -21,11 +21,10 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.model.OperationType;
@@ -57,9 +56,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -72,7 +69,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -234,84 +230,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateDoiRequestTicketWhenPublicationWithDraftDoiIsPublished()
-        throws IOException, ApiGatewayException {
-        var publication = createDraftPublicationWithDoi();
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
-        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest =
-            pendingPublishingRequest
-                .complete(publication, USER_INSTANCE)
-                .persistNewTicket(ticketService);
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        var ticket =
-            ticketService
-                .fetchTicketByResourceIdentifier(
-                    publication.getPublisher().getId(),
-                    publication.getIdentifier(),
-                    DoiRequest.class)
-                .orElseThrow();
-
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
-        assertThat(
-            ticket.getOwnerAffiliation(),
-            is(equalTo(pendingPublishingRequest.getOwnerAffiliation())));
-    }
-
-    @Test
-    void shouldCreateDoiRequestForTheSameInstitutionAsConsumedPublishingRequestTicketWhenPublishingMetadataOnPendingPublishingRequest()
-        throws IOException, ApiGatewayException {
-        var publication = createDraftPublicationWithDoi();
-        var publishingRequest = pendingPublishingRequest(publication);
-        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        var pendingPublishingRequest = publishingRequest.persistNewTicket(ticketService);
-        var event = createEvent(null, pendingPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        var ticket =
-            ticketService
-                .fetchTicketByResourceIdentifier(
-                    publication.getPublisher().getId(),
-                    publication.getIdentifier(),
-                    DoiRequest.class)
-                .orElseThrow();
-
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(ticket.getStatus(), is(equalTo(TicketStatus.PENDING)));
-        assertThat(ticket.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(
-            ticket.getOwnerAffiliation(),
-            is(equalTo(pendingPublishingRequest.getOwnerAffiliation())));
-        assertThat(ticket.getResponsibilityArea(), is(equalTo(publishingRequest.getResponsibilityArea())));
-    }
-
-    @Test
-    void shouldCreateDoiRequestTicketForPublishedResourceAndSetTicketEventWithTheUserFromPublishingRequest()
-        throws IOException, ApiGatewayException {
-        var publication = createDraftPublicationWithDoi();
-        var publishingRequest = pendingPublishingRequest(publication);
-        publishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        var pendingPublishingRequest = publishingRequest.persistNewTicket(ticketService);
-        var event = createEvent(null, pendingPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var ticket =
-            ticketService
-                .fetchTicketByResourceIdentifier(
-                    publication.getPublisher().getId(),
-                    publication.getIdentifier(),
-                    DoiRequest.class)
-                .orElseThrow();
-
-        assertInstanceOf(DoiRequestedEvent.class, ticket.getTicketEvent());
-        assertEquals(pendingPublishingRequest.getOwner(), ticket.getTicketEvent().user());
-    }
-
-    @Test
     void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
         throws ApiGatewayException, IOException {
         var publication = createDraftPublicationWithDoi();
@@ -376,7 +294,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenUpdatingPublicationFails()
+    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenUpdatingFilesFails()
         throws ApiGatewayException, IOException {
         var publication = createPublication();
         var pendingPublishingRequest =
@@ -386,7 +304,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                                             .complete(publication, USER_INSTANCE)
                                             .persistNewTicket(ticketService);
         var handlerThrowingException =
-            handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication();
+            handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication(publication);
         var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
 
         assertThrows(
@@ -474,7 +392,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     private static void fileOwnerIsUnchanged(FileEntry fileEntry, Publication publication) {
-        Assertions.assertEquals(publication.getResourceOwner().getOwnerAffiliation(), fileEntry.getOwnerAffiliation());
+        assertEquals(publication.getResourceOwner().getOwnerAffiliation(), fileEntry.getOwnerAffiliation());
     }
 
     private static URI getActualOwnerAffiliation(Resource resource, File file) {
@@ -562,52 +480,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
         assertTrue(updatedPublication.getAssociatedArtifacts().stream().allMatch(RejectedFile.class::isInstance));
-    }
-
-    @Test
-    void shouldPublishPublicationWhenPendingPublishingRequestAndCustomerAllowsPublishingMetadata()
-        throws ApiGatewayException, IOException {
-        var publication = createPublication();
-        publication.setAssociatedArtifacts(
-            new AssociatedArtifactList(randomPendingInternalFile(), randomPendingOpenFile()));
-        resourceService.updatePublication(publication);
-        var publishingRequest = PublishingRequestCase.create(Resource.fromPublication(publication),
-                                                             UserInstance.fromPublication(publication),
-                                                             REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        var ticket = publishingRequest.persistNewTicket(ticketService);
-        var event = createEvent(null, ticket);
-
-        handler.handleRequest(event, outputStream, CONTEXT);
-
-        var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-
-        assertEquals(PublicationStatus.PUBLISHED, publishedPublication.getStatus());
-    }
-
-    @Test
-    void shouldRefreshPendingPublishingRequestWhenPublishingMetadataWithoutDoingAnyTicketUpdates()
-        throws ApiGatewayException, IOException {
-        var publication = createPublication();
-        publication.setAssociatedArtifacts(
-            new AssociatedArtifactList(randomPendingInternalFile(), randomPendingOpenFile()));
-        resourceService.updatePublication(publication);
-        var publishingRequest = PublishingRequestCase
-                                    .create(Resource.fromPublication(publication),
-                                            UserInstance.fromPublication(publication),
-                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        var ticket = publishingRequest.persistNewTicket(ticketService);
-        var event = createEvent(null, ticket);
-
-        handler.handleRequest(event, outputStream, CONTEXT);
-
-        var refreshedPublishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
-
-        assertNotEquals(publishingRequest, refreshedPublishingRequest);
-
-        publishingRequest.setModifiedDate(null);
-        refreshedPublishingRequest.setModifiedDate(null);
-
-        assertEquals(publishingRequest, refreshedPublishingRequest);
     }
 
     @Test
@@ -765,16 +637,14 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     private AcceptedPublishingRequestEventHandler
-    handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication()
+    handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication(Publication publication)
         throws ApiGatewayException {
         resourceService = mock(ResourceService.class);
         var s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, randomString());
-        when(resourceService.getPublicationByIdentifier(any())).thenReturn(randomPublication());
-        when(resourceService.getResourceByIdentifier(any())).thenReturn(
-            Resource.fromPublication(randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build()));
-        when(resourceService.updateResource(any(), any())).thenReturn(Resource.fromPublication(randomPublication()));
-        when(resourceService.updatePublication(any())).thenThrow(RuntimeException.class);
+        when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
+        when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publication));
+        doThrow(RuntimeException.class).when(resourceService).updateResource(any(), any());
         return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
     }
 

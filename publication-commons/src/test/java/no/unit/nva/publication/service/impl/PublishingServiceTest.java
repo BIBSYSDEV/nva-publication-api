@@ -9,6 +9,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,7 +19,9 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 import no.unit.nva.clients.ChannelClaimDto;
 import no.unit.nva.clients.ChannelClaimDto.ChannelClaim;
 import no.unit.nva.clients.ChannelClaimDto.ChannelClaim.ChannelConstraint;
@@ -33,9 +36,12 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
+import no.unit.nva.publication.model.FilesApprovalEntry;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -199,7 +205,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
         publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var ticket = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).findFirst();
+        var ticket = getAllFileApprovals(publication).findFirst();
 
         assertInstanceOf(PublishingRequestCase.class, ticket.orElseThrow());
     }
@@ -215,9 +221,14 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
         publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+        var tickets = getAllFileApprovals(publication).toList();
 
         assertTrue(tickets.isEmpty());
+    }
+
+    private Stream<TicketEntry> getAllFileApprovals(Publication publication) {
+        return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
+                   .filter(FilesApprovalEntry.class::isInstance);
     }
 
     @Test
@@ -237,7 +248,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
                                                                                    instanceType.getSimpleName()));
         publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var ticket = (FilesApprovalThesis) resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).findFirst().orElseThrow();
+        var ticket = (FilesApprovalThesis) getAllFileApprovals(publication).findFirst().orElseThrow();
 
         assertEquals(ticket.getOwnerAffiliation(), userInstance.getTopLevelOrgCristinId());
         assertEquals(ticket.getResponsibilityArea(), userInstance.getPersonAffiliation());
@@ -260,10 +271,29 @@ class PublishingServiceTest extends ResourcesLocalTest {
                                                                                    getPublisherChannelClaimId(publication), EVERYONE, instanceType.getSimpleName()));
         publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var ticket = (FilesApprovalThesis) resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).findFirst().orElseThrow();
+        var ticket = (FilesApprovalThesis) getAllFileApprovals(publication).findFirst().orElseThrow();
 
         assertEquals(ticket.getReceivingOrganizationDetails().topLevelOrganizationId(), channelClaimOwner);
         assertEquals(ticket.getReceivingOrganizationDetails().subOrganizationId(), channelClaimOwner);
+    }
+
+    @Test
+    void shouldPersistDoiRequestWhenPublishingPublicationWithDoi() throws ApiGatewayException {
+        var publication = randomPublication();
+        var resource = persistResource(Resource.fromPublication(publication));
+
+        publishingService.publishResource(resource.getIdentifier(), UserInstance.fromPublication(publication));
+
+        var doiRequest = getPersistedDoiRequest(resource);
+
+        assertTrue(doiRequest.isPresent());
+    }
+
+    private Optional<DoiRequest> getPersistedDoiRequest(Resource resource) {
+        return resourceService.fetchAllTicketsForResource(resource)
+                   .filter(DoiRequest.class::isInstance)
+                   .map(DoiRequest.class::cast)
+                   .findFirst();
     }
 
     private URI getPublisherChannelClaimId(Publication publication) {
