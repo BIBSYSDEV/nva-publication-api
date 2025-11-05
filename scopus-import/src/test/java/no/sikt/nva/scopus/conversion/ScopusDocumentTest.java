@@ -12,7 +12,7 @@ public class ScopusDocumentTest {
 
     @Test
     void shouldParseScopusXmlToDocTp() {
-        var file = IoUtils.stringFromResources(Path.of("2-s2.0-0018978799.xml"));
+        var file = IoUtils.stringFromResources(Path.of("2-s2.0-85175337306.xml"));
 
         assertDoesNotThrow(() -> JAXB.unmarshal(new StringReader(file), DocTp.class));
     }

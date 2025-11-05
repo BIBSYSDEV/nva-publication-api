@@ -36,6 +36,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
+import no.scopus.generated.AddressPartTp;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -65,6 +66,7 @@ import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.PersonalnameType;
+import no.scopus.generated.PostalCodeTp;
 import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublisherTp;
 import no.scopus.generated.PublishercopyrightTp;
@@ -73,6 +75,7 @@ import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
+import no.scopus.generated.Text;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
@@ -559,7 +562,7 @@ public final class ScopusGenerator {
         return authorGroup;
     }
 
-    private static AffiliationTp randomAffiliation() {
+    public static AffiliationTp randomAffiliation() {
         AffiliationTp affiliationTp = new AffiliationTp();
         affiliationTp.setAfid(randomString());
         affiliationTp.setAffiliationInstanceId(randomString());
@@ -568,7 +571,21 @@ public final class ScopusGenerator {
         affiliationTp.setDptid(randomString());
         affiliationTp.getOrganization().addAll(randomOrganizations());
         affiliationTp.setCityGroup(randomString());
+        affiliationTp.setAddressPart(randomAddressPart());
+        affiliationTp.getPostalCode().add(randomPostalCodeTp());
         return affiliationTp;
+    }
+
+    private static PostalCodeTp randomPostalCodeTp() {
+        var postalCodeTp = new PostalCodeTp();
+        postalCodeTp.setContent(randomString());
+        return postalCodeTp;
+    }
+
+    private static AddressPartTp randomAddressPart() {
+        var addressPart = new AddressPartTp();
+        addressPart.getContent().add(randomString());
+        return addressPart;
     }
 
     private static String randomCountry() {
@@ -987,6 +1004,16 @@ public final class ScopusGenerator {
         var collaborationTp = new CollaborationTp();
         collaborationTp.setIndexedName(randomString());
         collaborationTp.setSeq(String.valueOf(sequence));
+        return collaborationTp;
+    }
+
+    public static CollaborationTp randomCollaboration() {
+        var collaborationTp = new CollaborationTp();
+        collaborationTp.setIndexedName(randomString());
+        collaborationTp.setSeq(String.valueOf(randomInteger()));
+        var text = new Text();
+        text.getContent().add(randomString());
+        collaborationTp.setText(text);
         return collaborationTp;
     }
 
