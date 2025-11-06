@@ -49,7 +49,7 @@ public class ScopusUpdater {
 
     private static ImportCandidate updateImportCandidate(ImportCandidate importCandidate,
                                                       ImportCandidate persistedImportcandidate) {
-        return persistedImportcandidate.copyImportCandidate()
+        return persistedImportcandidate.copy()
                    .withEntityDescription(importCandidate.getEntityDescription())
                    .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())

@@ -18,17 +18,10 @@ public final class ImportCandidateEnricher {
                                                   ImportCandidate input,
                                                   ImportCandidate databaseVersion) throws UnauthorizedException {
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        var enrichedCandidate = databaseVersion.copyImportCandidate()
+        var enrichedCandidate = databaseVersion.copy()
             .withEntityDescription(input.getEntityDescription())
             .withAssociatedArtifacts(input.getAssociatedArtifacts())
-            .withDoi(input.getDoi())
             .withAdditionalIdentifiers(input.getAdditionalIdentifiers())
-            .withProjects(input.getProjects())
-            .withSubjects(input.getSubjects())
-            .withFundings(input.getFundings())
-            .withRightsHolder(input.getRightsHolder())
-            .withHandle(input.getHandle())
-            .withLink(input.getLink())
             .withPublisher(Organization.fromUri(userInstance.getCustomerId()))
             .withResourceOwner(new ResourceOwner(
                 new Username(userInstance.getUsername()),

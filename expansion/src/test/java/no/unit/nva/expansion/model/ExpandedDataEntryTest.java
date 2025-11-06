@@ -49,7 +49,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.Username;
@@ -63,7 +62,6 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
-import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -79,7 +77,6 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate.Builder;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -334,19 +331,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
         return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription(publicationContext))
-                   .withLink(randomUri())
-                   .withDoi(randomDoi())
-                   .withIndexedDate(Instant.now())
-                   .withPublishedDate(Instant.now())
-                   .withHandle(randomUri())
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withSubjects(List.of(randomUri()))
                    .withIdentifier(SortableIdentifier.next())
-                   .withRightsHolder(randomString())
-                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(Set.of(new FundingBuilder().withId(randomUri()).build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
@@ -560,7 +548,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         private ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(
             Publication publication, RawContentRetriever uriRetriever) {
-            var importCandidate = new Builder().withPublication(publication).build();
+            var importCandidate = createImportCandidateFromPublication(publication);
             var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
             when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(
                 new CristinOrganization(randomUri(), randomUri(), randomString(),
@@ -604,5 +592,18 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
             return requestCase;
         }
+    }
+
+    private ImportCandidate createImportCandidateFromPublication(Publication publication) {
+        return new ImportCandidate.Builder()
+                   .withIdentifier(publication.getIdentifier())
+                   .withResourceOwner(publication.getResourceOwner())
+                   .withPublisher(publication.getPublisher())
+                   .withCreatedDate(publication.getCreatedDate())
+                   .withModifiedDate(publication.getModifiedDate())
+                   .withAssociatedArtifacts(publication.getAssociatedArtifacts())
+                   .withEntityDescription(publication.getEntityDescription())
+                   .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
+                   .build();
     }
 }

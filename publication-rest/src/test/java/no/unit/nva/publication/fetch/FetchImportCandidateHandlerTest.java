@@ -5,7 +5,6 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.fetch.FetchImportCandidateHandler.IMPORT_CANDIDATE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -25,15 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -113,18 +111,10 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
         return new ImportCandidate.Builder()
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
-                   .withLink(randomUri())
-                   .withDoi(randomDoi())
-                   .withIndexedDate(Instant.now())
-                   .withPublishedDate(Instant.now())
-                   .withHandle(randomUri())
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withSubjects(List.of(randomUri()))
                    .withIdentifier(SortableIdentifier.next())
-                   .withRightsHolder(randomString())
-                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())

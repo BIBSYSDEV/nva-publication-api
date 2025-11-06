@@ -11,7 +11,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,11 +43,9 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -375,19 +372,10 @@ class DaoTest extends ResourcesLocalTest {
         return new ImportCandidate.Builder()
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
-                   .withLink(randomUri())
-                   .withDoi(randomDoi())
-                   .withIndexedDate(Instant.now())
-                   .withPublishedDate(Instant.now())
-                   .withHandle(randomUri())
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withSubjects(List.of(randomUri()))
                    .withIdentifier(SortableIdentifier.next())
-                   .withRightsHolder(randomString())
-                   .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
-                   .withFundings(Set.of(new FundingBuilder().withIdentifier(randomString()).build()))
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())

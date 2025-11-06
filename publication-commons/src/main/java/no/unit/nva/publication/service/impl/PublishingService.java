@@ -1,5 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +15,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.publication.model.FilesApprovalEntry;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -58,12 +61,19 @@ public class PublishingService {
     public void publishResource(SortableIdentifier resourceIdentifier, UserInstance userInstance)
         throws ApiGatewayException {
         var resource = getResource(resourceIdentifier);
+        if (PUBLISHED.equals(resource.getStatus())) {
+            return;
+        }
         validatePermissions(resource, userInstance);
 
         publishResource(userInstance, resource);
 
         if (!resource.getPendingFiles().isEmpty()) {
             publishResourceWithPendingFiles(userInstance, resource);
+        }
+
+        if (nonNull(resource.getDoi())) {
+            DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
         }
     }
 
