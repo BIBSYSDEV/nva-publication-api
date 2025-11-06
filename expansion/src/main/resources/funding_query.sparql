@@ -15,14 +15,16 @@ CONSTRUCT {
 } WHERE {
   [] nva:funding|project:funding ?funding .
   ?funding a ?rawType .
-  OPTIONAL { ?funding nva:source|project:source ?source . }
   OPTIONAL { ?funding nva:identifier|project:identifier ?identifier . }
   OPTIONAL { ?funding nva:label|project:label ?label . }
-  OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
-  OPTIONAL { ?source nva:activeTo ?activeTo . }
-  OPTIONAL { ?source nva:activeFrom ?activeFrom . }
-  OPTIONAL { ?source nva:fundingAmount ?fundingAmount . }
-  OPTIONAL { ?source nva:label ?sourceLabel . }
+  OPTIONAL {
+      ?funding nva:source|project:source ?source .
+      OPTIONAL { ?source nva:identifier ?sourceIdentifier . }
+      OPTIONAL { ?source nva:activeTo ?activeTo . }
+      OPTIONAL { ?source nva:activeFrom ?activeFrom . }
+      OPTIONAL { ?source nva:fundingAmount ?fundingAmount . }
+      OPTIONAL { ?source nva:label ?sourceLabel . }
+  }
 
   # The following line maps the type IRI from project namespace to nva namespace.
   BIND(IRI(REPLACE(STR(?rawType), STR(project:), STR(nva:))) AS ?type)
