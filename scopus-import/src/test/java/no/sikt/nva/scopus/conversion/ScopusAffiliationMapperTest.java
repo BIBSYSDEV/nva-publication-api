@@ -3,20 +3,23 @@ package no.sikt.nva.scopus.conversion;
 import static no.sikt.nva.scopus.conversion.AffiliationMapper.mapToAffiliation;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.randomAffiliation;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.randomCollaboration;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.List;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.OrganizationTp;
-import no.unit.nva.publication.model.business.importcandidate.Affiliation;
+import no.unit.nva.publication.model.business.importcandidate.ScopusAffiliation;
 import org.junit.jupiter.api.Test;
 
-class AffiliationMapperTest {
+class ScopusAffiliationMapperTest {
 
     @Test
     void shouldMapNullToEmptyAffiliation() {
-        assertEquals(Affiliation.emptyAffiliation(), mapToAffiliation((AffiliationTp) null));
+        assertEquals(ScopusAffiliation.emptyAffiliation(), mapToAffiliation((AffiliationTp) null));
     }
 
     @Test
@@ -25,7 +28,7 @@ class AffiliationMapperTest {
 
         var affiliation = mapToAffiliation(scopusAffiliation);
 
-        assertEquals(scopusAffiliation.getAfid(), affiliation.scopusAffiliationId());
+        assertEquals(scopusAffiliation.getAfid(), affiliation.identifier().affiliation());
     }
 
     @Test
@@ -34,7 +37,7 @@ class AffiliationMapperTest {
 
         var affiliation = mapToAffiliation(scopusAffiliation);
 
-        assertEquals(scopusAffiliation.getDptid(), affiliation.scopusDepartmentId());
+        assertEquals(scopusAffiliation.getDptid(), affiliation.identifier().department());
     }
 
     @Test
@@ -63,7 +66,7 @@ class AffiliationMapperTest {
 
         var expectedOrganizationNames = createExpectedOrganizationNames(scopusAffiliation);
 
-        assertEquals(expectedOrganizationNames, affiliation.names());
+        assertThat(expectedOrganizationNames, containsInAnyOrder(affiliation.names().toArray()));
     }
 
     @Test
@@ -114,7 +117,7 @@ class AffiliationMapperTest {
 
         var expectedNames = getExpectedNames(scopusAffiliation);
 
-        assertEquals(expectedNames, affiliation.names());
+        assertThat(expectedNames, containsInAnyOrder(affiliation.names().toArray()));
     }
 
     private List<String> getExpectedNames(CollaborationTp collaborationTp) {

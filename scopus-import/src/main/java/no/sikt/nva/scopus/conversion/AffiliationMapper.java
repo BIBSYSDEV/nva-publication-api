@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static java.util.Objects.nonNull;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -13,24 +14,25 @@ import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.PostalCodeTp;
 import no.sikt.nva.scopus.ScopusConverter;
 import no.unit.nva.publication.model.business.importcandidate.Address;
-import no.unit.nva.publication.model.business.importcandidate.Affiliation;
+import no.unit.nva.publication.model.business.importcandidate.ScopusAffiliation;
 import no.unit.nva.publication.model.business.importcandidate.Country;
+import no.unit.nva.publication.model.business.importcandidate.AffiliationIdentifier;
 
 public final class AffiliationMapper {
 
     private AffiliationMapper() {
     }
 
-    public static Affiliation mapToAffiliation(AffiliationTp affiliation) {
-        return nonNull(affiliation) ? getAffiliation(affiliation) : Affiliation.emptyAffiliation();
+    public static ScopusAffiliation mapToAffiliation(AffiliationTp affiliation) {
+        return nonNull(affiliation) ? getAffiliation(affiliation) : ScopusAffiliation.emptyAffiliation();
     }
 
-    public static Affiliation mapToAffiliation(CollaborationTp collaboration) {
-        return nonNull(collaboration) ? getAffiliation(collaboration) : Affiliation.emptyAffiliation();
+    public static ScopusAffiliation mapToAffiliation(CollaborationTp collaboration) {
+        return nonNull(collaboration) ? getAffiliation(collaboration) : ScopusAffiliation.emptyAffiliation();
     }
 
-    private static Affiliation getAffiliation(CollaborationTp collaboration) {
-        return new Affiliation(null, null, getOrganizationNames(collaboration), null, null, null);
+    private static ScopusAffiliation getAffiliation(CollaborationTp collaboration) {
+        return new ScopusAffiliation(null, getOrganizationNames(collaboration), null, null, null);
     }
 
     private static List<String> getOrganizationNames(CollaborationTp collaboration) {
@@ -43,10 +45,10 @@ public final class AffiliationMapper {
         return collaboration.getText().getContent().stream().map(ScopusConverter::extractContentString).toList();
     }
 
-    private static Affiliation getAffiliation(AffiliationTp scopusAffiliation) {
-        return new Affiliation(scopusAffiliation.getAfid(), scopusAffiliation.getDptid(),
-                               getOrganizationNames(scopusAffiliation), scopusAffiliation.getSourceText(),
-                               createCountry(scopusAffiliation), createLocation(scopusAffiliation));
+    private static ScopusAffiliation getAffiliation(AffiliationTp scopusAffiliation) {
+        return new ScopusAffiliation(new AffiliationIdentifier(scopusAffiliation.getAfid(), scopusAffiliation.getDptid()),
+                                     getOrganizationNames(scopusAffiliation), scopusAffiliation.getSourceText(),
+                                     createCountry(scopusAffiliation), createLocation(scopusAffiliation));
     }
 
     private static Country createCountry(AffiliationTp scopusAffiliation) {
@@ -72,7 +74,7 @@ public final class AffiliationMapper {
         return postalCodeList.isEmpty() ? null : postalCodeList.getFirst();
     }
 
-    private static List<String> getPostalCodeList(List<PostalCodeTp> postalCodes) {
+    private static List<String> getPostalCodeList(Collection<PostalCodeTp> postalCodes) {
         return postalCodes.stream()
                    .filter(Objects::nonNull)
                    .map(PostalCodeTp::getContent)
