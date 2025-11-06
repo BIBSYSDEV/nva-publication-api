@@ -1,27 +1,54 @@
 package no.unit.nva.model;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.exceptions.UnsynchronizedPublicationChannelDateException;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.testing.EntityDescriptionBuilder;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.net.URI;
+import java.time.Year;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static no.unit.nva.DatamodelConfig.dataModelObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Named.named;
 
 class EntityDescriptionTest {
 
-    public static final Javers JAVERS = JaversBuilder.javers().build();
+    private static final Javers JAVERS = JaversBuilder.javers().build();
+    private static final String CHANNEL_URI_TEMPLATE =
+            "https://api.nva.sikt.no/publication-channel/serial-publication/12345/%s";
+
+    private static Stream<Named<PublicationDate>> yearValueProvider() {
+
+        return Stream.of(
+                named("Null publication date", null),
+                named("Null year value", publicationDateWithYearOnly(null)),
+                named("Empty year value", publicationDateWithYearOnly("")),
+                named("Whitespace", publicationDateWithYearOnly(" ")),
+                named("Future year", publicationDateWithYearOnly(String.valueOf(Year.now().getValue() + 10))),
+                named("Random string", publicationDateWithYearOnly(randomString()))
+        );
+    }
 
     @Test
     void shouldCopyEntityDescriptionWithoutDataLoss() {
@@ -42,7 +69,7 @@ class EntityDescriptionTest {
         var contributor2 = createRandomContributorWithSequence(1);
         entityDescription.setContributors(List.of(contributor1, contributor2));
 
-        assertThat(entityDescription.getContributors().get(0), is(equalTo(contributor2)));
+        assertThat(entityDescription.getContributors().getFirst(), is(equalTo(contributor2)));
     }
 
     @Test
@@ -193,6 +220,38 @@ class EntityDescriptionTest {
         assertThat(entityDescription.getContributors(), is(equalTo(expectedList)));
     }
 
+    @ParameterizedTest(name = "Should throw when publication date is not synchronized with publication channel date")
+    @MethodSource("yearValueProvider")
+    void shouldThrowWhenPublicationDateIsNotSynchronizedWithPublicationChannelDate(PublicationDate value) {
+        var entityDescription = randomEntityDescription(AcademicArticle.class);
+        entityDescription.setPublicationDate(value);
+        var reference = entityDescription.getReference();
+        reference.setPublicationContext(new Journal(URI.create(CHANNEL_URI_TEMPLATE.formatted(Year.now().getValue()))));
+        assertThrows(UnsynchronizedPublicationChannelDateException.class, entityDescription::validate);
+    }
+
+    @ParameterizedTest(name = "Should throw when publication channel date is not synchronized with publication date")
+    @MethodSource("yearValueProvider")
+    void shouldThrowWhenPublicationChannelDateIsNotSynchronizedWithPublicationDate(PublicationDate value) {
+        var entityDescription = randomEntityDescription(AcademicArticle.class);
+        var reference = entityDescription.getReference();
+        var channelUri = URI.create(CHANNEL_URI_TEMPLATE.formatted(value));
+        reference.setPublicationContext(new Journal(channelUri));
+        entityDescription.setPublicationDate(publicationDateWithYearOnly(String.valueOf(Year.now().getValue())));
+        assertThrows(UnsynchronizedPublicationChannelDateException.class, entityDescription::validate);
+    }
+
+    @Test
+    void shouldNotThrowWhenPublicationDateIsSynchronizedWithPublicationChannelDate() {
+        var entityDescription = randomEntityDescription(AcademicArticle.class);
+        var reference = entityDescription.getReference();
+        var value = String.valueOf(Year.now().getValue());
+        var channelUri = URI.create(CHANNEL_URI_TEMPLATE.formatted(value));
+        reference.setPublicationContext(new Journal(channelUri));
+        entityDescription.setPublicationDate(publicationDateWithYearOnly(value));
+        assertDoesNotThrow(entityDescription::validate);
+    }
+
     private static Contributor createContributor(Integer integer, String name) {
         return new Contributor.Builder()
                 .withSequence(integer)
@@ -206,5 +265,9 @@ class EntityDescriptionTest {
         var originalObjectNode = dataModelObjectMapper.convertValue(original, ObjectNode.class);
         var copyObjectNode = dataModelObjectMapper.convertValue(copy, ObjectNode.class);
         return JAVERS.compare(originalObjectNode, copyObjectNode);
+    }
+
+    private static PublicationDate publicationDateWithYearOnly(String year) {
+        return new PublicationDate.Builder().withYear(year).build();
     }
 }

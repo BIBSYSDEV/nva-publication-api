@@ -1,5 +1,6 @@
 package no.unit.nva.model;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -12,11 +13,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
+
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.exceptions.UnsynchronizedPublicationChannelDateException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
+    private static final List<Class<?>> PUBLICATION_CHANNEL_CLASSES = List.of(Journal.class);
     private String mainTitle;
     private Map<String, String> alternativeTitles;
     private URI language;
@@ -236,6 +242,28 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
                 .withDescription(getDescription())
                 .withReference(getReference())
                 .withMetadataSource(getMetadataSource());
+    }
+
+    /**
+     * This method will throw a runtime exception subclass when called if a validation fails.
+     */
+    public void validate() {
+
+        if (PUBLICATION_CHANNEL_CLASSES.contains(this.getReference().getPublicationContext().getClass())) {
+            var publicationContext = this.getReference().getPublicationContext();
+            if (publicationContext instanceof Journal journal
+                    && isNotSynchronizedWithPublicationDate(journal)) {
+                throw new UnsynchronizedPublicationChannelDateException();
+            }
+        }
+
+    }
+
+    private boolean isNotSynchronizedWithPublicationDate(Journal journal) {
+        return isNull(journal.getId())
+                || isNull(publicationDate)
+                || isNull(publicationDate.getYear())
+                || !UriWrapper.fromUri(journal.getId()).getLastPathElement().equals(publicationDate.getYear());
     }
 
     public static final class Builder {
