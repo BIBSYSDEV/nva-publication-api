@@ -452,15 +452,18 @@ public class Resource implements Entity {
         return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).toOptional();
     }
 
-    public void publish(ResourceService resourceService, UserInstance userInstance) {
-        fetch(resourceService)
-            .filter(Resource::isNotPublished)
-            .ifPresent(resource -> resource.publish(userInstance, resourceService));
+    public Resource publish(ResourceService resourceService, UserInstance userInstance) {
+        var resource = fetch(resourceService);
+        if (resource.isPresent() && resource.get().isNotPublished()) {
+            return resource.get().publish(userInstance, resourceService);
+        } else {
+            return resource.orElseThrow();
+        }
     }
 
-    private void publish(UserInstance userInstance, ResourceService resourceService) {
+    private Resource publish(UserInstance userInstance, ResourceService resourceService) {
         publish(userInstance);
-        resourceService.updateResource(this, userInstance);
+        return resourceService.updateResource(this, userInstance);
     }
 
     public void publish(UserInstance userInstance) {

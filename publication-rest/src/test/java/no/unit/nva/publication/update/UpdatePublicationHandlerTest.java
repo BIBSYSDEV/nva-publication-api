@@ -2196,7 +2196,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                        .persistNew(resourceService, UserInstance.fromPublication(publication));
 
         if (shouldBePublished) {
-            Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
+            return Resource.fromPublication(persistedPublication)
+                       .publish(resourceService, UserInstance.fromPublication(publication))
+                       .toPublication();
         }
 
         return persistedPublication;
