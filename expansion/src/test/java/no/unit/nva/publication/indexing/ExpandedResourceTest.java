@@ -1060,6 +1060,28 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         assertThat(actualNode, is(equalTo(expectedNode)));
     }
 
+    @Test
+    void shouldNotFailWithUnconfirmedFunding() throws BadRequestException {
+        var publication = randomPublication();
+        var unconfirmedFunding =
+                (UnconfirmedFunding) new FundingBuilder().withIdentifier("249994").build();
+        publication.setFundings(Set.of(unconfirmedFunding));
+
+        var resource =
+                Resource.fromPublication(publication)
+                        .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+        var uriRetriever = FakeUriRetriever.newInstance();
+
+        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+        uriRetriever.registerResponse(
+                unconfirmedFunding.getSource(), 404, APPLICATION_JSON_LD, "Not Found");
+
+        assertDoesNotThrow(
+                () -> fromPublication(uriRetriever, resourceService, sqsClient, resource));
+    }
+
     private static Contributor contributorWithOneAffiliation(Organization contributor1org) {
         return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
