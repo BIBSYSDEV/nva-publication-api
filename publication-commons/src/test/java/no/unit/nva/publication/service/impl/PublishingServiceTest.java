@@ -51,7 +51,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 class PublishingServiceTest extends ResourcesLocalTest {
@@ -288,6 +287,19 @@ class PublishingServiceTest extends ResourcesLocalTest {
         var doiRequest = getPersistedDoiRequest(resource);
 
         assertTrue(doiRequest.isPresent());
+    }
+
+    @Test
+    void shouldPersistDoiRequestWithPublicationStatusPublishedWhenPublishingPublicationWithDoi()
+        throws ApiGatewayException {
+        var resource = persistResource(Resource.fromPublication(randomPublication().copy().withStatus(DRAFT).build()));
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+
+        publishingService.publishResource(resource.getIdentifier(), userInstance);
+
+        var doiRequest = getPersistedDoiRequest(resource).orElseThrow();
+
+        assertEquals(PublicationStatus.PUBLISHED, doiRequest.getResourceStatus());
     }
 
     @Test
