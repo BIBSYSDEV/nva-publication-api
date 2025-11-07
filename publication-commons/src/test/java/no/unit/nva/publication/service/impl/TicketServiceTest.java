@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.TestingUtils.createGeneralSupportRequest;
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.createUnpublishRequest;
@@ -724,6 +725,26 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
         assertFalse(completedTicket.getViewedBy().contains(user));
         assertTrue(completedTicket.getViewedBy().contains(userInstance.getUser()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCompletingDoiRequestWithInvalidPublicationYearForDoi() throws ApiGatewayException {
+        var userInstance = UserInstance.create(randomString(), randomUri());
+        var publishedResource = randomPublishedResourceWithPublicationYear(userInstance, randomString());
+
+        var ticket = TicketTestUtils.createPersistedTicket(publishedResource.toPublication(), DoiRequest.class, ticketService);
+
+        assertThrows(BadRequestException.class,
+                     () -> ticketService.completeTicket(ticket, userInstance));
+    }
+
+    private Resource randomPublishedResourceWithPublicationYear(UserInstance userInstance, String year) throws BadRequestException {
+        var publication = randomPublication();
+        publication.getEntityDescription().getPublicationDate().setYear(year);
+        var persitedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                   userInstance);
+        return Resource.fromPublication(persitedPublication).publish(resourceService,
+                                                                     userInstance);
     }
 
     private static Username getUsername(Publication publication) {

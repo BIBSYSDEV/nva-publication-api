@@ -41,7 +41,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,15 +74,12 @@ import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
-import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -800,24 +796,7 @@ public class ResourceService extends ServiceWithTransactions {
         throws BadRequestException {
         List<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.addAll(deleteResourceTransactionItems(daos));
-        transactionItems.addAll(deleteDoiRequestTransactionItems(daos));
         return transactionItems;
-    }
-
-    private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
-        Optional<DoiRequestDao> doiRequest = extractDoiRequest(daos);
-        if (doiRequest.isPresent()) {
-            return deleteDoiRequestTransactionItems(doiRequest.orElseThrow());
-        }
-        return Collections.emptyList();
-    }
-
-    private List<TransactWriteItem> deleteDoiRequestTransactionItems(DoiRequestDao doiRequestDao) {
-        WithPrimaryKey identifierEntry = IdentifierEntry.create(doiRequestDao);
-        WithPrimaryKey uniqueDoiRequestEntry = UniqueDoiRequestEntry.create(doiRequestDao);
-        return Stream.of(doiRequestDao, identifierEntry, uniqueDoiRequestEntry).map(this::newDeleteTransactionItem)
-
-                   .collect(Collectors.toList());
     }
 
     private List<TransactWriteItem> deleteResourceTransactionItems(List<Dao> daos) throws BadRequestException {
