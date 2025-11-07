@@ -7,7 +7,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.ThirdPartySystem.OTHER;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.FILE_UPLOADED;
-import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
+import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_PUBLISHED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,6 +25,7 @@ import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -68,17 +69,17 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldCreateLogEntryWhenResourceEventIsPresent() throws BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         logEntryService.persistLogEntry(Resource.fromPublication(publication));
 
         var logEntries = Resource.fromPublication(publication).fetchLogEntries(resourceService);
 
-        assertEquals(PUBLICATION_CREATED, logEntries.getFirst().topic());
+        assertEquals(PUBLICATION_PUBLISHED, logEntries.getFirst().topic());
     }
 
     @Test
     void shouldNotCreateTheSameLogEntryMultipleTimesForResource() throws BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         var resource = Resource.fromPublication(publication);
         var userInstance = UserInstance.fromPublication(publication);
         var resourceEvent = CreatedResourceEvent.create(userInstance, Instant.now());
@@ -101,7 +102,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     @Test
     void shouldCreateLogEntryWithUserUsernameOnlyWhenFailingWhenFetchingUser()
         throws BadRequestException, NotFoundException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         when(identityServiceClient.getUser(any())).thenThrow(new NotFoundException("User not found"));
 
         logEntryService.persistLogEntry(Resource.fromPublication(publication));
@@ -115,7 +116,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldCreateLogEntryWhenFileEventIsPresent() throws BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), UserInstance.fromPublication(publication));
         fileEntry.persist(resourceService, UserInstance.fromPublication(publication));
         fileEntry.approve(resourceService, new User(randomString()));
@@ -132,7 +133,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         throws BadRequestException, NotFoundException {
         when(identityServiceClient.getUser(any())).thenThrow(new NotFoundException("User not found"));
 
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), UserInstance.fromPublication(publication));
         fileEntry.persist(resourceService, UserInstance.fromPublication(publication));
         fileEntry.approve(resourceService, new User(randomString()));
@@ -146,7 +147,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistLogEntryFromImportedResourceEvent() throws BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         var resource = Resource.fromPublication(publication);
         var userInstance = UserInstance.fromPublication(publication);
         resource.setResourceEvent(ImportedResourceEvent.fromImportSource(
@@ -163,7 +164,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistLogEntryFromFileTypeUpdateByImportEvent() throws BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         var userInstance = UserInstance.fromPublication(publication);
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance);
         fileEntry.persist(resourceService, userInstance);
@@ -178,7 +179,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistFileUploadedLogEntryForThirdParty() throws BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         var userInstance = UserInstance.createExternalUser(randomResourceOwner(), randomUri(), OTHER);
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance);
         fileEntry.persist(resourceService, userInstance);
@@ -191,7 +192,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistLogEntryWhenConsumingDoiRequest() throws ApiGatewayException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         var resource = Resource.fromPublication(publication);
         var doiRequest = createDoiRequestWithEvent(resource, publication);
         logEntryService.persistLogEntry(doiRequest);
@@ -207,9 +208,11 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         return doiRequest.persistNewTicket(ticketService);
     }
 
-    private Publication createPublication() throws BadRequestException {
-        var publication = randomPublication();
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    private Publication createPublishedPublication() throws BadRequestException {
+        var publication = randomPublication(AcademicArticle.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+        return Resource.fromPublication(persistedPublication).publish(resourceService, userInstance).toPublication();
     }
 
     private UserDto randomUser() {

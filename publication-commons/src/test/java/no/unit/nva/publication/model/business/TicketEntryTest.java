@@ -1,6 +1,8 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationWithStatus;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
@@ -22,7 +24,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -72,20 +73,20 @@ class TicketEntryTest {
     }
 
     @Test
-    void shouldReturnFalseWhenTicketWithoutAssignee() throws ConflictException {
+    void shouldReturnFalseWhenTicketWithoutAssignee() {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
-        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
+        var userInstance = UserInstance.fromPublication(publication);
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(publication), userInstance);
 
         assertFalse(ticket.hasAssignee());
     }
 
     @Test
-    void shouldReturnTrueWhenUserIsFromTheSameInstitutionAsTicket() throws ConflictException {
+    void shouldReturnTrueWhenUserIsFromTheSameInstitutionAsTicket() {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
-        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next)
-                         .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
 
-        var userInstance = UserInstance.fromPublication(publication);
+        var userInstance = UserInstance.fromTicket(ticket);
 
         assertTrue(ticket.hasSameOwnerAffiliationAs(userInstance));
     }
@@ -102,8 +103,9 @@ class TicketEntryTest {
 
     @Test
     void shouldSetTicketEventOnDoiRequest() {
-        var userInstance = UserInstance.fromPublication(randomPublication());
-        var doiRequest = DoiRequest.create(Resource.fromPublication(randomPublication()), userInstance);
+        var publication = randomPublicationWithStatus(PUBLISHED);
+        var userInstance = UserInstance.fromPublication(publication);
+        var doiRequest = DoiRequest.create(Resource.fromPublication(publication), userInstance);
         doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, Instant.now()));
 
         assertTrue(doiRequest.hasTicketEvent());
@@ -111,7 +113,7 @@ class TicketEntryTest {
 
     @Test
     void shouldCreateDoiRequestWithUserFromUserInstance() {
-        var resource = Resource.fromPublication(randomPublication());
+        var resource = Resource.fromPublication(randomPublicationWithStatus(PUBLISHED));
         var userInstance = randomUserInstance();
 
         var doiRequest = DoiRequest.create(resource, userInstance);
@@ -181,7 +183,7 @@ class TicketEntryTest {
 
     @Test
     void shouldCopyDoiRequestWithoutLossOfInformation() {
-        var resource = Resource.fromPublication(randomPublication());
+        var resource = Resource.fromPublication(randomPublicationWithStatus(PUBLISHED));
         var userInstance = randomUserInstance();
         var doiRequest = DoiRequest.create(resource, userInstance);
 

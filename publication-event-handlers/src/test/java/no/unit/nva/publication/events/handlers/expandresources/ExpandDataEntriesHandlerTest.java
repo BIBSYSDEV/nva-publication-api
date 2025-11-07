@@ -359,15 +359,6 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldIgnoreAndNotCreateEnrichmentEventForDoiRequestsOfDraftResources() throws IOException {
-        var newImage = doiRequestForDraftResource();
-        var event = emulateEventEmittedByDataEntryUpdateHandler(EMPTY_IMAGE, newImage);
-        expandResourceHandler.handleRequest(event, output, CONTEXT);
-        var eventReference = parseHandlerResponse();
-        assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
-    }
-
-    @Test
     void shouldExpandResourceOnFileEntryChange() throws IOException {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         publication.setStatus(PublicationStatus.PUBLISHED);

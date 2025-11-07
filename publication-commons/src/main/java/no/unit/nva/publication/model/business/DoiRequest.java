@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -36,7 +37,7 @@ public class DoiRequest extends TicketEntry {
     public static final String WRONG_PUBLICATION_STATUS_ERROR =
         "DoiRequests may only be created for publications with statuses %s";
     public static final Set<PublicationStatus> ACCEPTABLE_PUBLICATION_STATUSES =
-        Set.of(PublicationStatus.PUBLISHED,
+        Set.of(PUBLISHED,
                PublicationStatus.PUBLISHED_METADATA,
                PublicationStatus.DRAFT);
     public static final String DOI_REQUEST_APPROVAL_FAILURE = "Cannot approve DoiRequest for non-published publication";
@@ -54,6 +55,9 @@ public class DoiRequest extends TicketEntry {
     }
 
     public static DoiRequest create(Resource resource, UserInstance userInstance) {
+        if (!PUBLISHED.equals(resource.getStatus())) {
+            throw new IllegalStateException("Doi request can be created for published resource only!");
+        }
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(SortableIdentifier.next());
         doiRequest.setStatus(TicketStatus.PENDING);
