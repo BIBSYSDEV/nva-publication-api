@@ -1,7 +1,18 @@
 package no.unit.nva.model;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import no.unit.nva.model.contexttypes.*;
+import no.unit.nva.model.contexttypes.BasicContext;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
+import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.GeographicalContent;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.ResearchData;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.exceptions.UnsynchronizedPublicationChannelDateException;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
