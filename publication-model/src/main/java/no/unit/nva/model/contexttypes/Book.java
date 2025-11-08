@@ -3,9 +3,13 @@ package no.unit.nva.model.contexttypes;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -141,6 +145,21 @@ public class Book implements BasicContext {
                    .map(ISBN_VALIDATOR::validate)
                    .filter(Objects::nonNull)
                    .toList();
+    }
+
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        var uris = new HashSet<URI>();
+        if (nonNull(publisher)
+                && publisher instanceof Publisher currentPublisher
+                && nonNull(currentPublisher.getId())) {
+            uris.add(currentPublisher.getId());
+        }
+        if (nonNull(series) && series instanceof Series currentSeries) {
+            uris.add(currentSeries.getId());
+        }
+        return Collections.unmodifiableSet(uris);
     }
 
     public static final class BookBuilder {

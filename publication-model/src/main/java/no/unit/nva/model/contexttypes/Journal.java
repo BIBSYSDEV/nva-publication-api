@@ -2,10 +2,14 @@ package no.unit.nva.model.contexttypes;
 
 import static java.util.Objects.isNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
+
 import no.unit.nva.model.contexttypes.utils.MigrateSerialPublicationUtil;
 import no.unit.nva.model.exceptions.InvalidSeriesException;
 import nva.commons.core.JacocoGenerated;
@@ -49,5 +53,14 @@ public class Journal implements Periodical {
         if (isNull(stringOfUri) || stringOfUri.isBlank()) {
             throw new InvalidSeriesException(stringOfUri);
         }
+    }
+
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        if (isNull(id)) {
+            return Collections.emptySet();
+        }
+        return Collections.singleton(id);
     }
 }

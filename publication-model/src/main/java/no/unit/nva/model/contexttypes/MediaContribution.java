@@ -1,8 +1,14 @@
 package no.unit.nva.model.contexttypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.net.URI;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
+
 import no.unit.nva.model.contexttypes.media.MediaFormat;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.media.SeriesEpisode;
@@ -79,6 +85,11 @@ public class MediaContribution implements PublicationContext {
         return Objects.hash(getMedium(), getFormat(), getDisseminationChannel(), getPartOf());
     }
 
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        return Collections.emptySet();
+    }
 
     public static final class Builder {
         private MediaSubType medium;
