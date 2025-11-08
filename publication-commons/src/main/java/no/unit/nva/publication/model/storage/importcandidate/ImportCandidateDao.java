@@ -1,14 +1,24 @@
 package no.unit.nva.publication.model.storage.importcandidate;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.IMPORT_CANDIDATE_KEY_PATTERN;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.storage.DynamoEntry;
+import nva.commons.core.JacocoGenerated;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeName("ImportCandidate")
 public class ImportCandidateDao implements DynamoEntry {
 
-    private ImportCandidate importCandidate;
+    @JsonProperty("data")
+    private ImportCandidate data;
+    @JsonProperty("identifier")
     private SortableIdentifier identifier;
 
     /**
@@ -19,27 +29,28 @@ public class ImportCandidateDao implements DynamoEntry {
 
     }
 
-    public ImportCandidateDao(ImportCandidate importCandidate, SortableIdentifier identifier) {
-        this.importCandidate = importCandidate.copy().withIdentifier(identifier).build();
+    public ImportCandidateDao(ImportCandidate data, SortableIdentifier identifier) {
+        this.data = data.copy().withIdentifier(identifier).build();
         this.identifier = identifier;
     }
 
-    public ImportCandidate getImportCandidate() {
-        return importCandidate;
+    public ImportCandidate getData() {
+        return data;
     }
 
+    @JacocoGenerated
     @Override
     public SortableIdentifier getIdentifier() {
-        return importCandidate.getIdentifier();
+        return identifier;
     }
 
-    @JsonProperty("PK0")
+    @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
     public String getPartitionKey() {
-        return "ImportCandidate:%s".formatted(identifier.toString());
+        return IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier.toString());
     }
 
-    @JsonProperty("SK0")
+    @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
     public String getSortKey() {
-        return "ImportCandidate:%s".formatted(identifier.toString());
+        return IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier.toString());
     }
 }

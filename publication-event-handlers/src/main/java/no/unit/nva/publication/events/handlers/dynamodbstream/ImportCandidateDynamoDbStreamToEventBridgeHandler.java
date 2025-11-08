@@ -3,7 +3,7 @@ package no.unit.nva.publication.events.handlers.dynamodbstream;
 import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
-import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toEntity;
+import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toImportCandidate;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -21,8 +21,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -63,22 +62,22 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
     public EventReference handleRequest(DynamodbEvent inputEvent, Context context) {
         var dynamodbStreamRecord = inputEvent.getRecords().getFirst();
         var dataEntryUpdateEvent = convertToUpdateEvent(dynamodbStreamRecord);
-        return dataEntryUpdateEvent.isResource()
-                   ? sendEvent(dataEntryUpdateEvent, context)
-                   : EMPTY_EVENT;
+        return isEmptyEvent(dataEntryUpdateEvent) ? EMPTY_EVENT : sendEvent(dataEntryUpdateEvent, context);
+    }
+
+    private static boolean isEmptyEvent(ImportCandidateDataEntryUpdate dataEntryUpdateEvent) {
+        return dataEntryUpdateEvent.getNewData().isEmpty() && dataEntryUpdateEvent.getOldData().isEmpty();
     }
 
     private static SortableIdentifier getImportCandidateIdentifier(ImportCandidateDataEntryUpdate blobObject) {
         return blobObject.getOldData()
-                   .map(Resource.class::cast)
-                   .map(Resource::getIdentifier)
+                   .map(ImportCandidate::getIdentifier)
                    .orElseGet(() -> getIdentifierFromNewData(blobObject));
     }
 
     private static SortableIdentifier getIdentifierFromNewData(ImportCandidateDataEntryUpdate blobObject) {
         return blobObject.getNewData()
-                   .map(Resource.class::cast)
-                   .map(Resource::getIdentifier)
+                   .map(ImportCandidate::getIdentifier)
                    .orElseThrow();
     }
 
@@ -125,13 +124,13 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
                                                   getImportCandidate(dynamoDbRecord.getDynamodb().getNewImage()));
     }
 
-    private Entity getImportCandidate(Map<String, AttributeValue> image) {
-        return attempt(() -> toEntity(image)).toOptional(this::logFailureInDebugging)
+    private ImportCandidate getImportCandidate(Map<String, AttributeValue> image) {
+        return attempt(() -> toImportCandidate(image)).toOptional(this::logFailureInDebugging)
                    .flatMap(Function.identity())
                    .orElse(null);
     }
 
-    private void logFailureInDebugging(Failure<Optional<Entity>> fail) {
+    private void logFailureInDebugging(Failure<Optional<ImportCandidate>> fail) {
         logger.debug(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
     }
 }

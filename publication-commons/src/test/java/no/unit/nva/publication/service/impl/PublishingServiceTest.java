@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
@@ -279,7 +280,8 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistDoiRequestWhenPublishingPublicationWithDoi() throws ApiGatewayException {
-        var resource = persistResource(Resource.fromPublication(randomPublication().copy().withStatus(DRAFT).build()));
+        var resource =
+            persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(DRAFT).build()));
         var userInstance = UserInstance.fromPublication(resource.toPublication());
 
         publishingService.publishResource(resource.getIdentifier(), userInstance);

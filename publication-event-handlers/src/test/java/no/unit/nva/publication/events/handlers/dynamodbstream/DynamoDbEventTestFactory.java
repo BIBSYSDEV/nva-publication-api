@@ -14,11 +14,12 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord
 import com.fasterxml.jackson.databind.JavaType;
 import java.util.List;
 import java.util.Map;
-import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 
 public class DynamoDbEventTestFactory {
 
-    public static DynamodbEvent dynamodbEventEventWithSingleDynamoDbRecord(Entity oldImage, Entity newImage) {
+    public static DynamodbEvent dynamodbEventEventWithSingleDynamoDbRecord(ImportCandidate oldImage, ImportCandidate newImage) {
         var event = new DynamodbEvent();
         var record = randomDynamoRecord();
         record.getDynamodb().setOldImage(toDynamoDbFormat(oldImage));
@@ -27,8 +28,8 @@ public class DynamoDbEventTestFactory {
         return event;
     }
 
-    private static Map<String, AttributeValue> toDynamoDbFormat(Entity publication) {
-        return nonNull(publication) ? publicationDynamoDbFormat(publication) : null;
+    private static Map<String, AttributeValue> toDynamoDbFormat(ImportCandidate importCandidate) {
+        return nonNull(importCandidate) ? publicationDynamoDbFormat(importCandidate) : null;
     }
 
     private static DynamodbEvent.DynamodbStreamRecord randomDynamoRecord() {
@@ -43,11 +44,11 @@ public class DynamoDbEventTestFactory {
         return streamRecord;
     }
 
-    private static Map<String, AttributeValue> publicationDynamoDbFormat(Entity publication) {
-        var dao = publication.toDao().toDynamoFormat();
-        var string = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
-        return (Map<String, AttributeValue>) attempt(
-            () -> dtoObjectMapper.readValue(string, dynamoMapStructureAsJacksonType())).orElseThrow();
+    private static Map<String, AttributeValue> publicationDynamoDbFormat(ImportCandidate importCandidate) {
+        var dao = new ImportCandidateDao(importCandidate, importCandidate.getIdentifier()).toDynamoFormat();
+        var jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
+        return attempt(
+            () -> (Map<String, AttributeValue>) dtoObjectMapper.readValue(jsonString, dynamoMapStructureAsJacksonType())).orElseThrow();
     }
 
     private static JavaType dynamoMapStructureAsJacksonType() {

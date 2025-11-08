@@ -9,6 +9,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditio
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.IMPORT_CANDIDATE_KEY_PATTERN;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
@@ -53,13 +54,11 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
-import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
 
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
-
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource ";
     public static final int DEFAULT_LIMIT = 100;
     private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
@@ -123,15 +122,14 @@ public class ReadResourceService {
             return Optional.empty();
         }
         return Optional.of(DynamoEntry.parseAttributeValuesMap(result.getItem(), ImportCandidateDao.class))
-                   .map(ImportCandidateDao::getImportCandidate);
+                   .map(ImportCandidateDao::getData);
     }
 
-    @NotNull
     private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {
         return new GetItemRequest(tableName, Map.of("PK0",
-                                                    new AttributeValue("ImportCandidate:%s".formatted(identifier)),
+                                                    new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier)),
                                                     "SK0",
-                                                    new AttributeValue("ImportCandidate:%s".formatted(identifier))));
+                                                    new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier))));
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {

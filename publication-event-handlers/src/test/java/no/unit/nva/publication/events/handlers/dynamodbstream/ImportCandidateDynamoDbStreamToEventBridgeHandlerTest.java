@@ -1,12 +1,10 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamoDbEventTestFactory.dynamodbEventEventWithSingleDynamoDbRecord;
-import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toEntity;
+import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toImportCandidate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -20,19 +18,26 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.AfterEach;
@@ -56,12 +61,12 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
     private FakeEventBridgeClient eventBridgeClient;
 
     public static Stream<Arguments> dynamoDbEventProvider() {
-        var publication = randomPublication();
+        var importCandidate = randomImportCandidate();
         return Stream.of(
-            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(Resource.fromPublication(publication), null)),
-            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(null, Resource.fromPublication(publication))),
-            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(Resource.fromPublication(publication),
-                                                                    Resource.fromPublication(publication))));
+            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(importCandidate, null)),
+            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(null, importCandidate)),
+            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(importCandidate,
+                                                                    importCandidate)));
     }
 
     @BeforeEach
@@ -95,7 +100,7 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
 
     @Test
     void shouldThrowExceptionWhenWritingEventToS3Fails() {
-        var event = dynamodbEventEventWithSingleDynamoDbRecord(Resource.fromPublication(randomPublication()), null);
+        var event = dynamodbEventEventWithSingleDynamoDbRecord(randomImportCandidate(), null);
         var failingS3Client = mock(S3Client.class);
         when(failingS3Client.putObject((PutObjectRequest) any(), (RequestBody) any())).thenThrow(new RuntimeException());
         var failingHandler = new ImportCandidateDynamoDbStreamToEventBridgeHandler(failingS3Client, eventBridgeClient);
@@ -110,20 +115,6 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
         var eventReference = handler.handleRequest(event, context);
 
         assertNull(eventReference);
-    }
-
-    @Test
-    void shouldNotEmitEventWhenConsumedBlobFileEntry() {
-        var event = dynamodbEventEventWithSingleDynamoDbRecord(randomFileEntry(), randomFileEntry());
-
-        var eventReference = handler.handleRequest(event, context);
-
-        assertNull(eventReference);
-    }
-
-    private static FileEntry randomFileEntry() {
-        return FileEntry.create(randomOpenFile(), SortableIdentifier.next(),
-                                UserInstance.create(randomString(), randomUri()));
     }
 
     private ImportCandidateDataEntryUpdate extractPersistedDataEntryUpdateEvent() {
@@ -152,7 +143,21 @@ class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
                                                   getEntity(dynamoDbRecord.getDynamodb().getNewImage()));
     }
 
-    private Entity getEntity(Map<String, AttributeValue> image) {
-        return attempt(() -> toEntity(image)).toOptional().flatMap(Function.identity()).orElse(null);
+    private static ImportCandidate randomImportCandidate() {
+        return new ImportCandidate.Builder()
+                   .withImportStatus(ImportStatusFactory.createNotImported())
+                   .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                   .withModifiedDate(Instant.now())
+                   .withCreatedDate(Instant.now())
+                   .withPublisher(new Organization.Builder().withId(RandomDataGenerator.randomUri()).build())
+                   .withIdentifier(SortableIdentifier.next())
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), RandomDataGenerator.randomUri()))
+                   .withAssociatedArtifacts(List.of())
+                   .build();
+    }
+
+    private ImportCandidate getEntity(Map<String, AttributeValue> image) {
+        return attempt(() -> toImportCandidate(image)).toOptional().flatMap(Function.identity()).orElse(null);
     }
 }
