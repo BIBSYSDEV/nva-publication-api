@@ -20,7 +20,6 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -123,7 +122,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenCanNotFetchImportCandidateWhenUpdatingIt() {
         var importCandidate = randomImportCandidate();
-        assertThrows(TransactionFailedException.class, () -> resourceService.updateImportCandidate(importCandidate));
+        assertThrows(NotFoundException.class, () -> resourceService.updateImportCandidate(importCandidate));
     }
 
     private ImportCandidate update(ImportCandidate importCandidate) {

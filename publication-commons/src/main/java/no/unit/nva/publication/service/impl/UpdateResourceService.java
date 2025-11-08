@@ -14,6 +14,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.net.HttpURLConnection;
@@ -49,6 +50,7 @@ import no.unit.nva.publication.model.business.publicationstate.UnpublishedResour
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
@@ -228,23 +230,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return persistedResource;
     }
 
-    public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
-        var existingResource = fetchExistingResource(Resource.fromImportCandidate(importCandidate));
-        if (isNotImported(existingResource)) {
-            var resource = Resource.fromImportCandidate(importCandidate);
-            resource.setCreatedDate(existingResource.getCreatedDate());
-            resource.setModifiedDate(clockForTimestamps.instant());
-
-            updateCuratingInstitutions(resource, existingResource);
-
-            var transactions = new ArrayList<TransactWriteItem>();
-            transactions.add(createPutTransaction(resource));
-            transactions.addAll(convertFileEntriesToDeleteTransactions(existingResource));
-            transactions.addAll(convertFileEntriesToPersistTransactions(resource.toImportCandidate()));
-
-            var request = new TransactWriteItemsRequest().withTransactItems(transactions);
-            sendTransactionWriteRequest(request);
-            return resource.toImportCandidate();
+    public ImportCandidate updateImportCandidate(ImportCandidate importCandidate)
+        throws BadRequestException, NotFoundException {
+        var persistedImportCandidate =
+            readResourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier())
+                .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE + importCandidate.getIdentifier()));
+        if (isNotImported(persistedImportCandidate)) {
+            importCandidate.setCreatedDate(persistedImportCandidate.getCreatedDate());
+            importCandidate.setModifiedDate(clockForTimestamps.instant());
+            var dao = new ImportCandidateDao(importCandidate, persistedImportCandidate.getIdentifier());
+            var putItemRequest = new PutItemRequest().withTableName(tableName).withItem(dao.toDynamoFormat());
+            client.putItem(putItemRequest);
+            return importCandidate;
         }
         throw new BadRequestException("Can not update already imported candidate");
     }
@@ -275,11 +272,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public ImportCandidate updateStatus(SortableIdentifier identifier, ImportStatus status) throws NotFoundException {
-        var resource = createUpdatedImportCandidate(identifier, status);
-        var updateResourceTransactionItem = createPutTransaction(resource);
-        var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
-        sendTransactionWriteRequest(request);
-        return resource.toImportCandidate();
+        var updatedImportCandidate = createUpdatedImportCandidate(identifier, status);
+        var dao = new ImportCandidateDao(updatedImportCandidate, identifier);
+        var putItemRequest = new PutItemRequest().withTableName(tableName).withItem(dao.toDynamoFormat());
+        client.putItem(putItemRequest);
+        return updatedImportCandidate;
     }
 
     protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
@@ -304,8 +301,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return nonNull(resource.getEntityDescription()) ? resource.getEntityDescription().getContributors() : List.of();
     }
 
-    private static boolean isNotImported(Resource resource) {
-        return !resource.toImportCandidate().getImportStatus().candidateStatus().equals(CandidateStatus.IMPORTED);
+    private static boolean isNotImported(ImportCandidate importCandidate) {
+        return !importCandidate.getImportStatus().candidateStatus().equals(CandidateStatus.IMPORTED);
     }
 
     private Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
@@ -329,23 +326,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
                                                      resource.toPublication().getEntityDescription(),
                                                      cristinUnitsUtil));
         }
-    }
-
-    private List<TransactWriteItem> convertFileEntriesToDeleteTransactions(Resource resource) {
-        return resource.getFileEntries()
-                   .stream()
-                   .map(FileEntry::toDao)
-                   .map(dao -> dao.toDeleteTransactionItem(tableName))
-                   .toList();
-    }
-
-    private List<TransactWriteItem> convertFileEntriesToPersistTransactions(ImportCandidate importCandidate) {
-        return Resource.fromImportCandidate(importCandidate)
-                   .getFileEntries()
-                   .stream()
-                   .map(FileEntry::toDao)
-                   .map(fileDao -> fileDao.toPutNewTransactionItem(tableName))
-                   .toList();
     }
 
     private List<TransactWriteItem> updateExistingPendingTicketsToNotApplicable(
@@ -397,14 +377,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return deletionStatusChangeInProgress();
     }
 
-    private Resource createUpdatedImportCandidate(SortableIdentifier identifier, ImportStatus status)
+    private ImportCandidate createUpdatedImportCandidate(SortableIdentifier identifier, ImportStatus status)
         throws NotFoundException {
-        var importCandidate = readResourceService.getResourceByIdentifier(identifier)
-                                  .orElseThrow(() -> new NotFoundException("Import candidate not found!"))
-                                  .toImportCandidate();
+        var importCandidate = readResourceService.getImportCandidateByIdentifier(identifier)
+                                  .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE + identifier));
         importCandidate.setImportStatus(status);
         importCandidate.setModifiedDate(Instant.now());
-        return Resource.fromImportCandidate(importCandidate);
+        return importCandidate;
     }
 
     private Resource fetchExistingResource(Resource resource) {

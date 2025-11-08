@@ -49,7 +49,7 @@ public class ImportCandidate implements JsonSerializable {
     }
 
     public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
-        return additionalIdentifiers;
+        return nonNull(additionalIdentifiers) ? additionalIdentifiers : Collections.emptySet();
     }
 
     public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
@@ -109,7 +109,7 @@ public class ImportCandidate implements JsonSerializable {
     }
 
     public AssociatedArtifactList getAssociatedArtifacts() {
-        return associatedArtifacts;
+        return nonNull(associatedArtifacts) ? associatedArtifacts : AssociatedArtifactList.empty();
     }
 
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
