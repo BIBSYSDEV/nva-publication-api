@@ -9,7 +9,9 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditio
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.IMPORT_CANDIDATE_KEY_PATTERN;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static nva.commons.core.attempt.Try.attempt;
@@ -53,7 +55,6 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
-import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
@@ -126,12 +127,10 @@ public class ReadResourceService {
                    .map(ImportCandidateDao::getImportCandidate);
     }
 
-    @NotNull
     private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {
-        return new GetItemRequest(tableName, Map.of("PK0",
-                                                    new AttributeValue("ImportCandidate:%s".formatted(identifier)),
-                                                    "SK0",
-                                                    new AttributeValue("ImportCandidate:%s".formatted(identifier))));
+        var primaryKey = new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier));
+        return new GetItemRequest(tableName, Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey,
+                                                    PRIMARY_KEY_SORT_KEY_NAME, primaryKey));
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
