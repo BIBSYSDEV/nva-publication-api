@@ -291,7 +291,8 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
                                  String.valueOf(now.getYear()));
     }
 
-    private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate) throws BadRequestException {
+    private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate)
+        throws BadRequestException, NotFoundException {
         if (nonNull(importCandidate.getIdentifier())) {
             return Try.of(importCandidateService.updateImportCandidate(importCandidate));
         }

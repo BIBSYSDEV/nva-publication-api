@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -8,13 +9,16 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditio
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.IMPORT_CANDIDATE_KEY_PATTERN;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
@@ -39,14 +43,17 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
@@ -75,7 +82,6 @@ public class ReadResourceService {
         return queryResultToListOfPublicationSummaries(result);
     }
 
-    // TODO: Fetch PublicationChannels and set them when persistence of PublicationChannel is implemented in NP-49090
     public Optional<Resource> getResourceByIdentifier(SortableIdentifier identifier) {
         var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
         var queryRequest = new QueryRequest()
@@ -109,6 +115,22 @@ public class ReadResourceService {
             res.setPublicationChannels(publicationChannels);
         });
         return resource;
+    }
+
+    public Optional<ImportCandidate> getImportCandidateByIdentifier(SortableIdentifier identifier) {
+        var getItemRequest = getGetItemRequest(identifier);
+        var result = client.getItem(getItemRequest);
+        if (isNull(result.getItem()) || result.getItem().isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(DynamoEntry.parseAttributeValuesMap(result.getItem(), ImportCandidateDao.class))
+                   .map(ImportCandidateDao::getImportCandidate);
+    }
+
+    private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {
+        var primaryKey = new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier));
+        return new GetItemRequest(tableName, Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey,
+                                                    PRIMARY_KEY_SORT_KEY_NAME, primaryKey));
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {

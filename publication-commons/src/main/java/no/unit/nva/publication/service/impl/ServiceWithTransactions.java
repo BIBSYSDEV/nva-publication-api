@@ -42,12 +42,28 @@ public class ServiceWithTransactions {
     }
 
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
-        Put put = new Put()
-                      .withItem(data.toDynamoFormat())
-                      .withTableName(tableName)
-                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        var put = newPut(data, tableName);
         return new TransactWriteItem().withPut(put);
+    }
+
+    /**
+     * Creates a DynamoDB Put operation for inserting a new entry.
+     *
+     * <p>The operation includes a condition expression that ensures the item does not
+     * already exist in the table (based on primary key). This prevents accidental
+     * overwrites of existing entries.
+     *
+     * @param data the DynamoEntry to insert into DynamoDB
+     * @param tableName the name of the DynamoDB table
+     * @return a Put operation configured with the entry data, table name, and a
+     *         conditional expression that fails if the primary key already exists.
+     */
+    protected static <T extends DynamoEntry> Put newPut(T data, String tableName) {
+        return new Put()
+                   .withItem(data.toDynamoFormat())
+                   .withTableName(tableName)
+                   .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                   .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
     }
 
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {

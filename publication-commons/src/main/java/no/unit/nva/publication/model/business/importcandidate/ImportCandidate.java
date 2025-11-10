@@ -49,7 +49,7 @@ public class ImportCandidate implements JsonSerializable {
     }
 
     public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
-        return additionalIdentifiers;
+        return nonNull(additionalIdentifiers) ? Set.copyOf(additionalIdentifiers) : Collections.emptySet();
     }
 
     public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
@@ -109,7 +109,9 @@ public class ImportCandidate implements JsonSerializable {
     }
 
     public AssociatedArtifactList getAssociatedArtifacts() {
-        return associatedArtifacts;
+        return nonNull(associatedArtifacts)
+                   ? new AssociatedArtifactList(List.copyOf(associatedArtifacts))
+                   : AssociatedArtifactList.empty();
     }
 
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
@@ -165,6 +167,7 @@ public class ImportCandidate implements JsonSerializable {
         return importStatus;
     }
 
+    @JacocoGenerated
     public void setImportStatus(ImportStatus importStatus) {
         this.importStatus = importStatus;
     }

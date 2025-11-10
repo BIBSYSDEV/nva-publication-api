@@ -76,6 +76,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
+//TODO remove JacocoGenerated annotations
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount", "PMD.CouplingBetweenObjects"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements Entity {
@@ -307,12 +308,14 @@ public class Resource implements Entity {
         this.version = version;
     }
 
+    @JacocoGenerated
     public List<URI> getAssociatedCustomers() {
         return nonNull(associatedCustomers)
                    ? associatedCustomers.stream().filter(Objects::nonNull).toList()
                    : Collections.emptyList();
     }
 
+    @JacocoGenerated
     public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
         this.associatedCustomers = nonNull(associatedCustomers)
                                        ? associatedCustomers.stream().filter(Objects::nonNull).toList()
@@ -397,6 +400,7 @@ public class Resource implements Entity {
                    .toList();
     }
 
+    @JacocoGenerated
     private static Resource convertToResource(ImportCandidate importCandidate) {
         return Resource.builder()
                    .withIdentifier(importCandidate.getIdentifier())
@@ -418,6 +422,7 @@ public class Resource implements Entity {
         return new ResourceBuilder();
     }
 
+    @JacocoGenerated
     public static Resource fromImportCandidate(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate).map(Resource::convertToResource).orElse(null);
     }
@@ -624,6 +629,7 @@ public class Resource implements Entity {
                    .build();
     }
 
+    @JacocoGenerated
     public ImportCandidate toImportCandidate() {
         return new ImportCandidate.Builder()
                    .withIdentifier(getIdentifier())

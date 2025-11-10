@@ -11,8 +11,6 @@ import static no.unit.nva.publication.model.business.Resource.resourceQueryObjec
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -25,7 +23,6 @@ import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -39,7 +36,6 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -80,6 +76,7 @@ import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -220,13 +217,8 @@ public class ResourceService extends ServiceWithTransactions {
      * @return updated importCandidate that has been sent to persistence
      */
     public ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
-        var now = clockForTimestamps.instant();
-        var newResource = Resource.fromImportCandidate(importCandidate);
-        newResource.setIdentifier(SortableIdentifier.next());
-        newResource.setPublishedDate(now);
-        newResource.setCreatedDate(now);
-        newResource.setModifiedDate(now);
-        return insertResourceFromImportCandidate(newResource);
+        var dao = new ImportCandidateDao(importCandidate, SortableIdentifier.next());
+        return insertResourceFromImportCandidate(dao);
     }
 
     public Publication markPublicationForDeletion(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -346,7 +338,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public ImportCandidate getImportCandidateByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        return getResourceByIdentifier(identifier).toImportCandidate();
+        return readResourceService.getImportCandidateByIdentifier(identifier)
+                   .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE + identifier));
     }
 
     public ImportCandidate updateImportStatus(SortableIdentifier identifier, ImportStatus status)
@@ -442,7 +435,8 @@ public class ResourceService extends ServiceWithTransactions {
         }
     }
 
-    public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
+    public ImportCandidate updateImportCandidate(ImportCandidate importCandidate)
+        throws BadRequestException, NotFoundException {
         return updateResourceService.updateImportCandidate(importCandidate);
     }
 
@@ -465,11 +459,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void persistLogEntry(LogEntry logEntry) {
-        var dao = LogEntryDao.fromLogEntry(logEntry);
-        var put = new Put().withItem(dao.toDynamoFormat())
-                      .withTableName(tableName)
-                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        var put = newPut(LogEntryDao.fromLogEntry(logEntry), tableName);
         var transactWriteItem = new TransactWriteItem().withPut(put);
         attempt(() -> getClient().transactWriteItems(newTransactWriteItemsRequest(transactWriteItem)));
     }
@@ -764,32 +754,15 @@ public class ResourceService extends ServiceWithTransactions {
                 newResource.toPublication().getEntityDescription(), cristinUnitsUtil));
     }
 
-    private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
-        TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
-
-        var fileTransactionWriteItems = newResource.getFiles()
-                                            .stream()
-                                            .map(file -> FileEntry.create(file, newResource.getIdentifier(),
-                                                                          UserInstance.fromPublication(
-                                                                              newResource.toPublication())))
-                                            .map(FileEntry::toDao)
-                                            .map(dao -> dao.toPutNewTransactionItem(tableName))
-                                            .toList();
-
+    private ImportCandidate insertResourceFromImportCandidate(ImportCandidateDao importCandidateDao) {
         var transactions = new ArrayList<TransactWriteItem>();
-        transactions.addAll(Arrays.stream(transactionItems).toList());
-        transactions.addAll(fileTransactionWriteItems);
+        var put = newPut(importCandidateDao, tableName);
+        var dao =  new TransactWriteItem().withPut(put);
+        transactions.add(dao);
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);
 
-        return newResource.toImportCandidate();
-    }
-
-    private TransactWriteItem[] transactionItemsForNewImportCandidateInsertion(Resource newResource) {
-        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(newResource), tableName);
-        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource,
-                                                                                                          tableName);
-        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
+        return importCandidateDao.getImportCandidate();
     }
 
     private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
@@ -847,11 +820,6 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
-        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
-    }
-
-    private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource,
-                                                                                      String tableName) {
         return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
     }
 }
