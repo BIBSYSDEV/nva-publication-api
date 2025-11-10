@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.business.logentry;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationWithStatus;
 import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATION_CREATED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -19,6 +20,7 @@ import no.unit.nva.clients.cristin.TypedValue;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
@@ -117,18 +119,17 @@ class LogEntryTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistTicketLogEntry() throws ApiGatewayException {
-        var publication = randomPublication();
+        var publication = randomPublicationWithStatus(PublicationStatus.PUBLISHED);
         var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication)
-                                       .persistNew(resourceService, userInstance);
-        var doiRequest = DoiRequest.create(Resource.fromPublication(persistedPublication), userInstance)
+        var persistedResource = persistResource(Resource.fromPublication(publication));
+        var doiRequest = DoiRequest.create(persistedResource, userInstance)
                              .persistNewTicket(ticketService);
         var logEntry = DoiRequestedEvent.create(userInstance, Instant.now())
-                                      .toLogEntry(persistedPublication.getIdentifier(), doiRequest.getIdentifier(),
+                                      .toLogEntry(persistedResource.getIdentifier(), doiRequest.getIdentifier(),
                                                   randomLogUser());
         logEntry.persist(resourceService);
 
-        var logEntries = Resource.fromPublication(persistedPublication).fetchLogEntries(resourceService);
+        var logEntries = persistedResource.fetchLogEntries(resourceService);
 
         assertTrue(logEntries.contains(logEntry));
     }

@@ -477,7 +477,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle() throws BadRequestException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().setMainTitle(null);
-        Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
+        Publication savedResource = createPersistedPublishedPublicationWithoutDoi(sampleResource);
 
         Executable action = () -> Resource.fromPublication(savedResource)
                                       .publish(resourceService, UserInstance.fromPublication(sampleResource));
@@ -490,7 +490,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().getReference().setDoi(randomDoi());
         sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
-        Publication savedResource = createPersistedPublicationWithoutDoi();
+        Publication savedResource = createPersistedPublishedPublicationWithoutDoi();
         Publication updatedResource = publishResource(savedResource);
         assertThat(updatedResource.getStatus().toString(), is(equalTo(PUBLISHED.toString())));
     }
@@ -498,7 +498,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void publishResourcePublishesResourceWhenResourceHasFilesButNoDoi() throws ApiGatewayException {
 
-        Publication sampleResource = createPersistedPublicationWithoutDoi();
+        Publication sampleResource = createPersistedPublishedPublicationWithoutDoi();
         sampleResource.setLink(null);
         sampleResource.getEntityDescription().getReference().setDoi(null);
 
@@ -579,7 +579,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist() throws BadRequestException {
-        Publication resource = createPersistedPublicationWithoutDoi();
+        Publication resource = createPersistedPublishedPublicationWithoutDoi();
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
 
@@ -620,17 +620,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(TransactionFailedException.class, deleteAction);
 
         assertThatTheEntriesHaveNotBeenDeleted();
-    }
-
-    @Test
-    void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
-        createDoiRequest(publication);
-
-        var userInstance = UserInstance.fromPublication(publication);
-        resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
-
-        assertThatAllEntriesHaveBeenDeleted();
     }
 
     @Test
@@ -1054,7 +1043,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldSetAllTicketsToNotApplicableWhenMarkingDraftPublicationAsDraftForDeletion() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
+        var publication = createPersistedPublicationWithDoi();
         var ticket = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
                          .withOwnerAffiliation(randomUri())
                          .withOwner(randomString())
@@ -1498,13 +1487,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void updateResourceMethodShouldRefreshTickets() throws ApiGatewayException {
-        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
-        var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var publication = createPersistedPublishedPublicationWithoutDoi();
 
         var ticket = createDoiRequest(publication);
         publication.setDoi(randomUri());
-        Resource.fromPublication(publication).update(resourceService, userInstance);
+        Resource.fromPublication(publication).update(resourceService, UserInstance.fromPublication(publication));
 
         var refreshedTicket = ticket.fetch(ticketService);
 
@@ -1671,7 +1658,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldDeleteAllResourceAssociatedResources() throws ApiGatewayException {
         var userInstance = randomUserInstance();
-        var publication = Resource.fromPublication(randomPublication()).persistNew(resourceService, userInstance);
+        var publication = createPersistedPublishedPublicationWithoutDoi();
         var doiRequest = createDoiRequest(publication);
         messageService.createMessage(doiRequest, userInstance, randomString());
 
@@ -1797,13 +1784,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
+    private Publication createPersistedPublishedPublicationWithoutDoi() throws BadRequestException {
         var publication = randomPublication(JournalArticle.class).copy().withDoi(null).build();
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var userInstance = UserInstance.fromPublication(publication);
+        var persostedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        return Resource.fromPublication(persostedPublication).publish(resourceService, userInstance).toPublication();
     }
 
-    private Publication createPersistedPublicationWithoutDoi(Publication publication) throws BadRequestException {
+    private Publication createPersistedPublishedPublicationWithoutDoi(Publication publication) throws BadRequestException {
         var withoutDoi = publication.copy().withDoi(null).build();
         return Resource.fromPublication(withoutDoi)
                    .persistNew(resourceService, UserInstance.fromPublication(withoutDoi));
@@ -1876,7 +1864,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPublishedResource() throws ApiGatewayException {
-        Publication resource = createPersistedPublicationWithoutDoi();
+        Publication resource = createPersistedPublishedPublicationWithoutDoi();
         publishResource(resource);
         return resourceService.getPublicationByIdentifier(resource.getIdentifier());
     }

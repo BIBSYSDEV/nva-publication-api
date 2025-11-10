@@ -280,8 +280,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistDoiRequestWhenPublishingPublicationWithDoi() throws ApiGatewayException {
-        var resource =
-            persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(DRAFT).build()));
+        var resource = persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(DRAFT).build()));
         var userInstance = UserInstance.fromPublication(resource.toPublication());
 
         publishingService.publishResource(resource.getIdentifier(), userInstance);

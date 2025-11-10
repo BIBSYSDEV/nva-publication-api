@@ -1,8 +1,10 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationWithStatus;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
@@ -36,12 +38,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -116,20 +115,6 @@ class DaoTest extends ResourcesLocalTest {
 
     public static Stream<Named<Class<?>>> ticketProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
-    }
-
-    public static Publication draftPublicationWithoutDoi() {
-        return randomPublication().copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
-    }
-
-    public static Publication draftDegreePublicationWithoutDoi() {
-        return randomDegreePublication().copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
     }
 
     @Override
@@ -302,13 +287,9 @@ class DaoTest extends ResourcesLocalTest {
     }
 
     private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
-        if (FilesApprovalThesis.class.equals(entityType)) {
-            return TicketEntry.createNewTicket(draftDegreePublicationWithoutDoi(), entityType, SortableIdentifier::next)
-                       .withOwner(randomString());
-        } else {
-            return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next)
-                       .withOwner(randomString());
-        }
+        return TicketEntry.createNewTicket(randomDegreePublication().copy().withStatus(PUBLISHED).build(), entityType,
+                                           SortableIdentifier::next)
+                   .withOwner(randomString());
     }
 
     private static Stream<Dao> instanceProvider() {

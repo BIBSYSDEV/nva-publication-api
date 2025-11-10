@@ -26,7 +26,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ImportCandidate implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
@@ -167,6 +166,7 @@ public class ImportCandidate implements JsonSerializable {
         return importStatus;
     }
 
+    @JacocoGenerated
     public void setImportStatus(ImportStatus importStatus) {
         this.importStatus = importStatus;
     }

@@ -1,8 +1,10 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationWithStatus;
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -13,7 +15,6 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -29,7 +30,7 @@ import org.junit.jupiter.api.Named;
 public final class DaoUtils extends TestDataSource {
 
     public static ResourceDao sampleResourceDao() {
-        return Try.of(Resource.fromPublication(randomPublication()))
+        return Try.of(Resource.fromPublication(randomPublicationWithStatus(PUBLISHED)))
                    .map(ResourceDao::new)
                    .orElseThrow();
     }
@@ -44,7 +45,7 @@ public final class DaoUtils extends TestDataSource {
     }
 
     public static DoiRequestDao doiRequestDao() {
-        var publication = randomPublicationEligibleForDoiRequest();
+        var publication = randomPublicationWithStatus(PUBLISHED);
         var doiRequest = DoiRequest.create(Resource.fromPublication(publication),
                                            UserInstance.fromPublication(publication));
         return new DoiRequestDao(doiRequest);
@@ -79,20 +80,13 @@ public final class DaoUtils extends TestDataSource {
         return (FilesApprovalThesisDao) filesApprovalThesis.toDao();
     }
 
-    private static Publication randomPublicationEligibleForDoiRequest() {
-        return randomDegreePublication().copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
-    }
-
     private static PublishingRequestDao sampleApprovePublishingRequestDao() {
         var publishingRequest = randomPublishingRequest().withOwner(randomString());
         return (PublishingRequestDao) publishingRequest.toDao();
     }
 
     private static MessageDao sampleMessageDao() {
-        var publication = randomPublicationEligibleForDoiRequest();
+        var publication = randomDegreePublication().copy().withStatus(PUBLISHED).build();
         var ticket = randomTicket(publication);
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         assertThat(message, doesNotHaveEmptyValues());

@@ -73,7 +73,7 @@ class UserInstanceTest {
     void userInstanceCreatedFromTicketShouldHaveAllFieldsPresentExceptPersonIdAndAccessRights() {
         var resource = Resource.fromPublication(randomPublication());
         var userInstance = UserInstance.createExternalUser(randomResourceOwner(), randomUri(), ThirdPartySystem.OTHER);
-        var ticket = DoiRequest.create(resource, userInstance);
+        var ticket = GeneralSupportRequest.create(resource, userInstance);
 
         var userInstanceFromTicket = UserInstance.fromTicket(ticket);
 
