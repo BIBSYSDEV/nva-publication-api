@@ -4,6 +4,7 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -18,9 +19,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -31,20 +29,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import lombok.Getter;
-import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -63,8 +55,6 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -77,6 +67,9 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
+import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
+import no.unit.nva.publication.model.business.importcandidate.ImportOrganization;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -172,9 +165,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        importCandidate.getEntityDescription().getContributors().stream()
-            .map(Contributor::getAffiliations)
+        importCandidate.getEntityDescription().contributors().stream()
+            .map(ImportContributor::affiliations)
                 .flatMap(i -> i.stream()
+                                  .map(ImportOrganization::corporation)
                               .filter(Organization.class::isInstance)
                               .map(Organization.class::cast)
                                   .map(Organization::getId))
@@ -211,7 +205,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         var channelUri =
-            ((Publisher)((Book) importCandidate.getEntityDescription().getReference().getPublicationContext())
+            ((Publisher)((Book) importCandidate.getEntityDescription().reference().getPublicationContext())
                             .getPublisher()).getId();
         uriRetriever.registerResponse(channelUri, SC_FORBIDDEN, MediaType.ANY_APPLICATION_TYPE, randomString());
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
@@ -224,7 +218,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
         var channelUri =
-            ((Publisher)((Book) importCandidate.getEntityDescription().getReference().getPublicationContext())
+            ((Publisher)((Book) importCandidate.getEntityDescription().reference().getPublicationContext())
                             .getPublisher()).getId();
         uriRetriever.registerResponse(channelUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
@@ -324,21 +318,26 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     private void overrideDefaultFakeResponseToReturnNonsensicalResponse(ImportCandidate importCandidate) {
         var journalUri =
-            ((Journal) importCandidate.getEntityDescription().getReference().getPublicationContext()).getId();
+            ((Journal) importCandidate.getEntityDescription().reference().getPublicationContext()).getId();
         uriRetriever.registerResponse(journalUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
     }
 
-    public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
-        return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription(publicationContext))
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
+    private ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
+        return new ImportCandidate.Builder()
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
+                   .withAssociatedArtifacts(List.of(randomOpenFile()))
+                   .withEntityDescription(randomImportEntityDescription(publicationContext))
                    .build();
+    }
+
+    private ImportEntityDescription randomImportEntityDescription(PublicationContext publicationContext) {
+        return new ImportEntityDescription(randomString(), randomUri(),
+                                           new PublicationDate.Builder().withYear("2020").build(),
+                                           List.of(), randomString(), Map.of(), List.of(), randomString(),
+                                           createReference(publicationContext));
     }
 
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
@@ -402,25 +401,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         return randomPublication(instanceType).copy().withDoi(null).build();
     }
 
-    private EntityDescription randomEntityDescription(PublicationContext publicationContext) {
-        return new EntityDescription.Builder().withPublicationDate(
-                new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .withReference(createReference(publicationContext))
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        Identity identity = new Identity.Builder().withId(randomUri()).withName(randomString()).build();
-        return new Contributor.Builder().withIdentity(identity)
-                   .withRole(new RoleType(Role.ACTOR))
-                   .withAffiliations(List.of(new Organization.Builder().withId(randomUri()).build()))
-                   .build();
-    }
-
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
         return (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
     }
@@ -476,8 +456,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             FakeUriResponse.setupFakeForType(publication, (FakeUriRetriever) uriRetriever, resourceService, false);
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication, uriRetriever);
-            } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
-                return createExpandedImportCandidate(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
                 var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -546,23 +524,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             return publication;
         }
 
-        private ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(
-            Publication publication, RawContentRetriever uriRetriever) {
-            var importCandidate = createImportCandidateFromPublication(publication);
-            var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
-            when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(
-                new CristinOrganization(randomUri(), randomUri(), randomString(),
-                                        List.of(new CristinOrganization(randomUri(),
-                                                                        randomUri(),
-                                                                        randomString(),
-                                                                        List.of(),
-                                                                        randomString(),
-                                                                        Map.of())),
-                                        randomString(), Map.of()).toJsonString()));
-            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-            return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
-        }
-
         private ExpandedDataEntryWithAssociatedPublication createExpandedResource(
             Publication publication,
             RawContentRetriever uriRetriever) {
@@ -592,18 +553,5 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
             return requestCase;
         }
-    }
-
-    private ImportCandidate createImportCandidateFromPublication(Publication publication) {
-        return new ImportCandidate.Builder()
-                   .withIdentifier(publication.getIdentifier())
-                   .withResourceOwner(publication.getResourceOwner())
-                   .withPublisher(publication.getPublisher())
-                   .withCreatedDate(publication.getCreatedDate())
-                   .withModifiedDate(publication.getModifiedDate())
-                   .withAssociatedArtifacts(publication.getAssociatedArtifacts())
-                   .withEntityDescription(publication.getEntityDescription())
-                   .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
-                   .build();
     }
 }

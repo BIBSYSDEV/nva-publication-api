@@ -48,8 +48,6 @@ import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.CustomerList;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
@@ -58,6 +56,8 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
+import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
@@ -173,16 +173,16 @@ public class ScopusConverter {
         return docTp.getItem().getItem().getBibrecord().getHead();
     }
 
-    private EntityDescription generateEntityDescription(List<Contributor> contributors) {
-        EntityDescription entityDescription = new EntityDescription();
-        entityDescription.setReference(generateReference());
-        entityDescription.setMainTitle(extractMainTitle());
-        entityDescription.setAbstract(extractMainAbstract());
-        entityDescription.setContributors(contributors);
-        entityDescription.setTags(generateTags());
-        entityDescription.setPublicationDate(extractPublicationDate());
-        entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
-        return entityDescription;
+    private ImportEntityDescription generateEntityDescription(List<ImportContributor> contributors) {
+        return new ImportEntityDescription(extractMainTitle(),
+                                    new LanguageExtractor(extractCitationLanguages()).extractLanguage(),
+                                    extractPublicationDate(),
+                                    contributors,
+                                    extractMainAbstract(),
+                                    null,
+                                    generateTags(),
+                                    null,
+                                    generateReference());
     }
 
     private ContributorsWithCustomers getContributors() {
@@ -205,7 +205,7 @@ public class ScopusConverter {
                    .toList();
     }
 
-    private record ContributorsWithCustomers(List<Contributor> contributors, Collection<URI> associatedCustomerUris) {
+    private record ContributorsWithCustomers(List<ImportContributor> contributors, Collection<URI> associatedCustomerUris) {
     }
 
     private List<CitationLanguageTp> extractCitationLanguages() {

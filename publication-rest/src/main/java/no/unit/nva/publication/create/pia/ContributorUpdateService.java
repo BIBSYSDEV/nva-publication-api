@@ -1,11 +1,11 @@
 package no.unit.nva.publication.create.pia;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
 
 public class ContributorUpdateService {
 
@@ -17,9 +17,9 @@ public class ContributorUpdateService {
     }
 
     public void updatePiaContributors(ImportCandidate input, ImportCandidate rawCandidate) {
-        var rawContributors = rawCandidate.getEntityDescription().getContributors();
+        var rawContributors = rawCandidate.getEntityDescription().contributors();
         var contributorsWithChanges = input.getEntityDescription()
-            .getContributors()
+            .contributors()
             .stream()
             .filter(contributor -> hasCristinIdChange(contributor, rawContributors))
             .toList();
@@ -29,19 +29,19 @@ public class ContributorUpdateService {
         }
     }
 
-    private boolean hasCristinIdChange(Contributor contributor, List<Contributor> rawContributors) {
+    private boolean hasCristinIdChange(ImportContributor contributor, Collection<ImportContributor> rawContributors) {
         return rawContributors.stream()
             .anyMatch(raw -> hasSameAuidButDifferentCristinId(raw, contributor));
     }
 
-    private boolean hasSameAuidButDifferentCristinId(Contributor a, Contributor b) {
-        var cristinIdsDiffer = !Objects.equals(a.getIdentity().getId(), b.getIdentity().getId());
+    private boolean hasSameAuidButDifferentCristinId(ImportContributor a, ImportContributor b) {
+        var cristinIdsDiffer = !Objects.equals(a.identity().getId(), b.identity().getId());
         var auidsMatch = Objects.equals(extractAuid(a), extractAuid(b));
         return cristinIdsDiffer && auidsMatch;
     }
 
-    private Optional<AdditionalIdentifier> extractAuid(Contributor contributor) {
-        return contributor.getIdentity()
+    private Optional<AdditionalIdentifier> extractAuid(ImportContributor contributor) {
+        return contributor.identity()
             .getAdditionalIdentifiers()
             .stream()
             .filter(id -> SCOPUS_AUTHOR_ID.equals(id.sourceName()))

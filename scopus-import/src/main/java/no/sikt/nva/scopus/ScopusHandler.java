@@ -33,9 +33,9 @@ import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.Resource;
@@ -154,7 +154,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private Optional<Resource> fetchPublicationsWithDoi(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
+        return Optional.ofNullable(importCandidate.getEntityDescription().reference())
                       .map(Reference::getDoi)
                       .flatMap(this::searchPublicationByDoi);
     }

@@ -8,6 +8,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
@@ -87,6 +88,7 @@ import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
@@ -123,6 +125,7 @@ import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
@@ -1734,8 +1737,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of(randomOpenFile()))
-                   .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                   .withEntityDescription(randomImportEntityDescription())
                    .build();
+    }
+
+    private ImportEntityDescription randomImportEntityDescription() {
+        return new ImportEntityDescription(randomString(), randomUri(),
+                                           new PublicationDate.Builder().withYear("2020").build(),
+                                           List.of(), randomString(), Map.of(), List.of(), randomString(),
+                                           randomReference(JournalArticle.class));
     }
 
     private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {

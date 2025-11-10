@@ -1,9 +1,9 @@
 package no.unit.nva.publication.create;
 
 import java.util.Optional;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.StringUtils;
 
@@ -30,7 +30,7 @@ public final class ImportCandidateValidator {
 
     private static boolean isNotPublishable(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(EntityDescription::getMainTitle)
+                   .map(ImportEntityDescription::mainTitle)
                    .filter(string -> !StringUtils.isEmpty(string))
                    .isEmpty();
     }

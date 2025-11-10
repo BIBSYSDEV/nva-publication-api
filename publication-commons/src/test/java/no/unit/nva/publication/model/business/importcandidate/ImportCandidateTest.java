@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -10,22 +11,17 @@ import static org.hamcrest.Matchers.not;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,16 +37,6 @@ public class ImportCandidateTest {
 
     private static Username randomPerson() {
         return new Username(randomString());
-    }
-
-    @Test
-    void shouldCreatePublicationFromImportCandidate() {
-        var randomImportCandidate = randomImportCandidate();
-        var expectedPublication = createExpectedPublication(randomImportCandidate);
-        var actualImportedPublication = randomImportCandidate.toPublication();
-        assertThat(randomImportCandidate.getImportStatus().candidateStatus(),
-                   is(equalTo(CandidateStatus.NOT_IMPORTED)));
-        assertThat(actualImportedPublication, is(equalTo(expectedPublication)));
     }
 
     @Test
@@ -80,7 +66,7 @@ public class ImportCandidateTest {
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
                 .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription())
+                   .withEntityDescription(randomImportEntityDescription())
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
@@ -91,34 +77,10 @@ public class ImportCandidateTest {
                    .build();
     }
 
-    private EntityDescription randomEntityDescription() {
-        return new EntityDescription.Builder()
-                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .build();
-    }
-
-    private Publication createExpectedPublication(ImportCandidate randomImportCandidate) {
-        return new Publication.Builder()
-                   .withAssociatedArtifacts(randomImportCandidate.getAssociatedArtifacts())
-                   .withEntityDescription(randomImportCandidate.getEntityDescription())
-                   .withAdditionalIdentifiers(randomImportCandidate.getAdditionalIdentifiers())
-                   .withCreatedDate(randomImportCandidate.getCreatedDate())
-                   .withIdentifier(randomImportCandidate.getIdentifier())
-                   .withModifiedDate(randomImportCandidate.getModifiedDate())
-                   .withPublisher(randomImportCandidate.getPublisher())
-                   .withResourceOwner(randomImportCandidate.getResourceOwner())
-                   .withStatus(PublicationStatus.PUBLISHED)
-                   .build();
+    private ImportEntityDescription randomImportEntityDescription() {
+        return new ImportEntityDescription(randomString(), randomUri(),
+                                           new PublicationDate.Builder().withYear("2020").build(),
+                                           List.of(), randomString(), Map.of(), List.of(), randomString(),
+                                           randomReference(JournalArticle.class));
     }
 }

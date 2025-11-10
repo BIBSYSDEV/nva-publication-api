@@ -1,8 +1,10 @@
 package no.unit.nva.publication.create;
 
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.ImportCandidateToResourceConverter;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -16,24 +18,18 @@ public final class ImportCandidateEnricher {
     }
 
     public static Resource createResourceToImport(RequestInfo requestInfo,
-                                                  ImportCandidate input,
+                                                  CreatePublicationRequest createPublicationRequest,
                                                   ImportCandidate databaseVersion) throws UnauthorizedException {
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        var enrichedCandidate = databaseVersion.copy()
-            .withEntityDescription(input.getEntityDescription())
-            .withAssociatedArtifacts(input.getAssociatedArtifacts())
-            .withAdditionalIdentifiers(input.getAdditionalIdentifiers())
+
+        var resource = ImportCandidateToResourceConverter.convert(databaseVersion);
+
+        return resource.copy()
+            .withEntityDescription(createPublicationRequest.getEntityDescription())
+            .withAssociatedArtifactsList(createPublicationRequest.getAssociatedArtifacts())
+            .withAdditionalIdentifiers(createPublicationRequest.getAdditionalIdentifiers())
             .withPublisher(Organization.fromUri(userInstance.getCustomerId()))
-            .withResourceOwner(new ResourceOwner(
-                new Username(userInstance.getUsername()),
-                userInstance.getTopLevelOrgCristinId()))
+            .withResourceOwner(new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId()))
             .build();
-        return Resource.builder()
-                   .withPublisher(enrichedCandidate.getPublisher())
-                   .withResourceOwner(new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId()))
-                   .withAdditionalIdentifiers(enrichedCandidate.getAdditionalIdentifiers())
-                   .withAssociatedArtifactsList(enrichedCandidate.getAssociatedArtifacts())
-                   .withEntityDescription(enrichedCandidate.getEntityDescription())
-                   .build();
     }
 }

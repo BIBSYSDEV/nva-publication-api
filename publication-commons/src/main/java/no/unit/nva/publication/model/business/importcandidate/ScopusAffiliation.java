@@ -7,8 +7,11 @@ import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.UnusedAssignment")
 @JacocoGenerated
-public record ScopusAffiliation(AffiliationIdentifier identifier, Collection<String> names, String text,
-                                Country country, Address address) implements ScopusOrganization {
+public record ScopusAffiliation(AffiliationIdentifier identifier,
+                                Collection<String> names,
+                                String text,
+                                Country country,
+                                Address address) implements ScopusOrganization {
 
     public ScopusAffiliation {
         names = nonNull(names) ? Collections.unmodifiableCollection(names) : Collections.emptyList();

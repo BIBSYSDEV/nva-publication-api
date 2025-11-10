@@ -14,9 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
@@ -40,7 +38,7 @@ public class ImportCandidate implements JsonSerializable {
     private Organization publisher;
     private Instant createdDate;
     private Instant modifiedDate;
-    private EntityDescription entityDescription;
+    private ImportEntityDescription entityDescription;
     private AssociatedArtifactList associatedArtifacts;
     private Set<AdditionalIdentifierBase> additionalIdentifiers;
 
@@ -99,11 +97,11 @@ public class ImportCandidate implements JsonSerializable {
         this.identifier = identifier;
     }
 
-    public EntityDescription getEntityDescription() {
+    public ImportEntityDescription getEntityDescription() {
         return entityDescription;
     }
 
-    public void setEntityDescription(EntityDescription entityDescription) {
+    public void setEntityDescription(ImportEntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }
 
@@ -182,20 +180,6 @@ public class ImportCandidate implements JsonSerializable {
                 : Collections.emptyList();
     }
 
-    public Publication toPublication() {
-        return new Publication.Builder()
-                   .withIdentifier(getIdentifier())
-                   .withPublisher(getPublisher())
-                   .withResourceOwner(getResourceOwner())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withEntityDescription(getEntityDescription())
-                   .withAssociatedArtifacts(getAssociatedArtifacts())
-                   .withStatus(PublicationStatus.PUBLISHED)
-                   .build();
-    }
-
     public Optional<String> getScopusIdentifier() {
         return getAdditionalIdentifiers().stream()
                    .filter(ScopusIdentifier.class::isInstance)
@@ -237,7 +221,7 @@ public class ImportCandidate implements JsonSerializable {
             return this;
         }
 
-        public Builder withEntityDescription(EntityDescription entityDescription) {
+        public Builder withEntityDescription(ImportEntityDescription entityDescription) {
             importCandidate.setEntityDescription(entityDescription);
             return this;
         }

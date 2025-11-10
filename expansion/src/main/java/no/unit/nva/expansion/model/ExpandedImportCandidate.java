@@ -8,6 +8,7 @@ import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,13 +22,11 @@ import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.PublisherExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Book;
@@ -39,6 +38,9 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
+import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
+import no.unit.nva.publication.model.business.importcandidate.ImportOrganization;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -103,7 +105,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private int totalNumberOfContributors;
     @Getter
     @JsonProperty(CONTRIBUTORS_FIELD)
-    private List<Contributor> contributors;
+    private List<ImportContributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
     private Set<ExpandedImportCandidateOrganization> organizations;
     @JsonProperty(COLLABORATION_TYPE_FIELD)
@@ -172,7 +174,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         this.onlineIssn = onlineIssn;
     }
 
-    public void setContributors(List<Contributor> contributors) {
+    public void setContributors(List<ImportContributor> contributors) {
         this.contributors = contributors;
     }
 
@@ -323,7 +325,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static String extractOnlineIssn(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
+        return Optional.ofNullable(importCandidate.getEntityDescription().reference())
                    .map(Reference::getPublicationContext)
                    .filter(UnconfirmedJournal.class::isInstance)
                    .map(UnconfirmedJournal.class::cast)
@@ -332,7 +334,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static String extractPrintIssn(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
+        return Optional.ofNullable(importCandidate.getEntityDescription().reference())
                    .map(Reference::getPublicationContext)
                    .filter(UnconfirmedJournal.class::isInstance)
                    .map(UnconfirmedJournal.class::cast)
@@ -344,21 +346,21 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return organizations.size() > 1 ? CollaborationType.COLLABORATIVE : CollaborationType.NON_COLLABORATIVE;
     }
 
-    private static List<Contributor> extractContributors(ImportCandidate importCandidate) {
-        var contributors = importCandidate.getEntityDescription().getContributors();
+    private static List<ImportContributor> extractContributors(ImportCandidate importCandidate) {
+        var contributors = importCandidate.getEntityDescription().contributors().stream().toList();
         return contributors.size() < 5 ? contributors.subList(0, contributors.size()) : contributors.subList(0, 5);
     }
 
     private static int extractNumberOfVerifiedContributors(ImportCandidate importCandidate) {
         return (int) importCandidate.getEntityDescription()
-                         .getContributors()
+                         .contributors()
                          .stream()
                          .filter(ExpandedImportCandidate::isVerifiedContributor)
                          .count();
     }
 
-    private static boolean isVerifiedContributor(Contributor contributor) {
-        return ContributorVerificationStatus.VERIFIED.equals(contributor.getIdentity().getVerificationStatus());
+    private static boolean isVerifiedContributor(ImportContributor contributor) {
+        return ContributorVerificationStatus.VERIFIED.equals(contributor.identity().getVerificationStatus());
     }
 
     private static URI generateIdentifier(SortableIdentifier identifier) {
@@ -371,7 +373,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static PublicationInstance<? extends Pages> extractPublicationInstance(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(EntityDescription::getReference)
+                   .map(ImportEntityDescription::reference)
                    .map(Reference::getPublicationInstance)
                    .orElse(null);
     }
@@ -379,7 +381,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private static ExpandedPublisher extractPublisher(ImportCandidate importCandidate,
                                                       RawContentRetriever uriRetriever) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(EntityDescription::getReference)
+                   .map(ImportEntityDescription::reference)
                    .map(Reference::getPublicationContext)
                    .filter(ExpandedImportCandidate::hasPublisher)
                    .map(publicationContext -> extractPublishingHouse(publicationContext, uriRetriever))
@@ -422,7 +424,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private static ExpandedJournal getPublicationContext(ImportCandidate importCandidate,
                                                          RawContentRetriever uriRetriever) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(EntityDescription::getReference)
+                   .map(ImportEntityDescription::reference)
                    .map(Reference::getPublicationContext)
                    .map(Journal.class::cast)
                    .map(journal ->  expandJournal(journal, uriRetriever))
@@ -436,30 +438,30 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static boolean isJournalContent(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(EntityDescription::getReference)
+                   .map(ImportEntityDescription::reference)
                    .map(Reference::getPublicationContext)
                    .map(Journal.class::isInstance)
                    .orElse(false);
     }
 
     private static int extractNumberOfContributors(ImportCandidate importCandidate) {
-        return importCandidate.getEntityDescription().getContributors().size();
+        return importCandidate.getEntityDescription().contributors().size();
     }
 
     private static String extractMainTitle(ImportCandidate importCandidate) {
-        return importCandidate.getEntityDescription().getMainTitle();
+        return importCandidate.getEntityDescription().mainTitle();
     }
 
     private static URI extractDoi(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(EntityDescription::getReference)
+                   .map(ImportEntityDescription::reference)
                    .map(Reference::getDoi)
                    .orElse(null);
     }
 
     private static String extractPublicationYear(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(EntityDescription::getPublicationDate)
+                   .map(ImportEntityDescription::publicationDate)
                    .map(PublicationDate::getYear)
                    .orElse(String.valueOf(new DateTime().getYear()));
     }
@@ -480,10 +482,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static Stream<URI> getOrganizationIdList(ImportCandidate importCandidate) {
         return importCandidate.getEntityDescription()
-                   .getContributors()
+                   .contributors()
                    .stream()
-                   .map(Contributor::getAffiliations)
-                   .flatMap(List::stream)
+                   .map(ImportContributor::affiliations)
+                   .flatMap(Collection::stream)
+                   .map(ImportOrganization::corporation)
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)
@@ -626,7 +629,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withContributors(List<Contributor> contributors) {
+        public Builder withContributors(List<ImportContributor> contributors) {
             expandedImportCandidate.setContributors(contributors);
             return this;
         }

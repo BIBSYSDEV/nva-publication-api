@@ -9,7 +9,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Base64;
 import java.util.List;
-import no.unit.nva.model.Contributor;
+import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class PiaClient {
                                                  config.piaSecretsNameEnvKey());
     }
 
-    public void updateContributor(List<Contributor> contributors, String scopusId) {
+    public void updateContributor(List<ImportContributor> contributors, String scopusId) {
         if (!contributors.isEmpty()) {
             var payload = createPayload(contributors, scopusId);
             var request = createRequest(payload.toString());
@@ -80,7 +80,7 @@ public class PiaClient {
                    .build();
     }
 
-    private List<PiaUpdateRequest> createPayload(List<Contributor> contributors, String scopusId) {
+    private List<PiaUpdateRequest> createPayload(List<ImportContributor> contributors, String scopusId) {
         return contributors
                    .stream()
                    .map(contributor -> toPiaRequest(contributor, scopusId))

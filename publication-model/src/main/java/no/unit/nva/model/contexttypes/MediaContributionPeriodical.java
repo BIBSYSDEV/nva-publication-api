@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public class MediaContributionPeriodical extends Journal {
+public sealed class MediaContributionPeriodical extends Journal {
 
     public static final String ID_FIELD = "id";
 

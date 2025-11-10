@@ -9,20 +9,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.AuthorGroupWithCristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
-import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
+import no.unit.nva.publication.model.business.importcandidate.ImportOrganization;
+import no.unit.nva.publication.model.business.importcandidate.ScopusAffiliation;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
@@ -37,17 +40,14 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static Contributor generateContributorFromCristinPerson(
+    public static ImportContributor generateContributorFromCristinPerson(
         CristinPerson cristinPerson, AuthorTp authorTp, PersonalnameType correspondencePerson,
-        List<CristinOrganization> cristinOrganizations) {
-
-        return new Contributor.Builder()
-                   .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson, authorTp))
-                   .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganizations))
-                   .withRole(new RoleType(Role.CREATOR))
-                   .withSequence(getSequenceNumber(authorTp))
-                   .withCorrespondingAuthor(isCorrespondingAuthor(authorTp, correspondencePerson))
-                   .build();
+        AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
+        return new ImportContributor(generateContributorIdentityFromCristinPerson(cristinPerson, authorTp),
+                                     generateOrganizations(cristinPerson.getAffiliations(), authorGroupWithCristinOrganization),
+                                     new RoleType(Role.CREATOR),
+                                     getSequenceNumber(authorTp),
+                                     isCorrespondingAuthor(authorTp, correspondencePerson));
     }
 
     private static Identity generateContributorIdentityFromCristinPerson(CristinPerson cristinPerson,
@@ -102,16 +102,16 @@ public final class CristinContributorExtractor {
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static List<Corporation> generateOrganizations(Set<Affiliation> affiliations,
-                                                           List<CristinOrganization> cristinOrganizations) {
+    private static List<ImportOrganization> generateOrganizations(Set<Affiliation> affiliations,
+                                                                  AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
         var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations);
-        var organizationsFromAuthorGroup = createOrganizationFromCristinOrganization(cristinOrganizations).toList();
+        var organizationsFromAuthorGroup = createOrganizationFromCristinOrganization(authorGroupWithCristinOrganization).toList();
         return cristinPersonActiveAffiliations.isEmpty()
                    ? organizationsFromAuthorGroup
                    : cristinPersonActiveAffiliations;
     }
 
-    private static List<Corporation> createOrganizationsFromActiveCristinPersonAffiliations(
+    private static List<ImportOrganization> createOrganizationsFromActiveCristinPersonAffiliations(
         Set<Affiliation> affiliations) {
         return affiliations.stream()
                    .filter(Affiliation::isActive)
@@ -120,23 +120,24 @@ public final class CristinContributorExtractor {
                    .toList();
     }
 
-    private static Corporation toOrganization(Affiliation affiliation) {
-        return new Organization.Builder().withId(affiliation.getOrganization())
-                   .build();
+    private static ImportOrganization toOrganization(Affiliation affiliation) {
+        return new ImportOrganization(Organization.fromUri(affiliation.getOrganization()), ScopusAffiliation.emptyAffiliation());
     }
 
-    private static Corporation toOrganization(CristinOrganization cristinOrganization) {
-        return new Organization.Builder().withId(cristinOrganization.id())
-                   .build();
+    private static ImportOrganization toOrganization(CristinOrganization cristinOrganization,
+                                                  AuthorGroupTp authorGroupTp) {
+        return new ImportOrganization(Organization.fromUri(cristinOrganization.id()),
+                                      AffiliationMapper.mapToAffiliation(authorGroupTp.getAffiliation()));
     }
 
-    private static Stream<Corporation> createOrganizationFromCristinOrganization(
-        List<CristinOrganization> cristinOrganization) {
-        return Optional.ofNullable(cristinOrganization)
+    private static Stream<ImportOrganization> createOrganizationFromCristinOrganization(
+        AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
+        return Optional.ofNullable(authorGroupWithCristinOrganization.getCristinOrganizations())
                    .stream()
                    .flatMap(Collection::stream)
                    .distinct()
-                   .map(CristinContributorExtractor::toOrganization);
+                   .map(cristinOrganization -> toOrganization(cristinOrganization,
+                                                              authorGroupWithCristinOrganization.getScopusAuthors()));
     }
 
     private static int getSequenceNumber(AuthorTp authorTp) {

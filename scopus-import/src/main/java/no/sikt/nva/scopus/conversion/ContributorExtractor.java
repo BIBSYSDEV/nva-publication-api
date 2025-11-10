@@ -27,6 +27,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
 import nva.commons.core.StringUtils;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
@@ -134,7 +135,7 @@ public class ContributorExtractor {
                    .build();
     }
 
-    private List<Contributor> processAuthorGroup(AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,
+    private List<ImportContributor> processAuthorGroup(AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,
                                                  Map<AuthorIdentifiers, CristinPerson> cristinPersons,
                                                  PersonalnameType correspondencePerson) {
         return authorGroupWithCristinOrganization.getScopusAuthors()
@@ -146,7 +147,7 @@ public class ContributorExtractor {
                    .toList();
     }
 
-    private Contributor createContributor(Object authorOrCollaboration,
+    private ImportContributor createContributor(Object authorOrCollaboration,
                                           AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,
                                           Map<AuthorIdentifiers, CristinPerson> cristinPersons,
                                           PersonalnameType correspondencePerson) {
@@ -159,7 +160,8 @@ public class ContributorExtractor {
         };
     }
 
-    private Contributor createFromAuthor(AuthorTp author, AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,
+    private ImportContributor createFromAuthor(AuthorTp author,
+                                          AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,
                                          Map<AuthorIdentifiers, CristinPerson> cristinPersons,
                                          PersonalnameType correspondencePerson) {
         var authorIdentifiers = new AuthorIdentifiers(author.getAuid(), author.getOrcid());
@@ -167,12 +169,14 @@ public class ContributorExtractor {
         return Optional.ofNullable(cristinPersons.get(authorIdentifiers))
                    .map(cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author,
                                                                               correspondencePerson,
-                                                                              authorGroupWithCristinOrganization.getCristinOrganizations()))
+                                                                              authorGroupWithCristinOrganization))
                    .orElseGet(() -> buildFromScopusAuthor(author, authorGroupWithCristinOrganization, correspondencePerson));
     }
 
-    private Contributor buildFromScopusAuthor(AuthorTp author, AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,
+    private ImportContributor buildFromScopusAuthor(AuthorTp author,
+                                               AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,
                                               PersonalnameType correspondencePerson) {
+        return new ImportContributor();
         return new Contributor.Builder().withIdentity(createIdentity(author))
                    .withAffiliations(authorGroupWithCristinOrganization.toCorporations())
                    .withRole(new RoleType(Role.CREATOR))
@@ -181,16 +185,14 @@ public class ContributorExtractor {
                    .build();
     }
 
-    private Contributor createFromCollaboration(CollaborationTp collaboration,
+    private ImportContributor createFromCollaboration(CollaborationTp collaboration,
                                                 AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization,
                                                 PersonalnameType correspondencePerson) {
-        return new Contributor.Builder().withIdentity(
-                new Identity.Builder().withName(collaboration.getIndexedName()).build())
-                   .withAffiliations(authorGroupWithCristinOrganization.toCorporations())
-                   .withRole(new RoleType(Role.OTHER))
-                   .withSequence(Integer.parseInt(collaboration.getSeq()))
-                   .withCorrespondingAuthor(isCorrespondingAuthor(collaboration, correspondencePerson))
-                   .build();
+        return new ImportContributor(new Identity.Builder().withName(collaboration.getIndexedName()).build(),
+                                     authorGroupWithCristinOrganization.toCorporations(),
+                                     new RoleType(Role.OTHER),
+                                     Integer.parseInt(collaboration.getSeq()),
+                                     isCorrespondingAuthor(collaboration, correspondencePerson));
     }
 
     private Identity createIdentity(AuthorTp authorTp) {
@@ -256,7 +258,7 @@ public class ContributorExtractor {
                    .toList();
     }
 
-    public record ContributorsOrganizationsWrapper(List<Contributor> contributors, Collection<URI> topLevelOrgs) {
+    public record ContributorsOrganizationsWrapper(List<ImportContributor> contributors, Collection<URI> topLevelOrgs) {
 
     }
 }
