@@ -4,7 +4,6 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
-import static no.unit.nva.publication.model.storage.DaoUtils.randomTicketType;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -44,10 +43,10 @@ class MessageTest extends TestDataSource {
     }
     
     @Test
-    void shouldReturnCopyWithoutLossOfInformation() throws ConflictException {
-        Publication publication = randomDegreePublicationEligibleForDoiRequest();
-        var ticket = TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next)
-                         .withOwner(UserInstance.fromPublication(publication).getUsername());
+    void shouldReturnCopyWithoutLossOfInformation() {
+        var publication = randomDegreePublicationEligibleForDoiRequest();
+        var ticket = GeneralSupportRequest.create(Resource.fromPublication(publication),
+                                                  UserInstance.fromPublication(publication));
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         var copy = message.copy();
         assertThat(message, doesNotHaveEmptyValues());
@@ -74,7 +73,7 @@ class MessageTest extends TestDataSource {
     
     private Message createSampleMessage() throws ConflictException {
         var publication = randomDegreePublicationEligibleForDoiRequest();
-        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
+        var ticket = TicketEntry.createNewTicket(publication, GeneralSupportRequest.class, SortableIdentifier::next);
         return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
     }
 }

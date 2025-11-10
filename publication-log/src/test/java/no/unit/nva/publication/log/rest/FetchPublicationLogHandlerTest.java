@@ -78,7 +78,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnUnauthorizedWhenUserIsNotAuthorized() throws IOException, BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
 
         handler.handleRequest(createUnauthorizedRequest(publication.getIdentifier()), output, context);
 
@@ -89,7 +89,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnForbiddenWhenUserHasNoRightsToFetchLog() throws IOException, BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
 
         handler.handleRequest(createRequest(publication), output, context);
 
@@ -101,7 +101,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnInternalServerErrorWhenUnexpectedExceptionThrown()
         throws IOException, BadRequestException, NotFoundException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
 
         resourceService = mock(ResourceService.class);
         when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publication));
@@ -121,7 +121,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnEmptyPublicationLogWhenUserHasRightsToFetchLogAndNoLogEntries()
         throws IOException, BadRequestException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
 
         handler.handleRequest(createAuthorizedRequest(publication), output, context);
 
@@ -133,7 +133,7 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnNotEmptyPublicationLogWhenUserHasRightsToFetchLog() throws IOException, ApiGatewayException {
-        var publication = createPublication();
+        var publication = createPublishedPublication();
         persistLogEntries(publication);
         handler.handleRequest(createAuthorizedRequest(publication), output, context);
 
@@ -188,9 +188,11 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private Publication createPublication() throws BadRequestException {
+    private Publication createPublishedPublication() throws BadRequestException {
         var publication = randomPublication(AcademicArticle.class);
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+        return Resource.fromPublication(persistedPublication).publish(resourceService, userInstance).toPublication();
     }
 
     private InputStream createUnauthorizedRequest(SortableIdentifier identifier) throws JsonProcessingException {

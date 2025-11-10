@@ -97,6 +97,10 @@ public final class PublicationGenerator {
         return buildRandomPublicationFromInstance(publicationInstanceClass);
     }
 
+    public static Publication randomPublicationWithStatus(PublicationStatus status) {
+        return randomPublication().copy().withStatus(status).build();
+    }
+
     public static Publication randomNonDegreePublication() {
         return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
     }

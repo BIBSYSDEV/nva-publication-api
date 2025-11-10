@@ -76,7 +76,7 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
     @ValueSource(classes = {DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class})
     void shouldReturnSuccessWhenTicketIsSuccessfullyDeleted(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
-        var publication = randomPersistedPublication();
+        var publication = randomPublishedPublication();
         var ticket = createTicket(publication, ticketType);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
 
@@ -96,7 +96,7 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
     void shouldReturnUnauthorizedWhenUserIsAttemptingToDeleteTicketUserDoesNotOwn(
         Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
-        var publication = randomPersistedPublication();
+        var publication = randomPublishedPublication();
         var ticket = createTicket(publication, ticketType);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
 
@@ -109,7 +109,7 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldCompleteGeneralSupportRequestWhenAllMessagesAreDeleted()
         throws ApiGatewayException, IOException {
-        var publication = randomPersistedPublication();
+        var publication = randomPublishedPublication();
         var ticket = createTicket(publication, GeneralSupportRequest.class);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
 
@@ -121,22 +121,15 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
         assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
-    private Publication randomPersistedPublication() throws BadRequestException {
+    private Publication randomPublishedPublication() throws BadRequestException {
         var publication = randomPublication();
-        return Resource.fromPublication(publication)
-                              .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication)
+                              .persistNew(resourceService, userInstance);
+        return Resource.fromPublication(persistedPublication).publish(resourceService, userInstance).toPublication();
     }
 
     private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                   .withOwner(randomString())
-                   .persistNewTicket(ticketService);
-    }
-
-    private TicketEntry persistRandomTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        var randomPublication = randomPublication();
-        var publication = Resource.fromPublication(randomPublication)
-                              .persistNew(resourceService, UserInstance.fromPublication(randomPublication));
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                    .withOwner(randomString())
                    .persistNewTicket(ticketService);

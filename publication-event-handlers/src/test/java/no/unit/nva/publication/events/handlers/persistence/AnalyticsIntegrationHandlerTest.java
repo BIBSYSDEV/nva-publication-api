@@ -158,7 +158,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         var samplePublication = randomPublication();
         UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = Resource.fromPublication(samplePublication).persistNew(resourceService, userInstance);
-        return samplePublication;
+        return Resource.fromPublication(samplePublication).publish(resourceService, userInstance).toPublication();
     }
 
     private URI expandPublicationAndSaveToS3(Publication publication) throws IOException {
