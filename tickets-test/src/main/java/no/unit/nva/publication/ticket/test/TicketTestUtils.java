@@ -93,7 +93,6 @@ public final class TicketTestUtils {
     public static Stream<Arguments> ticketTypeAndPublicationStatusProvider() {
         return Stream.of(
                 Arguments.of(DoiRequest.class, PUBLISHED),
-                Arguments.of(DoiRequest.class, PUBLISHED_METADATA),
                 Arguments.of(GeneralSupportRequest.class, DRAFT));
     }
 
@@ -338,6 +337,16 @@ public final class TicketTestUtils {
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         }
         return persistedPublication;
+    }
+
+    public static Publication createPublishedPublication(ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublication(AcademicArticle.class);
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = resourceService.createPublication(userInstance, publication);
+        return Resource.fromPublication(persistedPublication)
+                   .publish(resourceService, userInstance)
+                   .toPublication();
     }
 
     public static Publication createPersistedPublicationWithOwner(
