@@ -23,6 +23,7 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
+import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 public final class ResourceBuilder {
@@ -153,6 +154,7 @@ public final class ResourceBuilder {
         return this;
     }
 
+    @JacocoGenerated
     public ResourceBuilder withImportStatus(ImportStatus importStatus) {
         this.importStatus = importStatus;
         return this;
@@ -188,6 +190,7 @@ public final class ResourceBuilder {
         return this;
     }
 
+    @JacocoGenerated
     public ResourceBuilder withAssociatedCustomers(Collection<URI> associatedCustomers) {
         this.associatedCustomers = nonNull(associatedCustomers)
                                        ? associatedCustomers.stream().filter(Objects::nonNull).toList()

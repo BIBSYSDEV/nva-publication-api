@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.storage.DynamoEntry;
+import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName("ImportCandidate")
@@ -35,6 +36,7 @@ public class ImportCandidateDao implements DynamoEntry {
         return importCandidate;
     }
 
+    @JacocoGenerated
     @Override
     public SortableIdentifier getIdentifier() {
         return importCandidate.getIdentifier();

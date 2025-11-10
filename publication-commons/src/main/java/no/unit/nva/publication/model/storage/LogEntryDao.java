@@ -17,6 +17,7 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.UnusedPrivateMethod")
 public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
@@ -39,6 +40,7 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
         return KEY_PATTERN.formatted(Resource.TYPE, resource.getIdentifier());
     }
 
+    @JacocoGenerated
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;

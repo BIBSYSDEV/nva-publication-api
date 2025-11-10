@@ -167,6 +167,7 @@ public class ImportCandidate implements JsonSerializable {
         return importStatus;
     }
 
+    @JacocoGenerated
     public void setImportStatus(ImportStatus importStatus) {
         this.importStatus = importStatus;
     }
