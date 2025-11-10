@@ -1,6 +1,8 @@
 package no.unit.nva.model.contexttypes;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -58,9 +60,6 @@ public class Journal implements Periodical {
     @JsonIgnore
     @Override
     public Set<URI> extractPublicationContextUris() {
-        if (isNull(id)) {
-            return Collections.emptySet();
-        }
-        return Collections.singleton(id);
+        return nonNull(id) ? Collections.singleton(id) : Collections.emptySet();
     }
 }

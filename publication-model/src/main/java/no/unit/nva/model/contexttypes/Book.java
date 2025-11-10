@@ -151,13 +151,11 @@ public class Book implements BasicContext {
     @Override
     public Set<URI> extractPublicationContextUris() {
         var uris = new HashSet<URI>();
-        if (nonNull(publisher)
-                && publisher instanceof Publisher currentPublisher
-                && nonNull(currentPublisher.getId())) {
-            uris.add(currentPublisher.getId());
+        if (nonNull(publisher) && publisher instanceof Publisher publisherWithId && nonNull(publisherWithId.getId())) {
+            uris.add(publisherWithId.getId());
         }
-        if (nonNull(series) && series instanceof Series currentSeries) {
-            uris.add(currentSeries.getId());
+        if (nonNull(series) && series instanceof Series seriesWithId && nonNull(seriesWithId.getId())) {
+            uris.add(seriesWithId.getId());
         }
         return Collections.unmodifiableSet(uris);
     }

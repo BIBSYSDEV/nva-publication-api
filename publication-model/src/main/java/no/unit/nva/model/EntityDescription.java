@@ -247,7 +247,6 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
      * This method will throw a runtime exception subclass when called if a validation fails.
      */
     public void validate() {
-
         var publicationContext = this.getReference().getPublicationContext();
         if (hasUnsynchronizedPublicationDateChannelDatePair(publicationContext)) {
             throw new UnsynchronizedPublicationChannelDateException();
@@ -262,11 +261,11 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     }
 
     private boolean isNotPublicationChannelUriDateMatch(PublicationContext context) {
-        return context.extractPublicationContextUris().stream()
+        return !context.extractPublicationContextUris().stream()
                 .map(UriWrapper::fromUri)
                 .map(UriWrapper::getLastPathElement)
                 .filter(Objects::nonNull)
-                .noneMatch(uriYear -> publicationDate.getYear().equals(uriYear));
+                .allMatch(uriYear -> publicationDate.getYear().equals(uriYear));
     }
 
     private boolean isEmptyPublicationDateWithPublicationChannels(PublicationContext context) {

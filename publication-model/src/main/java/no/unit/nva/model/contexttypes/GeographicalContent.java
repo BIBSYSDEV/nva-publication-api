@@ -49,8 +49,8 @@ public class GeographicalContent implements BasicContext {
     @JsonIgnore
     @Override
     public Set<URI> extractPublicationContextUris() {
-        if (nonNull(publisher) && publisher instanceof Publisher currentPublisher && nonNull(currentPublisher.getId())) {
-            return Set.of(currentPublisher.getId());
+        if (nonNull(publisher) && publisher instanceof Publisher publisherWithId && nonNull(publisherWithId.getId())) {
+            return Set.of(publisherWithId.getId());
         }
         return Collections.emptySet();
     }

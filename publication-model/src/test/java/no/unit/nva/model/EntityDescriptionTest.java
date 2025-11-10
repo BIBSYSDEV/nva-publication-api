@@ -36,10 +36,12 @@ import java.time.Year;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static no.unit.nva.DatamodelConfig.dataModelObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -77,6 +79,14 @@ class EntityDescriptionTest {
                 Journal.class,
                 Report.class,
                 ResearchData.class
+        );
+    }
+
+    public static Stream<Named<DateSeriesPublisher>> dateUriProvider() {
+        return Stream.of(
+                named("Series out of bound", new DateSeriesPublisher("2024", "2020", "2024")),
+                named("Publisher out of bound", new DateSeriesPublisher("2024", "2024", "2020")),
+                named("Series and Publisher out of bound", new DateSeriesPublisher("2022", "2024", "2020"))
         );
     }
 
@@ -292,31 +302,62 @@ class EntityDescriptionTest {
         assertThrows(UnsynchronizedPublicationChannelDateException.class, entityDescription::validate);
     }
 
+    @ParameterizedTest
+    @DisplayName("Should throw when Book series or publisher uris are not synchronized with date")
+    @MethodSource("dateUriProvider")
+    void shouldThrowWhenBookSeriesAndPublisherAreNotSynchronizedWithDate(DateSeriesPublisher dateSeriesPublisher) {
+        var entityDescription = entityDescriptionFromContext(Book.class);
+        entityDescription.setPublicationDate(dateSeriesPublisher.date());
+        var reference = entityDescription.getReference();
+        var book = new Book(new Series(dateSeriesPublisher.series()),
+                randomString(),
+                new Publisher(dateSeriesPublisher.publisher()),
+                List.of(randomIsbn13()),
+                Revision.UNREVISED);
+        reference.setPublicationContext(book);
+        assertThrows(UnsynchronizedPublicationChannelDateException.class, entityDescription::validate);
+    }
+
+    @Test
+    void shouldNotThrowWhenDateSeriesPublisherAreSynchronized() {
+        var entityDescription = entityDescriptionFromContext(Book.class);
+        var dateSeriesPublisher = new DateSeriesPublisher("2025", "2025", "2025");
+        entityDescription.setPublicationDate(dateSeriesPublisher.date());
+        var reference = entityDescription.getReference();
+        var book = new Book(new Series(dateSeriesPublisher.series()),
+                randomString(),
+                new Publisher(dateSeriesPublisher.publisher()),
+                List.of(randomIsbn13()),
+                Revision.UNREVISED);
+        reference.setPublicationContext(book);
+        assertDoesNotThrow(entityDescription::validate);
+    }
+
     private static EntityDescription createEntityDescriptionForTypeWithChannelAndPublicationDate(
             Class<? extends BasicContext> clazz, String publicationYear, String publicationChannelYear) {
         var entityDescription = entityDescriptionFromContext(clazz);
         var reference = entityDescription.getReference();
+        reference.setPublicationContext(createContextForType(reference, publicationChannelYear));
+        entityDescription.setPublicationDate(publicationDateWithYearOnly(publicationYear));
+        return entityDescription;
+    }
+
+    private static PublicationContext createContextForType(Reference reference, String publicationChannelYear) {
         if (isAssignableFrom(reference, Book.class)) {
-            var book = createBookSubclassWithSeriesAndPublisher((Book) reference.getPublicationContext(), publicationChannelYear);
-            reference.setPublicationContext(book);
+            return createBookSubclassWithSeriesAndPublisher((Book) reference.getPublicationContext(), publicationChannelYear);
         } else if (isAssignableFrom(reference, Degree.class)) {
-            var degree = createBookSubclassWithSeriesAndPublisher((Degree) reference.getPublicationContext(), publicationChannelYear);
-            reference.setPublicationContext(degree);
+            return createBookSubclassWithSeriesAndPublisher((Degree) reference.getPublicationContext(), publicationChannelYear);
         } else if (isAssignableFrom(reference, GeographicalContent.class)) {
-            reference.setPublicationContext(new GeographicalContent(publisher(publicationChannelYear)));
+            return new GeographicalContent(publisher(publicationChannelYear));
         } else if (isAssignableFrom(reference, Journal.class)) {
-            reference.setPublicationContext(new Journal(serialPublicationUri(publicationChannelYear)));
+            return new Journal(serialPublicationUri(publicationChannelYear));
         } else if (isAssignableFrom(reference, Report.class)) {
-            var report = createBookSubclassWithSeriesAndPublisher((Report) reference.getPublicationContext(), publicationChannelYear);
-            reference.setPublicationContext(report);
+            return  createBookSubclassWithSeriesAndPublisher((Report) reference.getPublicationContext(), publicationChannelYear);
         } else if (isAssignableFrom(reference, ResearchData.class)) {
-            var researchData = new ResearchData(publisher(publicationChannelYear));
-            reference.setPublicationContext(researchData);
+            return new ResearchData(publisher(publicationChannelYear));
         } else {
             throw new IllegalStateException("Unexpected value: " + reference.getPublicationContext());
         }
-        entityDescription.setPublicationDate(publicationDateWithYearOnly(publicationYear));
-        return entityDescription;
     }
 
     private static Book createBookSubclassWithSeriesAndPublisher(Book book, String publicationYear) {
@@ -375,5 +416,13 @@ class EntityDescriptionTest {
 
     private static PublicationDate publicationDateWithYearOnly(String year) {
         return new PublicationDate.Builder().withYear(year).build();
+    }
+
+    record DateSeriesPublisher(PublicationDate date, URI series, URI publisher) {
+        public DateSeriesPublisher(String year, String seriesYear, String publisherYear) {
+            this(new PublicationDate.Builder().withYear(year).build(),
+                    URI.create("https://example.org/serial-publication/"+ UUID.randomUUID() + "/" + seriesYear),
+                    URI.create("https://example.org/publisher/"+ UUID.randomUUID() + "/" + publisherYear));
+        }
     }
 }
