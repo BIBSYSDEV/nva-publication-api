@@ -256,8 +256,8 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
     private boolean hasUnsynchronizedPublicationDateChannelDatePair(PublicationContext context) {
         return nonNull(context)
-                && isEmptyPublicationDateWithPublicationChannels(context)
-                || isNotPublicationChannelUriDateMatch(context);
+                && (isEmptyPublicationDateWithPublicationChannels(context)
+                || isNotPublicationChannelUriDateMatch(context));
     }
 
     private boolean isNotPublicationChannelUriDateMatch(PublicationContext context) {
