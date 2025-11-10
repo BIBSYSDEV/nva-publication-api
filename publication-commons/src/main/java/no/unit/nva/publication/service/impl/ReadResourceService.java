@@ -11,6 +11,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AN
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.IMPORT_CANDIDATE_KEY_PATTERN;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static nva.commons.core.attempt.Try.attempt;
@@ -126,10 +127,9 @@ public class ReadResourceService {
     }
 
     private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {
-        return new GetItemRequest(tableName, Map.of("PK0",
-                                                    new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier)),
-                                                    "SK0",
-                                                    new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier))));
+        var primaryKey = new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier));
+        return new GetItemRequest(tableName, Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey,
+                                                    PRIMARY_KEY_SORT_KEY_NAME, primaryKey));
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {

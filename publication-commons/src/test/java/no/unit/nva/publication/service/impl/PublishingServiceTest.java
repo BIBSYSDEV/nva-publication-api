@@ -294,7 +294,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
     @Test
     void shouldPersistDoiRequestWithPublicationStatusPublishedWhenPublishingPublicationWithDoi()
         throws ApiGatewayException {
-        var resource = persistResource(Resource.fromPublication(randomPublication().copy().withStatus(DRAFT).build()));
+        var resource = persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(DRAFT).build()));
         var userInstance = UserInstance.fromPublication(resource.toPublication());
 
         publishingService.publishResource(resource.getIdentifier(), userInstance);
@@ -307,7 +307,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
     @Test
     void shouldNotPersistDoiRequestWhenPublishingPublicationAlreadyPublishedPublication() throws ApiGatewayException {
         var resource =
-            persistResource(Resource.fromPublication(randomPublication().copy().withStatus(PUBLISHED).build()));
+            persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(PUBLISHED).build()));
         var userInstance = UserInstance.fromPublication(resource.toPublication());
 
         publishingService.publishResource(resource.getIdentifier(), userInstance);
