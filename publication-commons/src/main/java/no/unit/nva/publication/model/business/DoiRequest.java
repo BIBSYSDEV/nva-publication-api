@@ -56,7 +56,7 @@ public class DoiRequest extends TicketEntry {
 
     public static DoiRequest create(Resource resource, UserInstance userInstance) {
         if (!PUBLISHED.equals(resource.getStatus())) {
-            throw new IllegalStateException("Doi request can be created for published resource only!");
+            throw new InvalidTicketStatusTransitionException(WRONG_PUBLICATION_STATUS_ERROR.formatted(PUBLISHED));
         }
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(SortableIdentifier.next());

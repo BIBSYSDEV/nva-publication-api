@@ -75,6 +75,7 @@ import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.InvalidTicketStatusTransitionException;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
@@ -165,7 +166,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, status);
         Executable executable = () -> DoiRequest.create(Resource.fromPublication(publication),
                                                         UserInstance.fromPublication(publication));
-        assertThrows(IllegalStateException.class, executable);
+        assertThrows(InvalidTicketStatusTransitionException.class, executable);
     }
 
     @Test
