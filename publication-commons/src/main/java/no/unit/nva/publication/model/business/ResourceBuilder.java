@@ -1,13 +1,10 @@
 package no.unit.nva.publication.model.business;
 
-import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.CuratingInstitution;
@@ -20,10 +17,8 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
-import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 public final class ResourceBuilder {
@@ -47,14 +42,12 @@ public final class ResourceBuilder {
     private List<URI> subjects;
     private Set<Funding> fundings;
     private String rightsHolder;
-    private ImportStatus importStatus;
     private List<PublicationNoteBase> publicationNotes;
     private URI duplicateOf;
     private Set<CuratingInstitution> curatingInstitutions;
     private List<ImportDetail> importDetails;
     private ResourceEvent resourceEvent;
     private List<PublicationChannel> publicationChannels;
-    private List<URI> associatedCustomers;
 
     ResourceBuilder() {
     }
@@ -154,12 +147,6 @@ public final class ResourceBuilder {
         return this;
     }
 
-    @JacocoGenerated
-    public ResourceBuilder withImportStatus(ImportStatus importStatus) {
-        this.importStatus = importStatus;
-        return this;
-    }
-
     public ResourceBuilder withPublicationNotes(List<PublicationNoteBase> publicationNotes) {
         this.publicationNotes = publicationNotes;
         return this;
@@ -190,14 +177,6 @@ public final class ResourceBuilder {
         return this;
     }
 
-    @JacocoGenerated
-    public ResourceBuilder withAssociatedCustomers(Collection<URI> associatedCustomers) {
-        this.associatedCustomers = nonNull(associatedCustomers)
-                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                                       : Collections.emptyList();
-        return this;
-    }
-
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -219,14 +198,12 @@ public final class ResourceBuilder {
         resource.setSubjects(subjects);
         resource.setFundings(fundings);
         resource.setRightsHolder(rightsHolder);
-        resource.setImportStatus(importStatus);
         resource.setPublicationNotes(publicationNotes);
         resource.setDuplicateOf(duplicateOf);
         resource.setCuratingInstitutions(curatingInstitutions);
         resource.setImportDetails(importDetails);
         resource.setResourceEvent(resourceEvent);
         resource.setPublicationChannels(publicationChannels);
-        resource.setAssociatedCustomers(associatedCustomers);
         return resource;
     }
 }

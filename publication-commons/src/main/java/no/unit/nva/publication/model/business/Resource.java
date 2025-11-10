@@ -56,8 +56,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -76,7 +74,6 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
-//TODO remove JacocoGenerated annotations
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount", "PMD.CouplingBetweenObjects"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements Entity {
@@ -122,10 +119,6 @@ public class Resource implements Entity {
     private Set<Funding> fundings;
     @JsonProperty
     private String rightsHolder;
-    @JsonProperty
-    private ImportStatus importStatus;
-    @JsonProperty
-    private List<URI> associatedCustomers;
     @JsonProperty
     private List<PublicationNoteBase> publicationNotes;
     @JsonProperty
@@ -308,20 +301,6 @@ public class Resource implements Entity {
         this.version = version;
     }
 
-    @JacocoGenerated
-    public List<URI> getAssociatedCustomers() {
-        return nonNull(associatedCustomers)
-                   ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                   : Collections.emptyList();
-    }
-
-    @JacocoGenerated
-    public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
-        this.associatedCustomers = nonNull(associatedCustomers)
-                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                                       : Collections.emptyList();
-    }
-
     private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {
         return getInstanceType()
                    .map(claimedPublicationChannel::instanceTypeIsWithinScope)
@@ -400,31 +379,8 @@ public class Resource implements Entity {
                    .toList();
     }
 
-    @JacocoGenerated
-    private static Resource convertToResource(ImportCandidate importCandidate) {
-        return Resource.builder()
-                   .withIdentifier(importCandidate.getIdentifier())
-                   .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
-                   .withCreatedDate(importCandidate.getCreatedDate())
-                   .withModifiedDate(importCandidate.getModifiedDate())
-                   .withStatus(importCandidate.getStatus())
-                   .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
-                   .withPublisher(importCandidate.getPublisher())
-                   .withEntityDescription(importCandidate.getEntityDescription())
-                   .withFilesEntries(getFileEntriesFromPublication(importCandidate.toPublication()))
-                   .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
-                   .withImportStatus(importCandidate.getImportStatus())
-                   .withAssociatedCustomers(importCandidate.getAssociatedCustomers())
-                   .build();
-    }
-
     public static ResourceBuilder builder() {
         return new ResourceBuilder();
-    }
-
-    @JacocoGenerated
-    public static Resource fromImportCandidate(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate).map(Resource::convertToResource).orElse(null);
     }
 
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
@@ -568,19 +524,6 @@ public class Resource implements Entity {
         this.identifier = identifier;
     }
 
-    /**
-     * This gets the import status for importCandidate and should be null in other context.
-     *
-     * @return importStatus if Resource is an ImportCandidate
-     */
-    public Optional<ImportStatus> getImportStatus() {
-        return Optional.ofNullable(importStatus);
-    }
-
-    public void setImportStatus(ImportStatus importStatus) {
-        this.importStatus = importStatus;
-    }
-
     public List<PublicationNoteBase> getPublicationNotes() {
         return nonNull(publicationNotes) ? publicationNotes : List.of();
     }
@@ -626,22 +569,6 @@ public class Resource implements Entity {
                    .withDuplicateOf(getDuplicateOf())
                    .withCuratingInstitutions(getCuratingInstitutions())
                    .withImportDetails(getImportDetails())
-                   .build();
-    }
-
-    @JacocoGenerated
-    public ImportCandidate toImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withIdentifier(getIdentifier())
-                   .withResourceOwner(extractResourceOwner())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withPublisher(getPublisher())
-                   .withEntityDescription(getEntityDescription())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withAssociatedArtifacts(getAssociatedArtifacts())
-                   .withImportStatus(getImportStatus().orElse(null))
-                   .withAssociatedCustomers(getAssociatedCustomers())
                    .build();
     }
 

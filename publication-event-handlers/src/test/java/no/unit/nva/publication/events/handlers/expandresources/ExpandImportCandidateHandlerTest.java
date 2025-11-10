@@ -219,8 +219,8 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
         var dataEntryUpdateEvent =
             new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update",
-                                               Resource.fromImportCandidate(oldImage),
-                                               Resource.fromImportCandidate(newImage));
+                                               oldImage,
+                                               newImage);
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         return s3Writer.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }

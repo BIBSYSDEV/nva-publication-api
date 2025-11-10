@@ -16,7 +16,9 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName("ImportCandidate")
 public class ImportCandidateDao implements DynamoEntry {
 
-    private ImportCandidate importCandidate;
+    @JsonProperty("data")
+    private ImportCandidate data;
+    @JsonProperty("identifier")
     private SortableIdentifier identifier;
 
     /**
@@ -27,19 +29,19 @@ public class ImportCandidateDao implements DynamoEntry {
 
     }
 
-    public ImportCandidateDao(ImportCandidate importCandidate, SortableIdentifier identifier) {
-        this.importCandidate = importCandidate.copy().withIdentifier(identifier).build();
+    public ImportCandidateDao(ImportCandidate data, SortableIdentifier identifier) {
+        this.data = data.copy().withIdentifier(identifier).build();
         this.identifier = identifier;
     }
 
-    public ImportCandidate getImportCandidate() {
-        return importCandidate;
+    public ImportCandidate getData() {
+        return data;
     }
 
     @JacocoGenerated
     @Override
     public SortableIdentifier getIdentifier() {
-        return importCandidate.getIdentifier();
+        return identifier;
     }
 
     @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)

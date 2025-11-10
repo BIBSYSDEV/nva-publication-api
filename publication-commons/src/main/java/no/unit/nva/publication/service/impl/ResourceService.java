@@ -217,6 +217,8 @@ public class ResourceService extends ServiceWithTransactions {
      * @return updated importCandidate that has been sent to persistence
      */
     public ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
+        importCandidate.setModifiedDate(clockForTimestamps.instant());
+        importCandidate.setCreatedDate(clockForTimestamps.instant());
         var dao = new ImportCandidateDao(importCandidate, SortableIdentifier.next());
         return insertResourceFromImportCandidate(dao);
     }
@@ -347,7 +349,7 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updateStatus(identifier, status);
     }
 
-    public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException, NotFoundException {
+    public void deleteImportCandidate(ImportCandidate importCandidate) throws BadMethodException {
         deleteResourceService.deleteImportCandidate(importCandidate);
         logger.info(IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE, importCandidate.getIdentifier());
     }
@@ -762,7 +764,7 @@ public class ResourceService extends ServiceWithTransactions {
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);
 
-        return importCandidateDao.getImportCandidate();
+        return importCandidateDao.getData();
     }
 
     private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)

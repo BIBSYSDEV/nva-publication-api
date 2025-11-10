@@ -60,7 +60,6 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 public class ReadResourceService {
 
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
-
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource ";
     public static final int DEFAULT_LIMIT = 100;
     private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
@@ -124,7 +123,7 @@ public class ReadResourceService {
             return Optional.empty();
         }
         return Optional.of(DynamoEntry.parseAttributeValuesMap(result.getItem(), ImportCandidateDao.class))
-                   .map(ImportCandidateDao::getImportCandidate);
+                   .map(ImportCandidateDao::getData);
     }
 
     private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {

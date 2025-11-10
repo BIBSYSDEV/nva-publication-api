@@ -31,7 +31,6 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.DeleteImportCandidateEvent;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.s3.S3Driver;
@@ -82,9 +81,7 @@ public class DeleteImportCandidateEventHandlerTest {
 
     private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
         var dataEntryUpdateEvent =
-            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update",
-                                               Resource.fromImportCandidate(oldImage),
-                                               Resource.fromImportCandidate(newImage));
+            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update", oldImage, newImage);
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         var s3Writer = new S3Driver(s3Client, EVENTS_BUCKET);
         return s3Writer.insertFile(filePath, dataEntryUpdateEvent.toJsonString());

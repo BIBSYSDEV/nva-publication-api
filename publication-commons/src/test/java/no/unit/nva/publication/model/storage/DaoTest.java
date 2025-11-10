@@ -38,16 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -55,8 +45,6 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -313,9 +301,7 @@ class DaoTest extends ResourcesLocalTest {
         throws ConflictException {
 
         if (Resource.class.equals(entityType)) {
-            return Resource.fromPublication(randomPublicationWithStatus(PUBLISHED));
-        } else if (ImportCandidate.class.equals(entityType)) {
-            return Resource.fromImportCandidate(randomImportCandidate());
+            return Resource.fromPublication(randomPublication());
         } else if (TicketEntry.class.isAssignableFrom(entityType)) {
             return createTicket((Class<? extends TicketEntry>) entityType);
         } else if (Message.class.equals(entityType)) {
@@ -347,37 +333,6 @@ class DaoTest extends ResourcesLocalTest {
     private FileEntry createRandomFileEntry() {
         return FileEntry.create(randomOpenFile(), SortableIdentifier.next(),
                                 UserInstance.fromPublication(randomPublication()));
-    }
-
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription())
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
-                   .build();
-    }
-
-    private EntityDescription randomEntityDescription() {
-        return new EntityDescription.Builder()
-                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .build();
     }
 
     private JsonNode serializeInstance(Dao daoInstance) throws JsonProcessingException {

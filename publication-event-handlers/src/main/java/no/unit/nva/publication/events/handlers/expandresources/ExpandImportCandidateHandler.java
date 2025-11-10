@@ -14,7 +14,6 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
@@ -60,9 +59,6 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
                                                  Context context) {
         var blob = readBlobFromS3(input);
         return blob.getNewData()
-                   .filter(Resource.class::isInstance)
-                   .map(Resource.class::cast)
-                   .map(Resource::toImportCandidate)
                    .map(this::expand)
                    .map(expandedImportCandidate -> shouldBeExpanded(expandedImportCandidate)
                                                        ? createOutPutEventAndPersistDocument(expandedImportCandidate)

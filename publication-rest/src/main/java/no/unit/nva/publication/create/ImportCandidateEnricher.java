@@ -3,6 +3,7 @@ package no.unit.nva.publication.create;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -27,6 +28,12 @@ public final class ImportCandidateEnricher {
                 new Username(userInstance.getUsername()),
                 userInstance.getTopLevelOrgCristinId()))
             .build();
-        return Resource.fromImportCandidate(enrichedCandidate);
+        return Resource.builder()
+                   .withPublisher(enrichedCandidate.getPublisher())
+                   .withResourceOwner(new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId()))
+                   .withAdditionalIdentifiers(enrichedCandidate.getAdditionalIdentifiers())
+                   .withAssociatedArtifactsList(enrichedCandidate.getAssociatedArtifacts())
+                   .withEntityDescription(enrichedCandidate.getEntityDescription())
+                   .build();
     }
 }

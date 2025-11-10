@@ -6,8 +6,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
+import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 
 //TODO: rename class to DynamoJsonToInternalModelEventHandler
 
@@ -34,6 +36,15 @@ public final class DynamodbStreamRecordDaoMapper {
                    .map(Dao.class::cast)
                    .map(Dao::getData)
                    .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate);
+    }
+
+    public static Optional<ImportCandidate> toImportCandidate(Map<String, AttributeValue> recordImage)
+        throws JsonProcessingException {
+        var attributeMap = fromEventMapToDynamodbMap(recordImage);
+        var dynamoEntry = DynamoEntry.parseAttributeValuesMap(attributeMap, DynamoEntry.class);
+        return Optional.of(dynamoEntry)
+                   .map(ImportCandidateDao.class::cast)
+                   .map(ImportCandidateDao::getData);
     }
 
     private static boolean isDao(DynamoEntry dynamoEntry) {

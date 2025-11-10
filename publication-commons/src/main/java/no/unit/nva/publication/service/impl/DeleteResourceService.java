@@ -26,13 +26,17 @@ public class DeleteResourceService extends ServiceWithTransactions {
     }
 
     public void deleteImportCandidate(ImportCandidate candidate) throws BadMethodException {
-        var importCandidate = readResourceService.getImportCandidateByIdentifier(candidate.getIdentifier());
-        if (importCandidate.isPresent() && CandidateStatus.IMPORTED.equals(importCandidate.get().getImportStatus().candidateStatus())) {
+        var importCandidate = readResourceService.getImportCandidateByIdentifier(candidate.getIdentifier()).orElseThrow();
+        if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().candidateStatus())) {
             throw new BadMethodException(CAN_NOT_DELETE_IMPORT_CANDIDATE_MESSAGE);
         } else {
-            var primaryKey = new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(candidate.getIdentifier()));
+            var primaryKey = getAttributeValue(importCandidate);
             client.deleteItem(new DeleteItemRequest(tableName, Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey,
                                                                       PRIMARY_KEY_SORT_KEY_NAME, primaryKey)));
         }
+    }
+
+    private static AttributeValue getAttributeValue(ImportCandidate candidate) {
+        return new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(candidate.getIdentifier()));
     }
 }
