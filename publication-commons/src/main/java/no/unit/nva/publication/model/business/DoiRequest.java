@@ -86,7 +86,8 @@ public class DoiRequest extends TicketEntry {
     @Override
     public void validateCreationRequirements(Publication publication) throws ConflictException {
         if (publicationDoesNotHaveAnExpectedStatus(publication)) {
-            throw new ConflictException(String.format(WRONG_PUBLICATION_STATUS_ERROR, ACCEPTABLE_PUBLICATION_STATUSES));
+            throw new ConflictException(String.format(WRONG_PUBLICATION_STATUS_ERROR,
+                                                      ACCEPTABLE_PUBLICATION_STATUSES));
         }
     }
 
