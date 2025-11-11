@@ -33,14 +33,14 @@ import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.SearchService;
@@ -139,7 +139,8 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private static void setStatusImported(ImportCandidate importCandidate, Resource resource) {
-        importCandidate.setImportStatus(ImportStatusFactory.createImported(RESOURCE_OWNER_SIKT, resource.getIdentifier()));
+        importCandidate.setImportStatus(ImportStatusFactory.createImported(RESOURCE_OWNER_SIKT,
+                                                                           resource.getIdentifier()));
     }
 
     private Optional<Resource> fetchPublicationsWithScopusIdentifier(String scopusIdentifier) {

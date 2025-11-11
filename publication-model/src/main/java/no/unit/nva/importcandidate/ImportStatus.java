@@ -1,4 +1,4 @@
-package no.unit.nva.publication.model.business.importcandidate;
+package no.unit.nva.importcandidate;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

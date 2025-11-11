@@ -13,10 +13,10 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.PostalCodeTp;
 import no.sikt.nva.scopus.ScopusConverter;
-import no.unit.nva.publication.model.business.importcandidate.Address;
-import no.unit.nva.publication.model.business.importcandidate.ScopusAffiliation;
-import no.unit.nva.publication.model.business.importcandidate.Country;
-import no.unit.nva.publication.model.business.importcandidate.AffiliationIdentifier;
+import no.unit.nva.importcandidate.Address;
+import no.unit.nva.importcandidate.AffiliationIdentifier;
+import no.unit.nva.importcandidate.Country;
+import no.unit.nva.importcandidate.ScopusAffiliation;
 
 public final class AffiliationMapper {
 

@@ -5,8 +5,8 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeVal
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
 import java.util.Optional;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;

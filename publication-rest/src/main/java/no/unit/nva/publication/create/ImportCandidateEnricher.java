@@ -1,12 +1,12 @@
 package no.unit.nva.publication.create;
 
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 

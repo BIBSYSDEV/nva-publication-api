@@ -1,4 +1,4 @@
-package no.unit.nva.publication.model.business.importcandidate;
+package no.unit.nva.importcandidate;
 
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -149,7 +149,7 @@ public class ImportCandidate implements JsonSerializable {
     }
 
     public Builder copy() {
-        return new ImportCandidate.Builder()
+        return new Builder()
                    .withIdentifier(getIdentifier())
                    .withResourceOwner(getResourceOwner())
                    .withPublisher(getPublisher())

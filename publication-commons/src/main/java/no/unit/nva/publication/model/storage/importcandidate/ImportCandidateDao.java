@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
 

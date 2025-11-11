@@ -1,4 +1,4 @@
-package no.unit.nva.publication.model.business.importcandidate;
+package no.unit.nva.importcandidate;
 
 import static java.util.Objects.nonNull;
 import java.net.URI;

@@ -27,8 +27,8 @@ import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.clients.CustomerList;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.Test;
 

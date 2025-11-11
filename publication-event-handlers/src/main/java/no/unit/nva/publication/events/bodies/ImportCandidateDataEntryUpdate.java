@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportCandidate;
 import nva.commons.core.JacocoGenerated;
 
 public class ImportCandidateDataEntryUpdate implements JsonSerializable {

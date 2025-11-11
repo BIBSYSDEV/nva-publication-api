@@ -1,4 +1,4 @@
-package no.unit.nva.publication.model.business.importcandidate;
+package no.unit.nva.importcandidate;
 
 import no.unit.nva.model.Corporation;
 import nva.commons.core.JacocoGenerated;
