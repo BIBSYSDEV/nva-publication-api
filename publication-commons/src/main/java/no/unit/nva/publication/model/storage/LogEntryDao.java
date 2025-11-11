@@ -22,8 +22,6 @@ import no.unit.nva.publication.model.business.logentry.LogEntry;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.UnusedPrivateMethod")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonTypeName("LogEntryDao")
 public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
                           LogEntry data) implements DynamoEntry {
 
