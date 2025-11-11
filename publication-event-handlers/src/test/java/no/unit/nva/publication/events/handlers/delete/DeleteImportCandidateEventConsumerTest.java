@@ -1,9 +1,10 @@
 package no.unit.nva.publication.events.handlers.delete;
 
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent.SCOPUS_IDENTIFIER;
 import static no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer.NO_IMPORT_CANDIDATE_FOUND;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,33 +14,20 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
-import no.unit.nva.importcandidate.ImportStatusFactory;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,13 +58,17 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         final var appender = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = persistedImportCandidate();
         var event = emulateImportCandidateDeleteEvent(getScopusIdentifier(importCandidate));
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(
-            toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever),
-                       SINGLE_HIT));
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(createResponse(importCandidate, SINGLE_HIT));
         handler.handleRequest(event, output, CONTEXT);
         assertThrows(NotFoundException.class,
                      () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
         assertThat(appender.getMessages(), containsString("Import candidate has been deleted:"));
+    }
+
+    private Optional<String> createResponse(ImportCandidate importCandidate, int hits) {
+        var expandedImportCandidate = new ExpandedImportCandidate();
+        expandedImportCandidate.setIdentifier(UriWrapper.fromUri(randomUri()).addChild(importCandidate.getIdentifier().toString()).getUri());
+        return toResponse(expandedImportCandidate, hits);
     }
 
     @Test
@@ -84,9 +76,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         throws NotFoundException {
         var importCandidate = persistedImportCandidate();
         var event = emulateImportCandidateDeleteEvent(getScopusIdentifier(importCandidate));
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(
-            toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever),
-                       TWO_HITS));
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(createResponse(importCandidate, TWO_HITS));
         assertThrows(RuntimeException.class, () -> handler.handleRequest(event, output, CONTEXT));
     }
 
@@ -121,43 +111,12 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     }
 
     private ImportCandidate persistedImportCandidate() throws NotFoundException {
-        var importCandidate = resourceService.persistImportCandidate(createImportCandidate());
+        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         return resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
     private InputStream emulateImportCandidateDeleteEvent(String scopusIdentifier) {
         var event = new ImportCandidateDeleteEvent("ImportCandidates.Scopus.Delete", scopusIdentifier);
         return EventBridgeEventBuilder.sampleEvent(event);
-    }
-
-    private ImportCandidate createImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription())
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SCOPUS_IDENTIFIER, randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
-                   .build();
-    }
-
-    private EntityDescription randomEntityDescription() {
-        return new EntityDescription.Builder()
-                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .build();
     }
 }

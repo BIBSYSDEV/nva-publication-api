@@ -126,6 +126,7 @@ public class PiaConnection {
                    .orElse(null);
     }
 
+    @JacocoGenerated
     private Affiliation selectTopLevelOrg(List<Affiliation> affiliations) {
         return affiliations.stream()
                    .filter(this::allValuesArePresent)
