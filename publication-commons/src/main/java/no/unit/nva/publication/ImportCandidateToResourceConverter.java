@@ -31,7 +31,7 @@ public final class ImportCandidateToResourceConverter {
                          importCandidate.getResourceOwner().getOwnerAffiliation());
     }
 
-    private static EntityDescription toEntityDescription(ImportCandidate enrichedCandidate) {
+    public static EntityDescription toEntityDescription(ImportCandidate enrichedCandidate) {
         var entityDescription = enrichedCandidate.getEntityDescription();
         return new EntityDescription.Builder().withAbstract(entityDescription.mainAbstract())
                    .withDescription(entityDescription.description())

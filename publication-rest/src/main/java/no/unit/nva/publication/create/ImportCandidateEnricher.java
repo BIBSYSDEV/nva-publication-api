@@ -1,9 +1,6 @@
 package no.unit.nva.publication.create;
 
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
 import no.unit.nva.publication.ImportCandidateToResourceConverter;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
@@ -18,16 +15,16 @@ public final class ImportCandidateEnricher {
     }
 
     public static Resource createResourceToImport(RequestInfo requestInfo,
-                                                  CreatePublicationRequest createPublicationRequest,
+                                                  ImportCandidate importCandidate,
                                                   ImportCandidate databaseVersion) throws UnauthorizedException {
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
 
         var resource = ImportCandidateToResourceConverter.convert(databaseVersion);
 
         return resource.copy()
-            .withEntityDescription(createPublicationRequest.getEntityDescription())
-            .withAssociatedArtifactsList(createPublicationRequest.getAssociatedArtifacts())
-            .withAdditionalIdentifiers(createPublicationRequest.getAdditionalIdentifiers())
+            .withEntityDescription(ImportCandidateToResourceConverter.toEntityDescription(importCandidate))
+            .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
+            .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
             .withPublisher(Organization.fromUri(userInstance.getCustomerId()))
             .withResourceOwner(new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId()))
             .build();
