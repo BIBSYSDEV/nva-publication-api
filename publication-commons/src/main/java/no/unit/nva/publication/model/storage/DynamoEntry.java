@@ -18,8 +18,7 @@ import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
 @JsonSubTypes({
     @JsonSubTypes.Type(Dao.class),
     @JsonSubTypes.Type(UniquenessEntry.class),
-    @JsonSubTypes.Type(ImportCandidateDao.class),
-    @JsonSubTypes.Type(name = "LogEntryDao", value = LogEntryDao.class)
+    @JsonSubTypes.Type(ImportCandidateDao.class)
 })
 public interface DynamoEntry {
 
