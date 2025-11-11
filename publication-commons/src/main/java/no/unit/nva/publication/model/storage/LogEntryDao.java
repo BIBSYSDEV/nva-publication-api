@@ -21,7 +21,7 @@ import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.UnusedPrivateMethod")
 public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
-                          LogEntry data) implements DynamoEntry{
+                          LogEntry data) implements DynamoEntry {
 
     public static final String TYPE = "LogEntry";
     private static final String KEY_PATTERN = "%s:%s";
