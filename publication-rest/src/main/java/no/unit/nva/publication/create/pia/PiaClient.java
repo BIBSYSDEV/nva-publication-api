@@ -9,7 +9,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Base64;
 import java.util.List;
-import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportContributor;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;

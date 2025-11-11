@@ -17,15 +17,15 @@ import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportOrganization;
+import no.unit.nva.importcandidate.ScopusAffiliation;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
-import no.unit.nva.publication.model.business.importcandidate.ImportOrganization;
-import no.unit.nva.publication.model.business.importcandidate.ScopusAffiliation;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 

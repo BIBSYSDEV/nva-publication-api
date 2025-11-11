@@ -3,9 +3,9 @@ package no.unit.nva.publication.create.pia;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
 
 public class ContributorUpdateService {
 

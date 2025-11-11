@@ -14,7 +14,7 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord
 import com.fasterxml.jackson.databind.JavaType;
 import java.util.List;
 import java.util.Map;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 
 public class DynamoDbEventTestFactory {

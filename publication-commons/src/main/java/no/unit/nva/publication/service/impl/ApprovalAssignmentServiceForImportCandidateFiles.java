@@ -13,12 +13,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportEntityDescription;
+import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
-import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
-import no.unit.nva.publication.model.business.importcandidate.ImportOrganization;
 
 public class ApprovalAssignmentServiceForImportCandidateFiles {
 

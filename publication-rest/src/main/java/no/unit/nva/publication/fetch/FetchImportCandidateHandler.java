@@ -5,7 +5,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.function.Function;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;

@@ -1,15 +1,15 @@
 package no.unit.nva.publication;
 
 import java.util.List;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportEntityDescription;
+import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
-import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
-import no.unit.nva.publication.model.business.importcandidate.ImportOrganization;
 
 public final class ImportCandidateToResourceConverter {
 
@@ -18,6 +18,7 @@ public final class ImportCandidateToResourceConverter {
 
     public static Resource convert(ImportCandidate importCandidate) {
         return Resource.builder()
+                   .withIdentifier(importCandidate.getIdentifier())
                    .withPublisher(importCandidate.getPublisher())
                    .withResourceOwner(getOwner(importCandidate))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())

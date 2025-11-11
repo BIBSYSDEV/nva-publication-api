@@ -1,11 +1,8 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -21,38 +18,24 @@ import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Identity;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
-import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
-import no.unit.nva.publication.model.business.importcandidate.ImportOrganization;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -170,35 +153,6 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     private ImportCandidate updatedVersionOfImportCandidate(ImportCandidate oldImage) {
         oldImage.setAssociatedArtifacts(new AssociatedArtifactList(randomAssociatedArtifacts()));
         return oldImage;
-    }
-
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomImportEntityDescriptionWithContributors())
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
-                   .build();
-    }
-
-    private ImportEntityDescription randomImportEntityDescriptionWithContributors() {
-        return new ImportEntityDescription(randomString(), RandomDataGenerator.randomUri(),
-                                           new PublicationDate.Builder().withYear("2020").build(),
-                                           List.of(randomImportContributor(), randomImportContributor(),
-                                                   randomImportContributor()),
-                                           randomString(), Map.of(), List.of(),
-                                           randomString(),
-                                           randomReference(JournalArticle.class));
-    }
-
-    private ImportContributor randomImportContributor() {
-        return new ImportContributor(new Identity.Builder().build(),
-                                     List.of(), new RoleType(Role.CREATOR), null, randomBoolean());
     }
 
     private InputStream emulateEventEmittedByImportCandidateUpdateHandler(ImportCandidate oldImage,

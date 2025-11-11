@@ -22,11 +22,11 @@ import no.sikt.nva.scopus.conversion.model.AuthorGroupWithCristinOrganization;
 import no.sikt.nva.scopus.conversion.model.AuthorIdentifiers;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.model.business.importcandidate.ImportContributor;
 import nva.commons.core.StringUtils;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})

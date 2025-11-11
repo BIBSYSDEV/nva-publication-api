@@ -1,9 +1,9 @@
 package no.unit.nva.publication.create;
 
 import java.util.Optional;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportEntityDescription;
+import no.unit.nva.importcandidate.CandidateStatus;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportEntityDescription;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.StringUtils;
 

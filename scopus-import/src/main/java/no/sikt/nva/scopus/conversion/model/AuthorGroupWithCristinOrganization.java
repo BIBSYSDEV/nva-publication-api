@@ -14,9 +14,9 @@ import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.UnconfirmedOrganization;
-import no.unit.nva.publication.model.business.importcandidate.ImportOrganization;
 
 public class AuthorGroupWithCristinOrganization {
 
