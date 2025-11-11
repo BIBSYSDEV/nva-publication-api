@@ -49,20 +49,6 @@ public final class ImportCandidateGenerator {
                    .build();
     }
 
-    public static ImportCandidate randomImportCandidateWithContributors(List<Contributor> contributors) {
-        return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription(randomPublicationContext(randomPublicationInstance().getClass())))
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of(randomOpenFile(), randomAssociatedLink()))
-                   .withAssociatedCustomers(List.of(randomUri(), randomUri()))
-                   .build();
-    }
-
     public static Contributor randomContributor() {
             return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
