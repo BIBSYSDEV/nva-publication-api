@@ -26,7 +26,7 @@ public class CristinContributorExtractorTest {
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
                                                                                            null);
         var expectedName = "First Last";
-        assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
+        assertThat(contributor.identity().getName(), is(equalTo(expectedName)));
     }
 
     @Test
@@ -34,7 +34,7 @@ public class CristinContributorExtractorTest {
         var person = new CristinPerson(null, null, null, null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
                                                                                            null);
-        assertThat(contributor.getIdentity().getName(), is(equalTo(StringUtils.EMPTY_STRING)));
+        assertThat(contributor.identity().getName(), is(equalTo(StringUtils.EMPTY_STRING)));
     }
 
     @Test
@@ -42,7 +42,7 @@ public class CristinContributorExtractorTest {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
                                                                                            null);
-        assertThat(contributor.getIdentity().getName(), is(equalTo(FIRST_NAME.getValue())));
+        assertThat(contributor.identity().getName(), is(equalTo(FIRST_NAME.getValue())));
     }
 
     @Test
@@ -51,7 +51,7 @@ public class CristinContributorExtractorTest {
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(),
                                                                                            correspondencePerson(),
                                                                                            null);
-        assertThat(contributor.isCorrespondingAuthor(), is(true));
+        assertThat(contributor.correspondingAuthor(), is(true));
     }
 
     @Test
@@ -60,7 +60,7 @@ public class CristinContributorExtractorTest {
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(),
                                                                                            correspondencePerson(),
                                                                                            null);
-        assertThat(contributor.isCorrespondingAuthor(), is(true));
+        assertThat(contributor.correspondingAuthor(), is(true));
     }
 
     private static PersonalnameType correspondencePerson() {

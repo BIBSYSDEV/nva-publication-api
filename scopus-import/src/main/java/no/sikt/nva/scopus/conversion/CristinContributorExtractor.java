@@ -132,7 +132,8 @@ public final class CristinContributorExtractor {
 
     private static Stream<ImportOrganization> createOrganizationFromCristinOrganization(
         AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
-        return Optional.ofNullable(authorGroupWithCristinOrganization.getCristinOrganizations())
+        return Optional.ofNullable(authorGroupWithCristinOrganization)
+                   .map(AuthorGroupWithCristinOrganization::getCristinOrganizations)
                    .stream()
                    .flatMap(Collection::stream)
                    .distinct()
