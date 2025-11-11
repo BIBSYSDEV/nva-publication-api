@@ -269,10 +269,10 @@ Resources:
           AttributeType: S
         - AttributeName: SK1
           AttributeType: S
-        - AttributeName: PK2
-          AttributeType: S
-        - AttributeName: SK2
-          AttributeType: S
+#        - AttributeName: PK2
+#          AttributeType: S
+#        - AttributeName: SK2
+#          AttributeType: S
 #        - AttributeName: PK3
 #          AttributeType: S
 #        - AttributeName: SK3
@@ -295,14 +295,14 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: ByCustomerResource
-          KeySchema:
-            - AttributeName: PK2
-              KeyType: HASH
-            - AttributeName: SK2
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+#        - IndexName: ByCustomerResource
+#          KeySchema:
+#            - AttributeName: PK2
+#              KeyType: HASH
+#            - AttributeName: SK2
+#              KeyType: RANGE
+#          Projection:
+#            ProjectionType: ALL
 #        - IndexName: ResourcesByIdentifier
 #          KeySchema:
 #            - AttributeName: PK3
