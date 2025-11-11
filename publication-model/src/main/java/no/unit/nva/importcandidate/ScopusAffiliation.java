@@ -3,6 +3,7 @@ package no.unit.nva.importcandidate;
 import static java.util.Objects.nonNull;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.UnusedAssignment")
@@ -14,7 +15,7 @@ public record ScopusAffiliation(AffiliationIdentifier identifier,
                                 Address address) implements ScopusOrganization {
 
     public ScopusAffiliation {
-        names = nonNull(names) ? Collections.unmodifiableCollection(names) : Collections.emptyList();
+        names = nonNull(names) ? List.copyOf(names) : Collections.emptyList();
     }
 
     public static ScopusAffiliation emptyAffiliation() {

@@ -10,7 +10,10 @@ import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import nva.commons.core.JacocoGenerated;
 
+//TODO Remove annotation once method is moved to module where it belongs NP-47690
+@JacocoGenerated
 public final class ImportCandidateToResourceConverter {
 
     private ImportCandidateToResourceConverter() {
@@ -27,11 +30,6 @@ public final class ImportCandidateToResourceConverter {
                    .build();
     }
 
-    private static Owner getOwner(ImportCandidate importCandidate) {
-        return new Owner(importCandidate.getResourceOwner().getOwner().getValue(),
-                         importCandidate.getResourceOwner().getOwnerAffiliation());
-    }
-
     public static EntityDescription toEntityDescription(ImportCandidate enrichedCandidate) {
         var entityDescription = enrichedCandidate.getEntityDescription();
         return new EntityDescription.Builder().withAbstract(entityDescription.mainAbstract())
@@ -44,6 +42,11 @@ public final class ImportCandidateToResourceConverter {
                    .withReference(entityDescription.reference())
                    .withContributors(convertToEntityDescriptionForResource(entityDescription))
                    .build();
+    }
+
+    private static Owner getOwner(ImportCandidate importCandidate) {
+        return new Owner(importCandidate.getResourceOwner().getOwner().getValue(),
+                         importCandidate.getResourceOwner().getOwnerAffiliation());
     }
 
     private static List<Contributor> convertToEntityDescriptionForResource(ImportEntityDescription entityDescription) {

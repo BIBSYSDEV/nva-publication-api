@@ -8,7 +8,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,7 +40,23 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(
             persistedImportCandidate.getIdentifier());
-        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
+
+        // Debug EntityDescription fields
+        var persisted = persistedImportCandidate.getEntityDescription();
+        var fetched = fetchedImportCandidate.getEntityDescription();
+        System.out.println("mainTitle equal? " + persisted.mainTitle().equals(fetched.mainTitle()));
+        System.out.println("language equal? " + persisted.language().equals(fetched.language()));
+        System.out.println("publicationDate equal? " + persisted.publicationDate().equals(fetched.publicationDate()));
+        System.out.println("contributors equal? " + persisted.contributors().equals(fetched.contributors()));
+        System.out.println("  contributors types: " + persisted.contributors().getClass() + " vs " + fetched.contributors().getClass());
+        System.out.println("mainAbstract equal? " + java.util.Objects.equals(persisted.mainAbstract(), fetched.mainAbstract()));
+        System.out.println("alternativeAbstracts equal? " + java.util.Objects.equals(persisted.alternativeAbstracts(), fetched.alternativeAbstracts()));
+        System.out.println("tags equal? " + persisted.tags().equals(fetched.tags()));
+        System.out.println("  tags types: " + persisted.tags().getClass() + " vs " + fetched.tags().getClass());
+        System.out.println("description equal? " + java.util.Objects.equals(persisted.description(), fetched.description()));
+        System.out.println("reference equal? " + java.util.Objects.equals(persisted.reference(), fetched.reference()));
+
+        assertEquals(persistedImportCandidate, fetchedImportCandidate);
     }
 
     @Test

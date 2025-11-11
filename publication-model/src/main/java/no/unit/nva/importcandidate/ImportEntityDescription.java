@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
@@ -17,8 +18,8 @@ public record ImportEntityDescription(String mainTitle, URI language, Publicatio
                                       String description, Reference reference) {
 
     public ImportEntityDescription {
-        contributors =
-            nonNull(contributors) ? Collections.unmodifiableCollection(contributors) : Collections.emptyList();
-        tags = nonNull(tags) ? Collections.unmodifiableCollection(tags) : Collections.emptyList();
+        contributors = nonNull(contributors) ? List.copyOf(contributors) : Collections.emptyList();
+        tags = nonNull(tags) ? List.copyOf(tags) : Collections.emptyList();
+        alternativeAbstracts = nonNull(alternativeAbstracts) ? Map.copyOf(alternativeAbstracts) : Collections.emptyMap();
     }
 }

@@ -18,6 +18,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -27,16 +30,23 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.Getter;
+import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportEntityDescription;
 import no.unit.nva.importcandidate.ImportOrganization;
+import no.unit.nva.importcandidate.ScopusAffiliation;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Revision;
@@ -424,6 +434,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             FakeUriResponse.setupFakeForType(publication, (FakeUriRetriever) uriRetriever, resourceService, false);
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication, uriRetriever);
+            } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
+                return createExpandedImportCandidate(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
                 var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
@@ -460,6 +472,59 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             var request = GeneralSupportRequest.create(Resource.fromPublication(publication), userInstance);
             return ExpandedGeneralSupportRequest.create(request, resourceService, expansionService,
                                                         ticketService);
+        }
+
+
+        private ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(
+            Publication publication, RawContentRetriever uriRetriever) {
+            var importCandidate = createImportCandidateFromPublication(publication);
+            var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
+            when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(
+                new CristinOrganization(randomUri(), randomUri(), randomString(),
+                                        List.of(new CristinOrganization(randomUri(),
+                                                                        randomUri(),
+                                                                        randomString(),
+                                                                        List.of(),
+                                                                        randomString(),
+                                                                        Map.of())),
+                                        randomString(), Map.of()).toJsonString()));
+            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+            return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
+        }
+
+        private ImportCandidate createImportCandidateFromPublication(Publication publication) {
+            return new ImportCandidate.Builder()
+                       .withIdentifier(publication.getIdentifier())
+                       .withResourceOwner(publication.getResourceOwner())
+                       .withPublisher(publication.getPublisher())
+                       .withCreatedDate(publication.getCreatedDate())
+                       .withModifiedDate(publication.getModifiedDate())
+                       .withAssociatedArtifacts(publication.getAssociatedArtifacts())
+                       .withEntityDescription(toImportEntityDescription(publication))
+                       .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
+                       .build();
+        }
+
+        private static ImportEntityDescription toImportEntityDescription(Publication publication) {
+            var entityDescription = publication.getEntityDescription();
+            return new ImportEntityDescription(entityDescription.getMainTitle(),
+                                               entityDescription.getLanguage(),
+                                               entityDescription.getPublicationDate(),
+                                               entityDescription.getContributors().stream()
+                                                   .map(ExpandedDataEntryWithAssociatedPublication::toImportContributor)
+                                                   .toList(),
+                                               entityDescription.getAbstract(),
+                                               entityDescription.getAlternativeAbstracts(),
+                                               entityDescription.getTags(),
+                                               entityDescription.getDescription(),
+                                               entityDescription.getReference());
+        }
+
+        private static ImportContributor toImportContributor(Contributor contributor) {
+            return new ImportContributor(contributor.getIdentity(),
+                                         contributor.getAffiliations().stream().map(corporation -> new ImportOrganization(corporation, ScopusAffiliation.emptyAffiliation())).toList(),
+                                         contributor.getRole()
+            , contributor.getSequence(), contributor.isCorrespondingAuthor());
         }
 
         private static ExpandedDataEntry createExpandedUnpublishRequest(Publication publication,

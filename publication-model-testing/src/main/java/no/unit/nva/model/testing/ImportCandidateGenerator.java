@@ -25,6 +25,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.role.Role;
@@ -69,10 +70,23 @@ public final class ImportCandidateGenerator {
     }
 
     public static ImportContributor randomImportContributor() {
-        return new ImportContributor(new Identity.Builder().withId(randomUri()).build(),
-                                     List.of(new ImportOrganization(Organization.fromUri(randomUri()),
-                                                                    ScopusAffiliation.emptyAffiliation())),
-                                     new RoleType(Role.CREATOR), null, randomBoolean());
+        return new ImportContributor(randomIdentityForContributorFromScopus(),
+                                     List.of(randomImportOrganization()),
+                                     new RoleType(Role.CREATOR), 1, randomBoolean());
+    }
+
+    private static ImportOrganization randomImportOrganization() {
+        return new ImportOrganization(Organization.fromUri(randomUri()), ScopusAffiliation.emptyAffiliation());
+    }
+
+    private static Identity randomIdentityForContributorFromScopus() {
+        return new Identity.Builder().withId(randomUri())
+                   .withAdditionalIdentifiers(List.of(contributorScopusIdentifier()))
+                   .build();
+    }
+
+    private static AdditionalIdentifier contributorScopusIdentifier() {
+        return new AdditionalIdentifier("scopus-auid", randomString());
     }
 
     private static ImportEntityDescription randomImportEntityDescription(PublicationContext publicationContext,

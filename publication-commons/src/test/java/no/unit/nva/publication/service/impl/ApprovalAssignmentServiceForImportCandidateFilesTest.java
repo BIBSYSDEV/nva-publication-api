@@ -1,11 +1,11 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributor;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.APPROVAL_NEEDED;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -230,7 +230,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                      List.of(new ImportOrganization(Organization.fromUri(cristinId),
                                                                     ScopusAffiliation.emptyAffiliation())),
                                      new RoleType(
-                                         Role.CREATOR), randomInteger(), correspondingAuthor);
+                                         Role.CREATOR), null, correspondingAuthor);
     }
 
     private static CustomerDto createCustomerDto(URI customerId, URI cristinId, boolean allowsPublishing) {
@@ -285,7 +285,8 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     private ImportEntityDescription randomImportEntityDescription() {
         return new ImportEntityDescription(randomString(), RandomDataGenerator.randomUri(),
                                            new PublicationDate.Builder().withYear("2020").build(),
-                                           List.of(), randomString(), Map.of(), List.of(), randomString(),
+                                           List.of(randomImportContributor()), randomString(), Map.of(), List.of(),
+                                           randomString(),
                                            randomReference(JournalArticle.class));
     }
 

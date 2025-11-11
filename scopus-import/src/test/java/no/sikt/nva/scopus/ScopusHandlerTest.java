@@ -291,7 +291,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return new ImportContributor(new Identity.Builder().withName(randomString()).build(),
                               List.of(),
                               new RoleType(Role.ACTOR),
-                              null, randomBoolean());
+                              1, randomBoolean());
     }
 
     private CustomerList customerList(URI organization) {
