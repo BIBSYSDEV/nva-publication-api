@@ -23,6 +23,7 @@ import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
 import static no.unit.nva.language.LanguageConstants.MULTIPLE;
 import static no.unit.nva.language.LanguageConstants.NORWEGIAN;
 import static no.unit.nva.language.LanguageConstants.UNDEFINED_LANGUAGE;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -75,7 +76,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -142,20 +142,14 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportCandidate;
-import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -197,7 +191,6 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.apache.tika.io.TikaInputStream;
 import org.hamcrest.Matchers;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -278,7 +271,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         contributorExtractor = mock(ContributorExtractor.class);
         var organization = randomUri();
         when(contributorExtractor.generateContributors(any()))
-            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomContributor()), List.of(organization)));
+            .thenReturn(new ContributorsOrganizationsWrapper(List.of(contributorWithName()),
+                                                             List.of(organization)));
         identityServiceClient = mock(IdentityServiceClient.class);
         when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
             .thenReturn(customerList(organization));
@@ -286,6 +280,13 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                           identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
                                           mockedSearchService(Collections.emptyList()), contributorExtractor);
         scopusData = new ScopusGenerator();
+    }
+
+    private static Contributor contributorWithName() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .build();
     }
 
     private CustomerList customerList(URI organization) {
@@ -1321,9 +1322,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private static Optional<String> toResponse(ImportCandidate importCandidate) {
-        return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
-            List.of(ExpandedImportCandidate
-                        .fromImportCandidate(importCandidate, mock(AuthorizedBackendUriRetriever.class))), 1)));
+        var expandedImportCandidate = new ExpandedImportCandidate();
+        expandedImportCandidate.setIdentifier(UriWrapper.fromUri(randomUri()).addChild(importCandidate.getIdentifier().toString()).getUri());
+        return Optional.of(new ImportCandidateSearchApiResponse(List.of(expandedImportCandidate), 1).toString());
     }
 
     private String getEid() {
@@ -1387,35 +1388,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return importCandidateService.persistImportCandidate(importCandidate);
     }
 
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription())
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
-                   .build();
-    }
-
-    private EntityDescription randomEntityDescription() {
-        return new EntityDescription.Builder().withPublicationDate(
-                new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .build();
-    }
-
     private void removePublishers() {
         var publishers = scopusData.getDocument()
                              .getItem()
@@ -1474,7 +1446,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return resourceService;
     }
 
-    @NotNull
     private ScopusGenerator generateScopusDataWithOneAffiliation() {
         return ScopusGenerator.createWithSpecifiedAffiliations(List.of(createAffiliation(List.of("Some Name"))));
     }

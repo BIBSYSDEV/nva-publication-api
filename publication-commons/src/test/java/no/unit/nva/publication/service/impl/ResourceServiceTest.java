@@ -7,7 +7,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
@@ -78,7 +78,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -1725,17 +1724,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
             var expected = "Resource:" + publication.getIdentifier().toString();
             assertThat(testAppender.getMessages(), containsString(expected));
         });
-    }
-
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of(randomOpenFile()))
-                   .withEntityDescription(randomEntityDescription(JournalArticle.class))
-                   .build();
     }
 
     private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {

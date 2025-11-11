@@ -3,9 +3,9 @@ package no.unit.nva.expansion.model;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -32,7 +32,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 import lombok.Getter;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
@@ -43,18 +42,10 @@ import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
-import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Revision;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
@@ -65,8 +56,6 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -328,19 +317,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         uriRetriever.registerResponse(journalUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
     }
 
-    public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
-        return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription(publicationContext))
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
-                   .build();
-    }
-
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
     @MethodSource("publicationInstanceProvider")
     void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized(
@@ -382,10 +358,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         assertThat(identifier, is(equalTo(expectedIdentifier)));
     }
 
-    private static Reference createReference(PublicationContext publicationContext) {
-        return new Reference.Builder().withDoi(randomDoi()).withPublishingContext(publicationContext).build();
-    }
-
     private static ExpandedDoiRequest randomDoiRequest(Publication publication,
                                                        ResourceExpansionService resourceExpansionService,
                                                        ResourceService resourceService, MessageService messageService,
@@ -400,25 +372,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     private static Publication randomPublicationWithoutDoi(Class<?> instanceType) {
         return randomPublication(instanceType).copy().withDoi(null).build();
-    }
-
-    private EntityDescription randomEntityDescription(PublicationContext publicationContext) {
-        return new EntityDescription.Builder().withPublicationDate(
-                new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .withReference(createReference(publicationContext))
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        Identity identity = new Identity.Builder().withId(randomUri()).withName(randomString()).build();
-        return new Contributor.Builder().withIdentity(identity)
-                   .withRole(new RoleType(Role.ACTOR))
-                   .withAffiliations(List.of(new Organization.Builder().withId(randomUri()).build()))
-                   .build();
     }
 
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
