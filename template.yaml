@@ -273,10 +273,10 @@ Resources:
           AttributeType: S
         - AttributeName: SK2
           AttributeType: S
-        - AttributeName: PK3
-          AttributeType: S
-        - AttributeName: SK3
-          AttributeType: S
+#        - AttributeName: PK3
+#          AttributeType: S
+#        - AttributeName: SK3
+#          AttributeType: S
 #        - AttributeName: PK4
 #          AttributeType: S
 #        - AttributeName: SK4
@@ -303,14 +303,14 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: ResourcesByIdentifier
-          KeySchema:
-            - AttributeName: PK3
-              KeyType: HASH
-            - AttributeName: SK3
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+#        - IndexName: ResourcesByIdentifier
+#          KeySchema:
+#            - AttributeName: PK3
+#              KeyType: HASH
+#            - AttributeName: SK3
+#              KeyType: RANGE
+#          Projection:
+#            ProjectionType: ALL
 #        - IndexName: ResourceByCristinId
 #          KeySchema:
 #            - AttributeName: PK4
