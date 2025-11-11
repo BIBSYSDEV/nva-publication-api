@@ -5,6 +5,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.ImportStatusFactory;
 import org.junit.jupiter.api.Test;
 
 public class ImportStatusTest {

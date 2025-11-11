@@ -5,14 +5,13 @@ import static no.sikt.nva.scopus.utils.ScopusGenerator.randomAffiliation;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.randomCollaboration;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.List;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.OrganizationTp;
-import no.unit.nva.publication.model.business.importcandidate.ScopusAffiliation;
+import no.unit.nva.importcandidate.ScopusAffiliation;
 import org.junit.jupiter.api.Test;
 
 class ScopusAffiliationMapperTest {

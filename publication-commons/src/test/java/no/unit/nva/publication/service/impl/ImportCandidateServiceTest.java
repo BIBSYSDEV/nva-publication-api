@@ -1,8 +1,8 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.importcandidate.CandidateStatus.IMPORTED;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
-import static no.unit.nva.publication.model.business.importcandidate.CandidateStatus.IMPORTED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,13 +15,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -59,7 +59,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDeleteImportCandidatePermanently() throws BadMethodException, NotFoundException {
+    void shouldDeleteImportCandidatePermanently() throws BadMethodException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         resourceService.deleteImportCandidate(importCandidate);
         assertThrows(NotFoundException.class,
