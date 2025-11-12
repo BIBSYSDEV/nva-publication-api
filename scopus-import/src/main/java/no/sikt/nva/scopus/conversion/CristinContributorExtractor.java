@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
@@ -104,7 +105,7 @@ public final class CristinContributorExtractor {
 
     private static List<ImportOrganization> generateOrganizations(Set<Affiliation> affiliations,
                                                                   AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
-        var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations);
+        var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations, authorGroupWithCristinOrganization);
         var organizationsFromAuthorGroup = createOrganizationFromCristinOrganization(authorGroupWithCristinOrganization).toList();
         return cristinPersonActiveAffiliations.isEmpty()
                    ? organizationsFromAuthorGroup
@@ -112,16 +113,24 @@ public final class CristinContributorExtractor {
     }
 
     private static List<ImportOrganization> createOrganizationsFromActiveCristinPersonAffiliations(
-        Set<Affiliation> affiliations) {
+        Set<Affiliation> affiliations, AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
+        var scopusAffiliation =
+            AffiliationMapper.mapToAffiliation(getAffiliation(authorGroupWithCristinOrganization));
         return affiliations.stream()
                    .filter(Affiliation::isActive)
-                   .map(CristinContributorExtractor::toOrganization)
+                   .map(affiliation -> toOrganization(scopusAffiliation, affiliation))
                    .distinct()
                    .toList();
     }
 
-    private static ImportOrganization toOrganization(Affiliation affiliation) {
-        return new ImportOrganization(Organization.fromUri(affiliation.getOrganization()), ScopusAffiliation.emptyAffiliation());
+    private static AffiliationTp getAffiliation(
+        AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
+        return Optional.ofNullable(authorGroupWithCristinOrganization).map(
+            AuthorGroupWithCristinOrganization::getScopusAuthors).map(AuthorGroupTp::getAffiliation).orElse(null);
+    }
+
+    private static ImportOrganization toOrganization(ScopusAffiliation scopusAffiliation, Affiliation affiliation) {
+        return new ImportOrganization(Organization.fromUri(affiliation.getOrganization()), scopusAffiliation);
     }
 
     private static ImportOrganization toOrganization(CristinOrganization cristinOrganization,
