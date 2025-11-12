@@ -14,14 +14,14 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Map;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
-import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.UnusedPrivateMethod")
 public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
-                          LogEntry data) implements DynamoEntry{
+                          LogEntry data) {
 
     public static final String TYPE = "LogEntry";
     private static final String KEY_PATTERN = "%s:%s";
@@ -40,10 +40,10 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
         return KEY_PATTERN.formatted(Resource.TYPE, resource.getIdentifier());
     }
 
-    @JacocoGenerated
-    @Override
-    public SortableIdentifier getIdentifier() {
-        return identifier;
+    public Map<String, AttributeValue> toDynamoFormat() {
+        return attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(this)).map(Item::fromJSON)
+                   .map(ItemUtils::toAttributeValues)
+                   .orElseThrow();
     }
 
     @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME)
