@@ -8,8 +8,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static java.util.Collections.emptyList;
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
-import static no.unit.nva.model.testing.ImportCandidateGenerator.createImportCandidateWithContributors;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributor;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
@@ -84,6 +85,7 @@ import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.ImportCandidateGenerator;
 import no.unit.nva.publication.create.pia.PiaClientConfig;
 import no.unit.nva.publication.create.pia.PiaUpdateRequest;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -423,7 +425,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var userInput = importCandidate.copy()
-                            .withEntityDescription(randomImportEntityDescription(null, List.of(randomImportContributor())))
+                            .withEntityDescription(
+                                randomImportEntityDescriptionWithoutMainTitle(List.of(randomImportContributor())))
                             .build();
         var request = createRequest(userInput);
         handler.handleRequest(request, output, context);
@@ -621,12 +624,12 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                                        .getAdditionalIdentifiers())
                                         .withName(randomString())
                                         .build();
-        return new ImportContributor(identityWithCristinId, List.of(), new RoleType(Role.CREATOR),
+        return new ImportContributor(identityWithCristinId, emptyList(), new RoleType(Role.CREATOR),
                                      contributorWithAuid.sequence(), false);
     }
 
     private ImportContributor createContributorWithAuid(String auid, int sequence) {
-        return new ImportContributor(identityWithAuid(auid), List.of(), new RoleType(Role.CREATOR),
+        return new ImportContributor(identityWithAuid(auid), emptyList(), new RoleType(Role.CREATOR),
                                      sequence, false);
     }
 
@@ -671,7 +674,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     private ImportCandidate createPersistedImportCandidate(List<ImportContributor> contributors)
         throws NotFoundException {
-        var candidate = createImportCandidateWithContributors(contributors);
+        var candidate = ImportCandidateGenerator.randomImportCandidate(contributors);
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
@@ -730,18 +733,17 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                randomBoolean(),
                                randomBoolean(),
                                randomBoolean(),
-                               Collections.emptyList(),
+                               emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(),
                                                                        RandomDataGenerator.randomUri()),
                                autoPublishScopusImportFiles);
     }
 
-    private ImportEntityDescription randomImportEntityDescription(String mainTitle,
-                                                                  List<ImportContributor> contributors) {
-        return new ImportEntityDescription(mainTitle, RandomDataGenerator.randomUri(),
+    private ImportEntityDescription randomImportEntityDescriptionWithoutMainTitle(List<ImportContributor> contributors) {
+        return new ImportEntityDescription(null, RandomDataGenerator.randomUri(),
                                            new PublicationDate.Builder().withYear("2020").build(),
                                            contributors,
-                                           randomString(), Map.of(), List.of(),
+                                           randomString(), Collections.emptyMap(), emptyList(),
                                            randomString(),
                                            randomReference(JournalArticle.class));
     }

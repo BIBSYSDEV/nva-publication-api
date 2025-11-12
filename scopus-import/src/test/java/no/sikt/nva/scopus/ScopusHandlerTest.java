@@ -24,8 +24,8 @@ import static no.unit.nva.language.LanguageConstants.MULTIPLE;
 import static no.unit.nva.language.LanguageConstants.NORWEGIAN;
 import static no.unit.nva.language.LanguageConstants.UNDEFINED_LANGUAGE;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributorWithName;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
@@ -151,7 +151,6 @@ import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
@@ -172,8 +171,6 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -276,7 +273,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         contributorExtractor = mock(ContributorExtractor.class);
         var organization = randomUri();
         when(contributorExtractor.generateContributors(any()))
-            .thenReturn(new ContributorsOrganizationsWrapper(List.of(contributorWithName()),
+            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomImportContributorWithName(randomString())),
                                                              List.of(organization)));
         identityServiceClient = mock(IdentityServiceClient.class);
         when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
@@ -285,13 +282,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                           identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
                                           mockedSearchService(Collections.emptyList()), contributorExtractor);
         scopusData = new ScopusGenerator();
-    }
-
-    private static ImportContributor contributorWithName() {
-        return new ImportContributor(new Identity.Builder().withName(randomString()).build(),
-                              List.of(),
-                              new RoleType(Role.ACTOR),
-                              1, randomBoolean());
     }
 
     private CustomerList customerList(URI organization) {
@@ -1132,7 +1122,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldMergeIncomingImportCandidateIntoExistingOneWhenScopusIdsMatch() throws IOException {
-        var existingImportCandidate = createPersistedImportCandidate();
+        var existingImportCandidate = importCandidateService.persistImportCandidate(randomImportCandidate());
         createEmptyPiaMock();
         var scopusIdentifier = existingImportCandidate.getScopusIdentifier().orElseThrow();
         var uri = UriWrapper.fromHost(HOST)
@@ -1397,11 +1387,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var string = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl()).addChild(randomString()).toString();
         location.setUpwUrlForPdf(string);
         return location;
-    }
-
-    private ImportCandidate createPersistedImportCandidate() {
-        var importCandidate = randomImportCandidate();
-        return importCandidateService.persistImportCandidate(importCandidate);
     }
 
     private void removePublishers() {

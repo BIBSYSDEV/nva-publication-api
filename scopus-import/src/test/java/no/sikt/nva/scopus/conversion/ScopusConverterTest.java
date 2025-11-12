@@ -2,9 +2,8 @@ package no.sikt.nva.scopus.conversion;
 
 import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCristinOrganization;
 import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCustomer;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributorWithAffiliationId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import java.net.URI;
 import java.util.List;
 import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.CitationtypeAtt;
@@ -30,14 +28,7 @@ import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.clients.CustomerList;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.importcandidate.ImportCandidate;
-import no.unit.nva.importcandidate.ImportContributor;
-import no.unit.nva.importcandidate.ImportOrganization;
-import no.unit.nva.importcandidate.ScopusAffiliation;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.Test;
 
@@ -110,7 +101,7 @@ public class ScopusConverterTest {
         var nonNvaOrgId = randomUri();
         when(contributorExtractor.generateContributors(any()))
             .thenReturn(new ContributorsOrganizationsWrapper(
-                List.of(randomContributorWithAffiliationId(nonNvaOrgId)),
+                List.of(randomImportContributorWithAffiliationId(nonNvaOrgId)),
                 List.of(nonNvaOrgId)
             ));
 
@@ -155,7 +146,8 @@ public class ScopusConverterTest {
         var contributorExtractor = mock(ContributorExtractor.class);
         var affiliationId = randomUri();
         when(contributorExtractor.generateContributors(any()))
-            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomContributorWithAffiliationId(affiliationId)), List.of(affiliationId)));
+            .thenReturn(new ContributorsOrganizationsWrapper(List.of(
+                randomImportContributorWithAffiliationId(affiliationId)), List.of(affiliationId)));
         var converter = new ScopusConverter(generator.getDocument(),
                                             mock(PublicationChannelConnection.class),
                                             identityServiceClient,
@@ -178,13 +170,5 @@ public class ScopusConverterTest {
             .getCitationTitle()
             .getTitletext()
             .add(null);
-    }
-
-    public static ImportContributor randomContributorWithAffiliationId(URI affiliationId) {
-        return new ImportContributor(new Identity.Builder().build(),
-                              List.of(new ImportOrganization(Organization.fromUri(affiliationId),
-                                                             ScopusAffiliation.emptyAffiliation())),
-                              new RoleType(
-                                  Role.CREATOR), randomInteger(), randomBoolean());
     }
 }

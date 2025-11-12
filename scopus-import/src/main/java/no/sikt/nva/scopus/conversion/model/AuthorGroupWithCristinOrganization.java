@@ -77,10 +77,15 @@ public class AuthorGroupWithCristinOrganization {
 
     private List<ImportOrganization> generateCorporationFromCristinOrganization() {
         return cristinOrganizations.stream()
-                   .map(cristinOrganization -> Organization.fromUri(cristinOrganization.id()))
-                   .map(corporation -> new ImportOrganization(corporation, mapToAffiliation(scopusAuthors.getAffiliation())))
+                   .map(CristinOrganization::id)
+                   .map(Organization::fromUri)
+                   .map(this::toImportorganization)
                    .distinct()
                    .collect(Collectors.toList());
+    }
+
+    private ImportOrganization toImportorganization(Organization corporation) {
+        return new ImportOrganization(corporation, mapToAffiliation(scopusAuthors.getAffiliation()));
     }
 
     private List<ImportOrganization> generateCorporationFromAuthorGroupTp() {

@@ -2,7 +2,9 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributor;
+import static no.unit.nva.model.testing.PublicationContextBuilder.randomPublicationContext;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstance;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.APPROVAL_NEEDED;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
@@ -14,7 +16,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.ImportCandidateGenerator;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -290,15 +292,10 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                            randomReference(JournalArticle.class));
     }
 
-    private ImportEntityDescription randomImportEntityDescriptionWithContributors(Collection<ImportContributor> contributors) {
-        return new ImportEntityDescription(randomString(), RandomDataGenerator.randomUri(),
-                                           new PublicationDate.Builder().withYear("2020").build(),
-                                           contributors, randomString(), Map.of(), List.of(), randomString(),
-                                           randomReference(JournalArticle.class));
-    }
-
     private ImportCandidate createImportCandidate(List<URI> customers, ImportContributor... contributors) {
-        var entityDescription = randomImportEntityDescriptionWithContributors(Arrays.asList(contributors));
+        var entityDescription =
+            ImportCandidateGenerator.randomImportEntityDescription(randomPublicationContext(randomPublicationInstance().getClass()),
+                                                                   Arrays.asList(contributors));
         return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedCustomers(customers)
                    .withEntityDescription(entityDescription)

@@ -1,5 +1,7 @@
 package no.unit.nva.model.testing;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static no.unit.nva.model.testing.PublicationContextBuilder.randomPublicationContext;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstance;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
@@ -8,9 +10,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
@@ -40,9 +42,11 @@ public final class ImportCandidateGenerator {
         return randomImportCandidate(randomPublicationContext(randomPublicationInstance().getClass()));
     }
 
-    public static ImportCandidate createImportCandidateWithContributors(List<ImportContributor> contributors) {
+    public static ImportCandidate randomImportCandidate(List<ImportContributor> contributors) {
         return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomImportEntityDescription(randomPublicationContext(randomPublicationInstance().getClass()), contributors))
+                   .withEntityDescription(
+                       randomImportEntityDescription(randomPublicationContext(randomPublicationInstance().getClass()),
+                                                     contributors))
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
@@ -56,8 +60,8 @@ public final class ImportCandidateGenerator {
 
     public static ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
         return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomImportEntityDescription(publicationContext,
-                                                                        List.of(randomImportContributor())))
+                   .withEntityDescription(
+                       randomImportEntityDescription(publicationContext, List.of(randomImportContributor())))
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
                    .withPublisher(new Organization.Builder().withId(randomUri()).build())
@@ -70,13 +74,34 @@ public final class ImportCandidateGenerator {
     }
 
     public static ImportContributor randomImportContributor() {
-        return new ImportContributor(randomIdentityForContributorFromScopus(),
-                                     List.of(randomImportOrganization()),
-                                     new RoleType(Role.CREATOR), 1, randomBoolean());
+        return randomImportContributorWithAffiliationId(randomUri());
     }
 
-    private static ImportOrganization randomImportOrganization() {
-        return new ImportOrganization(Organization.fromUri(randomUri()), ScopusAffiliation.emptyAffiliation());
+    public static ImportContributor randomImportContributorWithAffiliationId(URI affiliationId) {
+        return new ImportContributor(randomIdentityForContributorFromScopus(),
+                                     List.of(randomImportOrganization(affiliationId)), creatorRole(), 1,
+                                     randomBoolean());
+    }
+
+    public static ImportEntityDescription randomImportEntityDescription(PublicationContext publicationContext,
+                                                                        List<ImportContributor> contributors) {
+        return new ImportEntityDescription(randomString(), randomUri(),
+                                           new PublicationDate.Builder().withYear("2020").build(), contributors,
+                                           randomString(), emptyMap(), emptyList(), randomString(),
+                                           createReference(publicationContext));
+    }
+
+    public static ImportContributor randomImportContributorWithName(String name) {
+        return new ImportContributor(new Identity.Builder().withName(name).build(), emptyList(), creatorRole(), 1,
+                                     randomBoolean());
+    }
+
+    private static RoleType creatorRole() {
+        return new RoleType(Role.CREATOR);
+    }
+
+    private static ImportOrganization randomImportOrganization(URI organizationId) {
+        return new ImportOrganization(Organization.fromUri(organizationId), ScopusAffiliation.emptyAffiliation());
     }
 
     private static Identity randomIdentityForContributorFromScopus() {
@@ -87,14 +112,6 @@ public final class ImportCandidateGenerator {
 
     private static AdditionalIdentifier contributorScopusIdentifier() {
         return new AdditionalIdentifier("scopus-auid", randomString());
-    }
-
-    private static ImportEntityDescription randomImportEntityDescription(PublicationContext publicationContext,
-                                                                         List<ImportContributor> contributors) {
-        return new ImportEntityDescription(randomString(), randomUri(),
-                                           new PublicationDate.Builder().withYear("2020").build(),
-                                           contributors, randomString(), Map.of(), List.of(),
-                                           randomString(), createReference(publicationContext));
     }
 
     private static Reference createReference(PublicationContext publicationContext) {

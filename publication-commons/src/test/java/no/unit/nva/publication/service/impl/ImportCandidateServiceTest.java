@@ -40,22 +40,6 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(
             persistedImportCandidate.getIdentifier());
-
-        // Debug EntityDescription fields
-        var persisted = persistedImportCandidate.getEntityDescription();
-        var fetched = fetchedImportCandidate.getEntityDescription();
-        System.out.println("mainTitle equal? " + persisted.mainTitle().equals(fetched.mainTitle()));
-        System.out.println("language equal? " + persisted.language().equals(fetched.language()));
-        System.out.println("publicationDate equal? " + persisted.publicationDate().equals(fetched.publicationDate()));
-        System.out.println("contributors equal? " + persisted.contributors().equals(fetched.contributors()));
-        System.out.println("  contributors types: " + persisted.contributors().getClass() + " vs " + fetched.contributors().getClass());
-        System.out.println("mainAbstract equal? " + java.util.Objects.equals(persisted.mainAbstract(), fetched.mainAbstract()));
-        System.out.println("alternativeAbstracts equal? " + java.util.Objects.equals(persisted.alternativeAbstracts(), fetched.alternativeAbstracts()));
-        System.out.println("tags equal? " + persisted.tags().equals(fetched.tags()));
-        System.out.println("  tags types: " + persisted.tags().getClass() + " vs " + fetched.tags().getClass());
-        System.out.println("description equal? " + java.util.Objects.equals(persisted.description(), fetched.description()));
-        System.out.println("reference equal? " + java.util.Objects.equals(persisted.reference(), fetched.reference()));
-
         assertEquals(persistedImportCandidate, fetchedImportCandidate);
     }
 
