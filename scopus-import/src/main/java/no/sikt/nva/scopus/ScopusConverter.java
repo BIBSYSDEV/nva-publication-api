@@ -17,7 +17,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,14 +51,10 @@ import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
 import no.unit.nva.importcandidate.ImportStatusFactory;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
-import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
@@ -67,16 +62,6 @@ import nva.commons.core.paths.UriWrapper;
 public class ScopusConverter {
 
     public static final String RESOURCE_OWNER_SIKT = "sikt@20754";
-    public static final String CRISTIN_ID_SIKT = "20754.0.0.0";
-    public static final String CRISTIN = "cristin";
-    public static final String ORGANIZATION = "organization";
-    public static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String PROD = "prod";
-    private static final Map<String, String> CUSTOMER_MAP = Map.of("sandbox", "bb3d0c0c-5065-4623-9b98-5810983c2478",
-                                                                   "dev", "bb3d0c0c-5065-4623-9b98-5810983c2478",
-                                                                   "test", "0baf8fcb-b18d-4c09-88bb-956b4f659103",
-                                                                   "prod", "22139870-8d31-4df9-bc45-14eb68287c4a");
-    public static final String CUSTOMER = "customer";
     public static final String MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE =
         "None of contributors belongs to NVA customer, all contributors affiliations: ";
     private final DocTp docTp;
@@ -121,8 +106,6 @@ public class ScopusConverter {
     public ImportCandidate generateImportCandidate() {
         var contributorsWithCustomers = getContributors();
         return new ImportCandidate.Builder()
-                   .withPublisher(createOrganization())
-                   .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription(contributorsWithCustomers.contributors()))
                    .withCreatedDate(Instant.now())
@@ -137,32 +120,6 @@ public class ScopusConverter {
         return content.stream()
                    .map(ScopusConverter::extractContentString)
                    .collect(Collectors.joining());
-    }
-
-    private static URI constructOwnerAffiliation() {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(CRISTIN)
-                   .addChild(ORGANIZATION)
-                   .addChild(CRISTIN_ID_SIKT)
-                   .getUri();
-    }
-
-    private Organization createOrganization() {
-        return new Organization.Builder()
-                   .withId(UriWrapper.fromHost(API_HOST).addChild(CUSTOMER).addChild(getId()).getUri())
-                   .build();
-    }
-
-    private static String getId() {
-        return CUSTOMER_MAP.keySet()
-                   .stream()
-                   .filter(API_HOST::contains)
-                   .findFirst()
-                   .orElse(CUSTOMER_MAP.get(PROD));
-    }
-
-    private ResourceOwner constructResourceOwner() {
-        return new ResourceOwner(new Username(RESOURCE_OWNER_SIKT), constructOwnerAffiliation());
     }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {

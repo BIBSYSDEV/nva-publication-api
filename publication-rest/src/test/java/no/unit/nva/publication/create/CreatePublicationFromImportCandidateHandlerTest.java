@@ -11,7 +11,6 @@ import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
-import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributor;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
@@ -700,17 +699,16 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     private InputStream createRequestWithoutAccessRights(ImportCandidate importCandidate) throws
                                                                                           JsonProcessingException {
         var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        var user = UserInstance.create(randomString(), importCandidate.getPublisher().getId());
         return new HandlerRequestBuilder<ImportCandidate>(restApiMapper)
                    .withHeaders(headers)
                    .withBody(importCandidate)
-                   .withCurrentCustomer(user.getCustomerId())
+                   .withCurrentCustomer(randomUri())
                    .build();
     }
 
     private InputStream createRequest(ImportCandidate importCandidate) throws JsonProcessingException {
         var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        var user = UserInstance.create(randomString(), importCandidate.getPublisher().getId());
+        var user = UserInstance.create(randomString(), randomUri());
         return new HandlerRequestBuilder<ImportCandidate>(restApiMapper)
                    .withHeaders(headers)
                    .withUserName(randomString())
