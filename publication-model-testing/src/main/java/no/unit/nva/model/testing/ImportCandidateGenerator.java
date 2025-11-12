@@ -25,8 +25,6 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -49,10 +47,8 @@ public final class ImportCandidateGenerator {
                                                      contributors))
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
                    .withIdentifier(SortableIdentifier.next())
                    .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of(randomOpenFile(), randomAssociatedLink()))
                    .withAssociatedCustomers(List.of(randomUri(), randomUri()))
                    .build();
@@ -64,10 +60,8 @@ public final class ImportCandidateGenerator {
                        randomImportEntityDescription(publicationContext, List.of(randomImportContributor())))
                    .withModifiedDate(Instant.now())
                    .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
                    .withIdentifier(SortableIdentifier.next())
                    .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of(randomOpenFile(), randomAssociatedLink()))
                    .withAssociatedCustomers(List.of(randomUri(), randomUri()))
                    .build();

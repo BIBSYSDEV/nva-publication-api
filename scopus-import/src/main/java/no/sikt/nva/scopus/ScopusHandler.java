@@ -2,7 +2,6 @@ package no.sikt.nva.scopus;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConverter.RESOURCE_OWNER_SIKT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -139,7 +138,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private static void setStatusImported(ImportCandidate importCandidate, Resource resource) {
-        importCandidate.setImportStatus(ImportStatusFactory.createImported(RESOURCE_OWNER_SIKT,
+        importCandidate.setImportStatus(ImportStatusFactory.createImported(resource.getResourceOwner().getUser().toString(),
                                                                            resource.getIdentifier()));
     }
 

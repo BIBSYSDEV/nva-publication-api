@@ -1,7 +1,6 @@
 package no.unit.nva.importcandidate;
 
 import static java.util.Objects.nonNull;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
@@ -14,9 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -27,15 +24,9 @@ import nva.commons.core.JacocoGenerated;
 public class ImportCandidate implements JsonSerializable {
 
     public static final String TYPE = "ImportCandidate";
-    private static final String IMPORT_STATUS = "importStatus";
-    private static final String ASSOCIATED_CUSTOMERS_FIELD = "associatedCustomers";
-    @JsonProperty(IMPORT_STATUS)
     private ImportStatus importStatus;
-    @JsonProperty(ASSOCIATED_CUSTOMERS_FIELD)
     private List<URI> associatedCustomers;
     private SortableIdentifier identifier;
-    private ResourceOwner resourceOwner;
-    private Organization publisher;
     private Instant createdDate;
     private Instant modifiedDate;
     private ImportEntityDescription entityDescription;
@@ -73,22 +64,6 @@ public class ImportCandidate implements JsonSerializable {
         this.modifiedDate = modifiedDate;
     }
 
-    public ResourceOwner getResourceOwner() {
-        return resourceOwner;
-    }
-
-    public void setResourceOwner(ResourceOwner resourceOwner) {
-        this.resourceOwner = resourceOwner;
-    }
-
-    public Organization getPublisher() {
-        return publisher;
-    }
-
-    public void setPublisher(Organization publisher) {
-        this.publisher = publisher;
-    }
-
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
@@ -124,8 +99,6 @@ public class ImportCandidate implements JsonSerializable {
         return Objects.equals(getImportStatus(), that.getImportStatus())
                && Objects.equals(getAssociatedCustomers(), that.getAssociatedCustomers())
                && Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getResourceOwner(), that.getResourceOwner())
-               && Objects.equals(getPublisher(), that.getPublisher())
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getEntityDescription(), that.getEntityDescription())
@@ -136,8 +109,8 @@ public class ImportCandidate implements JsonSerializable {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getImportStatus(), getAssociatedCustomers(), getIdentifier(), getResourceOwner(),
-                            getPublisher(), getCreatedDate(), getModifiedDate(), getEntityDescription(),
+        return Objects.hash(getImportStatus(), getAssociatedCustomers(), getIdentifier(), getCreatedDate(),
+                            getModifiedDate(), getEntityDescription(),
                             getAssociatedArtifacts(), getAdditionalIdentifiers());
     }
 
@@ -149,8 +122,6 @@ public class ImportCandidate implements JsonSerializable {
     public Builder copy() {
         return new Builder()
                    .withIdentifier(getIdentifier())
-                   .withResourceOwner(getResourceOwner())
-                   .withPublisher(getPublisher())
                    .withCreatedDate(getCreatedDate())
                    .withModifiedDate(getModifiedDate())
                    .withEntityDescription(getEntityDescription())
@@ -206,11 +177,6 @@ public class ImportCandidate implements JsonSerializable {
             return this;
         }
 
-        public Builder withPublisher(Organization publisher) {
-            importCandidate.setPublisher(publisher);
-            return this;
-        }
-
         public Builder withCreatedDate(Instant createdDate) {
             importCandidate.setCreatedDate(createdDate);
             return this;
@@ -233,11 +199,6 @@ public class ImportCandidate implements JsonSerializable {
 
         public Builder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
             importCandidate.setAdditionalIdentifiers(additionalIdentifiers);
-            return this;
-        }
-
-        public Builder withResourceOwner(ResourceOwner randomResourceOwner) {
-            importCandidate.setResourceOwner(randomResourceOwner);
             return this;
         }
 

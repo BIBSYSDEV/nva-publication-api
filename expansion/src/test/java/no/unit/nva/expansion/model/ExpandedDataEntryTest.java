@@ -495,8 +495,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         private ImportCandidate createImportCandidateFromPublication(Publication publication) {
             return new ImportCandidate.Builder()
                        .withIdentifier(publication.getIdentifier())
-                       .withResourceOwner(publication.getResourceOwner())
-                       .withPublisher(publication.getPublisher())
                        .withCreatedDate(publication.getCreatedDate())
                        .withModifiedDate(publication.getModifiedDate())
                        .withAssociatedArtifacts(publication.getAssociatedArtifacts())
