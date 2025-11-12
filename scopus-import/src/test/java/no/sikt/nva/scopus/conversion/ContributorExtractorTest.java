@@ -57,7 +57,8 @@ import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.clients.CustomerList;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import no.unit.nva.model.Contributor;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -123,7 +124,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getAffiliations(), is(emptyIterable()));
+        assertThat(contributor.affiliations(), is(emptyIterable()));
     }
 
     @Test
@@ -142,7 +143,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getAffiliations(), is(emptyIterable()));
+        assertThat(contributor.affiliations(), is(emptyIterable()));
     }
 
     @Test
@@ -161,7 +162,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getAffiliations(), hasSize(1));
+        assertThat(contributor.affiliations(), hasSize(1));
     }
 
     @Test
@@ -176,7 +177,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getAffiliations(), is(emptyIterable()));
+        assertThat(contributor.affiliations(), is(emptyIterable()));
     }
 
     @Test
@@ -191,7 +192,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
+        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().corporation()).getId();
         assertThat(id, is(equalTo(cristinOrganisationIdFromFetchOrganisationResponse)));
     }
 
@@ -209,7 +210,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getIdentity().getName(), is(equalTo(expectedContributorName)));
+        assertThat(contributor.identity().getName(), is(equalTo(expectedContributorName)));
     }
 
     @Test
@@ -225,7 +226,7 @@ public class ContributorExtractorTest {
                                  .contributors()
                                  .getFirst();
 
-        assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
+        assertThat(nvaContributor.identity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
     }
 
     @Test
@@ -244,7 +245,7 @@ public class ContributorExtractorTest {
                                  .contributors()
                                  .getFirst();
 
-        assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
+        assertThat(nvaContributor.identity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
     }
 
     @Test
@@ -260,7 +261,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getIdentity().getId(), is(nullValue()));
+        assertThat(contributor.identity().getId(), is(nullValue()));
     }
 
     @Test
@@ -279,7 +280,7 @@ public class ContributorExtractorTest {
 
         var expectedOrcId = UriWrapper.fromHost(ORCID_HOST_NAME).addChild(orcIdFromXml).toString();
 
-        assertThat(contributor.getIdentity().getOrcId(), is(equalTo(expectedOrcId)));
+        assertThat(contributor.identity().getOrcId(), is(equalTo(expectedOrcId)));
     }
 
     @Test
@@ -294,7 +295,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getIdentity().getOrcId(), is(nullValue()));
+        assertThat(contributor.identity().getOrcId(), is(nullValue()));
     }
 
     @Test
@@ -312,9 +313,9 @@ public class ContributorExtractorTest {
                               .collect(SingletonCollector.collect());
 
         var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
-        var actualOrganizations = contributor.getAffiliations();
+        var actualOrganizations = contributor.affiliations();
 
-        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
+        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().corporation()).getId();
         assertThat(actualOrganizations.size(), is(equalTo(expectedAffiliations.size())));
         assertThat(id, is(equalTo(expectedAffiliations.getFirst().getOrganization())));
     }
@@ -348,15 +349,15 @@ public class ContributorExtractorTest {
 
         authors.forEach(author -> {
             var matchingContributor = contributors.stream()
-                                          .filter(contributor -> contributor.getSequence() == Integer.parseInt(author.getSeq()))
+                                          .filter(contributor -> contributor.sequence() == Integer.parseInt(author.getSeq()))
                                           .findFirst()
                                           .orElseThrow();
 
             var orcid = getOrcid(author);
             if (StringUtils.isNotBlank(orcid)) {
-                assertThat(matchingContributor.getIdentity().getOrcId(), is(equalTo(orcid)));
+                assertThat(matchingContributor.identity().getOrcId(), is(equalTo(orcid)));
             }
-            assertThat(matchingContributor.getSequence(), is(equalTo(Integer.parseInt(author.getSeq()))));
+            assertThat(matchingContributor.sequence(), is(equalTo(Integer.parseInt(author.getSeq()))));
         });
     }
 
@@ -375,12 +376,12 @@ public class ContributorExtractorTest {
         var contributors = contributorExtractorFromDocument().generateContributors(document).contributors();
 
         var correspondingContributor = contributors.stream()
-                                           .filter(Contributor::isCorrespondingAuthor)
+                                           .filter(ImportContributor::correspondingAuthor)
                                            .findFirst()
                                            .orElseThrow(() -> new AssertionError("No corresponding author found"));
 
-        assertThat(correspondingContributor.getIdentity().getName(), startsWith(correspondingAuthorTp.getGivenName()));
-        assertThat(correspondingContributor.isCorrespondingAuthor(), is(true));
+        assertThat(correspondingContributor.identity().getName(), startsWith(correspondingAuthorTp.getGivenName()));
+        assertThat(correspondingContributor.correspondingAuthor(), is(true));
     }
 
     @Test
@@ -434,7 +435,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
+        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().corporation()).getId();
         assertThat(id, is(equalTo(organization.id())));
     }
 
@@ -457,7 +458,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
+        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().corporation()).getId();
         assertThat(id, is(equalTo(organization.id())));
     }
 
@@ -496,9 +497,9 @@ public class ContributorExtractorTest {
         assertThat(result.contributors(), hasSize(1));
 
         var contributor = result.contributors().getFirst();
-        assertThat(contributor.getIdentity().getOrcId(), containsString(sharedOrcid));
+        assertThat(contributor.identity().getOrcId(), containsString(sharedOrcid));
 
-        assertThat(contributor.getAffiliations().size(), is(2));
+        assertThat(contributor.affiliations().size(), is(2));
     }
 
     @Test
@@ -524,9 +525,9 @@ public class ContributorExtractorTest {
         assertThat(result.contributors(), hasSize(1));
 
         var contributor = result.contributors().getFirst();
-        assertThat(contributor.getSequence(), is(Integer.parseInt(sequenceNumber)));
+        assertThat(contributor.sequence(), is(Integer.parseInt(sequenceNumber)));
 
-        assertThat(contributor.getAffiliations().size(), is(2));
+        assertThat(contributor.affiliations().size(), is(2));
     }
 
     @Test
@@ -551,9 +552,9 @@ public class ContributorExtractorTest {
         assertThat(result.contributors(), hasSize(1));
 
         var contributor = result.contributors().getFirst();
-        assertThat(contributor.getIdentity().getId(), is(equalTo(cristinPerson.getId())));
+        assertThat(contributor.identity().getId(), is(equalTo(cristinPerson.getId())));
 
-        assertThat(contributor.getAffiliations(), hasSize(1));
+        assertThat(contributor.affiliations(), hasSize(1));
     }
 
     @Test
@@ -578,9 +579,9 @@ public class ContributorExtractorTest {
 
         var contributor = result.contributors().getFirst();
 
-        assertThat(contributor.getIdentity().getId(), is(nullValue()));
+        assertThat(contributor.identity().getId(), is(nullValue()));
 
-        assertThat(contributor.getAffiliations().size(), is(2));
+        assertThat(contributor.affiliations().size(), is(2));
     }
 
     @Test
@@ -737,20 +738,6 @@ public class ContributorExtractorTest {
                     .willReturn(aResponse().withBody("[]").withStatus(HTTP_OK)));
     }
 
-    private Contributor findContributorBySequence(List<Contributor> contributors, int sequence) {
-        return contributors.stream()
-                   .filter(c -> c.getSequence() == sequence)
-                   .findFirst()
-                   .orElseThrow(() -> new AssertionError("No contributor found with sequence: " + sequence));
-    }
-
-    private String determineAuthorName(AuthorTp author) {
-        return author.getPreferredName() != null ? author.getPreferredName().getGivenName()
-                                                   + StringUtils.SPACE
-                                                   + author.getPreferredName().getSurname()
-                   : author.getGivenName() + StringUtils.SPACE + author.getSurname();
-    }
-
     private void mockPiaAuthorEmptyResponse(String auid) {
         var response = PiaResponseGenerator.convertAuthorsToJson(List.of());
         stubFor(WireMock.get(urlPathEqualTo("/sentralimport/authors"))
@@ -758,25 +745,25 @@ public class ContributorExtractorTest {
                     .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
     }
 
-    private void assertThatContributorHasCorrectCristinPersonData(Contributor contributor,
+    private void assertThatContributorHasCorrectCristinPersonData(ImportContributor contributor,
                                                                   Map<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
-        var actualCristinId = contributor.getIdentity().getId();
+        var actualCristinId = contributor.identity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
         var expectedCristinPerson = getPersonByCristinNumber(piaCristinIdAndAuthors.keySet(),
                                                              actualCristinId).orElseThrow();
         var expectedName = calculateExpectedNameFromCristinPerson(expectedCristinPerson);
 
-        assertThat(contributor.getIdentity().getName(), is(IsEqual.equalTo(expectedName)));
+        assertThat(contributor.identity().getName(), is(IsEqual.equalTo(expectedName)));
 
-        assertThat(contributor.getAffiliations(), hasSize(getActiveAffiliations(expectedCristinPerson).size()));
+        assertThat(contributor.affiliations(), hasSize(getActiveAffiliations(expectedCristinPerson).size()));
 
-        assertThat(contributor.getIdentity().getVerificationStatus(),
+        assertThat(contributor.identity().getVerificationStatus(),
                    anyOf(IsEqual.equalTo(ContributorVerificationStatus.VERIFIED),
                          IsEqual.equalTo(ContributorVerificationStatus.NOT_VERIFIED)));
 
-        var actualOrganizationFromAffiliation = contributor.getAffiliations()
+        var actualOrganizationFromAffiliation = contributor.affiliations()
                                                     .stream()
-                                                    .filter(Organization.class::isInstance)
+                                                    .map(ImportOrganization::corporation)
                                                     .map(Organization.class::cast)
                                                     .map(Organization::getId)
                                                     .collect(Collectors.toList());

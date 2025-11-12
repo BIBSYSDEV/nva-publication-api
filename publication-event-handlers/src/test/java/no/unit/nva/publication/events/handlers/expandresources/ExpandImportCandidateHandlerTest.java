@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.model.testing.ImportCandidateGenerator.randomContributor;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -18,8 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +26,8 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.importcandidate.ImportCandidate;
-import no.unit.nva.model.Contributor;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
@@ -96,7 +95,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldProduceExpandedImportCandidateWithCollaboration() throws IOException {
-        var oldImage = importCandidateWithMultipleContributors();
+        var oldImage = randomImportCandidate();
         var newImage = updatedVersionOfImportCandidate(oldImage);
         var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
         handler.handleRequest(request, output, CONTEXT);
@@ -108,15 +107,16 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldProduceExpandedImportCandidateWithExpandedOrganization() throws IOException {
-        var oldImage = importCandidateWithMultipleContributors();
+        var oldImage = randomImportCandidate();
         var newImage = updatedVersionOfImportCandidate(oldImage);
         var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
-        newImage.getEntityDescription().getContributors().stream()
-                               .map(Contributor::getAffiliations)
-                               .flatMap(List::stream)
-                               .filter(Organization.class::isInstance)
-                               .map(Organization.class::cast)
-                               .forEach(this::mockOrganizations);
+        newImage.getEntityDescription().contributors().stream()
+            .map(ImportContributor::affiliations)
+            .flatMap(Collection::stream)
+            .map(ImportOrganization::corporation)
+            .filter(Organization.class::isInstance)
+            .map(Organization.class::cast)
+            .forEach(this::mockOrganizations);
 
         handler.handleRequest(request, output, CONTEXT);
         var response = objectMapper.readValue(output.toString(), EventReference.class);
@@ -142,7 +142,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     private ImportCandidate updatedVersionOfImportCandidateWithPublicationDate(ImportCandidate importCandidate) {
-        importCandidate.getEntityDescription().getPublicationDate().setYear("2015");
+        importCandidate.getEntityDescription().publicationDate().setYear("2015");
         return importCandidate;
     }
 
@@ -153,14 +153,6 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     private ImportCandidate updatedVersionOfImportCandidate(ImportCandidate oldImage) {
         oldImage.setAssociatedArtifacts(new AssociatedArtifactList(randomAssociatedArtifacts()));
         return oldImage;
-    }
-
-    private ImportCandidate importCandidateWithMultipleContributors() {
-        var importCandidate = randomImportCandidate();
-        var contributors = new ArrayList<>(importCandidate.getEntityDescription().getContributors());
-        contributors.addAll(List.of(randomContributor(), randomContributor(), randomContributor()));
-        importCandidate.getEntityDescription().setContributors(contributors);
-        return importCandidate;
     }
 
     private InputStream emulateEventEmittedByImportCandidateUpdateHandler(ImportCandidate oldImage,

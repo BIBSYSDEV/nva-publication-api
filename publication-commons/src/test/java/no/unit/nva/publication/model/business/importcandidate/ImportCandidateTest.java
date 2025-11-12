@@ -11,12 +11,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportStatus;
 import no.unit.nva.importcandidate.ImportStatusFactory;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,16 +30,6 @@ public class ImportCandidateTest {
 
     private static Username randomPerson() {
         return new Username(randomString());
-    }
-
-    @Test
-    void shouldCreatePublicationFromImportCandidate() {
-        var randomImportCandidate = randomImportCandidate();
-        var expectedPublication = createExpectedPublication(randomImportCandidate);
-        var actualImportedPublication = randomImportCandidate.toPublication();
-        assertThat(randomImportCandidate.getImportStatus().candidateStatus(),
-                   is(equalTo(CandidateStatus.NOT_IMPORTED)));
-        assertThat(actualImportedPublication, is(equalTo(expectedPublication)));
     }
 
     @Test
@@ -67,19 +54,5 @@ public class ImportCandidateTest {
         var randomImportCandidate = randomImportCandidate();
         var copy = randomImportCandidate.copy().withAssociatedArtifacts(randomAssociatedArtifacts()).build();
         assertThat(randomImportCandidate, is(not(equalTo(copy))));
-    }
-
-    private Publication createExpectedPublication(ImportCandidate randomImportCandidate) {
-        return new Publication.Builder()
-                   .withAssociatedArtifacts(randomImportCandidate.getAssociatedArtifacts())
-                   .withEntityDescription(randomImportCandidate.getEntityDescription())
-                   .withAdditionalIdentifiers(randomImportCandidate.getAdditionalIdentifiers())
-                   .withCreatedDate(randomImportCandidate.getCreatedDate())
-                   .withIdentifier(randomImportCandidate.getIdentifier())
-                   .withModifiedDate(randomImportCandidate.getModifiedDate())
-                   .withPublisher(randomImportCandidate.getPublisher())
-                   .withResourceOwner(randomImportCandidate.getResourceOwner())
-                   .withStatus(PublicationStatus.PUBLISHED)
-                   .build();
     }
 }

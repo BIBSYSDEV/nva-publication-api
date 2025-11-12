@@ -8,7 +8,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,7 +40,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(
             persistedImportCandidate.getIdentifier());
-        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
+        assertEquals(persistedImportCandidate, fetchedImportCandidate);
     }
 
     @Test

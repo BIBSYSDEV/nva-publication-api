@@ -1,7 +1,10 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributor;
+import static no.unit.nva.model.testing.PublicationContextBuilder.randomPublicationContext;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomPublicationInstance;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.APPROVAL_NEEDED;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
@@ -15,15 +18,24 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportEntityDescription;
+import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.importcandidate.ImportStatusFactory;
-import no.unit.nva.model.Contributor;
+import no.unit.nva.importcandidate.ScopusAffiliation;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.ImportCandidateGenerator;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -72,7 +84,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
         var importCandidate = createImportCandidate(
             List.of(customer.customerId),
-            createContributor(createCristinId(), true, 1));
+            createImportContributor(createCristinId(), true, 1));
 
         assertThrows(ApprovalAssignmentException.class,
                      () -> service.determineCustomerResponsibleForApproval(importCandidate));
@@ -108,7 +120,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
         var importCandidate = createImportCandidate(
             List.of(customer.customerId),
-            createContributor(customer.cristinId, true, 1));
+            createImportContributor(customer.cristinId, true, 1));
 
         var result = service.determineCustomerResponsibleForApproval(importCandidate).getStatus();
 
@@ -125,8 +137,8 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
         var importCandidate = createImportCandidate(
             List.of(nonCorrespondenceCustomer.customerId, correspondenceCustomer.customerId),
-            createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
-            createContributor(correspondenceCustomer.cristinId, true, 2));
+            createImportContributor(nonCorrespondenceCustomer.cristinId, false, 1),
+            createImportContributor(correspondenceCustomer.cristinId, true, 2));
 
         var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
 
@@ -143,8 +155,8 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
         var importCandidate = createImportCandidate(
             List.of(otherCustomer.customerId, lowestSequenceCustomer.customerId),
-            createContributor(otherCustomer.cristinId, false, 2),
-            createContributor(lowestSequenceCustomer.cristinId, false, 1));
+            createImportContributor(otherCustomer.cristinId, false, 2),
+            createImportContributor(lowestSequenceCustomer.cristinId, false, 1));
 
         var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
 
@@ -179,7 +191,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
         var importCandidate = createImportCandidate(
             List.of(otherCustomer.customerId, correspondenceCustomer.customerId),
-            createContributor(otherCustomer.cristinId, false, 1),
+            createImportContributor(otherCustomer.cristinId, false, 1),
             createNonCorrespondenceContributorWithoutSequence(correspondenceCustomer.cristinId, true));
 
         var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
@@ -204,9 +216,9 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                 higherSequenceCorrespondenceCustomer.customerId,
                 nonCorrespondenceCustomer.customerId
             ),
-            createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
-            createContributor(higherSequenceCorrespondenceCustomer.cristinId, true, 3),
-            createContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
+            createImportContributor(nonCorrespondenceCustomer.cristinId, false, 1),
+            createImportContributor(higherSequenceCorrespondenceCustomer.cristinId, true, 3),
+            createImportContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
         );
 
         var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
@@ -214,12 +226,13 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         assertEquals(lowestSequenceCorrespondenceCustomer.customerId, customerDto.id());
     }
 
-    private static Contributor createNonCorrespondenceContributorWithoutSequence(URI cristinId,
+    private static ImportContributor createNonCorrespondenceContributorWithoutSequence(URI cristinId,
                                                                                  boolean correspondingAuthor) {
-        return new Contributor.Builder()
-                   .withAffiliations(List.of(Organization.fromUri(cristinId)))
-                   .withCorrespondingAuthor(correspondingAuthor)
-                   .build();
+        return new ImportContributor(new Identity.Builder().build(),
+                                     List.of(new ImportOrganization(Organization.fromUri(cristinId),
+                                                                    ScopusAffiliation.emptyAffiliation())),
+                                     new RoleType(
+                                         Role.CREATOR), null, correspondingAuthor);
     }
 
     private static CustomerDto createCustomerDto(URI customerId, URI cristinId, boolean allowsPublishing) {
@@ -230,11 +243,12 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                allowsPublishing);
     }
 
-    private static Contributor createContributor(URI cristinId, boolean isCorrespondence, int sequence) {
-        return new Contributor.Builder().withAffiliations(List.of(Organization.fromUri(cristinId)))
-                   .withCorrespondingAuthor(isCorrespondence)
-                   .withSequence(sequence)
-                   .build();
+    private static ImportContributor createImportContributor(URI cristinId, boolean isCorrespondence, int sequence) {
+        return new ImportContributor(new Identity.Builder().build(),
+                                     List.of(new ImportOrganization(Organization.fromUri(cristinId),
+                                                                    ScopusAffiliation.emptyAffiliation())),
+                                     new RoleType(
+                                         Role.CREATOR), sequence, isCorrespondence);
     }
 
     private static URI createCristinId() {
@@ -259,7 +273,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                    .withIdentifier(SortableIdentifier.next())
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedCustomers(List.of(customerId))
-                   .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                   .withEntityDescription(randomImportEntityDescription())
                    .build();
     }
 
@@ -270,9 +284,18 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                    .build();
     }
 
-    private ImportCandidate createImportCandidate(List<URI> customers, Contributor... contributors) {
-        var entityDescription = randomEntityDescription(JournalArticle.class);
-        entityDescription.setContributors(Arrays.asList(contributors));
+    private ImportEntityDescription randomImportEntityDescription() {
+        return new ImportEntityDescription(randomString(), RandomDataGenerator.randomUri(),
+                                           new PublicationDate.Builder().withYear("2020").build(),
+                                           List.of(randomImportContributor()), randomString(), Map.of(), List.of(),
+                                           randomString(),
+                                           randomReference(JournalArticle.class));
+    }
+
+    private ImportCandidate createImportCandidate(List<URI> customers, ImportContributor... contributors) {
+        var entityDescription =
+            ImportCandidateGenerator.randomImportEntityDescription(randomPublicationContext(randomPublicationInstance().getClass()),
+                                                                   Arrays.asList(contributors));
         return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedCustomers(customers)
                    .withEntityDescription(entityDescription)

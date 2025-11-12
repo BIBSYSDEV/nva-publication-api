@@ -14,8 +14,9 @@ import java.util.stream.Collectors;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.importcandidate.ImportCandidate;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportEntityDescription;
+import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 
@@ -80,10 +81,10 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         }
     }
 
-    private static List<Contributor> getContributors(ImportCandidate importCandidate) {
+    private static Collection<ImportContributor> getContributors(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate)
                    .map(ImportCandidate::getEntityDescription)
-                   .map(EntityDescription::getContributors)
+                   .map(ImportEntityDescription::contributors)
                    .orElse(Collections.emptyList());
     }
 
@@ -103,9 +104,9 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         return first.substring(START_OF_STRING, first.indexOf(CRISTIN_ID_SEPARATOR));
     }
 
-    private static Comparator<Contributor> compareByCorrespondingAuthorAndSequence() {
-        return Comparator.comparing(Contributor::isCorrespondingAuthor, Comparator.reverseOrder())
-                   .thenComparing(Contributor::getSequence, Comparator.nullsLast(Comparator.naturalOrder()));
+    private static Comparator<ImportContributor> compareByCorrespondingAuthorAndSequence() {
+        return Comparator.comparing(ImportContributor::correspondingAuthor, Comparator.reverseOrder())
+                   .thenComparing(ImportContributor::sequence, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     private Optional<CustomerDto> findAnyCustomerAllowingAutoApproval(Collection<CustomerDto> customers) {
@@ -125,10 +126,10 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                    .orElseThrow(() -> new ApprovalAssignmentException(NO_CONTRIBUTOR_MESSAGE));
     }
 
-    private Optional<CustomerContributorPair> findMatchingCustomer(Contributor contributor,
+    private Optional<CustomerContributorPair> findMatchingCustomer(ImportContributor contributor,
                                                                    Map<String, CustomerDto> customerMap) {
-        return contributor.getAffiliations()
-                   .stream()
+        return contributor.affiliations().stream()
+                   .map(ImportOrganization::corporation)
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)
@@ -202,16 +203,16 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                                                    getSequence(customerContributorPair.contributor()));
         }
 
-        private static URI getContributorId(Contributor contributor) {
-            return Optional.ofNullable(contributor).map(Contributor::getIdentity).map(Identity::getId).orElse(null);
+        private static URI getContributorId(ImportContributor contributor) {
+            return Optional.ofNullable(contributor).map(ImportContributor::identity).map(Identity::getId).orElse(null);
         }
 
-        private static boolean isCorrespondingAuthor(Contributor contributor) {
-            return Optional.ofNullable(contributor).map(Contributor::isCorrespondingAuthor).orElse(false);
+        private static boolean isCorrespondingAuthor(ImportContributor contributor) {
+            return Optional.ofNullable(contributor).map(ImportContributor::correspondingAuthor).orElse(false);
         }
 
-        private static Integer getSequence(Contributor contributor) {
-            return Optional.ofNullable(contributor).map(Contributor::getSequence).orElse(null);
+        private static Integer getSequence(ImportContributor contributor) {
+            return Optional.ofNullable(contributor).map(ImportContributor::sequence).orElse(null);
         }
 
         public CustomerDto getCustomer() {
@@ -227,5 +228,5 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         }
     }
 
-    public record CustomerContributorPair(CustomerDto customerDto, Contributor contributor) {}
+    public record CustomerContributorPair(CustomerDto customerDto, ImportContributor contributor) {}
 }
