@@ -764,13 +764,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private ImportCandidate insertResourceFromImportCandidate(ImportCandidateDao importCandidateDao) {
-        var transactions = new ArrayList<TransactWriteItem>();
-        var put = newPut(importCandidateDao, tableName);
-        var dao =  new TransactWriteItem().withPut(put);
-        transactions.add(dao);
-        var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
-        sendTransactionWriteRequest(transactWriteItemsRequest);
-
+        client.putItem(tableName, importCandidateDao.toDynamoFormat());
         return importCandidateDao.getData();
     }
 
