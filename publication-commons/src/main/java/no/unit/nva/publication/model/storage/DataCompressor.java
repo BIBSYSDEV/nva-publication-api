@@ -118,18 +118,26 @@ public class DataCompressor {
     private static AttributeValue asBinaryAttributeValue(Entity dao) {
         var compressedDataBytes = attempt(() -> dynamoDbObjectMapper.convertValue(dao, JsonNode.class)).map(
                 JsonNode::toString)
-                                      .map(jsonStr -> jsonStr.getBytes(StandardCharsets.UTF_8))
+                                      .map(DataCompressor::getBytes)
                                       .map(DataCompressor::compress)
                                       .orElseThrow();
         return new AttributeValue().withB(ByteBuffer.wrap(compressedDataBytes));
     }
 
+    private static byte [] getBytes(String value) {
+        return value.getBytes(StandardCharsets.UTF_8);
+    }
+
     private static <T> AttributeValue asBinaryAttributeValue(T value) {
-        var compressedDataBytes = attempt(() -> dynamoDbObjectMapper.convertValue(value, JsonNode.class)).map(
-                JsonNode::toString)
-                                      .map(jsonStr -> jsonStr.getBytes(StandardCharsets.UTF_8))
+        var compressedDataBytes = attempt(() -> toJsonNode(value))
+                                      .map(JsonNode::toString)
+                                      .map(DataCompressor::getBytes)
                                       .map(DataCompressor::compress)
                                       .orElseThrow();
         return new AttributeValue().withB(ByteBuffer.wrap(compressedDataBytes));
+    }
+
+    private static <T> JsonNode toJsonNode(T value) {
+        return dynamoDbObjectMapper.convertValue(value, JsonNode.class);
     }
 }
