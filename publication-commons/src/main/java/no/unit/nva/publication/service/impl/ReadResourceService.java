@@ -48,11 +48,11 @@ import no.unit.nva.publication.model.business.publicationchannel.PublicationChan
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
-import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 
@@ -122,7 +122,7 @@ public class ReadResourceService {
         if (isNull(result.getItem()) || result.getItem().isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(DynamoEntry.parseAttributeValuesMap(result.getItem(), ImportCandidateDao.class))
+        return Optional.of(DatabaseEntryWithData.fromAttributeValuesMap(result.getItem(), ImportCandidateDao.class))
                    .map(ImportCandidateDao::getData);
     }
 
