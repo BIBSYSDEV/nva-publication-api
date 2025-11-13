@@ -25,7 +25,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.ImportOrganization;
+import no.unit.nva.importcandidate.OrganizationMapping;
 import no.unit.nva.importcandidate.ImportStatus;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Organization;
@@ -486,7 +486,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .stream()
                    .map(ImportContributor::affiliations)
                    .flatMap(Collection::stream)
-                   .map(ImportOrganization::corporation)
+                   .map(OrganizationMapping::targetOrganization)
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)

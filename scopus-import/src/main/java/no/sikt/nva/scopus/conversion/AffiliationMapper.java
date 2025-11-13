@@ -14,25 +14,25 @@ import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.PostalCodeTp;
 import no.sikt.nva.scopus.ScopusConverter;
 import no.unit.nva.importcandidate.Address;
-import no.unit.nva.importcandidate.AffiliationIdentifier;
+import no.unit.nva.importcandidate.SourceOrganizationIdentifier;
 import no.unit.nva.importcandidate.Country;
-import no.unit.nva.importcandidate.ScopusAffiliation;
+import no.unit.nva.importcandidate.SourceOrganization;
 
 public final class AffiliationMapper {
 
     private AffiliationMapper() {
     }
 
-    public static ScopusAffiliation mapToAffiliation(AffiliationTp affiliation) {
+    public static SourceOrganization mapToAffiliation(AffiliationTp affiliation) {
         return nonNull(affiliation) ? getAffiliation(affiliation) : null;
     }
 
-    public static ScopusAffiliation mapToAffiliation(CollaborationTp collaboration) {
+    public static SourceOrganization mapToAffiliation(CollaborationTp collaboration) {
         return nonNull(collaboration) ? getAffiliation(collaboration) : null;
     }
 
-    private static ScopusAffiliation getAffiliation(CollaborationTp collaboration) {
-        return new ScopusAffiliation(null, getOrganizationNames(collaboration), null, null, null);
+    private static SourceOrganization getAffiliation(CollaborationTp collaboration) {
+        return new SourceOrganization(null, getOrganizationNames(collaboration), null, null, null);
     }
 
     private static List<String> getOrganizationNames(CollaborationTp collaboration) {
@@ -45,10 +45,10 @@ public final class AffiliationMapper {
         return collaboration.getText().getContent().stream().map(ScopusConverter::extractContentString).toList();
     }
 
-    private static ScopusAffiliation getAffiliation(AffiliationTp scopusAffiliation) {
-        return new ScopusAffiliation(new AffiliationIdentifier(scopusAffiliation.getAfid(), scopusAffiliation.getDptid()),
-                                     getOrganizationNames(scopusAffiliation), scopusAffiliation.getSourceText(),
-                                     createCountry(scopusAffiliation), createLocation(scopusAffiliation));
+    private static SourceOrganization getAffiliation(AffiliationTp scopusAffiliation) {
+        return new SourceOrganization(new SourceOrganizationIdentifier(scopusAffiliation.getAfid(), scopusAffiliation.getDptid()),
+                                      getOrganizationNames(scopusAffiliation), scopusAffiliation.getSourceText(),
+                                      createCountry(scopusAffiliation), createLocation(scopusAffiliation));
     }
 
     private static Country createCountry(AffiliationTp scopusAffiliation) {

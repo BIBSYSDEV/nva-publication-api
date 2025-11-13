@@ -147,7 +147,7 @@ import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
-import no.unit.nva.importcandidate.ImportOrganization;
+import no.unit.nva.importcandidate.OrganizationMapping;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
 import no.unit.nva.model.Contributor;
@@ -1069,7 +1069,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var affiliationIds = actualContributors.stream()
                                  .map(ImportContributor::affiliations)
                                  .flatMap(Collection::stream)
-                                 .map(ImportOrganization::corporation)
+                                 .map(OrganizationMapping::targetOrganization)
                                  .filter(Organization.class::isInstance)
                                  .map(Organization.class::cast)
                                  .filter(org -> nonNull(org.getId()))
@@ -1277,7 +1277,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         contributor.affiliations()
             .stream()
             .filter(Objects::nonNull)
-            .map(ImportOrganization::corporation)
+            .map(OrganizationMapping::targetOrganization)
             .filter(Organization.class::isInstance)
             .map(Organization.class::cast)
             .forEach(affiliation -> assertThat(affiliation.getId(), is(equalTo(null))));

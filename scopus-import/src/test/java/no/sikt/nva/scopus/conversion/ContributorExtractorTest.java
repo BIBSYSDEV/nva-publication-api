@@ -60,7 +60,7 @@ import no.unit.nva.clients.CustomerList;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.importcandidate.ImportContributor;
-import no.unit.nva.importcandidate.ImportOrganization;
+import no.unit.nva.importcandidate.OrganizationMapping;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Organization;
@@ -189,7 +189,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().corporation()).getId();
+        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().targetOrganization()).getId();
         assertThat(id, is(equalTo(cristinOrganisationIdFromFetchOrganisationResponse)));
     }
 
@@ -428,7 +428,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().corporation()).getId();
+        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().targetOrganization()).getId();
         assertThat(id, is(equalTo(organization.id())));
     }
 
@@ -451,7 +451,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().corporation()).getId();
+        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().targetOrganization()).getId();
         assertThat(id, is(equalTo(organization.id())));
     }
 
@@ -633,7 +633,7 @@ public class ContributorExtractorTest {
         return wrapper.contributors().stream()
                    .map(ImportContributor::affiliations)
                    .flatMap(Collection::stream)
-                   .map(ImportOrganization::corporation)
+                   .map(OrganizationMapping::targetOrganization)
                    .filter(Objects::nonNull)
                    .toList();
     }
@@ -753,7 +753,7 @@ public class ContributorExtractorTest {
 
         assertThat(contributor.identity().getName(), is(IsEqual.equalTo(expectedName)));
 
-        assertThat(contributor.affiliations().stream().map(ImportOrganization::corporation).filter(Objects::nonNull).toList(),
+        assertThat(contributor.affiliations().stream().map(OrganizationMapping::targetOrganization).filter(Objects::nonNull).toList(),
                    hasSize(getActiveAffiliations(expectedCristinPerson).size()));
 
         assertThat(contributor.identity().getVerificationStatus(),
@@ -762,7 +762,7 @@ public class ContributorExtractorTest {
 
         var actualOrganizationFromAffiliation = contributor.affiliations()
                                                     .stream()
-                                                    .map(ImportOrganization::corporation)
+                                                    .map(OrganizationMapping::targetOrganization)
                                                     .filter(Objects::nonNull)
                                                     .map(Organization.class::cast)
                                                     .map(Organization::getId)
