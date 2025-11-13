@@ -205,7 +205,7 @@ public class PiaConnection {
 
     private String getBodyFromResponse(HttpResponse<String> response) {
         if (response.statusCode() != HttpURLConnection.HTTP_OK) {
-            logger.info(PIA_RESPONSE_ERROR + response.statusCode());
+            logger.error(PIA_RESPONSE_ERROR + response.statusCode());
             throw new RuntimeException();
         }
         return response.body();
