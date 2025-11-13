@@ -104,7 +104,7 @@ public final class CristinContributorExtractor {
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static List<ImportOrganization> generateOrganizations(Set<Affiliation> affiliations,
+    private static Collection<ImportOrganization> generateOrganizations(Set<Affiliation> affiliations,
                                                                   AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
         var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations, authorGroupWithCristinOrganization);
         var organizationsFromAuthorGroup = createOrganizationFromCristinOrganization(authorGroupWithCristinOrganization).toList();
@@ -113,7 +113,7 @@ public final class CristinContributorExtractor {
                    : cristinPersonActiveAffiliations;
     }
 
-    private static List<ImportOrganization> createOrganizationsFromActiveCristinPersonAffiliations(
+    private static Collection<ImportOrganization> createOrganizationsFromActiveCristinPersonAffiliations(
         Set<Affiliation> affiliations, AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
         var list = new ArrayList<ImportOrganization>();
         list.add(new ImportOrganization(null,
