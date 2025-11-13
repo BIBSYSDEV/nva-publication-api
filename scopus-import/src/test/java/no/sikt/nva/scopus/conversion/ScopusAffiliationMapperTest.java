@@ -11,14 +11,13 @@ import java.util.List;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.OrganizationTp;
-import no.unit.nva.importcandidate.ScopusAffiliation;
 import org.junit.jupiter.api.Test;
 
 class ScopusAffiliationMapperTest {
 
     @Test
     void shouldMapNullToEmptyAffiliation() {
-        assertEquals(ScopusAffiliation.emptyAffiliation(), mapToAffiliation((AffiliationTp) null));
+        assertEquals(null, mapToAffiliation((AffiliationTp) null));
     }
 
     @Test

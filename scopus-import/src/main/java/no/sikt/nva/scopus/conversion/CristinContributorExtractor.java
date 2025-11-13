@@ -21,7 +21,6 @@ import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportOrganization;
-import no.unit.nva.importcandidate.ScopusAffiliation;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -133,7 +132,7 @@ public final class CristinContributorExtractor {
     }
 
     private static ImportOrganization toOrganization(Affiliation affiliation) {
-        return new ImportOrganization(Organization.fromUri(affiliation.getOrganization()), ScopusAffiliation.emptyAffiliation());
+        return new ImportOrganization(Organization.fromUri(affiliation.getOrganization()), null);
     }
 
     private static ImportOrganization toOrganization(CristinOrganization cristinOrganization,

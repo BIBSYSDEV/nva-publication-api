@@ -28,7 +28,6 @@ import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
 import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.importcandidate.ImportStatusFactory;
-import no.unit.nva.importcandidate.ScopusAffiliation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -230,7 +229,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                                                                  boolean correspondingAuthor) {
         return new ImportContributor(new Identity.Builder().build(),
                                      List.of(new ImportOrganization(Organization.fromUri(cristinId),
-                                                                    ScopusAffiliation.emptyAffiliation())),
+                                                                    null)),
                                      new RoleType(
                                          Role.CREATOR), null, correspondingAuthor);
     }
@@ -246,7 +245,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     private static ImportContributor createImportContributor(URI cristinId, boolean isCorrespondence, int sequence) {
         return new ImportContributor(new Identity.Builder().build(),
                                      List.of(new ImportOrganization(Organization.fromUri(cristinId),
-                                                                    ScopusAffiliation.emptyAffiliation())),
+                                                                    null)),
                                      new RoleType(
                                          Role.CREATOR), sequence, isCorrespondence);
     }

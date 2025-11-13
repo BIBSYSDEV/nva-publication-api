@@ -45,7 +45,6 @@ import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
 import no.unit.nva.importcandidate.ImportOrganization;
-import no.unit.nva.importcandidate.ScopusAffiliation;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -520,7 +519,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         private static ImportContributor toImportContributor(Contributor contributor) {
             return new ImportContributor(contributor.getIdentity(),
-                                         contributor.getAffiliations().stream().map(corporation -> new ImportOrganization(corporation, ScopusAffiliation.emptyAffiliation())).toList(),
+                                         contributor.getAffiliations().stream().map(corporation -> new ImportOrganization(corporation, null)).toList(),
                                          contributor.getRole()
             , contributor.getSequence(), contributor.isCorrespondingAuthor());
         }
