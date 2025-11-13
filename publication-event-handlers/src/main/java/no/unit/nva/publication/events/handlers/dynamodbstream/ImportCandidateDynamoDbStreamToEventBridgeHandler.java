@@ -130,6 +130,7 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
                    .orElse(null);
     }
 
+    @JacocoGenerated
     private void logFailureInDebugging(Failure<Optional<ImportCandidate>> fail) {
         logger.debug(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
     }
