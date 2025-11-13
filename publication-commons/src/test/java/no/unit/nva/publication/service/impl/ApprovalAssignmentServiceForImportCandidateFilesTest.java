@@ -26,7 +26,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.OrganizationMapping;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -228,8 +228,8 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     private static ImportContributor createNonCorrespondenceContributorWithoutSequence(URI cristinId,
                                                                                  boolean correspondingAuthor) {
         return new ImportContributor(new Identity.Builder().build(),
-                                     List.of(new OrganizationMapping(Organization.fromUri(cristinId),
-                                                                     null)),
+                                     List.of(new Affiliation(Organization.fromUri(cristinId),
+                                                             null)),
                                      new RoleType(
                                          Role.CREATOR), null, correspondingAuthor);
     }
@@ -244,8 +244,8 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
     private static ImportContributor createImportContributor(URI cristinId, boolean isCorrespondence, int sequence) {
         return new ImportContributor(new Identity.Builder().build(),
-                                     List.of(new OrganizationMapping(Organization.fromUri(cristinId),
-                                                                     null)),
+                                     List.of(new Affiliation(Organization.fromUri(cristinId),
+                                                             null)),
                                      new RoleType(
                                          Role.CREATOR), sequence, isCorrespondence);
     }

@@ -49,7 +49,6 @@ import no.scopus.generated.DocTp;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.ContributorExtractor.ContributorsOrganizationsWrapper;
-import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
@@ -60,7 +59,7 @@ import no.unit.nva.clients.CustomerList;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.importcandidate.ImportContributor;
-import no.unit.nva.importcandidate.OrganizationMapping;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Organization;
@@ -306,7 +305,8 @@ public class ContributorExtractorTest {
 
         var corporations = getCorporations(contributorExtractorFromDocument().generateContributors(document));
 
-        var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
+        var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(
+            no.sikt.nva.scopus.conversion.model.cristin.Affiliation::isActive).toList();
         var actualOrganization = (Organization) corporations.getFirst();
 
         assertThat(corporations.size(), is(equalTo(expectedAffiliations.size())));
@@ -633,7 +633,7 @@ public class ContributorExtractorTest {
         return wrapper.contributors().stream()
                    .map(ImportContributor::affiliations)
                    .flatMap(Collection::stream)
-                   .map(OrganizationMapping::targetOrganization)
+                   .map(Affiliation::targetOrganization)
                    .filter(Objects::nonNull)
                    .toList();
     }
@@ -665,8 +665,9 @@ public class ContributorExtractorTest {
                    .toString();
     }
 
-    private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
-        return expectedCristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
+    private static List<no.sikt.nva.scopus.conversion.model.cristin.Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
+        return expectedCristinPerson.getAffiliations().stream().filter(
+            no.sikt.nva.scopus.conversion.model.cristin.Affiliation::isActive).toList();
     }
 
     private static AuthorTp getFirstAuthor(DocTp document) {
@@ -753,7 +754,7 @@ public class ContributorExtractorTest {
 
         assertThat(contributor.identity().getName(), is(IsEqual.equalTo(expectedName)));
 
-        assertThat(contributor.affiliations().stream().map(OrganizationMapping::targetOrganization).filter(Objects::nonNull).toList(),
+        assertThat(contributor.affiliations().stream().map(Affiliation::targetOrganization).filter(Objects::nonNull).toList(),
                    hasSize(getActiveAffiliations(expectedCristinPerson).size()));
 
         assertThat(contributor.identity().getVerificationStatus(),
@@ -762,15 +763,15 @@ public class ContributorExtractorTest {
 
         var actualOrganizationFromAffiliation = contributor.affiliations()
                                                     .stream()
-                                                    .map(OrganizationMapping::targetOrganization)
+                                                    .map(Affiliation::targetOrganization)
                                                     .filter(Objects::nonNull)
                                                     .map(Organization.class::cast)
                                                     .map(Organization::getId)
                                                     .collect(Collectors.toList());
         var expectedOrganizationFromAffiliation = expectedCristinPerson.getAffiliations()
                                                       .stream()
-                                                      .filter(Affiliation::isActive)
-                                                      .map(Affiliation::getOrganization)
+                                                      .filter(no.sikt.nva.scopus.conversion.model.cristin.Affiliation::isActive)
+                                                      .map(no.sikt.nva.scopus.conversion.model.cristin.Affiliation::getOrganization)
                                                       .toList();
 
         assertThat(actualOrganizationFromAffiliation, containsInAnyOrder(

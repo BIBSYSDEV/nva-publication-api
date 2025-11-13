@@ -4,7 +4,7 @@ import java.util.List;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.OrganizationMapping;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
@@ -58,6 +58,6 @@ public final class ImportCandidateToResourceConverter {
     }
 
     private static List<Corporation> getCorporations(ImportContributor importContributor) {
-        return importContributor.affiliations().stream().map(OrganizationMapping::targetOrganization).toList();
+        return importContributor.affiliations().stream().map(Affiliation::targetOrganization).toList();
     }
 }

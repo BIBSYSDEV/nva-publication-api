@@ -65,7 +65,7 @@ import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.OrganizationMapping;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -362,7 +362,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                       .withSequence(userInputContributor.sequence())
                                       .withIdentity(userInputContributor.identity())
                                       .withAffiliations(userInputContributor.affiliations().stream().map(
-                                          OrganizationMapping::targetOrganization).toList())
+                                          Affiliation::targetOrganization).toList())
                                       .withRole(userInputContributor.role())
                                       .build();
         assertThat(publication.getEntityDescription().getContributors(),

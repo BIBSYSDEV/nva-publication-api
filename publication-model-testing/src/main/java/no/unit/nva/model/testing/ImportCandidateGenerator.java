@@ -18,7 +18,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.OrganizationMapping;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -93,8 +93,8 @@ public final class ImportCandidateGenerator {
         return new RoleType(Role.CREATOR);
     }
 
-    private static OrganizationMapping randomImportOrganization(URI organizationId) {
-        return new OrganizationMapping(Organization.fromUri(organizationId), null);
+    private static Affiliation randomImportOrganization(URI organizationId) {
+        return new Affiliation(Organization.fromUri(organizationId), null);
     }
 
     private static Identity randomIdentityForContributorFromScopus() {

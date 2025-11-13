@@ -44,7 +44,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.OrganizationMapping;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -167,7 +167,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         importCandidate.getEntityDescription().contributors().stream()
             .map(ImportContributor::affiliations)
                 .flatMap(i -> i.stream()
-                                  .map(OrganizationMapping::targetOrganization)
+                                  .map(Affiliation::targetOrganization)
                               .filter(Organization.class::isInstance)
                               .map(Organization.class::cast)
                                   .map(Organization::getId))
@@ -519,7 +519,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         private static ImportContributor toImportContributor(Contributor contributor) {
             return new ImportContributor(contributor.getIdentity(),
-                                         contributor.getAffiliations().stream().map(corporation -> new OrganizationMapping(corporation, null)).toList(),
+                                         contributor.getAffiliations().stream().map(corporation -> new Affiliation(corporation, null)).toList(),
                                          contributor.getRole(), contributor.getSequence(), contributor.isCorrespondingAuthor());
         }
 

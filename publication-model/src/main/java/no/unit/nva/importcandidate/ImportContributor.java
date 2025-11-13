@@ -11,7 +11,7 @@ import no.unit.nva.model.role.RoleType;
 
 @SuppressWarnings("PMD.UnusedAssignment")
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record ImportContributor(Identity identity, Collection<OrganizationMapping> affiliations, RoleType role,
+public record ImportContributor(Identity identity, Collection<Affiliation> affiliations, RoleType role,
                                 Integer sequence, boolean correspondingAuthor) {
 
     public ImportContributor {

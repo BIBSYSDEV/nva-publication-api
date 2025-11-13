@@ -16,7 +16,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.OrganizationMapping;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 
@@ -129,7 +129,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
     private Optional<CustomerContributorPair> findMatchingCustomer(ImportContributor contributor,
                                                                    Map<String, CustomerDto> customerMap) {
         return contributor.affiliations().stream()
-                   .map(OrganizationMapping::targetOrganization)
+                   .map(Affiliation::targetOrganization)
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)
