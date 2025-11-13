@@ -1,6 +1,7 @@
 package no.unit.nva.importcandidate;
 
 import static java.util.Objects.nonNull;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.time.Instant;
@@ -151,6 +152,7 @@ public class ImportCandidate implements JsonSerializable {
                 : Collections.emptyList();
     }
 
+    @JsonIgnore
     public Optional<String> getScopusIdentifier() {
         return getAdditionalIdentifiers().stream()
                    .filter(ScopusIdentifier.class::isInstance)

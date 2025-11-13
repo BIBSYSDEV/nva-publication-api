@@ -38,6 +38,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.scopus.generated.AffiliationTp;
@@ -47,6 +48,7 @@ import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.ContributorExtractor.ContributorsOrganizationsWrapper;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
@@ -60,6 +62,7 @@ import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.ContributorVerificationStatus;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -112,23 +115,20 @@ public class ContributorExtractorTest {
     }
 
     @Test
-    void shouldCreateContributorWithoutAffiliationWhenAuthorTpIsNorwegianContributorWithoutAffiliation() {
+    void shouldCreateContributorWithoutOrganizationWhenAuthorTpIsNorwegianContributorWithoutAffiliation() {
         var generator = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1);
         var document = generator.getDocument();
         var authorTp = getFirstAuthor(document);
 
         mockCristinPersonWithoutAffiliation(authorTp);
 
-        var contributor = contributorExtractorFromDocument().generateContributors(document)
-                              .contributors()
-                              .stream()
-                              .collect(SingletonCollector.collect());
+        var corporations = getCorporations(contributorExtractorFromDocument().generateContributors(document));
 
-        assertThat(contributor.affiliations(), is(emptyIterable()));
+        assertThat(corporations, is(emptyIterable()));
     }
 
     @Test
-    void shouldCreateContributorWithoutAffiliationWhenAuthorTpIsNorwegianContributorWithOtherNorwegianInstitution()
+    void shouldCreateContributorWithoutCorporationWhenAuthorTpIsNorwegianContributorWithOtherNorwegianInstitution()
         throws JsonProcessingException {
         var generator = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1);
         var document = generator.getDocument();
@@ -138,12 +138,9 @@ public class ContributorExtractorTest {
         mockCristinPersonWithoutAffiliation(authorTp);
         mockOtherCristinOrganization(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument().generateContributors(document)
-                              .contributors()
-                              .stream()
-                              .collect(SingletonCollector.collect());
+        var corporations = getCorporations(contributorExtractorFromDocument().generateContributors(document));
 
-        assertThat(contributor.affiliations(), is(emptyIterable()));
+        assertThat(corporations, is(emptyIterable()));
     }
 
     @Test
@@ -299,7 +296,7 @@ public class ContributorExtractorTest {
     }
 
     @Test
-    void shouldUseActiveAffiliationOnlyWhenCreatingOrganizationsForContributorWhenFetchingCristinPerson() {
+    void shouldUseActiveAffiliationsOnlyWhenCreatingOrganizationsForContributorWhenFetchingCristinPerson() {
         var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
         var authorTp = getFirstAuthor(document);
         var authorGroupTp = getAuthorGroup(document).getFirst();
@@ -307,17 +304,13 @@ public class ContributorExtractorTest {
         var cristinPerson = mockCristinPersonWithSingleActiveAffiliation(authorTp);
         mockPiaAndCristinAffiliation(authorGroupTp);
 
-        var contributor = contributorExtractorFromDocument().generateContributors(document)
-                              .contributors()
-                              .stream()
-                              .collect(SingletonCollector.collect());
+        var corporations = getCorporations(contributorExtractorFromDocument().generateContributors(document));
 
         var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
-        var actualOrganizations = contributor.affiliations();
+        var actualOrganization = (Organization) corporations.getFirst();
 
-        var id = ((Organization) contributor.affiliations().stream().toList().getFirst().corporation()).getId();
-        assertThat(actualOrganizations.size(), is(equalTo(expectedAffiliations.size())));
-        assertThat(id, is(equalTo(expectedAffiliations.getFirst().getOrganization())));
+        assertThat(corporations.size(), is(equalTo(expectedAffiliations.size())));
+        assertThat(actualOrganization.getId(), is(equalTo(expectedAffiliations.getFirst().getOrganization())));
     }
 
     @Test
@@ -540,21 +533,17 @@ public class ContributorExtractorTest {
 
         var firstAuthor = (AuthorTp) authorGroup1.getAuthorOrCollaboration().getFirst();
 
-        var cristinPerson = mockCristinPersonWithSingleActiveAffiliation(firstAuthor);
+        mockCristinPersonWithSingleActiveAffiliation(firstAuthor);
         mockPiaAndCristinAffiliation(authorGroup1);
         mockPiaAndCristinAffiliation(authorGroup2);
 
         var correspondenceTps = List.<CorrespondenceTp>of();
         var authorGroupTps = List.of(authorGroup1, authorGroup2);
 
-        var result = contributorExtractorFromDocument().generateContributors(correspondenceTps, authorGroupTps);
+        var corporations = getCorporations(contributorExtractorFromDocument().generateContributors(correspondenceTps,
+                                                                                             authorGroupTps));
 
-        assertThat(result.contributors(), hasSize(1));
-
-        var contributor = result.contributors().getFirst();
-        assertThat(contributor.identity().getId(), is(equalTo(cristinPerson.getId())));
-
-        assertThat(contributor.affiliations(), hasSize(1));
+        assertThat(corporations, hasSize(1));
     }
 
     @Test
@@ -638,6 +627,15 @@ public class ContributorExtractorTest {
         var contributors = contributorExtractorFromDocument().generateContributors(correspondenceTps, authorGroupTps).contributors();
 
         assertThat(contributors.size(), is(1));
+    }
+
+    private List<Corporation> getCorporations(ContributorsOrganizationsWrapper wrapper) {
+        return wrapper.contributors().stream()
+                   .map(ImportContributor::affiliations)
+                   .flatMap(Collection::stream)
+                   .map(ImportOrganization::corporation)
+                   .filter(Objects::nonNull)
+                   .toList();
     }
 
     public static PersonalnameType personalnameType(String givenName, String surname) {
@@ -755,7 +753,8 @@ public class ContributorExtractorTest {
 
         assertThat(contributor.identity().getName(), is(IsEqual.equalTo(expectedName)));
 
-        assertThat(contributor.affiliations(), hasSize(getActiveAffiliations(expectedCristinPerson).size()));
+        assertThat(contributor.affiliations().stream().map(ImportOrganization::corporation).filter(Objects::nonNull).toList(),
+                   hasSize(getActiveAffiliations(expectedCristinPerson).size()));
 
         assertThat(contributor.identity().getVerificationStatus(),
                    anyOf(IsEqual.equalTo(ContributorVerificationStatus.VERIFIED),
@@ -764,6 +763,7 @@ public class ContributorExtractorTest {
         var actualOrganizationFromAffiliation = contributor.affiliations()
                                                     .stream()
                                                     .map(ImportOrganization::corporation)
+                                                    .filter(Objects::nonNull)
                                                     .map(Organization.class::cast)
                                                     .map(Organization::getId)
                                                     .collect(Collectors.toList());

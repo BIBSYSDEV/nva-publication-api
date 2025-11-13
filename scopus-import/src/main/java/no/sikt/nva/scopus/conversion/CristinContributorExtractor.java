@@ -4,11 +4,13 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static nva.commons.core.StringUtils.isNotBlank;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
@@ -102,22 +104,32 @@ public final class CristinContributorExtractor {
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static List<ImportOrganization> generateOrganizations(Set<Affiliation> affiliations,
+    private static Collection<ImportOrganization> generateOrganizations(Set<Affiliation> affiliations,
                                                                   AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
-        var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations);
+        var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations, authorGroupWithCristinOrganization);
         var organizationsFromAuthorGroup = createOrganizationFromCristinOrganization(authorGroupWithCristinOrganization).toList();
         return cristinPersonActiveAffiliations.isEmpty()
                    ? organizationsFromAuthorGroup
                    : cristinPersonActiveAffiliations;
     }
 
-    private static List<ImportOrganization> createOrganizationsFromActiveCristinPersonAffiliations(
-        Set<Affiliation> affiliations) {
-        return affiliations.stream()
-                   .filter(Affiliation::isActive)
-                   .map(CristinContributorExtractor::toOrganization)
-                   .distinct()
-                   .toList();
+    private static Collection<ImportOrganization> createOrganizationsFromActiveCristinPersonAffiliations(
+        Set<Affiliation> affiliations, AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
+        var list = new ArrayList<ImportOrganization>();
+        list.add(new ImportOrganization(null,
+                                        AffiliationMapper.mapToAffiliation(getAffiliation(authorGroupWithCristinOrganization))));
+        list.addAll(affiliations.stream()
+                        .filter(Affiliation::isActive)
+                        .map(CristinContributorExtractor::toOrganization)
+                        .distinct()
+                        .toList());
+        return list;
+    }
+
+    private static AffiliationTp getAffiliation(
+        AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
+        return Optional.ofNullable(authorGroupWithCristinOrganization).map(
+            AuthorGroupWithCristinOrganization::getScopusAuthors).map(AuthorGroupTp::getAffiliation).orElse(null);
     }
 
     private static ImportOrganization toOrganization(Affiliation affiliation) {
