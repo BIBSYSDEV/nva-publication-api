@@ -27,7 +27,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
-import no.unit.nva.importcandidate.ImportOrganization;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
@@ -113,7 +113,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         newImage.getEntityDescription().contributors().stream()
             .map(ImportContributor::affiliations)
             .flatMap(Collection::stream)
-            .map(ImportOrganization::corporation)
+            .map(Affiliation::targetOrganization)
             .filter(Organization.class::isInstance)
             .map(Organization.class::cast)
             .forEach(this::mockOrganizations);

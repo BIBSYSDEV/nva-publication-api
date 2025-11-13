@@ -26,7 +26,7 @@ class ScopusAffiliationMapperTest {
 
         var affiliation = mapToAffiliation(scopusAffiliation);
 
-        assertEquals(scopusAffiliation.getAfid(), affiliation.identifier().affiliation());
+        assertEquals(scopusAffiliation.getAfid(), affiliation.identifier().affiliationIdentifier());
     }
 
     @Test
@@ -35,7 +35,7 @@ class ScopusAffiliationMapperTest {
 
         var affiliation = mapToAffiliation(scopusAffiliation);
 
-        assertEquals(scopusAffiliation.getDptid(), affiliation.identifier().department());
+        assertEquals(scopusAffiliation.getDptid(), affiliation.identifier().departmentIdentifier());
     }
 
     @Test
