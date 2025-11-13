@@ -95,7 +95,6 @@ public final class FakeUriResponse {
                                         ResourceService resourceService, boolean publicationContextRedirects) {
         var publication = ImportCandidateToResourceConverter.convert(importCandidate).toPublication();
         fakeContributorResponses(publication, fakeUriRetriever);
-        fakeOwnerResponse(fakeUriRetriever, importCandidate.getResourceOwner().getOwnerAffiliation());
         fakePendingNviResponse(fakeUriRetriever, publication);
         fakeFundingResponses(fakeUriRetriever, publication);
         fakeProjectResponses(fakeUriRetriever, publication, emptySet());

@@ -8,7 +8,6 @@ import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import nva.commons.core.JacocoGenerated;
 
@@ -22,8 +21,6 @@ public final class ImportCandidateToResourceConverter {
     public static Resource convert(ImportCandidate importCandidate) {
         return Resource.builder()
                    .withIdentifier(importCandidate.getIdentifier())
-                   .withPublisher(importCandidate.getPublisher())
-                   .withResourceOwner(getOwner(importCandidate))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
                    .withEntityDescription(toEntityDescription(importCandidate))
@@ -42,11 +39,6 @@ public final class ImportCandidateToResourceConverter {
                    .withReference(entityDescription.reference())
                    .withContributors(convertToEntityDescriptionForResource(entityDescription))
                    .build();
-    }
-
-    private static Owner getOwner(ImportCandidate importCandidate) {
-        return new Owner(importCandidate.getResourceOwner().getOwner().getValue(),
-                         importCandidate.getResourceOwner().getOwnerAffiliation());
     }
 
     private static List<Contributor> convertToEntityDescriptionForResource(ImportEntityDescription entityDescription) {
