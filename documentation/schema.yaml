@@ -278,13 +278,6 @@ AssociatedLink:
         type: string
       description:
         type: string
-      relation:
-        type: string
-        enum:
-        - metadataSource
-        - sameAs
-        - dataset
-        - mention
       type:
         type: string
 AudioVisualPublication:
@@ -725,13 +718,15 @@ Degree:
         type: array
         items:
           type: string
-      course:
+      courseCode:
         $ref: "#/components/schemas/Course"
       revision:
         type: string
         enum:
         - Revised
         - Unrevised
+      course:
+        $ref: "#/components/schemas/Course"
       additionalIdentifiers:
         uniqueItems: true
         type: array
@@ -1047,24 +1042,6 @@ ExhibitionProductionSubtype:
     description:
       type: string
       writeOnly: true
-FeatureArticle:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/PublicationInstancePages"
-  - type: object
-    properties:
-      volume:
-        type: string
-      issue:
-        type: string
-      articleNumber:
-        type: string
-      pages:
-        $ref: "#/components/schemas/Range"
-      type:
-        type: string
 File:
   required:
   - type
@@ -1120,8 +1097,6 @@ Funding:
   - type
   type: object
   properties:
-    identifier:
-      type: string
     labels:
       type: object
       additionalProperties:
@@ -1129,14 +1104,16 @@ Funding:
     source:
       type: string
       format: uri
+    fundingAmount:
+      $ref: "#/components/schemas/MonetaryAmount"
     activeFrom:
       type: string
       format: date-time
     activeTo:
       type: string
       format: date-time
-    fundingAmount:
-      $ref: "#/components/schemas/MonetaryAmount"
+    identifier:
+      type: string
     type:
       type: string
 GeographicalContent:
@@ -1226,10 +1203,6 @@ ImportSource:
       - BRAGE
       - CRISTIN
       - SCOPUS
-      - DLR
-      - INSPERA
-      - WISE_FLOW
-      - OTHER
     archive:
       type: string
     type:
@@ -1247,7 +1220,6 @@ ImportUploadDetails:
         enum:
         - Brage
         - Scopus
-        - DLR
       archive:
         type: string
       uploadedDate:
@@ -2273,7 +2245,6 @@ Publication:
       items:
         $ref: "#/components/schemas/ResearchProject"
     fundings:
-      uniqueItems: true
       type: array
       items:
         $ref: "#/components/schemas/Funding"
@@ -2316,9 +2287,6 @@ Publication:
       type: array
       items:
         $ref: "#/components/schemas/ImportDetail"
-    pendingOpenFileCount:
-      type: integer
-      format: int64
     modelVersion:
       type: string
     type:
@@ -2865,16 +2833,6 @@ UploadDetails:
   properties:
     type:
       type: string
-UploadedFile:
-  required:
-  - type
-  type: object
-  allOf:
-  - $ref: "#/components/schemas/File"
-  - type: object
-    properties:
-      type:
-        type: string
 UserUploadDetails:
   required:
   - type
