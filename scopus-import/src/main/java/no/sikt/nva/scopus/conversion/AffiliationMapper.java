@@ -24,11 +24,11 @@ public final class AffiliationMapper {
     }
 
     public static ScopusAffiliation mapToAffiliation(AffiliationTp affiliation) {
-        return nonNull(affiliation) ? getAffiliation(affiliation) : ScopusAffiliation.emptyAffiliation();
+        return nonNull(affiliation) ? getAffiliation(affiliation) : null;
     }
 
     public static ScopusAffiliation mapToAffiliation(CollaborationTp collaboration) {
-        return nonNull(collaboration) ? getAffiliation(collaboration) : ScopusAffiliation.emptyAffiliation();
+        return nonNull(collaboration) ? getAffiliation(collaboration) : null;
     }
 
     private static ScopusAffiliation getAffiliation(CollaborationTp collaboration) {

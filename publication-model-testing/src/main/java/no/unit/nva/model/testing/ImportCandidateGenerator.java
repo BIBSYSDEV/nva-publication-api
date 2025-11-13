@@ -20,7 +20,6 @@ import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
 import no.unit.nva.importcandidate.ImportOrganization;
 import no.unit.nva.importcandidate.ImportStatusFactory;
-import no.unit.nva.importcandidate.ScopusAffiliation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -95,7 +94,7 @@ public final class ImportCandidateGenerator {
     }
 
     private static ImportOrganization randomImportOrganization(URI organizationId) {
-        return new ImportOrganization(Organization.fromUri(organizationId), ScopusAffiliation.emptyAffiliation());
+        return new ImportOrganization(Organization.fromUri(organizationId), null);
     }
 
     private static Identity randomIdentityForContributorFromScopus() {

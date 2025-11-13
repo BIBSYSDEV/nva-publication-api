@@ -17,8 +17,4 @@ public record ScopusAffiliation(AffiliationIdentifier identifier,
     public ScopusAffiliation {
         names = nonNull(names) ? List.copyOf(names) : Collections.emptyList();
     }
-
-    public static ScopusAffiliation emptyAffiliation() {
-        return new ScopusAffiliation(null, null, null, null, null);
-    }
 }
